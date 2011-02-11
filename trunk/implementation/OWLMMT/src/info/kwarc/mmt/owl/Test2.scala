@@ -122,9 +122,27 @@ object Test2 {
 
 	def main(args: Array[String]) {
      
-		    // Get hold of an ontology manager
+		    //Get hold of an ontology manager
 			val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 			val controller = new Controller(NullChecker, new ConsoleReport)
+		/*	
+		    //Let's load an ontology from the web
+			val iri : IRI = IRI.create("http://www.co-ode.org/ontologies/pizza/pizza.owl");
+			val pizzaOntology : OWLOntology  = manager.loadOntologyFromOntologyDocument(iri); 
+			println("Loaded ontology: " + pizzaOntology);
+			
+			//Remove the ontology so that we can load a local copy.
+			manager.removeOntology(pizzaOntology);
+		
+			//We can also load ontologies from files.  Download the pizza ontology from
+			//http://www.co-ode.org/ontologies/pizza/pizza.owl and put it somewhere on your hard drive
+			//Create a file object that points to the local copy
+			val file : File = new File("E:\\Fall10\\CompSem\\Project\\ex2.owl");
+			
+			//Now load the local copy
+			val test : OWLOntology  = manager.loadOntologyFromOntologyDocument(file);
+			println("Loaded ontology: " + test);
+		*/	
 			
 			val arg = args(0)
 			val file : File = new File(arg)
@@ -166,8 +184,9 @@ object Test2 {
 						   val name = IRItoLocalPath(entity.getIRI) // woman  
 						   val tp  = OWLOMS("OWL2SUB", "class")     // type , module and name 
 						   val con = new Constant(currentThy, name, Some(tp), None, null) 
-						     // theory name: ex, class name:woman,type,none definition icin, null ignore et  
-						   println("new: " + con.toString)
+						   //theory name: ex, class name:woman,type,none definition icin, null ignore et  
+						   // println("new: " + con.toString)
+						   println(con.toString)
 					} 
 					
 					else if(entity.isOWLDataProperty) {
@@ -178,7 +197,7 @@ object Test2 {
 						   val con = new Constant(currentThy, name, Some(tp), None, null) 
 						   controller.add(con)
 						   
-						   println("new: " + con.toString)
+						   println(con.toString)
 					}
 				 	
 				    else if(entity.isOWLDatatype) {
@@ -189,28 +208,28 @@ object Test2 {
 						   val con = new Constant(currentThy, name, Some(tp), None, null) 
 						   controller.add(con)
 						   
-						   println("new: " + con.toString)
+						   println(con.toString)
 				    }   
 						
 				    else if(entity.isOWLNamedIndividual){
-				    	   //println("old: " + entity.toStringID()+ " : " + "individual" + "." )
+				    	   // println("old: " + entity.toStringID()+ " : " + "individual" + "." )
 						   
 				    	   val name = IRItoLocalPath(entity.getIRI)  // John
 						   val tp  = OWLOMS("OWL2SUB", "individual") // type , module and name
 						   val con = new Constant(currentThy, name, Some(tp), None, null)
 				    	   controller.add(con)
 						   
-				    	   println("new: " + con.toString)
+				    	   println(con.toString)
 				    }
 				    else if(entity.isOWLObjectProperty){
-				    	   //println("old: " + entity.toStringID()+ " : " + "objectProperty" + "." )
+				    	   // println("old: " + entity.toStringID()+ " : " + "objectProperty" + "." )
 				    	   
 				    	   val name = IRItoLocalPath(entity.getIRI) // hasWife
 						   val tp  = OWLOMS("OWL2SUB", "objectProperty")     // type , module and name
 						   val con = new Constant(currentThy, name, Some(tp), None, null)
 				    	   controller.add(con)
 						   
-				    	   println("new: " + con.toString)
+				    	   println(con.toString)
 				    }
 				    else  println("none")   
 				    
@@ -219,7 +238,7 @@ object Test2 {
 				 	     //ax.toString
 				 	     // println(ax.name + " : " + "individual" + ".")
 				 	    println("works")
-				 }
+				   }
 				 */	     
 				   
 				case ax : OWLSubClassOfAxiom =>
@@ -234,14 +253,13 @@ object Test2 {
 				  val con = new Constant(currentThy, name, Some(tp), None, null)
 				  controller.add(con)
 						   
-				  println("new: " + con.toString)
+				  println(con.toString)
 			     
 				 //Apply(Apply(f,a),b),  ApplySpine(f,a,b)
-				 //con //p*
-				 //println
+				 //con //p* //println
 				  
 				case ax : OWLSubObjectPropertyOfAxiom =>
-				  //println("_" + " : " + "(" + "subObjectPropertyOf" + ax.getSubProperty + ax.getSuperProperty + ")" + ".")
+				  // println("_" + " : " + "(" + "subObjectPropertyOf" + ax.getSubProperty + ax.getSuperProperty + ")" + ".")
 				  
 				  val name = new LocalPath("ax" + num) 
 				  num = num+1
@@ -249,7 +267,7 @@ object Test2 {
 				  val con = new Constant(currentThy, name, Some(tp), None, null)
 				  controller.add(con)
 						   
-				  println("new: " + con.toString)
+				  println(con.toString)
 				   
 				case ax : OWLObjectPropertyDomainAxiom =>
 				  //println("_" + " : " + "(" + "objectPropertyDomain" + ax.getProperty + ax.getDomain + ")" + ".")
@@ -260,7 +278,7 @@ object Test2 {
 				  val con = new Constant(currentThy, name, Some(tp), None, null)
 				  controller.add(con)
 						   
-				  println("new: " + con.toString)
+				  println(con.toString)
 				/*  
 				case ax : OWLObjectPropertyRangeAxiom =>
 			      //println("_" + " : " + "(" + "objectPropertyRange" + ax.getProperty + ax.getRange + ")" + ".")
@@ -271,7 +289,7 @@ object Test2 {
 				 // val con = new Constant(currentThy, name, Some(tp), None, null)
 				 // controller.add(con)
 						   
-				 // println("new: " + con.toString)
+				 // println(con.toString)
 				*/
 			    				   
 				case ax : OWLClassAssertionAxiom => 
@@ -287,7 +305,7 @@ object Test2 {
 				  val con = new Constant(currentThy, name, Some(tp), None, null)
 				  controller.add(con)
 						   
-				  println("new: " + con.toString)
+				  println(con.toString)
 				  
 			    case ax : OWLObjectPropertyAssertionAxiom => 
 				 /*println("property assertion")
@@ -295,7 +313,7 @@ object Test2 {
 				   printProperty(ax.getProperty)
 				   printObject(ax.getObject)
 				 */   
-				   //println("_" + " : " + "(" + "objectPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
+				   // println("_" + " : " + "(" + "objectPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) 
 				   num = num+1
@@ -303,7 +321,7 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 						   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				   
 				case ax : OWLNegativeObjectPropertyAssertionAxiom => 
 				 /*println("negativeObjectPropertyAssertion")
@@ -311,7 +329,7 @@ object Test2 {
 				   printProperty(ax.getProperty)
 				   printObject(ax.getObject)
 				 */  
-				   //println("_" + " : " + "(" + "negativeObjectPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
+				   // println("_" + " : " + "(" + "negativeObjectPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num)
 				   num = num+1
@@ -319,7 +337,7 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 						   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				      
 			/*    case ax : OWLDataPropertyAssertionAxiom =>
 				   println("dataPropertyAssertion")
@@ -337,7 +355,7 @@ object Test2 {
                 
 						 
 			    case ax : OWLTransitiveObjectPropertyAxiom =>	
-				   //println("_" + " : " + "(" + "transitiveObjectProperty" + ax.getProperty +  ")" + ".")
+				   // println("_" + " : " + "(" + "transitiveObjectProperty" + ax.getProperty +  ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) //p*
 				   num = num+1
@@ -345,10 +363,10 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				   
 			    case ax : OWLSymmetricObjectPropertyAxiom =>	
-				   //println("_" + " : " + "(" + "symmetricObjectProperty" + ax.getProperty +  ")" + ".")
+				   // println("_" + " : " + "(" + "symmetricObjectProperty" + ax.getProperty +  ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) 
 				   num = num+1
@@ -356,10 +374,10 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				   
 			    case ax : OWLFunctionalObjectPropertyAxiom =>	
-				   //println("_" + " : " + "(" + "functionalObjectProperty" + ax.getProperty +  ")" + ".")
+				   // println("_" + " : " + "(" + "functionalObjectProperty" + ax.getProperty +  ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num)
 				   num = num+1
@@ -367,10 +385,10 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				   
 			    case ax : OWLInverseFunctionalObjectPropertyAxiom =>	
-				   //println("_" + " : " + "(" + "inverseFunctionalObjectProperty" + ax.getProperty +  ")" + ".")
+				   // println("_" + " : " + "(" + "inverseFunctionalObjectProperty" + ax.getProperty +  ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) //p*
 				   num = num+1
@@ -378,10 +396,10 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				  
 				case ax : OWLAsymmetricObjectPropertyAxiom =>	
-				   //println("_" + " : " + "(" + "asymmetricObjetProperty" + ax.getProperty +  ")" + ".")
+				   // println("_" + " : " + "(" + "asymmetricObjetProperty" + ax.getProperty +  ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) 
 				   num = num+1
@@ -389,11 +407,11 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				   
 				  
 				case ax : OWLReflexiveObjectPropertyAxiom =>	
-				   //println("_" + " : " + "(" + "reflexiveObjectProperty" + ax.getProperty +  ")" + ".")
+				   // println("_" + " : " + "(" + "reflexiveObjectProperty" + ax.getProperty +  ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) 
 				   num = num+1
@@ -401,10 +419,10 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				     
 				case ax : OWLIrreflexiveObjectPropertyAxiom =>	
-				   //println("_" + " : " + "(" + "irreflexiveObjectProperty" + ax.getProperty +  ")" + ".")
+				   // println("_" + " : " + "(" + "irreflexiveObjectProperty" + ax.getProperty +  ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) 
 				   num = num+1
@@ -412,11 +430,11 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				     
 				     
 				case ax : OWLEquivalentClassesAxiom =>	
-				 //println("_" + " : " + "(" + "equivalentClasses" + ? ")" + ".")
+				 // println("_" + " : " + "(" + "equivalentClasses" + ? ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) //p*
 				   num = num+1
@@ -425,10 +443,10 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				  	  
 				case ax : OWLDisjointClassesAxiom =>
-				   //println("_" + " : " + "(" + "disjointClasses" + ? ")" + ".")
+				   // println("_" + " : " + "(" + "disjointClasses" + ? ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) //p*
 				   num = num+1
@@ -437,11 +455,11 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				   
 				   
 			    case ax : OWLEquivalentObjectPropertiesAxiom =>	
-				 //println("_" + " : " + "(" + "equivalentObjectProperty" + ? ")" + ".")
+				 // println("_" + " : " + "(" + "equivalentObjectProperty" + ? ")" + ".")
 				  
 				   val name = new LocalPath("ax" + num) 
 				   num = num+1
@@ -450,7 +468,7 @@ object Test2 {
 				   val con = new Constant(currentThy, name, Some(tp), None, null)
 				   controller.add(con)
 				   
-				   println("new: " + con.toString)
+				   println(con.toString)
 				   
 				   
 			    case ax : OWLDisjointObjectPropertiesAxiom =>
@@ -514,7 +532,7 @@ object Test2 {
 			println(controller.get(currentThy).toString)
 
 	
-/*
+		  /*
 			// We can always obtain the location where an ontology was loaded from
 			val documentIRI : IRI  = manager.getOntologyDocumentIRI(localPizza);
 			println("    from: " + documentIRI);
@@ -537,7 +555,7 @@ object Test2 {
 			println("    from: " + manager.getOntologyDocumentIRI(redirectedPizza));
 			
 			// Note that when imports are loaded an ontology manager will be searched for mappings
-*/
+ 		*/
 
 
 	}
