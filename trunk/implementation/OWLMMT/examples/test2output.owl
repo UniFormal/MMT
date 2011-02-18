@@ -1,0 +1,202 @@
+<theory cdbase="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
+         <constant name="ax1">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasWife" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax2">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="irreflexiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesparentOf" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/Bill">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/hasParent">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax3">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasAncestor" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax4">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="asymmetricObjetProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasChild" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax5">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasParent" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familieshasChild" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax6">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="differentIndividuals" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesBill" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesJohn" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax7">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="equivalentClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesMyBirthdayGuests" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="objectOneOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesJohn" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesMary" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesBill" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax9">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasWife" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesMan" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/ParentOf">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax10">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="symmetricObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasSpouse" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/James">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax11">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="sameIndividual" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesJames" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesJim" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/John">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax12">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesGrandfather" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesMan" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesParent" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax14">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesMan" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesWoman" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax15">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="equivalentClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesMother" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesParent" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesWoman" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/hasWife">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax17">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="equivalentClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesHuman" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesPerson" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax18">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2QL" name="inverseFunctionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasWife" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/hasRelative">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/Mary">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax19">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="classAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/families/Woman" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/families/Mary" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/hasChild">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax20">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesWoman" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesPerson" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax21">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="negativeObjectPropertyAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasWife" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesBill" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familiesMary" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/hasAncestor">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax22">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/families/hasWife" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/families/John" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/families/Mary" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax23">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="equivalentClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesChildlessPerson" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesPerson" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="objectComplementOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familiesParent" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax26">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="reflexiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasRelative" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax27">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="disjointObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasParent" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familieshasSpouse" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/familieshasAge">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="dataProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax28">
+       <type><OMOBJ xmlns:om="om"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="http://example.com/owl/familieshasWife" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS><om:OMS module="_" name="http://example.com/owl/familieshasSpouse" base="file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="http://example.com/owl/families/hasSpouse">
+       <type><OMOBJ xmlns:om="om"><om:OMS module="OWL2SUB" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant>
+      </theory>
+file:/E:/Fall10/CompSem/Project/MMTtrunk/implementation/OWLMMT/ex2.owl?_ = {
+	ax1 : @(OWL2SUB?functionalObjectProperty, _?http://example.com/owl/familieshasWife)
+	ax2 : @(OWL2SUB?irreflexiveObjectProperty, _?http://example.com/owl/familiesparentOf)
+	http://example.com/owl/families/Bill : OWL2SUB?individual
+	http://example.com/owl/families/hasParent : OWL2SUB?objectProperty
+	ax3 : @(OWL2SUB?transitiveObjectProperty, _?http://example.com/owl/familieshasAncestor)
+	ax4 : @(OWL2SUB?asymmetricObjetProperty, _?http://example.com/owl/familieshasChild)
+	ax5 : @(OWL2QL?inverseObjectProperties, _?http://example.com/owl/familieshasParent, _?http://example.com/owl/familieshasChild)
+	ax6 : @(OWL2SUB?differentIndividuals, _?http://example.com/owl/familiesBill, _?http://example.com/owl/familiesJohn)
+	ax7 : @(OWL2SUB?equivalentClasses, _?http://example.com/owl/familiesMyBirthdayGuests, @(OWL2QL?objectOneOf, _?http://example.com/owl/familiesJohn, _?http://example.com/owl/familiesMary, _?http://example.com/owl/familiesBill))
+	ax9 : @(OWL2SUB?objectPropertyDomain, _?http://example.com/owl/familieshasWife, _?http://example.com/owl/familiesMan)
+	http://example.com/owl/families/ParentOf : OWL2SUB?objectProperty
+	ax10 : @(OWL2SUB?symmetricObjectProperty, _?http://example.com/owl/familieshasSpouse)
+	http://example.com/owl/families/James : OWL2SUB?individual
+	ax11 : @(OWL2SUB?sameIndividual, _?http://example.com/owl/familiesJames, _?http://example.com/owl/familiesJim)
+	http://example.com/owl/families/John : OWL2SUB?individual
+	ax12 : @(OWL2SUB?subClassOf, _?http://example.com/owl/familiesGrandfather, @(OWL2SUB?objectIntersectionOf, _?http://example.com/owl/familiesMan, _?http://example.com/owl/familiesParent))
+	ax14 : @(OWL2SUB?disjointClasses, _?http://example.com/owl/familiesMan, _?http://example.com/owl/familiesWoman)
+	ax15 : @(OWL2SUB?equivalentClasses, _?http://example.com/owl/familiesMother, @(OWL2SUB?objectIntersectionOf, _?http://example.com/owl/familiesParent, _?http://example.com/owl/familiesWoman))
+	http://example.com/owl/families/hasWife : OWL2SUB?objectProperty
+	ax17 : @(OWL2SUB?equivalentClasses, _?http://example.com/owl/familiesHuman, _?http://example.com/owl/familiesPerson)
+	ax18 : @(OWL2QL?inverseFunctionalObjectProperty, _?http://example.com/owl/familieshasWife)
+	http://example.com/owl/families/hasRelative : OWL2SUB?objectProperty
+	http://example.com/owl/families/Mary : OWL2SUB?individual
+	ax19 : @(OWL2SUB?classAssertion, _?http://example.com/owl/families/Woman, _?http://example.com/owl/families/Mary)
+	http://example.com/owl/families/hasChild : OWL2SUB?objectProperty
+	ax20 : @(OWL2SUB?subClassOf, _?http://example.com/owl/familiesWoman, _?http://example.com/owl/familiesPerson)
+	ax21 : @(OWL2SUB?negativeObjectPropertyAssertion, _?http://example.com/owl/familieshasWife, _?http://example.com/owl/familiesBill, _?http://example.com/owl/familiesMary)
+	http://example.com/owl/families/hasAncestor : OWL2SUB?objectProperty
+	ax22 : @(OWL2SUB?objectPropertyAssertion, _?http://example.com/owl/families/hasWife, _?http://example.com/owl/families/John, _?http://example.com/owl/families/Mary)
+	ax23 : @(OWL2SUB?equivalentClasses, _?http://example.com/owl/familiesChildlessPerson, @(OWL2SUB?objectIntersectionOf, _?http://example.com/owl/familiesPerson, @(OWL2QL?objectComplementOf, _?http://example.com/owl/familiesParent)))
+	ax26 : @(OWL2SUB?reflexiveObjectProperty, _?http://example.com/owl/familieshasRelative)
+	ax27 : @(OWL2SUB?disjointObjectProperty, _?http://example.com/owl/familieshasParent, _?http://example.com/owl/familieshasSpouse)
+	http://example.com/owl/familieshasAge : OWL2SUB?dataProperty
+	ax28 : @(OWL2SUB?subObjectPropertyOf, _?http://example.com/owl/familieshasWife, _?http://example.com/owl/familieshasSpouse)
+	http://example.com/owl/families/hasSpouse : OWL2SUB?objectProperty
+}
+
