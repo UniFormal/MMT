@@ -1,0 +1,59 @@
+/*
+     $Id: st.css 2036 2010-08-27 06:19:19Z kohlhase $
+     $HeadURL: https://svn.omdoc.org/repos/jomdoc/src/jomdoc/trunk/css/st.css $
+
+     Copyright (c) KWARC, Jacobs University Bremen, 2009
+     http://kwarc.info
+
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 3 of the license, or (at your option) any later version.
+
+     For other licensing options, please contact Michael Kohlhase
+     <m.kohlhase@jacobs-university.de>.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
+
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library; if not, write to the Free Software
+     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/*
+ * Keywords OMDoc-derived Documents (English)
+ */
+
+/* theories (Module ST) */
+div.omdoc-imports:before {content: "imports from:"}
+
+/* mathematical statements (Module ST) */
+span.omdoc-theorem-number:before {content:"Theorem "}
+span.omdoc-lemma-number:before {content:"Lemma "}
+span.omdoc-corollary-number:before {content:"Corollary "}
+span.omdoc-proposition-number:before {content:"Proposition "}
+span.omdoc-conjecture-number:before {content:"Conjecture "}
+span.omdoc-false-conjecture-number:before {content:"Conjecture (false) "}
+span.omdoc-obligation-number:before {content:"Obligation "}
+span.omdoc-postulate-number:before {content:"Postulate "}
+span.omdoc-rule-number:before {content:"Rule "}
+span.omdoc-formula-number:before {content:"Formula "}
+span.omdoc-assumption-number:before {content:"Assumption "}
+span.omdoc-conclusion-number:before {content:"Conclusion "}
+span.omdoc-example-number:before {content:"Example "}
+span.omdoc-definition-number:before {content:"Definition "}
+
+/* now we handle references, their content must be generated */
+span.omdoc-reference-for:before {content:"for "}
+
+/* proofs (Module PF) */
+span.omdoc-proof-number:before {content:"Proof "}
+
+/* DC Metadata (Module DC) */
+div.dc-authors:before {content: "Written by: "}
+div.dc-date:before {content: "Date: "}
+div.dc-description:before {content: "Description: "}
+

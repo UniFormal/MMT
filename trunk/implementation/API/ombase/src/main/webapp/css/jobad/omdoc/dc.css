@@ -1,0 +1,74 @@
+/*
+     $Id: dc.css 2346 2011-02-06 06:33:05Z kohlhase $
+     $HeadURL: https://svn.omdoc.org/repos/jomdoc/src/jomdoc/trunk/css/dc.css $
+
+     Copyright (c) KWARC, Jacobs University Bremen, 2009
+     http://kwarc.info
+
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 3 of the license, or (at your option) any later version.
+
+     For other licensing options, please contact Michael Kohlhase
+     <m.kohlhase@jacobs-university.de>.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
+
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library; if not, write to the Free Software
+     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/*
+ * DC module (Dublin Core metadata)
+ */
+
+div.dc-titleblock {
+    width: 80%;
+    font-size: medium;
+    border-style: inset;
+    border-color: #222222;
+    border-width: 2pt;
+    margin: 10px 0px 10px 0px;
+    border: 0px #cc9900 solid;
+    border-bottom-width: 2px;
+    padding-bottom: 12px;
+    line-height: normal;
+}
+
+div.dc-title {
+    background-color:#6699cc;
+    color: #ffffff;
+    display: block;
+    padding: 7px 15px 7px 15px;
+    border: 0px #cc9900 solid;
+    border-bottom-width: 2px;
+    font-family: verdana, tahoma, "century gothic", "gothic l", arial, helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: -2px;
+    text-align: left;
+}
+
+div.dc-authors:before, div.dc-date:before, div.dc-description:before {
+    padding: 0px;
+    margin: 0px;
+    /* margin-left: -36px; */
+    display: inline;
+    font-weight: bold;
+}
+
+div.dc-authors, div.dc-date, div.dc-description {
+    display: block;
+    margin: 2px 15px;
+    margin-left: 36px;
+}
+
+div.dc-authors {
+    padding-top: 10px;
+}
+

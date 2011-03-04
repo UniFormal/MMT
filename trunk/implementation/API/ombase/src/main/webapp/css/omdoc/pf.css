@@ -1,0 +1,71 @@
+/*
+     $Id: pf.css 2345 2011-02-06 06:32:25Z kohlhase $
+     $HeadURL: https://svn.omdoc.org/repos/jomdoc/src/jomdoc/trunk/css/pf.css $
+
+     Copyright (c) KWARC, Jacobs University Bremen, 2009
+     http://kwarc.info
+
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 3 of the license, or (at your option) any later version.
+
+     For other licensing options, please contact Michael Kohlhase
+     <m.kohlhase@jacobs-university.de>.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
+
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library; if not, write to the Free Software
+     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/*
+ * PF module (structured proofs)
+ */
+
+/* some general style for proofs */
+div.omdoc-proof {
+    padding-left:5px;
+    background-color:#F0F0F0;
+    display: block;
+    margin: 10px 0px 10px 0px;
+}
+
+/* and now the numbering; this is just a copy of the treatment in st.xsl */
+span.omdoc-proof-number {
+    font-style:normal;
+    font-weight: bold;
+}
+
+span.omdoc-proof-number:after {content: ": ";}
+
+/* proof steps are a bit special, their number format is different */
+span.omdoc-proofstep-derive-number:after{content: ". "}
+span.omdoc-proofstep-hypothesis-number:after{content: ". "}
+
+/* nested proofs do not have a proof marker */
+span.omdoc-statement-content > div.omdoc-proof > span.omdoc-statement-header {display:none}
+
+/******* I am not sure that these are still used **********/
+span.omdoc-plineno {
+    font-weight: bold;
+}
+
+span.omdoc-justification {
+}
+
+span.omdoc-justification-method {
+    padding-left: 1em;
+}
+
+span.omdoc-justification-premises {
+    padding-left: 1em;
+}
+
+div.omdoc-derive {
+    padding-left: 1em;
+}

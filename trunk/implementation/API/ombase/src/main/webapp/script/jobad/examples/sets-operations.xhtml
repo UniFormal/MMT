@@ -1,0 +1,2758 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:krextor="http://kwarc.info/projects/krextor">
+  <head>
+  <link href="https://svn.omdoc.org/repos/jomdoc/src/jomdoc/trunk/css/omdoc-default.css" type="text/css" rel="stylesheet" />
+  <link href="../../../css/jobad.css" type="text/css" rel="stylesheet" />
+  <link href="../../../css/jquery/jquery-ui.css" type="text/css" rel="stylesheet"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/jqcontextmenu.css" />
+  <script src="../../../classpath/jquery-1.3.js" type="text/javascript"></script>
+  <script src="../../../classpath/jquery.xmlns.js" type="text/javascript"></script>
+  <script src="../../../classpath/jquery-ui.min.js" type="text/javascript"></script>
+  <script type="text/javascript" src="../../../classpath/jqcontextmenu.js">  	/************************************************ jQuery Context Menu- (c) Dynamic Drive DHTML code library (www.dynamicdrive.com)* This notice MUST stay intact for legal use* Visit Dynamic Drive at http://www.dynamicdrive.com/ for this script and 100s more***********************************************/</script>
+  <script src="./../service.js" type="text/javascript"></script>
+  <script type="text/javascript">
+  	loadModule('../services', 'folding');
+  </script>  
+    <title/>
+  </head>
+  <body xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" 
+xmlns:ns1="http://omdoc.org/ontology#" 
+xmlns:ns2="http://salt.semanticauthoring.org/onto/abstract-document-ontology#"
+ xmlns:ns3="http://purl.org/dc/elements/1.1/" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#pre-sets-operations-post.omdoc"
+ typeof="ns1:Document">
+
+
+    <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations"></span>
+    <span rel="ns2:hasComposite" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations"></span>
+
+    <div xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+xmlns:dc="http://purl.org/dc/elements/1.1/" class="omdoc-theory" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations"
+ typeof="ns1:Theory">
+      <span rel="ns1:imports" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc#sets-introduction"></span>
+      <span rel="ns1:imports" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc#mathtalk-definitions"></span>
+      <span rel="ns1:imports" 
+resource="http://linkeddata.tntbase.org/slides/missing/en/highschool.omdoc#highschool"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#eset.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#eset.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p5"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p5"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powersetFN.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powersetFN.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p7"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p7"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p9"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p9"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#tup.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#tup.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p11"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p11"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ntupli.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ntupli.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p13"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p13"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ntupui.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ntupui.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p15"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p15"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#cartFN.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#cartFN.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p17"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p17"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#cart.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#cart.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p19"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p19"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ncartli.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ncartli.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p21"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p21"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ncartui.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ncartui.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p23"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p23"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#cartdots.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#cartdots.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p25"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p25"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndim.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndim.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p27"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p27"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequalOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequalOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p29"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p29"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p31"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p31"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sseteqOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sseteqOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p33"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p33"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sseteq.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sseteq.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p35"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p35"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#msseteq.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#msseteq.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p37"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p37"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ssetOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ssetOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p39"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p39"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sset.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sset.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p41"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p41"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nsseteqOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nsseteqOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p43"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p43"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nsseteq.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nsseteq.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p45"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p45"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nssetOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nssetOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p47"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p47"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nsset.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nsset.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p49"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p49"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#superseteqOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#superseteqOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p51"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p51"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#superseteq.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#superseteq.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p53"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p53"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#supersetOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#supersetOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p55"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p55"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#superset.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#superset.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p57"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p57"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#unionOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#unionOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p59"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p59"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p61"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p61"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#munion.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#munion.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p63"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p63"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#munionCollection.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#munionCollection.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p65"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p65"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#MunionCollection.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#MunionCollection.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p67"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p67"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersectOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersectOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p69"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p69"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersect.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersect.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p71"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p71"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#mintersectCollection.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#mintersectCollection.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p73"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p73"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#MintersectCollection.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#MintersectCollection.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p75"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p75"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setdiffOp.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setdiffOp.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p77"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p77"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setdiff.sym"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setdiff.sym"></span>
+      <span rel="ns1:homeTheoryOf" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p79"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p79"></span>
+      <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p80"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p80"></span>
+      <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p81"></span>
+      <div class="omdoc-imports">imports from: <a 
+href="http://alpha.tntbase.mathweb.org:8080/tntbase/eswc/restful/ld/xhtml/slides/dmath/en/sets-introduction.xhtml#sets-introduction"
+ 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p1">sets-introduction</a>,
+ <a 
+href="http://alpha.tntbase.mathweb.org:8080/tntbase/eswc/restful/ld/xhtml/slides/dmath/en/mathtalk-definitions.xhtml#mathtalk-definitions"
+ 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p2">mathtalk-definitions</a>,
+ <a 
+href="http://alpha.tntbase.mathweb.org:8080/tntbase/eswc/restful/ld/xhtml/slides/missing/en/highschool.xhtml#highschool"
+ 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p3">highschool</a>
+      </div>
+      <div id="sets-operations.p80" class="omdoc-omtext" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p80"
+ typeof="ns1:Statement">
+        <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Informal"></span>
+        <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p80.p1"></span>
+        <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p80.p1"></span>
+
+        <p id="sets-operations.p80.p1.p1">
+Now that we can represent sets, we want to have some operations on sets 
+that let us
+construct new sets from existing ones. We can simply define these 
+operations using the
+three set description operations introduced above.
+</p>
+      </div>
+      <div class="omdoc-slide" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sets-operations.p81"
+ typeof="ns1:DocumentUnit">
+        <span property="ns3:title" content="Operations on Sets"></span>
+        <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#I1"></span>
+        <div class="omdoc-slidetitle">Operations on Sets</div>
+        <div class="omdoc-slidecontent">
+          <div class="omdoc-omgroup" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#I1"
+ typeof="ns1:DocumentUnit">
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-equality.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-equality.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#power-set.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#power-set.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#empty-set.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#empty-set.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#emptyset.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#emptyset.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesian-product.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesian-product.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#pair.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#pair.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nCartProd.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nCartProd.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#n-tuple.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#n-tuple.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nCartSpace.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nCartSpace.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#vector.sym"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#vector.sym"></span>
+            <span rel="ns1:hasDirectPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def"></span>
+            <span rel="ns2:hasPart" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def"></span>
+            <ul>
+              <li>
+                <div id="setequal.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequalOp.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-equality.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="setequal.def.p1.p1">
+                    <span id="setequal.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setequal.def.p1.p1.p1.p1">set
+ equality</span>
+                    </span>: <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e612">
+                      <m:semantics>
+                        <m:mrow 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-600" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-600">(</m:mo>
+                            </m:maction>
+                            <m:mi 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1-args-arg1">A</m:mi>
+                            <m:mo 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1-args-fun1">≡</m:mo>
+                            <m:mi 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1-args-arg2">B</m:mi>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-600" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-600">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:mrow 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-fun">
+                            <m:mo>:</m:mo>
+                            <m:mo>⁣</m:mo>
+                            <m:mo>⟺</m:mo>
+                          </m:mrow>
+                          <m:mrow 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-800" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-800">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-fun">∀</m:mo>
+                            <m:mi 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-args-arg1">x</m:mi>
+                            <m:mo 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-fun">.</m:mo>
+                            <m:mrow 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="200" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="200">(</m:mo>
+                              </m:maction>
+                              <m:mrow 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-200" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-200">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1-arg1">x</m:mi>
+                                <m:mo 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1-fun">∈</m:mo>
+                                <m:mi 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1-arg2">A</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-200" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-200">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:mo 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-fun">⇔</m:mo>
+                              <m:mrow 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-200" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-200">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2-arg1">x</m:mi>
+                                <m:mo 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2-fun">∈</m:mo>
+                                <m:mi 
+xref="#a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2-arg2">B</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-200" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-200">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="200" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="200">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-800" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-800">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defequiv" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-fun"/>
+                            <om:OMA 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1">
+                              <om:OMS cd="sets-operations" 
+name="setequal" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1-args-fun1"/>
+                              <om:OMV name="A" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1-args-arg1"/>
+                              <om:OMV name="B" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg1-args-arg2"/>
+                            </om:OMA>
+                            <om:OMA 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2">
+                              <om:OMS cd="mathtalk" name="foral" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-fun"/>
+                              <om:OMV name="x" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-args-arg1"/>
+                              <om:OMA 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2">
+                                <om:OMS cd="mathtalk" name="biimpl" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-fun"/>
+                                <om:OMA 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1-fun"/>
+                                  <om:OMV name="x" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1-arg1"/>
+                                  <om:OMV name="A" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg1-arg2"/>
+                                </om:OMA>
+                                <om:OMA 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2-fun"/>
+                                  <om:OMV name="x" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2-arg1"/>
+                                  <om:OMV name="B" 
+id="a75811fa8-59ab-4984-9fcd-4b5765b4e111-arg2-arg2-arg2-arg2"/>
+                                </om:OMA>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="subset.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sseteqOp.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#sseteq.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="subset.def.p1.p1">
+                    <span id="subset.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#subset.def.p1.p1.p1.p1">subset</span>
+                    </span>:
+<m:math xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e734">
+                      <m:semantics>
+                        <m:mrow 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-600" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-600">(</m:mo>
+                            </m:maction>
+                            <m:mi 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1-arg1">A</m:mi>
+                            <m:mo 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1-fun">⊆</m:mo>
+                            <m:mi 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1-arg2">B</m:mi>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-600" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-600">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:mrow 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-fun">
+                            <m:mo>:</m:mo>
+                            <m:mo>⁣</m:mo>
+                            <m:mo>⟺</m:mo>
+                          </m:mrow>
+                          <m:mrow 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-800" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-800">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-fun">∀</m:mo>
+                            <m:mi 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-args-arg1">x</m:mi>
+                            <m:mo 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-fun">.</m:mo>
+                            <m:mrow 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="400" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="400">(</m:mo>
+                              </m:maction>
+                              <m:mrow 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1-arg1">x</m:mi>
+                                <m:mo 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1-fun">∈</m:mo>
+                                <m:mi 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1-arg2">A</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:mo 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-fun">⇒</m:mo>
+                              <m:mrow 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2-arg1">x</m:mi>
+                                <m:mo 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2-fun">∈</m:mo>
+                                <m:mi 
+xref="#ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2-arg2">B</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="400" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="400">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-800" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-800">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defequiv" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-fun"/>
+                            <om:OMA 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1">
+                              <om:OMS cd="sets-operations" name="sseteq"
+ 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1-fun"/>
+                              <om:OMV name="A" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1-arg1"/>
+                              <om:OMV name="B" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg1-arg2"/>
+                            </om:OMA>
+                            <om:OMA 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2">
+                              <om:OMS cd="mathtalk" name="foral" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-fun"/>
+                              <om:OMV name="x" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-args-arg1"/>
+                              <om:OMA 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2">
+                                <om:OMS cd="mathtalk" name="imply" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-fun"/>
+                                <om:OMA 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1-fun"/>
+                                  <om:OMV name="x" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1-arg1"/>
+                                  <om:OMV name="A" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg1-arg2"/>
+                                </om:OMA>
+                                <om:OMA 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2-fun"/>
+                                  <om:OMV name="x" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2-arg1"/>
+                                  <om:OMV name="B" 
+id="ad79bd7e6-cddc-407d-845a-96fdd73465fe-arg2-arg2-arg2-arg2"/>
+                                </om:OMA>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="union.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#unionOp.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#munion.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="union.def.p1.p1">
+                    <span id="union.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#union.def.p1.p1.p1.p1">union</span>
+                    </span>: <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e855">
+                      <m:semantics>
+                        <m:mrow 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-400" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                            </m:maction>
+                            <m:mi 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1-args-arg1">A</m:mi>
+                            <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1-args-fun1">∪</m:mo>
+                            <m:mi 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1-args-arg2">B</m:mi>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-400" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-fun">:=</m:mo>
+                          <m:mrow 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-fun">{</m:mo>
+                            <m:mi 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg1">x</m:mi>
+                            <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-fun">∣</m:mo>
+                            <m:mrow 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999400" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999400">(</m:mo>
+                              </m:maction>
+                              <m:mrow 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-500" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-500">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1-arg11">x</m:mi>
+                                <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1-fun1">∈</m:mo>
+                                <m:mi 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1-arg21">A</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-500" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-500">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-fun1">∨</m:mo>
+                              <m:mrow 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-500" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-500">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2-arg12">x</m:mi>
+                                <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2-fun2">∈</m:mo>
+                                <m:mi 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2-arg22">B</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-500" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-500">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999400" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999400">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-fun">}</m:mo>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defeq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-fun"/>
+                            <om:OMA 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1">
+                              <om:OMS cd="sets-operations" name="union" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1-args-fun1"/>
+                              <om:OMV name="A" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1-args-arg1"/>
+                              <om:OMV name="B" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg1-args-arg2"/>
+                            </om:OMA>
+                            <om:OMA 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="setst" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-fun"/>
+                              <om:OMV name="x" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg1"/>
+                              <om:OMA 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2">
+                                <om:OMS cd="mathtalk" name="disj" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-fun1"/>
+                                <om:OMA 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1-fun1"/>
+                                  <om:OMV name="x" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1-arg11"/>
+                                  <om:OMV name="A" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg1-arg21"/>
+                                </om:OMA>
+                                <om:OMA 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2-fun2"/>
+                                  <om:OMV name="x" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2-arg12"/>
+                                  <om:OMV name="B" 
+id="a4e5ee6a3-3111-4755-b478-c42d7dcc6294-arg2-arg2-args-arg2-arg22"/>
+                                </om:OMA>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="intersection.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersectOp.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersect.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="intersection.def.p1.p1">
+                    <span id="intersection.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#intersection.def.p1.p1.p1.p1">intersection</span>
+                    </span>: <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e974">
+                      <m:semantics>
+                        <m:mrow 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-300" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-300">(</m:mo>
+                            </m:maction>
+                            <m:mi 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1-args-arg1">A</m:mi>
+                            <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1-args-fun1">∩</m:mo>
+                            <m:mi 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1-args-arg2">B</m:mi>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-300" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-300">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-fun">:=</m:mo>
+                          <m:mrow 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-fun">{</m:mo>
+                            <m:mi 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg1">x</m:mi>
+                            <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-fun">∣</m:mo>
+                            <m:mrow 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999500" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999500">(</m:mo>
+                              </m:maction>
+                              <m:mrow 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1-arg11">x</m:mi>
+                                <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1-fun1">∈</m:mo>
+                                <m:mi 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1-arg21">A</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-fun1">∧</m:mo>
+                              <m:mrow 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2-arg12">x</m:mi>
+                                <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2-fun2">∈</m:mo>
+                                <m:mi 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2-arg22">B</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999500" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999500">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-fun">}</m:mo>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defeq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-fun"/>
+                            <om:OMA 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1">
+                              <om:OMS cd="sets-operations" 
+name="intersect" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1-args-fun1"/>
+                              <om:OMV name="A" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1-args-arg1"/>
+                              <om:OMV name="B" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg1-args-arg2"/>
+                            </om:OMA>
+                            <om:OMA 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="setst" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-fun"/>
+                              <om:OMV name="x" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg1"/>
+                              <om:OMA 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2">
+                                <om:OMS cd="mathtalk" name="conj" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-fun1"/>
+                                <om:OMA 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1-fun1"/>
+                                  <om:OMV name="x" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1-arg11"/>
+                                  <om:OMV name="A" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg1-arg21"/>
+                                </om:OMA>
+                                <om:OMA 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2-fun2"/>
+                                  <om:OMV name="x" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2-arg12"/>
+                                  <om:OMV name="B" 
+id="ac7f955c4-0751-4ef2-9236-ff33d8f93a41-arg2-arg2-args-arg2-arg22"/>
+                                </om:OMA>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="set-difference.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setdiffOp.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#setdiff.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="set-difference.def.p1.p1">
+                    <span id="set-difference.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#set-difference.def.p1.p1.p1.p1">set
+ difference</span>
+                    </span>: <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1096">
+                      <m:semantics>
+                        <m:mrow 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-300" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-300">(</m:mo>
+                            </m:maction>
+                            <m:mi 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1-arg1">A</m:mi>
+                            <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1-fun">\</m:mo>
+                            <m:mi 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1-arg2">B</m:mi>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-300" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-300">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-fun">:=</m:mo>
+                          <m:mrow 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-fun">{</m:mo>
+                            <m:mi 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg1">x</m:mi>
+                            <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-fun">∣</m:mo>
+                            <m:mrow 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999500" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999500">(</m:mo>
+                              </m:maction>
+                              <m:mrow 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1-arg11">x</m:mi>
+                                <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1-fun1">∈</m:mo>
+                                <m:mi 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1-arg21">A</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-fun1">∧</m:mo>
+                              <m:mrow 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="150" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="150">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2-arg12">x</m:mi>
+                                <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2-fun2">∉</m:mo>
+                                <m:mi 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2-arg22">B</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="150" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="150">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999500" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999500">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-fun">}</m:mo>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defeq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-fun"/>
+                            <om:OMA 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1">
+                              <om:OMS cd="sets-operations" 
+name="setdiff" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1-fun"/>
+                              <om:OMV name="A" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1-arg1"/>
+                              <om:OMV name="B" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg1-arg2"/>
+                            </om:OMA>
+                            <om:OMA 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="setst" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-fun"/>
+                              <om:OMV name="x" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg1"/>
+                              <om:OMA 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2">
+                                <om:OMS cd="mathtalk" name="conj" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-fun1"/>
+                                <om:OMA 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1-fun1"/>
+                                  <om:OMV name="x" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1-arg11"/>
+                                  <om:OMV name="A" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg1-arg21"/>
+                                </om:OMA>
+                                <om:OMA 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2">
+                                  <om:OMS cd="sets-introduction" 
+name="ninset" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2-fun2"/>
+                                  <om:OMV name="x" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2-arg12"/>
+                                  <om:OMV name="B" 
+id="aebc22654-33dd-4b41-bf09-e94629a6a7ca-arg2-arg2-args-arg2-arg22"/>
+                                </om:OMA>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="powerset.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#power-set.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="powerset.def.p1.p1">
+the <span id="powerset.def.p1.p1.p1" class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#powerset.def.p1.p1.p1.p1">power
+ set</span>
+                    </span>:
+<m:math xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1219">
+                      <m:semantics>
+                        <m:mrow 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg1">
+                            <m:mo 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg1-fun">P</m:mo>
+                            <m:mrow>
+                              <m:mo fence="true">(</m:mo>
+                              <m:mi 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg1-arg1">A</m:mi>
+                              <m:mo fence="true">)</m:mo>
+                            </m:mrow>
+                          </m:mrow>
+                          <m:mo 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-fun">:=</m:mo>
+                          <m:mrow 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-fun">{</m:mo>
+                            <m:mi 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg1">S</m:mi>
+                            <m:mo 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-fun">∣</m:mo>
+                            <m:mrow 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999700" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999700">(</m:mo>
+                              </m:maction>
+                              <m:mi 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2-arg1">S</m:mi>
+                              <m:mo 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2-fun">⊆</m:mo>
+                              <m:mi 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2-arg2">A</m:mi>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999700" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999700">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-fun">}</m:mo>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defeq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="a967b743d-134e-4cdc-8174-1750c3aff4ef-fun"/>
+                            <om:OMA 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg1">
+                              <om:OMS cd="sets-operations" 
+name="powerset" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg1-fun"/>
+                              <om:OMV name="A" 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg1-arg1"/>
+                            </om:OMA>
+                            <om:OMA 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="setst" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-fun"/>
+                              <om:OMV name="S" 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg1"/>
+                              <om:OMA 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2">
+                                <om:OMS cd="sets-operations" 
+name="sseteq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2-fun"/>
+                                <om:OMV name="S" 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2-arg1"/>
+                                <om:OMV name="A" 
+id="a967b743d-134e-4cdc-8174-1750c3aff4ef-arg2-arg2-arg2"/>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="emptyset.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#emptyset.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#eset.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#empty-set.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#emptyset.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#emptyset.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="emptyset.def.p1.p1">
+the <span id="emptyset.def.p1.p1.p1" class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#emptyset.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#emptyset.def.p1.p1.p1.p1">empty
+ set</span>
+                    </span>: <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1305">
+                      <m:semantics>
+                        <m:mrow 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="100" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="100">(</m:mo>
+                          </m:maction>
+                          <m:mo 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6-fun">∀</m:mo>
+                          <m:mi 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6-args-arg1">x</m:mi>
+                          <m:mo 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6-fun">.</m:mo>
+                          <m:mrow 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="550" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="550">(</m:mo>
+                            </m:maction>
+                            <m:mi 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2-arg1">x</m:mi>
+                            <m:mo 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2-fun">∉</m:mo>
+                            <m:mi mathvariant="normal" 
+xref="#ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2-arg2">∅</m:mi>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="550" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="550">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="100" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="100">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="ae2ef9fb7-288b-4306-80e1-caec1420f4e6">
+                            <om:OMS cd="mathtalk" name="foral" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="ae2ef9fb7-288b-4306-80e1-caec1420f4e6-fun"/>
+                            <om:OMV name="x" 
+id="ae2ef9fb7-288b-4306-80e1-caec1420f4e6-args-arg1"/>
+                            <om:OMA 
+id="ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="ninset" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2-fun"/>
+                              <om:OMV name="x" 
+id="ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2-arg1"/>
+                              <om:OMS cd="sets-operations" name="eset" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="ae2ef9fb7-288b-4306-80e1-caec1420f4e6-arg2-arg2"/>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="Cartesianproduct.def" class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#cart.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesian-product.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#pair.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="Cartesianproduct.def.p1.p1">
+                    <span id="Cartesianproduct.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def.p1.p1.p1.p1">Cartesian
+ product</span>
+                    </span>:
+<m:math xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1362">
+                      <m:semantics>
+                        <m:mrow 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg1">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-400" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                            </m:maction>
+                            <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg1-args-arg1">A</m:mi>
+                            <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg1-args-fun1">×</m:mo>
+                            <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg1-args-arg2">B</m:mi>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-400" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-fun">:=</m:mo>
+                          <m:mrow 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-fun">{</m:mo>
+                            <m:mrow 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-2000000" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-2000000">(</m:mo>
+                              </m:maction>
+                              <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-fun">⟨</m:mo>
+                              <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-args-arg1">a</m:mi>
+                              <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-args-fun1">,</m:mo>
+                              <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-args-arg2">b</m:mi>
+                              <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-fun">⟩</m:mo>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-2000000" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-2000000">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-fun">∣</m:mo>
+                            <m:mrow 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999500" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999500">(</m:mo>
+                              </m:maction>
+                              <m:mrow 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1-arg11">a</m:mi>
+                                <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1-fun1">∈</m:mo>
+                                <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1-arg21">A</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-fun1">∧</m:mo>
+                              <m:mrow 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2">
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                                </m:maction>
+                                <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2-arg12">b</m:mi>
+                                <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2-fun2">∈</m:mo>
+                                <m:mi 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2-arg22">B</m:mi>
+                                <m:maction xmlns:o="http://omdoc.org/ns"
+ type="elision" o:elevel="-400" egroup="fence">
+                                  <m:mspace/>
+                                  <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                                </m:maction>
+                              </m:mrow>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999500" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999500">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-fun">}</m:mo>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defeq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="ac506bcf5-7cdd-450c-9924-936b934b43df-fun"/>
+                            <om:OMA 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg1">
+                              <om:OMS cd="sets-operations" name="cart" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg1-args-fun1"/>
+                              <om:OMV name="A" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg1-args-arg1"/>
+                              <om:OMV name="B" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg1-args-arg2"/>
+                            </om:OMA>
+                            <om:OMA 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="setst" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-fun"/>
+                              <om:OMA 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1">
+                                <om:OMS cd="sets-operations" name="tup" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-fun"/>
+                                <om:OMV name="a" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-args-arg1"/>
+                                <om:OMV name="b" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg1-args-arg2"/>
+                              </om:OMA>
+                              <om:OMA 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2">
+                                <om:OMS cd="mathtalk" name="conj" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk.omdoc" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-fun1"/>
+                                <om:OMA 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1-fun1"/>
+                                  <om:OMV name="a" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1-arg11"/>
+                                  <om:OMV name="A" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg1-arg21"/>
+                                </om:OMA>
+                                <om:OMA 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2">
+                                  <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2-fun2"/>
+                                  <om:OMV name="b" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2-arg12"/>
+                                  <om:OMV name="B" 
+id="ac506bcf5-7cdd-450c-9924-936b934b43df-arg2-arg2-args-arg2-arg22"/>
+                                </om:OMA>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>, call
+<m:math xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1489">
+                      <m:semantics>
+                        <m:mrow 
+xref="#ab8e6acee-5b78-4e48-bb74-f58ab5aba650">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000000" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="-1000000">(</m:mo>
+                          </m:maction>
+                          <m:mo 
+xref="#ab8e6acee-5b78-4e48-bb74-f58ab5aba650-fun">⟨</m:mo>
+                          <m:mi 
+xref="#ab8e6acee-5b78-4e48-bb74-f58ab5aba650-args-arg1">a</m:mi>
+                          <m:mo 
+xref="#ab8e6acee-5b78-4e48-bb74-f58ab5aba650-args-fun1">,</m:mo>
+                          <m:mi 
+xref="#ab8e6acee-5b78-4e48-bb74-f58ab5aba650-args-arg2">b</m:mi>
+                          <m:mo 
+xref="#ab8e6acee-5b78-4e48-bb74-f58ab5aba650-fun">⟩</m:mo>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000000" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="-1000000">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="ab8e6acee-5b78-4e48-bb74-f58ab5aba650">
+                            <om:OMS cd="sets-operations" name="tup" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="ab8e6acee-5b78-4e48-bb74-f58ab5aba650-fun"/>
+                            <om:OMV name="a" 
+id="ab8e6acee-5b78-4e48-bb74-f58ab5aba650-args-arg1"/>
+                            <om:OMV name="b" 
+id="ab8e6acee-5b78-4e48-bb74-f58ab5aba650-args-arg2"/>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>
+                    <span id="Cartesianproduct.def.p1.p1.p4" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def.p1.p1.p4">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#Cartesianproduct.def.p1.p1.p4.p1">pair</span>
+                    </span>.
+</p>
+                </div>
+              </li>
+              <li>
+                <div id="nfoldCartesianproduct.def" 
+class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nCartProd.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#n-tuple.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="nfoldCartesianproduct.def.p1.p1">
+                    <span id="nfoldCartesianproduct.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def.p1.p1.p1.p1">
+                        <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1532">
+                          <m:semantics>
+                            <m:mi 
+xref="#acd0dcbf8-5c5a-431a-91c4-befb08850fb0">n</m:mi>
+                            <m:annotation-xml>
+                              <om:OMV name="n" 
+id="acd0dcbf8-5c5a-431a-91c4-befb08850fb0"/>
+                            </m:annotation-xml>
+                          </m:semantics>
+                        </m:math>-fold Cartesian product</span>
+                    </span>:
+<m:math xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1556">
+                      <m:semantics>
+                        <m:mrow 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:mrow 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-400" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-400">(</m:mo>
+                            </m:maction>
+                            <m:msub>
+                              <m:mi 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-arg1">A</m:mi>
+                              <m:mn 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-arg2">1</m:mn>
+                            </m:msub>
+                            <m:mrow 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-fun">
+                              <m:mo>×</m:mo>
+                              <m:mi mathvariant="normal">⋯</m:mi>
+                              <m:mo>×</m:mo>
+                            </m:mrow>
+                            <m:msub>
+                              <m:mi 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-arg1">A</m:mi>
+                              <m:mi 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-arg3">n</m:mi>
+                            </m:msub>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-400" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-400">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:mo 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-fun">:=</m:mo>
+                          <m:mrow 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-fun">{</m:mo>
+                            <m:mrow 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-2000000" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-2000000">(</m:mo>
+                              </m:maction>
+                              <m:mo 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-fun">⟨</m:mo>
+                              <m:msub>
+                                <m:mi 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-arg1">a</m:mi>
+                                <m:mn 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-arg2">1</m:mn>
+                              </m:msub>
+                              <m:mrow 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-fun">
+                                <m:mo>,</m:mo>
+                                <m:mi mathvariant="normal">…</m:mi>
+                                <m:mo>,</m:mo>
+                              </m:mrow>
+                              <m:msub>
+                                <m:mi 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-arg1">a</m:mi>
+                                <m:mi 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-arg3">n</m:mi>
+                              </m:msub>
+                              <m:mo 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-fun">⟩</m:mo>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-2000000" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-2000000">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-fun">∣</m:mo>
+                            <m:mrow 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999900" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999900">(</m:mo>
+                              </m:maction>
+                              <m:msub>
+                                <m:mi>a</m:mi>
+                                <m:mi>i</m:mi>
+                              </m:msub>
+                              <m:mo 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg2-fun">∈</m:mo>
+                              <m:msub>
+                                <m:mi>A</m:mi>
+                                <m:mi>i</m:mi>
+                              </m:msub>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999900" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999900">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-fun">}</m:mo>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defeq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-fun"/>
+                            <om:OMA 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1">
+                              <om:OMS cd="sets-operations" 
+name="ncartli" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-fun"/>
+                              <om:OMV name="A" 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-arg1"/>
+                              <om:OMI 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-arg2">1</om:OMI>
+                              <om:OMV name="n" 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg1-arg3"/>
+                            </om:OMA>
+                            <om:OMA 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="setst" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-fun"/>
+                              <om:OMA 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1">
+                                <om:OMS cd="sets-operations" 
+name="ntupli" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-fun"/>
+                                <om:OMV name="a" 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-arg1"/>
+                                <om:OMI 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-arg2">1</om:OMI>
+                                <om:OMV name="n" 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg1-arg3"/>
+                              </om:OMA>
+                              <om:OMA 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg2">
+                                <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg2-fun"/>
+                                <om:OMATTR 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg2-arg1">
+                                  <om:OMATP>
+                                    <om:OMS cd="OMPres" name="PMML"/>
+                                    <om:OMFOREIGN>
+                                      <m:msub>
+                                        <m:mi>a</m:mi>
+                                        <m:mi>i</m:mi>
+                                      </m:msub>
+                                    </om:OMFOREIGN>
+                                  </om:OMATP>
+                                  <om:OMV name="name.cvar.1"/>
+                                </om:OMATTR>
+                                <om:OMATTR 
+id="aa1e224de-083a-4a5d-83fb-ffe4f8cfeeac-arg2-arg2-arg2">
+                                  <om:OMATP>
+                                    <om:OMS cd="OMPres" name="PMML"/>
+                                    <om:OMFOREIGN>
+                                      <m:msub>
+                                        <m:mi>A</m:mi>
+                                        <m:mi>i</m:mi>
+                                      </m:msub>
+                                    </om:OMFOREIGN>
+                                  </om:OMATP>
+                                  <om:OMV name="name.cvar.2"/>
+                                </om:OMATTR>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>, call <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1701">
+                      <m:semantics>
+                        <m:mrow 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000000" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="-1000000">(</m:mo>
+                          </m:maction>
+                          <m:mo 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969-fun">⟨</m:mo>
+                          <m:msub>
+                            <m:mi 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969-arg1">a</m:mi>
+                            <m:mn 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969-arg2">1</m:mn>
+                          </m:msub>
+                          <m:mrow 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969-fun">
+                            <m:mo>,</m:mo>
+                            <m:mi mathvariant="normal">…</m:mi>
+                            <m:mo>,</m:mo>
+                          </m:mrow>
+                          <m:msub>
+                            <m:mi 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969-arg1">a</m:mi>
+                            <m:mi 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969-arg3">n</m:mi>
+                          </m:msub>
+                          <m:mo 
+xref="#a1df58078-45af-4d9e-8b59-2e0c7336b969-fun">⟩</m:mo>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000000" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="-1000000">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="a1df58078-45af-4d9e-8b59-2e0c7336b969">
+                            <om:OMS cd="sets-operations" name="ntupli" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="a1df58078-45af-4d9e-8b59-2e0c7336b969-fun"/>
+                            <om:OMV name="a" 
+id="a1df58078-45af-4d9e-8b59-2e0c7336b969-arg1"/>
+                            <om:OMI 
+id="a1df58078-45af-4d9e-8b59-2e0c7336b969-arg2">1</om:OMI>
+                            <om:OMV name="n" 
+id="a1df58078-45af-4d9e-8b59-2e0c7336b969-arg3"/>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math> a
+<span id="nfoldCartesianproduct.def.p1.p1.p4" class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def.p1.p1.p4">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nfoldCartesianproduct.def.p1.p1.p4.p1">
+                        <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1744">
+                          <m:semantics>
+                            <m:mi 
+xref="#a7522956b-d93d-40bd-846a-fef3c71d77ed">n</m:mi>
+                            <m:annotation-xml>
+                              <om:OMV name="n" 
+id="a7522956b-d93d-40bd-846a-fef3c71d77ed"/>
+                            </m:annotation-xml>
+                          </m:semantics>
+                        </m:math>-tuple</span>
+                    </span>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div id="ndimCartesianspace.def" 
+class="omdoc-definition" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def"
+ typeof="ns1:Definition">
+                  <span rel="ns1:formalityDegree" 
+resource="http://omdoc.org/ontology#Formal"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndim.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#nCartSpace.sym"></span>
+                  <span rel="ns1:defines" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#vector.sym"></span>
+                  <span rel="ns1:hasProperty" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def.p1"></span>
+                  <span rel="ns2:hasInformationChunk" 
+resource="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def.p1"></span>
+
+                  <div class="omdoc-titlebox">
+                    <span class="omdoc-titleword">Definition</span>
+                  </div>
+
+                  <p id="ndimCartesianspace.def.p1.p1">
+                    <span id="ndimCartesianspace.def.p1.p1.p1" 
+class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def.p1.p1.p1">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def.p1.p1.p1.p1">
+                        <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1769">
+                          <m:semantics>
+                            <m:mi 
+xref="#a38967bfa-6799-469b-b5df-b1fec212cbfb">n</m:mi>
+                            <m:annotation-xml>
+                              <om:OMV name="n" 
+id="a38967bfa-6799-469b-b5df-b1fec212cbfb"/>
+                            </m:annotation-xml>
+                          </m:semantics>
+                        </m:math>-dim Cartesian space</span>
+                    </span>:
+<m:math xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1793">
+                      <m:semantics>
+                        <m:mrow 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">(</m:mo>
+                          </m:maction>
+                          <m:msup 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg1">
+                            <m:mi 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg1-arg1">A</m:mi>
+                            <m:mi 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg1-arg2">n</m:mi>
+                          </m:msup>
+                          <m:mo 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-fun">:=</m:mo>
+                          <m:mrow 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2">
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">(</m:mo>
+                            </m:maction>
+                            <m:mo 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-fun">{</m:mo>
+                            <m:mrow 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-2000000" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-2000000">(</m:mo>
+                              </m:maction>
+                              <m:mo 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-fun">⟨</m:mo>
+                              <m:msub>
+                                <m:mi 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-arg1">a</m:mi>
+                                <m:mn 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-arg2">1</m:mn>
+                              </m:msub>
+                              <m:mrow 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-fun">
+                                <m:mo>,</m:mo>
+                                <m:mi mathvariant="normal">…</m:mi>
+                                <m:mo>,</m:mo>
+                              </m:mrow>
+                              <m:msub>
+                                <m:mi 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-arg1">a</m:mi>
+                                <m:mi 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-arg3">n</m:mi>
+                              </m:msub>
+                              <m:mo 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-fun">⟩</m:mo>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-2000000" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-2000000">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-fun">∣</m:mo>
+                            <m:mrow 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg2">
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999900" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999900">(</m:mo>
+                              </m:maction>
+                              <m:msub>
+                                <m:mi>a</m:mi>
+                                <m:mi>i</m:mi>
+                              </m:msub>
+                              <m:mo 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg2-fun">∈</m:mo>
+                              <m:mi 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg2-arg2">A</m:mi>
+                              <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-999900" egroup="fence">
+                                <m:mspace/>
+                                <m:mo egroup="fence" fence="true" 
+o:elevel="-999900">)</m:mo>
+                              </m:maction>
+                            </m:mrow>
+                            <m:mo 
+xref="#aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-fun">}</m:mo>
+                            <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000900" egroup="fence">
+                              <m:mspace/>
+                              <m:mo egroup="fence" fence="true" 
+o:elevel="-1000900">)</m:mo>
+                            </m:maction>
+                          </m:mrow>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="900" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="900">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573">
+                            <om:OMS cd="mathtalk-definitions" 
+name="defeq" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/mathtalk-definitions.omdoc"
+ id="aac22a2aa-39f8-4ccb-9651-872c9131b573-fun"/>
+                            <om:OMA 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg1">
+                              <om:OMS cd="sets-operations" name="ndim" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"/>
+                              <om:OMV name="A" 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg1-arg1"/>
+                              <om:OMV name="n" 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg1-arg2"/>
+                            </om:OMA>
+                            <om:OMA 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2">
+                              <om:OMS cd="sets-introduction" 
+name="setst" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-introduction.omdoc"
+ id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-fun"/>
+                              <om:OMA 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1">
+                                <om:OMS cd="sets-operations" 
+name="ntupli" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-fun"/>
+                                <om:OMV name="a" 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-arg1"/>
+                                <om:OMI 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-arg2">1</om:OMI>
+                                <om:OMV name="n" 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg1-arg3"/>
+                              </om:OMA>
+                              <om:OMA 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg2">
+                                <om:OMS cd="set1" name="inset" 
+cdbase="http://linkeddata.tntbase.org/slides/missing/en/set1.omdoc" 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg2-fun"/>
+                                <om:OMATTR 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg2-arg1">
+                                  <om:OMATP>
+                                    <om:OMS cd="OMPres" name="PMML"/>
+                                    <om:OMFOREIGN>
+                                      <m:msub>
+                                        <m:mi>a</m:mi>
+                                        <m:mi>i</m:mi>
+                                      </m:msub>
+                                    </om:OMFOREIGN>
+                                  </om:OMATP>
+                                  <om:OMV name="name.cvar.3"/>
+                                </om:OMATTR>
+                                <om:OMV name="A" 
+id="aac22a2aa-39f8-4ccb-9651-872c9131b573-arg2-arg2-arg2"/>
+                              </om:OMA>
+                            </om:OMA>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math>, call <m:math 
+xmlns:m="http://www.w3.org/1998/Math/MathML" 
+xmlns:mcd="http://www.w3.org/ns/mathml-cd" xmlns="http://omdoc.org/ns" 
+xmlns:om="http://www.openmath.org/OpenMath" 
+xmlns:omdoc="http://omdoc.org/ns" xmlns:stex="http://kwarc.info/ns/sTeX"
+ id="MCRd2981e1903">
+                      <m:semantics>
+                        <m:mrow 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b">
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000000" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="-1000000">(</m:mo>
+                          </m:maction>
+                          <m:mo 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b-fun">⟨</m:mo>
+                          <m:msub>
+                            <m:mi 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b-arg1">a</m:mi>
+                            <m:mn 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b-arg2">1</m:mn>
+                          </m:msub>
+                          <m:mrow 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b-fun">
+                            <m:mo>,</m:mo>
+                            <m:mi mathvariant="normal">…</m:mi>
+                            <m:mo>,</m:mo>
+                          </m:mrow>
+                          <m:msub>
+                            <m:mi 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b-arg1">a</m:mi>
+                            <m:mi 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b-arg3">n</m:mi>
+                          </m:msub>
+                          <m:mo 
+xref="#a92413a69-256c-4016-8a36-63fe8622d86b-fun">⟩</m:mo>
+                          <m:maction xmlns:o="http://omdoc.org/ns" 
+type="elision" o:elevel="-1000000" egroup="fence">
+                            <m:mspace/>
+                            <m:mo egroup="fence" fence="true" 
+o:elevel="-1000000">)</m:mo>
+                          </m:maction>
+                        </m:mrow>
+                        <m:annotation-xml>
+                          <om:OMA 
+id="a92413a69-256c-4016-8a36-63fe8622d86b">
+                            <om:OMS cd="sets-operations" name="ntupli" 
+cdbase="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations.omdoc"
+ id="a92413a69-256c-4016-8a36-63fe8622d86b-fun"/>
+                            <om:OMV name="a" 
+id="a92413a69-256c-4016-8a36-63fe8622d86b-arg1"/>
+                            <om:OMI 
+id="a92413a69-256c-4016-8a36-63fe8622d86b-arg2">1</om:OMI>
+                            <om:OMV name="n" 
+id="a92413a69-256c-4016-8a36-63fe8622d86b-arg3"/>
+                          </om:OMA>
+                        </m:annotation-xml>
+                      </m:semantics>
+                    </m:math> a <span 
+id="ndimCartesianspace.def.p1.p1.p4" class="omdoc-indexterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def.p1.p1.p4">
+                      <span class="omdoc-definiendumterm" 
+about="http://linkeddata.tntbase.org/slides/dmath/en/sets-operations#ndimCartesianspace.def.p1.p1.p4.p1">vector</span>
+                    </span>
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  <ul id="JOBADcontextMenu" class="jqcontextmenu" style="display: block;
+ visibility: visible; left: 947px; top: 218px;"></ul><div 
+style="display: none; position: absolute; overflow: hidden; z-index: 
+1000; outline: 0px none;" class="ui-dialog ui-widget ui-widget-content 
+ui-corner-all  ui-draggable ui-resizable" tabindex="-1" role="dialog" 
+aria-labelledby="ui-dialog-title-_jobad_dialog"><div 
+class="ui-dialog-titlebar ui-widget-header ui-corner-all 
+ui-helper-clearfix" unselectable="on" style="-moz-user-select: none;"><span
+ class="ui-dialog-title" id="ui-dialog-title-_jobad_dialog" 
+unselectable="on" style="-moz-user-select: none;">Basic dialog</span><a 
+href="#" class="ui-dialog-titlebar-close ui-corner-all" role="button" 
+unselectable="on" style="-moz-user-select: none;"><span class="ui-icon 
+ui-icon-closethick" unselectable="on" style="-moz-user-select: none;">close</span></a></div><div
+ id="_jobad_dialog" class="ui-dialog-content ui-widget-content"></div><div
+ class="ui-resizable-handle ui-resizable-n" unselectable="on" 
+style="-moz-user-select: none;"></div><div class="ui-resizable-handle 
+ui-resizable-e" unselectable="on" style="-moz-user-select: none;"></div><div
+ class="ui-resizable-handle ui-resizable-s" unselectable="on" 
+style="-moz-user-select: none;"></div><div class="ui-resizable-handle 
+ui-resizable-w" unselectable="on" style="-moz-user-select: none;"></div><div
+ class="ui-resizable-handle ui-resizable-se ui-icon 
+ui-icon-gripsmall-diagonal-se ui-icon-grip-diagonal-se" style="z-index: 
+1001; -moz-user-select: none;" unselectable="on"></div><div 
+class="ui-resizable-handle ui-resizable-sw" style="z-index: 1002; 
+-moz-user-select: none;" unselectable="on"></div><div 
+class="ui-resizable-handle ui-resizable-ne" style="z-index: 1003; 
+-moz-user-select: none;" unselectable="on"></div><div 
+class="ui-resizable-handle ui-resizable-nw" style="z-index: 1004; 
+-moz-user-select: none;" unselectable="on"></div></div></body>
+</html>

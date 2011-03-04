@@ -1,0 +1,395 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>Scaladoc for jomdoc.frontend</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		      <script type="text/javascript" src="../../lib/jquery.js"></script>
+          
+      <link href="../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <script type="text/javascript" src="../../lib/template.js"></script>
+      <script type="text/javascript" src="../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body class="value">
+
+      <p id="owner"><a href="../package.html" class="extype" name="jomdoc">jomdoc</a></p>
+
+      <div id="definition">
+        <img src="../../lib/package_big.png" />
+        <h1>frontend</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">frontend</span>
+      </span>
+      </h4>
+      <div class="fullcomment" id="comment"></div>
+      
+      <div id="template">
+
+        <div id="mbrsel">
+          
+          <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in">Public</li><li class="all out">All</li></ol>
+          </div>
+        </div>
+        
+                
+        
+        <div class="members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="jomdoc.frontend.Action">
+      <h4 class="signature"><a href="Action.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Action</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" name="jomdoc.frontend.AddCatalog">
+      <h4 class="signature"><a href="AddCatalog.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">AddCatalog</span><span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.AddTNTBase">
+      <h4 class="signature"><a href="AddTNTBase.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">AddTNTBase</span><span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Closure">
+      <h4 class="signature"><a href="Closure.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Closure</span><span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends MakeContent with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Component">
+      <h4 class="signature"><a href="Component.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Component</span><span class="params">(<span name="p">p: Path</span>, <span name="comp">comp: String</span>)</span><span class="result"> extends MakeContent with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.ConsoleReport">
+      <h4 class="signature"><a href="ConsoleReport.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ConsoleReport</span><span class="result"> extends Report</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">outputs to standard output</p>
+    </li><li visbl="pub" name="jomdoc.frontend.Controller">
+      <h4 class="signature"><a href="Controller.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Controller</span><span class="result"> extends ROController</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.DefaultGet">
+      <h4 class="signature"><a href="DefaultGet.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">DefaultGet</span><span class="params">(<span name="pres">pres: MakePresentation</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Deps">
+      <h4 class="signature"><a href="Deps.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Deps</span><span class="params">(<span name="path">path: Path</span>, <span name="xml">xml: Boolean</span>)</span><span class="result"> extends MakePresentation with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.ExecFile">
+      <h4 class="signature"><a href="ExecFile.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ExecFile</span><span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.FileReport">
+      <h4 class="signature"><a href="FileReport.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">FileReport</span><span class="result"> extends Report with FileWriter</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">outputs to a file</p>
+    </li><li visbl="pub" name="jomdoc.frontend.Get">
+      <h4 class="signature"><a href="Get.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Get</span><span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends MakeContent with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.GetAction">
+      <h4 class="signature"><a href="GetAction.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">GetAction</span><span class="result"> extends Action</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" name="jomdoc.frontend.LoggingOff">
+      <h4 class="signature"><a href="LoggingOff.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">LoggingOff</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.LoggingOn">
+      <h4 class="signature"><a href="LoggingOn.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">LoggingOn</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.MakeContent">
+      <h4 class="signature"><a href="MakeContent.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">MakeContent</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" name="jomdoc.frontend.MakePresentation">
+      <h4 class="signature"><a href="MakePresentation.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">MakePresentation</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" name="jomdoc.frontend.MultipleReports">
+      <h4 class="signature"><a href="MultipleReports.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">MultipleReports</span><span class="result"> extends Report</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">joins a list of reports (an output category is reported if this report and the component report it)</p>
+    </li><li visbl="pub" name="jomdoc.frontend.NotFound">
+      <h4 class="signature"><a href="NotFound.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">NotFound</span><span class="params">(<span name="path">path: Path</span>)</span><span class="result"> extends Throwable with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Present">
+      <h4 class="signature"><a href="Present.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Present</span><span class="params">(<span name="c">c: MakeContent</span>, <span name="nset">nset: MPath</span>)</span><span class="result"> extends MakePresentation with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Print">
+      <h4 class="signature"><a href="Print.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Print</span><span class="params">(<span name="pres">pres: MakePresentation</span>)</span><span class="result"> extends GetAction with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.ROController">
+      <h4 class="signature"><a href="ROController.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ROController</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" name="jomdoc.frontend.Read">
+      <h4 class="signature"><a href="Read.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Read</span><span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Report">
+      <h4 class="signature"><a href="Report.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Report</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">Instances of Report handle all output to the user</p>
+    </li><li visbl="pub" name="jomdoc.frontend.Respond">
+      <h4 class="signature"><a href="Respond.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Respond</span><span class="params">(<span name="pres">pres: MakePresentation</span>, <span name="param">param: String</span>)</span><span class="result"> extends GetAction with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.SetBase">
+      <h4 class="signature"><a href="SetBase.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">SetBase</span><span class="params">(<span name="base">base: Path</span>)</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Shell">
+      <h4 class="signature"><a href="Shell.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Shell</span><span class="result"> extends Controller</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.ToFile">
+      <h4 class="signature"><a href="ToFile.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ToFile</span><span class="params">(<span name="pres">pres: MakePresentation</span>, <span name="file">file: File</span>)</span><span class="result"> extends GetAction with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.ToNode">
+      <h4 class="signature"><a href="ToNode.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ToNode</span><span class="params">(<span name="c">c: MakeContent</span>)</span><span class="result"> extends MakePresentation with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.ToString">
+      <h4 class="signature"><a href="ToString.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ToString</span><span class="params">(<span name="c">c: MakeContent</span>)</span><span class="result"> extends MakePresentation with Product</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+        
+        <div class="members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="jomdoc.frontend.Action">
+      <h4 class="signature"><a href="Action$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Action</span><span class="result"> extends RegexParsers</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Clear">
+      <h4 class="signature"><a href="Clear$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Clear</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Exit">
+      <h4 class="signature"><a href="Exit$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Exit</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Local">
+      <h4 class="signature"><a href="Local$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Local</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.NoAction">
+      <h4 class="signature"><a href="NoAction$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">NoAction</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.NullReport">
+      <h4 class="signature"><a href="NullReport$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">NullReport</span><span class="result"> extends Report</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">outputs nothing, throws exceptions</p>
+    </li><li visbl="pub" name="jomdoc.frontend.PrintAll">
+      <h4 class="signature"><a href="PrintAll$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">PrintAll</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.PrintAllXML">
+      <h4 class="signature"><a href="PrintAllXML$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">PrintAllXML</span><span class="result"> extends Action with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend.Run">
+      <h4 class="signature"><a href="Run$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Run</span><span class="result"> extends Shell</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+                
+      </div>
+      
+      <div id="tooltip"></div>
+      
+    </body>
+      </html>

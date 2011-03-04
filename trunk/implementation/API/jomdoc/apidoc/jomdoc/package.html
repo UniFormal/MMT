@@ -1,0 +1,696 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>Scaladoc for jomdoc</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		      <script type="text/javascript" src="../lib/jquery.js"></script>
+          
+      <link href="../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <script type="text/javascript" src="../lib/template.js"></script>
+      <script type="text/javascript" src="../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body class="value">
+
+      
+
+      <div id="definition">
+        <img src="../lib/package_big.png" />
+        <h1>jomdoc</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">jomdoc</span>
+      </span>
+      </h4>
+      <div class="fullcomment" id="comment"></div>
+      
+      <div id="template">
+
+        <div id="mbrsel">
+          
+          <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in">Public</li><li class="all out">All</li></ol>
+          </div>
+        </div>
+        
+                
+        
+        <div class="members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="jomdoc.AddError">
+      <h4 class="signature"><a href="AddError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">AddError</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Content">
+      <h4 class="signature"><a href="Content.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">Content</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">The trait Content is mixed into any class that can be rendered using notations.</p>
+    </li><li visbl="pub" name="jomdoc.ContentElement">
+      <h4 class="signature"><a href="ContentElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">ContentElement</span><span class="result"> extends StructuralElement</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A ContentElement is any OMDoc element that is used to represent mathematical content.</p>
+    </li><li visbl="pub" name="jomdoc.DPath">
+      <h4 class="signature"><a href="DPath.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">DPath</span><span class="params">(<span name="uri">uri: URI</span>)</span><span class="result"> extends Path with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A DPath represents an MMT document level path.</p>
+    </li><li visbl="pub" name="jomdoc.DeleteError">
+      <h4 class="signature"><a href="DeleteError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">DeleteError</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.DocumentElement">
+      <h4 class="signature"><a href="DocumentElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">DocumentElement</span><span class="result"> extends StructuralElement</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A DocumentElement is any OMDoc element that is used to represent document structure.</p>
+    </li><li visbl="pub" name="jomdoc.Error">
+      <h4 class="signature"><a href="Error.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Error</span><span class="result"> extends Throwable</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" name="jomdoc.GetError">
+      <h4 class="signature"><a href="GetError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">GetError</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ImplementationError">
+      <h4 class="signature"><a href="ImplementationError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ImplementationError</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Invalid">
+      <h4 class="signature"><a href="Invalid.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Invalid</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.LocalPath">
+      <h4 class="signature"><a href="LocalPath.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">LocalPath</span><span class="params">(<span name="fragments">fragments: List[String]</span>)</span><span class="result"> extends Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A LocalPath represents a local MMT module (relative to a document) or symbol (relative to a module) name.</p>
+    </li><li visbl="pub" name="jomdoc.LocalRef">
+      <h4 class="signature"><a href="LocalRef.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">LocalRef</span><span class="params">(<span name="fragments">fragments: List[String]</span>, <span name="absolute">absolute: Boolean</span>)</span><span class="result"> extends Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A LocalRef represents a qualified local possibly relative reference to an MMT module or symbol.</p>
+    </li><li visbl="pub" name="jomdoc.LookupError">
+      <h4 class="signature"><a href="LookupError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">LookupError</span><span class="params">(<span name="name">name: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.MPath">
+      <h4 class="signature"><a href="MPath.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">MPath</span><span class="params">(<span name="parent">parent: DPath</span>, <span name="name">name: LocalPath</span>)</span><span class="result"> extends Path with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An MPath represents an MMT module level path.</p>
+    </li><li visbl="pub" name="jomdoc.MetaData">
+      <h4 class="signature"><a href="MetaData.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">MetaData</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">The trait MetaData is mixed into any class that can carry metadata (not used yet)
+</p>
+    </li><li visbl="pub" name="jomdoc.ObjError">
+      <h4 class="signature"><a href="ObjError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ObjError</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ParseError">
+      <h4 class="signature"><a href="ParseError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ParseError</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Path">
+      <h4 class="signature"><a href="Path.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Path</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A Path represents an MMT path.</p>
+    </li><li visbl="pub" name="jomdoc.PresentationElement">
+      <h4 class="signature"><a href="PresentationElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">PresentationElement</span><span class="result"> extends StructuralElement</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A PresentationElement is any OMDoc element that is used to represent notations.</p>
+    </li><li visbl="pub" name="jomdoc.PresentationError">
+      <h4 class="signature"><a href="PresentationError.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">PresentationError</span><span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role">
+      <h4 class="signature"><a href="Role.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Role</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">Roles of expressions, corresponding to productions of the abstract grammar.</p>
+    </li><li visbl="pub" name="jomdoc.Role_Constant">
+      <h4 class="signature"><a href="Role_Constant.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Role_Constant</span><span class="params">(<span name="univ">univ: Universe</span>)</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Fragment">
+      <h4 class="signature"><a href="Role_Fragment.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Role_Fragment</span><span class="params">(<span name="kind">kind: String</span>)</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.SPath">
+      <h4 class="signature"><a href="SPath.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">SPath</span><span class="params">(<span name="parent">parent: MPath</span>, <span name="name">name: LocalPath</span>)</span><span class="result"> extends Path with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An SPath represents an MMT symbol level path.</p>
+    </li><li visbl="pub" name="jomdoc.StructuralElement">
+      <h4 class="signature"><a href="StructuralElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">StructuralElement</span><span class="result"> extends Content with MetaData</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A StructuralElement is any OMDoc element on the document, module, or symbol level.</p>
+    </li><li visbl="pub" name="jomdoc.SubstitutionUndefined">
+      <h4 class="signature"><a href="SubstitutionUndefined.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">SubstitutionUndefined</span><span class="params">(<span name="name">name: String</span>)</span><span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+        
+        <div class="members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="jomdoc.!">
+      <h4 class="signature"><a href="$bang$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">!</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax !(n) to match atomic local names in patterns.</p>
+    </li><li visbl="pub" name="jomdoc./">
+      <h4 class="signature"><a href="$div$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">/</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax head / tail in patterns.</p>
+    </li><li visbl="pub" name="jomdoc.?">
+      <h4 class="signature"><a href="$qmark$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">?</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax doc ? mod in patterns.</p>
+    </li><li visbl="pub" name="jomdoc.??">
+      <h4 class="signature"><a href="$qmark$qmark$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">??</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax doc ? mod ?? sym in patterns.</p>
+    </li><li visbl="pub" name="jomdoc.Path">
+      <h4 class="signature"><a href="Path$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Path</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role">
+      <h4 class="signature"><a href="Role$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">helper object for roles</p>
+    </li><li visbl="pub" name="jomdoc.Role_Alias">
+      <h4 class="signature"><a href="Role_Alias$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Alias</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_ConAss">
+      <h4 class="signature"><a href="Role_ConAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ConAss</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_ConstantRef">
+      <h4 class="signature"><a href="Role_ConstantRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ConstantRef</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_DefinedStructure">
+      <h4 class="signature"><a href="Role_DefinedStructure$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_DefinedStructure</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_DefinedView">
+      <h4 class="signature"><a href="Role_DefinedView$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_DefinedView</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Document">
+      <h4 class="signature"><a href="Role_Document$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Document</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Include">
+      <h4 class="signature"><a href="Role_Include$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Include</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Instance">
+      <h4 class="signature"><a href="Role_Instance$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Instance</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Notation">
+      <h4 class="signature"><a href="Role_Notation$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Notation</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Notationset">
+      <h4 class="signature"><a href="Role_Notationset$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Notationset</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_ObjToplevel">
+      <h4 class="signature"><a href="Role_ObjToplevel$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ObjToplevel</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Open">
+      <h4 class="signature"><a href="Role_Open$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Open</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Pattern">
+      <h4 class="signature"><a href="Role_Pattern$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Pattern</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_StrAss">
+      <h4 class="signature"><a href="Role_StrAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_StrAss</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_StrToplevel">
+      <h4 class="signature"><a href="Role_StrToplevel$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_StrToplevel</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Structure">
+      <h4 class="signature"><a href="Role_Structure$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Structure</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_StructureRef">
+      <h4 class="signature"><a href="Role_StructureRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_StructureRef</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Theory">
+      <h4 class="signature"><a href="Role_Theory$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Theory</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_TheoryRef">
+      <h4 class="signature"><a href="Role_TheoryRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_TheoryRef</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_Variable">
+      <h4 class="signature"><a href="Role_Variable$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Variable</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_VariableRef">
+      <h4 class="signature"><a href="Role_VariableRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_VariableRef</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_View">
+      <h4 class="signature"><a href="Role_View$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_View</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_ViewRef">
+      <h4 class="signature"><a href="Role_ViewRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ViewRef</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_XRef">
+      <h4 class="signature"><a href="Role_XRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_XRef</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_application">
+      <h4 class="signature"><a href="Role_application$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_application</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_attribution">
+      <h4 class="signature"><a href="Role_attribution$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_attribution</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_binding">
+      <h4 class="signature"><a href="Role_binding$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_binding</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_composition">
+      <h4 class="signature"><a href="Role_composition$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_composition</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_foreign">
+      <h4 class="signature"><a href="Role_foreign$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_foreign</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_hidden">
+      <h4 class="signature"><a href="Role_hidden$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_hidden</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_identity">
+      <h4 class="signature"><a href="Role_identity$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_identity</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_morphismapplication">
+      <h4 class="signature"><a href="Role_morphismapplication$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_morphismapplication</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.Role_value">
+      <h4 class="signature"><a href="Role_value$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_value</span><span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.\">
+      <h4 class="signature"><a href="$bslash$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">\</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax init \ last in patterns.</p>
+    </li><li visbl="pub" name="jomdoc.backend">
+      <h4 class="signature"><a href="backend/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">backend</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.documents">
+      <h4 class="signature"><a href="documents/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">documents</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.frontend">
+      <h4 class="signature"><a href="frontend/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">frontend</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.lf">
+      <h4 class="signature"><a href="lf/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">lf</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.libraries">
+      <h4 class="signature"><a href="libraries/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">libraries</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.modules">
+      <h4 class="signature"><a href="modules/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">modules</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.objects">
+      <h4 class="signature"><a href="objects/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">objects</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology">
+      <h4 class="signature"><a href="ontology/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">ontology</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.patterns">
+      <h4 class="signature"><a href="patterns/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">patterns</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.presentation">
+      <h4 class="signature"><a href="presentation/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">presentation</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.symbols">
+      <h4 class="signature"><a href="symbols/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">symbols</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.tntplugin">
+      <h4 class="signature"><a href="tntplugin/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">tntplugin</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.utils">
+      <h4 class="signature"><a href="utils/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">utils</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+                
+      </div>
+      
+      <div id="tooltip"></div>
+      
+    </body>
+      </html>

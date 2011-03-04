@@ -1,0 +1,6 @@
+This directory contains CSS stylesheets and stylesheet modules to use for 
+XHTML documents generated from OMDoc. The two top-level stylesheets are  
+   omdoc-default.css  (for use in standalone documents)
+   omdoc-vanilla.css   (for use in portal applications)
+In your own application, feel free to recombine and override modules as it
+suits you.

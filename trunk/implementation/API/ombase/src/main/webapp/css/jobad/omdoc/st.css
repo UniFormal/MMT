@@ -1,0 +1,62 @@
+/*
+     $Id: st.css 2343 2011-02-06 06:18:19Z kohlhase $
+     $HeadURL: https://svn.omdoc.org/repos/jomdoc/src/jomdoc/trunk/css/st.css $
+
+     Copyright (c) KWARC, Jacobs University Bremen, 2009
+     http://kwarc.info
+
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 3 of the license, or (at your option) any later version.
+
+     For other licensing options, please contact Michael Kohlhase
+     <m.kohlhase@jacobs-university.de>.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
+
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library; if not, write to the Free Software
+     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/*
+ * ST module (mathematical statements)
+ *
+ * This CSS module determines the layout of mathematical statements. 
+ * All can statements have title boxes, this is handled by st-titlebox.css
+ */
+
+/* THEORIES */
+div.omdoc-theory {
+    display: block;
+    margin: 15px 22px;
+    padding: 10px;
+    border: 1px #000000 outset;
+    color: #000000;
+    position: relative;
+}
+
+/* STATEMENTS */
+/* general rules */
+div.omdoc-assertion, div.omdoc-definition, div.omdoc-theorem,
+div.omdoc-lemma, div.omdoc-axiom, div.omdoc-symbol, 
+div.omdoc-example, div.omdoc-counterexample {
+    padding-left:5px;
+    display: block;
+    margin: 10px 0px 10px 0px;
+}
+
+/* specizalized  for some particular statements */
+div.omdoc-assertion {font-style:italic}
+
+div.omdoc-counterexample {
+    margin: 15px 72px;
+    padding: 10px;
+    border: 1px #000000 outset;
+    color: #000000;
+}
+

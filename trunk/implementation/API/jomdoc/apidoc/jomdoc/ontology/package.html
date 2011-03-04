@@ -1,0 +1,370 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>Scaladoc for jomdoc.ontology</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		      <script type="text/javascript" src="../../lib/jquery.js"></script>
+          
+      <link href="../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <script type="text/javascript" src="../../lib/template.js"></script>
+      <script type="text/javascript" src="../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body class="value">
+
+      <p id="owner"><a href="../package.html" class="extype" name="jomdoc">jomdoc</a></p>
+
+      <div id="definition">
+        <img src="../../lib/package_big.png" />
+        <h1>ontology</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">ontology</span>
+      </span>
+      </h4>
+      <div class="fullcomment" id="comment"></div>
+      
+      <div id="template">
+
+        <div id="mbrsel">
+          
+          <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in">Public</li><li class="all out">All</li></ol>
+          </div>
+        </div>
+        
+                
+        
+        <div class="members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="jomdoc.ontology.ABoxDecl">
+      <h4 class="signature"><a href="ABoxDecl.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ABoxDecl</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An ABoxDecl is a declaration in an ABox for the MMT ontology.</p>
+    </li><li visbl="pub" name="jomdoc.ontology.ABoxStore">
+      <h4 class="signature"><a href="ABoxStore.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ABoxStore</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An ABoxStore stores the abox of the loaded documents with respect to the MMT ontology.</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Binary">
+      <h4 class="signature"><a href="Binary.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Binary</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Choice">
+      <h4 class="signature"><a href="Choice.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Choice</span><span class="params">(<span name="qs">qs: Query*</span>)</span><span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the union of a list of relations</p>
+    </li><li visbl="pub" name="jomdoc.ontology.HasType">
+      <h4 class="signature"><a href="HasType.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">HasType</span><span class="params">(<span name="tp">tp: Unary</span>)</span><span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the reflexive relation restricted to a unary predicate</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Individual">
+      <h4 class="signature"><a href="Individual.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Individual</span><span class="params">(<span name="path">path: Path</span>, <span name="tp">tp: Unary</span>)</span><span class="result"> extends ABoxDecl with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Individual represents a unary predicate in the ABox.</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Query">
+      <h4 class="signature"><a href="Query.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Query</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">Objects of type Query are expressions of a simple query language over an MMT ABox.</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Relation">
+      <h4 class="signature"><a href="Relation.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Relation</span><span class="params">(<span name="dep">dep: Binary</span>, <span name="subj">subj: Path</span>, <span name="obj">obj: Path</span>)</span><span class="result"> extends ABoxDecl with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Relation represents a binary predicate in the ABox.</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Sequence">
+      <h4 class="signature"><a href="Sequence.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Sequence</span><span class="params">(<span name="qs">qs: Query*</span>)</span><span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the composition of a list of relations</p>
+    </li><li visbl="pub" name="jomdoc.ontology.ToObject">
+      <h4 class="signature"><a href="ToObject.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ToObject</span><span class="params">(<span name="dep">dep: Binary</span>)</span><span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">base case: a primitive binary relation</p>
+    </li><li visbl="pub" name="jomdoc.ontology.ToSubject">
+      <h4 class="signature"><a href="ToSubject.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ToSubject</span><span class="params">(<span name="dep">dep: Binary</span>)</span><span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">base case: the inverse of a primitive binary relation</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Transitive">
+      <h4 class="signature"><a href="Transitive.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Transitive</span><span class="params">(<span name="q">q: Query</span>)</span><span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the transitive closure of a relation</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Unary">
+      <h4 class="signature"><a href="Unary.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Unary</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Unary represents a unary predicate on MMT paths in the MMT ontology.</p>
+    </li></ol>
+            </div>
+        
+        <div class="members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="jomdoc.ontology.Binary">
+      <h4 class="signature"><a href="Binary$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Binary</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.Declares">
+      <h4 class="signature"><a href="Declares$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Declares</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.DependsOnDefiniensOf">
+      <h4 class="signature"><a href="DependsOnDefiniensOf$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">DependsOnDefiniensOf</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.DependsOnTypeOf">
+      <h4 class="signature"><a href="DependsOnTypeOf$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">DependsOnTypeOf</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.HasCodomain">
+      <h4 class="signature"><a href="HasCodomain$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasCodomain</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.HasDomain">
+      <h4 class="signature"><a href="HasDomain$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasDomain</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.HasMeta">
+      <h4 class="signature"><a href="HasMeta$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasMeta</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.HasOccurrenceOfInDefinition">
+      <h4 class="signature"><a href="HasOccurrenceOfInDefinition$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInDefinition</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.HasOccurrenceOfInImport">
+      <h4 class="signature"><a href="HasOccurrenceOfInImport$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInImport</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.HasOccurrenceOfInTarget">
+      <h4 class="signature"><a href="HasOccurrenceOfInTarget$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInTarget</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.HasOccurrenceOfInType">
+      <h4 class="signature"><a href="HasOccurrenceOfInType$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInType</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsAlias">
+      <h4 class="signature"><a href="IsAlias$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsAlias</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsAliasFor">
+      <h4 class="signature"><a href="IsAliasFor$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsAliasFor</span><span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsConAss">
+      <h4 class="signature"><a href="IsConAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsConAss</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsConstant">
+      <h4 class="signature"><a href="IsConstant$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsConstant</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsDocument">
+      <h4 class="signature"><a href="IsDocument$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsDocument</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsNotation">
+      <h4 class="signature"><a href="IsNotation$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsNotation</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsOpen">
+      <h4 class="signature"><a href="IsOpen$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsOpen</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsStrAss">
+      <h4 class="signature"><a href="IsStrAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsStrAss</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsStructure">
+      <h4 class="signature"><a href="IsStructure$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsStructure</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsStyle">
+      <h4 class="signature"><a href="IsStyle$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsStyle</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsTheory">
+      <h4 class="signature"><a href="IsTheory$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsTheory</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.IsView">
+      <h4 class="signature"><a href="IsView$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsView</span><span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.Query">
+      <h4 class="signature"><a href="Query$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Query</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" name="jomdoc.ontology.Reflexive">
+      <h4 class="signature"><a href="Reflexive$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Reflexive</span><span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the reflexive relation</p>
+    </li><li visbl="pub" name="jomdoc.ontology.Unary">
+      <h4 class="signature"><a href="Unary$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Unary</span><span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+                
+      </div>
+      
+      <div id="tooltip"></div>
+      
+    </body>
+      </html>

@@ -1,0 +1,50 @@
+/*
+     $Id: mobj.css 957 2009-08-05 17:06:02Z clange $
+     $HeadURL: https://svn.omdoc.org/repos/jomdoc/src/jomdoc/trunk/css/mobj.css $
+
+     Copyright (c) KWARC, Jacobs University Bremen, 2009
+     http://kwarc.info
+
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 3 of the license, or (at your option) any later version.
+
+     For other licensing options, please contact Michael Kohlhase
+     <m.kohlhase@jacobs-university.de>.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
+
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library; if not, write to the Free Software
+     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/*
+ * MOBJ module (mathematical formulae)
+ */
+
+@namespace xlink url(http://www.w3.org/1999/xlink);
+
+span.math {
+    font-style: oblique;
+    color: #006600;
+}
+
+div.displaymath {
+    font-style: oblique;
+    display: block;
+    text-align: center;
+    color: #006600;
+}
+
+math {
+    color: #006600;
+}
+
+*[xlink|href] {
+    cursor: pointer;
+}

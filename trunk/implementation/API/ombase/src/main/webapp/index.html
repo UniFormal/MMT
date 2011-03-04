@@ -1,0 +1,42 @@
+<lift:surround with="wrapper" at="content">
+
+<div style="width:100%">
+  
+ <div id="title">
+ The MMT Browser
+ </div>
+
+ <div id="header">
+  <span>  
+    <lift:Get.breadcrumbs>
+      <i:last/>
+    </lift:Get.breadcrumbs>
+  </span>
+  <span style="margin-left:5%;margin-right:5%">
+    <lift:Get.linkOMDoc/>
+  </span>
+  <span><a href="/:admin">administration</a></span>
+ </div>  
+
+ <div id="sidebar">
+
+    <div id="pathtree"/>
+    
+    <div id="crossrefs"> 
+     <lift:Get.outgoing/>
+    </div>
+
+ </div>
+
+ <div id="main">
+    <lift:Get.get/>
+    <div id="dialog" title="Basic dialog"></div>
+    <ul id="JOBADcontextMenu" class="jqcontextmenu">
+      <li><a href="#" class='JOBADcmenu'>Item 1a</a></li>
+    </ul>
+ </div>
+</div>
+
+
+</lift:surround>
+
