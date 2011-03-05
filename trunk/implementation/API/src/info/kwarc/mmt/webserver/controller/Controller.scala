@@ -1,4 +1,4 @@
-package ombase.controller
+package info.kwarc.mmt.webserver.controller
 import jomdoc._
 
 object Controller extends {

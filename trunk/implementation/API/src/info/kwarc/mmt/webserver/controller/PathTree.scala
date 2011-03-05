@@ -1,4 +1,4 @@
-package ombase.controller
+package info.kwarc.mmt.webserver.controller
 
 object PathTree {
 	private def item(p : jomdoc.Path, state : String) =

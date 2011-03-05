@@ -1,4 +1,4 @@
-package ombase.snippet
+package info.kwarc.mmt.webserver.snippet
 
 import net.liftweb.http._
 import net.liftweb.util._

@@ -1,4 +1,4 @@
-package ombase.snippet
+package info.kwarc.mmt.webserver.snippet
 
 import scala.xml.{Node,NodeSeq}
 import net.liftweb._
