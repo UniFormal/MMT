@@ -1,3 +1,0 @@
-jobad_server.js is the version that can be integrated into documents served from a server backend, or actually into any kind of document that interacts with a web service.
-
-jobad.js is an old, currently unmaintained implementation for client-only services.

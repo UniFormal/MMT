@@ -1,1 +1,0 @@
-java -jar jomdoc.jar file startup.mmt
