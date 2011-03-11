@@ -1,0 +1,34 @@
+
+* Description
+
+A reference API to the MMT data structures with a scriptable shell frontend.
+
+
+* Source
+
+The complete source for the API is bundled:
+ - main MMT API in 'src/main'
+ - tests in 'src/test'
+ - Ant build files 'build.xml' and 'build.properties'
+ - local dependencies in 'lib' and global in '../../lib'
+ - demo material can be found in the examples directory
+
+This directory can be directly opened as an Eclipse project.
+
+
+* Building
+
+This project can be built with Ant; execute 'ant help' for more information
+about the available targets.
+
+
+* Licensing
+
+The open source license permits you to use MMT-API at no charge under 
+the condition that if you use the software in an application you 
+redistribute, the complete source code for your application must 
+be available and freely redistributable under reasonable conditions. 
+For other licensing contact Florian Rabe <f.rabe@jacobs-university.de>.
+
+You may find the open source license in COPYING file that is located 
+within the same directory as this file.
