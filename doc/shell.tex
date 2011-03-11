@@ -1,0 +1,95 @@
+\paragraph{Invocation}
+The MMT shell is invoked by
+\begin{center}
+\code{java -jar jomdoc.jar}
+\end{center}
+Further command line parameters are passed to the shell and executed as a command. In particular, the command \code{file F} can be used to execute a startup file. After invocation, the shell can be controlled via STDIN/STDOUT.
+
+Besides caching all loaded documents, the shell only maintains one state variable: a base MMT-URI. All paths are interpreted relative to this base.
+
+\paragraph{General Syntax}
+\emph{Commands} are given by a keyword followed by a whitespace-separated list of arguments and terminated by a newline. Empty lines and lines starting with \code{//} are ignored.
+
+We use the following meta-variables for command arguments:
+\begin{itemize}
+	\item \code{F}: a file name that is interpreted relative to the current directory,
+	\item \code{U}: an MMT-URI that is interpreted relative to the current base URI,
+	\item \code{A}: an action that is executed on a path or object.
+\end{itemize}
+
+An exception are \emph{actions}, where the keyword is placed after the first argument in the style of OO-programming, see below.
+
+\paragraph{Basic Commands}
+\begin{itemize}
+\item \code{log+ C}, \code{log- C} : Switch on/off logging of component \code{C}.
+\item \code{base U}: Sets the base path to \code{U}.
+\item \code{file F}: Reads the file \code{F} and executes every line as a command. If a command causes an error, execution is aborted.
+\item \code{exit}: Quits the shell.
+\end{itemize}
+
+\paragraph{Interacting with Documents}
+The shell stores a set of documents that are parsed into abstract data structures and made available for querying.
+
+\begin{itemize}
+\item \code{read U}: Retrieves, parses, validates, and stores the document with URI \code{U}. If read documents contain notation definitions, these are parsed and stored as well. However, the handling of notations is lazy: Dereferencing of references to notation containers and parsing of found notations are on demand.
+\item \code{clear}: Deletes all read knowledge items from memory.
+\item \code{printAll}, \code{printXML}: Dumps the memory, used for testing.
+\item Documents are accessed using actions on MMT-URIs as described below.
+\end{itemize}
+If the execution of these commands, requires documents that have not been read yet, these are retrieved automatically. This happens, for example, if the read document imports a theory from another document, or if the requested path points to a document that has not been read yet.
+
+Both reading and accessing documents is done via document URIs, not via URLs. Therefore, when reading documents, a catalog is necessary to translate URIs into URLs (see below).
+
+\paragraph{Catalog Commands}
+The catalog maintains a translation map from URIs to URLs. It is initially empty so that no addressing is possible. The following commands add entries to the catalog.
+
+\begin{itemize}
+\item \code{catalog F}: This is used to add local working copies to the catalog. It takes a file \code{F} in the locutor (see \url{https://locutor.kwarc.info/})  registry format and creates an entry for every working copy listed in it. The repository URLs are treated as URIs that are translated to the location of the local working copy. (See the example file \code{locutor.xml} file in the distribution.)
+\item \code{local}: This adds an entry for the local file system. URIs of the form \code{file:///U} are translated to themselves.
+\item \code{ombase F}: This creates a catalog entry for an OMBase server described in \code{F}. See the example file \code{ombase.xml} in the documentation.
+\end{itemize}
+
+\paragraph{Actions}
+Actions provide a simple infix syntax to pipe retrieved knowledge items through some typed post-processing operations.
+
+The command $O\;A\;a_1\;\ldots\;a_n$ evaluates $O$ and then applies action $A$ with additional arguments $a_i$. This corresponds to $O.A(a_1,\ldots,a_n)$ in OO-programming. Actions may be chained: $O\;A\;a_1\;\ldots\;a_n \;B\;b_1\;\ldots\;b_n$ corresponds to $O.A(a_1,\ldots,a_n).B(b_1,\ldots,b_n)$. Actions are classified according to the type of $O$, which is MMT-URI, MMT-Object, or Non-MMT-Object, and the return type, which is MMT-Object, Non-MMT-object, or Nothing.
+\smallskip
+
+\noindent
+Actions on MMT-URIs $U$
+\begin{itemize}
+\item empty action: dereferences $U$ and returns it (MMT-Object)
+\item \code{closure}: dereferences $U$ and returns the closure as a self-contained document (MMT-Object)
+\item \code{deps xml}: dereferences $U$ and returns its dependency set in XML representation (Non-MMT-Object)
+\item \code{deps locutor}: dereferences $U$ and returns its dependency set in locutor representation (Non-MMT-Object)
+\end{itemize}
+
+\noindent
+Actions on MMT-Objects $O$
+\begin{itemize}
+\item empty action: returns the text representation of $O$ (Non-MMT-Object)
+\item \code{component C}: returns the component of $O$ called \code{C} (MMT-Object)
+\item \code{xml}: returns the XML representation of $O$ (Non-MMT-Object)
+\item \code{present U}: returns the rendering of $O$ using style \code{U} (Non-MMT-Object)
+\end{itemize}
+Valid component names \code{C} are in particular \code{type} and \code{definition} if $O$ is a constant.
+
+
+\noindent
+Actions on Non-MMT-Objects, all returning Nothing:
+\begin{itemize}
+\item empty action: prints to standard output
+\item \code{write F}: prints to file \code{F}
+\end{itemize}
+
+\begin{example}
+The action
+
+\noindent
+\code{U/algebra/algebra.omdoc?group closure present O/omdoc/ascii.omdoc?ascii write group.txt}
+writes the presentation of the closure of the theory of groups to the file \code{group.txt} using an ASCII-based style.
+
+\noindent
+\code{U/algebra/algebra.omdoc?group?inv component type xml}
+writes the type type of \code{U/algebra/algebra.omdoc?group?inv} in XML to standard output.
+\end{example}

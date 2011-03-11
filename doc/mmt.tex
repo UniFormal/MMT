@@ -1,0 +1,63 @@
+\documentclass{article}
+\usepackage{graphicx,url,wrapfig,amsmath,amssymb}  %standard packages
+\usepackage{amsthm}
+\usepackage[show]{ed/ed} %for ednotes
+%\usepackage{xkeyval} %needed for listings package
+%\usepackage{listings} %listings
+%\usepackage{lstomdoc} %for omdoc listings
+%\usepackage{tikz} %diagrams
+%\usetikzlibrary{shapes} %needed for tikz package
+%\usetikzlibrary{arrows} %needed for tikz package
+\usepackage[top=3cm,bottom=3cm,left=4cm,right=3cm]{geometry} %define borders
+
+\input{commands}
+\input{math}
+
+\usepackage[nobook]{theorems}
+\usepackage{listings}
+\usepackage{xmldoc}
+\usepackage{xcolor}
+\usepackage{mmt_new}
+
+\usepackage{hyperref} %pdf hyper links, load this last
+
+\setlength{\hfuzz}{3pt} \hbadness=10001 %make box warning less strict
+
+\title{The {\mmt} Language and System}
+\author{Florian Rabe \\
+Jacobs University Bremen}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\omitted}{\op{None}}
+\newcommand{\mmturi}{\ensuremath{\op{MMTURI}}}
+\newcommand{\mmtqname}{\ensuremath{\op{QName}}}
+\newcommand{\mmtname}{\ensuremath{\op{Name}}}
+\newcommand{\snippet}[1]{\texttt{#1}}
+\newcommand{\defemph}[1]{{\bf #1}}
+\newcommand{\translate}[2]{T(#1,#2)}
+\newcommand{\render}[3]{R(#1,#2,#3)}
+\newcommand{\iPrec}{\op{iPrec}}
+\newcommand{\oPrec}{\op{oPrec}}
+
+\begin{document}
+\maketitle
+
+%\begin{abstract}
+%\end{abstract}
+
+\section{Syntax}\label{sec:syntax}
+\input{syntax}
+
+\section{Notations}\label{sec:notations}
+\input{notations}
+
+\section{The Shell}\label{sec:shell}
+\input{shell}
+
+\section{The HTTP Server}\label{sec:http}
+\input{http}
+
+
+\bibliographystyle{alpha}
+\input{bibs}
+\end{document}
