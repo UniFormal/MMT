@@ -1,0 +1,49 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
+<head>
+  <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> -->
+  <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jobad.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jqcontextmenu.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jquery/jquery-ui.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jquery/ui.base.css"/>
+  <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"/>
+  <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
+  <script type="text/javascript" src="/script/jquery/jquery-ui.min.js"/>
+  <script type="text/javascript" src="/script/jquery/jqcontextmenu.js"/>
+  <script type="text/javascript" src="/script/tree/jquery.hotkeys.js"/>
+  <script type="text/javascript" src="/script/tree/jquery.jstree.js"/>
+  <script type="text/javascript" src="/script/jobad/service.js"/>
+  <script type="text/javascript">
+    var dir = '/script/jobad/services';
+    loadModule(dir, 'latin'); 
+    loadModule(dir, 'folding');
+    $(function () {
+       $("#pathtree").jstree({
+           "core" : {"animation": 0},
+           "xml_data" : {
+              "ajax" : {
+                 "url" : "/:pathtree",
+                 "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
+              },
+              "xsl" : "nest"
+           },
+           "themes" : {"theme" : "classic", "icons" : false},
+           "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
+       });
+   });
+   $(function () {
+       $("#crossrefs").jstree({
+           "core" : {"animation": 0},
+           "themes" : {"theme" : "classic", "icons" : false},
+           "plugins" : ["html_data", "themes", "ui", "hotkeys"]
+       });
+   });
+  </script>
+</head>
+
+<body>
+  <lift:bind name="content"/>
+  <lift:msgs/>
+</body>
+</html>
