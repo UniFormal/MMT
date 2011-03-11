@@ -1,0 +1,11 @@
+http://cds.omdoc.org/math/algebra/algebra1.omdoc?Monoid = {
+	PlainImport(http://cds.omdoc.org/logics/first-order/proof_theory/derived.omdoc?FOLEQPFExt,http://cds.omdoc.org/math/algebra/algebra1.omdoc?Monoid)
+	sg : http://cds.omdoc.org/math/algebra/algebra1.omdoc?Semigroup = 
+{
+}
+	* => http://cds.omdoc.org/math/algebra/algebra1.omdoc?Monoid?sg/mag/*
+	miden : http://cds.omdoc.org/math/algebra/algebra1.omdoc?MagmaIdentity = 
+{	rid/mag |-> OMCOMP(List(LINK(http://cds.omdoc.org/math/algebra/algebra1.omdoc?Semigroup/mag), LINK(http://cds.omdoc.org/math/algebra/algebra1.omdoc?Monoid/sg)))
+}
+	e => http://cds.omdoc.org/math/algebra/algebra1.omdoc?Monoid?miden/rid/e
+}
