@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mmt-web" default="build" basedir=".">
+
+    <target name="help">
+        <echo>
+      MMT API build file
+    -------------------------------------------------------
+
+      available targets:
+
+      help        - print this message
+      build       - compile, generate war, deploy
+      docs        - generate documentation
+
+      compile     - compile sources to build/main and build/test
+      scaladoc    - generate scaladoc in build/apidocs
+      war         - generate build/mmt-web.war
+      clean       - clean up the build directories
+
+    -------------------------------------------------------
+        </echo>
+    </target>
+
+    <property environment="env" />
+    <property file="build.properties" />
+    <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+    <path id="scalac.classpath">
+        <pathelement location="${lib.common}/scala-library.jar"/>
+        <pathelement location="${lib.common}/scala-compiler.jar"/>
+    </path>
+    <!-- compile.classpath holds all paths needed to compile the library. -->
+    <path id="compile.classpath">
+        <path refid="scalac.classpath" />
+        <pathelement location="${lib}/servlet-api-2.5.jar" />
+        <pathelement location="${lib}/lift-util_2.8.1-2.2-SNAPSHOT.jar" />
+        <pathelement location="${lib}/lift-webkit_2.8.1-2.2-SNAPSHOT.jar" />
+        <pathelement location="${lib}/lift-common_2.8.1-2.2-SNAPSHOT.jar" />
+        <pathelement location="${lib}/lift-json_2.8.1-2.2-SNAPSHOT.jar" />
+        <pathelement location="${lib.common}/mmt-api.jar" />
+    </path>
+    <path id="scaladoc.classpath">
+        <path refid="scalac.classpath"/>
+        <path refid="compile.classpath"/>
+    </path>
+    <!-- This defines the task scalac (which is similar to javac but for scala). -->
+    <taskdef resource="scala/tools/ant/antlib.xml"
+        classpathref="scalac.classpath"/>
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="build" depends="war,docs"/>
+
+    <!-- This target compiles the library using the task scalac and the classpath compile.classpath. -->
+    <target name="compile" depends="init">
+        <mkdir dir="${build.main}"/>
+        <mkdir dir="${build.test}"/>
+        <scalac destdir="${build.main}" srcdir="${src.main}" classpathref="compile.classpath"/>
+        <scalac destdir="${build.test}" srcdir="${src.test}" classpathref="compile.classpath"/>
+    </target>
+
+    <target name="war" depends="compile">
+        <war destfile="${build}/mmt-web.war" webxml="${web}/WEB-INF/web.xml">
+            <fileset dir="${web}" />
+            <classes dir="${build.main}" />
+            <lib dir="${lib}">
+                <exclude name="servlet-api-2.5.jar"/>
+            </lib>
+            <lib file="${lib.common}/scala-library.jar" />
+            <lib file="${lib.common}/mmt-api.jar" />
+        </war>
+    </target>
+
+    <target name="docs" depends="scaladoc"/>
+
+    <target name="scaladoc" depends="init">
+        <mkdir dir="${scaladoc}"/>
+        <scaladoc
+            destdir="${scaladoc}"
+            doctitle="MMT WEB"
+            docversion="${mmt.version}"
+            sourcepath="${src.main}"
+            classpathref="scaladoc.classpath"
+            srcdir="${src.main}">
+            <include name="**/*.scala"/>
+        </scaladoc>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build}" />
+    </target>
+</project>

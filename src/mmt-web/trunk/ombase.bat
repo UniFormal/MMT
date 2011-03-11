@@ -1,0 +1,1 @@
+java -jar ..\lib\jetty-runner.jar ombase.war 1>2 > jetty.log
