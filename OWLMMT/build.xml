@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="owl" default="build-library" basedir=".">
+
+  <target name="init">
+	<!-- The variable scala.home holds the directory in which to find the scala compiler. -->
+	<property name="scala.home" value="../lib" />
+	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+	<path id="scalac.classpath">
+		<pathelement location="${scala.home}/scala-library.jar"/>
+		<pathelement location="${scala.home}/scala-compiler.jar"/>
+	</path>
+	<!-- This defines the task scalac (which is similar to javac but for scala). -->
+	<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
+    <!-- Create the time stamp -->
+    <tstamp />
+  </target>
+
+  <target name="clean">
+    <delete dir="bin" />
+  </target>
+
+  <target name="compile-library" depends="init">
+    <mkdir dir="${basedir}/bin"/>
+    <path id="compile.classpath">
+      <pathelement location="${scala.home}/scala-library.jar"/>
+      <pathelement location="bin"/>	
+    </path>
+    <scalac destdir="${basedir}/bin" srcdir="${basedir}/src" classpathref="compile.classpath" deprecation="yes"/>
+  </target>
+
+  <target name="build-library" depends="compile-library">
+    <jar destfile="owl_mmt.jar">
+      <manifest>
+    	<attribute name="Main-Class" value="info.kwarc.mmt.owl.Test2"/>
+    	<attribute name="Class-Path" value="../lib/scala-library.jar ../lib/jomdoc.jar ../lib/owlapi-bin.jar"/>
+      </manifest>
+      <fileset dir="${basedir}/bin"/>
+    </jar>
+  </target>
+
+</project>
