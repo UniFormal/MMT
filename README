@@ -1,0 +1,6 @@
+Directory structure:
+ - admin
+ - deploy	projects ready to be used without building required
+ - doc 		MMT documentation
+ - src		project sources
+ - www		web site
