@@ -3,7 +3,7 @@
 
     <target name="help">
         <echo>
-      MMT API build file
+      MMT WEB build file
     -------------------------------------------------------
 
       available targets:
@@ -25,8 +25,8 @@
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <pathelement location="${lib.common}/scala-library.jar"/>
-        <pathelement location="${lib.common}/scala-compiler.jar"/>
+        <pathelement location="${scala.dir}/scala-library.jar"/>
+        <pathelement location="${scala.dir}/scala-compiler.jar"/>
     </path>
     <!-- compile.classpath holds all paths needed to compile the library. -->
     <path id="compile.classpath">
@@ -36,7 +36,7 @@
         <pathelement location="${lib}/lift-webkit_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-common_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-json_2.8.1-2.2-SNAPSHOT.jar" />
-        <pathelement location="${lib.common}/mmt-api.jar" />
+        <pathelement location="${lib}/mmt-api/mmt-api.jar" />
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
@@ -67,8 +67,8 @@
             <lib dir="${lib}">
                 <exclude name="servlet-api-2.5.jar"/>
             </lib>
-            <lib file="${lib.common}/scala-library.jar" />
-            <lib file="${lib.common}/mmt-api.jar" />
+            <lib file="${scala.dir}/scala-library.jar" />
+            <lib file="${lib}/mmt-api/mmt-api.jar" />
         </war>
     </target>
 
