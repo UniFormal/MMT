@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="jomdoc" default="build-library" basedir=".">
+<project name="mmt-api" default="build" basedir=".">
 
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -62,7 +62,7 @@
     </target>
 
     <target name="jar" depends="compile">
-        <jar destfile="${build}/mmt-api.jar">
+        <jar destfile="${build}/${jar}">
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
                 <!-- DM TODO: this shouldn't really be here -->
@@ -79,16 +79,25 @@
     <target name="docs" depends="scaladoc"/>
 
     <target name="scaladoc" depends="init">
-        <mkdir dir="${scaladoc}"/>
+        <mkdir dir="${apidocs}"/>
         <scaladoc
-            destdir="${scaladoc}"
-            doctitle="MMT API"
+            destdir="${apidocs}"
+            doctitle="${prj}"
             docversion="${mmt.version}"
             sourcepath="${src.main}"
             classpathref="scaladoc.classpath"
             srcdir="${src.main}">
             <include name="**/*.scala"/>
         </scaladoc>
+    </target>
+
+    <target name="deploy" depends="build">
+        <copy todir="${deploy}/${prj}/apidocs">
+            <fileset dir="${apidocs}" includes="**/*"/>
+        </copy>
+        <copy todir="${deploy}/${prj}/lib">
+            <fileset file="${build}/${jar}"/>
+        </copy>
     </target>
 
     <target name="clean">

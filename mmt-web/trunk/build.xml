@@ -61,7 +61,7 @@
     </target>
 
     <target name="war" depends="compile">
-        <war destfile="${build}/mmt-web.war" webxml="${web}/WEB-INF/web.xml">
+        <war destfile="${build}/${jar}" webxml="${web}/WEB-INF/web.xml">
             <fileset dir="${web}" />
             <classes dir="${build.main}" />
             <lib dir="${lib}">
@@ -75,16 +75,25 @@
     <target name="docs" depends="scaladoc"/>
 
     <target name="scaladoc" depends="init">
-        <mkdir dir="${scaladoc}"/>
+        <mkdir dir="${apidocs}"/>
         <scaladoc
-            destdir="${scaladoc}"
-            doctitle="MMT WEB"
+            destdir="${apidocs}"
+            doctitle="${prj}"
             docversion="${mmt.version}"
             sourcepath="${src.main}"
             classpathref="scaladoc.classpath"
             srcdir="${src.main}">
             <include name="**/*.scala"/>
         </scaladoc>
+    </target>
+
+    <target name="deploy" depends="build">
+        <copy todir="${deploy}/${prj}/apidocs">
+            <fileset dir="${apidocs}" includes="**/*"/>
+        </copy>
+        <copy todir="${deploy}/${prj}/lib">
+            <fileset file="${build}/${jar}"/>
+        </copy>
     </target>
 
     <target name="clean">
