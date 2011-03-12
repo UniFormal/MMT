@@ -1,0 +1,538 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>info.kwarc.mmt.api.ontology</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body class="value" onload="windowTitle();">
+
+      <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
+
+      <div id="definition">
+        <img src="../../../../../lib/package_big.png" />
+        <h1>ontology</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">ontology</span>
+        
+        
+        
+      </span>
+      </h4>
+      <div class="fullcomment" id="comment"></div>
+
+      <div id="template">
+
+        <div id="mbrsel">
+          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+          
+          
+          <div id="visbl">
+              <span class="filtertype">Visibility</span>
+              <ol><li class="public in">Public</li><li class="all out">All</li></ol>
+            </div>
+          <div id="impl">
+              <span class="filtertype">Impl.</span>
+              <ol><li class="concrete in">Concrete</li><li class="abstract in">Abstract</li></ol>
+            </div>
+        </div>
+
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.ABoxDecl">
+      <a id="ABoxDecl:ABoxDecl"></a>
+      <h4 class="signature"><a href="ABoxDecl.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ABoxDecl</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An ABoxDecl is a declaration in an ABox for the MMT ontology.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.ABoxStore">
+      <a id="ABoxStore:ABoxStore"></a>
+      <h4 class="signature"><a href="ABoxStore.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ABoxStore</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An ABoxStore stores the abox of the loaded documents with respect to the MMT ontology.</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.Binary">
+      <a id="Binary:Binary"></a>
+      <h4 class="signature"><a href="Binary.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Binary</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Choice">
+      <a id="Choice:Choice"></a>
+      <h4 class="signature"><a href="Choice.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Choice</span>
+        
+        <span class="params">(<span name="qs">qs: Query*</span>)</span>
+        <span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the union of a list of relations</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasType">
+      <a id="HasType:HasType"></a>
+      <h4 class="signature"><a href="HasType.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">HasType</span>
+        
+        <span class="params">(<span name="tp">tp: Unary</span>)</span>
+        <span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the reflexive relation restricted to a unary predicate</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Individual">
+      <a id="Individual:Individual"></a>
+      <h4 class="signature"><a href="Individual.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Individual</span>
+        
+        <span class="params">(<span name="path">path: Path</span>, <span name="tp">tp: Unary</span>)</span>
+        <span class="result"> extends ABoxDecl with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Individual represents a unary predicate in the ABox.</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.Query">
+      <a id="Query:Query"></a>
+      <h4 class="signature"><a href="Query.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Query</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">Objects of type Query are expressions of a simple query language over an MMT ABox.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Relation">
+      <a id="Relation:Relation"></a>
+      <h4 class="signature"><a href="Relation.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Relation</span>
+        
+        <span class="params">(<span name="dep">dep: Binary</span>, <span name="subj">subj: Path</span>, <span name="obj">obj: Path</span>)</span>
+        <span class="result"> extends ABoxDecl with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Relation represents a binary predicate in the ABox.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Sequence">
+      <a id="Sequence:Sequence"></a>
+      <h4 class="signature"><a href="Sequence.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Sequence</span>
+        
+        <span class="params">(<span name="qs">qs: Query*</span>)</span>
+        <span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the composition of a list of relations</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.ToObject">
+      <a id="ToObject:ToObject"></a>
+      <h4 class="signature"><a href="ToObject.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">ToObject</span>
+        
+        <span class="params">(<span name="dep">dep: Binary</span>)</span>
+        <span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">base case: a primitive binary relation</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.ToSubject">
+      <a id="ToSubject:ToSubject"></a>
+      <h4 class="signature"><a href="ToSubject.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">ToSubject</span>
+        
+        <span class="params">(<span name="dep">dep: Binary</span>)</span>
+        <span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">base case: the inverse of a primitive binary relation</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Transitive">
+      <a id="Transitive:Transitive"></a>
+      <h4 class="signature"><a href="Transitive.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Transitive</span>
+        
+        <span class="params">(<span name="q">q: Query</span>)</span>
+        <span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the transitive closure of a relation</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.Unary">
+      <a id="Unary:Unary"></a>
+      <h4 class="signature"><a href="Unary.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Unary</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An object of type Unary represents a unary predicate on MMT paths in the MMT ontology.</p>
+    </li></ol>
+            </div>
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Binary">
+      <a id="Binary:Binary"></a>
+      <h4 class="signature"><a href="Binary$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Binary</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Declares">
+      <a id="Declares:Declares"></a>
+      <h4 class="signature"><a href="Declares$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Declares</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.DependsOnDefiniensOf">
+      <a id="DependsOnDefiniensOf:DependsOnDefiniensOf"></a>
+      <h4 class="signature"><a href="DependsOnDefiniensOf$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">DependsOnDefiniensOf</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.DependsOnTypeOf">
+      <a id="DependsOnTypeOf:DependsOnTypeOf"></a>
+      <h4 class="signature"><a href="DependsOnTypeOf$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">DependsOnTypeOf</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasCodomain">
+      <a id="HasCodomain:HasCodomain"></a>
+      <h4 class="signature"><a href="HasCodomain$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasCodomain</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasDomain">
+      <a id="HasDomain:HasDomain"></a>
+      <h4 class="signature"><a href="HasDomain$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasDomain</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasMeta">
+      <a id="HasMeta:HasMeta"></a>
+      <h4 class="signature"><a href="HasMeta$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasMeta</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasOccurrenceOfInDefinition">
+      <a id="HasOccurrenceOfInDefinition:HasOccurrenceOfInDefinition"></a>
+      <h4 class="signature"><a href="HasOccurrenceOfInDefinition$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInDefinition</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasOccurrenceOfInImport">
+      <a id="HasOccurrenceOfInImport:HasOccurrenceOfInImport"></a>
+      <h4 class="signature"><a href="HasOccurrenceOfInImport$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInImport</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasOccurrenceOfInTarget">
+      <a id="HasOccurrenceOfInTarget:HasOccurrenceOfInTarget"></a>
+      <h4 class="signature"><a href="HasOccurrenceOfInTarget$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInTarget</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasOccurrenceOfInType">
+      <a id="HasOccurrenceOfInType:HasOccurrenceOfInType"></a>
+      <h4 class="signature"><a href="HasOccurrenceOfInType$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">HasOccurrenceOfInType</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsAlias">
+      <a id="IsAlias:IsAlias"></a>
+      <h4 class="signature"><a href="IsAlias$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsAlias</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsAliasFor">
+      <a id="IsAliasFor:IsAliasFor"></a>
+      <h4 class="signature"><a href="IsAliasFor$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsAliasFor</span>
+        
+        
+        <span class="result"> extends Binary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsConAss">
+      <a id="IsConAss:IsConAss"></a>
+      <h4 class="signature"><a href="IsConAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsConAss</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsConstant">
+      <a id="IsConstant:IsConstant"></a>
+      <h4 class="signature"><a href="IsConstant$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsConstant</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsDocument">
+      <a id="IsDocument:IsDocument"></a>
+      <h4 class="signature"><a href="IsDocument$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsDocument</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsNotation">
+      <a id="IsNotation:IsNotation"></a>
+      <h4 class="signature"><a href="IsNotation$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsNotation</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsOpen">
+      <a id="IsOpen:IsOpen"></a>
+      <h4 class="signature"><a href="IsOpen$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsOpen</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsStrAss">
+      <a id="IsStrAss:IsStrAss"></a>
+      <h4 class="signature"><a href="IsStrAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsStrAss</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsStructure">
+      <a id="IsStructure:IsStructure"></a>
+      <h4 class="signature"><a href="IsStructure$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsStructure</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsStyle">
+      <a id="IsStyle:IsStyle"></a>
+      <h4 class="signature"><a href="IsStyle$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsStyle</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsTheory">
+      <a id="IsTheory:IsTheory"></a>
+      <h4 class="signature"><a href="IsTheory$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsTheory</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsView">
+      <a id="IsView:IsView"></a>
+      <h4 class="signature"><a href="IsView$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IsView</span>
+        
+        
+        <span class="result"> extends Unary with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Query">
+      <a id="Query:Query"></a>
+      <h4 class="signature"><a href="Query$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Query</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Reflexive">
+      <a id="Reflexive:Reflexive"></a>
+      <h4 class="signature"><a href="Reflexive$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Reflexive</span>
+        
+        
+        <span class="result"> extends Query with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the reflexive relation</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Unary">
+      <a id="Unary:Unary"></a>
+      <h4 class="signature"><a href="Unary$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Unary</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+      </div>
+      
+      <div id="tooltip"></div>
+      
+    </body>
+      </html>
