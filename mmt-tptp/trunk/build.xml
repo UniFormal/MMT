@@ -29,12 +29,18 @@
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <pathelement location="${scala.dir}/scala-library.jar"/>
-        <pathelement location="${scala.dir}/scala-compiler.jar"/>
+        <fileset dir="${scala.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+    <path id="compile.classpath">
+        <path refid="scalac.classpath"/>
+        <fileset dir="${lib}">
+            <include name="**/*.jar"/>
+        </fileset>
     </path>
     <path id="scaladoc.classpath">
-        <path refid="scalac.classpath"/>
-        <pathelement location="${lib}/mmt-api/mmt-api.jar" />
+        <path refid="compile.classpath"/>
     </path>
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
     <taskdef resource="scala/tools/ant/antlib.xml"
@@ -49,12 +55,6 @@
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
         <mkdir dir="${build.test}"/>
-        <path id="compile.classpath">
-            <pathelement location="${scala.dir}/scala-library.jar"/>
-            <pathelement location="${build.main}"/>
-            <pathelement location="${build.test}"/>
-            <pathelement location="${lib}/mmt-api/mmt-api.jar" />
-        </path>
         <scalac destdir="${build.main}" srcdir="${src.main}"
             classpathref="compile.classpath" deprecation="yes"/>
         <scalac destdir="${build.test}" srcdir="${src.test}"
