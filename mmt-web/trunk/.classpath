@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="**/*.java" kind="src" path="src/main/resources"/>
-	<classpathentry kind="src" path="src/main/info/kwarc/"/>
+	<classpathentry kind="src" path="src/main/info/kwarc"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jomdoc"/>
 	<classpathentry kind="lib" path="lib/servlet-api-2.5.jar"/>
 	<classpathentry kind="lib" path="lib/lift-common_2.8.1-2.2-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/lift-util_2.8.1-2.2-SNAPSHOT.jar"/>
@@ -15,6 +14,7 @@
 	<classpathentry kind="lib" path="lib/slf4j-api-1.6.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-fileupload-1.2.1.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.16.jar"/>
-	<classpathentry kind="lib" path="../../../deploy/lib/scala/scala-library.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
