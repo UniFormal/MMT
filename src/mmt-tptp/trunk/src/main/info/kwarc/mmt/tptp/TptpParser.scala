@@ -1,4 +1,4 @@
-package kwarc.info.mmt.tptp
+package info.kwarc.mmt.tptp
 
 import tptp._
 import java.io._

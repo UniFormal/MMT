@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package kwarc.info.mmt.tptp
+package info.kwarc.mmt.tptp
 
 import tptp.TptpParserOutput.BinaryConnective._
 import tptp.TptpParserOutput.Quantifier._

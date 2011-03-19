@@ -1,7 +1,8 @@
-package kwarc.info.mmt.tptp
+package info.kwarc.mmt.tptp
 
 import scala.collection.mutable._
-import ptp.SimpleTptpParserOutput._
+import tptp.SimpleTptpParserOutput._
+import tptp.SimpleTptpParserOutput.Formula._
 
 class TptpToMMT {
 
