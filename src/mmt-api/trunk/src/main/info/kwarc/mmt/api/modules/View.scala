@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
 
 /**
@@ -27,7 +28,8 @@ abstract class View(doc : DPath, name : LocalPath, val from : MPath, val to : MP
   * @param to the codomain theory
   * @param meta the optional meta-morphism
   */
-class DeclaredView(doc : DPath, name : LocalPath, from : MPath, to : MPath) extends View(doc, name, from, to) with DeclaredLink {
+class DeclaredView(doc : DPath, name : LocalPath, from : MPath, to : MPath)
+   extends View(doc, name, from, to) with DeclaredModule[Assignment, LinkImport] with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_View
    def toNode =
       <view name={name.flat} cdbase={doc.toPath} from={from.toPath} to={to.toPath}>
@@ -45,7 +47,8 @@ class DeclaredView(doc : DPath, name : LocalPath, from : MPath, to : MPath) exte
    * @param to the codomain theory
    * @param df the definiens
    */
-class DefinedView(doc : DPath, name : LocalPath, from : MPath, to : MPath, val df : Morph) extends View(doc, name, from, to) with DefinedLink {
+class DefinedView(doc : DPath, name : LocalPath, from : MPath, to : MPath, val df : Morph)
+   extends View(doc, name, from, to) with DefinedModule[Morph] with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedView
    def toNode =
       <view name={name.flat} cdbase={doc.toPath} from={from.toPath} to={to.toPath}>
