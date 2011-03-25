@@ -7,10 +7,11 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.ontology._
 import scala.xml.{Node,NodeSeq}
 
-abstract class ContentMessage
+/*abstract class ContentMessage
 case class Add(e : ContentElement) extends ContentMessage
 case class Get(path : Path) extends ContentMessage
 case class Delete(path : Path) extends ContentMessage
+*/
 
 /**
  * A Library represents an MMT theory graph.
@@ -42,8 +43,8 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
       case mod ?? name => 
          val Mod = get(mod)
          (Mod, name) match {
-            case (t : Theory, !(n)) => t.getO(n).getOrElse(throw GetError(path + " not found"))
-            case (t : Theory, hd / tl) => t.getO(hd) match {
+            case (t : DeclaredTheory, !(n)) => t.getO(n).getOrElse(throw GetError(path + " not found"))
+            case (t : DeclaredTheory, hd / tl) => t.getO(hd) match {
                case Some(struc : Structure) => 
                   val sym = resolveAlias(getSymbol(struc.from ? tl, _ => "from didn't point to theory"))
                   struc.applyTo(sym)
@@ -55,10 +56,10 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
                case Some(a) => a
                case _ =>
                   val assig = getStructureAssignment(mod ? init)
-                  val sym = resolveAlias(getSymbol(domain(assig.target) ? last))
+                  val sym = resolveAlias(localGet(Morph.domain(assig.target)(this), last))
                   assig.applyTo(sym)
             }
-            case (l : DefinedLink, _) => getSymbol(l.from ? name) match {
+            case (l : DefinedLink, _) => localGet(l.from, name) match {
                case con : Constant => new ConstantAssignment(mod, name, con.toTerm * l.df) 
                case struc : Structure => new StructureAssignment(mod, name, struc.toMorph * l.df)
             }
@@ -104,7 +105,10 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
    protected def addUnchecked(e : ContentElement) = {
       (e.path, e) match {
          case (_, i : TheoImport) =>
-            getTheory(i.parent).add(i)
+            getTheory(i.parent) match {
+               case t : DeclaredTheory => t.add(i)
+               case _ => AddError("adding import to non-declared theory impossible")
+            }
          case (_, i : LinkImport) =>
             getLink(i.parent) match {
                case d : DeclaredLink => d.add(i)
@@ -117,7 +121,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
                catch {case GetError(_) => 
                  throw AddError("addition of " + e.toNode + " to " + mod + " impossible because parent does not exist")}
                (parent, e) match {
-                  case (t : Theory, s : Symbol) =>
+                  case (t : DeclaredTheory, s : Symbol) =>
                      t.add(s)
                   case (l : DeclaredLink, a : Assignment) =>
                      l.add(a)
@@ -139,7 +143,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
          case mod ?? name =>
             try {
                get(mod) match {
-                  case t : Theory => t.delete(name)
+                  case t : DeclaredTheory => t.delete(name)
                   case l : DeclaredLink => l.delete(name)
                   case _ => throw DeleteError("cannot delete from " + path)
                }
@@ -156,7 +160,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
       modules.clear
    }
    
-   /**
+/*   /**
     * Convenience method to check whether a theory is imported into another one.
     * @param from the domain theory
     * @param to the codomain theory
@@ -175,7 +179,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
    def importsTo(to : MPath) : List[ModuleObj] = {
       var res : List[ModuleObj] = Nil
       get(to) match {
-         case t : Theory =>
+         case t : DeclaredTheory =>
             t.getImports.foreach {
                case TheoImport(_, OMT(from)) => res = OMT(from) :: importsTo(from) ::: res
             }
@@ -194,19 +198,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
          case l : DefinedLink => Nil
       }
    } 
-   def normalize(t : Term) : Term = {t match {
-     case _ => null
-   }}
-   def domain(m : Morph) : MPath = m.first match {
-      case OMIDENT(OMT(path)) => path
-      case OML(path) => getLink(path).from
-   }
-
-   def codomain(m : Morph) : MPath = m.last match {
-      case OMIDENT(OMT(path)) => path
-      case OML(path) => getLink(path).to
-   }
-   
+*/
    def toNode : NodeSeq = modules.values.map(_.toNode).toList
    override def toString = modules.values.map(_.toString).mkString("","\n\n","")
 }
@@ -230,9 +222,11 @@ object Normalize extends Traverser[(Lookup,Morph)] {
 		case OML(p) =>
 			lazy val expandDef = {
 				val from = lib.getLink(p).from
-				lib.getConstant(from ? path.name).df match {
-			       case None => OMHID()
-				   case Some(d) => apply(d, (lib, OML(p)), con)
+				lib.globalGet(from, ID(path)) match {
+					case c : Constant => c.df match {
+                       case None => OMHID()
+                       case Some(d) => apply(d, (lib, OML(p)), con)
+					}
 				}
 			}
 			try {

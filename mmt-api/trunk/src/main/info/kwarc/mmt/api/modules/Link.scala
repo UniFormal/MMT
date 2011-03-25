@@ -9,9 +9,9 @@ import info.kwarc.mmt.api.utils._
  */
 trait Link {
    /** the domain of the link */
-   val from : MPath
+   val from : TheoryObj
    /** the codomain of the link */
-   val to : MPath
+   val to : TheoryObj
    protected def main_components : List[Content]
 }
 
@@ -20,21 +20,16 @@ trait Link {
   *
   * Declared links are constructed empty. {@link info.kwarc.mmt.api.modules.StatementSet[Assignment]} is derived to hold a set of name-indexed assignments.
   */
-trait DeclaredLink extends Link with StatementSet[Assignment, LinkImport] {
+trait DeclaredLink extends Link with Body[Assignment, LinkImport] {
    /** the set of assignments */
    //def isMapped(source : LocalPath) : Boolean = assignments.isDefinedAt(source)
-   protected def statementsToNode = valueList.map(_.toNode)
-   protected def statementsToString = valueList.map("\t" + _.toString).mkString("\n{", "\n", "\n}")
    def components = main_components ::: valueList
 }
 
   /**
    * A DeclaredLink represents an MMT link given by an existing morphism. 
    */
-trait DefinedLink extends Link {
+trait DefinedLink extends Link with ModuleDefiniens[Morph] {
    /** the definiens of the link */
-   val df : Morph
-   protected def dfToNode = <definition>{df.toOBJNode}</definition>
-   protected def dfToString = df.toString
    def components = main_components ::: List(df)
 }

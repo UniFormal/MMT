@@ -51,6 +51,8 @@ sealed abstract class Binary(val desc : String) {
 //symbol - symbol
 case object HasOccurrenceOfInType extends Binary("S refers to O in type")
 case object HasOccurrenceOfInDefinition extends Binary("S refers to O in definition")
+case object HasOccurrenceOfInCodomain extends Binary("S refers to O in codomain")
+case object HasOccurrenceOfInDomain extends Binary("S refers to O in domain")
 case object DependsOnTypeOf extends Binary("S depends on the type of O")
 case object DependsOnDefiniensOf extends Binary("S depends on the definiens of O")
 case object HasOccurrenceOfInTarget extends Binary("S refers to O")

@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.libraries._
 
 /**
@@ -8,7 +9,7 @@ import info.kwarc.mmt.api.libraries._
  * 
  * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory or link, respectively
  */
-abstract class Statement(val parent : MPath) extends ContentElement
+abstract class Declaration(val parent : TheoryObj) extends ContentElement
 
 /**
  * Declaration unifies MMT symbols and MMT assignments. These are the named statements.
@@ -16,6 +17,6 @@ abstract class Statement(val parent : MPath) extends ContentElement
  * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory or link, respectively
  * @param name the name of the symbol that is declared or instantiated, respectively
  */
-abstract class Declaration (parent : MPath, val name : LocalPath) extends Statement(parent) {
+abstract class NamedDeclaration(parent: TheoryObj, id: ID) extends Declaration(parent) {
    def path = parent ? name
 }

@@ -69,6 +69,22 @@ case class OMS(path : SPath) extends Term {
    def ^(sub : Substitution) = this
 }
 
+case class ID(origin: TheoryObj, name: LocalPath, via: Morph) extends Term {
+   def head = None
+   def ^(sub : Substitution) = this
+   def role = Role_IDRef
+   def components = {
+	   val viac = via match {case OMIDENT(_) => Omitted case _ => via}
+	   List(origin, StringLiteral(name.flat), viac)
+   }
+   def toNodeID(pos : Position) =
+     <om:OMID name={name.flat}>{origin.toNodeID(pos + 0)}{via.toNodeID(pos + 1)}</om:OMID> % pos.toIDAttr
+}
+
+object ID {
+	def apply(p: SPath) : ID = ID(OMT(p.parent), p.name, OMIDENT(OMT(p.parent)))
+}
+
 /**
  * An OMBINDC represents a binding with condition
  * @param binder the binder
@@ -249,7 +265,10 @@ case class OMSTR(value : String) extends Term {
 /**
  * A ModuleObj is a composed module level expressions.
  */
-sealed abstract class ModuleObj extends Obj
+sealed abstract class ModuleObj extends Obj {
+	def path : Path
+	def head : Option[Path] = Some(path)
+}
 
 /**
  * A Morph represents a morphism.
@@ -302,7 +321,7 @@ case class OMCOMP(initial : Morph, rest : Morph*) extends Morph {
    }
    def role = Role_composition
    def components = morphisms
-   def head = first.head
+   def path = first.path
    def toNodeID(pos : Position) =
       <om:OMA>{mmt.composition.toNode}
               {morphisms.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
@@ -314,7 +333,7 @@ case class OMCOMP(initial : Morph, rest : Morph*) extends Morph {
  * @param theory the theory
  */
 case class OMIDENT(theory : TheoryObj) extends AtomicMorph {
-   def head = theory.head
+   def path = theory.path
    def role = Role_identity
    def components = List(theory)
    def toNodeID(pos : Position) = <om:OMA>{mmt.identity.toNode}{theory.toNode}</om:OMA> % pos.toIDAttr
@@ -325,7 +344,6 @@ case class OMIDENT(theory : TheoryObj) extends AtomicMorph {
  * @param path the path to the link, structures are referenced by their module level path
  */
 case class OML(path : MPath) extends AtomicMorph {
-   def head = Some(path)
    def role = Role_ViewRef
    def components = path.components
    def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
@@ -351,7 +369,6 @@ sealed abstract class TheoryObj extends ModuleObj {
  * @param path the path to the theory
  */
 case class OMT(path : MPath) extends TheoryObj {
-   def head = Some(path)
    def role = Role_TheoryRef
    def components = path.components
    def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
@@ -476,4 +493,16 @@ object Obj {
      val name = xml.attr(N,"name")
      Path.parse(doc, mod, name, base)
   }
+}
+
+object Morph {
+	def domain(m : Morph)(implicit lib : Lookup) : TheoryObj = m.first match {
+      case OMIDENT(OMT(path)) => OMT(path)
+      case OML(path) => lib.getLink(path).from
+    }
+
+   def codomain(m : Morph)(implicit lib : Lookup) : TheoryObj = m.last match {
+      case OMIDENT(OMT(path)) => OMT(path)
+      case OML(path) => lib.getLink(path).to
+   }
 }

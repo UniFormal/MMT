@@ -12,7 +12,8 @@ abstract class Role(val bracketable : Boolean, override val toString : String, c
 }
 case object Role_Document            extends Role(false, "Document")
 case object Role_XRef                extends Role(false, "XRef")
-case object Role_Theory              extends Role(false, "Theory", ("name", 0), ("meta", 1))
+case object Role_DeclaredTheory      extends Role(false, "Theory", ("name", 0), ("meta", 1))
+case object Role_DefinedTheory       extends Role(false, "Theory", ("name", 0), ("definiens", 1))
 case object Role_View                extends Role(false, "View", ("name", 0), ("from", 1), ("to", 2))
 case object Role_DefinedView         extends Role(false, "DefinedView")
 case object Role_Notationset         extends Role(false, "Style")
@@ -34,6 +35,7 @@ case object Role_TheoryRef           extends Role(false, "theory")
 case object Role_ViewRef             extends Role(false, "view")
 case object Role_StructureRef        extends Role(false, "structure")
 case object Role_ConstantRef         extends Role(false, "constant")
+case object Role_IDRef               extends Role(false, "id")
 case object Role_VariableRef         extends Role(false, "variable")
 case object Role_hidden              extends Role(false, "Toplevel")
 case object Role_application         extends Role(true,  "application" )
@@ -53,7 +55,8 @@ object Role {
    def parse(s : String) = s match {
       case "Document" => Role_Document
       case "XRef" => Role_XRef
-      case "Theory" => Role_Theory
+      case "Theory" => Role_DeclaredTheory
+      case "DefinedTheory" => Role_DefinedTheory
       case "View" => Role_View
       case "DefinedView" => Role_DefinedView
       case "Style" => Role_Notationset

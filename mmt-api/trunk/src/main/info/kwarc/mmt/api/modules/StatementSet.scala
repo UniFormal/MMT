@@ -1,9 +1,10 @@
 package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
-import scala.xml.Node
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
+import scala.xml.Node
 
 /**
  * StatementSet represents the content of modules, i.e., a set of statements.
@@ -14,7 +15,7 @@ import info.kwarc.mmt.api.utils._
  * @param S symbols.Symbol for theories and symbols.Assignment for links
  * @param I modules.TheoImport for theories and modules.LinkImport for links
  */
-trait StatementSet[S <: Declaration, I <: Import] {
+trait Body[S <: Declaration, I <: Import] {
    //invariant: order contains the keys for which statements is defined in the order of addition
    protected val statements = new scala.collection.mutable.HashMap[LocalPath,S]
    protected var imports : List[I] = Nil
@@ -61,4 +62,6 @@ trait StatementSet[S <: Declaration, I <: Import] {
    }
    def isEmpty = statements.isEmpty
    def valueList = order
+   protected def statementsToNode = valueList.map(_.toNode)
+   protected def statementsToString = valueList.map("\t" + _.toString).mkString("\n{", "\n", "\n}")
 }

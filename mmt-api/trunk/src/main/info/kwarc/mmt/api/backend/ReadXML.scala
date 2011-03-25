@@ -73,37 +73,40 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
            val name = Path.parseName(xml.attr(m,"name"))
            val base = Path.parse(xml.attr(m,"base"), modParent)
            (base, m) match {
-	         case (base : DPath, <theory>{symbols @ _*}</theory>) =>
+	         case (base : DPath, <theory>{seq @ _*}</theory>) =>
 		         log("theory " + name + " found")
 		         val tpath = base ? name
-		         val meta = xml.attr(m, "meta") match {
-		            case "" => None
-		            case mt =>
-		               log("meta-theory " + mt + " found")
-		               Some(Path.parseM(mt, base))
+		         val (t: Theory, body: Option[Seq[Node]]) = seq match {
+		        	 case <definition>{d}</definition> =>
+		        	   val df = Obj.parseTheory(d, tpath)
+		        	   (new DefinedTheory(modParent, name, df), None)
+		        	 case symbols => 
+				         val meta = xml.attr(m, "meta") match {
+				            case "" => None
+				            case mt =>
+				               log("meta-theory " + mt + " found")
+				               Some(Path.parseM(mt, base))
+				         }
+				         (new DeclaredTheory(base, name, meta), Some(symbols))
 		         }
-		         val t = new Theory(base, name, meta)
-		         add(t)
-                 t.meta.foreach(m => add(PlainImport(m, tpath)))
-		         docParent map (dp => add(MRef(dp, tpath, true)))
-		         readSymbols(tpath, symbols)
+        	     add(t)
+        	     docParent map (dp => add(MRef(dp, tpath, true)))
+                 body.foreach(readSymbols(tpath, _))
 	         case (base : DPath, <view>{seq @ _*}</view>) =>
 	            log("view " + name + " found")
 	            val vpath = base ? name
 	            val from = Path.parseM(xml.attr(m, "from"), base)
 	            val to = Path.parseM(xml.attr(m, "to"), base)
-	            seq match {
+	            val (v: View, body : Option[Seq[Node]]) = seq match {
                   case <definition>{d}</definition> =>
 		            val df = Obj.parseMorphism(d, vpath)
-		            val v = new DefinedView(modParent, name, from, to, df)
-		            add(v)
-			        docParent map (dp => add(MRef(dp, vpath, true)))
+		            (new DefinedView(modParent, name, from, to, df), None)
 	              case assignments =>
-	 		        val v = new DeclaredView(base, name, from, to)
-			        add(v)
-			        docParent map (dp => add(MRef(dp, vpath, true)))
-			        readAssignments(vpath, to, assignments)
+	 		        (new DeclaredView(base, name, from, to), Some(assignments))
                 }
+	            add(v)
+	            docParent map (dp => add(MRef(dp, vpath, true)))
+			    body.foreach(readAssignments(vpath, to, _))
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			     val npath = base ? name
