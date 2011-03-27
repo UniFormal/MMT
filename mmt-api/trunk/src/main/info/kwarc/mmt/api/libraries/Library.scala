@@ -45,8 +45,8 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
          (Mod, name) match {
             case (t : DeclaredTheory, !(n)) => t.getO(n).getOrElse(throw GetError(path + " not found"))
             case (t : DeclaredTheory, hd / tl) => t.getO(hd) match {
-               case Some(struc : Structure) => 
-                  val sym = resolveAlias(getSymbol(struc.from ? tl, _ => "from didn't point to theory"))
+               case Some(struc : Structure) =>
+                  val sym = resolveAlias(localGet(struc.from, tl))
                   struc.applyTo(sym)
                case Some(_ : Constant) => throw GetError("local path continued after resolving to constant")
                case None => throw GetError(hd + " not found in " + mod)

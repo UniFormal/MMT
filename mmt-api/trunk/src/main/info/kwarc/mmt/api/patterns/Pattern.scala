@@ -10,7 +10,7 @@ import scala.io.Source
 
 // TODO: Adjust code for (optional) contexts for jokers and binders
 // TODO: Adjust ReadXML.scala accordingly
-class Pattern(parent : MPath, name : LocalPath, val tp : Option[Term], val df: Option[Term]) extends Symbol(parent, name) {
+class Pattern(val parent : MPath, val name : LocalName, val tp : Option[Term], val df: Option[Term]) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
@@ -23,7 +23,7 @@ class Pattern(parent : MPath, name : LocalPath, val tp : Option[Term], val df: O
      "Pattern for " + name.flat + (if (tp.isDefined) " " + tp.get.toString else "")
 }
 
-class Instance(parent : MPath, name : LocalPath, val pattern : SPath, val matches : List[Match]) extends Symbol(parent, name) {
+class Instance(val parent : MPath, val name : LocalName, val pattern : SPath, val matches : List[Match]) extends Symbol {
    def toNode = 
      <instance name={name.flat}>
      {matches map {

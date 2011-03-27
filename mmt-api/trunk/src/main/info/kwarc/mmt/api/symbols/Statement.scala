@@ -9,7 +9,9 @@ import info.kwarc.mmt.api.libraries._
  * 
  * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory or link, respectively
  */
-abstract class Declaration(val parent : TheoryObj) extends ContentElement
+abstract class Declaration extends ContentElement {
+   val parent : MPath
+}
 
 /**
  * Declaration unifies MMT symbols and MMT assignments. These are the named statements.
@@ -17,6 +19,7 @@ abstract class Declaration(val parent : TheoryObj) extends ContentElement
  * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory or link, respectively
  * @param name the name of the symbol that is declared or instantiated, respectively
  */
-abstract class NamedDeclaration(parent: TheoryObj, id: ID) extends Declaration(parent) {
+abstract class NamedDeclaration extends Declaration {
+   val name : LocalName
    def path = parent ? name
 }

@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.presentation._
 import scala.collection.mutable.Map
@@ -12,30 +13,36 @@ object Path {
       parse(d,m,n,base)
    }
    // merge(x,y) merges the URI or LocalPath x with the relative or absolute reference y
-   private def merge(bd : Option[DPath], d : DPath) = if (bd.isEmpty) d else DPath(bd.get.uri.resolve(d.uri)) 
-   private def merge(bl : Option[LocalPath], l : LocalRef) =
+   private def mergeD(bd : Option[DPath], d : DPath) : DPath = if (bd.isEmpty) d else DPath(bd.get.uri.resolve(d.uri)) 
+   private def mergeM(bl : Option[LocalPath], l : LocalRef) : LocalPath =
       if (bl.isEmpty || l.absolute)
-         LocalPath(l.fragments)
+         l.toLocalPath
       else
-         bl.get / LocalPath(l.fragments)
+         bl.get / l.toLocalPath
+   private def mergeS(bl : Option[LocalName], l : LocalRef) : LocalName =
+      if (bl.isEmpty || l.absolute)
+         l.toLocalName
+      else
+         bl.get / l.toLocalName
+   //TODO: parsing of includes in names
    /** turns an MMT-URI reference (d,m,n) into an MMT-URI relative to base (omitting a component is possible by making it empty) */
    def parse(d : xml.URI, m : String, n : String, base : Path) : Path = {
       //to make the case distinctions simpler, all omitted (= empty) components become None
       val doc = if (d.getScheme == null && d.getAuthority == null && d.getPath == "") None else Some(DPath(d))
-      def wrap(l : LocalRef) = if (l.fragments.isEmpty) None else Some(l)
+      def wrap(l : LocalRef) = if (l.segments.isEmpty) None else Some(l)
       val mod = wrap(parseLocal(m))
       val name = wrap(parseLocal(n))
       //get the base as a triple of three Options (first component will never be None)
       val (bdoc, bmod, bname) = base.toTriple
       //now explicit case distinctions to be sure that all cases are covered
       (bdoc, bmod, bname, doc, mod, name) match {
-         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? merge(bname, n)
-         case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? merge(bmod, m)
-         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? merge(bmod, m) ? n 
+         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeS(bname, n)
+         case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? mergeM(bmod, m)
+         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeM(bmod, m) ? n.toLocalName
          case (_       , _       , _, None,    None,    None   ) => base
-         case (_       , _       , _, Some(d), None,    None   ) => merge(bdoc, d)
-         case (_       , _       , _, Some(d), Some(m), None   ) => merge(bdoc, d) ? m
-         case (_       , _       , _, Some(d), Some(m), Some(n)) => merge(bdoc, d) ? m ? n
+         case (_       , _       , _, Some(d), None,    None   ) => mergeD(bdoc, d)
+         case (_       , _       , _, Some(d), Some(m), None   ) => mergeD(bdoc, d) ? m.toLocalPath
+         case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalPath ? n.toLocalName
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
    }
@@ -75,13 +82,26 @@ object Path {
          throw ParseError("cannot parse " + n + " (local path may not have empty component or end in slash)")
       LocalRef(l, ! relative)
    }
-   def parseName(n : String) : LocalPath = {
+   def parseName(n : String) : LocalRef = {
       val r = parseLocal(n)
       if (! r.absolute)
          throw ParseError("cannot parse " + n + " (local path may not start with slash)")
-      r.toLocalPath
+      r
    }
 }
+
+/**
+ * A LocalRef represents a qualified local possibly relative reference to an MMT module or symbol.
+ * @param segments the list of (in MMT: slash-separated) components
+ * @param absolute a flag whether the reference is absolute (in MMT: starts with a slash)
+ */
+case class LocalRef(segments : List[String], absolute : Boolean) {
+   def toLocalPath = LocalPath(segments)
+   def toLocalName = LocalName(segments.map(NamedStep(_)) : _*)
+   override def toString = segments.mkString(if (absolute) "/" else "","/","")
+}
+
+
 /**
  * A Path represents an MMT path. <p>
  * An MMT path refers to a document (doc), a module (doc?mod), or a symbol (doc?mod?sym).<p>
@@ -110,7 +130,7 @@ abstract class Path {
    def toPath : String = toPath(false)
    def toPathLong : String = toPath(true)
    def toPathEscaped = scala.xml.Utility.escape(toPath)
-   def toTriple : (Option[DPath], Option[LocalPath], Option[LocalPath]) = this match {
+   def toTriple : (Option[DPath], Option[LocalPath], Option[LocalName]) = this match {
       case doc ? mod ?? name => (Some(doc), Some(mod), Some(name))
       case doc ? mod => (Some(doc), Some(mod), None)
       case doc : DPath => (Some(doc), None, None)
@@ -132,7 +152,6 @@ case class DPath(uri : xml.URI) extends Path {
    def ^! = DPath(uri ^)
    def ?(n : String) : MPath = this ? new LocalPath(n)
    def ?(n : LocalPath) = MPath(this, n)
-   def ?(r : LocalRef) : MPath = this ? r.toLocalPath
 }
 
 /**
@@ -151,9 +170,8 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
    /** go down to a submodule */
    def /(n : LocalPath) = MPath(parent, name / n)
    /** go down to a symbol */
-   def ?(n : LocalPath) = SPath(this,n)
-   def ?(r : LocalRef) : SPath = this ? r.toLocalPath
-   def ?(n : String) : SPath = this ? LocalPath(List(n))
+   def ?(n : LocalName) = SPath(this,n)
+   def ?(n : String) : SPath = this ? LocalName(n)
    def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
 }
 
@@ -162,24 +180,23 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
  * @param parent the path of the parent module
  * @param name the name of the symbol
  */
-case class SPath(parent : MPath, name : LocalPath) extends Path {
-   def this(doc : DPath, module : LocalPath, name : LocalPath) = this(MPath(doc, module), name)
+case class SPath(parent : MPath, name: LocalName) extends Path {
    def doc = parent.doc
    def module = parent.name
-   def last = name.fragments.last
-   def /(n : LocalPath) = SPath(parent, name / n)
+   def last = name.steps.last.toPath
+   def /(n : String) = SPath(parent, name / n)
    /** go up to to next higher structure, stay if none */
-   def ^ : SPath = if (name.isNative) this else parent ? name.init
+   def ^ : SPath = if (name.length == 1) this else parent ? name.init
    /** go up to containing module */
    def ^^ : MPath = parent
    /** go up to containing document */
    def ^^^ : DPath = ^^.^^
-   def ^! = if (name.isNative) ^^ else ^
+   def ^! = if (name.length == 1) ^^ else ^
    def components : List[Content] = List(StringLiteral(doc.toString), StringLiteral(module.flat), StringLiteral(name.flat), StringLiteral(toPathEscaped))
 }
 
 /**
- * A LocalPath represents a local MMT module (relative to a document) or symbol (relative to a module) name.
+ * A LocalPath represents a local MMT module (relative to a document).
  * @param fragments the list of (in MMT: slash-separated) components
  */
 case class LocalPath(fragments : List[String]) {
@@ -198,14 +215,28 @@ case class LocalPath(fragments : List[String]) {
    override def toString = flat
 }
 
-/**
- * A LocalRef represents a qualified local possibly relative reference to an MMT module or symbol.
- * @param fragments the list of (in MMT: slash-separated) components
- * @param absolute a flag whether the reference is absolute (in MMT: starts with a slash)
- */
-case class LocalRef(fragments : List[String], absolute : Boolean) {
-   def toLocalPath = LocalPath(fragments)
-   override def toString = fragments.mkString(if (absolute) "/" else "","/","")
+case class LocalName(steps: List[QNStep]) {
+   def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
+   def /(n: String) : LocalName = this / LocalName(n)
+   def flat : String = steps.map(_.toPath).mkString("", "/", "")
+   def init = LocalName(steps.init)
+   def tail = LocalName(steps.tail)
+   def head = LocalName(List(steps.head))
+   def last = LocalName(List(steps.last))
+   def length = steps.length
+}
+object LocalName {
+   def apply(steps : QNStep*) : LocalName = LocalName(steps : _*)
+   def apply(n: String) : LocalName = LocalName(NamedStep(n)) 
+}
+abstract class QNStep {
+   def toPath : String
+}
+case class NamedStep(name: String) extends QNStep {
+   def toPath = name
+}
+case class IncludeStep(from: TheoryObj) extends QNStep {
+   def toPath = "[include " + from.toString + "]"
 }
 
 /** 
@@ -223,7 +254,7 @@ object ? {
  * Scala's pattern matching could also recognize a pattern "doc ? mod ? name". But then doc would have type Path, not DPath.
  */
 object ?? {
-   def unapply(p : Path) : Option[(MPath,LocalPath)] = p match {
+   def unapply(p : Path) : Option[(MPath,LocalName)] = p match {
       case p : SPath => Some((p ^^, p.name))
       case _ => None
    }
@@ -234,6 +265,7 @@ object ?? {
  */
 object / {
    def unapply(l : LocalPath) = if (l.isNative) None else Some((l.head,l.tail))
+   def unapply(l : LocalName) = if (l.length == 1) None else Some((l.head,l.tail))
 }
 
 
@@ -242,6 +274,7 @@ object / {
  */
 object \ {
    def unapply(l : LocalPath) = if (l.isNative) None else Some((l.init,l.last))
+   def unapply(l : LocalName) = if (l.length == 1) None else Some((l.init,l.last))
 }
 
 /** 
@@ -249,6 +282,7 @@ object \ {
  */
 object ! {
    def unapply(l : LocalPath) = if (l.isNative) Some(l.head) else None
+   def unapply(l : LocalName) = if (l.length == 1) Some(l.head) else None
 }
 
 /*

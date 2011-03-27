@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.presentation.{StringLiteral}
  * @param name the new name
  * @param forpath the path the new name abbreviates
  */
-class Alias(parent : MPath, name : LocalPath, val forpath : SPath) extends Symbol(parent, name) {
+class Alias(val parent : MPath, val name : LocalName, val forpath : SPath) extends Symbol {
   def role = info.kwarc.mmt.api.Role_Alias
   def components = List(StringLiteral(name.flat), OMS(forpath))
   

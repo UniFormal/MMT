@@ -12,7 +12,13 @@ trait Link {
    val from : TheoryObj
    /** the codomain of the link */
    val to : TheoryObj
-   protected def main_components : List[Content]
+   protected def innerNodes : Seq[scala.xml.Node]
+   protected def outerComponents : List[Content]
+   protected def innerComponents : List[Content]
+   protected def outerString : String
+   protected def innerString : String
+   def components = outerComponents ::: innerComponents
+   override def toString = outerString + " = " + innerString
 }
 
  /**
@@ -20,16 +26,9 @@ trait Link {
   *
   * Declared links are constructed empty. {@link info.kwarc.mmt.api.modules.StatementSet[Assignment]} is derived to hold a set of name-indexed assignments.
   */
-trait DeclaredLink extends Link with Body[Assignment, LinkImport] {
-   /** the set of assignments */
-   //def isMapped(source : LocalPath) : Boolean = assignments.isDefinedAt(source)
-   def components = main_components ::: valueList
-}
+trait DeclaredLink extends Link with Body[Assignment, LinkImport]
 
   /**
    * A DeclaredLink represents an MMT link given by an existing morphism. 
    */
-trait DefinedLink extends Link with ModuleDefiniens[Morph] {
-   /** the definiens of the link */
-   def components = main_components ::: List(df)
-}
+trait DefinedLink extends Link with ModuleDefiniens[Morph]

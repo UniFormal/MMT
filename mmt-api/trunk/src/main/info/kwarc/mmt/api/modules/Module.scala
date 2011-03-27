@@ -13,13 +13,14 @@ abstract class Module(val parent : DPath, val name : LocalPath) extends ContentE
    def path = parent ? name
 }
 
-trait DeclaredModule[S <: Declaration, I <: Import] extends Body[S,I]
+trait DeclaredModule[S <: NamedDeclaration, I <: Import] extends Body[S,I] {
+}
 
 trait DefinedModule[M <: ModuleObj] extends ModuleDefiniens[M]
 
 trait ModuleDefiniens[M <: ModuleObj] {
    val df : M
-   protected def dfToNode = <definition>{df.toOBJNode}</definition>
-   protected def dfToString = df.toString
-   def dfNode = <definition>{df.toNode}</definition>
+   protected def innerString = df.toString
+   protected def innerNodes = <definition>{df.toNode}</definition>
+   protected def innerComponents = List(df)
 }

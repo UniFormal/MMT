@@ -15,18 +15,18 @@ import scala.xml.Node
  * @param S symbols.Symbol for theories and symbols.Assignment for links
  * @param I modules.TheoImport for theories and modules.LinkImport for links
  */
-trait Body[S <: Declaration, I <: Import] {
+trait Body[S <: NamedDeclaration, I <: Import] {
    //invariant: order contains the keys for which statements is defined in the order of addition
-   protected val statements = new scala.collection.mutable.HashMap[LocalPath,S]
+   protected val statements = new scala.collection.mutable.HashMap[LocalName,S]
    protected var imports : List[I] = Nil
-   protected var order : List[Statement] = Nil
+   protected var order : List[Declaration] = Nil
    //invariant: "prefixes" stores all prefixes for all LocalPaths in the domain of "statements", together with a counter how often they occur
-   protected val prefixes = new scala.collection.mutable.HashMap[LocalPath,Int]
-   def get(name : LocalPath) : S = statements(name)
-   def getO(name : LocalPath) : Option[S] =
+   protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
+   def get(name : LocalName) : S = statements(name)
+   def getO(name : LocalName) : Option[S] =
       try {Some(get(name))}
       catch {case _ => None}
-   def get(name : String) : S = get(new LocalPath(name))
+   def get(name : String) : S = get(LocalName(name))
    def getImports : List[I] = imports
    def add(s : S) {
 	      val name = s.name
@@ -44,7 +44,7 @@ trait Body[S <: Declaration, I <: Import] {
       imports ::= i
       order = order ::: List(i)
    }
-   def delete(name : LocalPath) {
+   def delete(name : LocalName) {
       if (statements.isDefinedAt(name)) {
          //decrease counters for all prefixes of the deleted statement
          name.prefixes.foreach(p => {
@@ -62,6 +62,7 @@ trait Body[S <: Declaration, I <: Import] {
    }
    def isEmpty = statements.isEmpty
    def valueList = order
-   protected def statementsToNode = valueList.map(_.toNode)
-   protected def statementsToString = valueList.map("\t" + _.toString).mkString("\n{", "\n", "\n}")
+   protected def innerNodes = valueList.map(_.toNode)
+   protected def innerString = valueList.map("\t" + _.toString).mkString("\n{", "\n", "\n}")
+   protected def innerComponents = valueList
 }

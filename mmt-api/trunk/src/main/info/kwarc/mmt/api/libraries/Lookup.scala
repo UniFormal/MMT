@@ -29,12 +29,12 @@ abstract class Lookup(val report : frontend.Report) {
    def getPattern(path : Path, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
    
-   def localGet(th : TheoryObj, name : LocalPath) : Symbol = th match {
+   def localGet(th : TheoryObj, name : LocalName) : Symbol = th match {
 	   case OMT(path) => getSymbol(path ? name)
    }
    def globalGet(th : TheoryObj, id : ID) : Symbol
    
-   def localGet(m : Morph, name : LocalPath) : Assignment
+   def localGet(m : Morph, name : LocalName) : Assignment
    def globalGet(m : Morph, id : ID) : Assignment
    
    def localDomain(th : ModuleObj) : Iterator[LocalPath]

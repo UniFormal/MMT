@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 
 /**
@@ -9,7 +10,8 @@ import info.kwarc.mmt.api.objects._
  * @param to the module into which it is included
  * @param of the included module object
  */
-abstract class Import(parent : MPath, val of : ModuleObj) extends symbols.Statement(parent) {
+abstract class Import extends Declaration {
+   val of : ModuleObj
    def toNode = <include>{of.toOBJNode}</include>
    def components = List(of)
    val path = parent
@@ -22,7 +24,7 @@ abstract class Import(parent : MPath, val of : ModuleObj) extends symbols.Statem
  * @param par the codomain of the inclusion
  * @param thy the included theory
  */
-case class TheoImport(par : MPath, thy : TheoryObj) extends Import(par, thy)
+case class TheoImport(parent : MPath, of : TheoryObj) extends Import
 /**
  * A PlainImport represents an MMT inclusion between theories.<p>
  *
@@ -44,4 +46,4 @@ object PlainImport {
  * @param to the link
  * @param of the included morphism
  */
-case class LinkImport(par : MPath, mor : Morph) extends Import(par, mor)
+case class LinkImport(parent : MPath, of : Morph) extends Import
