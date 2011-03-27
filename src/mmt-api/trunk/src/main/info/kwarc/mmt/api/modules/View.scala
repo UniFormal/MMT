@@ -15,8 +15,22 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  * @param from the domain theory
  * @param to the codomain theory
  */
-abstract class View(doc : DPath, name : LocalPath, val from : MPath, val to : MPath) extends Module(doc, name) with Link {
-   protected def main_components = List(StringLiteral(name.flat), objects.OMT(from), objects.OMT(to))
+abstract class View(doc : DPath, name : LocalPath, val from : TheoryObj, val to : TheoryObj)
+         extends Module(doc, name) with Link {
+   protected def outerComponents = List(StringLiteral(name.flat), from, to)
+   protected def outerString = path + " : " + from.toString + " -> " + to.toString
+   def toNode = (from.asPath, to.asPath) match {
+	   case (Some(p), Some(q)) =>
+         <view name={name.flat} cdbase={doc.toPath} from={p.toPath} to={q.toPath}>
+           {innerNodes}
+         </view>
+	   case _ => 
+         <view name={name.flat} cdbase={doc.toPath}>
+           <from>{from.toOBJNode}</from><to>{to.toOBJNode}</to>
+           {innerNodes}
+         </view>
+	     
+   }
 }
 
  /**
@@ -28,14 +42,9 @@ abstract class View(doc : DPath, name : LocalPath, val from : MPath, val to : MP
   * @param to the codomain theory
   * @param meta the optional meta-morphism
   */
-class DeclaredView(doc : DPath, name : LocalPath, from : MPath, to : MPath)
-   extends View(doc, name, from, to) with DeclaredModule[Assignment, LinkImport] with DeclaredLink {
+class DeclaredView(doc : DPath, name : LocalPath, from : TheoryObj, to : TheoryObj)
+      extends View(doc, name, from, to) with DeclaredModule[Assignment, LinkImport] with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_View
-   def toNode =
-      <view name={name.flat} cdbase={doc.toPath} from={from.toPath} to={to.toPath}>
-        {statementsToNode}
-      </view>
-   override def toString = path + " : " + from.toPath + " -> " + to.toPath + " = " + statementsToString 
 }
 
   /**
@@ -47,12 +56,7 @@ class DeclaredView(doc : DPath, name : LocalPath, from : MPath, to : MPath)
    * @param to the codomain theory
    * @param df the definiens
    */
-class DefinedView(doc : DPath, name : LocalPath, from : MPath, to : MPath, val df : Morph)
-   extends View(doc, name, from, to) with DefinedModule[Morph] with DefinedLink {
+class DefinedView(doc : DPath, name : LocalPath, from : TheoryObj, to : TheoryObj, val df : Morph)
+      extends View(doc, name, from, to) with DefinedModule[Morph] with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedView
-   def toNode =
-      <view name={name.flat} cdbase={doc.toPath} from={from.toPath} to={to.toPath}>
-        {dfToNode}
-      </view>
-   override def toString = path + " : " + from.toPath + " -> " + to.toPath + " = " + dfToString
 }

@@ -14,8 +14,8 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  * @param df the optional definiens
  * @param role the role of the constant
  */
-class Constant(parent : MPath, name : LocalPath,
-               val tp : Option[Term], val df : Option[Term], val uv : Universe, val genFrom : Option[Symbol]) extends Symbol(parent, name) {
+class Constant(val parent : MPath, val name : LocalName,
+               val tp : Option[Term], val df : Option[Term], val uv : Universe, val genFrom : Option[Symbol]) extends Symbol {
   def toTerm = OMS(path)
 
   def role = info.kwarc.mmt.api.Role_Constant(uv)

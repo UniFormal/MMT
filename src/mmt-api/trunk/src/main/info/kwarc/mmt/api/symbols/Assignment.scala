@@ -3,15 +3,6 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation._
 
-/**
- * An Assignment represents an MMT assignment.<p>
- * 
- * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent link
- * @param name the name of the instantiated symbol
- */
-abstract class Assignment(parent : MPath, name : LocalPath) extends Declaration(parent, name) {
-}
-
  /**
   * A ConstantAssignment represents an MMT assignment to a constant.<p>
   * 
@@ -19,7 +10,7 @@ abstract class Assignment(parent : MPath, name : LocalPath) extends Declaration(
   * @param name the name of the instantiated symbol
   * @param target the term assigned to the symbol 
   */
-class ConstantAssignment(parent : MPath, name : LocalPath, val target : Term) extends Assignment(parent, name) {
+class ConstantAssignment(val parent : MPath, val name : LocalName, val target : Term) extends Assignment {
    def toNode = <maps name={name.flat}>{target.toOBJNode}</maps>
    override def toString = name + " |-> " + target.toString 
    def components = List(StringLiteral(name.flat), target)
@@ -33,7 +24,7 @@ class ConstantAssignment(parent : MPath, name : LocalPath, val target : Term) ex
    * @param name the name of the instantiated symbol
    * @param target the morphism assigned to the symbol 
    */
-class StructureAssignment(parent : MPath, name : LocalPath, val target : Morph) extends Assignment(parent, name) {
+class StructureAssignment(val parent : MPath, val name : LocalName, val target : Morph) extends Assignment {
    /**
     * computes induced assignments, compare the corresponding method in {@link info.kwarc.mmt.api.symbols.Structure}
     * @param sym a symbol of the domain theory of the instantiated structure
@@ -49,7 +40,7 @@ class StructureAssignment(parent : MPath, name : LocalPath, val target : Morph) 
    def role = info.kwarc.mmt.api.Role_StrAss
 }
 
-class Open(parent : MPath, name : LocalPath, val as : Option[String]) extends Assignment(parent, name) {
+class Open(val parent : MPath, val name : LocalName, val as : Option[String]) extends Assignment {
    def toNode = <open name={name.flat} as={as.getOrElse(null)}/>
    override def toString = "open " + name.flat + as.map(" " + _).getOrElse("")
    def components = List(StringLiteral(name.flat), as.map(StringLiteral(_)).getOrElse(Omitted))

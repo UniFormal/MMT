@@ -5,8 +5,8 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
 
-abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
-
+abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name) {
+}
 /**
  * A Theory represents an MMT theory.<p>
  * 
@@ -18,18 +18,18 @@ abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
  */
 class DeclaredTheory(doc : DPath, name : LocalPath, val meta : Option[MPath])
       extends Theory(doc, name) with DeclaredModule[Symbol, TheoImport] {
-   def components = StringLiteral(name.flat) :: meta.map(objects.OMT(_)).getOrElse(Omitted) :: valueList
    def role = Role_DeclaredTheory
+   def components = StringLiteral(name.flat) :: meta.map(objects.OMT(_)).getOrElse(Omitted) :: innerComponents
+   override def toString = path + meta.map(" : " + _.toPath).getOrElse("") + " = " + innerString
    def toNode =
       <theory name={name.flat} cdbase={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
-         {statementsToNode}
+         {innerNodes}
       </theory>
-   override def toString = path + " = " + valueList.map("\t" + _.toString).mkString("{\n","\n","\n}")
 }
 
 class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends Theory(doc, name) with DefinedModule[TheoryObj] {
-   def components = List(StringLiteral(name.flat), df) 
    def role = Role_DefinedTheory
-   def toNode = <theory name={name.flat} cdbase={doc.toPath}>{dfToNode}</theory>
-   override def toString = path + " = " + dfToString
+   def components = StringLiteral(name.flat) :: innerComponents
+   override def toString = path + " = " + innerString
+   def toNode = <theory name={name.flat} cdbase={doc.toPath}>{innerNodes}</theory>
 }

@@ -57,7 +57,7 @@ case class OMHID() extends Term {
  * @param path the path of the referenced content element
  */
 case class OMS(path : SPath) extends Term {
-   def symbol : LocalPath = path.name
+   def symbol : LocalName = path.name
    def module : LocalPath = path.^^.name
    def document : DPath = path ^^^
    def head = Some(path)
@@ -69,7 +69,7 @@ case class OMS(path : SPath) extends Term {
    def ^(sub : Substitution) = this
 }
 
-case class ID(origin: TheoryObj, name: LocalPath, via: Morph) extends Term {
+case class ID(origin: TheoryObj, name: LocalName, via: Morph) extends Term {
    def head = None
    def ^(sub : Substitution) = this
    def role = Role_IDRef
@@ -268,6 +268,7 @@ case class OMSTR(value : String) extends Term {
 sealed abstract class ModuleObj extends Obj {
 	def path : Path
 	def head : Option[Path] = Some(path)
+	def asPath : Option[MPath] = None
 }
 
 /**
@@ -349,6 +350,7 @@ case class OML(path : MPath) extends AtomicMorph {
    def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
    override def toString = "LINK(" + path.toPath + ")"
    def links = List(path) 
+   override def asPath = Some(path)
 }
 
 
@@ -373,6 +375,7 @@ case class OMT(path : MPath) extends TheoryObj {
    def components = path.components
    def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
    override def toString = "THY(" + path.name.flat + ")"
+   override def asPath = Some(path)
 }
 
 /**
@@ -458,7 +461,11 @@ object Obj {
          case <OMS/> =>
             parseOMS(N, base) match {
                case p : MPath => callback(p); OML(p)
-               case doc ? mod ?? str => val p = doc ? (mod / str); callback(p); OML(p)
+               case doc ? mod ?? str =>
+                  throw ParseError("not a well-formed link reference (case was removed): " + N.toString)
+                  /* val p = doc ? (mod / str)
+                  callback(p)
+                  OML(p) */
                case _ => throw ParseError("not a well-formed link reference: " + N.toString)
             }
          case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.composition.path =>

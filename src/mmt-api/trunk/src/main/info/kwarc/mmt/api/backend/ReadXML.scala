@@ -70,7 +70,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
          case scala.xml.Comment(_) =>
          case <metadata>{_*}</metadata> => 
          case _ =>
-           val name = Path.parseName(xml.attr(m,"name"))
+           val name = Path.parseName(xml.attr(m,"name")).toLocalPath
            val base = Path.parse(xml.attr(m,"base"), modParent)
            (base, m) match {
 	         case (base : DPath, <theory>{seq @ _*}</theory>) =>
@@ -95,8 +95,8 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	         case (base : DPath, <view>{seq @ _*}</view>) =>
 	            log("view " + name + " found")
 	            val vpath = base ? name
-	            val from = Path.parseM(xml.attr(m, "from"), base)
-	            val to = Path.parseM(xml.attr(m, "to"), base)
+	            val from = OMT(Path.parseM(xml.attr(m, "from"), base))
+	            val to = OMT(Path.parseM(xml.attr(m, "to"), base))
 	            val (v: View, body : Option[Seq[Node]]) = seq match {
                   case <definition>{d}</definition> =>
 		            val df = Obj.parseMorphism(d, vpath)
@@ -129,7 +129,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
       }
    }
    def readSymbols(thy : MPath, symbols : NodeSeq) {
-      def doCon(name : LocalPath, t : Option[Node], d : Option[Node], r : String) {
+      def doCon(name : LocalName, t : Option[Node], d : Option[Node], r : String) {
          log("constant " + name + " found")
          val spath = thy ? name
          val uv = Universe.parse(r)
@@ -138,7 +138,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
          val c = new Constant(thy, name, tp, df, uv, None)
          add(c)
       }
-      for (s <- symbols; name = Path.parseName(xml.attr(s,"name"))) {
+      for (s <- symbols; name = Path.parseName(xml.attr(s,"name")).toLocalName) {
          val (s2, md) = splitOffMetaData(s) 
          s2 match {
          case <constant><type>{t}</type><definition>{d}</definition></constant> =>
@@ -154,7 +154,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
          case <structure>{seq @ _*}</structure> =>
             log("structure " + name + " found")
             val spath = thy ? name
-            val from = Path.parseM(xml.attr(s, "from"), thy)
+            val from = OMT(Path.parseM(xml.attr(s, "from"), thy))
             seq match {
                case <definition>{d}</definition> =>
                   val df = Obj.parseMorphism(d, spath)
@@ -198,7 +198,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
    }
    def readAssignments(link : MPath, to : MPath, assignments : NodeSeq) {
       for (A <- assignments) {
-         val name = Path.parseLocal(xml.attr(A, "name")).toLocalPath
+         val name = Path.parseLocal(xml.attr(A, "name")).toLocalName
          val src = link ? name
          A match {
             case <conass>{t}</conass> =>

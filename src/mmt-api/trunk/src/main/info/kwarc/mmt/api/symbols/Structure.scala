@@ -16,8 +16,8 @@ import info.kwarc.mmt.api.presentation._
  * @param name the name of the view
  * @param from the domain theory
  */
-abstract class Structure(parent : MPath, name : LocalPath, val from : MPath) extends Symbol(parent, name) with Link {
-   val to = parent
+abstract class Structure extends Symbol with Link {
+   val to = OMT(parent)
    def toMorph = OML(parent / name)
    /**
     * computes induced symbols, compare the corresponding method in {@link info.kwarc.mmt.api.symbols.StructureAssignment}
@@ -30,7 +30,19 @@ abstract class Structure(parent : MPath, name : LocalPath, val from : MPath) ext
       case p : Pattern => null //TODO translate pattern
       case i : Instance => null //TODO translate instance
    }
-   protected def main_components = List(objects.OMS(path), objects.OMT(from))
+   protected def outerComponents = List(StringLiteral(name.flat), from)
+   protected def outerString = path + " : " + from.toString
+   def toNode = from.asPath match {
+	   case Some(p) =>
+         <structure name={name.flat} from={p.toPath}>
+           {innerNodes}
+         </structure>
+	   case _ =>
+         <structure name={name.flat}>
+           <from>{from.toOBJNode}</from>
+           {innerNodes}
+         </structure>
+   }
 }
 
 /**
@@ -41,12 +53,8 @@ abstract class Structure(parent : MPath, name : LocalPath, val from : MPath) ext
  * @param from the domain theory
  * @param meta the optional meta-morphism
  */
-class DeclaredStructure (parent : MPath, name : LocalPath, from : MPath) extends Structure(parent, name, from) with DeclaredLink {
-   def toNode =
-      <structure name={name.flat} from={from.toPath}>
-        {statementsToNode}
-      </structure>
-   override def toString = name + " : " + from.toPath + " = " + statementsToString 
+class DeclaredStructure(val parent : MPath, val name : LocalName, val from : TheoryObj)
+      extends Structure with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_Structure
 }
 
@@ -58,12 +66,8 @@ class DeclaredStructure (parent : MPath, name : LocalPath, from : MPath) extends
   * @param from the domain theory
   * @param df the definiens
   */
-class DefinedStructure (parent : MPath, name : LocalPath, from : MPath, val df : Morph) extends Structure(parent, name, from) with DefinedLink {
-   def toNode =
-      <structure name={name.flat} from={from.toPath}>
-        {dfToNode}
-      </structure>
-   override def toString = name + " : " + from.toPath + " = " + dfToString 
+class DefinedStructure (val parent : MPath, val name : LocalName, val from : TheoryObj, val df : Morph)
+      extends Structure with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedStructure
 }
  
