@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.libraries._
  * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory or link, respectively
  */
 abstract class Declaration extends ContentElement {
-   val parent : MPath
+   val parent : ModuleObj
 }
 
 /**
@@ -21,5 +21,5 @@ abstract class Declaration extends ContentElement {
  */
 abstract class NamedDeclaration extends Declaration {
    val name : LocalName
-   def path = parent ? name
+   def path = GlobalName(parent, name)
 }

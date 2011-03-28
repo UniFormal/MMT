@@ -21,8 +21,20 @@ trait Body[S <: NamedDeclaration, I <: Import] {
    protected var imports : List[I] = Nil
    protected var order : List[Declaration] = Nil
    //invariant: "prefixes" stores all prefixes for all LocalPaths in the domain of "statements", together with a counter how often they occur
-   protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
+   //protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
    def get(name : LocalName) : S = statements(name)
+   def getFirst(name: LocalName, error: String => Nothing) : (S, Option[LocalName]) =
+      getFirst(name, None, error(" no prefix of " + name + " is declared"))
+   def getFirst(name: LocalName, rest : Option[LocalName], error: => Nothing) : (S, Option[LocalName]) =
+      statements.get(name) match {
+         case Some(d) => (d, rest)
+         case None => name match {
+            case !(n) => error
+            case ln \ n =>
+              val r = rest match {case None => !(n) case Some(l) => n / l}
+              getFirst(ln, Some(r), error)
+         }
+      }
    def getO(name : LocalName) : Option[S] =
       try {Some(get(name))}
       catch {case _ => None}
@@ -30,13 +42,15 @@ trait Body[S <: NamedDeclaration, I <: Import] {
    def getImports : List[I] = imports
    def add(s : S) {
 	      val name = s.name
-	      val pr = name.prefixes
+	 /*     val pr = name.prefixes
 	      if (prefixes.isDefinedAt(name))
 	         throw AddError("a statement name with prefix " + name + " already exists")
 	      if (pr.exists(statements.isDefinedAt(_)))
 	         throw AddError("a statement name for a prefix of " + name + " already exists")
 	      //increase counters for all prefixes of the added statement
-	      pr.foreach(p => prefixes(p) = prefixes.getOrElse(p,0) + 1)
+	      pr.foreach(p => prefixes(p) = prefixes.getOrElse(p,0) + 1) */
+	      if (statements.isDefinedAt(name))
+	         throw AddError("a declaration for the name " + name + " already exists")
 	      statements(name) = s
 	      order = order ::: List(s)
    }
@@ -47,11 +61,11 @@ trait Body[S <: NamedDeclaration, I <: Import] {
    def delete(name : LocalName) {
       if (statements.isDefinedAt(name)) {
          //decrease counters for all prefixes of the deleted statement
-         name.prefixes.foreach(p => {
+         /*name.prefixes.foreach(p => {
             val i = prefixes(p)
             if (i > 1) prefixes(p) = i - 1
             else prefixes -= p
-         })
+         })*/
          statements -= name
          order = order.filter(_ != get(name))
       }

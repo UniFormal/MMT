@@ -69,20 +69,19 @@ case class OMS(path : SPath) extends Term {
    def ^(sub : Substitution) = this
 }
 
-case class ID(origin: TheoryObj, name: LocalName, via: Morph) extends Term {
-   def head = None
+case class OMID(gname: GlobalName) extends Term {
+   def parent = gname.parent
+   def name = gname.name
+   def head = None //TODO better head
    def ^(sub : Substitution) = this
    def role = Role_IDRef
-   def components = {
-	   val viac = via match {case OMIDENT(_) => Omitted case _ => via}
-	   List(origin, StringLiteral(name.flat), viac)
-   }
+   def components = List(parent, StringLiteral(name.flat))
    def toNodeID(pos : Position) =
-     <om:OMID name={name.flat}>{origin.toNodeID(pos + 0)}{via.toNodeID(pos + 1)}</om:OMID> % pos.toIDAttr
+     <om:OMID name={name.flat}>{parent.toNodeID(pos + 0)}</om:OMID> % pos.toIDAttr
 }
 
-object ID {
-	def apply(p: SPath) : ID = ID(OMT(p.parent), p.name, OMIDENT(OMT(p.parent)))
+object OMID {
+	def apply(p: SPath) : OMID = OMID(GlobalName(OMT(p.parent), p.name))
 }
 
 /**
@@ -269,6 +268,7 @@ sealed abstract class ModuleObj extends Obj {
 	def path : Path
 	def head : Option[Path] = Some(path)
 	def asPath : Option[MPath] = None
+	def %(n: LocalName) = GlobalName(this, n)
 }
 
 /**
@@ -284,49 +284,31 @@ sealed abstract class Morph extends ModuleObj {
     * @return the composition <code>that</code> ; <code>this</code>
     */
    def *(that : Morph) : Morph = that match {
-      case that : OMCOMP => OMCOMP(this, that.morphisms : _*)
+      case that : OMCOMP => OMCOMP(this :: that.morphisms)
       case _ => OMCOMP(this, that)
    }
-   /** returns the first atomic morphism in a composition, never returns an OMCOMP */
-   def first : AtomicMorph = normalize.initial.first
-   /** returns the last atomic morphism in a composition, never returns an OMCOMP */
-   def last : AtomicMorph = normalize match {
-	   case OMCOMP(f) => f.last
-	   case OMCOMP(f, r @ _*) => r.last.last
-   }
-   /** eliminates all nested occurrences of OMCOMP, identities */ 
-   def normalize : OMCOMP
    //morphisms do not contain free variables
    def ^ (sub : Substitution) = this
    def toOBJNode = <OMMOR xmlns:om={xml.namespace("om")}>{toNode}</OMMOR>
 }
 
-abstract class AtomicMorph extends Morph {
-   def normalize = OMCOMP(this)
-}
+abstract class AtomicMorph extends Morph
 
 /**
  * An OMComp represents the associative composition of a list of morphisms. Compositions may be nested.
  * @param morphisms the list of morphisms in diagram order
  */
-case class OMCOMP(initial : Morph, rest : Morph*) extends Morph {
-   def morphisms = initial :: rest.toList
-   override def *(that : Morph) = that match {
-      case that : OMCOMP => OMCOMP(initial, rest ++ that.morphisms : _*)
-      case _ => OMCOMP(initial, rest ++ List(that) : _*)
-   }
-   def normalize = {
-	   val OMCOMP(f,r @ _*) = initial.normalize
-	   val rs = rest.flatMap(_.normalize.morphisms)
-	   OMCOMP(f, r ++ rs : _*)
-   }
+case class OMCOMP(morphisms: List[Morph]) extends Morph {
    def role = Role_composition
    def components = morphisms
-   def path = first.path
+   def path = mmt.composition.path
    def toNodeID(pos : Position) =
       <om:OMA>{mmt.composition.toNode}
               {morphisms.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
       </om:OMA> % pos.toIDAttr
+}
+object OMCOMP {
+   def apply(ms: Morph*) : OMCOMP = OMCOMP(ms : _*)
 }
 
 /**
@@ -334,7 +316,7 @@ case class OMCOMP(initial : Morph, rest : Morph*) extends Morph {
  * @param theory the theory
  */
 case class OMIDENT(theory : TheoryObj) extends AtomicMorph {
-   def path = theory.path
+   def path = mmt.identity.path
    def role = Role_identity
    def components = List(theory)
    def toNodeID(pos : Position) = <om:OMA>{mmt.identity.toNode}{theory.toNode}</om:OMA> % pos.toIDAttr
@@ -353,6 +335,9 @@ case class OML(path : MPath) extends AtomicMorph {
    override def asPath = Some(path)
 }
 
+case class OMSTRUCT(gname: GlobalName) extends AtomicMorph {
+   def role = Role_StructureRef
+}
 
 /**
  * A TheoryObj represents a Theory object.
@@ -470,7 +455,7 @@ object Obj {
             }
          case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.composition.path =>
             val links = child.toList.tail.map(parseMorphism(_, nbase, callback))
-            OMCOMP(links.head, links.tail : _*)
+            OMCOMP(links)
          case <OMA>{child @ _*}</OMA> if child.length == 2 && parseOMS(child(0), base) == mmt.identity.path =>
             val theory = parseTheory(child(1), nbase, callback)
             OMIDENT(theory)
@@ -503,13 +488,17 @@ object Obj {
 }
 
 object Morph {
-	def domain(m : Morph)(implicit lib : Lookup) : TheoryObj = m.first match {
-      case OMIDENT(OMT(path)) => OMT(path)
+	def domain(m : Morph)(implicit lib : Lookup) : TheoryObj = m match {
+      case OMIDENT(t) => t
+      case OMCOMP(m :: _) => domain(m)
+      case OMCOMP(Nil) => throw ImplementationError("cannot infer domain of empty composition")
       case OML(path) => lib.getLink(path).from
     }
 
-   def codomain(m : Morph)(implicit lib : Lookup) : TheoryObj = m.last match {
-      case OMIDENT(OMT(path)) => OMT(path)
+   def codomain(m : Morph)(implicit lib : Lookup) : TheoryObj = m match {
+      case OMIDENT(t) => t
+      case OMCOMP(Nil) => throw ImplementationError("cannot infer codomain of empty composition")
+      case OMCOMP(l) => codomain(l.last)
       case OML(path) => lib.getLink(path).to
    }
 }
