@@ -17,8 +17,8 @@ import info.kwarc.mmt.api.presentation._
  * @param from the domain theory
  */
 abstract class Structure extends Symbol with Link {
-   val to = OMT(parent)
-   def toMorph = OML(parent / name)
+   val to = parent
+   def toMorph = OMSTRUCT(path)
    /**
     * computes induced symbols, compare the corresponding method in {@link info.kwarc.mmt.api.symbols.StructureAssignment}
     * @param sym a symbol of the domain theory of the structure
@@ -53,7 +53,7 @@ abstract class Structure extends Symbol with Link {
  * @param from the domain theory
  * @param meta the optional meta-morphism
  */
-class DeclaredStructure(val parent : MPath, val name : LocalName, val from : TheoryObj)
+class DeclaredStructure(val parent : TheoryObj, val name : LocalName, val from : TheoryObj)
       extends Structure with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_Structure
 }
@@ -66,7 +66,7 @@ class DeclaredStructure(val parent : MPath, val name : LocalName, val from : The
   * @param from the domain theory
   * @param df the definiens
   */
-class DefinedStructure (val parent : MPath, val name : LocalName, val from : TheoryObj, val df : Morph)
+class DefinedStructure (val parent : TheoryObj, val name : LocalName, val from : TheoryObj, val df : Morph)
       extends Structure with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedStructure
 }

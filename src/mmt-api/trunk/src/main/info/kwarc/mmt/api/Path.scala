@@ -207,37 +207,48 @@ case class LocalPath(fragments : List[String]) {
    def isNative = fragments.length == 1
    def init = LocalPath(fragments.init)
    def tail = LocalPath(fragments.tail)
-   def head = LocalPath(List(fragments.head))
-   def last = LocalPath(List(fragments.last))
+   def head = fragments.head
+   def last = fragments.last
    def length = fragments.length
    def prefixes : List[LocalPath] = if (length <= 1) List(this) else this :: tail.prefixes
    implicit def toList : List[String] = fragments
    override def toString = flat
 }
 
-case class LocalName(steps: List[QNStep]) {
+case class LocalName(steps: List[LNStep]) {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
    def /(n: String) : LocalName = this / LocalName(n)
    def flat : String = steps.map(_.toPath).mkString("", "/", "")
    def init = LocalName(steps.init)
    def tail = LocalName(steps.tail)
-   def head = LocalName(List(steps.head))
-   def last = LocalName(List(steps.last))
+   def head = steps.head
+   def last = steps.last
    def length = steps.length
 }
 object LocalName {
-   def apply(steps : QNStep*) : LocalName = LocalName(steps : _*)
-   def apply(n: String) : LocalName = LocalName(NamedStep(n)) 
+   def apply(steps: LNStep*) : LocalName = LocalName(steps : _*)
+   def apply(steps: String*) : LocalName = LocalName(steps.map(NamedStep(_)):_*) 
 }
-abstract class QNStep {
+abstract class LNStep {
    def toPath : String
+   def unary_! = LocalName(this)
+   def /(n: LocalName) = LocalName(this) / n
 }
-case class NamedStep(name: String) extends QNStep {
+case class NamedStep(name: String) extends LNStep {
    def toPath = name
 }
-case class IncludeStep(from: TheoryObj) extends QNStep {
+case class IncludeStep(from: TheoryObj) extends LNStep {
    def toPath = "[include " + from.toString + "]"
 }
+object LNEmpty {
+   def apply() = LocalName(Nil)
+   def unapply(n: LocalName) : Option[Unit] = n match {
+      case LocalName(Nil) => Some(())
+      case _ => None
+   }
+}
+
+case class GlobalName(parent: ModuleObj, name: LocalName) extends Path
 
 /** 
  * This permits the syntax doc ? mod in patterns. 
@@ -260,12 +271,20 @@ object ?? {
    }
 }
 
+object % {
+   def apply(p: ModuleObj, n: LocalName) : GlobalName = GlobalName(p,n)
+   def unapply(p : Path) : Option[(ModuleObj,LocalName)] = p match {
+      case GlobalName(p,n) => Some((p,n))
+      case _ => None
+   }
+}
+
 /** 
  * This permits the syntax head / tail in patterns. 
  */
 object / {
-   def unapply(l : LocalPath) = if (l.isNative) None else Some((l.head,l.tail))
-   def unapply(l : LocalName) = if (l.length == 1) None else Some((l.head,l.tail))
+   def unapply(l : LocalPath) : Option[(String,LocalPath)] = if (l.isNative) None else Some((l.head,l.tail))
+   def unapply(l : LocalName) : Option[(LNStep,LocalName)] = if (l.length == 1) None else Some((l.head,l.tail))
 }
 
 
@@ -273,16 +292,16 @@ object / {
  * This permits the syntax init \ last in patterns. 
  */
 object \ {
-   def unapply(l : LocalPath) = if (l.isNative) None else Some((l.init,l.last))
-   def unapply(l : LocalName) = if (l.length == 1) None else Some((l.init,l.last))
+   def unapply(l : LocalPath) : Option[(LocalPath,String)] = if (l.isNative) None else Some((l.init,l.last))
+   def unapply(l : LocalName) : Option[(LocalName,LNStep)] = if (l.length == 1) None else Some((l.init,l.last))
 }
 
 /** 
  * This permits the syntax !(n) to match atomic local names in patterns. 
  */
 object ! {
-   def unapply(l : LocalPath) = if (l.isNative) Some(l.head) else None
-   def unapply(l : LocalName) = if (l.length == 1) Some(l.head) else None
+   def unapply(l : LocalPath) : Option[String] = if (l.isNative) Some(l.head) else None
+   def unapply(l : LocalName) : Option[LNStep] = if (l.length == 1) Some(l.head) else None
 }
 
 /*

@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.objects._
  * @param name the name of the symbol
  */
 abstract class Symbol extends NamedDeclaration {
+   val parent : TheoryObj
 }
 
 /**
@@ -19,5 +20,6 @@ abstract class Symbol extends NamedDeclaration {
  * @param name the name of the instantiated symbol
  */
 abstract class Assignment extends NamedDeclaration {
+   val parent : Morph
    val target : Obj
 }

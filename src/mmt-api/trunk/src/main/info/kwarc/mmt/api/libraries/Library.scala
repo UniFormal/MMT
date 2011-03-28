@@ -34,13 +34,64 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
     * @param path the path to be dereferenced
     * @return the content element
     */
-   def get(path : Path) : ContentElement = path match {
+   def get(p : MPath) : Module = p match {
+      case doc ? !(mod) => trymodules(doc ? mod)
+      //case doc ? (t / !(str)) => getStructure(doc ? t ? str)	   
+      case doc ? _ => throw GetError("retrieval of complex module name " + p + " not possible")
+   }
+   def get(gname: GlobalName) : Declaration =
+      get(gname, msg => throw GetError("error while retrieving " + gname + ": " + msg))
+   def get(gname: GlobalName, error: String => Nothing) : Declaration = gname.parent match {
+      case OMT(p) => get(p) match {
+         case t: DefinedTheory =>
+            get(t.df % gname.name, error)
+         case t: DeclaredTheory =>
+            t.getFirst(gname.name, error) match {
+               case (d, None) => d
+               case (c: Constant, Some(ln)) => error("local name " + ln + " left after resolving to constant")
+               case (i: TheoImport, Some(ln)) => get(i.from % ln, error)
+               case (s: Structure, Some(ln)) => translate(get(s.from % ln, error), OMSTRUCT(s.path))
+            }
+         case _ => throw GetError("module exists but is not a theory: " + p)
+      }
+      case OML(p) => get(p) match {
+         case v : View => getInLink(v, gname.name, error) 
+         case _ => throw GetError("module exists but is not a view: " + p)
+      }
+      case OMSTRUCT(p) => get(p, error) match {
+         case s : Structure => getInLink(s, gname.name, error)
+         case _ => throw GetError("declaration exists but is not a structure: " + p)
+      }
+      case OMCOMP(hd::tl) =>
+         val a = get(hd % gname.name, error)
+         tl match {
+            case Nil => a
+            case _ => translate(a, OMCOMP(tl))
+         }
+      case OMIDENT(t) => get(t % gname.name) match {
+         case c: Constant => new ConstantAssignment(OMIDENT(t), gname.name, c.toTerm)
+         case s: Structure => new StructureAssignment(OMIDENT(t), gname.name, s.toMorph)
+         //case i: Include => new LinkImport(gname.parent, gname.name, c.toTerm)
+      }
+         
+   }
+   private def getInLink(l: Link, name: LocalName, error: String => Nothing) : Declaration = l match {
+      case l: DefinedLink =>
+         get(l.df % name, error)
+      case l: DeclaredLink =>
+         l.getFirst(name, error) match {
+            case (a, None) => a
+            case (a: ConstantAssignment, Some(ln)) => error("local name " + ln + " left after resolving to constant assignment")
+            case (a: StructureAssignment, Some(ln)) => get(a.target % ln, error)
+            case (a: LinkImport, Some(ln)) => get(a.target % ln, error)
+         }
+   }
+   def translate(d: Declaration, m : Morph) : Declaration
+	 /*  
+	   
+	   path match {
       case doc : DPath => throw ImplementationError("retrieval of document from library")
-      case doc ? !(mod) => 
-        trymodules(doc ? mod)
-      case doc ? (t / str) => getStructure(doc ? t ? str)
-      case doc ? _ => throw GetError("retrieval of complex module name " + path + " not possible")
-      case mod ?? name => 
+      case mod % name => 
          val Mod = get(mod)
          (Mod, name) match {
             case (t : DeclaredTheory, !(n)) => t.getO(n).getOrElse(throw GetError(path + " not found"))
@@ -66,19 +117,24 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
             case _ => throw GetError("module of " + path + " was found but points to neither theory or link or name was empty -- should be impossible")
          }
    }
+   */
+   /*
    def structureModToSym(p : MPath) : SPath = p match {
 	   case doc ? (t / str) => doc ? t ? str
-   }
+   }*/
    /** recursively resolves an Alias; result is not an Alias */
    def resolveAlias(sym : Symbol) : Symbol = sym match {
          case a : Alias => resolveAlias(getSymbol(a.forpath))
          case _ => sym
    }
-   /** returns the symbol from the argument symbol arose by a structure declaration */
-   def preImage(p : SPath) : Option[SPath] = p.name match {
+   /** returns the symbol from which the argument symbol arose by a structure declaration */
+   def preImage(p : GlobalName) : Option[GlobalName] = p.name match {
          case hd / tl =>
-            try {Some(getStructure(p.parent ? hd).from ? tl)}
-            catch {case _ => None}
+            try {
+               get(p.parent % !(hd)) match {
+                  case s : Structure => Some(s.from % tl)
+               }
+            } catch {case _ => None}
          case !(hd) => None
    }
    
@@ -104,6 +160,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
    // error checks of this method could be moved to Checker
    protected def addUnchecked(e : ContentElement) = {
       (e.path, e) match {
+         case (None, _) => AddError("adding to complex module expression impossible")
          case (_, i : TheoImport) =>
             getTheory(i.parent) match {
                case t : DeclaredTheory => t.add(i)

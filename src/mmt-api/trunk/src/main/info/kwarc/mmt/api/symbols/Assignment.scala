@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.presentation._
   * @param name the name of the instantiated symbol
   * @param target the term assigned to the symbol 
   */
-class ConstantAssignment(val parent : MPath, val name : LocalName, val target : Term) extends Assignment {
+class ConstantAssignment(val parent : Morph, val name : LocalName, val target : Term) extends Assignment {
    def toNode = <maps name={name.flat}>{target.toOBJNode}</maps>
    override def toString = name + " |-> " + target.toString 
    def components = List(StringLiteral(name.flat), target)
@@ -24,7 +24,7 @@ class ConstantAssignment(val parent : MPath, val name : LocalName, val target : 
    * @param name the name of the instantiated symbol
    * @param target the morphism assigned to the symbol 
    */
-class StructureAssignment(val parent : MPath, val name : LocalName, val target : Morph) extends Assignment {
+class StructureAssignment(val parent : Morph, val name : LocalName, val target : Morph) extends Assignment {
    /**
     * computes induced assignments, compare the corresponding method in {@link info.kwarc.mmt.api.symbols.Structure}
     * @param sym a symbol of the domain theory of the instantiated structure
@@ -40,7 +40,7 @@ class StructureAssignment(val parent : MPath, val name : LocalName, val target :
    def role = info.kwarc.mmt.api.Role_StrAss
 }
 
-class Open(val parent : MPath, val name : LocalName, val as : Option[String]) extends Assignment {
+class Open(val parent : Morph, val name : LocalName, val as : Option[String]) extends Assignment {
    def toNode = <open name={name.flat} as={as.getOrElse(null)}/>
    override def toString = "open " + name.flat + as.map(" " + _).getOrElse("")
    def components = List(StringLiteral(name.flat), as.map(StringLiteral(_)).getOrElse(Omitted))

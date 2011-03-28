@@ -24,7 +24,10 @@ abstract class Import extends Declaration {
  * @param par the codomain of the inclusion
  * @param thy the included theory
  */
-case class TheoImport(parent : MPath, of : TheoryObj) extends Import
+case class TheoImport(parent : TheoryObj, of : TheoryObj) extends Import {
+   def from = of
+   def to = parent
+}
 /**
  * A PlainImport represents an MMT inclusion between theories.<p>
  *
@@ -32,9 +35,9 @@ case class TheoImport(parent : MPath, of : TheoryObj) extends Import
  * @param to the codomain of the inclusion
  */
 object PlainImport {
-	def apply(from : MPath, to : MPath) = TheoImport(to, OMT(from))
+	def apply(from : MPath, to : MPath) = TheoImport(OMT(to), OMT(from))
 	def unapply(t: TheoImport) : Option[(MPath,MPath)] = t match {
-		case TheoImport(to, OMT(from)) => Some((from, to))
+		case TheoImport(OMT(to), OMT(from)) => Some((from, to))
 		case _ => None
 	}
 }
@@ -46,4 +49,6 @@ object PlainImport {
  * @param to the link
  * @param of the included morphism
  */
-case class LinkImport(parent : MPath, of : Morph) extends Import
+case class LinkImport(parent : Morph, of : Morph) extends Import {
+   def target = of
+}
