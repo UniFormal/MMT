@@ -48,7 +48,7 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.ABoxStore, repor
              case None => None
 	         case Some(_ : DPath) => None
 	         case Some(p : MPath) => try {sets(p).get(key)} catch {case _ => None}
-	         case Some(p : SPath) =>
+	         case Some(p : GlobalName) =>
 	            //get default notation, ...
 	            defaults.get(key) orElse
                    //... otherwise, if symbol arose from structure, get notation from preimage

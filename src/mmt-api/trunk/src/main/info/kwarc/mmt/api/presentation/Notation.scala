@@ -10,7 +10,7 @@ case class NotationImport(from : MPath, to : MPath) extends PresentationElement 
    val path = to
    val parent = to
    val role = Role_Include
-   val components = List(objects.OMT(from),objects.OMT(to))
+   val components = List(objects.OMMOD(from),objects.OMMOD(to))
    def toNode = <include from={from.toPath}/>
 }
 

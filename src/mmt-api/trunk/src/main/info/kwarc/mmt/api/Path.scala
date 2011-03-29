@@ -59,8 +59,8 @@ object Path {
          case _ => throw ParseError("MMT-URI may have at most two ?s: " + s)
       }
    }
-   def parseS(s : String, base : Path) : SPath = parse(s,base) match {
-      case p : SPath => p
+   def parseS(s : String, base : Path) : GlobalName = parse(s,base) match {
+      case p : GlobalName => p
       case p => throw ParseError("symbol path expected: " + p) 
    }
    def parseM(s : String, base : Path) : MPath = parse(s,base) match {
@@ -114,8 +114,6 @@ abstract class Path {
    def ^! : Path
    /** the list of ancestors paths starting with this path */
    def ancestors : List[Path] = if (this.^! == this) List(this) else this :: (this ^!).ancestors
-   /** the last component */
-   def last : String
    /** checks whether this is a prefix of that */
    def <=(that : Path) : Boolean = this == that || (that != that.^! && this <= that.^!)
    /** string representation of a Path
@@ -170,29 +168,31 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
    /** go down to a submodule */
    def /(n : LocalPath) = MPath(parent, name / n)
    /** go down to a symbol */
-   def ?(n : LocalName) = SPath(this,n)
-   def ?(n : String) : SPath = this ? LocalName(n)
+   def ?(n : LocalName) : GlobalName = OMMOD(this) % n
+   def ?(n : String) : GlobalName = this ? LocalName(n)
    def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
 }
 
+//TODO abolish SPath
 /**
  * An SPath represents an MMT symbol level path.
  * @param parent the path of the parent module
  * @param name the name of the symbol
  */
-case class SPath(parent : MPath, name: LocalName) extends Path {
+case class SPath(parent : MPath, name: LocalName) {
    def doc = parent.doc
    def module = parent.name
    def last = name.steps.last.toPath
    def /(n : String) = SPath(parent, name / n)
    /** go up to to next higher structure, stay if none */
-   def ^ : SPath = if (name.length == 1) this else parent ? name.init
+   def ^ : SPath = if (name.length == 1) this else SPath(parent, name.init)
    /** go up to containing module */
    def ^^ : MPath = parent
    /** go up to containing document */
    def ^^^ : DPath = ^^.^^
    def ^! = if (name.length == 1) ^^ else ^
-   def components : List[Content] = List(StringLiteral(doc.toString), StringLiteral(module.flat), StringLiteral(name.flat), StringLiteral(toPathEscaped))
+   def toPath = parent.toPath + "?" + name.flat
+   //def components : List[Content] = List(StringLiteral(doc.toString), StringLiteral(module.flat), StringLiteral(name.flat), StringLiteral(toPathEscaped))
 }
 
 /**
@@ -248,7 +248,11 @@ object LNEmpty {
    }
 }
 
-case class GlobalName(parent: ModuleObj, name: LocalName) extends Path
+case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
+   def doc = utils.mmt.mmtbase
+   def ^! = if (name.length == 1) parent.toMPath else parent % name.init
+
+}
 
 /** 
  * This permits the syntax doc ? mod in patterns. 

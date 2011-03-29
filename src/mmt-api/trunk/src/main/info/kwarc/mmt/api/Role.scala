@@ -31,8 +31,7 @@ case object Role_Include             extends Role(false, "Include")
 case object Role_StrToplevel         extends Role(false, "Toplevel")
 case object Role_Notation            extends Role(false, "Notation")
 case object Role_Variable            extends Role(false, "Variable")
-case object Role_TheoryRef           extends Role(false, "theory")
-case object Role_ViewRef             extends Role(false, "view")
+case object Role_ModRef              extends Role(false, "module")
 case object Role_StructureRef        extends Role(false, "structure")
 case object Role_ConstantRef         extends Role(false, "constant")
 case object Role_IDRef               extends Role(false, "id")
@@ -74,8 +73,7 @@ object Role {
       case "Open" => Role_Open
       case "Notation" => Role_Notation
       case "Toplevel" => Role_StrToplevel
-      case "theory" => Role_TheoryRef
-      case "view" => Role_ViewRef
+      case "module" => Role_ModRef
       case "structure" => Role_StructureRef
       case "constant" => Role_ConstantRef
       case "variable" => Role_VariableRef

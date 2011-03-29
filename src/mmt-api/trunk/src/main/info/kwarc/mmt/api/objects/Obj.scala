@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import scala.xml.{Node}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.presentation._
 import Context._
 import Substitution._
@@ -44,10 +45,10 @@ sealed abstract class Term extends Obj {
  * OMHID represents the hidden term.
  */
 case class OMHID() extends Term {
-   def toOMS = mmt.mmtsymbol("hidden")
+   def toOMS = OMID(mmt.mmtsymbol("hidden"))
    def toNodeID(pos : Position) = toOMS.toNodeID(pos)
    def ^ (sub : Substitution) = this
-   def head = None
+   def head = Some(mmt.mmtsymbol("hidden"))
    def role = Role_hidden
    def components = Nil
 }
@@ -56,8 +57,14 @@ case class OMHID() extends Term {
  * An OMS represents a reference to a content element.
  * @param path the path of the referenced content element
  */
-case class OMS(path : SPath) extends Term {
-   def symbol : LocalName = path.name
+object OMS {
+   def apply(path : SPath) : Term = OMID(OMMOD(path.parent) % path.name)
+   def unapply(t: Term) : Option[SPath] = t match {
+      case OMID(OMMOD(p) % ln) => Some(SPath(p,ln))
+      case _ => None
+   }
+}
+/*   def symbol : LocalName = path.name
    def module : LocalPath = path.^^.name
    def document : DPath = path ^^^
    def head = Some(path)
@@ -67,7 +74,7 @@ case class OMS(path : SPath) extends Term {
      <om:OMS base={document.toPath} module={module.flat} name={symbol.flat}/> % pos.toIDAttr
    override def toString = path.module.flat + "?" + path.name.flat
    def ^(sub : Substitution) = this
-}
+}*/
 
 case class OMID(gname: GlobalName) extends Term {
    def parent = gname.parent
@@ -76,12 +83,10 @@ case class OMID(gname: GlobalName) extends Term {
    def ^(sub : Substitution) = this
    def role = Role_IDRef
    def components = List(parent, StringLiteral(name.flat))
-   def toNodeID(pos : Position) =
-     <om:OMID name={name.flat}>{parent.toNodeID(pos + 0)}</om:OMID> % pos.toIDAttr
-}
-
-object OMID {
-	def apply(p: SPath) : OMID = OMID(GlobalName(OMT(p.parent), p.name))
+   def toNodeID(pos : Position) = parent match {
+      case OMMOD(doc ? mod) => <om:OMS base={doc.toPath} module={mod.flat} name={name.flat}/> % pos.toIDAttr
+      case par => <om:OMS name={name.flat}>{par.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
+   }
 }
 
 /**
@@ -99,7 +104,7 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
    override def presentation(lpar : LocalParams) = {
       val LocalParams(pos, ip, cont, io) = lpar
       val addedContext = head match {
-         case Some(path : SPath) => context.zipWithIndex.map {
+         case Some(path : GlobalName) => context.zipWithIndex.map {
            case (v, i) => VarData(v.name, path, pos + (i+1))
          }
          case _ => throw PresentationError("binder without a path: " + this)
@@ -139,11 +144,11 @@ object OMBIND {
  * @param via the applied morphism
  */
 case class OMM(arg : Term, via : Morph) extends Term {
-   def head = via.head
+   def head = Some(mmt.morphismapplication)
    def role = Role_morphismapplication
    def components = List(arg,via)
    def toNodeID(pos : Position) =
-     <om:OMA>{mmt.morphismapplication.toNode}{arg.toNodeID(pos + 0)}{via.toNodeID(pos + 1)}</om:OMA> % pos.toIDAttr
+     <om:OMA>{OMID(mmt.morphismapplication).toNode}{arg.toNodeID(pos + 0)}{via.toNodeID(pos + 1)}</om:OMA> % pos.toIDAttr
    def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub)
 }
 
@@ -211,7 +216,7 @@ case class OME(error : Term, args : List[Term]) extends Term {
  * @param key the key (This must be an OMS in OpenMath.)
  * @param value the value
  */
-case class OMATTR(arg : Term, key : OMS, value : Term) extends Term {
+case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def head = key.head
    def role = Role_attribution
    def components = List(key, arg, value)
@@ -264,11 +269,28 @@ case class OMSTR(value : String) extends Term {
 /**
  * A ModuleObj is a composed module level expressions.
  */
-sealed abstract class ModuleObj extends Obj {
+sealed trait ModuleObj extends Obj {
 	def path : Path
 	def head : Option[Path] = Some(path)
+	/**
+	 * returns Some(p) iff this module object refers to a real declaration with path p
+	 */
 	def asPath : Option[MPath] = None
 	def %(n: LocalName) = GlobalName(this, n)
+	/** converts the object into an MPath */
+	def toMPath : MPath = utils.mmt.mmtbase ? toString
+}
+
+/**
+ * A TheoryObj represents a Theory object.
+ * Theory objects are to theory modules as terms are to constants: Theory modules introduce named theories,
+ * theory objects refer to theory modules or to composed theories.
+ * References to theory modules are the only possible theory objects.
+ */
+sealed trait TheoryObj extends ModuleObj {
+   def ^ (sub : Substitution) : TheoryObj = this
+   def *(that : Morph) : TheoryObj = this
+   def toOBJNode = <OMTHY xmlns:om={xml.namespace("om")}>{toNode}</OMTHY>
 }
 
 /**
@@ -276,7 +298,7 @@ sealed abstract class ModuleObj extends Obj {
  * Morphisms are to links as terms are to constants.
  * Morphisms are formed from links, identity, and composition.
  */
-sealed abstract class Morph extends ModuleObj {
+sealed trait Morph extends ModuleObj {
    /**
     * composition in diagram order
     * no nested OMCOMPs are introduced 
@@ -288,11 +310,29 @@ sealed abstract class Morph extends ModuleObj {
       case _ => OMCOMP(this, that)
    }
    //morphisms do not contain free variables
-   def ^ (sub : Substitution) = this
+   def ^ (sub : Substitution) : Morph = this
    def toOBJNode = <OMMOR xmlns:om={xml.namespace("om")}>{toNode}</OMMOR>
 }
 
-abstract class AtomicMorph extends Morph
+sealed trait AtomicMorph extends Morph
+
+/**
+ * An OMMOD represents a reference to a module (which may be a theory or a morphism expression).
+ * @param path the path to the link, structures are referenced by their module level path
+ */
+case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
+   //need to override the methods for which two implementations are inherited
+   override def ^ (sub : Substitution) : OMMOD = this
+   override def *(that : Morph) : OMMOD = this
+   override def toOBJNode = throw ImplementationError("OMMOD should not be rendered as OBJ node; use URI instead")
+   override def toMPath = path
+   def role = Role_ModRef
+   def components = path.components
+   def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
+   override def toString = "MOD(" + path.toPath + ")"
+   def links = List(path) 
+   override def asPath = Some(path)
+}
 
 /**
  * An OMComp represents the associative composition of a list of morphisms. Compositions may be nested.
@@ -301,9 +341,9 @@ abstract class AtomicMorph extends Morph
 case class OMCOMP(morphisms: List[Morph]) extends Morph {
    def role = Role_composition
    def components = morphisms
-   def path = mmt.composition.path
+   def path = mmt.composition
    def toNodeID(pos : Position) =
-      <om:OMA>{mmt.composition.toNode}
+      <om:OMA>{OMID(mmt.composition).toNode}
               {morphisms.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
       </om:OMA> % pos.toIDAttr
 }
@@ -316,52 +356,23 @@ object OMCOMP {
  * @param theory the theory
  */
 case class OMIDENT(theory : TheoryObj) extends AtomicMorph {
-   def path = mmt.identity.path
+   def path = mmt.identity
    def role = Role_identity
    def components = List(theory)
-   def toNodeID(pos : Position) = <om:OMA>{mmt.identity.toNode}{theory.toNode}</om:OMA> % pos.toIDAttr
+   def toNodeID(pos : Position) = <om:OMA>{OMID(mmt.identity).toNode}{theory.toNode}</om:OMA> % pos.toIDAttr
 }
 
-/**
- * An OML represents a reference to a link.
- * @param path the path to the link, structures are referenced by their module level path
- */
-case class OML(path : MPath) extends AtomicMorph {
-   def role = Role_ViewRef
-   def components = path.components
-   def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
-   override def toString = "LINK(" + path.toPath + ")"
-   def links = List(path) 
-   override def asPath = Some(path)
-}
-
-case class OMSTRUCT(gname: GlobalName) extends AtomicMorph {
+case class OMDL(gname: GlobalName) extends AtomicMorph {
+   def path = gname
    def role = Role_StructureRef
+   def components = List(gname.parent, StringLiteral(gname.name.flat))
+   def toNodeID(pos : Position) = OMID(gname).toNodeID(pos)
+   override def asPath = gname match {
+	   case OMMOD(p) % LocalName(List(NamedStep(n))) => Some(p / n)
+	   case _ => None
+   }
 }
 
-/**
- * A TheoryObj represents a Theory object.
- * Theory objects are to theory modules as terms are to constants: Theory modules introduce named theories,
- * theory objects refer to theory modules or to composed theories.
- * References to theory modules are the only possible theory objects.
- */
-sealed abstract class TheoryObj extends ModuleObj {
-   def ^ (sub : Substitution) : TheoryObj = this
-   def *(that : Morph) : Obj = this
-   def toOBJNode = <OMTHY xmlns:om={xml.namespace("om")}>{toNode}</OMTHY>
-}
-
-/**
- * An OMT represents a reference to a theory module. 
- * @param path the path to the theory
- */
-case class OMT(path : MPath) extends TheoryObj {
-   def role = Role_TheoryRef
-   def components = path.components
-   def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
-   override def toString = "THY(" + path.name.flat + ")"
-   override def asPath = Some(path)
-}
 
 /**
  * Obj contains the parsing methods for objects.
@@ -370,7 +381,7 @@ case class OMT(path : MPath) extends TheoryObj {
 object Obj {
    //read basattr and compute new base
    private def newBase(N : Node, base : Path) : Path = {
-      val b = xml.attr(N,"mmtbase")
+      val b = xml.attr(N,"base")
       if (b == "") base else Path.parse(b, base)
    }
    //base: base reference, may be set by any object
@@ -399,7 +410,7 @@ object Obj {
             }
          case <OMV/> =>
             OMV(xml.attr(N,"name"))
-         case <OMA>{child @ _*}</OMA> if child.length == 3 && child(0) == mmt.morphismapplication.toNode =>
+         case <OMA>{child @ _*}</OMA> if child.length == 3 && parseOMS(child.head, base) == mmt.morphismapplication =>
             val arg = parseTerm(child(1), nbase, callback)
             val morph = parseMorphism(child(2), nbase, callback)
             OMM(arg, morph)
@@ -417,7 +428,7 @@ object Obj {
             doBinder(binder, context, None, body)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
             val k = parseTerm(key, nbase, callback)
-            if (! k.isInstanceOf[OMS])
+            if (! k.isInstanceOf[OMID])
                throw new ParseError("key must be OMS in " + N.toString)
             val v = parseTerm(value, nbase, callback)
             if (rest.length == 0)
@@ -425,7 +436,7 @@ object Obj {
             val n = if (rest.length == 1)
                rest(0) else <OMATTR>{rest}</OMATTR>
             val t = parseTerm(n, nbase, callback)
-            OMATTR(t, k.asInstanceOf[OMS], v)
+            OMATTR(t, k.asInstanceOf[OMID], v)
          case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s}</OMSTR> => OMSTR(s.toString)
@@ -445,18 +456,18 @@ object Obj {
          case <OMMOR>{mor}</OMMOR> => parseMorphism(mor, base, callback)
          case <OMS/> =>
             parseOMS(N, base) match {
-               case p : MPath => callback(p); OML(p)
+               case p : MPath => callback(p); OMMOD(p)
                case doc ? mod ?? str =>
                   throw ParseError("not a well-formed link reference (case was removed): " + N.toString)
                   /* val p = doc ? (mod / str)
                   callback(p)
-                  OML(p) */
+                  OMMOD(p) */
                case _ => throw ParseError("not a well-formed link reference: " + N.toString)
             }
-         case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.composition.path =>
+         case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.composition =>
             val links = child.toList.tail.map(parseMorphism(_, nbase, callback))
             OMCOMP(links)
-         case <OMA>{child @ _*}</OMA> if child.length == 2 && parseOMS(child(0), base) == mmt.identity.path =>
+         case <OMA>{child @ _*}</OMA> if child.length == 2 && parseOMS(child(0), base) == mmt.identity =>
             val theory = parseTheory(child(1), nbase, callback)
             OMIDENT(theory)
          case _ => throw ParseError("not a well-formed morphism: " + N.toString)
@@ -472,7 +483,7 @@ object Obj {
         case <OMTHY>{thy}</OMTHY> => parseTheory(thy, base, callback)
         case <OMS/> =>
            parseOMS(N, base) match {
-               case p : MPath => callback(p); OMT(p)
+               case p : MPath => callback(p); OMMOD(p)
                case _ => throw ParseError("not a well-formed theory reference: " + N.toString)
            }
         case _ => throw ParseError("not a well-formed theory: " + N.toString)
@@ -492,13 +503,22 @@ object Morph {
       case OMIDENT(t) => t
       case OMCOMP(m :: _) => domain(m)
       case OMCOMP(Nil) => throw ImplementationError("cannot infer domain of empty composition")
-      case OML(path) => lib.getLink(path).from
+      case OMMOD(path) => try {
+         lib.get(path) match {case l: Link => l.from}
+      } catch {
+         case _ => throw Invalid("not a well-formed morphism: " + m)
+      }
     }
 
    def codomain(m : Morph)(implicit lib : Lookup) : TheoryObj = m match {
       case OMIDENT(t) => t
       case OMCOMP(Nil) => throw ImplementationError("cannot infer codomain of empty composition")
       case OMCOMP(l) => codomain(l.last)
-      case OML(path) => lib.getLink(path).to
+      case OMMOD(path) => try {
+         lib.get(path) match {case l: Link => l.to}
+      } catch {
+         case _ => throw Invalid("not a well-formed morphism: " + m)
+      }
+      //case OMDL(t % ln) => //TODO 
    }
 }

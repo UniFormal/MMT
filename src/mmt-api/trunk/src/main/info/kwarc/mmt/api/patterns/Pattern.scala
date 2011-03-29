@@ -5,12 +5,13 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects.Context._
 import info.kwarc.mmt.api.objects.Substitution._
+import info.kwarc.mmt.api.utils._
 import scala.io.Source
 
 
 // TODO: Adjust code for (optional) contexts for jokers and binders
 // TODO: Adjust ReadXML.scala accordingly
-class Pattern(val parent : MPath, val name : LocalName, val tp : Option[Term], val df: Option[Term]) extends Symbol {
+class Pattern(val home: TheoryObj, val name : LocalName, val tp : Option[Term], val df: Option[Term]) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
@@ -23,7 +24,7 @@ class Pattern(val parent : MPath, val name : LocalName, val tp : Option[Term], v
      "Pattern for " + name.flat + (if (tp.isDefined) " " + tp.get.toString else "")
 }
 
-class Instance(val parent : MPath, val name : LocalName, val pattern : SPath, val matches : List[Match]) extends Symbol {
+class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : List[Match]) extends Symbol {
    def toNode = 
      <instance name={name.flat}>
      {matches map {
@@ -42,9 +43,9 @@ class Instance(val parent : MPath, val name : LocalName, val pattern : SPath, va
 }
 
 object PRep {
-	def apply(fn: Term, n: Int): Term = OMA(info.kwarc.mmt.api.utils.mmt.repetition,List(fn,OMI(n)))
+	def apply(fn: Term, n: Int): Term = OMA(OMID(mmt.repetition),List(fn,OMI(n)))
     def unapply(t: Term) : Option[(Term,Int)] = t match {
-		case OMA(info.kwarc.mmt.api.utils.mmt.repetition,List(fn,OMI(n))) => Some((fn,n.toInt))
+		case OMA(mmt.repetition,List(fn,OMI(n))) => Some((fn,n.toInt))
 		case _ => None
 	}
 }
@@ -60,7 +61,7 @@ object Pattern {
        val t : Option[Term] = if (pat.tp.isDefined) Some(merge(pat.tp.get,inst.matches)) else None
     */
     val d : Option[Term] = pat.df.map(mergeTerm(_,inst.matches))     
-    new Constant(inst.parent,inst.name,t,d,null,Some(inst))
+    new Constant(inst.home,inst.name,t,d,null,Some(inst))
   }
 
   /**
@@ -71,7 +72,7 @@ object Pattern {
    */
   def splitTerm(tm: Term, ctx: Context = Context()):(Context,Term) = { //TODO: If we have a fixed joker context, then we dont need splitting.
 	  tm match {
-	 	  case OMBIND(bin,con,bdy) if bin == info.kwarc.mmt.api.utils.mmt.jokerbinder => splitTerm(bdy,ctx ++ con)
+	 	  case OMBIND(bin,con,bdy) if bin == mmt.jokerbinder => splitTerm(bdy,ctx ++ con)
 	 	  case _ => (ctx,tm)
 	  }
   }
@@ -105,9 +106,9 @@ object Pattern {
 	 	  case OMA(fun,args) => 
 	 	  val expargs = 
 	 	 	  args flatMap {
-	 	    	 case OMA(fn,List(f,OMI(n))) if (fn == info.kwarc.mmt.api.utils.mmt.repetition) => 
+	 	    	 case OMA(fn,List(f,OMI(n))) if (fn == mmt.repetition) => 
 	 	    	 //Currently no nested repetitions, thus no recursion
-	 	           List.tabulate[Term](n.toInt)(i => OMA(info.kwarc.mmt.api.utils.mmt.index,List(OMI(i + 1),f)))
+	 	           List.tabulate[Term](n.toInt)(i => OMA(OMID(mmt.index),List(OMI(i + 1),f)))
 	 	    	 case arg => List(arg) //Currently no repetition in binders, thus no case for it
 	 	     }
 	 	   OMA(fun,expargs)
@@ -124,7 +125,7 @@ object Pattern {
 	 	  case OMA(fun,args) => 
 	 	  val expargs = 
 	 	 	  args flatMap {
-	 	    	 case OMA(fn,List(f,OMI(n))) if (fn == info.kwarc.mmt.api.utils.mmt.repetition) => //Currently no nested repetitions, thus no recursion
+	 	    	 case OMA(fn,List(f,OMI(n))) if (fn == mmt.repetition) => //Currently no nested repetitions, thus no recursion
 	 	         List.tabulate[Term](n.asInstanceOf[Int])(_ => f)
 	 	    	 case arg => List(arg) //Currently no repetition in binders, thus no case for it
 	 	     }
@@ -148,8 +149,8 @@ object Pattern {
   
   def substituteList(tm: Term, vr:String, tl: List[Term]): Term = {
 	   tm match {
-	 	  case OMA(info.kwarc.mmt.api.utils.mmt.index,List(OMI(i),fn)) => 
-	 	    OMA(info.kwarc.mmt.api.utils.mmt.index,List(OMI(i),fn ^ Substitution(Sub(vr,tl(i.toInt - 1)))))
+	 	  case OMA(mmt.index,List(OMI(i),fn)) => 
+	 	    OMA(OMID(mmt.index),List(OMI(i),fn ^ Substitution(Sub(vr,tl(i.toInt - 1)))))
 	 	  case OMA(fn,args) => OMA(substituteList(fn,vr,tl),args.map(arg => substituteList(arg,vr,tl)))
 	 	  case OMBIND(bin,con,bdy) => OMBIND(bin,substituteList(con,vr,tl),substituteList(bdy,vr,tl))
 	 	  case OMATTR(arg,key,value)=> OMATTR(substituteList(arg,vr,tl),key,substituteList(value,vr,tl))
@@ -170,7 +171,7 @@ object Pattern {
    
   def removeIndex(tm:Term): Term = {
 	   tm match {
-	  	   case OMA(info.kwarc.mmt.api.utils.mmt.index,List(OMI(i),fun)) => fun
+	  	   case OMA(OMID(mmt.index),List(OMI(i),fun)) => fun
 	  	   case OMA(fn,args) => OMA(removeIndex(fn),args.map(removeIndex))
 	  	   case OMBIND(bin,con,bdy) => OMBIND(bin,removeIndex(con),removeIndex(bdy))
 	 	   case OMATTR(arg,key,value)=> OMATTR(removeIndex(arg),key,removeIndex(value))

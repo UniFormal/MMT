@@ -42,23 +42,18 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
    def get(gname: GlobalName) : Declaration =
       get(gname, msg => throw GetError("error while retrieving " + gname + ": " + msg))
    def get(gname: GlobalName, error: String => Nothing) : Declaration = gname.parent match {
-      case OMT(p) => get(p) match {
+      case OMMOD(p) => get(p) match {
          case t: DefinedTheory =>
             get(t.df % gname.name, error)
          case t: DeclaredTheory =>
             t.getFirst(gname.name, error) match {
                case (d, None) => d
                case (c: Constant, Some(ln)) => error("local name " + ln + " left after resolving to constant")
-               case (i: TheoImport, Some(ln)) => get(i.from % ln, error)
-               case (s: Structure, Some(ln)) => translate(get(s.from % ln, error), OMSTRUCT(s.path))
+               case (l: DefinitionalLink, Some(ln)) => translate(get(l.from % ln, error), OMDL(l.path))
             }
-         case _ => throw GetError("module exists but is not a theory: " + p)
-      }
-      case OML(p) => get(p) match {
          case v : View => getInLink(v, gname.name, error) 
-         case _ => throw GetError("module exists but is not a view: " + p)
       }
-      case OMSTRUCT(p) => get(p, error) match {
+      case OMDL(p) => get(p, error) match {
          case s : Structure => getInLink(s, gname.name, error)
          case _ => throw GetError("declaration exists but is not a structure: " + p)
       }
@@ -70,12 +65,13 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
          }
       case OMIDENT(t) => get(t % gname.name) match {
          case c: Constant => new ConstantAssignment(OMIDENT(t), gname.name, c.toTerm)
-         case s: Structure => new StructureAssignment(OMIDENT(t), gname.name, s.toMorph)
-         //case i: Include => new LinkImport(gname.parent, gname.name, c.toTerm)
+         case l: DefinitionalLink => new StructureAssignment(OMIDENT(t), gname.name, l.toMorph)
       }
          
    }
+   //TODO definition expansion, partiality
    private def getInLink(l: Link, name: LocalName, error: String => Nothing) : Declaration = l match {
+      case l: IncludeLink => get(OMIDENT(l.from) % name)
       case l: DefinedLink =>
          get(l.df % name, error)
       case l: DeclaredLink =>
@@ -83,7 +79,6 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
             case (a, None) => a
             case (a: ConstantAssignment, Some(ln)) => error("local name " + ln + " left after resolving to constant assignment")
             case (a: StructureAssignment, Some(ln)) => get(a.target % ln, error)
-            case (a: LinkImport, Some(ln)) => get(a.target % ln, error)
          }
    }
    def translate(d: Declaration, m : Morph) : Declaration
@@ -121,12 +116,12 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
    /*
    def structureModToSym(p : MPath) : SPath = p match {
 	   case doc ? (t / str) => doc ? t ? str
-   }*/
+   }
    /** recursively resolves an Alias; result is not an Alias */
    def resolveAlias(sym : Symbol) : Symbol = sym match {
-         case a : Alias => resolveAlias(getSymbol(a.forpath))
+         case a : Alias => resolveAlias(get(a.forpath))
          case _ => sym
-   }
+   }*/
    /** returns the symbol from which the argument symbol arose by a structure declaration */
    def preImage(p : GlobalName) : Option[GlobalName] = p.name match {
          case hd / tl =>
@@ -138,6 +133,14 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
          case !(hd) => None
    }
    
+   private def getContainer(m: ModuleObj, error: String => Nothing) : ContentElement = m match {
+      case OMMOD(p) => get(p)
+      case OMDL(OMMOD(p) % !(n)) => get(OMMOD(p) % !(n), error) match {
+         case s: Structure => s
+         case _ => error("not a structure: " + m) 
+      }
+      case _ => error("not a theory, view, or structure: " + m)
+   }
    /**
     * Validates and, if successful, adds a ContentElement to the theory graph.
     * Note that the element already points to the intended parent element
@@ -158,55 +161,32 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
       }
    }
    // error checks of this method could be moved to Checker
-   protected def addUnchecked(e : ContentElement) = {
-      (e.path, e) match {
-         case (None, _) => AddError("adding to complex module expression impossible")
-         case (_, i : TheoImport) =>
-            getTheory(i.parent) match {
-               case t : DeclaredTheory => t.add(i)
-               case _ => AddError("adding import to non-declared theory impossible")
-            }
-         case (_, i : LinkImport) =>
-            getLink(i.parent) match {
-               case d : DeclaredLink => d.add(i)
-               case _ => throw AddError("adding link import to non-declared link impossible")
-            }
-         case (doc ? mod, m : Module) =>
-            modules(doc ? mod) = m
-         case (mod ?? _, _) =>
-            val parent = try {get(mod)}
-               catch {case GetError(_) => 
-                 throw AddError("addition of " + e.toNode + " to " + mod + " impossible because parent does not exist")}
-               (parent, e) match {
-                  case (t : DeclaredTheory, s : Symbol) =>
-                     t.add(s)
-                  case (l : DeclaredLink, a : Assignment) =>
-                     l.add(a)
-                  case (m, e) => throw AddError("addition of " + e.toNode + " to " + m.path + " impossible")
-               }
-         case _ => throw AddError("addition of " + e.toNode + " impossible")
-      }
+   protected def addUnchecked(e : ContentElement) = (e.path, e) match {
+      case doc : DPath => throw ImplementationError("addtion of document to library impossible")
+      case (doc ? mod, m : Module) =>
+         modules(doc ? mod) = m
+      case (par % ln, _) =>
+         val c = getContainer(par, msg => throw AddError("illegal parent: " + msg))
+         (c,e) match {
+            case (t: DeclaredTheory, e: Symbol) => t.add(e)
+            case (l: DeclaredLink, e: Assignment) => l.add(e)
+            case _ => throw AddError("only addition of symbols to declared theories or assignments to declared links allowed")
+         }
    }
+
    /**
     * Dereferences a path and deletes the found content element.
     * @param path the path to the element to be deleted
     */
    def delete(path : Path) {
       path match {
-         case doc : DPath => throw ImplementationError("deletion of document from library")
-         case doc ? !(mod) => modules -= doc ? mod
-         case doc ? t / !(i) => delete(doc ? t ? i)
-         case doc ? _ => throw DeleteError("deletion of complex module names not possible")
-         case mod ?? name =>
-            try {
-               get(mod) match {
-                  case t : DeclaredTheory => t.delete(name)
-                  case l : DeclaredLink => l.delete(name)
-                  case _ => throw DeleteError("cannot delete from " + path)
-               }
-            } catch {
-               case _  => throw DeleteError("cannot delete from " + path) 
-            }
+         case doc : DPath => throw ImplementationError("deletion of documents from library impossible")
+         case doc ? mod => modules -= doc ? mod
+         case par % ln => getContainer(par, msg => throw DeleteError("illegal parent: " + msg)) match {
+            case t: DeclaredTheory => t.delete(ln)
+            case l: DeclaredLink => l.delete(ln)
+            case _  => throw DeleteError("cannot delete from " + path)
+         }
       }
    }
    def update(e : ContentElement) {
@@ -225,7 +205,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
     */
    def imports(from : MPath, to : MPath) : Boolean =
       from == to ||
-      getTheory(to).getImports.exists {case TheoImport(_, OMT(f)) => imports(from, f)}
+      getTheory(to).getImports.exists {case TheoImport(_, OMMOD(f)) => imports(from, f)}
    
    /**
     * returns the set of imports (including a possible meta-theory) into a module
@@ -238,7 +218,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
       get(to) match {
          case t : DeclaredTheory =>
             t.getImports.foreach {
-               case TheoImport(_, OMT(from)) => res = OMT(from) :: importsTo(from) ::: res
+               case TheoImport(_, OMMOD(from)) => res = OMMOD(from) :: importsTo(from) ::: res
             }
             res.distinct
          case l : DeclaredLink =>
@@ -247,7 +227,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
                case LinkImport(_, mor) =>
                   res = mor :: res
                   mor match {
-                     case OML(l) => res = importsTo(l) ::: res
+                     case OMMOD(l) => res = importsTo(l) ::: res
                      case _ =>
                   }
             }
@@ -259,13 +239,13 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
    def toNode : NodeSeq = modules.values.map(_.toNode).toList
    override def toString = modules.values.map(_.toString).mkString("","\n\n","")
 }
-
+/*
 object Normalize extends Traverser[(Lookup,Morph)] {
 	def apply(cont : Continuation[(Lookup,Morph)], t: Term)(implicit con : Context, state : (Lookup,Morph)) : Term = {
 		val (lib, mor) = state
 		t match {
-           case OMM(arg, via) => cont(this, arg)(con, (lib, mor * via))
-		   case OMS(path) => applyMorph(lib, con, path, mor)
+         case OMM(arg, via) => cont(this, arg)(con, (lib, mor * via))
+		   case OMID(gname) => applyMorph(lib, con, path, mor)
 		   case t => cont(this,t)
 		}
 	}
@@ -276,13 +256,13 @@ object Normalize extends Traverser[(Lookup,Morph)] {
 	 */
 	def applyMorph(lib: Lookup, con : Context, path: SPath, mor: Morph) : Term = mor match {
 		case OMIDENT(_) => OMS(path)
-		case OML(p) =>
+		case OMMOD(p) =>
 			lazy val expandDef = {
 				val from = lib.getLink(p).from
-				lib.globalGet(from, ID(path)) match {
+				lib.globalGet(from, OMID(path)) match {
 					case c : Constant => c.df match {
                        case None => OMHID()
-                       case Some(d) => apply(d, (lib, OML(p)), con)
+                       case Some(d) => apply(d, (lib, OMMOD(p)), con)
 					}
 				}
 			}
@@ -302,9 +282,11 @@ object Normalize extends Traverser[(Lookup,Morph)] {
 				  case _ => throw Invalid("ill-formed term")					
 			   }
 		   }
-		case OMCOMP(f) => applyMorph(lib, con, path, f)
-		case OMCOMP(f, r, rr @ _*) =>
+		case OMCOMP(Nil) => OMS(path)
+		case OMCOMP(f::Nil) => applyMorph(lib, con, path, f)
+		case OMCOMP(f :: tl) =>
 		   val s = applyMorph(lib, con, path, f)
-		   apply(s, (lib, OMCOMP(r, rr : _*)), con)
+		   apply(s, (lib, OMCOMP(tl)), con)
 	}
 }
+*/

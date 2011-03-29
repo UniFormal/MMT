@@ -7,19 +7,17 @@ import info.kwarc.mmt.api.utils._
 import scala.xml.Node
 
 /**
- * StatementSet represents the content of modules, i.e., a set of statements.
+ * StatementSet represents the content of modules, i.e., a set of declarations.
  * 
  * It provides (i) a name-indexed hash map of symbol level Declarations, and a list of Imports.
  * It is mixed into theories and links to hold the symbols/imports and assignments/imports, respectively.
  * 
  * @param S symbols.Symbol for theories and symbols.Assignment for links
- * @param I modules.TheoImport for theories and modules.LinkImport for links
  */
-trait Body[S <: NamedDeclaration, I <: Import] {
+trait Body[S <: NamedDeclaration] {
    //invariant: order contains the keys for which statements is defined in the order of addition
    protected val statements = new scala.collection.mutable.HashMap[LocalName,S]
-   protected var imports : List[I] = Nil
-   protected var order : List[Declaration] = Nil
+   protected var order : List[S] = Nil
    //invariant: "prefixes" stores all prefixes for all LocalPaths in the domain of "statements", together with a counter how often they occur
    //protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
    def get(name : LocalName) : S = statements(name)
@@ -39,7 +37,6 @@ trait Body[S <: NamedDeclaration, I <: Import] {
       try {Some(get(name))}
       catch {case _ => None}
    def get(name : String) : S = get(LocalName(name))
-   def getImports : List[I] = imports
    def add(s : S) {
 	      val name = s.name
 	 /*     val pr = name.prefixes
@@ -53,10 +50,6 @@ trait Body[S <: NamedDeclaration, I <: Import] {
 	         throw AddError("a declaration for the name " + name + " already exists")
 	      statements(name) = s
 	      order = order ::: List(s)
-   }
-   def add(i : I) {
-      imports ::= i
-      order = order ::: List(i)
    }
    def delete(name : LocalName) {
       if (statements.isDefinedAt(name)) {

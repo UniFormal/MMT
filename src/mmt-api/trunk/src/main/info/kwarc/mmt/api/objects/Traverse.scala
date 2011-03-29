@@ -37,7 +37,7 @@ object PushMorphs extends Traverser[Morph] {
 		case OMS(path) => OMM(t, morph)
 		case t => cont(this,t)
 	}
-	def apply(t: Term, thy : info.kwarc.mmt.api.MPath) : Term = apply(t, OMIDENT(OMT(thy)))
+	def apply(t: Term, thy : info.kwarc.mmt.api.MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
 }
 
 object Substitute extends Traverser[Substitution] {

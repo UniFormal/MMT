@@ -30,7 +30,7 @@ case class LFError(msg : String) extends java.lang.Throwable(msg)
 object LF {
    val lfbase = new DPath(new xml.URI("http", "cds.omdoc.org", "/logical_frameworks/lf/lf.omdoc", null))
    val lftheory = lfbase ? "lf"
-   def constant(name : String) = OMS(lftheory ? name)
+   def constant(name : String) = OMID(lftheory ? name)
    val ktype = constant("type")
    val kind = constant("kind")
 }
@@ -127,7 +127,7 @@ object LFF extends Foundation {
   def check(s : Term, T : Term, G : Context)(implicit lib : Lookup) : Boolean = {
    s match {
 	   case Univ(1) => T == Univ(2)
-	   case OMS(path) => equal(lookuptype(path), T)
+	   case OMID(path) => equal(lookuptype(path), T)
 	   case OMV(name) => equal(T, G(name).asInstanceOf[TermVarDecl].tp.get) //TODO
 	   case Lambda(x, a, t) =>
 	     val G2 = G ++ OMV(x) % a
@@ -159,13 +159,13 @@ object LFF extends Foundation {
    */
  def equal (tm1 : Term, tm2 : Term)(implicit lib : Lookup) : Boolean = (tm1, tm2) match {
 	 case (OMV(x), OMV(y)) => x == y
-	 case (OMS(c), OMS(d)) => if (c == d) true else {
+	 case (OMID(c), OMID(d)) => if (c == d) true else {
 		lookupdef(c) match {
 			case None => lookupdef(d) match {
 				case None => false
-				case Some(t) => equal(OMS(c), t)
+				case Some(t) => equal(OMID(c), t)
 			}
-			case Some(t) => equal(OMS(d), t) //flipping the order so that if both c and d have definitions, d is expanded next 
+			case Some(t) => equal(OMID(d), t) //flipping the order so that if both c and d have definitions, d is expanded next 
 		}
 	 }
 	 case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => equal(a1,a2) && equal(t1,t2^(x2/x1))
@@ -191,12 +191,12 @@ object LFF extends Foundation {
   */
  def reduce(t : Term, G : Context)(implicit lib : Lookup) : Term = t match {
 	 case Apply(Lambda(x,a,t), s) => if (check(s,a,G)) reduce(t ^ (G.id ++ x/s), G) else throw LFError("ill-formed")
-	 case ApplySpine(OMS(p), args) => lookupdef(p) match {
+	 case ApplySpine(OMID(p), args) => lookupdef(p) match {
 		 case None => t
 		 case Some(d) => reduce(ApplySpine(d, args :_*), G)
 	 }
 	 case ApplySpine(_,_) => t
-	 case OMS(p) => lookupdef(p) match {
+	 case OMID(p) => lookupdef(p) match {
 		 case Some(d) => reduce(d, G)
 		 case None => t}
 	 case t => t
@@ -208,7 +208,7 @@ object LFF extends Foundation {
   def infer(s : Term, G : Context)(implicit lib : Lookup) : Term = {
    s match {
       case Univ(1) => Univ(2)
-      case OMS(path) => lookuptype(path)
+      case OMID(path) => lookuptype(path)
       case OMV(name) => G(name).asInstanceOf[TermVarDecl].tp.get //TODO
       case Lambda(name, tp, body) =>
           val G2 = G ++ OMV(name) % tp

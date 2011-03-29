@@ -9,9 +9,9 @@ import info.kwarc.mmt.api.presentation.{StringLiteral}
  * @param name the new name
  * @param forpath the path the new name abbreviates
  */
-class Alias(val parent : MPath, val name : LocalName, val forpath : SPath) extends Symbol {
+class Alias(val home: TheoryObj, val name : LocalName, val forpath : GlobalName) extends Symbol {
   def role = info.kwarc.mmt.api.Role_Alias
-  def components = List(StringLiteral(name.flat), OMS(forpath))
+  def components = List(StringLiteral(name.flat), OMID(forpath))
   
   def toNode =
      <alias name={name.flat} for={forpath.toPath}/>

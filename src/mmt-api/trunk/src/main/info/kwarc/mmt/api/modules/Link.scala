@@ -26,9 +26,15 @@ trait Link {
   *
   * Declared links are constructed empty. {@link info.kwarc.mmt.api.modules.StatementSet[Assignment]} is derived to hold a set of name-indexed assignments.
   */
-trait DeclaredLink extends Link with Body[Assignment, LinkImport]
+trait DeclaredLink extends Link with Body[Assignment]
 
   /**
    * A DeclaredLink represents an MMT link given by an existing morphism. 
    */
 trait DefinedLink extends Link with ModuleDefiniens[Morph]
+
+trait IncludeLink extends Link {
+   protected def innerNodes : Seq[scala.xml.Node] = Nil
+   protected def innerComponents : List[Content] = Nil
+   protected def innerString : String = ""
+}

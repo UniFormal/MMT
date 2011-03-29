@@ -21,7 +21,7 @@ abstract class VarDecl(val name : String) extends Content {
  * @param df optional definiens
  * @param attrs list of additional attributions, starting with the innermost
  */
-case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs : (OMS, Term)*) extends VarDecl(n) {
+case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs : (OMID, Term)*) extends VarDecl(n) {
    def ^(sub : Substitution) = TermVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
    def role = Role_Variable
    def components = List(StringLiteral(n), tp.getOrElse(Omitted), df.getOrElse(Omitted), varToOMATTR)
@@ -32,9 +32,9 @@ case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs :
    def toOMATTR : Term = {
       (tp, df) match {
          case (None, None) => varToOMATTR
-         case (Some(t), None) => OMATTR(varToOMATTR, mmt.mmttype, t)
-         case (None, Some(d)) => OMATTR(varToOMATTR, mmt.mmtdef, d)
-         case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, mmt.mmttype, t), mmt.mmtdef, d)
+         case (Some(t), None) => OMATTR(varToOMATTR, OMID(mmt.mmttype), t)
+         case (None, Some(d)) => OMATTR(varToOMATTR, OMID(mmt.mmtdef), d)
+         case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
    override def toString = varToOMATTR.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
@@ -54,7 +54,7 @@ object TermVarDecl {
          case v => doVar(v, None, None)
       }
    }
-   private def doVar(v : Term, tp : Option[Term], df : Option[Term], attrs : (OMS,Term)*) : TermVarDecl = {
+   private def doVar(v : Term, tp : Option[Term], df : Option[Term], attrs : (OMID,Term)*) : TermVarDecl = {
       v match {
          case OMV(n) => TermVarDecl(n, tp, df, attrs : _*)
          case OMATTR(tm, key, value) => doVar(tm, tp, df, (key, value) :: attrs.toList : _*)
