@@ -91,12 +91,12 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 		         }
         	     add(t)
         	     docParent map (dp => add(MRef(dp, tpath, true)))
-                 body.foreach(readSymbols(tpath, _))
+              body.foreach(readSymbols(tpath, OMMOD(tpath) % LNEmpty(), _))
 	         case (base : DPath, <view>{seq @ _*}</view>) =>
 	            log("view " + name + " found")
 	            val vpath = base ? name
-	            val from = OMT(Path.parseM(xml.attr(m, "from"), base))
-	            val to = OMT(Path.parseM(xml.attr(m, "to"), base))
+	            val from = OMMOD(Path.parseM(xml.attr(m, "from"), base))
+	            val to = OMMOD(Path.parseM(xml.attr(m, "to"), base))
 	            val (v: View, body : Option[Seq[Node]]) = seq match {
                   case <definition>{d}</definition> =>
 		            val df = Obj.parseMorphism(d, vpath)
@@ -106,7 +106,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                 }
 	            add(v)
 	            docParent map (dp => add(MRef(dp, vpath, true)))
-			    body.foreach(readAssignments(vpath, to, _))
+			      body.foreach(readAssignments(OMMOD(vpath), to % LNEmpty(), _))
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			     val npath = base ? name
@@ -128,13 +128,13 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
          }}
       }
    }
-   def readSymbols(thy : MPath, symbols : NodeSeq) {
+   def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq) {
+      val thy = OMMOD(tpath)
       def doCon(name : LocalName, t : Option[Node], d : Option[Node], r : String) {
          log("constant " + name + " found")
-         val spath = thy ? name
          val uv = Universe.parse(r)
-         val tp = t.map(Obj.parseTerm(_, thy))
-         val df = d.map(Obj.parseTerm(_, thy))
+         val tp = t.map(Obj.parseTerm(_, base))
+         val df = d.map(Obj.parseTerm(_, base))
          val c = new Constant(thy, name, tp, df, uv, None)
          add(c)
       }
@@ -153,31 +153,30 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
             doCon(name,None,None,xml.attr(s,"role"))
          case <structure>{seq @ _*}</structure> =>
             log("structure " + name + " found")
-            val spath = thy ? name
-            val from = OMT(Path.parseM(xml.attr(s, "from"), thy))
+            val from = OMMOD(Path.parseM(xml.attr(s, "from"), base))
             seq match {
                case <definition>{d}</definition> =>
-                  val df = Obj.parseMorphism(d, spath)
+                  val df = Obj.parseMorphism(d, base)
                   val i = new DefinedStructure(thy, name, from, df)
                   add(i)
                case assignments =>
                   val i = new DeclaredStructure(thy, name, from)
                   add(i)
-                  readAssignments(thy / name, thy, assignments)
+                  readAssignments(OMDL(thy % name), base, assignments)
             }
          case <alias/> =>
-            val forpath = Path.parseS(xml.attr(s, "for"), thy)
+            val forpath = Path.parseS(xml.attr(s, "for"), base)
             log("found alias " + name + " for " + forpath)
             add(new Alias(thy, name, forpath))
          case <include/> =>
-            val from = Path.parseM(xml.attr(s, "from"), thy)
+            val from = Path.parseM(xml.attr(s, "from"), base)
             log("include from " + from + " found")
-            add(PlainImport(from, thy))
+            add(PlainInclude(from, tpath))
          case <notation>{_*}</notation> =>
-            readNotations(thy, thy, s)
+            readNotations(tpath, base, s)
          case <pattern><type>{tp}</type></pattern> =>
             log("pattern with name " + name + " found")
-            val p = new Pattern(thy, name, Some(Obj.parseTerm(tp,thy)), None)
+            val p = new Pattern(thy, name, Some(Obj.parseTerm(tp,base)), None)
             add(p)
          case <instance>{ms @ _*}</instance> =>
              val lm = ms.toList map {
@@ -187,28 +186,27 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                            catch {case _ => throw ParseError("value must be natural number: " + a)}
                    if (n < 0) throw ParseError("value must be natural number: " + n)
                    Length(n)
-                case <match>{ls @ _*}</match> => OMOBJ(ls.toList map {l => Obj.parseTerm(l,thy)})
+                case <match>{ls @ _*}</match> => OMOBJ(ls.toList map {l => Obj.parseTerm(l,base)})
                 }
-            val inst = new Instance(thy,name,Path.parseS(xml.attr(s2,"pattern"),thy),lm)
+            val inst = new Instance(thy,name,Path.parseS(xml.attr(s2,"pattern"),base),lm)
             add(inst)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s)
          }
       }
    }
-   def readAssignments(link : MPath, to : MPath, assignments : NodeSeq) {
+   def readAssignments(link : Morph, base : Path, assignments : NodeSeq) {
       for (A <- assignments) {
          val name = Path.parseLocal(xml.attr(A, "name")).toLocalName
-         val src = link ? name
          A match {
             case <conass>{t}</conass> =>
                log("assignment for " + name + " found")
-               val tg = Obj.parseTerm(t, to)
+               val tg = Obj.parseTerm(t, base)
                val m = new ConstantAssignment(link, name, tg)
                add(m)
             case <strass>{t}</strass> =>
                log("assignment for " + name + " found")
-               val tg = Obj.parseMorphism(t, to)
+               val tg = Obj.parseMorphism(t, base)
                val m = new StructureAssignment(link, name, tg)
                add(m)
             case <open/> =>
@@ -217,9 +215,14 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                val m = new Open(link, name, as)
                add(m)
             case <include>{mor}</include> =>
-               val of = Obj.parseMorphism(mor, to)
+               val of = Obj.parseMorphism(mor, base)
                log("include of " + of + " found")
-               add(LinkImport(link, of))
+               val f = xml.attr(A, "from")
+               val from = if (f == "")
+                  Morph.domain(of)(controller.library) // throws Invalid if domain cannot be inferred
+               else
+                  OMMOD(Path.parseM(f, base))
+               add(IncludeAssignment(link, from, of))
             case scala.xml.Comment(_) =>
             case _ => throw ParseError("assignment expected: " + A)
          }

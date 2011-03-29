@@ -24,7 +24,7 @@ case class LocalParams(pos : Position, iPrec : Option[Precedence], context : Lis
  * @param name the variable name
  * @param binder the path of the binder 
  */
-case class VarData(name : String, binder : SPath, decl : Position)
+case class VarData(name : String, binder : GlobalName, decl : Position)
 
 /** A special presentable object that is wrapped around the toplevel of the presented expression if it is a declaration.
  * @param c the presented expression

@@ -43,7 +43,7 @@ abstract class View(doc : DPath, name : LocalPath, val from : TheoryObj, val to 
   * @param meta the optional meta-morphism
   */
 class DeclaredView(doc : DPath, name : LocalPath, from : TheoryObj, to : TheoryObj)
-      extends View(doc, name, from, to) with DeclaredModule[Assignment, LinkImport] with DeclaredLink {
+      extends View(doc, name, from, to) with DeclaredModule[Assignment] with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_View
 }
 

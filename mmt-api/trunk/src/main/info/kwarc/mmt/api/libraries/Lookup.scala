@@ -29,14 +29,6 @@ abstract class Lookup(val report : frontend.Report) {
    def getPattern(path : Path, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
    
-   def localGet(th : TheoryObj, name : LocalName) : Symbol = th match {
-	   case OMT(path) => getSymbol(path ? name)
-   }
-   def globalGet(th : TheoryObj, id : ID) : Symbol
-   
-   def localGet(m : Morph, name : LocalName) : Assignment
-   def globalGet(m : Morph, id : ID) : Assignment
-   
    def localDomain(th : ModuleObj) : Iterator[LocalPath]
 
    def globalDomain(th : ModuleObj) : Iterator[LocalPath]
@@ -68,5 +60,5 @@ abstract class Lookup(val report : frontend.Report) {
    //def importsFrom(from : MPath) : scala.collection.mutable.Set[MPath]
    def importsTo(to : MPath) : List[objects.ModuleObj] */
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
-   def preImage(p : SPath) : Option[SPath]
+   def preImage(p : GlobalName) : Option[GlobalName]
 }

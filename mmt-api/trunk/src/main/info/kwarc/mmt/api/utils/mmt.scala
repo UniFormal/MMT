@@ -6,7 +6,7 @@ object mmt {
    val baseURI = new xml.URI("http", "cds.omdoc.org", "/", null)
    val mmtbase = DPath(baseURI.resolve("omdoc/mmt.omdoc"))
    val mmtcd = mmtbase ? "mmt"
-   def mmtsymbol(name : String) = OMS(mmtcd ? name)
+   def mmtsymbol(name : String) = mmtcd ? name
    val mmttype = mmtsymbol("type")
    val mmtdef = mmtsymbol("definiens")
    val identity = mmtsymbol("identity")

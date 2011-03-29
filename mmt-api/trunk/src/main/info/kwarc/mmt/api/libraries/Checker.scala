@@ -32,7 +32,7 @@ abstract class Checker {
     *  @return the list of identifiers occurring in t
     */
    def checkTheo(t : TheoryObj)(implicit lib : Lookup) : List[Path] = t match {
-     case OMT(p) =>
+     case OMMOD(p) =>
        lookupTheory(lib, p)
        List(p)
    }
@@ -40,7 +40,7 @@ abstract class Checker {
 	  val todep = l match {
          case _ : View =>
             val ds = checkTheo(l.to).map(HasOccurrenceOfInCodomain(path,_))
-            IsView(path) :: ds  
+            IsView(path) :: ds
          case _ : Structure => List(IsStructure(path))
       }
       val fromdep = checkTheo(l.from).map(HasOccurrenceOfInDomain(path,_))
@@ -64,9 +64,9 @@ object NullChecker extends Checker {
 object GraphChecker extends Checker {
    def check(s : ContentElement)(implicit lib : Lookup) = {
       s match {
-	      case TheoImport(par, OMT(f)) =>
+	      case PlainInclude(t, f) =>
 	         lookupTheory(lib, f)
-             Success(List(HasOccurrenceOfInImport(par, f)))
+             Success(List(HasOccurrenceOfInImport(t, f)))
 	      case t : DeclaredTheory =>
 	         val mdep = t.meta match {
 	            case Some(m) => lookupTheory(lib, m); List(HasMeta(t.path, m))
@@ -96,24 +96,20 @@ class FoundChecker(foundation : Foundation) extends Checker {
     */
    def check(s : ContentElement)(implicit lib : Lookup) : CheckResult = try {
       s match {
-         case TheoImport(par, of) =>
-            lookupTheory(lib, par)
-            val occs = checkTheo(of)
-            val deps = occs.map(HasOccurrenceOfInImport(par, _))
-            Success(deps)
-         case LinkImport(par, of) =>
-            lib.getLink(par)
-            val (occs, _, _) = inferMorphism(of)
-            val deps = occs.map(p => HasOccurrenceOfInImport(par, p))
-            Success(deps)
-            //TODO: check for overlap between imported morphisms
+         case s: Declaration => s.home match {
+            case OMMOD(p) => p
+            case OMDL(OMMOD(p) % !(n)) => 
+            case _ => throw Invalid("adding declarations to composed theories not allowed")
+         }
+      }
+      /*s match {
          case t : DeclaredTheory =>
             if (! t.isEmpty) return Fail("new theory not empty")
             val d = List(IsTheory(t.path))
             t.meta match {
                case Some(mt) =>
                   lookupTheory(lib, mt)
-                  Reconstructed(List(t, PlainImport(mt, t.path)), HasMeta(t.path, mt) :: d)
+                  Reconstructed(List(t, PlainInclude(mt, t.path)), HasMeta(t.path, mt) :: d)
                case _ =>
                   Success(d)
             }
@@ -133,19 +129,26 @@ class FoundChecker(foundation : Foundation) extends Checker {
                return Fail("definition of defined link does not type-check: " + to + " is not imported into " + l.to)
             val deps = occs.map(HasOccurrenceOfInDefinition(l.path, _))
             Success(checkLink(l, s.path) ::: deps)
+         case l: IncludeLink => Success(Nil) //TODO
+/*         case TheoImport(par, of) =>
+            lookupTheory(lib, par)
+            val occs = checkTheo(of)
+            val deps = occs.map(HasOccurrenceOfInImport(par, _))
+            Success(deps) */
          case c : Constant =>
+            val parent : MPath = c.parent.asPath.getOrElse(throw Invalid("adding constants to composed theories not allowed"))
             val occtp = if (c.tp.isDefined) {
-               checkTerm(c.parent, c.tp.get, c.uv)
+               checkTerm(parent, c.tp.get, c.uv)
             } else
                Nil
-            val occdf = if (c.df.isDefined) checkTerm(c.parent, c.df.get, c.uv) else Nil
+            val occdf = if (c.df.isDefined) checkTerm(parent, c.df.get, c.uv) else Nil
             if (! foundation.typing(c.df, c.tp)) return Fail("definition of constant does not type-check")
             val deps = IsConstant(c.path) ::  
               occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
             Success(deps)
          case a : Alias =>
             lib.get(a.forpath)
-            if (lib.imports(OMT(a.forpath.parent), OMT(a.parent)))
+            if (lib.imports(a.forpath.parent, a.parent))
                Success(List(IsAlias(a.path), IsAliasFor(a.path, a.forpath)))
             else
                Fail("illegal alias")
@@ -160,7 +163,7 @@ class FoundChecker(foundation : Foundation) extends Checker {
             val defleq = source.df.isEmpty || a.target == OMHID() || foundation.equality(source.df.get, a.target)
             if (! defleq) return Fail("assignment violates definedness ordering")
             val occas = checkTerm(link.to, a.target, source.uv)
-            if (! foundation.typing(Some(a.target), source.tp.map(_ * OML(a.parent))))
+            if (! foundation.typing(Some(a.target), source.tp.map(_ * a.parent)))
                return Fail("assignment does not type-check")
             val deps = IsConAss(a.path) :: occas.map(HasOccurrenceOfInTarget(a.path, _))
             Success(deps)
@@ -172,18 +175,27 @@ class FoundChecker(foundation : Foundation) extends Checker {
             //TODO: checking of equality
             val deps = IsConAss(a.path) :: occs.map(HasOccurrenceOfInTarget(a.path, _))
             Success(deps)
+         case a: IncludeAssignment => Success(Nil) //TODO
+/*         case LinkImport(par, of) =>
+            lib.getLink(par)
+            val (occs, _, _) = inferMorphism(of)
+            val deps = occs.map(p => HasOccurrenceOfInImport(par, p))
+            Success(deps)*/
+            //TODO: check for overlap between imported morphisms
          case a : Open =>
             val str = lib.getStructure(a.parent)
             val source = try {lib.getSymbol(str.from ? a.name)}
                          catch {case _ => return Fail("open of non-existing constant")}
-            val name = a.as.map(new LocalPath(_)).getOrElse(a.name)
+            val name = a.as.map(LocalName(_)).getOrElse(a.name)
             val al = new Alias(str.to, name, str.to ? str.name / source.name)
             Reconstructed(List(a, al), List(IsOpen(a.path)))
          case p : Pattern => Success(Nil) // TODO
          case i : Instance => Reconstructed(List(Pattern.elaborate(i,lib)),Nil)
-      }
+      } */
+      Success(Nil)
    } catch {
       case Invalid(msg) => Fail("content element contains ill-formed object: " + msg)
+      case GetError(msg) => Fail("content element contains ill-formed object: get error: " + msg)
    }
    
    /**
@@ -196,23 +208,24 @@ class FoundChecker(foundation : Foundation) extends Checker {
     */
    def checkTerm(home : MPath, s : Term, univ : Universe)(implicit lib : Lookup) : List[Path] = {
       lookupTheory(lib, home)
-      checkTerm(OMT(home), Context(), s, IsEqualTo(univ)).distinct
+      checkTerm(OMMOD(home), Context(), s, IsEqualTo(univ)).distinct
    }
    //TODO redesign role checking, currently not done
    private def checkTerm(home : TheoryObj, context : Context, s : Term, uvcheck : UnivCheck)(implicit lib : Lookup) : List[Path] = {
       s match {
-         case OMS(path) =>
+         case OMID(path) =>
+            //val toccs = checkTheo(path.parent) TODO check theory?
             val s = try {lib.get(path)}
                     catch {case GetError(msg) =>
                                 throw Invalid("ill-formed constant reference: " + msg)
                     }
             s match {
                case a : Alias =>
-                  if (! lib.imports(OMT(a.parent), home))
+                  if (! lib.imports(a.home, home))
                      throw Invalid("constant " + s + " is not imported into home theory " + home)
                   List(path)
                case c : Constant =>
-                  if (! lib.imports(OMT(c.parent), home))
+                  if (! lib.imports(c.home, home))
                      throw Invalid("constant " + s + " is not imported into home theory " + home)
 /*                  uvcheck(c.uv) match {
                      case None => ()
@@ -274,13 +287,13 @@ class FoundChecker(foundation : Foundation) extends Checker {
      case OMIDENT(t) =>
         val occs = checkTheo(t)
         (occs, t, t)
-     case OML(m : MPath) =>
+     case OMMOD(m : MPath) =>
         val l = lib.getLink(m)
         (List(m), l.from, l.to)
-     case OMCOMP(hd) => inferMorphism(hd)
-     case OMCOMP(hd, tl @ _*) =>
+     case OMCOMP(hd :: Nil) => inferMorphism(hd)
+     case OMCOMP(hd :: tl) =>
         val (l1, r,s1) = inferMorphism(hd)
-        val (l2, s2,t) = inferMorphism(OMCOMP(tl.head, tl.tail : _*))
+        val (l2, s2,t) = inferMorphism(OMCOMP(tl))
         if (lib.imports(s1,s2))
            (l1 ::: l2, r, t)
         else
