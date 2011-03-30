@@ -14,7 +14,7 @@ import scala.xml.Node
  * 
  * @param S symbols.Symbol for theories and symbols.Assignment for links
  */
-trait Body[S <: NamedDeclaration] {
+trait Body[S <: Declaration] {
    //invariant: order contains the keys for which statements is defined in the order of addition
    protected val statements = new scala.collection.mutable.HashMap[LocalName,S]
    protected var order : List[S] = Nil
@@ -23,7 +23,7 @@ trait Body[S <: NamedDeclaration] {
    def get(name : LocalName) : S = statements(name)
    def getFirst(name: LocalName, error: String => Nothing) : (S, Option[LocalName]) =
       getFirst(name, None, error(" no prefix of " + name + " is declared"))
-   def getFirst(name: LocalName, rest : Option[LocalName], error: => Nothing) : (S, Option[LocalName]) =
+   private def getFirst(name: LocalName, rest : Option[LocalName], error: => Nothing) : (S, Option[LocalName]) =
       statements.get(name) match {
          case Some(d) => (d, rest)
          case None => name match {

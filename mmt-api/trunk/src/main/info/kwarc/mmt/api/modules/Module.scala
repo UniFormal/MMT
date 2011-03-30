@@ -13,7 +13,7 @@ abstract class Module(val parent : DPath, val name : LocalPath) extends ContentE
    def path = parent ? name
 }
 
-trait DeclaredModule[S <: NamedDeclaration] extends Body[S] {
+trait DeclaredModule[S <: Declaration] extends Body[S] {
 }
 
 trait DefinedModule[M <: ModuleObj] extends ModuleDefiniens[M]

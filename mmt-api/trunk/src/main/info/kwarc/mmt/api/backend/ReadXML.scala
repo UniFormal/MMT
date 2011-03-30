@@ -76,7 +76,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	         case (base : DPath, <theory>{seq @ _*}</theory>) =>
 		         log("theory " + name + " found")
 		         val tpath = base ? name
-		         val (t: Theory, body: Option[Seq[Node]]) = seq match {
+		         val (t, body) = seq match {
 		        	 case <definition>{d}</definition> =>
 		        	   val df = Obj.parseTheory(d, tpath)
 		        	   (new DefinedTheory(modParent, name, df), None)
@@ -97,7 +97,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	            val vpath = base ? name
 	            val from = OMMOD(Path.parseM(xml.attr(m, "from"), base))
 	            val to = OMMOD(Path.parseM(xml.attr(m, "to"), base))
-	            val (v: View, body : Option[Seq[Node]]) = seq match {
+	            val (v, body) = seq match {
                   case <definition>{d}</definition> =>
 		            val df = Obj.parseMorphism(d, vpath)
 		            (new DefinedView(modParent, name, from, to, df), None)
@@ -162,7 +162,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                case assignments =>
                   val i = new DeclaredStructure(thy, name, from)
                   add(i)
-                  readAssignments(OMDL(thy % name), base, assignments)
+                  readAssignments(OMDL(thy, name), base, assignments)
             }
          case <alias/> =>
             val forpath = Path.parseS(xml.attr(s, "for"), base)

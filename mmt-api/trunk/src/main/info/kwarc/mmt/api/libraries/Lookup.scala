@@ -10,7 +10,7 @@ abstract class Lookup(val report : frontend.Report) {
    def apply(path : Path) = get(path)
 
    def get(path : Path) : ContentElement
-   //typed access methods -- note that these cannot be polymorphic in the return type (see below)
+   //typed access methods
    private def defmsg(path : Path) : String = "no element of required type found at " + path
    def getTheory(path : Path, msg : Path => String = defmsg) : Theory =
      get(path) match {case e : Theory => e case _ => throw GetError(msg(path))}
@@ -28,7 +28,16 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case e : StructureAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : Path, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
-   
+   /* The above methods should be polymorphic in the return type like this:
+      def get[A <: ContentElement](p : Path) : A = {
+         get(p) match {
+            case a : A => a
+            case _ => throw GetError("bad role")
+         }
+      }
+   *  But we cannot case-split over an abstract type parameter due to Scala's compilation-time type erasure.
+   */
+   /*
    def localDomain(th : ModuleObj) : Iterator[LocalPath]
 
    def globalDomain(th : ModuleObj) : Iterator[LocalPath]
@@ -40,21 +49,12 @@ abstract class Lookup(val report : frontend.Report) {
    def globalImports(th : TheoryObj) : Iterator[TheoryObj]
    
    def globalImports(m : Morph) : Iterator[Morph]
+    */
    
    def imports(from: TheoryObj, to: TheoryObj) : Boolean
-   
-   def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
-   /** It should be like this.
-    *  But we cannot case-split over an abstract type parameter due to Scala's compilation-time type erasure.
-   def get[A <: ContentElement](p : Path) : A = {
-      get(p) match {
-         case a : A => a
-         case _ => throw GetError("bad role")
-      }
-   }
-   */
-   def structureModToSym(p : MPath) : SPath
-   def resolveAlias(s : Symbol) : Symbol
+   //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
+   //def structureModToSym(p : MPath) : SPath
+   //def resolveAlias(s : Symbol) : Symbol
    
  /*  def imports(from : MPath, to : MPath) : Boolean
    //def importsFrom(from : MPath) : scala.collection.mutable.Set[MPath]

@@ -98,7 +98,7 @@ class FoundChecker(foundation : Foundation) extends Checker {
       s match {
          case s: Declaration => s.home match {
             case OMMOD(p) => p
-            case OMDL(OMMOD(p) % !(n)) => 
+            case OMDL(OMMOD(p), !(n)) => 
             case _ => throw Invalid("adding declarations to composed theories not allowed")
          }
       }
@@ -213,6 +213,10 @@ class FoundChecker(foundation : Foundation) extends Checker {
    //TODO redesign role checking, currently not done
    private def checkTerm(home : TheoryObj, context : Context, s : Term, uvcheck : UnivCheck)(implicit lib : Lookup) : List[Path] = {
       s match {
+         case OMID((h: TheoryObj) % (IncludeStep(from) / ln)) =>
+            if (! lib.imports(from, h))
+               throw Invalid(from + " is not imported into " + h + " in " + s)
+            checkTerm(home, context, OMID(from % ln), uvcheck)
          case OMID(path) =>
             //val toccs = checkTheo(path.parent) TODO check theory?
             val s = try {lib.get(path)}
@@ -266,7 +270,7 @@ class FoundChecker(foundation : Foundation) extends Checker {
                throw Invalid("codomain of morphism is not imported into expected home theory")
             val occa = checkTerm(from, context, arg, uvcheck) // using the same context because variable attributions are ignored anyway
             occm ::: occa
-         case OMHID() => Nil//TODO roles
+         case OMHID => Nil//TODO roles
          case OME(err, args) =>
             val occe = checkTerm(home, context, err, IsEqualTo(Error))
             val occa = args.flatMap(checkTerm(home, context, _, IsSemantic))
@@ -290,6 +294,14 @@ class FoundChecker(foundation : Foundation) extends Checker {
      case OMMOD(m : MPath) =>
         val l = lib.getLink(m)
         (List(m), l.from, l.to)
+     case OMDL(to, name) =>
+        val occs = checkTheo(to)
+        val from = lib.get(to % name) match {
+           case l: DefinitionalLink => l.from
+           case _ => throw Invalid("invalid morphism " + m)
+        }
+        (occs, from, to)
+     case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
      case OMCOMP(hd :: Nil) => inferMorphism(hd)
      case OMCOMP(hd :: tl) =>
         val (l1, r,s1) = inferMorphism(hd)
@@ -298,6 +310,9 @@ class FoundChecker(foundation : Foundation) extends Checker {
            (l1 ::: l2, r, t)
         else
            throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
+     case OMEMPTY(f,t) =>
+        val occs = checkTheo(f) ::: checkTheo(t)
+        (occs, f,t)
    }
    /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
     *  @param lib the library

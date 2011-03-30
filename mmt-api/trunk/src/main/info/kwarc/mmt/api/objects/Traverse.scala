@@ -18,7 +18,7 @@ class OneStep[State] extends Continuation[State] {
 		      OMBINDC(rec(b), newvars, cond.map(x => rec(x)(newcon, state)), rec(body)(newcon, state))
 		   case OMS(_) => t
 		   case OMV(_) => t
-		   case OMHID() => t
+		   case OMHID => t
 		   case OMFOREIGN(_) => t
 		   case OMI(_) => t
 		   case OMSTR(_) => t

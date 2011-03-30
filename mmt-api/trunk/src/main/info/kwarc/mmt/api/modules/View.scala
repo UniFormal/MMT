@@ -17,6 +17,7 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  */
 abstract class View(doc : DPath, name : LocalPath, val from : TheoryObj, val to : TheoryObj)
          extends Module(doc, name) with Link {
+   def toMorph = OMMOD(path)
    protected def outerComponents = List(StringLiteral(name.flat), from, to)
    protected def outerString = path + " : " + from.toString + " -> " + to.toString
    def toNode = (from.asPath, to.asPath) match {

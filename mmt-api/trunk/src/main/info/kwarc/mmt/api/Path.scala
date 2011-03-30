@@ -227,7 +227,7 @@ case class LocalName(steps: List[LNStep]) {
 }
 object LocalName {
    def apply(steps: LNStep*) : LocalName = LocalName(steps : _*)
-   def apply(steps: String*) : LocalName = LocalName(steps.map(NamedStep(_)):_*) 
+   def apply(step: String) : LocalName = LocalName(NamedStep(step)) 
 }
 abstract class LNStep {
    def toPath : String
