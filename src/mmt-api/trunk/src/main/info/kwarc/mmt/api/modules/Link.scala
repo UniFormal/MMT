@@ -12,6 +12,7 @@ trait Link {
    val from : TheoryObj
    /** the codomain of the link */
    val to : TheoryObj
+   def toMorph : Morph
    protected def innerNodes : Seq[scala.xml.Node]
    protected def outerComponents : List[Content]
    protected def innerComponents : List[Content]

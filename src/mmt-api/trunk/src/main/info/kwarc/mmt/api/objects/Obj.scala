@@ -15,18 +15,29 @@ import Substitution._
  */
 sealed abstract class Obj extends Content {
    /** prints to OpenMath (with OMOBJ wrapper) */
-   def toOBJNode : Node
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.None)
+   def toOBJNode = <OMOBJ xmlns:om={xml.namespace("om")}>{toNode}</OMOBJ>
    /** applies a substitution to an object (computed immediately) */
    def ^ (sub : Substitution) : Obj
-   /** applies a morphism to an object (not computed immediately) */
-   def *(that : Morph) : Obj
    def head : Option[Path]
    def role : Role
    def nkey = NotationKey(head, role)
    def components : List[Content]
    def presentation(lpar: LocalParams) = ByNotation(nkey, components, lpar)
+}
+
+trait MMTObject {
+   def args : List[Obj]
+   def components = OMID(path) :: args
+   def path : GlobalName
+   def head = Some(path)
+   def role = if (args.isEmpty) Role_IDRef else Role_application
+   def toNodeID(pos : Position) =
+      if (args.isEmpty) OMID(path).toNode
+      else
+      <om:OMA>{components.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
+      </om:OMA> % pos.toIDAttr
 }
 
 /**
@@ -35,22 +46,20 @@ sealed abstract class Obj extends Content {
 sealed abstract class Term extends Obj {
    def strip : Term = this
    def ^(sub : Substitution) : Term
+   /** morphism application (written postfix), maps OMHID to OMHID */
    def *(that : Morph) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */
    def apply(args : Term*) = OMA(this, args.toList)
-   def toOBJNode = <OMOBJ xmlns:om={xml.namespace("om")}>{toNode}</OMOBJ>
 }
 
 /**
  * OMHID represents the hidden term.
  */
-case class OMHID() extends Term {
-   def toOMS = OMID(mmt.mmtsymbol("hidden"))
-   def toNodeID(pos : Position) = toOMS.toNodeID(pos)
+case object OMHID extends Term with MMTObject {
    def ^ (sub : Substitution) = this
-   def head = Some(mmt.mmtsymbol("hidden"))
-   def role = Role_hidden
-   def components = Nil
+   override def *(that: Morph) = this
+   def path = mmt.mmtsymbol("hidden")
+   def args = Nil
 }
 
 /**
@@ -143,13 +152,10 @@ object OMBIND {
  * @param arg the argument term
  * @param via the applied morphism
  */
-case class OMM(arg : Term, via : Morph) extends Term {
-   def head = Some(mmt.morphismapplication)
-   def role = Role_morphismapplication
-   def components = List(arg,via)
-   def toNodeID(pos : Position) =
-     <om:OMA>{OMID(mmt.morphismapplication).toNode}{arg.toNodeID(pos + 0)}{via.toNodeID(pos + 1)}</om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub)
+case class OMM(arg : Term, via : Morph) extends Term with MMTObject {
+   def path = mmt.morphismapplication
+   def args = List(arg,via)
+   def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
 }
 
 /**
@@ -270,8 +276,6 @@ case class OMSTR(value : String) extends Term {
  * A ModuleObj is a composed module level expressions.
  */
 sealed trait ModuleObj extends Obj {
-	def path : Path
-	def head : Option[Path] = Some(path)
 	/**
 	 * returns Some(p) iff this module object refers to a real declaration with path p
 	 */
@@ -289,8 +293,6 @@ sealed trait ModuleObj extends Obj {
  */
 sealed trait TheoryObj extends ModuleObj {
    def ^ (sub : Substitution) : TheoryObj = this
-   def *(that : Morph) : TheoryObj = this
-   def toOBJNode = <OMTHY xmlns:om={xml.namespace("om")}>{toNode}</OMTHY>
 }
 
 /**
@@ -311,7 +313,6 @@ sealed trait Morph extends ModuleObj {
    }
    //morphisms do not contain free variables
    def ^ (sub : Substitution) : Morph = this
-   def toOBJNode = <OMMOR xmlns:om={xml.namespace("om")}>{toNode}</OMMOR>
 }
 
 sealed trait AtomicMorph extends Morph
@@ -322,10 +323,9 @@ sealed trait AtomicMorph extends Morph
  */
 case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    //need to override the methods for which two implementations are inherited
-   override def ^ (sub : Substitution) : OMMOD = this
-   override def *(that : Morph) : OMMOD = this
-   override def toOBJNode = throw ImplementationError("OMMOD should not be rendered as OBJ node; use URI instead")
+   override def ^(sub : Substitution) : OMMOD = this
    override def toMPath = path
+   def head = Some(path)
    def role = Role_ModRef
    def components = path.components
    def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
@@ -334,18 +334,25 @@ case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    override def asPath = Some(path)
 }
 
+case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
+   def path = cod % name
+   def head : Option[Path] = Some(path)
+   def role = Role_StructureRef
+   def components = List(path.parent, StringLiteral(path.name.flat))
+   def toNodeID(pos : Position) = OMID(path).toNodeID(pos)
+   override def asPath = path match {
+      case OMMOD(p) % LocalName(List(NamedStep(n))) => Some(p / n)
+      case _ => None
+   }
+}
+
 /**
  * An OMComp represents the associative composition of a list of morphisms. Compositions may be nested.
  * @param morphisms the list of morphisms in diagram order
  */
-case class OMCOMP(morphisms: List[Morph]) extends Morph {
-   def role = Role_composition
-   def components = morphisms
+case class OMCOMP(morphisms: List[Morph]) extends Morph with MMTObject {
+   def args = morphisms
    def path = mmt.composition
-   def toNodeID(pos : Position) =
-      <om:OMA>{OMID(mmt.composition).toNode}
-              {morphisms.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
-      </om:OMA> % pos.toIDAttr
 }
 object OMCOMP {
    def apply(ms: Morph*) : OMCOMP = OMCOMP(ms : _*)
@@ -355,22 +362,14 @@ object OMCOMP {
  * An OMIDENT represents the identity morphism of a theory.
  * @param theory the theory
  */
-case class OMIDENT(theory : TheoryObj) extends AtomicMorph {
+case class OMIDENT(theory : TheoryObj) extends Morph with MMTObject {
+   def args = List(theory)
    def path = mmt.identity
-   def role = Role_identity
-   def components = List(theory)
-   def toNodeID(pos : Position) = <om:OMA>{OMID(mmt.identity).toNode}{theory.toNode}</om:OMA> % pos.toIDAttr
 }
 
-case class OMDL(gname: GlobalName) extends AtomicMorph {
-   def path = gname
-   def role = Role_StructureRef
-   def components = List(gname.parent, StringLiteral(gname.name.flat))
-   def toNodeID(pos : Position) = OMID(gname).toNodeID(pos)
-   override def asPath = gname match {
-	   case OMMOD(p) % LocalName(List(NamedStep(n))) => Some(p / n)
-	   case _ => None
-   }
+case class OMEMPTY(from: TheoryObj, to: TheoryObj) extends Morph  with MMTObject {
+   def args = List(from,to)
+   def path = mmt.emptymorphism
 }
 
 
@@ -453,7 +452,7 @@ object Obj {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       N match {
-         case <OMMOR>{mor}</OMMOR> => parseMorphism(mor, base, callback)
+         case <OMOBJ>{mor}</OMOBJ> => parseMorphism(mor, base, callback)
          case <OMS/> =>
             parseOMS(N, base) match {
                case p : MPath => callback(p); OMMOD(p)
@@ -480,7 +479,7 @@ object Obj {
   def parseTheory(N : Node, base : Path, callback : Path => Unit) : TheoryObj = {
      val nbase = newBase(N, base)
      N match {
-        case <OMTHY>{thy}</OMTHY> => parseTheory(thy, base, callback)
+        case <OMOBJ>{thy}</OMOBJ> => parseTheory(thy, base, callback)
         case <OMS/> =>
            parseOMS(N, base) match {
                case p : MPath => callback(p); OMMOD(p)
@@ -503,8 +502,14 @@ object Morph {
       case OMIDENT(t) => t
       case OMCOMP(m :: _) => domain(m)
       case OMCOMP(Nil) => throw ImplementationError("cannot infer domain of empty composition")
+      case OMEMPTY(f,_) => f
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.from}
+      } catch {
+         case _ => throw Invalid("not a well-formed morphism: " + m)
+      }
+      case OMDL(h,n) => try {
+         lib.getStructure(h % n).from
       } catch {
          case _ => throw Invalid("not a well-formed morphism: " + m)
       }
@@ -514,11 +519,12 @@ object Morph {
       case OMIDENT(t) => t
       case OMCOMP(Nil) => throw ImplementationError("cannot infer codomain of empty composition")
       case OMCOMP(l) => codomain(l.last)
+      case OMEMPTY(_,t) => t
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.to}
       } catch {
          case _ => throw Invalid("not a well-formed morphism: " + m)
       }
-      //case OMDL(t % ln) => //TODO 
+      case OMDL(t, _ ) => t
    }
 }

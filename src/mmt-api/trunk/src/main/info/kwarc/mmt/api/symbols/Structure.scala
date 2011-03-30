@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.presentation._
 
 trait DefinitionalLink extends Symbol with Link {
    val to = home
-   def toMorph = OMDL(path)
+   def toMorph = OMDL(home, name)
    def applyTo(sym : Symbol) : Symbol = sym match {
       case c : Constant => new Constant(to, name / c.name, c.tp.map(_ * toMorph), c.df.map(_ * toMorph), c.uv, c.genFrom.map(applyTo))
       case s : Structure => new DefinedStructure(to, name / s.name, s.from, s.toMorph * toMorph)
