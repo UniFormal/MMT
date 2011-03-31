@@ -91,7 +91,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 		         }
         	     add(t)
         	     docParent map (dp => add(MRef(dp, tpath, true)))
-              body.foreach(readSymbols(tpath, OMMOD(tpath) % LNEmpty(), _))
+              body.foreach(readSymbols(tpath, tpath, _))
 	         case (base : DPath, <view>{seq @ _*}</view>) =>
 	            log("view " + name + " found")
 	            val vpath = base ? name
@@ -106,7 +106,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                 }
 	            add(v)
 	            docParent map (dp => add(MRef(dp, vpath, true)))
-			      body.foreach(readAssignments(OMMOD(vpath), to % LNEmpty(), _))
+			      body.foreach(readAssignments(OMMOD(vpath), to.toMPath, _)) //TODO relative names will be resolved wrong
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			     val npath = base ? name

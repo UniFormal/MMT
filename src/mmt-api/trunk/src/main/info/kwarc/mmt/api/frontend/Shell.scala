@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.utils._
 
 class Shell(foundation : libraries.Foundation) extends {
-      val filereport = new frontend.FileReport(new java.io.File("info.kwarc.mmt.api.log"))
+      val filereport = new frontend.FileReport(new java.io.File("jomdoc.log"))
       val consreport = new ConsoleReport
       val report = new MultipleReports(filereport, consreport)
       val checker = new libraries.FoundChecker(foundation)
@@ -12,7 +12,7 @@ class Shell(foundation : libraries.Foundation) extends {
    def main(args : Array[String]) : Unit = {
       val command = args.mkString("", " ", "")
       filereport.groups += "*"
-  	  consreport.groups += "*"
+      consreport.groups += "*"
       handleLine(command)
       val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
       while (true) {
