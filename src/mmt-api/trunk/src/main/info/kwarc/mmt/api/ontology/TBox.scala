@@ -86,22 +86,13 @@ object Binary {
 abstract class ABoxDecl {
    val path : Path
    val toNode : scala.xml.Node
-   val toLocutor : String
 }
 
 /**
  * An object of type Individual represents a unary predicate in the ABox.
  */
 case class Individual(path : Path, tp : Unary) extends ABoxDecl {
-   lazy val toNode = <individual path={path.toString} predicate={tp.toString}/>
-   lazy val toLocutor = {
-      val xpath = path match {
-         case p : DPath => "/"
-         case _ ? mod => "/*[name='" + mod + "']"
-         case _ ? mod ?? sym => "/*[name='" + mod.flat + "']/*[name='" + sym.flat + "']"
-      }
-     "\"" + path + "\" : " + tp + " (url=\"" + path + "\", xpath=\"" + xpath + "\")"
-   }
+   lazy val toNode = <individual path={path.toPath} predicate={tp.toString}/>
 }
 
 /**

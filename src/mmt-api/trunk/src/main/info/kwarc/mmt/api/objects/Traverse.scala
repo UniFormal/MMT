@@ -16,7 +16,7 @@ class OneStep[State] extends Continuation[State] {
 		      val newvars = vars
 		      val newcon = con ++ vars
 		      OMBINDC(rec(b), newvars, cond.map(x => rec(x)(newcon, state)), rec(body)(newcon, state))
-		   case OMS(_) => t
+		   case OMID(_) => t
 		   case OMV(_) => t
 		   case OMHID => t
 		   case OMFOREIGN(_) => t
@@ -34,7 +34,7 @@ abstract class Traverser[State] extends Continuation[State] {
 object PushMorphs extends Traverser[Morph] {
 	def apply(cont : Continuation[Morph], t: Term)(implicit con : Context, morph : Morph) : Term = t match {
 		case OMM(arg, via) => cont(this, arg)(con, morph * via)
-		case OMS(path) => OMM(t, morph)
+		case OMID(path) => OMM(t, morph)
 		case t => cont(this,t)
 	}
 	def apply(t: Term, thy : info.kwarc.mmt.api.MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))

@@ -175,27 +175,6 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
    def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
 }
 
-//TODO abolish SPath
-/**
- * An SPath represents an MMT symbol level path.
- * @param parent the path of the parent module
- * @param name the name of the symbol
- */
-case class SPath(parent : MPath, name: LocalName) {
-   def doc = parent.doc
-   def module = parent.name
-   def last = name.steps.last.toPath
-   def /(n : String) = SPath(parent, name / n)
-   /** go up to to next higher structure, stay if none */
-   def ^ : SPath = if (name.length == 1) this else SPath(parent, name.init)
-   /** go up to containing module */
-   def ^^ : MPath = parent
-   /** go up to containing document */
-   def ^^^ : DPath = ^^.^^
-   def ^! = if (name.length == 1) ^^ else ^
-   def toPath = parent.toPath + "?" + name.flat
-   //def components : List[Content] = List(StringLiteral(doc.toString), StringLiteral(module.flat), StringLiteral(name.flat), StringLiteral(toPathEscaped))
-}
 
 /**
  * A LocalPath represents a local MMT module (relative to a document).
@@ -219,8 +198,15 @@ case class LocalPath(fragments : List[String]) {
 
 case class LocalName(steps: List[LNStep]) {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
+   def /(n: LNStep) : LocalName = this / LocalName(List(n))
    def /(n: String) : LocalName = this / LocalName(n)
+   /** append an IncludeStep, drop the last step if it is already an IncludeStep */ 
+   def thenInclude(from: TheoryObj) = this match {
+      case s \ IncludeStep(_) => s / IncludeStep(from)
+      case _ => this / IncludeStep(from) 
+   }
    def flat : String = steps.map(_.toPath).mkString("", "/", "")
+   override def toString = flat
    def init = LocalName(steps.init)
    def tail = LocalName(steps.tail)
    def head = steps.head
@@ -254,7 +240,6 @@ object LNEmpty {
 case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
    def doc = utils.mmt.mmtbase
    def ^! = if (name.length == 1) parent.toMPath else parent % name.init
-
 }
 
 /** 
@@ -263,17 +248,6 @@ case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
 object ? {
    def unapply(p : Path) : Option[(DPath,LocalPath)] = p match {
       case p : MPath => Some((p ^^, p.name))
-      case _ => None
-   }
-}
-
-/** 
- * This permits the syntax doc ? mod ?? sym in patterns. 
- * Scala's pattern matching could also recognize a pattern "doc ? mod ? name". But then doc would have type Path, not DPath.
- */
-object ?? {
-   def unapply(p : Path) : Option[(MPath,LocalName)] = p match {
-      case p : SPath => Some((p ^^, p.name))
       case _ => None
    }
 }

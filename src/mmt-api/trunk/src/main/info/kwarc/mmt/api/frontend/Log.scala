@@ -13,6 +13,11 @@ abstract class Report {
    def apply(e : Error) : Unit = apply("error", "\n" + e.msg)
    /** implementation specific logging hook */
    def log(group : => String, msg : => String)
+   protected var ind : String = ""
+   /** increase indentation */
+   def indent {ind = ind + "  "}
+   /** decrease indentation */
+   def unindent {ind = ind.substring(2)}
 }
 
 /** outputs nothing, throws exceptions */
@@ -24,14 +29,14 @@ object NullReport extends Report {
 /** outputs to standard output */
 class ConsoleReport extends Report {
    def log(group : => String, msg : => String) {
-      println(group + ": " + msg) 
+      println(ind + group + ": " + msg) 
    }
 }
 
 /** outputs to a file */
 class FileReport(val filename : java.io.File) extends Report with utils.FileWriter {
    def log(group : => String, msg : => String) {
-         file.println(java.lang.System.currentTimeMillis().toString + "\t" + group + ": " + msg)
+         file.println(java.lang.System.currentTimeMillis().toString + "\t" + ind + group + ": " + msg)
          file.flush
    }
 }
@@ -41,4 +46,6 @@ class MultipleReports(reports : Report*) extends Report {
 	def log(group : => String, msg : => String) {
 		reports.toList.map(_.apply(group, msg))
 	}
+	override def indent {reports.toList.map(_.indent)}
+	override def unindent {reports.toList.map(_.unindent)}
 }

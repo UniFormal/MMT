@@ -96,7 +96,7 @@ object OMQuery {
        p match {
           case p: DPath => s1 
           case p: MPath => s1.replace("%mod%", p.name.flat)
-          case p: SPath => s1.replace("%mod%", p.parent.name.flat).replace("%name%", p.name.flat)
+          case p: GlobalName => s1.replace("%mod%", p.parent.toMPath.name.flat).replace("%name%", p.name.flat)
        }
    }
 }
@@ -148,7 +148,7 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
         val qs = path match {
            case p : DPath => dpats
            case p : MPath => mpats
-           case p : SPath => spats
+           case p : GlobalName => spats
         }
         qs.foreach {q =>
            val qpath = OMQuery.replace(q.path, path)

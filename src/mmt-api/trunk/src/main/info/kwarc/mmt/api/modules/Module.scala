@@ -21,7 +21,7 @@ trait DefinedModule[M <: ModuleObj] extends ModuleDefiniens[M]
 
 trait ModuleDefiniens[M <: ModuleObj] {
    val df : M
-   protected def innerString = df.toString
+   protected def innerString = " = " + df.toString
    protected def innerNodes = <definition>{df.toNode}</definition>
    protected def innerComponents = List(df)
 }

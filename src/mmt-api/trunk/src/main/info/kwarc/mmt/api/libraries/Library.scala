@@ -6,7 +6,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.ontology._
 import scala.xml.{Node,NodeSeq}
-import info.kwarc.mmt.api.utils.MyList.fromList
 
 /*abstract class ContentMessage
 case class Add(e : ContentElement) extends ContentMessage
@@ -44,7 +43,7 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
       case doc ? !(mod) => getModule(doc ? mod)
       //case doc ? (t / !(str)) => getStructure(doc ? t ? str)    
       case doc ? _ => throw GetError("retrieval of complex module name " + p + " not possible")
-      case OMMOD(p) % name => get(p) match {
+      case OMMOD(p) % name => get(p, error) match {
          case t: DefinedTheory =>
             get(t.df % name, error)
          case t: DeclaredTheory =>
@@ -70,10 +69,8 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
                         else
                            Some(a.target)                                        // use assignment as new definition
                         new Constant(l.to, l.name / ln, c.tp.map(_ * l.toMorph), newDef, c.uv, Some(l))
-                     case (s: Structure, a: StructureAssignment) =>
+                     case (s: DefinitionalLink, a: DefLinkAssignment) =>
                         new DefinedStructure(l.to, l.name / s.name, s.from, a.target)
-                     case (i: Include, a: IncludeAssignment) =>
-                        new DefinedStructure(l.to, l.name / i.name, i.from, a.target)
                   }
             }
          case v : View => getInLink(v, name, error) 
@@ -88,25 +85,24 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
          tl match {
             case Nil => a
             case _ => a match {
-               case a: StructureAssignment => new StructureAssignment(m, a.name, a.target * OMCOMP(tl))
                case a: ConstantAssignment => new ConstantAssignment(m, a.name, a.target * OMCOMP(tl))
+               case a: DefLinkAssignment => new DefLinkAssignment(m, a.name, a.target * OMCOMP(tl))
             }
          }
       case (m @ OMIDENT(t)) % name => get(t % name) match {
          case c: Constant => new ConstantAssignment(m, name, c.toTerm)
-         case l: DefinitionalLink => new StructureAssignment(m, name, l.toMorph)
+         case l: DefinitionalLink => new DefLinkAssignment(m, name, l.toMorph)
       }
       case (m @ OMEMPTY(f,t)) % name => get(f % name) match {
          case c: Constant => new ConstantAssignment(m, name, OMHID)
-         case l: DefinitionalLink => new StructureAssignment(m, name, OMEMPTY(l.from, t))
+         case l: DefinitionalLink => new DefLinkAssignment(m, name, OMEMPTY(l.from, t))
       }
    }
    //TODO definition expansion, partiality
    private def getInLink(l: Link, name: LocalName, error: String => Nothing) : ContentElement = l match {
       case l: IncludeLink => get(l.from % name) match {
          case c: Constant => new ConstantAssignment(l.toMorph, name, c.toTerm)
-         case s: Structure => new StructureAssignment(l.toMorph, name, s.toMorph)
-         case i: Include => new IncludeAssignment(l.toMorph, i.from, i.toMorph)
+         case s: DefinitionalLink => new DefLinkAssignment(l.toMorph, name, s.toMorph)
       }
       case l: DefinedLink =>
          get(l.df % name, error)
@@ -116,29 +112,45 @@ class Library(checker : Checker, dependencies : ABoxStore, report : frontend.Rep
          getFirst match {
             case Some((a, None)) => a
             case Some((a: ConstantAssignment, Some(ln))) => error("local name " + ln + " left after resolving to constant assignment")
-            case Some((a: StructureAssignment, Some(ln))) => get(a.target % ln, error)
+            case Some((a: DefLinkAssignment, Some(ln))) => get(a.target % ln, error)
             case None => (l, get(l.from % name)) match {
                // return default assignment
                case (l: Structure, c:Constant) => new ConstantAssignment(l.toMorph, name, OMID(l.to % (l.name / name)))
                case (l: View, c:Constant) => new ConstantAssignment(l.toMorph, name, OMHID)
-               case (l: Structure, d:DefinitionalLink) => new StructureAssignment(l.toMorph, name, OMCOMP(d.toMorph, l.toMorph))
-               case (l: View, d:DefinitionalLink) => new StructureAssignment(l.toMorph, name, OMEMPTY(d.from, l.to))
+               case (l: Structure, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, OMCOMP(d.toMorph, l.toMorph))
+               case (l: View, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, OMEMPTY(d.from, l.to))
             }
          }
    }
-   def importsTo(to: TheoryObj) : List[TheoryObj] = to match {
+   def importsTo(to: TheoryObj) : Iterator[TheoryObj] = to match {
       case OMMOD(p) =>
          getTheory(p) match {
             case t: DefinedTheory => importsTo(t.df)
-            case t: DeclaredTheory => t.valueList.mapPartial {
-               case i:Include => Some(i.from)
-               case _ => None
-            }
+            case t: DeclaredTheory =>
+               new Iterator[TheoryObj] {
+                  private val i = t.iterator
+                  private def takeNext : Option[TheoryObj] = {
+                     if (i.hasNext)
+                        i.next match {
+                           case i:Include => Some(i.from)
+                           case _ => takeNext
+                        }
+                     else
+                        None
+                  }
+                  private var n = takeNext
+                  def next = {
+                     val f = n.get
+                     n = takeNext
+                     f
+                  }
+                  def hasNext = n.isDefined
+               }
          }
    }
    def imports(from: TheoryObj, to: TheoryObj) : Boolean = {
       from == to || ((from,to) match {
-         case (OMMOD(f), OMMOD(t)) => importsTo(to).exists(imports(from,_))
+         case (OMMOD(f), OMMOD(t)) => importsTo(to) contains from
       })
             
    }
