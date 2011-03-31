@@ -66,7 +66,7 @@
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
                 <!-- DM TODO: this shouldn't really be here -->
-                <attribute name="Class-Path" value="${scala.dir}/scala-library.jar"/>
+                <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar"/>
             </manifest>
             <service type="info.kwarc.tntbase.pluginapi.TntIntegrationPlugin"><!-- produces wrong directory, fix by updating to ant 1.7.1 -->
                 <provider classname="${root.pkg}.tntplugin.TNTValidation"/>

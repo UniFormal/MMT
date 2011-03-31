@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.utils._
 abstract class Lookup(val report : frontend.Report) {
    def apply(path : Path) = get(path)
 
+   def getModule(p : MPath, die: Boolean = false) : Module
    def get(path : Path) : ContentElement
    //typed access methods
    private def defmsg(path : Path) : String = "no element of required type found at " + path

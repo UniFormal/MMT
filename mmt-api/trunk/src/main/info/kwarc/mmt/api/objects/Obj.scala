@@ -404,7 +404,7 @@ object Obj {
       N match {
          case <OMS/> =>
             parseOMS(N, base) match {
-               case p : SPath => callback(p); OMS(p)
+               case p : GlobalName => callback(p); OMID(p)
                case p => throw new ParseError("Not a term: " + p + N.toString)
             }
          case <OMV/> =>
@@ -453,9 +453,11 @@ object Obj {
       val nbase = newBase(N, base)
       N match {
          case <OMOBJ>{mor}</OMOBJ> => parseMorphism(mor, base, callback)
+         case <OMMOR>{mor}</OMMOR> => parseMorphism(mor, base, callback)
          case <OMS/> =>
             parseOMS(N, base) match {
                case p : MPath => callback(p); OMMOD(p)
+               case (t: TheoryObj) % name => callback(t % name); OMDL(t, name)
                case doc ? mod ?? str =>
                   throw ParseError("not a well-formed link reference (case was removed): " + N.toString)
                   /* val p = doc ? (mod / str)

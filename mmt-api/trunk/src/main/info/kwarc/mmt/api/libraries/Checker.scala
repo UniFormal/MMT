@@ -23,9 +23,6 @@ case class Reconstructed(recon : List[ContentElement], deps : List[ABoxDecl]) ex
 case class Fail(msg : String) extends CheckResult
 
 abstract class Checker {
-   protected def lookupTheory(lib : Lookup, t : MPath) {
-      lib.getTheory(t) // can throw NotFound(t)
-   }
    /** checks whether a theory object is well-formed relative to a library
     *  @param lib the library
     *  @param t the theory
@@ -33,7 +30,7 @@ abstract class Checker {
     */
    def checkTheo(t : TheoryObj)(implicit lib : Lookup) : List[Path] = t match {
      case OMMOD(p) =>
-       lookupTheory(lib, p)
+       lib.getModule(p)
        List(p)
    }
    protected def checkLink(l : Link, path : Path)(implicit lib : Lookup) : List[ABoxDecl] = {
@@ -46,7 +43,25 @@ abstract class Checker {
       val fromdep = checkTheo(l.from).map(HasOccurrenceOfInDomain(path,_))
       todep ::: fromdep
    }
-   
+   // detailed checks redundant because even lib.addUnchecked checks them
+   protected def checkHomeTheory(s: Symbol) : MPath = s.home match {
+      case OMMOD(p) =>
+         //lib.getModule(p)
+         p
+      case _ => throw Invalid("adding constants to composed theories not allowed")
+   }
+   protected def checkHomeMorph(a: Assignment) : Path = a.home match {
+      case OMMOD(p) =>
+         //lib.getModule(p, true)
+         p
+      case OMDL(OMMOD(p), name) =>
+         OMMOD(p) % name 
+      case _ => throw Invalid("adding constants to composed theories not allowed")
+   }
+   protected def checkEmpty[D<: Declaration](b: Body[D]) {
+      if (! b.isEmpty) throw Invalid("body not empty")
+   }
+
    def check(s : ContentElement)(implicit lib : Lookup) : CheckResult
 }
 
@@ -58,101 +73,142 @@ object NullChecker extends Checker {
 }
 
 /**
- * A Checker that makes sure all referenced theories are loaded and infers simple ABox elements,
- * but checks nothing else.
+ * A Checker that checks only module level elements.
  */
-object GraphChecker extends Checker {
-   def check(s : ContentElement)(implicit lib : Lookup) = {
-      s match {
-	      case PlainInclude(t, f) =>
-	         lookupTheory(lib, f)
-             Success(List(HasOccurrenceOfInImport(t, f)))
-	      case t : DeclaredTheory =>
-	         val mdep = t.meta match {
-	            case Some(m) => lookupTheory(lib, m); List(HasMeta(t.path, m))
-                case _ => Nil
-	         }
-             Success(IsTheory(t.path) :: mdep)
-	      case l : Link =>
-             val tpdep = l match {
-               case _ : View => IsView(l.path)
-               case _ : Structure => IsStructure(l.path)
-             }
-             Success(checkLink(l, s.path))
-          //TODO: should also load all views
-          case _ => Success(Nil)
-      }
-   }
-}
-
-/**
- * A Checker that implements MMT-wellformedness relative to a foundation.
- */
-class FoundChecker(foundation : Foundation) extends Checker {
-   /** checks whether a content element may be added to a library
-    * @param lib the library
-    * @param s the content element
-    * throws backend.NotFound(p) if possibly well-formed after retrieving p
-    */
+abstract class ModuleChecker extends Checker {
    def check(s : ContentElement)(implicit lib : Lookup) : CheckResult = try {
-      s match {
-         case s: Declaration => s.home match {
-            case OMMOD(p) => p
-            case OMDL(OMMOD(p), !(n)) => 
-            case _ => throw Invalid("adding declarations to composed theories not allowed")
-         }
-      }
-      /*s match {
-         case t : DeclaredTheory =>
-            if (! t.isEmpty) return Fail("new theory not empty")
+      checkModuleLevel(s)
+   } catch {
+      case Invalid(msg) => Fail("content element contains ill-formed object: " + msg)
+      case GetError(msg) => Fail("content element contains ill-formed object: get error: " + msg)
+      //case e => Fail("error during checking: " + e.msg)
+   }
+   def checkModuleLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult = 
+      e match {
+         case t: DeclaredTheory =>
+            checkEmpty(t)
             val d = List(IsTheory(t.path))
             t.meta match {
                case Some(mt) =>
-                  lookupTheory(lib, mt)
+                  checkTheo(OMMOD(mt))
                   Reconstructed(List(t, PlainInclude(mt, t.path)), HasMeta(t.path, mt) :: d)
                case _ =>
                   Success(d)
             }
-            
          case t : DefinedTheory =>
             val occs = checkTheo(t.df)
             val deps = occs.map(HasOccurrenceOfInDefinition(t.path, _))
             Success(IsTheory(t.path) :: deps)
-         case l : DeclaredLink =>
-            if (! l.isEmpty) return Fail("new declared link not empty")
-            Success(checkLink(l, s.path))
-         case l : DefinedLink =>
+         case l : DeclaredView =>
+            checkEmpty(l)
+            Success(checkLink(l, e.path))
+         case l : DefinedView =>
             val (occs, from, to) = inferMorphism(l.df)
             if (! lib.imports(l.from, from))
                return Fail("definition of defined link does not type-check: " + l.from + " is not imported into " + from)
             if (! lib.imports(to, l.to))
                return Fail("definition of defined link does not type-check: " + to + " is not imported into " + l.to)
             val deps = occs.map(HasOccurrenceOfInDefinition(l.path, _))
-            Success(checkLink(l, s.path) ::: deps)
-         case l: IncludeLink => Success(Nil) //TODO
-/*         case TheoImport(par, of) =>
-            lookupTheory(lib, par)
-            val occs = checkTheo(of)
+            Success(checkLink(l, e.path) ::: deps)
+         case l: Include =>
+            val par = checkHomeTheory(l)
+            val occs = checkTheo(l.from)
             val deps = occs.map(HasOccurrenceOfInImport(par, _))
-            Success(deps) */
+            Success(deps)
+         case s: DeclaredStructure =>
+            checkEmpty(s)
+            val par = checkHomeTheory(s)
+            val occs = checkTheo(s.from)
+            val deps = occs.map(HasOccurrenceOfInImport(par, _))
+            Success(deps)
+         case s: DefinedStructure =>
+            val par = checkHomeTheory(s)
+            val foccs = checkTheo(s.from)
+            val doccs = checkMorphism(s.df, s.from, s.to)
+            val deps = foccs.map(HasOccurrenceOfInImport(par, _)) ::: doccs.map(HasOccurrenceOfInDefinition(par, _)) 
+            Success(deps)
+         case e => checkSymbolLevel(e)
+      }
+   def checkSymbolLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult
+   
+  /** checks whether a morphism object is well-formed relative to a library and infers its type
+    *  @param lib the library
+    *  @param m the theory
+    *  @return the list of named objects occurring in m, the domain and codomain of m
+    */
+   def inferMorphism(m : Morph)(implicit lib : Lookup) : (List[Path], TheoryObj, TheoryObj) = m match {
+     case OMIDENT(t) =>
+        val occs = checkTheo(t)
+        (occs, t, t)
+     case OMMOD(m : MPath) =>
+        val l = lib.getLink(m)
+        (List(m), l.from, l.to)
+     case OMDL(to, name) =>
+        val occs = checkTheo(to)
+        val from = lib.get(to % name) match {
+           case l: DefinitionalLink => l.from
+           case _ => throw Invalid("invalid morphism " + m)
+        }
+        (occs, from, to)
+     case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
+     case OMCOMP(hd :: Nil) => inferMorphism(hd)
+     case OMCOMP(hd :: tl) =>
+        val (l1, r,s1) = inferMorphism(hd)
+        val (l2, s2,t) = inferMorphism(OMCOMP(tl))
+        if (lib.imports(s1,s2))
+           (l1 ::: l2, r, t)
+        else
+           throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
+     case OMEMPTY(f,t) =>
+        val occs = checkTheo(f) ::: checkTheo(t)
+        (occs, f,t)
+   }
+   /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
+    *  @param lib the library
+    *  @param m the morphism
+    *  @param dom the domain
+    *  @param cod the codomain
+    *  @return the list of identifiers occurring in m
+    */
+   def checkMorphism(m : Morph, dom : TheoryObj, cod : TheoryObj)(implicit lib : Lookup) : List[Path] = {
+      val (l, d,c) = inferMorphism(m)
+      if (! lib.imports(dom, d) || ! lib.imports(c, cod))
+         throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + c + " -> " + d)
+      l
+   }
+}
+
+object SimpleChecker extends ModuleChecker {
+   def checkSymbolLevel(e: ContentElement)(implicit lib : Lookup) = Success(Nil)
+}
+
+/**
+ * A Checker that implements MMT-wellformedness relative to a foundation.
+ */
+class FoundChecker(foundation : Foundation) extends ModuleChecker {
+   /** checks whether a content element may be added to a library
+    * @param lib the library
+    * @param s the content element
+    * throws backend.NotFound(p) if possibly well-formed after retrieving p
+    */
+   def checkSymbolLevel(s : ContentElement)(implicit lib : Lookup) : CheckResult = s match {
          case c : Constant =>
-            val parent : MPath = c.parent.asPath.getOrElse(throw Invalid("adding constants to composed theories not allowed"))
-            val occtp = if (c.tp.isDefined) {
-               checkTerm(parent, c.tp.get, c.uv)
-            } else
-               Nil
-            val occdf = if (c.df.isDefined) checkTerm(parent, c.df.get, c.uv) else Nil
+            //checkHomeTheory(c)
+            val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get, c.uv) else Nil
+            val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get, c.uv) else Nil
             if (! foundation.typing(c.df, c.tp)) return Fail("definition of constant does not type-check")
             val deps = IsConstant(c.path) ::  
               occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
             Success(deps)
-         case a : Alias =>
+         case _ => Success(Nil)
+/*         case a : Alias =>
             lib.get(a.forpath)
             if (lib.imports(a.forpath.parent, a.parent))
                Success(List(IsAlias(a.path), IsAliasFor(a.path, a.forpath)))
             else
                Fail("illegal alias")
          case a : ConstantAssignment =>
+            checkHomeMorph(a)
             val link = lib.getLink(a.parent)
             val sourceSym = try {lib.getSymbolNoAlias(link.from ? a.name)}
                          catch {case _ => return Fail("assignment to non-existing constant")}
@@ -191,13 +247,8 @@ class FoundChecker(foundation : Foundation) extends Checker {
             Reconstructed(List(a, al), List(IsOpen(a.path)))
          case p : Pattern => Success(Nil) // TODO
          case i : Instance => Reconstructed(List(Pattern.elaborate(i,lib)),Nil)
-      } */
-      Success(Nil)
-   } catch {
-      case Invalid(msg) => Fail("content element contains ill-formed object: " + msg)
-      case GetError(msg) => Fail("content element contains ill-formed object: get error: " + msg)
-   }
-   
+ */     }
+
    /**
     * Checks structural well-formedness of a closed term relative to a library and a home theory.
     * @param lib the library
@@ -206,9 +257,9 @@ class FoundChecker(foundation : Foundation) extends Checker {
     * @param univ the universe to check the term against
     * @return the list of identifiers occurring in s (no duplicates, random order)
     */
-   def checkTerm(home : MPath, s : Term, univ : Universe)(implicit lib : Lookup) : List[Path] = {
-      lookupTheory(lib, home)
-      checkTerm(OMMOD(home), Context(), s, IsEqualTo(univ)).distinct
+   def checkTerm(home: TheoryObj, s : Term, univ : Universe)(implicit lib : Lookup) : List[Path] = {
+      checkTheo(home)
+      checkTerm(home, Context(), s, IsEqualTo(univ)).distinct
    }
    //TODO redesign role checking, currently not done
    private def checkTerm(home : TheoryObj, context : Context, s : Term, uvcheck : UnivCheck)(implicit lib : Lookup) : List[Path] = {
@@ -280,51 +331,5 @@ class FoundChecker(foundation : Foundation) extends Checker {
          case OMSTR(s) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMF(d) => Nil //TODO roles; check import of pseudo-theories, dependencies?
       }
-   }
-   
-   /** checks whether a morphism object is well-formed relative to a library and infers its type
-    *  @param lib the library
-    *  @param m the theory
-    *  @return the list of named objects occurring in m, the domain and codomain of m
-    */
-   def inferMorphism(m : Morph)(implicit lib : Lookup) : (List[Path], TheoryObj, TheoryObj) = m match {
-     case OMIDENT(t) =>
-        val occs = checkTheo(t)
-        (occs, t, t)
-     case OMMOD(m : MPath) =>
-        val l = lib.getLink(m)
-        (List(m), l.from, l.to)
-     case OMDL(to, name) =>
-        val occs = checkTheo(to)
-        val from = lib.get(to % name) match {
-           case l: DefinitionalLink => l.from
-           case _ => throw Invalid("invalid morphism " + m)
-        }
-        (occs, from, to)
-     case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
-     case OMCOMP(hd :: Nil) => inferMorphism(hd)
-     case OMCOMP(hd :: tl) =>
-        val (l1, r,s1) = inferMorphism(hd)
-        val (l2, s2,t) = inferMorphism(OMCOMP(tl))
-        if (lib.imports(s1,s2))
-           (l1 ::: l2, r, t)
-        else
-           throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
-     case OMEMPTY(f,t) =>
-        val occs = checkTheo(f) ::: checkTheo(t)
-        (occs, f,t)
-   }
-   /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
-    *  @param lib the library
-    *  @param m the morphism
-    *  @param dom the domain
-    *  @param cod the codomain
-    *  @return the list of identifiers occurring in m
-    */
-   def checkMorphism(m : Morph, dom : TheoryObj, cod : TheoryObj)(implicit lib : Lookup) : List[Path] = {
-      val (l, d,c) = inferMorphism(m)
-      if (! lib.imports(dom, d) || ! lib.imports(c, cod))
-         throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + c + " -> " + d)
-      l
    }
 }

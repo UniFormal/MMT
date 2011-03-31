@@ -111,7 +111,7 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.ABoxStore, repor
             else {
                e.key.path match {
                   case Some(p : MPath) if p == e.nset => defaults(e.key) = e
-                  case Some(p : SPath) if p.parent == e.nset => defaults(e.key) = e
+                  case Some(objects.OMMOD(p) % _) if p == e.nset => defaults(e.key) = e
                   case _ => throw AddError("notation set " + e.nset + " does not exist, and default notations must be for containing theory: " + e.toString)
                }
             }

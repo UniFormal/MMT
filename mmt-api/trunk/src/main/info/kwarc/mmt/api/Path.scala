@@ -97,7 +97,7 @@ object Path {
  */
 case class LocalRef(segments : List[String], absolute : Boolean) {
    def toLocalPath = LocalPath(segments)
-   def toLocalName = LocalName(segments.map(NamedStep(_)) : _*)
+   def toLocalName = LocalName(segments.map(NamedStep(_)))
    override def toString = segments.mkString(if (absolute) "/" else "","/","")
 }
 
@@ -123,13 +123,15 @@ abstract class Path {
    def toPath(long : Boolean) : String = this match {
       case DPath(uri) => uri.toString + (if (long) "??" else "")
       case doc ? name => doc.toPath + "?" + name.flat + (if (long) "?" else "")
-      case mod ?? name => mod.toPath + "?" + name.flat
+      case mod % name => mod.toMPath.toPath + "?" + name.flat
    }
    def toPath : String = toPath(false)
    def toPathLong : String = toPath(true)
    def toPathEscaped = scala.xml.Utility.escape(toPath)
    def toTriple : (Option[DPath], Option[LocalPath], Option[LocalName]) = this match {
-      case doc ? mod ?? name => (Some(doc), Some(mod), Some(name))
+      case mod % name =>
+         val mp = mod.toMPath
+         (Some(mp.parent), Some(mp.name), Some(name))
       case doc ? mod => (Some(doc), Some(mod), None)
       case doc : DPath => (Some(doc), None, None)
    }
@@ -226,11 +228,12 @@ case class LocalName(steps: List[LNStep]) {
    def length = steps.length
 }
 object LocalName {
-   def apply(steps: LNStep*) : LocalName = LocalName(steps : _*)
+   def apply(step: LNStep) : LocalName = LocalName(List(step))
    def apply(step: String) : LocalName = LocalName(NamedStep(step)) 
 }
 abstract class LNStep {
    def toPath : String
+   override def toString = toPath
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
 }
