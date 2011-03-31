@@ -1,6 +1,5 @@
 package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects.{OMS}
 
 object mmt {
    val baseURI = new xml.URI("http", "cds.omdoc.org", "/", null)

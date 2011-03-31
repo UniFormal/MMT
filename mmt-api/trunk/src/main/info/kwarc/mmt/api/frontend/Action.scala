@@ -32,9 +32,7 @@ object Action extends RegexParsers {
    private def presentation = present | tonode | deps | tostring
    private def tonode = content <~ "xml" ^^ {c => ToNode(c)}
    private def present = content ~ ("present" ~> mpath) ^^ {case c ~ p => Present(c,p)}
-   private def deps = locdeps | xmldeps
-   private def locdeps = path <~ "deps locutor" ^^ {case p => Deps(p, false)}
-   private def xmldeps = path <~ "deps xml" ^^ {case p => Deps(p, true)}
+   private def deps = path <~ "deps" ^^ {case p => Deps(p)}
    private def tostring = content ^^ {c => ToString(c)}
    private def content = closure | component | get
    private def closure = path <~ "closure" ^^ {p => Closure(p)}
@@ -119,15 +117,16 @@ case class Present(c : MakeContent, nset : MPath) extends MakePresentation {
    }
    override def toString = c + " present " + nset
 }
-case class Deps(path : Path, xml : Boolean) extends MakePresentation {
+case class Deps(path : Path) extends MakePresentation {
    def make(controller : Controller, rb : RenderingHandler) {
-     if (xml) rb(<mmtabox xmlns="http://omdoc.org/abox" built="10.04.2010"/>)
+     rb.elementStart("","mmtabox")
+     rb.attributeStart("", "xmlns")
+     rb("http://omdoc.org/abox")
+     rb.attributeEnd
      (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
-         (d : ontology.ABoxDecl) =>
-            if (path <= d.path) {
-               if (xml) rb(d.toNode) else rb(d.toLocutor + "\n")
-            }
+         (d : ontology.ABoxDecl) => if (path <= d.path) rb(d.toNode)
      )
+     rb.elementEnd
    }
    override def toString = path.toString + " deps"
 }

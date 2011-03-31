@@ -11,8 +11,6 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation._
 import scala.xml.{Node,NodeSeq}
 
-//TODO abolish eager and RawNotation, just always parse
-
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
 class Reader(controller : frontend.Controller, report : frontend.Report) {
    def log(s : String) = report("reader", s)
@@ -91,7 +89,11 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 		         }
         	     add(t)
         	     docParent map (dp => add(MRef(dp, tpath, true)))
-              body.foreach(readSymbols(tpath, tpath, _))
+              body.foreach {d => 
+        	              report.indent
+                       readSymbols(tpath, tpath, d)
+        	              report.unindent
+        	     }
 	         case (base : DPath, <view>{seq @ _*}</view>) =>
 	            log("view " + name + " found")
 	            val vpath = base ? name
@@ -106,7 +108,11 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                 }
 	            add(v)
 	            docParent map (dp => add(MRef(dp, vpath, true)))
-			      body.foreach(readAssignments(OMMOD(vpath), to.toMPath, _)) //TODO relative names will be resolved wrong
+			      body.foreach {d =>
+	               report.indent
+	               readAssignments(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
+	               report.unindent
+	            }
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			     val npath = base ? name
@@ -207,12 +213,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
             case <strass>{t}</strass> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseMorphism(t, base)
-               val m = new StructureAssignment(link, name, tg)
-               add(m)
-            case <open/> =>
-               log("open for " + name + " found")
-               val as = xml.attr(A, "as") match {case "" => None case a => Some(a)}
-               val m = new Open(link, name, as)
+               val m = new DefLinkAssignment(link, name, tg)
                add(m)
             case <include>{mor}</include> =>
                val of = Obj.parseMorphism(mor, base)
@@ -222,7 +223,12 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                   Morph.domain(of)(controller.library) // throws Invalid if domain cannot be inferred
                else
                   OMMOD(Path.parseM(f, base))
-               add(IncludeAssignment(link, from, of))
+               add(new DefLinkAssignment(link, LocalName(IncludeStep(from)), of))
+            case <open/> =>
+               log("open for " + name + " found")
+               val as = xml.attr(A, "as") match {case "" => None case a => Some(a)}
+               val m = new Open(link, name, as)
+               add(m)
             case scala.xml.Comment(_) =>
             case _ => throw ParseError("assignment expected: " + A)
          }

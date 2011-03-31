@@ -16,7 +16,7 @@ class TNTValidation extends {
       val p = Path.parse(s, base)
       val files = con.getValue("name").asInstanceOf[java.util.List[String]] // list of files in current transaction
       get(p)
-      val deps = Respond(Deps(p.doc, true), "").get(this)
+      val deps = Respond(Deps(p.doc), "").get(this)
       deps.toString
    }
 }

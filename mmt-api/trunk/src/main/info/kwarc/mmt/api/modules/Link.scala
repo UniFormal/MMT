@@ -19,7 +19,7 @@ trait Link {
    protected def outerString : String
    protected def innerString : String
    def components = outerComponents ::: innerComponents
-   override def toString = outerString + " = " + innerString
+   override def toString = outerString + innerString
 }
 
  /**

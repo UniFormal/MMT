@@ -25,8 +25,8 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case e : Structure => e case _ => throw GetError(msg(path))} 
    def getConstantAssignment(path : Path, msg : Path => String = defmsg) : ConstantAssignment =
      get(path) match {case e : ConstantAssignment => e case _ => throw GetError(msg(path))} 
-   def getStructureAssignment(path : Path, msg : Path => String = defmsg) : StructureAssignment =
-     get(path) match {case e : StructureAssignment => e case _ => throw GetError(msg(path))} 
+   def getDefLinkAssignment(path : Path, msg : Path => String = defmsg) : DefLinkAssignment =
+     get(path) match {case e : DefLinkAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : Path, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
    /* The above methods should be polymorphic in the return type like this:
@@ -53,6 +53,7 @@ abstract class Lookup(val report : frontend.Report) {
     */
    
    def imports(from: TheoryObj, to: TheoryObj) : Boolean
+   def importsTo(to: TheoryObj) : Iterator[TheoryObj]
    //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
    //def structureModToSym(p : MPath) : SPath
    //def resolveAlias(s : Symbol) : Symbol

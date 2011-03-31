@@ -62,29 +62,6 @@ case object OMHID extends Term with MMTObject {
    def args = Nil
 }
 
-/**
- * An OMS represents a reference to a content element.
- * @param path the path of the referenced content element
- */
-object OMS {
-   def apply(path : SPath) : Term = OMID(OMMOD(path.parent) % path.name)
-   def unapply(t: Term) : Option[SPath] = t match {
-      case OMID(OMMOD(p) % ln) => Some(SPath(p,ln))
-      case _ => None
-   }
-}
-/*   def symbol : LocalName = path.name
-   def module : LocalPath = path.^^.name
-   def document : DPath = path ^^^
-   def head = Some(path)
-   def role = Role_ConstantRef
-   def components = path.components
-   def toNodeID(pos : Position) =
-     <om:OMS base={document.toPath} module={module.flat} name={symbol.flat}/> % pos.toIDAttr
-   override def toString = path.module.flat + "?" + path.name.flat
-   def ^(sub : Substitution) = this
-}*/
-
 case class OMID(gname: GlobalName) extends Term {
    def parent = gname.parent
    def name = gname.name
@@ -329,9 +306,9 @@ case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    def role = Role_ModRef
    def components = path.components
    def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
-   override def toString = "MOD(" + path.toPath + ")"
    def links = List(path) 
    override def asPath = Some(path)
+   override def toString = path.toPath
 }
 
 case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
@@ -344,6 +321,7 @@ case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
       case OMMOD(p) % LocalName(List(NamedStep(n))) => Some(p / n)
       case _ => None
    }
+   override def toString = path.toString
 }
 
 /**
@@ -353,9 +331,10 @@ case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
 case class OMCOMP(morphisms: List[Morph]) extends Morph with MMTObject {
    def args = morphisms
    def path = mmt.composition
+   override def toString = morphisms.mkString("", " ; ", "")
 }
 object OMCOMP {
-   def apply(ms: Morph*) : OMCOMP = OMCOMP(ms : _*)
+   def apply(ms: Morph*) : OMCOMP = OMCOMP(ms.toList)
 }
 
 /**
@@ -458,9 +437,9 @@ object Obj {
             parseOMS(N, base) match {
                case p : MPath => callback(p); OMMOD(p)
                case (t: TheoryObj) % name => callback(t % name); OMDL(t, name)
-               case doc ? mod ?? str =>
+/*               case doc ? mod ?? str =>
                   throw ParseError("not a well-formed link reference (case was removed): " + N.toString)
-                  /* val p = doc ? (mod / str)
+                  val p = doc ? (mod / str)
                   callback(p)
                   OMMOD(p) */
                case _ => throw ParseError("not a well-formed link reference: " + N.toString)

@@ -34,7 +34,9 @@ class Controller(checker : Checker, report : Report) extends ROController {
    val backend = new Backend(reader, report)
    protected def retrieve(path : Path) {
       log("retrieving " + path)
+      report.indent
       backend.get(path, false)
+      report.unindent
       log("retrieved " + path)
    }
    private def iterate[A](a : => A) : A = iterate(a, Nil)
@@ -66,7 +68,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
       path match {
          case p : DPath => iterate (docstore.get(p))
          case p : MPath => iterate (try {library.get(p)} catch {case _ => notstore.get(p)})
-         case p : SPath => iterate (library.get(p))
+         case p : GlobalName => iterate (library.get(p))
       }
    }
    def get(nset : MPath, key : NotationKey) : Notation = {

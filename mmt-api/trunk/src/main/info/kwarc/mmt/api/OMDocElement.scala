@@ -14,7 +14,7 @@ trait Content {
  * The trait MetaData is mixed into any class that can carry metadata (not used yet)
  */
 trait MetaData {
-   val metadata = new scala.collection.mutable.HashMap[SPath,String]
+   val metadata = new scala.collection.mutable.HashMap[GlobalName,String]
 }
 
 /** 

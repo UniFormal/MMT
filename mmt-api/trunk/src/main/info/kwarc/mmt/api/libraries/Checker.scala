@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.utils.MyList.fromList
 
 /** CheckResult is the result type of checking a content element */
 sealed abstract class CheckResult
@@ -23,45 +24,6 @@ case class Reconstructed(recon : List[ContentElement], deps : List[ABoxDecl]) ex
 case class Fail(msg : String) extends CheckResult
 
 abstract class Checker {
-   /** checks whether a theory object is well-formed relative to a library
-    *  @param lib the library
-    *  @param t the theory
-    *  @return the list of identifiers occurring in t
-    */
-   def checkTheo(t : TheoryObj)(implicit lib : Lookup) : List[Path] = t match {
-     case OMMOD(p) =>
-       lib.getModule(p)
-       List(p)
-   }
-   protected def checkLink(l : Link, path : Path)(implicit lib : Lookup) : List[ABoxDecl] = {
-	  val todep = l match {
-         case _ : View =>
-            val ds = checkTheo(l.to).map(HasOccurrenceOfInCodomain(path,_))
-            IsView(path) :: ds
-         case _ : Structure => List(IsStructure(path))
-      }
-      val fromdep = checkTheo(l.from).map(HasOccurrenceOfInDomain(path,_))
-      todep ::: fromdep
-   }
-   // detailed checks redundant because even lib.addUnchecked checks them
-   protected def checkHomeTheory(s: Symbol) : MPath = s.home match {
-      case OMMOD(p) =>
-         //lib.getModule(p)
-         p
-      case _ => throw Invalid("adding constants to composed theories not allowed")
-   }
-   protected def checkHomeMorph(a: Assignment) : Path = a.home match {
-      case OMMOD(p) =>
-         //lib.getModule(p, true)
-         p
-      case OMDL(OMMOD(p), name) =>
-         OMMOD(p) % name 
-      case _ => throw Invalid("adding constants to composed theories not allowed")
-   }
-   protected def checkEmpty[D<: Declaration](b: Body[D]) {
-      if (! b.isEmpty) throw Invalid("body not empty")
-   }
-
    def check(s : ContentElement)(implicit lib : Lookup) : CheckResult
 }
 
@@ -114,7 +76,12 @@ abstract class ModuleChecker extends Checker {
             val par = checkHomeTheory(l)
             val occs = checkTheo(l.from)
             val deps = occs.map(HasOccurrenceOfInImport(par, _))
-            Success(deps)
+            // flattening (transitive closure) of includes 
+            val flat = lib.importsTo(l.from).toList.mapPartial {t =>
+               if (lib.imports(t, l.home)) None
+               else Some(new Include(l.home, t))
+            }
+            Reconstructed(l:: flat.toList, deps)
          case s: DeclaredStructure =>
             checkEmpty(s)
             val par = checkHomeTheory(s)
@@ -131,15 +98,41 @@ abstract class ModuleChecker extends Checker {
       }
    def checkSymbolLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult
    
+   protected def checkLink(l : Link, path : Path)(implicit lib : Lookup) : List[ABoxDecl] = {
+	  val todep = l match {
+         case _ : View =>
+            val ds = checkTheo(l.to).map(HasOccurrenceOfInCodomain(path,_))
+            IsView(path) :: ds
+         case _ : Structure => List(IsStructure(path))
+      }
+      val fromdep = checkTheo(l.from).map(HasOccurrenceOfInDomain(path,_))
+      todep ::: fromdep
+   }
+   // detailed checks redundant because even lib.addUnchecked checks them
+   protected def checkHomeTheory(s: Symbol) : MPath = s.home match {
+      case OMMOD(p) => p
+      case _ => throw Invalid("adding constants to composed theories not allowed")
+   }
+   protected def checkEmpty[D<: Declaration](b: Body[D]) {
+      if (! b.isEmpty) throw Invalid("body not empty")
+   }
+
+   /** checks whether a theory object is well-formed relative to a library
+    *  @param lib the library
+    *  @param t the theory
+    *  @return the list of identifiers occurring in t
+    */
+   def checkTheo(t : TheoryObj)(implicit lib : Lookup) : List[Path] = t match {
+     case OMMOD(p) =>
+       lib.getModule(p)
+       List(p)
+   }
   /** checks whether a morphism object is well-formed relative to a library and infers its type
     *  @param lib the library
     *  @param m the theory
     *  @return the list of named objects occurring in m, the domain and codomain of m
     */
    def inferMorphism(m : Morph)(implicit lib : Lookup) : (List[Path], TheoryObj, TheoryObj) = m match {
-     case OMIDENT(t) =>
-        val occs = checkTheo(t)
-        (occs, t, t)
      case OMMOD(m : MPath) =>
         val l = lib.getLink(m)
         (List(m), l.from, l.to)
@@ -150,6 +143,9 @@ abstract class ModuleChecker extends Checker {
            case _ => throw Invalid("invalid morphism " + m)
         }
         (occs, from, to)
+     case OMIDENT(t) =>
+        val occs = checkTheo(t)
+        (occs, t, t)
      case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
      case OMCOMP(hd :: Nil) => inferMorphism(hd)
      case OMCOMP(hd :: tl) =>
@@ -191,6 +187,14 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
     * @param s the content element
     * throws backend.NotFound(p) if possibly well-formed after retrieving p
     */
+   //Note: Even Library.addUnchecked checks that declarations can only be added to atomic declared theories/views.
+   //Therefore, the home modules are not checked here.
+   //Body.add checks that no two declarations of the same name exist. Therefore, names are not checked here.
+   //Names that are prefixes of other names in the same body are permitted.
+   //  This works well for links, for theories it is questionable. Refusing declaration with non-primitive names might be forbidden.
+   //  When retrieving, more specific entries overrule the more general ones.
+
+   //TODO: compatibility of multiple assignments to the same knowledge item
    def checkSymbolLevel(s : ContentElement)(implicit lib : Lookup) : CheckResult = s match {
          case c : Constant =>
             //checkHomeTheory(c)
@@ -200,44 +204,42 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val deps = IsConstant(c.path) ::  
               occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
             Success(deps)
+         case a : ConstantAssignment =>
+            val (l,d) = getSource(a)
+            val c = d match {
+                case c : Constant => c
+                case _ => return Fail("constant-assignment to non-constant")
+            }
+            val occas = checkTerm(l.to, a.target, c.uv)
+            if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home)))
+               return Fail("assignment does not type-check")
+            val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)
+            if (! defleq) return Fail("assignment violates definedness ordering")
+            val deps = IsConAss(a.path) :: occas.map(HasOccurrenceOfInTarget(a.path, _))
+            Success(deps)
+         case a : DefLinkAssignment =>
+            val (l,d) = getSource(a)
+            val s = d match {
+                case s : Structure => s
+                case _ => return Fail("structure-assignment to non-structure")
+            }
+            val occs = checkMorphism(a.target, s.from, l.to)
+            val deps = IsStrAss(a.path) :: occs.map(HasOccurrenceOfInTarget(a.path, _))
+            // flattening of includes: this assignment also applies to every theory t included into s.from 
+            val flat = lib.importsTo(s.from).toList.mapPartial {t =>
+               val name = a.name.thenInclude(t)
+               if (l.declares(name)) None //here, the compatiblity check can be added
+               else Some(new DefLinkAssignment(a.home, name, a.target))
+            }
+            Reconstructed(a :: flat, deps)
          case _ => Success(Nil)
-/*         case a : Alias =>
+   }
+/*       case a : Alias =>
             lib.get(a.forpath)
             if (lib.imports(a.forpath.parent, a.parent))
                Success(List(IsAlias(a.path), IsAliasFor(a.path, a.forpath)))
             else
                Fail("illegal alias")
-         case a : ConstantAssignment =>
-            checkHomeMorph(a)
-            val link = lib.getLink(a.parent)
-            val sourceSym = try {lib.getSymbolNoAlias(link.from ? a.name)}
-                         catch {case _ => return Fail("assignment to non-existing constant")}
-            val source = sourceSym match {
-                case s : Structure => return Fail("assignment to structure")
-                case c : Constant => if (c.parent == link.from) c else return Fail("assignment to included constant")
-            }
-            val defleq = source.df.isEmpty || a.target == OMHID() || foundation.equality(source.df.get, a.target)
-            if (! defleq) return Fail("assignment violates definedness ordering")
-            val occas = checkTerm(link.to, a.target, source.uv)
-            if (! foundation.typing(Some(a.target), source.tp.map(_ * a.parent)))
-               return Fail("assignment does not type-check")
-            val deps = IsConAss(a.path) :: occas.map(HasOccurrenceOfInTarget(a.path, _))
-            Success(deps)
-         case a : StructureAssignment =>
-            val link = lib.getLink(a.parent)
-            val source = try {lib.getStructure(link.from ? a.name)}
-                         catch {case _ => return Fail("assignment to non-existing structure")}
-            val occs = checkMorphism(a.target, source.from, link.to)
-            //TODO: checking of equality
-            val deps = IsConAss(a.path) :: occs.map(HasOccurrenceOfInTarget(a.path, _))
-            Success(deps)
-         case a: IncludeAssignment => Success(Nil) //TODO
-/*         case LinkImport(par, of) =>
-            lib.getLink(par)
-            val (occs, _, _) = inferMorphism(of)
-            val deps = occs.map(p => HasOccurrenceOfInImport(par, p))
-            Success(deps)*/
-            //TODO: check for overlap between imported morphisms
          case a : Open =>
             val str = lib.getStructure(a.parent)
             val source = try {lib.getSymbol(str.from ? a.name)}
@@ -247,8 +249,22 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             Reconstructed(List(a, al), List(IsOpen(a.path)))
          case p : Pattern => Success(Nil) // TODO
          case i : Instance => Reconstructed(List(Pattern.elaborate(i,lib)),Nil)
- */     }
+ */
 
+   private def getSource(a: Assignment)(implicit lib: Lookup) : (DeclaredLink, ContentElement) = {
+      val p = a.home match {
+         case OMMOD(p) => p
+         case OMDL(OMMOD(p), name) => OMMOD(p) % name 
+         case _ => throw Invalid("adding assignment to non-declared-view")
+      }
+      val l = lib.get(p) match {
+         case l: DeclaredLink => l
+         case _ => throw Invalid("adding assignment to non-declared-view") 
+      }
+      val s = try {lib.get(l.from % a.name)}
+              catch {case _ => throw Invalid("assignment to undeclared name")}
+      (l, s)
+   }
    /**
     * Checks structural well-formedness of a closed term relative to a library and a home theory.
     * @param lib the library

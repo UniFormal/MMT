@@ -20,7 +20,12 @@ trait Body[S <: Declaration] {
    protected var order : List[S] = Nil
    //invariant: "prefixes" stores all prefixes for all LocalPaths in the domain of "statements", together with a counter how often they occur
    //protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
+   def declares(name: LocalName) = statements.isDefinedAt(name)
    def get(name : LocalName) : S = statements(name)
+   def getO(name : LocalName) : Option[S] =
+      try {Some(get(name))}
+      catch {case _ => None}
+   def get(name : String) : S = get(LocalName(name))
    def getFirst(name: LocalName, error: String => Nothing) : (S, Option[LocalName]) =
       getFirst(name, None, error(" no prefix of " + name + " is declared"))
    private def getFirst(name: LocalName, rest : Option[LocalName], error: => Nothing) : (S, Option[LocalName]) =
@@ -33,10 +38,6 @@ trait Body[S <: Declaration] {
               getFirst(ln, Some(r), error)
          }
       }
-   def getO(name : LocalName) : Option[S] =
-      try {Some(get(name))}
-      catch {case _ => None}
-   def get(name : String) : S = get(LocalName(name))
    def add(s : S) {
 	      val name = s.name
 	 /*     val pr = name.prefixes
@@ -69,7 +70,8 @@ trait Body[S <: Declaration] {
    }
    def isEmpty = statements.isEmpty
    def valueList = order
+   def iterator = valueList.iterator 
    protected def innerNodes = valueList.map(_.toNode)
-   protected def innerString = valueList.map("\t" + _.toString).mkString("\n{", "\n", "\n}")
+   protected def innerString = valueList.map("\t" + _.toString).mkString(" = {", "\n", "\n}")
    protected def innerComponents = valueList
 }

@@ -84,7 +84,7 @@ case class Include(val home: TheoryObj, val from: TheoryObj) extends Definitiona
    val name = LocalName(IncludeStep(from))
    val role = info.kwarc.mmt.api.Role_Include
    protected def outerComponents : List[Content] = List(from)
-   protected def outerString : String = "include " + from + " -> " + to  
+   protected def outerString : String = "include " + from  
    def toNode = from match {
       case OMMOD(p) => <include from={p.toPath}/> 
       case _ => <include>{from.toOBJNode}</include>
