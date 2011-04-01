@@ -6,8 +6,9 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.presentation._
 import scala.collection.mutable.Map
 
+/** helper object for paths */
 object Path {
-   //parses an MMT-URI reference into a triple and then makes it absolute
+   /** parses an MMT-URI reference into a triple and then makes it absolute */
    def parse(s : String, base : Path) : Path = {
       val (d,m,n) = toTriple(s)
       parse(d,m,n,base)
@@ -46,7 +47,7 @@ object Path {
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
    }
-   //splits uri?mod?name into (uri, mod, name)
+   /** splits uri?mod?name into (uri, mod, name) */
    def toTriple(s : String) : (xml.URI, String, String) = {
       if (s.indexOf("#") != -1)
          throw new ParseError("MMT-URI may not have fragment")
@@ -59,18 +60,22 @@ object Path {
          case _ => throw ParseError("MMT-URI may have at most two ?s: " + s)
       }
    }
+   /** as parse but fails if the result is not a symbol level URI */
    def parseS(s : String, base : Path) : GlobalName = parse(s,base) match {
       case p : GlobalName => p
       case p => throw ParseError("symbol path expected: " + p) 
    }
+   /** as parse but fails if the result is not a module level URI */
    def parseM(s : String, base : Path) : MPath = parse(s,base) match {
       case p : MPath => p
       case p => throw ParseError("module path expected: " + p) 
    }
+   /** as parse but fails if the result is not a document level URI */
    def parseD(s : String, base : Path) : DPath = parse(s,base) match {
       case p : DPath => p
       case p => throw ParseError("document path expected: " + p) 
    }
+   /** parses a possibly relative LocalPath or LocalName */
    def parseLocal(n : String) : LocalRef = {
       val relative = n.startsWith("/")
       var l = n.split("/",-1).toList
@@ -82,6 +87,7 @@ object Path {
          throw ParseError("cannot parse " + n + " (local path may not have empty component or end in slash)")
       LocalRef(l, ! relative)
    }
+   /** as parseLocal but fails on relative results */
    def parseName(n : String) : LocalRef = {
       val r = parseLocal(n)
       if (! r.absolute)
@@ -104,8 +110,8 @@ case class LocalRef(segments : List[String], absolute : Boolean) {
 
 /**
  * A Path represents an MMT path. <p>
- * An MMT path refers to a document (doc), a module (doc?mod), or a symbol (doc?mod?sym).<p>
- * See the objects ?, ??, /, \, and ! for pattern matching paths.
+ * An MMT path refers to a document (doc), a module (doc?mod), or a symbol (M % sym).
+ * Use the objects ?, %, /, \, and ! for pattern matching paths.
  */
 abstract class Path {
    /** the document part of the path */
@@ -125,9 +131,13 @@ abstract class Path {
       case doc ? name => doc.toPath + "?" + name.flat + (if (long) "?" else "")
       case mod % name => mod.toMPath.toPath + "?" + name.flat
    }
+   /** as toPath(false) */
    def toPath : String = toPath(false)
+   /** as toPath(true) */
    def toPathLong : String = toPath(true)
+   /** as toPath, but escapes XML-illegal characters */
    def toPathEscaped = scala.xml.Utility.escape(toPath)
+   /** breaks an MMT URI reference into its components, all of which are optional */
    def toTriple : (Option[DPath], Option[LocalPath], Option[LocalName]) = this match {
       case mod % name =>
          val mp = mod.toMPath
@@ -175,6 +185,13 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
    def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
 }
 
+/** A GlobalName represents the MMT URI of a symbol-level declaration.
+ * This includss virtual declarations and declarations within complex module expressions. 
+ */
+case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
+   def doc = utils.mmt.mmtbase
+   def ^! = if (name.length == 1) parent.toMPath else parent % name.init
+}
 
 /**
  * A LocalPath represents a local MMT module (relative to a document).
@@ -196,6 +213,10 @@ case class LocalPath(fragments : List[String]) {
    override def toString = flat
 }
 
+/**
+ * A LocalNameh represents a local MMT symbol-level declarations (relative to a module).
+ * @param steps the list of (in MMT: slash-separated) components
+ */
 case class LocalName(steps: List[LNStep]) {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
    def /(n: LNStep) : LocalName = this / LocalName(List(n))
@@ -217,29 +238,28 @@ object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
    def apply(step: String) : LocalName = LocalName(NamedStep(step)) 
 }
+/** a step in a LocalName */
 abstract class LNStep {
    def toPath : String
    override def toString = toPath
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
 }
+/** constant or structure declaration */
 case class NamedStep(name: String) extends LNStep {
    def toPath = name
 }
+/** an include declaration; these are unnamed and identified by the imported theory */
 case class IncludeStep(from: TheoryObj) extends LNStep {
    def toPath = "[include " + from.toString + "]"
 }
+
 object LNEmpty {
    def apply() = LocalName(Nil)
    def unapply(n: LocalName) : Option[Unit] = n match {
       case LocalName(Nil) => Some(())
       case _ => None
    }
-}
-
-case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
-   def doc = utils.mmt.mmtbase
-   def ^! = if (name.length == 1) parent.toMPath else parent % name.init
 }
 
 /** 
@@ -252,6 +272,9 @@ object ? {
    }
 }
 
+/** 
+ * This permits the syntax M % sym in patterns. 
+ */
 object % {
    def apply(p: ModuleObj, n: LocalName) : GlobalName = GlobalName(p,n)
    def unapply(p : Path) : Option[(ModuleObj,LocalName)] = p match {
@@ -278,23 +301,9 @@ object \ {
 }
 
 /** 
- * This permits the syntax !(n) to match atomic local names in patterns. 
+ * This permits the syntax !(n) in patterns to match atomic local names. 
  */
 object ! {
    def unapply(l : LocalPath) : Option[String] = if (l.isNative) Some(l.head) else None
    def unapply(l : LocalName) : Option[LNStep] = if (l.length == 1) Some(l.head) else None
 }
-
-/*
-object test {
-def t(p : Path) = p match {
-   case a ? b / c => println("?/" + a ? (b / c))
-   case a ? !(b) => println("?!: " + a ? b)
-   case a ? b ?? c \ d => println("???\\: " + a ? b ? (c / d))
-   case a ? b ?? c => println("???: " + a ? b ? c)
-   case a => println(a)
-}
-}
-*/
-
-

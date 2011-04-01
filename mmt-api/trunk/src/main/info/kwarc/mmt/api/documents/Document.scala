@@ -1,12 +1,6 @@
 package info.kwarc.mmt.api.documents
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils._
 
 /**
  * A Document represents an MMT document.
@@ -18,14 +12,16 @@ import info.kwarc.mmt.api.utils._
  * @param inititems the initial list of references
  * @param controller a read-only controller in which references are resolved to obtain the full document
  */
-class Document(val path : DPath) extends DocumentElement {
+class Document(val path : DPath) extends NarrativeElement {
    /** constructs a non-empty document */
    def this(path : DPath, inititems : List[XRef]) = {
 	   this(path)
 	   inititems foreach add
    }
    private var items : List[XRef] = Nil
+   /** returns the list of children of the document */
    def getItems = items
+   /** adds a child at the end of the documents */
    def add(r : XRef) {
       items = items ::: List(r)
    }
@@ -37,49 +33,40 @@ class Document(val path : DPath) extends DocumentElement {
 }
 
 /**
- * An XRef represents a reference from a document to a module declared in some other document.
- * 
+ * An XRef represents a reference from a document to an external document part or module.
  * An XRef is semantically equivalent to copy-pasting the referenced module.
- * All documents are represented as lists of XRefs no matter whether a module is given directly or by reference.
+ * All documents are represented as lists of XRefs no matter whether a module is given locally or remotely.
  * @param parent the containing document
  * @param target the referenced module
- * @param generated true iff the module was given directly and replaced by a generated XRef during parsing.
+ * @param generated true iff the module was given directly in the document rather than referenced remotely
  */
-abstract class XRef(val parent : DPath, val target : Path, val generated : Boolean) extends DocumentElement {
+abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElement {
    val path = parent
    val role = Role_XRef
    def components = List(StringLiteral(target.toString))
    def toNode : scala.xml.Node
+   override def toString = "ref " +  target.toPath
 }
 
-case class DRef(p : DPath, override val target : DPath, g : Boolean) extends XRef(p, target, g) {
+/** reference to a document section */
+class DRef(p : DPath, target : DPath) extends XRef(p, target) {
    def toNode = <omdoc href={target.toString}/>
 }
-case class MRef(p : DPath, override val target : MPath, g : Boolean) extends XRef(p, target, g) {
+object DRef {
+   def apply(p : DPath, target : DPath, generated: Boolean): DRef = {
+      val r = new DRef(p, target)
+      if (generated) r.setOrigin(DocumentSkeleton)
+      r
+   }
+}
+/** reference to a module */
+class MRef(p : DPath, target : MPath) extends XRef(p, target) {
    def toNode = <mref target={target.toString}/>
 }
-
-/**
- * A DocStore holds a set of documents indexed by their URIs.
- */
-class DocStore(abox : ontology.ABoxStore, report : Report) {
-   private val documents = new scala.collection.mutable.HashMap[DPath,Document]
-   /** adds a document to the DocStore */
-   def add(d : DocumentElement) {d match {
-      case d : Document =>
-         documents(d.path) = d
-         abox += ontology.IsDocument(d.path)
-      case r : XRef =>
-         val d = try {documents(r.parent)} catch {case _ => throw AddError("document does not exist in " + r)}
-         d.add(r)
-         abox += ontology.Declares(d.path, r.target)
-   }}
-   /** retrieves a document from the DocStore */
-   def get(p : DPath) = {
-      try {documents(p)}
-      catch {case _ => throw frontend.NotFound(p)}
+object MRef {
+   def apply(p : DPath, target : MPath, generated: Boolean): MRef = {
+      val r = new MRef(p, target) 
+      if (generated) r.setOrigin(DocumentSkeleton)
+      r
    }
-   /** deletes all documents */
-   def clear {documents.clear}
 }
-

@@ -10,7 +10,7 @@ trait DefinitionalLink extends Symbol with Link {
    val to = home
    def toMorph = OMDL(home, name)
    def applyTo(sym : Symbol) : Symbol = sym match {
-      case c : Constant => new Constant(to, name / c.name, c.tp.map(_ * toMorph), c.df.map(_ * toMorph), c.uv, c.genFrom.map(applyTo))
+      case c : Constant => new Constant(to, name / c.name, c.tp.map(_ * toMorph), c.df.map(_ * toMorph), c.uv)
       case s : Structure => new DefinedStructure(to, name / s.name, s.from, s.toMorph * toMorph)
       case p : Pattern => null //TODO translate pattern
       case i : Instance => null //TODO translate instance

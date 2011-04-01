@@ -60,8 +60,10 @@ object Pattern {
     	}
        val t : Option[Term] = if (pat.tp.isDefined) Some(merge(pat.tp.get,inst.matches)) else None
     */
-    val d : Option[Term] = pat.df.map(mergeTerm(_,inst.matches))     
-    new Constant(inst.home,inst.name,t,d,null,Some(inst))
+    val d : Option[Term] = pat.df.map(mergeTerm(_,inst.matches))
+    val c = new Constant(inst.home,inst.name,t,d,null)
+    c.setOrigin(InstanceElaboration(inst.path))
+    c
   }
 
   /**

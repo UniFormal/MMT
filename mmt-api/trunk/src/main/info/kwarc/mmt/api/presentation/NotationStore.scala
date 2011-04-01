@@ -15,7 +15,7 @@ case class NotationKey(path : Option[Path], role : Role)
  * @param depstore the abox store
  * @param report the logging handler
  */
-class NotationStore(lib : libraries.Lookup, depstore : ontology.ABoxStore, report : frontend.Report) {
+class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report : frontend.Report) {
    protected val sets = new scala.collection.mutable.HashMap[MPath, Style]
    protected val defaults = new scala.collection.mutable.HashMap[NotationKey, Notation]
 

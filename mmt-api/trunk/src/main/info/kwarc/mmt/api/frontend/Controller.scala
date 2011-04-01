@@ -6,10 +6,13 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
-//import scala.actors.{Actor,Channel}
 
+/** An exception that is throw when a needed knowledge item is not available.
+ * A Controller catches it and retrieves the item dynamically.  
+ */
 case class NotFound(path : Path) extends java.lang.Throwable
 
+/** An interface to a controller containing read-only methods. */
 abstract class ROController {
    val library : Lookup  
    def get(path : Path) : StructuralElement
@@ -22,15 +25,24 @@ abstract class ROController {
    }
 }
 
-
+/** A Controller is the central class maintaining all MMT knowledge items.
+  * It stores all stateful entities and executes Action commands.
+  */  
 class Controller(checker : Checker, report : Report) extends ROController {
-   def log(s : => String) = report("controller", s)
-   val depstore = new ABoxStore(report)
-   val docstore = new DocStore(depstore, report)
+   protected def log(s : => String) = report("controller", s)
+   /** maintains all relational elements */
+   val depstore = new RelStore(report)
+   /** maintains all content elements */
    val library = new Library(checker, depstore, report)
+   /** maintains all presentation elements */
    val notstore = new NotationStore(library, depstore, report)
+   /** maintains all narrative elements */
+   val docstore = new DocStore(depstore, report)
+   /** the MMT rendering engine */
    val presenter = new presentation.Presenter(this, report)
+   /** the MMT parser (XML syntax) */
    val reader = new Reader(this, report)
+   /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(reader, report)
    protected def retrieve(path : Path) {
       log("retrieving " + path)
@@ -51,19 +63,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
          case e => throw e
       }
    }
-   def add(e : StructuralElement) {
-      iterate (e match {
-         case c : ContentElement => library.add(c)
-         case p : PresentationElement => notstore.add(p)
-         case d : DocumentElement => docstore.add(d) 
-      })
-   }
-   def clear {
-      docstore.clear
-      library.clear
-      notstore.clear
-      depstore.clear
-   }
+   /** retrieves a knowledge item */
    def get(path : Path) : StructuralElement = {
       path match {
          case p : DPath => iterate (docstore.get(p))
@@ -71,8 +71,27 @@ class Controller(checker : Checker, report : Report) extends ROController {
          case p : GlobalName => iterate (library.get(p))
       }
    }
+   /** selects a notation
+    *  @param nset the style from which to select
+    *  @param the notation key identifying the knowledge item to be presented
+    */
    def get(nset : MPath, key : NotationKey) : Notation = {
       iterate (notstore.get(nset,key))
+   }
+   /** adds a knowledge item */
+   def add(e : StructuralElement) {
+      iterate (e match {
+         case c : ContentElement => library.add(c)
+         case p : PresentationElement => notstore.add(p)
+         case d : NarrativeElement => docstore.add(d) 
+      })
+   }
+   /** clears the state */
+   def clear {
+      docstore.clear
+      library.clear
+      notstore.clear
+      depstore.clear
    }
    protected var base : Path = DPath(mmt.baseURI)
    protected def handleExc[A](a: => A) {
@@ -86,6 +105,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
         val act = Action.parseAct(l, base)
         handle(act)
    }
+   /** exectutes an Action */
    def handle(act : Action) {
 	  if (act != NoAction) report("user", act.toString)
 	  handleExc (act match {
@@ -115,7 +135,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
 	      case Read(p) => backend.get(p, true)
-	      case DefaultGet(p) => handle(Print(p))
+	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("library", library.toNode.toString)
 	      case PrintAll => report("library", library.toString)

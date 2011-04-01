@@ -4,66 +4,13 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.MyList.fromList
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.{HashSet,HashMap}
-/**
- * Objects of type Query are expressions of a simple query language over an MMT ABox.
- * The semantics of a query is that it denotes a binary relation between MMT paths.
- */
-sealed abstract class Query {
-   def |(q: Query) = Choice(this, q)
-   def *(q: Query) = Sequence(this, q)
-   /** the same query but for the inverse relation */
-   def unary_- : Query
-}
-/** base case: a primitive binary relation */
-case class ToObject(dep : Binary) extends Query {
-   def unary_- = ToSubject(dep)
-   override def toString = "+ " + dep
-}
-/** base case: the inverse of a primitive binary relation */
-case class ToSubject(dep : Binary) extends Query {
-   def unary_- = ToObject(dep)
-   override def toString = "- " + dep
-}
-/** the transitive closure of a relation */
-case class Transitive(q : Query) extends Query {
-   def unary_- = Transitive(- q)
-   override def toString = "(" + q + ")*"
-}
-/** the union of a list of relations */
-case class Choice(qs : Query*) extends Query {
-   def unary_- = Choice(qs.map(- _) : _*)
-   override def toString = qs.mkString(""," | ", "")
-}
-/** the composition of a list of relations */
-case class Sequence(qs : Query*) extends Query {
-   def unary_- = Sequence(qs.reverse.map(- _) : _*)
-   override def toString = qs.mkString(""," ; ", "")
-}
-/** the reflexive relation */
-case object Reflexive extends Query {
-   def unary_- = this
-   override def toString = "Id"
-}
-/** the reflexive relation restricted to a unary predicate */
-case class HasType(tp : Unary) extends Query {
-   def unary_- = this
-   override def toString = ":" + tp
-}
-
-object Query {
-    /** S has a structure declaration with domain O, defined as an abbreviation */
-	def HasStructureFrom = Sequence(- HasCodomain, HasType(IsStructure), + HasDomain)
-    /** Disjunction of all binary relations */
-	def AnyDep = Choice(+HasOccurrenceOfInType, +HasOccurrenceOfInDefinition, +HasOccurrenceOfInTarget,
-   +IsAliasFor, +HasMeta, +HasOccurrenceOfInImport, +HasDomain, +HasCodomain)
-}
 
 /**
- * An ABoxStore stores the abox of the loaded documents with respect to the MMT ontology.
- * Triples (subject, binary, object) are hashed
- * such that for each two components the set of possible completions can be retrieved efficiently.
+ * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
+ * Triples (subject, binary, object) are hashed three ways so that for any two components
+ * the set of third components can be retrieved efficiently.
  */
-class ABoxStore(report : frontend.Report) {
+class RelStore(report : frontend.Report) {
    private val types = new HashMap[Path, Unary]
    private val subjects = new HashMapToSet[(Binary,Path), Path]
    private val objects = new HashMapToSet[(Path,Binary), Path]
@@ -74,7 +21,7 @@ class ABoxStore(report : frontend.Report) {
    /** retrieves all Relation declarations */
    def getDeps : Iterator[Relation] = dependencies.pairs.map({case ((p,q), d) => Relation(d,p,q)})
    /** adds a declaration */
-   def +=(d : ABoxDecl) {
+   def +=(d : RelationalElement) {
       log(d.toString)
       d match {
         case Relation(dep, subj, obj) =>                  
@@ -86,9 +33,11 @@ class ABoxStore(report : frontend.Report) {
    }
    /**
     * Executes a query.
-    * @param start an MMT path
-    * @param q the query to be executed
-    * @param add a continuation called on every element in the result set (duplicate calls possible)
+    * There is no result set; instead, a continuation is passed that can be used to build the result set;
+    * this permits, e.g., to keep track of the order in which results were found.
+    * @param start the MMTURI to which the results are related
+    * @param q the query to be executed; the way in which results are related to the start
+    * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
     */
    def query(start : Path, q : Query, add : Path => Unit) {q match {
       case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d 
@@ -149,6 +98,7 @@ class ABoxStore(report : frontend.Report) {
     * mentioned in C. This permits to compute a significantly smaller theory when presenting C to an ATP system.
     * Note that L is not splittable, thus L itself and thus all axioms and connectives given in L are returned
     * even if they are not mentioned by C.
+    * This is currently not implemented.
     * @param o the MMT object
     * @param splittable a list of theories that may be split.
     * @return the list of MMT paths needed to make the object well-formed

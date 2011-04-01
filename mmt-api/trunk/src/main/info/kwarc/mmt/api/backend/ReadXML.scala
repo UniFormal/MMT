@@ -141,7 +141,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
          val uv = Universe.parse(r)
          val tp = t.map(Obj.parseTerm(_, base))
          val df = d.map(Obj.parseTerm(_, base))
-         val c = new Constant(thy, name, tp, df, uv, None)
+         val c = new Constant(thy, name, tp, df, uv)
          add(c)
       }
       for (s <- symbols; name = Path.parseName(xml.attr(s,"name")).toLocalName) {
