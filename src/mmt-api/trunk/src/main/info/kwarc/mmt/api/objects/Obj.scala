@@ -32,7 +32,7 @@ trait MMTObject {
    def components = OMID(path) :: args
    def path : GlobalName
    def head = Some(path)
-   def role = if (args.isEmpty) Role_IDRef else Role_application
+   def role = if (args.isEmpty) Role_ConstantRef else Role_application
    def toNodeID(pos : Position) =
       if (args.isEmpty) OMID(path).toNode
       else
@@ -65,10 +65,17 @@ case object OMHID extends Term with MMTObject {
 case class OMID(gname: GlobalName) extends Term {
    def parent = gname.parent
    def name = gname.name
-   def head = None //TODO better head
+   def head = Some(gname)
    def ^(sub : Substitution) = this
-   def role = Role_IDRef
-   def components = List(parent, StringLiteral(name.flat))
+   def role = gname match {
+      case OMMOD(p) % _ => Role_ConstantRef
+      case _ => Role_ComplexConstantRef
+   }
+   def components = gname match {
+      case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.flat),
+                                 StringLiteral(ln.flat), StringLiteral(gname.toPathEscaped))
+      case _ => List(parent, StringLiteral(name.flat)) 
+   }
    def toNodeID(pos : Position) = parent match {
       case OMMOD(doc ? mod) => <om:OMS base={doc.toPath} module={mod.flat} name={name.flat}/> % pos.toIDAttr
       case par => <om:OMS name={name.flat}>{par.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
@@ -311,11 +318,33 @@ case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    override def toString = path.toPath
 }
 
+/*
+case object OMINIT extends TheoryObj with ComposedModuleObject {
+   def role = Role_initial
+    def components = Nil
+}
+
+case class OMPII(left: TheoryObj, right: TheoryObj) extends TheoryObj with ComposedModuleObject {
+   def role = Role_pushout_ii
+   def components = List(left, right)
+   override def toString = left.toString + " + " + right.toString
+}
+
+case class OMPI(push: TheoryObj, along: Morph, wth: TheoryObj) extends TheoryObj with ComposedModuleObject {
+   def role = Role_pushout_i
+   def components = List(push, along, wth)
+   override def toString = push.toString + " + " + along.toString + " with " + wth.toString 
+}
+*/
+
 case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
    def path = cod % name
    def head : Option[Path] = Some(path)
-   def role = Role_StructureRef
-   def components = List(path.parent, StringLiteral(path.name.flat))
+   def role = cod match {
+      case OMMOD(_) => Role_StructureRef
+      case _ => Role_ComplexConstantRef
+   }
+   def components = OMID(cod % name).components
    def toNodeID(pos : Position) = OMID(path).toNodeID(pos)
    override def asPath = path match {
       case OMMOD(p) % LocalName(List(NamedStep(n))) => Some(p / n)
@@ -346,11 +375,37 @@ case class OMIDENT(theory : TheoryObj) extends Morph with MMTObject {
    def path = mmt.identity
 }
 
-case class OMEMPTY(from: TheoryObj, to: TheoryObj) extends Morph  with MMTObject {
+case class OMEMPTY(from: TheoryObj, to: TheoryObj) extends Morph with MMTObject {
    def args = List(from,to)
    def path = mmt.emptymorphism
 }
 
+/*
+object OMINITM {
+   def apply(thy : TheoryObj) = OMEMPTY(OMINITIAL, thy)
+   def unapply(t: Obj) : Option[TheoryObj] = t match {
+      case OMEMPTY(OMINITIAL, thy) => Some(thy)
+   }
+}
+
+case class OMUNION(morphs: left: Morph, right: Morph) extends Morph with ComposedModuleObject {
+   def role = Role_pushout_iim
+   def components = List(left, right)
+   override def toString = left.toString + " + " + right.toString
+}
+
+case class OMPIM(push: Morph, along: Morph, wth: Morph) extends Morph with ComposedModuleObject {
+   def role = Role_pushout_im
+   def components = List(push, along, wth)
+   override def toString = push.toString + " + " + along.toString + " with " + wth.toString 
+}
+
+case class OMPIW(raise: Morph, to: TheoryObj) extends Morph with ComposedModuleObject {
+   def role = Role_pushout_iim
+   def components = List(raise, to)
+   override def toString = raise.toString + " * " + to.toString
+}
+*/
 
 /**
  * Obj contains the parsing methods for objects.

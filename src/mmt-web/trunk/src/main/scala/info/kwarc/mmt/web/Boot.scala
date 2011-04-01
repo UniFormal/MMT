@@ -1,11 +1,11 @@
-package info.kwarc.mmt.web
-
+package bootstrap.liftweb
 import info.kwarc.mmt.web.controller._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api._
 import net.liftweb._
 import net.liftweb.http._
 import net.liftweb.common.{Box,Empty,Full}
+
 /**
   * A class that's instantiated early and run. 
   * It allows the application to modify lift's environment.
@@ -40,8 +40,8 @@ class Boot {
                    case "text/xml" => "xml"
                    case _ => "xhtml"
                 }
-	            case ToNode(_) | Deps(_, true) => "xml"
-	            case ToString(_) | Deps(_, false) => "text"
+	            case ToNode(_) | Deps(_) => "xml"
+	            case ToString(_) => "text"
 	         }
              case _ => "xml"
          }
@@ -55,7 +55,7 @@ class Boot {
    /** init method */
    def boot {
      // where to search snippets
-     LiftRules.addToPackages("ombase")
+     LiftRules.addToPackages("info.kwarc.mmt.web")
 
      // add URL rewrites
      LiftRules.statelessRewrite.append {

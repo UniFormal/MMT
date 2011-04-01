@@ -12,6 +12,11 @@ object mmt {
    val composition = mmtsymbol("composition")
    val morphismapplication = mmtsymbol("morphismapplication")
    val emptymorphism = mmtsymbol("emptymorphism")
+/*   val poii = mmtsymbol("theory-union")
+   val poiim = mmtsymbol("morphism-union")
+   val poi = mmtsymbol("theory-with")
+   val poim = mmtsymbol("morphism-with")
+   val poiw = mmtsymbol("morphism-extend") */
    val jokerbinder = mmtsymbol("joker")
    val repetition = mmtsymbol("repetition")
    val index = mmtsymbol("index")
