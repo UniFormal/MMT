@@ -41,7 +41,7 @@ class Get {
       ancs.flatMap {p =>
          val sep = p match {
     	   case p : MPath if ! mpathfound => mpathfound = true; gsep
-    	   case p : SPath if ! spathfound => spathfound = true; gsep
+    	   case p : GlobalName if ! spathfound => spathfound = true; gsep
     	   case p if p.^! == p => Nil
     	   case _ => lsep
     	 }
