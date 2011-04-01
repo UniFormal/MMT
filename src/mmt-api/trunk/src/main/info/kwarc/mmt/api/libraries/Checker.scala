@@ -13,16 +13,18 @@ sealed abstract class CheckResult
 /** the content element is well-formed
  * @param decls the list of dependencies of the object 
  */
-case class Success(deps : List[ABoxDecl]) extends CheckResult
+case class Success(deps : List[RelationalElement]) extends CheckResult
 /** the content element is well-formed and was reconstructed to several new objects (e.g., type inference)
  * @param recon the reconstructed content elements
  */
-case class Reconstructed(recon : List[ContentElement], deps : List[ABoxDecl]) extends CheckResult
+case class Reconstructed(recon : List[ContentElement], deps : List[RelationalElement]) extends CheckResult
 /** the content element is ill-formed
  * @param msg an error message 
  */
 case class Fail(msg : String) extends CheckResult
 
+/** Objects of type Checker can be used by a Library to check added ContentElements.
+  *  They may return reconstructed declarations and can infer the relational represtnestion. */
 abstract class Checker {
    def check(s : ContentElement)(implicit lib : Lookup) : CheckResult
 }
@@ -35,7 +37,7 @@ object NullChecker extends Checker {
 }
 
 /**
- * A Checker that checks only module level elements.
+ * A Checker that checks only knowledge items whose well-formedness is foundation-independent.
  */
 abstract class ModuleChecker extends Checker {
    def check(s : ContentElement)(implicit lib : Lookup) : CheckResult = try {
@@ -79,7 +81,11 @@ abstract class ModuleChecker extends Checker {
             // flattening (transitive closure) of includes 
             val flat = lib.importsTo(l.from).toList.mapPartial {t =>
                if (lib.imports(t, l.home)) None
-               else Some(new Include(l.home, t))
+               else {
+                  val i = new Include(l.home, t)
+                  i.setOrigin(IncludeClosure)
+                  Some(i)
+               }
             }
             Reconstructed(l:: flat.toList, deps)
          case s: DeclaredStructure =>
@@ -98,7 +104,7 @@ abstract class ModuleChecker extends Checker {
       }
    def checkSymbolLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult
    
-   protected def checkLink(l : Link, path : Path)(implicit lib : Lookup) : List[ABoxDecl] = {
+   protected def checkLink(l : Link, path : Path)(implicit lib : Lookup) : List[RelationalElement] = {
 	  val todep = l match {
          case _ : View =>
             val ds = checkTheo(l.to).map(HasOccurrenceOfInCodomain(path,_))
@@ -229,7 +235,11 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val flat = lib.importsTo(s.from).toList.mapPartial {t =>
                val name = a.name.thenInclude(t)
                if (l.declares(name)) None //here, the compatiblity check can be added
-               else Some(new DefLinkAssignment(a.home, name, a.target))
+               else {
+                  val r = new DefLinkAssignment(a.home, name, a.target)
+                  r.setOrigin(IncludeClosure)
+                  Some(r)
+               }
             }
             Reconstructed(a :: flat, deps)
          case _ => Success(Nil)

@@ -4,6 +4,10 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.documents._
 import scala.util.parsing.combinator._
 
+/** helper object for Actions
+ * This object provides a combinator parser for Actions that is used when commands are sent to a controller as strings.
+ * It is straighforward to understand the concrete syntax from the source code.
+ */
 object Action extends RegexParsers {
    private var base : Path = null
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
@@ -25,10 +29,10 @@ object Action extends RegexParsers {
    private def clear = "clear" ^^ {case _ => Clear}
    private def exit = "exit" ^^ {case _ => Exit}
    private def getaction = tofile | respond | print | defaultget
-   private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => ToFile(p,f)}
-   private def print = presentation <~ "print" ^^ {p => Print(p)}
+   private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
+   private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
    private def defaultget = presentation ^^ {p => DefaultGet(p)}
-   private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => Respond(p,s)}
+   private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
    private def presentation = present | tonode | deps | tostring
    private def tonode = content <~ "xml" ^^ {c => ToNode(c)}
    private def present = content ~ ("present" ~> mpath) ^^ {case c ~ p => Present(c,p)}
@@ -43,6 +47,7 @@ object Action extends RegexParsers {
    private def mpath = str ^^ {s => Path.parseM(s, base)}
    private def file = str ^^ {s => new java.io.File(s)}
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
+   /** parses an action from a string, relative to a base path */
    def parseAct(s:String, b : Path) : Action = {
       base = b
       val p = parseAll(commented,s)
@@ -53,98 +58,65 @@ object Action extends RegexParsers {
    }
 }
 
-abstract class Action
+/** Objects of type Action represent commands that can be executed by a Controller. */
+sealed abstract class Action
 
+/** switch on logging for a certain group */
 case class LoggingOn(s : String) extends Action {override def toString = "log+ " + s}
+/** switch off logging for a certain group */
 case class LoggingOff(s : String) extends Action {override def toString = "log- " + s}
+/** set the current base path */
 case class SetBase(base : Path) extends Action {override def toString = "base " + base}
+/** read a knowledge item */
 case class Read(p : Path) extends Action {override def toString = "read " + p}
+/** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
+/** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddCatalog(file : java.io.File) extends Action {override def toString = "catalog " + file}
+/** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
+/** load a file containing commands and execute them, fails on first error if any */
 case class ExecFile(file : java.io.File) extends Action {override def toString = "file " + file}
+/** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends Action
+/** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
+/** clear the state */
 case object Clear extends Action {override def toString = "clear"}
+/** exit */
 case object Exit extends Action {override def toString = "exit"}
+/** do nothing */
 case object NoAction extends Action {override def toString = ""}
 
-case class DefaultGet(pres : MakePresentation) extends Action {
-   override def toString = pres.toString
-}
-abstract class GetAction extends Action {
-   def make(controller : Controller)
-}
-case class Print(pres : MakePresentation) extends GetAction {
-   def make(controller : Controller) {
-      pres.make(controller, ConsoleWriter)
-      println
-   }
-   override def toString = pres.toString
-}
-case class ToFile(pres : MakePresentation, file : java.io.File) extends GetAction {
-   def make(controller : Controller) {
-      val rb = new presentation.FileWriter(file)
-      pres.make(controller, rb)
-      rb.file.close
-   }
-   override def toString = pres + " write " + file
-}
-case class Respond(pres : MakePresentation, param : String) extends GetAction {
-   def get(controller : Controller) : scala.xml.Node = {
-      val rb = new XMLBuilder
-      pres.make(controller, rb)
-      rb.get
-   }
-   def make (controller : Controller) {get(controller)}
-   override def toString = pres.toString + " respond" + (if (param == "") "" else " " + param)
+/** Objects of type GetAction represent commands that
+ *  - retrieve knowledge items in abstract/internal syntax (see MakeAbstract)
+ *  - post-process them to obtain concrete/external syntax (see MakeConrete)
+ *  - then output the concrete form in various ways (see Output).
+ */ 
+case class GetAction(o: Output) extends Action {
+   /** implement the Action using the provided Controller */
+   def make(controller : Controller) = o.make(controller)
 }
 
-abstract class MakePresentation {
-   def make(controller : Controller, rb : RenderingHandler)
-}
-case class ToNode(c : MakeContent) extends MakePresentation {
-   def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toNode)}
-   override def toString = c + " xml"
-}
-case class ToString(c : MakeContent) extends MakePresentation {
-   def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toString)}
-   override def toString = c.toString
-}
-case class Present(c : MakeContent, nset : MPath) extends MakePresentation {
-   def make(controller : Controller, rb : RenderingHandler) {
-      controller.presenter(c.make(controller), presentation.GlobalParams(rb, nset))
-   }
-   override def toString = c + " present " + nset
-}
-case class Deps(path : Path) extends MakePresentation {
-   def make(controller : Controller, rb : RenderingHandler) {
-     rb.elementStart("","mmtabox")
-     rb.attributeStart("", "xmlns")
-     rb("http://omdoc.org/abox")
-     rb.attributeEnd
-     (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
-         (d : ontology.ABoxDecl) => if (path <= d.path) rb(d.toNode)
-     )
-     rb.elementEnd
-   }
-   override def toString = path.toString + " deps"
+/** execute the Controller-specific default Action associated with a presentable element */
+case class DefaultGet(pres : MakeConcrete) extends Action {
+   override def toString = pres.toString
 }
 
-abstract class MakeContent {
+/** represent retrieval operations that return content elements
+ *  These objects become Action commands by wrapping them in post-processing steps.
+ *  see the children of MakePresentation
+ */
+abstract class MakeAbstract {
    def make(controller : Controller) : Content
 }
-case class Closure(p : Path) extends MakeContent {
-   def make(controller : Controller) : Document = p match {
-      case doc ? name =>
-         controller.get(doc ? name) // retrieve once to make sure it's in memory 
-         val cl = controller.depstore.theoryClosure(doc ? name).toList
-         val clp = cl.map(MRef(doc, _, true))
-         new Document(doc, clp)
-   }
-   override def toString = p + " closure"
+/** retrieves a knowledge item */
+case class Get(p : Path) extends MakeAbstract {
+   def make(controller : Controller) : StructuralElement = controller.get(p)
+   override def toString = p.toString
 }
-case class Component(p : Path, comp : String) extends MakeContent {
+/** retrieves a component of a knowledge item */
+case class Component(p : Path, comp : String) extends MakeAbstract {
    def make(controller : Controller) : Content = {
       val o = controller.get(p)
       o.role.componentByName(comp) match {
@@ -154,7 +126,87 @@ case class Component(p : Path, comp : String) extends MakeContent {
    }
    override def toString = p + " component " + comp
 }
-case class Get(p : Path) extends MakeContent {
-   def make(controller : Controller) : StructuralElement = controller.get(p)
-   override def toString = p.toString
+/** retrieves the closure of a knowledge item */
+case class Closure(p : Path) extends MakeAbstract {
+   def make(controller : Controller) : Document = p match {
+      case doc ? name =>
+         controller.get(doc ? name) // retrieve once to make sure it's in memory 
+         val cl = controller.depstore.theoryClosure(doc ? name).toList
+         val clp = cl.map(MRef(doc, _, true))
+         new Document(doc, clp)
+   }
+   override def toString = p + " closure"
+}
+
+/** represents the first post-processing phase
+ *  These produce concrete syntax from the abstract syntax.
+ * */
+abstract class MakeConcrete {
+   /** takes a Controller, executes the rendering and passes it to a RenderingHandler */
+   def make(controller : Controller, rb : RenderingHandler)
+}
+/** takes a content element and renders it as XML */
+case class ToNode(c : MakeAbstract) extends MakeConcrete {
+   def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toNode)}
+   override def toString = c + " xml"
+}
+/** takes a content element and renders it as text */
+case class ToString(c : MakeAbstract) extends MakeConcrete {
+   def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toString)}
+   override def toString = c.toString
+}
+/** takes a content element and renders it using notations */
+case class Present(c : MakeAbstract, nset : MPath) extends MakeConcrete {
+   def make(controller : Controller, rb : RenderingHandler) {
+      controller.presenter(c.make(controller), presentation.GlobalParams(rb, nset))
+   }
+   override def toString = c + " present " + nset
+}
+/** retrieves all relational elements about a certain path and renders them as XML */
+case class Deps(path : Path) extends MakeConcrete {
+   def make(controller : Controller, rb : RenderingHandler) {
+     rb.elementStart("","mmtabox")
+     rb.attributeStart("", "xmlns")
+     rb("http://omdoc.org/abox")
+     rb.attributeEnd
+     (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
+         (d : RelationalElement) => if (path <= d.path) rb(d.toNode)
+     )
+     rb.elementEnd
+   }
+   override def toString = path.toString + " deps"
+}
+
+/** represents the final post-processing phase, which outputs concrete syntax */
+abstract class Output {
+   def make(controller : Controller)
+}
+/** prints to STDOUT */
+case class Print(pres : MakeConcrete) extends Output {
+   def make(controller : Controller) {
+      pres.make(controller, ConsoleWriter)
+      println
+   }
+   override def toString = pres.toString
+}
+/** writes to a file */
+case class ToFile(pres : MakeConcrete, file : java.io.File) extends Output {
+   def make(controller : Controller) {
+      val rb = new presentation.FileWriter(file)
+      pres.make(controller, rb)
+      rb.file.close
+   }
+   override def toString = pres + " write " + file
+}
+/** produces the result and throws it away
+ *  call get to keep it in memory and retrieve it
+ */
+case class Respond(pres : MakeConcrete, param : String) extends Output {
+   def get(controller : Controller) : scala.xml.Node = {
+      val rb = new XMLBuilder
+      pres.make(controller, rb)
+      rb.get
+   }
+   def make (controller : Controller) {get(controller)}
+   override def toString = pres.toString + " respond" + (if (param == "") "" else " " + param)
 }
