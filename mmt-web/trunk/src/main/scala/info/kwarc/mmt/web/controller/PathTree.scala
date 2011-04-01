@@ -1,11 +1,11 @@
 package info.kwarc.mmt.web.controller
-
+import info.kwarc.mmt.web.snippet._
 import info.kwarc.mmt.api._
 
 object PathTree {
 	private def item(p : Path, state : String) =
 		<item id={p.toPath} state={state}>
-		  <content><name href="#" onclick={info.kwarc.mmt.web.snippet.Get.navigate(p)}>{p.last}</name></content>
+		  <content><name href="#" onclick={Get.navigate(p)}>{p.last}</name></content>
 		</item>
 	def apply(q: String) : scala.xml.Node = {
 		if (q == ":root")
