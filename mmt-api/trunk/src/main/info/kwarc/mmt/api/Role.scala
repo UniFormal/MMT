@@ -34,15 +34,12 @@ case object Role_Variable            extends Role(false, "Variable")
 case object Role_ModRef              extends Role(false, "module")
 case object Role_StructureRef        extends Role(false, "structure")
 case object Role_ConstantRef         extends Role(false, "constant")
-case object Role_IDRef               extends Role(false, "id")
+case object Role_ComplexConstantRef extends Role(false, "complex-constant")
 case object Role_VariableRef         extends Role(false, "variable")
 case object Role_hidden              extends Role(false, "Toplevel")
 case object Role_application         extends Role(true,  "application" )
 case object Role_attribution         extends Role(true,  "attribution" )
 case object Role_binding             extends Role(true,  "binding" )
-case object Role_morphismapplication extends Role(true,  "morphism-application" )
-case object Role_composition         extends Role(true,  "composition" )
-case object Role_identity            extends Role(true,  "identity" )
 case object Role_value               extends Role(false, "value")
 case object Role_foreign             extends Role(false, "foreign")
 case object Role_ObjToplevel         extends Role(false, "toplevel")
@@ -76,14 +73,12 @@ object Role {
       case "module" => Role_ModRef
       case "structure" => Role_StructureRef
       case "constant" => Role_ConstantRef
+      case "complex-constant" => Role_ComplexConstantRef
       case "variable" => Role_VariableRef
       case "hidden" => Role_hidden
       case "application" => Role_application
       case "attribution" => Role_attribution
       case "binding" => Role_binding
-      case "morphism-application" => Role_morphismapplication
-      case "composition" => Role_composition
-      case "identity" => Role_identity
       case "toplevel" => Role_ObjToplevel
       case s if s.startsWith("fragment:") => Role_Fragment(s.substring(9))
       case s => throw ParseError("illegal role: " + s)
