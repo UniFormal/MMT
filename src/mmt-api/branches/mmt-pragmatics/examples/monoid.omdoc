@@ -1,0 +1,9 @@
+<theory cdbase="http://cds.omdoc.org/math/algebra/algebra1.omdoc" name="Monoid" >
+         <include><OMTHY xmlns:om="om"><om:OMS cdbase="http://cds.omdoc.org/logics/first-order/proof_theory/derived.omdoc" cd="FOLEQPFExt"></om:OMS></OMTHY></include><structure from="http://cds.omdoc.org/math/algebra/algebra1.omdoc?Semigroup" name="sg">
+        
+      </structure><alias name="*" for="http://cds.omdoc.org/math/algebra/algebra1.omdoc?Monoid?sg/mag/*"></alias><structure from="http://cds.omdoc.org/math/algebra/algebra1.omdoc?MagmaIdentity" name="miden">
+        <maps name="rid/mag"><OMMOR xmlns:om="om"><om:OMA><om:OMS module="mmt" name="composition" base="http://cds.omdoc.org/omdoc/mmt.omdoc"></om:OMS>
+              <om:OMS cdbase="http://cds.omdoc.org/math/algebra/algebra1.omdoc" cd="Semigroup/mag"></om:OMS><om:OMS cdbase="http://cds.omdoc.org/math/algebra/algebra1.omdoc" cd="Monoid/sg"></om:OMS>
+      </om:OMA></OMMOR></maps>
+      </structure><alias name="e" for="http://cds.omdoc.org/math/algebra/algebra1.omdoc?Monoid?miden/rid/e"></alias>
+      </theory>
