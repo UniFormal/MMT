@@ -1,0 +1,40 @@
+<!--input file not given, using default: tarski -->
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+1R
+mizar.objects.MizJustifiedTheorem@1ac3379
+mizar.objects.MizJustifiedTheorem@6779e6
+TARSKI_K_1 : @(lf?arrow, HIDDEN?set, Mizar-Curry?prop)
+TARSKI_K_1 : @(lf?arrow, HIDDEN?set, Mizar-Curry?prop)
+be_TARSKI_K_1 : (lf?Pi [y : HIDDEN?set] @(lf?arrow, @(Mizar-Curry?is, y, HIDDEN?set), @(Mizar-Curry?is, @(TARSKI?TARSKI_K_1, y), HIDDEN?set)))
