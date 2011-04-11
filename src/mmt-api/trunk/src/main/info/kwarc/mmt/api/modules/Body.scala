@@ -22,6 +22,7 @@ trait Body[S <: Declaration] {
    //protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
    /** true iff a declaration for a name is present */ 
    def declares(name: LocalName) = statements.isDefinedAt(name)
+   def domain = statements.keySet
    /** retrieve a declaration, may throw exception if not present */ 
    def get(name : LocalName) : S = statements(name)
    /** retrieve a declaration, None if not present */ 
