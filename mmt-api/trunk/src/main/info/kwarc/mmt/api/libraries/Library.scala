@@ -122,6 +122,23 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
             }
          }
    }
+/*   def domain(m : ModuleObj) : Iterator[GlobalName] = m match {
+      case OMMOD(p) =>
+        val imported = importsTo(OMMOD(p)) flatMap domain
+        val local = get(p) match {
+           case p: DeclaredTheory => p.valueList flatMap {
+              case i: Include => Nil
+              case c: Constant => List(c.path)
+              case a: Alias => List(a.path)
+              case s: Structure => domain(s.from) map {
+                 case f % n if f == s.from => m % (s.name / n)
+                 case (f: TheoryObj) % n   => m % (s.name / IncludeStep(f) / n)
+              }
+              case _ => Nil //should be impossible
+           }
+        }
+        imported ++ local
+   }*/
    def importsTo(to: TheoryObj) : Iterator[TheoryObj] = to match {
       case OMMOD(p) =>
          getTheory(p) match {

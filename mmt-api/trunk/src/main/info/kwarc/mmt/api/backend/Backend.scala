@@ -4,6 +4,8 @@ import info.kwarc.mmt.api.utils._
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
 
+// local XML databases or query engines to access local XML files: baseX or Saxon
+
 case object NotApplicable extends java.lang.Throwable
 case class NotFound(p : Path) extends info.kwarc.mmt.api.Error("Cannot find ressource " + p.toString)
 
