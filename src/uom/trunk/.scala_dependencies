@@ -1,0 +1,14 @@
+E:\homedir\MMT\src\uom\trunk\bin;E:\MorePrograms\eclipse\configuration\org.eclipse.osgi\bundles\198\1\.cp\lib\scala-library.jar;E:\MorePrograms\eclipse\configuration\org.eclipse.osgi\bundles\198\1\.cp\lib\scala-dbc.jar;E:\MorePrograms\eclipse\configuration\org.eclipse.osgi\bundles\198\1\.cp\lib\scala-swing.jar;D:\Program Files\Java\lib\rt.jar;D:\Program Files\Java\lib\jsse.jar;D:\Program Files\Java\lib\jce.jar;D:\Program Files\Java\lib\ext\dnsns.jar;D:\Program Files\Java\lib\ext\QTJava.zip;D:\Program Files\Java\lib\ext\sunjce_provider.jar;D:\Program Files\Java\lib\ext\sunpkcs11.jar;E:\homedir\MMT\src\mmt-api\trunk\build\main
+-------
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala
+-------
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$UriToPackage$1.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$doTheory$1.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$main$1.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$1.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Synthesizer.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Synthesizer$$anonfun$main$1.class
+E:\homedir\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> E:\homedir\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Synthesizer$.class
