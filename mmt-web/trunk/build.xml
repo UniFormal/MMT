@@ -36,7 +36,7 @@
         <pathelement location="${lib}/lift-webkit_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-common_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-json_2.8.1-2.2-SNAPSHOT.jar" />
-        <pathelement location="${lib}/mmt-api/mmt-api.jar" />
+        <pathelement location="../../mmt-api/trunk/build/mmt-api.jar" />
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
@@ -55,9 +55,7 @@
     <!-- This target compiles the library using the task scalac and the classpath compile.classpath. -->
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
-        <mkdir dir="${build.test}"/>
         <scalac destdir="${build.main}" srcdir="${src.main}" classpathref="compile.classpath"/>
-        <scalac destdir="${build.test}" srcdir="${src.test}" classpathref="compile.classpath"/>
     </target>
 
     <target name="war" depends="compile">
@@ -66,10 +64,9 @@
             <classes dir="${build.main}" />
             <lib dir="${lib}">
                 <exclude name="servlet-api-2.5.jar"/>
-                <exclude name="jetty-runner.jar"/>
             </lib>
             <lib file="${scala.dir}/scala-library.jar" />
-            <lib file="${lib}/mmt-api/mmt-api.jar" />
+            <lib file="../../mmt-api/trunk/build/mmt-api.jar" />
         </war>
     </target>
 

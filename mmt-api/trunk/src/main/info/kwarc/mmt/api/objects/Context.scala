@@ -47,10 +47,10 @@ object TermVarDecl {
    /** converts OpenMath-style attributed variable to MMT term variable */
    def fromTerm(t : Term) : TermVarDecl = {
       t match {
-         case OMATTR(OMATTR(v, mmt.mmttype, t), mmt.mmtdef, d) => doVar(v, Some(t), Some(d))
-         case OMATTR(OMATTR(v, mmt.mmtdef, d), mmt.mmttype, t) => doVar(v, Some(t), Some(d))
-         case OMATTR(v, mmt.mmttype, t) => doVar(v, Some(t), None)
-         case OMATTR(v, mmt.mmtdef, d) => doVar(v, None, Some(d))
+         case OMATTR(OMATTR(v, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d) => doVar(v, Some(t), Some(d))
+         case OMATTR(OMATTR(v, OMID(mmt.mmtdef), d), OMID(mmt.mmttype), t) => doVar(v, Some(t), Some(d))
+         case OMATTR(v, OMID(mmt.mmttype), t) => doVar(v, Some(t), None)
+         case OMATTR(v, OMID(mmt.mmtdef), d) => doVar(v, None, Some(d))
          case v => doVar(v, None, None)
       }
    }
