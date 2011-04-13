@@ -23,7 +23,7 @@ class Admin {
       }
    }
    
-   private def available = List(("clear", "clear"), ("printAll", "print all"), ("exit", "exit"))
+   private def available = List(("clear", "clear"), ("printAll", "print all"))
    def commands(xhtml : scala.xml.NodeSeq) : scala.xml.NodeSeq = {
       available.flatMap({case (t,d) => BindHelpers.bind("i", xhtml,
          AttrBindParam("target", scala.xml.Text(":admin?" + t), "href"),

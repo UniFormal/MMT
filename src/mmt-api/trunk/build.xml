@@ -48,16 +48,12 @@
 
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
-        <mkdir dir="${build.test}"/>
         <path id="compile.classpath">
             <pathelement location="${scala.dir}/scala-library.jar"/>
             <pathelement location="${build.main}"/>
-            <pathelement location="${build.test}"/>
             <pathelement location="${lib}/tntbase-plugin-api.jar"/>
         </path>
         <scalac destdir="${build.main}" srcdir="${src.main}"
-            classpathref="compile.classpath" deprecation="yes"/>
-        <scalac destdir="${build.test}" srcdir="${src.test}"
             classpathref="compile.classpath" deprecation="yes"/>
     </target>
 
