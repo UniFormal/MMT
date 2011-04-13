@@ -1,0 +1,43 @@
+<omdoc xmlns="http://omdoc.org/ns" base="http://cds.omdoc.org/unsorted/uom.omdoc">
+   <theory name="lists">
+     <!--constant name="elem"/-->
+     <constant name="list"/>
+     <constant name="nil"/>
+     <constant name="cons"/>
+     
+     <constant name="append"/>
+     <constant name="append_*">
+       <definition>
+         <OMOBJ>
+           <OMFOREIGN>
+             def append_*(l: Term, m: Term) : Term = {
+               null
+             }
+           </OMFOREIGN>
+         </OMOBJ>
+       </definition>
+     </constant>
+   </theory>
+
+   <theory name="lists_ext">
+     <include from="?lists"/>
+
+     <constant name="append_many"/>
+     <constant name="append_many_*">
+       <definition>
+         <OMOBJ>
+           <OMFOREIGN>
+             def append_many_*(l: Term*) : Term = {
+               l.toList match {
+								 case Nil => lists.nil
+								 case hd :: tl => lists.append_*(hd, append_many_*(tl : _*))
+               }
+             }
+           </OMFOREIGN>
+         </OMOBJ>
+       </definition>
+     </constant>
+          
+   </theory>
+   
+</omdoc>
