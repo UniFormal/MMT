@@ -6,6 +6,47 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.MyList._
 import info.kwarc.mmt.api.objects._
 import java.io._
+import scala.Console._
+import scala.tools.nsc.util._
+ 
+object ScalaReflection {
+  implicit def any2anyExtras(x: Any) = new AnyExtras(x)
+}
+ 
+class AnyExtras(x: Any) {
+  def methods_ = println(methods.reduceLeft[String](_ + ", " + _))
+  def methods__ = methods.foreach(println _)
+  def fields_ = println(fields.reduceLeft[String](_ + ", " + _))
+  def fields__ = fields.foreach(println _)
+ 
+  def methods = wrapped.getClass
+      .getDeclaredMethods
+      .toList
+      .map(m => m.toString
+                        .replaceFirst("\\).*", ")")
+                        .replaceAll("[^(]+\\.", "")
+                        .replace("()", ""))
+      .filter(!_.startsWith("$tag"))
+ 
+  def fields = wrapped.getClass
+      .getDeclaredFields
+      .toList
+      .map(m => m.toString.replaceFirst("^.*\\.", ""))
+ 
+  private def wrapped: AnyRef = x match {
+    case x: Byte => byte2Byte(x)
+    case x: Short => short2Short(x)
+    case x: Char => char2Character(x)
+    case x: Int => int2Integer(x)
+    case x: Long => long2Long(x)
+    case x: Float => float2Float(x)
+    case x: Double => double2Double(x)
+    case x: Boolean => boolean2Boolean(x)
+    case _ => x.asInstanceOf[AnyRef]
+  }
+}
+
+
 
 object Synthesizer extends {
    val report = new frontend.FileReport(new java.io.File("uom.log"))
@@ -52,7 +93,7 @@ object Synthesizer extends {
 
 //     val dpath = Path.parseD(args(2), base) // semantic identifier of the document (given by base attribute)
 
-      println(library.toString)
+//   println(library.toString)
 	   snippets foreach {
 	  	   case (path,code) =>
            println("Path : " + path.toString + "\n\nCode : \n\n" + code +"\n\n")
@@ -62,8 +103,9 @@ object Synthesizer extends {
            }
 	  	     val newcons = new Constant(oldcons.home, oldcons.name, oldcons.tp, Some(OMFOREIGN(scala.xml.Text(code))), null) 
 	  	     library.update(newcons)
+           println(new AnyExtras(library).methods__)
 	   }
-	   println(library.toString)
+	   //println(library.toString)
 //	   val doc = try {docstore.get(dpath)} // get the content of the document as a list of reference elements
 //	             catch {case jomdoc.frontend.NotFound(p) => println(p.toPath + " not found"); exit}
 //	   println(doc.toString)
