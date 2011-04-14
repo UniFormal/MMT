@@ -94,8 +94,8 @@ object Extractor extends {
 
 //     out.println(UriToPackage(args(1)))
 
-     out.println("import jomdoc._")
-     out.println("import jomdoc.objects._\n")   //handle initial imports
+     out.println("import info.kwarc.mmt.api._")
+     out.println("import info.kwarc.mmt.api.objects._\n") // handle initial imports
 
      out.close    //TODO some exception handling
 
