@@ -73,7 +73,7 @@ trait Body[S <: Declaration] {
             else prefixes -= p
          })*/
          statements -= name
-         order = order.filter(_ != get(name))
+         order = order.filter(_.name != name)
       }
    }
    /** delete and add a declaration */
