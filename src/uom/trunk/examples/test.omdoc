@@ -11,7 +11,7 @@
          <OMOBJ>
            <OMFOREIGN>
              def append_*(l: Term, m: Term) : Term = {
-               null
+               cons
              }
            </OMFOREIGN>
          </OMOBJ>
