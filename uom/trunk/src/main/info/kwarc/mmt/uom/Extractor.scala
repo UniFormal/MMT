@@ -165,8 +165,9 @@ object Extractor extends {
 	   handle(Local)
 	   val file = utils.xml.URI(new java.io.File(args(0)).toURI) // physical location of the file
 	   handle(Read(DPath(file)))
-	   val dpath = Path.parseD(args(1), base) // semantic identifier of the document (given by base attribute)
-	   
+
+     /* semantic identifier of the document (given by base attribute) */
+	   val dpath = Path.parseD(args(1), base)	   
 	   val doc = try {docstore.get(dpath)} // get the content of the document as a list of reference elements
 	             catch {case NotFound(p) => println(p.toPath + " not found"); exit}
 	   val theos : List[DeclaredTheory] =  // dereference all and keep the theories
