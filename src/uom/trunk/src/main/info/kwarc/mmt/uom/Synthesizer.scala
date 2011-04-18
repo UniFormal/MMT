@@ -103,7 +103,7 @@ object Synthesizer extends {
            }
 	  	     val newcons = new Constant(oldcons.home, oldcons.name, oldcons.tp, Some(OMFOREIGN(scala.xml.Text(code))), null) 
 	  	     library.update(newcons)
-           println(new AnyExtras(library).methods__)
+//           println(new AnyExtras(library).methods__)
 	   }
 	   //println(library.toString)
 //	   val doc = try {docstore.get(dpath)} // get the content of the document as a list of reference elements
