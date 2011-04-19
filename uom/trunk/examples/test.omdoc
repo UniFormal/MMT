@@ -1,6 +1,6 @@
 <omdoc xmlns="http://omdoc.org/ns" base="http://cds.omdoc.org/unsorted/uom.omdoc">
    <theory name="lists">
-     <!--constant name="elem"/-->
+     <constant name="elem"/>
      <constant name="list"/>
      <constant name="nil"/>
      <constant name="cons"/>
@@ -11,7 +11,12 @@
          <OMOBJ>
            <OMFOREIGN>
              def append_*(l: Term, m: Term) : Term = {
-               l
+               l match {
+      				   case this.nil => m
+      					 case OMA(this.cons, List(this.elem, rest)) => 
+        						OMA(this.cons, List(this.elem,  append_*(rest, m)) )
+      					 case _ => throw new Exception("malformed term")
+    					 }
              }
            </OMFOREIGN>
          </OMOBJ>
