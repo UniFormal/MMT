@@ -87,8 +87,8 @@ object Extractor extends {
      var out = new PrintWriter(new BufferedWriter(
        new FileWriter("extracted.scala", true)))
      out.println(UriToPackage(t.parent.toString) + "{")
-     out.println("object " + t.name + " {")
-     out.println("  private val base = DPath(new utils.xml.URI(\"" +
+     out.println("class " + t.name + " {")
+     out.println("  val base = DPath(new utils.xml.URI(\"" +
        t.parent.toString  + "\"))\n")
 	   t.valueList map {
 	      case c: Constant =>  // handle constants here

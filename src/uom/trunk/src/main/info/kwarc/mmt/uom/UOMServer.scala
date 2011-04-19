@@ -6,6 +6,13 @@ import java.util.jar._
 import info.kwarc.mmt.api.objects._
 
 object UOMServer {
+
+  implicit def reflector(ref: AnyRef) = new {
+    def getV(name: String): Any = ref.getClass.getMethods
+      .find(_.getName == name).get.invoke(ref)
+  }
+
+
   def main(args :Array[String]) {
     try {
       val urlArray = new Array[URL](1)
@@ -36,7 +43,43 @@ object UOMServer {
           
           try {
             val classToLoad = Class.forName(className, true, child)
-            classToLoad.getDeclaredFields.map ((field) => {
+            val instance = classToLoad.newInstance
+            classToLoad.getDeclaredMethods.map(method => { 
+              if (method.getReturnType.getName.equals(
+                "info.kwarc.mmt.uom.Implementation")) {
+                println(method.getName)
+                println("Invoking")
+                val invokeResult = method.invoke(instance)
+                println("Invoke OK ZOMG!!!")
+                invokeResult match {
+                  case impl : Implementation => { 
+                    println("Pattern match OK")
+                    println(impl.name)
+                    val example = new org.omdoc.cds.unsorted.uom.omdoc.lists
+                    println(impl.apply(example.nil, example.cons))
+                  }
+                  case _ => {
+                    System.err.println("Wrong return type of method")
+                    System.exit(1)
+                  } 
+                }
+              }
+            })
+//              val constructors = classToLoad.getConstructors
+//                println("Total of " + constructors.length)
+//                constructors.map(x => {
+//                x.newInstance()
+//                println("Created a new instance\n")
+//              })
+//            if (classToLoad.getConstructors.length != 0)
+//           {
+//            println("Print methods")
+//            classToLoad.getMethods.map(x=>println(x))
+//            println("\nPrint fields")
+//            classToLoad.getFields.map(x=>println(x))
+//          }
+
+//            classToLoad.getDeclaredFields.map ((field) => {
               //println(field.getType.getName)
               //if (field.getType.getName == 
               //    "info.kwarc.mmt.uom.Implementation") {
@@ -46,21 +89,22 @@ object UOMServer {
                 //val method = obj.getDeclaredMethod("apply", 
                 //  Class.forName("scala.collection.Seq"))
 
-                println("Tashaka e : " + classToLoad.getName)
-                val kurInstance = classToLoad.newInstance
-                println("Instantiated that bitch")
-                //println(classToLoad.getDeclaredMethods.map(x => println(x)))
-                val kurMethod = classToLoad.getDeclaredMethod("apply", 
-                  Class.forName("scala.collection.Seq"))
-                val result = kurMethod.invoke(kurInstance, 
-                  org.omdoc.cds.unsorted.uom.omdoc.lists.list::
-                  org.omdoc.cds.unsorted.uom.omdoc.lists.list::Nil
-                )
+//                println("Tashaka e : " + classToLoad.getSimpleName)
+//                val kurInstance = classToLoad.newInstance
+//                println("Instantiated that bitch\n")
+                //classToLoad.getFields.map(x => println(x))
+//                val kurMethod = classToLoad.getDeclaredMethod("apply", 
+//                  Class.forName("scala.collection.Seq"))
 
-                if (result == null)
-                  println("result is null")
-                else
-                  println(result)
+//                val result = kurMethod.invoke(kurInstance, 
+//                  org.omdoc.cds.unsorted.uom.omdoc.lists.cons::
+//                  org.omdoc.cds.unsorted.uom.omdoc.lists.list::Nil
+//                )
+
+//                if (result == null)
+//                  println("result is null")
+//                else
+//                  println(result)
 
                 //println(method.toString)
                 //val instance = obj.newInstance
@@ -70,8 +114,9 @@ object UOMServer {
                 //)
                //if (result == nill 
              // }
-           }
-            )
+//           }
+//            )
+
 //            val method = classToLoad.getDeclaredMethod("test", 
 //            Class.forName("java.lang.String"))
 
@@ -82,7 +127,8 @@ object UOMServer {
           catch {
             case e : IllegalAccessException => println("\n\n"+e.toString+"\n\n")
             case e : NoSuchMethodException =>
-              // println("Skipping " + e.toString +"\n")
+              println("Skipping " + e.toString +"\n")
+            case e : InstantiationException => println("\n\n" + e.toString + "\n\n")
           }
         }
       }
