@@ -55,8 +55,9 @@ object UOMServer {
                   case impl : Implementation => { 
                     println("Pattern match OK")
                     println(impl.name)
-                    val example = new org.omdoc.cds.unsorted.uom.omdoc.lists
-                    println(impl.apply(example.nil, example.cons))
+                    val ex = new org.omdoc.cds.unsorted.uom.omdoc.lists
+                    println(impl.apply(OMA(ex.cons, ex.elem::ex.nil::Nil), 
+                      OMA(ex.cons, ex.elem::ex.nil::Nil)))
                   }
                   case _ => {
                     System.err.println("Wrong return type of method")
