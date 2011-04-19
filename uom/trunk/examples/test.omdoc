@@ -11,7 +11,7 @@
          <OMOBJ>
            <OMFOREIGN>
              def append_*(l: Term, m: Term) : Term = {
-               cons
+               l
              }
            </OMFOREIGN>
          </OMOBJ>
@@ -19,7 +19,7 @@
      </constant>
    </theory>
 
-   <theory name="lists_ext">
+   <!--theory name="lists_ext">
      <include from="?lists"/>
 
      <constant name="append_many"/>
@@ -38,6 +38,6 @@
        </definition>
      </constant>
           
-   </theory>
+   </theory-->
    
 </omdoc>
