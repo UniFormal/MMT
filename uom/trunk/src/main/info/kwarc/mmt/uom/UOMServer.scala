@@ -17,10 +17,6 @@ object UOMServer {
     urlArray(0) = jarFile.toURI.toURL 
     val child = new URLClassLoader(urlArray, this.getClass.getClassLoader)
 
-    val packageName = ""
-    //val packageName = "info.kwarc.mmt.uom"
-    //packageName.replaceAll("\\." , "/")
-    //println(packageName)
     val jarInput = new JarInputStream(new FileInputStream(jarFileName))
     val classImplementation = Class.forName("info.kwarc.mmt.uom.Implementation")
     while(true) {
@@ -28,13 +24,11 @@ object UOMServer {
       if (jarEntry == null) {
         return
       }
-      if ( jarEntry.getName.startsWith(packageName) && 
-        (jarEntry.getName.endsWith(".class"))) {
+      if ( jarEntry.getName.endsWith(".class") ) {
         val className = jarEntry.getName()
           .replaceAll("/", "\\.")
           .replaceAll(".class","")
         
-
         val classToLoad = Class.forName(className, true, child)
         classToLoad.getDeclaredMethods.map(method => { 
           if (method.getReturnType.getName.equals(
