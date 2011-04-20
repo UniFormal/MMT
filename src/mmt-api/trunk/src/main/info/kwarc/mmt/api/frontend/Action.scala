@@ -23,7 +23,7 @@ object Action extends RegexParsers {
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
-   private def read = "read" ~> file ^^ {f => Read(DPath(new utils.xml.URI(f.toURI)))}
+   private def read = "read" ~> file ^^ {f => Read(f)}
    private def printall = "printAll" ^^ {case _ => PrintAll}
    private def printallxml = "printXML" ^^ {case _ => PrintAllXML}
    private def clear = "clear" ^^ {case _ => Clear}
@@ -58,10 +58,8 @@ object Action extends RegexParsers {
    }
 }
 
-sealed abstract class ResAction[Res]
-
 /** Objects of type Action represent commands that can be executed by a Controller. */
-sealed abstract class Action extends ResAction[Nothing]
+sealed abstract class Action
 
 /** switch on logging for a certain group */
 case class LoggingOn(s : String) extends Action {override def toString = "log+ " + s}
@@ -70,7 +68,7 @@ case class LoggingOff(s : String) extends Action {override def toString = "log- 
 /** set the current base path */
 case class SetBase(base : Path) extends Action {override def toString = "base " + base}
 /** read a knowledge item */
-case class Read(p : Path) extends Action {override def toString = "read " + p}
+case class Read(f : java.io.File) extends Action {override def toString = "read " + f}
 /** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
