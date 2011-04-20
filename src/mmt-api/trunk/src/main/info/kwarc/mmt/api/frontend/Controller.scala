@@ -98,7 +98,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
        try {a}
        catch {
     	   case e : info.kwarc.mmt.api.Error => report(e)
-           case e : java.io.FileNotFoundException => report("error", e.getMessage)
+         case e : java.io.FileNotFoundException => report("error", e.getMessage)
        }
    }
    protected def handleLine(l : String) {
@@ -106,9 +106,9 @@ class Controller(checker : Checker, report : Report) extends ROController {
         handle(act)
    }
    /** exectutes an Action */
-   def handle(act : Action) {
+   def handle[Res](act : ResAction[Res]) : Unit = {
 	  if (act != NoAction) report("user", act.toString)
-	  handleExc (act match {
+	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
 	      case AddTNTBase(f) =>
