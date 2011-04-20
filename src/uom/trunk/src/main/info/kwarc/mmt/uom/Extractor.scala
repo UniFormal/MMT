@@ -187,12 +187,10 @@ object Extractor extends {
      out.println("import info.kwarc.mmt.api.objects._")
      out.println("import info.kwarc.mmt.uom.Implementation")
 
-
      out.close    //TODO some exception handling
 
 	   theos foreach doTheory // handle all theories
    }
-   
 }
 
 

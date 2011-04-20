@@ -18,7 +18,6 @@ object UOMServer {
     val child = new URLClassLoader(urlArray, this.getClass.getClassLoader)
 
     val jarInput = new JarInputStream(new FileInputStream(jarFileName))
-    val classImplementation = Class.forName("info.kwarc.mmt.uom.Implementation")
     while(true) {
       val jarEntry = jarInput.getNextJarEntry
       if (jarEntry == null) {
