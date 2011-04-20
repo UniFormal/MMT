@@ -58,8 +58,10 @@ object Action extends RegexParsers {
    }
 }
 
+sealed abstract class ResAction[Res]
+
 /** Objects of type Action represent commands that can be executed by a Controller. */
-sealed abstract class Action
+sealed abstract class Action extends ResAction[Nothing]
 
 /** switch on logging for a certain group */
 case class LoggingOn(s : String) extends Action {override def toString = "log+ " + s}
