@@ -46,11 +46,7 @@ object Synthesizer extends {
 	   val snippets = getSnippets(scalafile)
      scalafile.close
 
-	   handle(Local)
-     /* physical location of the document */
-	   val docPath = DPath(utils.xml.URI(new java.io.File(args(1)).toURI))
-     handle(Read(docPath))
-
+     val dpath = read(new java.io.File(args(1)))
 
 	   snippets foreach {
 	  	 case (path,code) =>
@@ -64,19 +60,8 @@ object Synthesizer extends {
            Some(OMFOREIGN(scala.xml.Text(code))), null) 
 	  	   library.update(newcons)
 	   }
-     val dpath = Path.parseD(args(2), base)
-
-
-	   val doc = try {
-       docstore.get(dpath)
-     } 
-     catch {
-       case NotFound(p) => println(p.toPath + " not found"); 
-       exit
-     }
-
-//     handle(GetAction(ToFile(ToString(Get(dpath)),new java.io.File(args(1)))))
-//     handle(GetAction(ToFile(Deps(dpath),new java.io.File(args(1)))))
+     val doc = get(dpath)
+     doc.toNode
    }
 }
 

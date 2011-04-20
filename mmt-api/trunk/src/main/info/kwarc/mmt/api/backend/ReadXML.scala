@@ -38,15 +38,20 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
    }
    
    def readDocuments(location : DPath, documents : NodeSeq) {
-        for (D <- documents) D match {
+      documents foreach {readDocument(location, _)}
+   }
+   def readDocument(location : DPath, D : Node) : DPath = {
+        D match {
         case <omdoc>{modules @ _*}</omdoc> =>
            val path = xml.attr(D, "base") match {case "" => location case s => DPath(new xml.URI(s))}
            log("document with base " + path + " found")
            val d = new Document(path)
            add(d)
            readModules(path, Some(path), modules)
-        case <mmtabox>{decls @ _*}</mmtabox> => readAssertions(decls)
-        case scala.xml.Comment(_) =>
+           path
+        case <mmtabox>{decls @ _*}</mmtabox> =>
+           readAssertions(decls)
+           location
         case _ => throw new ParseError("document expected: " + D)
       }
    }

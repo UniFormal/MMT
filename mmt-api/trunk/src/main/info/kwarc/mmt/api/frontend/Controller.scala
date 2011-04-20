@@ -93,6 +93,10 @@ class Controller(checker : Checker, report : Report) extends ROController {
       notstore.clear
       depstore.clear
    }
+   def read(f: java.io.File) : DPath = {
+      val N = utils.xml.readFile(f)
+      reader.readDocument(DPath(xml.URI(f.toURI)), N)
+   }
    protected var base : Path = DPath(mmt.baseURI)
    protected def handleExc[A](a: => A) {
        try {a}
@@ -106,7 +110,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
         handle(act)
    }
    /** exectutes an Action */
-   def handle[Res](act : ResAction[Res]) : Unit = {
+   def handle(act : Action) : Unit = {
 	  if (act != NoAction) report("user", act.toString)
 	   (act match {
 	      case AddCatalog(f) =>
@@ -134,7 +138,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	      case LoggingOn(g) => report.groups += g
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
-	      case Read(p) => backend.get(p, true)
+	      case Read(f) => read(f)
 	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("library", library.toNode.toString)
