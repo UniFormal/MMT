@@ -60,7 +60,6 @@ object TermVarDecl {
          case OMATTR(tm, key, value) => doVar(tm, tp, df, (key, value) :: attrs.toList : _*)
          case v => throw new ObjError(v + " is not an MMT variable")
       }
-      
    }
 }
 
@@ -88,7 +87,20 @@ case class Context(variables : VarDecl*) {
 }
 
 /** a case in a substitution */
-case class Sub(name: String, target: Term)
+case class Sub(name: String, target: Term) {
+	def toOMATTR = OMATTR(OMV(name), OMID(mmt.mmtdef), target)
+	def toNodeID(pos: Position ) = toOMATTR.toNodeID(pos)
+	override def toString = toOMATTR.toString
+}
+/** helper object */
+object Sub {
+   /** converts OpenMath-style attributed variable to a Sub */
+   def fromTerm(t : Term) : Sub = t match {
+      case OMATTR(OMV(n), OMID(mmt.mmtdef), t) => Sub(n, t)
+      case _ => throw ObjError(t + " is not a case in a substitution")
+   }
+}
+
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) {
    def ++(n:String, t:Term) : Substitution = this ++ Sub(n,t)
@@ -99,10 +111,19 @@ case class Substitution(subs : Sub*) {
 	   case None => throw SubstitutionUndefined(v)
 	   case Some(s) => s.target 
    }
+   override def toString = this.map(_.toString).mkString("",", ","")
+   def toNode = toNodeID(Position.None)
+   def toNodeID(pos : Position) =
+     <om:OMBVAR>{this.zipWithIndex.map({case (s,i) => s.toNodeID(pos + (i+1))})}</om:OMBVAR>
 }
 
 /** helper object */
 object Context {
+	/** parsers an OMBVAR into a context */
+	def parse(N : scala.xml.Node, base : Path, callback : Path => Unit = x => ()) : Context = N match {
+		case <om:OMBVAR>{context @ _*}</om:OMBVAR> => fromTerms(context.map(Obj.parseTerm(_, base, callback)).toList)
+        case _ => throw ParseError("not a well-formed context: " + N.toString)
+	}
    /** converts a list of OpenMath-style attributed variable to a context */
    def fromTerms(l : List[Term]) = Context(l.map(TermVarDecl.fromTerm) : _*)
    /** implicit conversion between a context and a list of variable declarations */
@@ -110,6 +131,13 @@ object Context {
    implicit def context2list(c: Context) : List[VarDecl] = c.variables.toList
 }
 object Substitution {
+	/** parsers an OMBVAR into a substitution */
+	def parse(N : scala.xml.Node, base : Path, callback : Path => Unit = x => ()) : Substitution = N match {
+		case <om:OMBVAR>{sb @ _*}</om:OMBVAR> => fromTerms(sb.map(Obj.parseTerm(_, base, callback)).toList)
+        case _ => throw ParseError("not a well-formed substitution: " + N.toString)
+	}
+   /** converts a list of OpenMath-style attributed variable to a substitution */
+   def fromTerms(l : List[Term]) = Substitution(l.map(Sub.fromTerm) : _*)
    /** implicit conversion between a substitution and a list of maps */
    implicit def string2OMV(s: String) : OMV = OMV(s)
    implicit def list2substitution(l : List[Sub]) : Substitution = Substitution(l:_*)
