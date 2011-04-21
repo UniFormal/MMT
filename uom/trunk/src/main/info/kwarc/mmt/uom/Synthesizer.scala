@@ -60,8 +60,11 @@ object Synthesizer extends {
            Some(OMFOREIGN(scala.xml.Text(code))), null) 
 	  	   library.update(newcons)
 	   }
-     val doc = get(dpath)
-     doc.toNodeResolved(libraries)
+     val doc = getDocument(dpath)
+
+     var out = new PrintWriter(new BufferedWriter(new FileWriter(args(1), false))); // open and overwrite
+     out.println(doc.toNodeResolved(library))
+     out.close
    }
 }
 
