@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.documents
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.presentation._
+import info.kwarc.mmt.api.libraries._
 
 /**
  * A Document represents an MMT document.
@@ -29,7 +30,15 @@ class Document(val path : DPath) extends NarrativeElement {
    val role = Role_Document
    def components = StringLiteral(path.toString) :: items
    override def toString = items.map(_.toString).mkString("","\n","")
-   def toNode = <omdoc base={path.toString}>{items.map(_.toNode)}</omdoc>
+   def toNode = <omdoc base={path.toPath}>{items.map(_.toNode)}</omdoc>
+   /** prints document with all generated module references expanded (document references are not expanded) */
+   def toNodeResolved(lib: Lookup) =
+      <omdoc base={path.toPath}>
+        {items map {
+           case r : MRef if r.isGenerated => lib.get(r.target).toNode
+           case r => r.toNode
+        }}
+     </omdoc>
 }
 
 /**
