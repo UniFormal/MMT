@@ -164,7 +164,7 @@ object Extractor extends {
 
 	   handle(Local)
 	   val file = utils.xml.URI(new java.io.File(args(0)).toURI) // physical location of the file
-	   handle(Read(DPath(file)))
+	   handle(Read(new java.io.File(args(0))))
 
      /* semantic identifier of the document (given by base attribute) */
 	   val dpath = Path.parseD(args(1), base)	   
