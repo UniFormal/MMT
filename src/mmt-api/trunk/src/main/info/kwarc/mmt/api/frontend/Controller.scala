@@ -23,6 +23,10 @@ abstract class ROController {
       case e : Notation => e
       case _ => throw GetError(msg)
    }
+   def getDocument(path: DPath, msg : Path => String = p => "no document found at " + p) : Document = get(path) match {
+      case d: Document => d
+      case _ => throw GetError(msg(path))
+   }
 }
 
 /** A Controller is the central class maintaining all MMT knowledge items.
