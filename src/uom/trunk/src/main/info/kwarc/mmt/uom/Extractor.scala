@@ -38,9 +38,10 @@ object Extractor extends {
    }
 
    def getGlobalName(t: DeclaredTheory, c: Constant) : String = {
-     return ( "GlobalName(OMMOD("  + "MPath(base, LocalPath(List(\n    \""
-     + t.name + "\")))), LocalName(List(NamedStep(\"" + c.name + "\"))))"
-     )
+//     return ( "GlobalName(OMMOD("  + "MPath(base, LocalPath(List(\n    \""
+//     + t.name + "\")))), LocalName(List(NamedStep(\"" + c.name + "\"))))"
+//     )
+       return "base ? \"" + t.name + "\" ? \"" + c.name + "\""
    }
 
    def getParameters(str : String) : Int = {
