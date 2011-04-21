@@ -426,9 +426,9 @@ object Obj {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       //this function unifies the two cases for binders in the case distinction below
-      def doBinder(binder : Node, context : Seq[Node], condition : Option[Node], body : Node) = {
+      def doBinder(binder : Node, context : Node, condition : Option[Node], body : Node) = {
          val bind = parseTerm(binder, nbase, callback)
-         val cont = Context.fromTerms(context.map(parseTerm(_, nbase, callback)).toList)
+         val cont = Context.parse(context, base, callback)
          if (cont.isEmpty)
             throw new ParseError("at least one variable required in " + cont.toString)
          val cond = condition.map(parseTerm(_, nbase, callback))
@@ -455,9 +455,9 @@ object Obj {
          case <OME>{child @ _*}</OME> =>
             val ch = child.toList.map(parseTerm(_, nbase, callback))
             OME(ch.head,ch.tail)
-         case <OMBIND>{binder}<om:OMBVAR>{context @ _*}</om:OMBVAR>{condition}{body}</OMBIND> =>
-            				doBinder(binder, context, Some(condition), body)
-         case <OMBIND>{binder}<om:OMBVAR>{context @ _*}</om:OMBVAR>{body}</OMBIND> =>
+         case <OMBIND>{binder}{context}{condition}{body}</OMBIND> =>
+           	doBinder(binder, context, Some(condition), body)
+         case <OMBIND>{binder}{context}{body}</OMBIND> =>
             doBinder(binder, context, None, body)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
             val k = parseTerm(key, nbase, callback)
