@@ -61,7 +61,7 @@ object Synthesizer extends {
 	  	   library.update(newcons)
 	   }
      val doc = get(dpath)
-     println(doc.toNode)
+     doc.toNodeResolved(libraries)
    }
 }
 
