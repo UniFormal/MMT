@@ -43,18 +43,13 @@ object PRep {
 }
 
 object Pattern {
-  def elaborate(inst: Instance, lib: Lookup): Context = {
+  def elaborate(inst: Instance, lib: Lookup): List[Constant] = {
     val pt : Pattern = lib.getPattern(inst.pattern) 
     // TODO There are two getPattern methods now, one should be eliminated.
-    pt.con map {
-     case TermVarDecl(n,Some(tp),Some(df),at) => TermVarDecl(n,Some(tp ^ inst.matches),Some(df ^ inst.matches),at)
-     case TermVarDecl(n,Some(tp),None,at)     => TermVarDecl(n,Some(tp ^ inst.matches),None,at)
-     case TermVarDecl(n,None,Some(df),at)     => TermVarDecl(n,None,Some(df ^ inst.matches),at)
-     case TermVarDecl(n,None,None,at)         => TermVarDecl(n,None,None,at)
+    pt.con.map {case TermVarDecl(n,tp,df,at) => 
+    	new Constant(inst.home,inst.name / n, tp.map(_^ inst.matches), df.map(_^ inst.matches),null)}
     }
-  }
-
- 
+    
   def expandRepetitionInd(tm: Term): Term = {
 	  tm match {
 	 	  case OMA(fun,args) => 
