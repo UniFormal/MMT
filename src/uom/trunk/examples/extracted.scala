@@ -22,6 +22,13 @@ class lists {
   // UOM start http://cds.omdoc.org/unsorted/uom.omdoc?lists?append_*
   def append_*(l: Term, m: Term) : Term = { l match { case this.nil => m; case OMA(this.cons, List(this.elem, rest)) => OMA(this.cons, List(this.elem, append_*(rest, m)) ); case _ => throw new Exception("malformed term"); } }
   //I have added this line from VIM
+  val append_* = Implementation(base ? "append_*") {
+     case Arguments(l, m) => 
+        l match {
+           case this.nil => m
+           case OMA(this.cons, List(this.elem, rest)) => OMA(this.cons, List(this.elem, append_*(rest, m)) )
+           case _ => throw new Exception("malformed term"); } }
+  }
   // UOM end
 
   def append_**(l : Term*) : Term  = {
