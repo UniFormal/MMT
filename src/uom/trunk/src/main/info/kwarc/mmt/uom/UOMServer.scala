@@ -49,6 +49,21 @@ object UOMServer {
     }
   }
 
+  def simplify(term : Term) : Term = {
+    term match {
+      case OMA( OMID( GlobalName(parent, LocalName(List(NamedStep(name))))), 
+          args) => {
+        val term_* = GlobalName(parent, LocalName(List(NamedStep(name+"_*"))))
+        if (impls.contains(term_* ))
+          return impls(term_*).apply(args.map(simplify) :_*)
+        else
+          return OMA(OMID(GlobalName(parent, LocalName(List(NamedStep(name))))
+                         ), args.map(simplify))
+      }
+      case _ => return term
+    }
+  }
+
   def main (args : Array[String]) {
     register(args(0))
 
@@ -60,17 +75,35 @@ object UOMServer {
           "lists_ext")))), LocalName(List(NamedStep("append_many_*"))))
 
     val ex = new org.omdoc.cds.unsorted.uom.omdoc.lists
+    val ext = new org.omdoc.cds.unsorted.uom.omdoc.lists_ext
 
-    println("First example\n\n")
-    println(impls(gname1).apply(OMA(ex.cons, ex.elem::ex.nil::Nil), 
-      OMA(ex.cons, ex.elem::ex.nil::Nil)))
+    /* append( [el], [el])  */
+    val c1 = OMA(ex.append, OMA(ex.cons, ex.elem::ex.nil::Nil) :: 
+        OMA(ex.cons, ex.elem::ex.nil::Nil) ::Nil)
+    val t1 = (simplify(c1))
+    println(t1+"\n\n")
 
-    println("\n\nSecond example\n\n")
-    println(impls(gname2).apply(
+    /* append_many([el], [el], [el]) */
+    val c2 =(OMA(ext.append_many, List(
       OMA(ex.cons, ex.elem::ex.nil::Nil), 
       OMA(ex.cons, ex.elem::ex.nil::Nil),
       OMA(ex.cons, ex.elem::ex.nil::Nil)
-      ))
+      )))
+    val t2 = simplify(c2)
+    println(t2+"\n\n")
+
+    /* append_many(c2)  */
+    val c2_equal = OMA(ext.append_many, c2::Nil)
+    if (simplify(c2_equal).equals(t2)) 
+      println("They are the same as expceted\n\n")
+
+    /* append(c1, c2)  */
+    val c3 = OMA(ex.append, c1::c2::Nil)
+    println(simplify(c3)+"\n\n")
+
+    /* very composite, result should be a list with 10 el */
+    val c4 = OMA(ext.append_many, c3::c2_equal::c1::Nil)
+    println(simplify(c4))
   }
 }
 
