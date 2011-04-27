@@ -10,6 +10,17 @@ import scala.collection.mutable.HashMap
 object UOMServer {
 
   val impls = new HashMap[GlobalName, Implementation]
+  /** a set of associative operators (semigroup) (flex arity is assumed) */
+  val assoc  = new HashSet[GlobalName]
+  /** a set of commutative operators (commutative magma) */
+  val commut = new HashSet[GlobalName]
+  /** a partial map from associative operators to unit elements (monoid) */
+  val unit   = new HashSet[GlobalName,GlobalName]
+  /** a partial map from monoidal operators to unary and binary inversion operators (group) */
+  val inverse = new HashMap[GlobalName,(Option[GlobalName],Option[GlobalName])]
+  /** maps operators that should trigger symbolic simplification (magma operations and inverses)
+      to the main operator (the magma operation) */
+  val symbolic = new HashMap[GlobalName,GlobalName]
 
   def register(jarFileName : String) {
     val urlArray = new Array[URL](1)
@@ -48,25 +59,30 @@ object UOMServer {
       }
     }
   }
-
-  def simplify(term : Term) : Term = {
-    term match {
-      case OMA( OMID( GlobalName(parent, LocalName(List(NamedStep(name))))), 
-          args) => {
-        val term_* = GlobalName(parent, LocalName(List(NamedStep(name+"_*"))))
-        if (impls.contains(term_* ))
-          return impls(term_*).apply(args.map(simplify) :_*)
-        else
-          return OMA(OMID(GlobalName(parent, LocalName(List(NamedStep(name))))
-                         ), args.map(simplify))
-      }
-      case _ => return term
-    }
+  
+  def symbolicSimplify(term: Term) : Term = term
+/*   term match {
+        case OMA(OMID(p), args) => symbolic.get(p) match {
+           case Some(q)
+              flatten nested OMAs of p into a single OMA
+              if unit(p) is defined, remove all units from the list
+              if inverse(p) is defined, use it to simplify further (distribute, cancel, possibly using commutativity)
+           case None => term
+        }
+*/
+ 
+  def simplify(term : Term) : Term = symbolicSimplify(term) match {
+     case OMA(OMID(p), args) =>
+        val recargs = args.map(simplify)
+        impls.get(p) match {
+           case Some(impl) => impl(recargs :_*)
+           case None => OMA(OMID(p), recargs)
+     case _ => term
   }
 
   def main (args : Array[String]) {
     register(args(0))
-
+    
     /* Test with some example terms */
     val base = DPath(new utils.xml.URI("http://cds.omdoc.org/unsorted/uom.omdoc"))
     val gname1 = GlobalName(OMMOD(MPath(base, LocalPath(List(
