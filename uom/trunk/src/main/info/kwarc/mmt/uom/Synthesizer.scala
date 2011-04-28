@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.utils.MyList._
 import info.kwarc.mmt.api.objects._
 import java.io._
 import scala.Console._
-import scala.tools.nsc.util._
+//import scala.tools.nsc.util._
 
 object Synthesizer extends {
    val report = new frontend.FileReport(new java.io.File("uom.log"))
