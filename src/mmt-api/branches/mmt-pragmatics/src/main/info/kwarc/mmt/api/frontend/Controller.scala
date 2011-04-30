@@ -47,6 +47,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       report.indent
+      println(path)
       backend.get(path, false)
       report.unindent
       log("retrieved " + path)

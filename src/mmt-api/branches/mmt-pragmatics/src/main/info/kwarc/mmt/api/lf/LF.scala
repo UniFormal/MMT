@@ -28,7 +28,7 @@ import Substitution._
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
 object LF {
-   val lfbase = new DPath(new xml.URI("http", "cds.omdoc.org", "/logical_frameworks/lf/lf.omdoc", null))
+   val lfbase = new DPath(new xml.URI("http", "cds.omdoc.org", "/foundations/lf/lf.omdoc", null))
    val lftheory = lfbase ? "lf"
    def constant(name : String) = OMID(lftheory ? name)
    val ktype = constant("type")
@@ -43,10 +43,10 @@ object Lambda {
    }
 }
 object Pi {
-   def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("pi"), OMV(name) % tp, body)
-   def apply(con: Context, body : Term) = OMBIND(LF.constant("pi"), con, body) //(?)
+   def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("Pi"), OMV(name) % tp, body)
+   def apply(con: Context, body : Term) = OMBIND(LF.constant("Pi"), con, body) //(?)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
-	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None), rest @ _*), s) if b == LF.constant("pi") =>
+	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None), rest @ _*), s) if b == LF.constant("Pi") =>
 	      if (rest.isEmpty) Some((n,t,s))
 	      else Some((n,t, Pi(rest.toList,s)))
 	   case OMA(f,args) if f == LF.constant("arrow") =>

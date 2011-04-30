@@ -57,8 +57,9 @@ trait Body[S <: Declaration] {
 	         throw AddError("a statement name for a prefix of " + name + " already exists")
 	      //increase counters for all prefixes of the added statement
 	      pr.foreach(p => prefixes(p) = prefixes.getOrElse(p,0) + 1) */
-	      if (statements.isDefinedAt(name))
+	      if (statements.isDefinedAt(name)) {
 	         throw AddError("a declaration for the name " + name + " already exists")
+	      }
 	      statements(name) = s
 	      order = order ::: List(s)
    }

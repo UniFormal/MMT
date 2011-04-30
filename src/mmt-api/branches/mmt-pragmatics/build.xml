@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="mmt-api" default="build" basedir=".">
+<project name="mmt-pragmatics" default="build" basedir=".">
 
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -28,15 +28,18 @@
     <property environment="env" />
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+
     <path id="scalac.classpath">
-        <pathelement location="${scala.dir}/scala-library.jar"/>
-        <pathelement location="${scala.dir}/scala-compiler.jar"/>
+        <pathelement location="lib/scala-library.jar"/>
+        <pathelement location="lib/scala-compiler.jar"/>
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
-        <pathelement location="${lib}/tntbase-plugin-api.jar"/>
+        <pathelement location="lib/tntbase-plugin-api.jar"/>
     </path>
+
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
+
     <taskdef resource="scala/tools/ant/antlib.xml"
         classpathref="scalac.classpath"/>
 
@@ -48,16 +51,12 @@
 
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
-        <mkdir dir="${build.test}"/>
         <path id="compile.classpath">
-            <pathelement location="${scala.dir}/scala-library.jar"/>
+            <pathelement location="lib/scala-library.jar"/>
             <pathelement location="${build.main}"/>
-            <pathelement location="${build.test}"/>
-            <pathelement location="${lib}/tntbase-plugin-api.jar"/>
+            <pathelement location="lib/tntbase-plugin-api.jar"/>
         </path>
         <scalac destdir="${build.main}" srcdir="${src.main}"
-            classpathref="compile.classpath" deprecation="yes"/>
-        <scalac destdir="${build.test}" srcdir="${src.test}"
             classpathref="compile.classpath" deprecation="yes"/>
     </target>
 
@@ -66,7 +65,7 @@
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
                 <!-- DM TODO: this shouldn't really be here -->
-                <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar"/>
+                <attribute name="Class-Path" value="../../../../../../deploy/lib/scala/scala-library.jar"/>
             </manifest>
             <service type="info.kwarc.tntbase.pluginapi.TntIntegrationPlugin"><!-- produces wrong directory, fix by updating to ant 1.7.1 -->
                 <provider classname="${root.pkg}.tntplugin.TNTValidation"/>

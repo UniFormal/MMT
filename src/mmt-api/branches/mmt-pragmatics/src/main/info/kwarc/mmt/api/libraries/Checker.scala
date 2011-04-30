@@ -55,7 +55,9 @@ abstract class ModuleChecker extends Checker {
             t.meta match {
                case Some(mt) =>
                   checkTheo(OMMOD(mt))
-                  Reconstructed(List(t, PlainInclude(mt, t.path)), HasMeta(t.path, mt) :: d)
+                  val mincl = PlainInclude(mt, t.path)
+                  mincl.setOrigin(MetaInclude)
+                  Reconstructed(List(t, mincl), HasMeta(t.path, mt) :: d)
                case _ =>
                   Success(d)
             }
