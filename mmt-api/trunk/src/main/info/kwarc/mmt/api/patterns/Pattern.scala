@@ -46,10 +46,14 @@ object Pattern {
   def elaborate(inst: Instance, lib: Lookup): List[Constant] = {
     val pt : Pattern = lib.getPattern(inst.pattern) 
     // TODO There are two getPattern methods now, one should be eliminated.
-    pt.con.map {case TermVarDecl(n,tp,df,at) => 
-    	new Constant(inst.home,inst.name / n, tp.map(_^ inst.matches), df.map(_^ inst.matches),null)}
+    pt.con.map {
+       case TermVarDecl(n,tp,df,at) => 
+        def auxSub(x : Term) = (x ^ inst.matches) ^ Substitution(Sub(n,OMID(inst.home % (inst.name / n))))
+    	new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
     }
-    
+  }
+ 
+ 
   def expandRepetitionInd(tm: Term): Term = {
 	  tm match {
 	 	  case OMA(fun,args) => 
