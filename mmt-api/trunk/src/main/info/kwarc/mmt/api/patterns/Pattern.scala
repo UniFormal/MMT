@@ -48,12 +48,14 @@ object Pattern {
     // TODO There are two getPattern methods now, one should be eliminated.
     pt.con.map {
        case TermVarDecl(n,tp,df,at) => 
-        def auxSub(x : Term) = (x ^ inst.matches) ^ Substitution(Sub(n,OMID(inst.home % (inst.name / n))))
+        def auxSub(x : Term) = {
+        	val names = pt.con.map(d => d.name)
+        	(x ^ inst.matches) ^ Substitution(names.map(y => Sub(y,OMID(inst.home % (inst.name / y)))) : _*)
+        }
     	new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
     }
   }
- 
- 
+  
   def expandRepetitionInd(tm: Term): Term = {
 	  tm match {
 	 	  case OMA(fun,args) => 
