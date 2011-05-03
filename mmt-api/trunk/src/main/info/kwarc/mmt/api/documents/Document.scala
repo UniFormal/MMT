@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.documents
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.modules._
 
 /**
  * A Document represents an MMT document.
@@ -22,6 +23,10 @@ class Document(val path : DPath) extends NarrativeElement {
    private var items : List[XRef] = Nil
    /** returns the list of children of the document */
    def getItems = items
+   def getModulesResolved(lib: Lookup) : List[Module] = items flatMap {
+       case r: MRef if r.isGenerated => List(lib.getModule(r.target))
+       case _ => Nil
+   }
    /** adds a child at the end of the documents */
    def add(r : XRef) {
       items = items ::: List(r)
@@ -58,8 +63,8 @@ abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElem
 }
 
 /** reference to a document section */
-class DRef(p : DPath, target : DPath) extends XRef(p, target) {
-   def toNode = <omdoc href={target.toString}/>
+class DRef(p : DPath, override val target : DPath) extends XRef(p, target) {
+   def toNode = <omdoc href={target.toPath}/>
 }
 object DRef {
    def apply(p : DPath, target : DPath, generated: Boolean): DRef = {
@@ -69,8 +74,8 @@ object DRef {
    }
 }
 /** reference to a module */
-class MRef(p : DPath, target : MPath) extends XRef(p, target) {
-   def toNode = <mref target={target.toString}/>
+class MRef(p : DPath, override val target : MPath) extends XRef(p, target) {
+   def toNode = <mref target={target.toPath}/>
 }
 object MRef {
    def apply(p : DPath, target : MPath, generated: Boolean): MRef = {
