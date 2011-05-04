@@ -75,7 +75,7 @@ abstract class ModuleChecker extends Checker {
             val deps = occs.map(HasOccurrenceOfInDefinition(l.path, _))
             Success(checkLink(l, e.path) ::: deps)
          case l: Include =>
-            val par = checkHomeTheory(l)
+            val par = checkAtomic(l.home)
             val occs = checkTheo(l.from)
             val deps = occs.map(HasOccurrenceOfInImport(par, _))
             // flattening (transitive closure) of includes 
@@ -90,12 +90,12 @@ abstract class ModuleChecker extends Checker {
             Reconstructed(l:: flat.toList, deps)
          case s: DeclaredStructure =>
             checkEmpty(s)
-            val par = checkHomeTheory(s)
+            val par = checkAtomic(s.home)
             val occs = checkTheo(s.from)
             val deps = occs.map(HasOccurrenceOfInImport(par, _))
             Success(deps)
          case s: DefinedStructure =>
-            val par = checkHomeTheory(s)
+            val par = checkAtomic(s.home)
             val foccs = checkTheo(s.from)
             val doccs = checkMorphism(s.df, s.from, s.to)
             val deps = foccs.map(HasOccurrenceOfInImport(par, _)) ::: doccs.map(HasOccurrenceOfInDefinition(par, _)) 
@@ -114,12 +114,11 @@ abstract class ModuleChecker extends Checker {
       val fromdep = checkTheo(l.from).map(HasOccurrenceOfInDomain(path,_))
       todep ::: fromdep
    }
-   // detailed checks redundant because even lib.addUnchecked checks them
-   protected def checkHomeTheory(s: Symbol) : MPath = s.home match {
+   protected def checkAtomic(m: ModuleObj) : MPath = m match {
       case OMMOD(p) => p
       case _ => throw Invalid("adding constants to composed theories not allowed")
    }
-   protected def checkEmpty[D<: Declaration](b: Body[D]) {
+   protected def checkEmpty[D <: Declaration](b: Body[D]) {
       if (! b.isEmpty) throw Invalid("body not empty")
    }
 
@@ -324,7 +323,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val occa = args.flatMap(checkTerm(home, context, _, IsSemantic))
             occf ::: occa
          case OMBINDC(binder, bound, condition, scope) =>
-            val newcontext = context ++ bound
+            val newcontext = context ++ bound // every variable can occur in every variable declaration
             val occb = checkTerm(home, context, binder, IsEqualTo(Binder))
             val occv = bound.variables.flatMap {
                // not checking the attributions
