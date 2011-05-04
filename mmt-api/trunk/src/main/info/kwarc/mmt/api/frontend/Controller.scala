@@ -102,6 +102,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
       reader.readDocument(DPath(xml.URI(f.toURI)), N)
    }
    protected var base : Path = DPath(mmt.baseURI)
+   def getBase = base
    protected def handleExc[A](a: => A) {
        try {a}
        catch {
