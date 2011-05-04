@@ -33,6 +33,7 @@ object LF {
    def constant(name : String) = OMID(lftheory ? name)
    val ktype = constant("type")
    val kind = constant("kind")
+   val arrow = constant("arrow")
 }
 
 object Lambda {
@@ -42,7 +43,8 @@ object Lambda {
 	   case _ => None
    }
 }
-object Pi {
+
+object Pi { 
    def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("pi"), OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(LF.constant("pi"), con, body) //(?)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
@@ -52,11 +54,19 @@ object Pi {
 	   case OMA(f,args) if f == LF.constant("arrow") =>
 	      val name = "" //TODO: invent fresh name here
 	      if (args.length > 2)
-	     	 Some((name, args(0), OMA(LF.constant("arrow"), args.tail)))
+	     	 Some((name, args(0), OMA(LF.arrow, args.tail)))
 	      else
 	     	 Some((name,args(0),args(1)))
 	   case _ => None
    }
+}
+
+object Arrow {
+	def apply(t1 : Term, t2 : Term) = OMA(LF.arrow,List(t1,t2))
+	def unapply(t : Term) : Option[(Term,Term)] = t match {
+		case OMA(LF.arrow,List(t1,t2)) => Some((t1,t2))
+		case _ => None
+	}
 }
 
 object Apply {
@@ -68,6 +78,7 @@ object Apply {
 		case _ => None
 	}
 }
+
 object ApplySpine {
 	def apply(f: Term, a: Term*) = OMA(f, a.toList)
 	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
