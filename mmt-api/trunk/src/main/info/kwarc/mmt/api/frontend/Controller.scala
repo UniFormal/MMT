@@ -90,6 +90,14 @@ class Controller(checker : Checker, report : Report) extends ROController {
          case d : NarrativeElement => docstore.add(d) 
       })
    }
+/*   def delete(p: Path) = p match {
+      case d: DPath =>
+         docstore.delete(m)
+      case m: MPath =>
+         library.delete(m)
+         notstore.delete(m)
+      case s: GlobalName => throw DeleteError("deleting symbols not possible")
+   }*/
    /** clears the state */
    def clear {
       docstore.clear
