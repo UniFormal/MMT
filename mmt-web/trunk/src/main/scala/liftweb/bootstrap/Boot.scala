@@ -34,7 +34,7 @@ class Boot {
       }
       // "xml": render and xml response; "text": render and text response; "xhtml": render via template/snippet and xml response
       val format = try { 
-         Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, Controller.basepath) match {
+         Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, Manager.basepath) match {
 	         case DefaultGet(p) => p match {
 	            case Present(_,_) => ctype match {
                    case "text/xml" => "xml"
@@ -65,6 +65,11 @@ class Boot {
              RewriteResponse(ParsePath(List("admin"), "html", true, false), 
                              Map(("command", command), ("format", "xhtml")),
                              true)
+          case RewriteRequest(ParsePath(List(":graph"), _, _, _), GetRequest, request) =>
+             val command = query(request)
+             RewriteResponse(ParsePath(List("graph"), "html", true, false), 
+                             Map(("command", command), ("format", "xhtml")),
+                             true)
           //auxiliary files: css and javascript
           case RewriteRequest(ppath @ ParsePath(hd :: _, _, _, _), GetRequest, request)
              if hd == "css" || hd == "script" || hd == ":pathtree" =>
@@ -93,7 +98,7 @@ class Boot {
           val sym = r.param("symbol").getOrElse("")
           val act = r.param("action").getOrElse("")
           try {
-             val node = Controller.doGet(doc, mod, sym, act)
+             val node = Manager.doGet(doc, mod, sym, act)
 	         r.param("format").get match {
 	            case "xml" => () => Full(XmlResponse(node))
 	            case "text" => () => Full(PlainTextResponse(node.toString))
@@ -114,12 +119,12 @@ class Boot {
     //LiftRules.ajaxPath = ":ajax_request"
     //LiftRules.resourceServerPath = "script"
     // disable auto-include of lift-javascript for comet actors
-    LiftRules.autoIncludeComet = _ => false
+    //LiftRules.autoIncludeComet = _ => false
     // disable GC to avoid javascript error
     LiftRules.enableLiftGC = false 
     
     // run the server
-    Controller.start()
+    Manager.start()
    }
 }
 

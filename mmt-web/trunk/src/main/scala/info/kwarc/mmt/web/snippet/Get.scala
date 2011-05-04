@@ -13,17 +13,17 @@ import info.kwarc.mmt.api._
 
 /** A class encapsulating various snippets that are called from the templates. */
 class Get {
-   private def log(msg : String) = Controller.report("get", msg)
+   private def log(msg : String) = Manager.report("get", msg)
    private val doc = S.param("document").getOrElse("")
    private val mod = S.param("module").getOrElse("")
    private val sym = S.param("symbol").getOrElse("")
    private val act = S.param("action").getOrElse("")
-   private val basepath = Controller.basepath
+   private val basepath = Manager.basepath
    private val path = Path.parse(new info.kwarc.mmt.api.utils.xml.URI(doc), mod, sym, basepath)
    /** the main snippet retrieving the requested object and applying the requested action */
    def get : Node = {
-      try {Controller.doGet(doc, mod, sym, act)}
-      catch {case e @ info.kwarc.mmt.api.backend.NotFound(p) => scala.xml.Text(e.getMessage)}
+      try {Manager.doGet(doc, mod, sym, act)}
+      catch {case e @ backend.NotFound(p) => scala.xml.Text(e.getMessage)}
    }
 
    /** yields the requested MMT-URI (without action) */
@@ -49,7 +49,7 @@ class Get {
       }
    }
    def incoming(xhtml : NodeSeq) : NodeSeq = {
-      val deps = Controller.depstore
+      val deps = Manager.controller.depstore
       var result : NodeSeq = Nil
       val meta = deps.query(path, ToObject(HasMeta)).toList
       result ++= meta.flatMap(p =>
@@ -63,7 +63,7 @@ class Get {
       result
    }
    def outgoing(xhtml : NodeSeq) : NodeSeq = {
-      val deps = Controller.depstore
+      val deps = Manager.controller.depstore
       val meta = deps.query(path, - HasMeta)
       val imps = deps.query(path, - HasOccurrenceOfInImport)
       val strs = deps.query(path, - Query.HasStructureFrom)

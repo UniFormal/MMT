@@ -1,0 +1,22 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
+<head>
+  <link rel="stylesheet" type="text/css" href="/css/jit/ForceDirected.css"/>
+  <script type="text/javascript" src="/script/graph/jit.js"/>
+  <script type="text/javascript" src="/script/graph/mmtgraph.js"/>
+  <script type="text/javascript" src="/script/graph/staticgraph.js"/>
+  <script type="text/javascript">
+    var mainWindow = window.opener;
+    function navigate(to) {
+       mainWindow.latin_navigate(to);
+    };
+    $(function(){
+       init_graph(staticgraph);
+    });
+  </script>
+</head>
+<body>
+  <div>
+    <div id="graph"/>
+ </div>
+</body>
+</html>

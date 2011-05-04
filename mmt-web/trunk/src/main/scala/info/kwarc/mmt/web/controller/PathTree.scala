@@ -9,11 +9,11 @@ object PathTree {
 		</item>
 	def apply(q: String) : scala.xml.Node = {
 		if (q == ":root")
-             <root>{item(Controller.basepath, "open")}</root>
+             <root>{item(Manager.basepath, "open")}</root>
           else {
-        	  val path = Path.parse(q, Controller.basepath)
-        	  Controller.get(path)
-        	  val children = Controller.depstore.query(path, + ontology.Declares) 
+        	  val path = Path.parse(q, Manager.basepath)
+        	  Manager.controller.get(path)
+        	  val children = Manager.controller.depstore.query(path, + ontology.Declares) 
         	  <root>{children.map{c => item(c, "closed")}}</root>
           }
 	}
