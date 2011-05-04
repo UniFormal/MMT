@@ -1,22 +1,25 @@
 package info.kwarc.mmt.web.controller
 import info.kwarc.mmt.api._
 
-object Controller extends {
+object Manager {
    val report = new frontend.FileReport(new java.io.File("server.log"))
-} with frontend.Controller(libraries.NullChecker, report) {
+   val controller = new frontend.Controller(libraries.NullChecker, report)
+   
+   protected def log(msg: => String) = report("manager", msg)
+      
    def start() {
-      handle(frontend.ExecFile(new java.io.File("startup.mmt")))
+      controller.handle(frontend.ExecFile(new java.io.File("startup.mmt")))
    }
    def doGet(doc : String, mod : String, sym : String, act : String) = {
       val action = frontend.Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, basepath)
       log(action.toString)
       val ret : scala.xml.Node = action match {
-         case frontend.DefaultGet(p) => frontend.Respond(p,"").get(this)
-         case a : frontend.Respond => a.get(this)
+         case frontend.DefaultGet(p) => frontend.Respond(p,"").get(controller)
+         case a : frontend.Respond => a.get(controller)
          case a => <error action={a.toString}/>
       }
       log("done")
       ret
    }
-   def basepath = base
+   def basepath = controller.getBase
 }

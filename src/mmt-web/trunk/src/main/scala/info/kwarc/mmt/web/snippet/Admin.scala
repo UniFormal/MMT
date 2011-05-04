@@ -10,13 +10,13 @@ class Admin {
    def exec : scala.xml.NodeSeq  = {
       val a = S.param("command").getOrElse("") match {
         case "" => NoAction
-        case s => Action.parseAct(s, Controller.basepath)
+        case s => Action.parseAct(s, Manager.basepath)
       }
       a match {
          case Clear =>
-           Controller.clear
+           Manager.controller.clear
            <p>clear: OK</p>
-         case PrintAll => scala.xml.Text(Controller.library.toString)
+         case PrintAll => scala.xml.Text(Manager.controller.library.toString)
          case Exit => exit
          case NoAction => <p>OK</p>
          case _ => <p>unsupported command</p>

@@ -7,7 +7,6 @@
   <link rel="stylesheet" type="text/css" href="/css/jobad/jqcontextmenu.css"/>
   <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
   <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/>
-  <link rel="stylesheet" type="text/css" href="/css/jit/ForceDirected.css"/>
   <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"/>
   <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
   <script type="text/javascript" src="/script/jquery/jquery-ui.min.js"/>
@@ -18,9 +17,6 @@
   <script type="text/javascript" src="/script/jobad/lib/dialog.js"/>
   <script type="text/javascript" src="/script/jobad/services/latin.js"/>
   <script type="text/javascript" src="/script/jobad/services/folding.js"/>
-  <script type="text/javascript" src="/script/jit/jit.js"/>
-  <script type="text/javascript" src="/script/jobad/graph.js"/>
-  <script type="text/javascript" src="/script/jobad/staticgraph.js"/>
   
   <script type="text/javascript">
     $(function () {
@@ -44,7 +40,10 @@
            "plugins" : ["html_data", "themes", "ui", "hotkeys"]
        });
    });
-   $(init_graph(staticgraph));
+   var graphWindow = null;
+   function openGraph(focus) {
+      var graphWindow = window.open("/:graph?" + focus);
+   };
   </script>
 </head>
 
