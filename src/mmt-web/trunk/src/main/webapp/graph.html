@@ -9,14 +9,17 @@
     function navigate(to) {
        mainWindow.latin_navigate(to);
     };
-    $(function(){
-       init_graph(staticgraph);
-    });
   </script>
 </head>
-<body>
+<body onload="initGraph(staticgraph);">
+
+  <button onclick="navigate('http://cds.omdoc.org/logics/first-order/proof_theory/derived.omdoc?ForallPFExt')">Click to test naviation in main window</button>
+
   <div>
     <div id="graph"/>
  </div>
+  
+ <div id="log"></div>
+
 </body>
 </html>
