@@ -1,14 +1,17 @@
 package info.kwarc.mmt.web.controller
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.uom._
 
 object Manager {
    val report = new frontend.FileReport(new java.io.File("server.log"))
    val controller = new frontend.Controller(libraries.NullChecker, report)
+   val uom = new UOMServer()
    
    protected def log(msg: => String) = report("manager", msg)
       
    def start() {
       controller.handle(frontend.ExecFile(new java.io.File("startup.mmt")))
+      // initialize UOM
    }
    def doGet(doc : String, mod : String, sym : String, act : String) = {
       val action = frontend.Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, basepath)

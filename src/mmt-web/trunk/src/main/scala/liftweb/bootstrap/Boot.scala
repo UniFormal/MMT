@@ -112,6 +112,18 @@ class Boot {
           val node = PathTree(q)
           val ct = "Content-Type" -> "text/html; charset=utf-8"
           () => Full(XmlResponse(node))
+       case r : Req if r.path.partPath.headOption == Some(":uom") =>
+          val q = query(r.request)
+          val node = q match {
+             case "register" => <error message="not implemented yet"/>
+             case "simplify" =>
+                val body = null // ???
+                val input = objects.Obj.parseTerm(body, Manager.basepath)
+                val output = Manager.uom.simplify(input)
+                output.toNode
+             case _ => <error message="illegal command"/>
+          }
+          () => Full(XmlResponse(node))
     }
     
     // disable auto-include of lift-javascript for ajax
