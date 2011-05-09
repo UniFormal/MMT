@@ -39,11 +39,12 @@ class UOMServer {
           .replaceAll(".class","")
         
         val classToLoad = Class.forName(className, true, child) // returns an object reflecting the class
-        val instance = classToLoad.newInstance
         // call each method in instance that returns an Implementation (we really only care about the Scala-generated getter methods of Implementation-fields)
         // and register the result in impls
         classToLoad.getDeclaredMethods map {method => 
           if (method.getReturnType.getName == "info.kwarc.mmt.uom.Implementation") {
+
+            val instance = classToLoad.newInstance  // do not move above for now
             val invokeResult = method.invoke(instance)
             invokeResult match {
               case impl : Implementation => {

@@ -92,19 +92,22 @@ object Extractor extends {
      out.println("  val base = DPath(new utils.xml.URI(\"" +
        t.parent.toString  + "\"))\n")
 	   t.valueList map {
-	      case c: Constant =>  // handle constants here
+	      case c: Constant =>  { // handle constants here
+        out.println("  val " + c.name 
+              + " = OMID("+ getGlobalName(t,c)  + ")")
+
           c.df match {
             case Some(term) => { 
               term match {
                 case OMFOREIGN(node) => {
-                  /* Create the _* block, marked by start end tags  */
+                  /* Create the block marked by start end tags  */
                   out.println("\n  // UOM start " + c.path.toString)
                   out.println("  "+node.text)
                   out.println("  // UOM end\n")
 
-                  /* Create the auxilary _** block  */
+                  /* Create the auxilary _* block  */
                   val params =  getParameters(node.text)
-                  out.print("  def " + c.name + "*(l : Term*) : Term "
+                  out.print("  def " + c.name + "_*(l : Term*) : Term "
                     + " = {\n    return " 
                     + c.name + "(")
 
@@ -122,21 +125,24 @@ object Extractor extends {
 
                   /* Create the final Implementation block  */
                   out.println("  val " + c.name 
-                    + "** = new Implementation(\n    "
+                    + "_** = new Implementation(\n    "
                     + getGlobalName(t,c)
                     + "\n    ,\n    "
-                    + c.name + "*\n    )\n"
+                    + c.name + "_*\n    )\n"
                   )
 
                 }
-                case _ => out.println("  val " + c.name 
-              + " = OMID("+ getGlobalName(t,c)  + ")")
+//                case _ => out.println("  val " + c.name 
+//              + " = OMID("+ getGlobalName(t,c)  + ")")
+                  case _ => {}
 
               }
             }
-            case None => out.println("  val " + c.name 
-              + " = OMID("+ getGlobalName(t,c)  + ")")
+//            case None => out.println("  val " + c.name 
+//              + " = OMID("+ getGlobalName(t,c)  + ")")
+              case None => {}
           }
+        }
 	      case PlainInclude(from, to) => {
           /* handle includes here */
           /* with the current implementation there is nothing to be done */
