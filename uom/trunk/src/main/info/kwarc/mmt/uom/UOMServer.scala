@@ -99,6 +99,7 @@ object Test {
     /* append( [el], [el]) */
     val c1 = OMA(ex.append, OMA(ex.cons, ex.elem :: ex.nil::Nil) :: 
         OMA(ex.cons, ex.elem::ex.nil::Nil) ::Nil)
+    println("XML BELOW\n\n" + c1.toNode)
     val t1 = (uom.simplify(c1))
     println(t1+"\n\n")
 
