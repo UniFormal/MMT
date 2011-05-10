@@ -11,12 +11,6 @@ import net.liftweb.common.{Box,Empty,Full}
   * It allows the application to modify lift's environment.
   */
 class Boot {
-   // extracts the URI query from a request
-   private def query(r : net.liftweb.http.provider.HTTPRequest) = r.queryString.getOrElse("")
-   // extracts the URI path from a request
-   private def path(r : net.liftweb.http.provider.HTTPRequest) = new java.net.URI(r.uri).getPath()
-   // extracts the content Type from a request
-   private def ctype(r : net.liftweb.http.provider.HTTPRequest) = r.header("Accept").getOrElse("")
    /**
     * @param action MMTURI?PP where PP is the action (possibly with _ for space)
     * @param ctype the accepted content type
@@ -61,12 +55,12 @@ class Boot {
      LiftRules.statelessRewrite.append {
           //admin interface
           case RewriteRequest(ParsePath(List(":admin"), _, _, _), GetRequest, request) =>
-             val command = query(request)
+             val command = ReqHelpers.query(request)
              RewriteResponse(ParsePath(List("admin"), "html", true, false), 
                              Map(("command", command), ("format", "xhtml")),
                              true)
           case RewriteRequest(ParsePath(List(":graph"), _, _, _), GetRequest, request) =>
-             val command = query(request)
+             val command = ReqHelpers.query(request)
              RewriteResponse(ParsePath(List("graph"), "html", true, false), 
                              Map(("command", command), ("format", "xhtml")),
                              true)
@@ -80,60 +74,18 @@ class Boot {
       * so the next best thing to an empty path is the path "/;"
       */
           case RewriteRequest(ParsePath(List(";"), _, _, _), GetRequest, request) => 
-           rewr(query(request), ctype(request))
+           rewr(ReqHelpers.query(request), ReqHelpers.ctype(request))
          /* URI of the form OMBASE-AUTHORITY/path?mod?sym?params where doc := OMBASE-AUTHORITY/path
           * lift transforms "" and "/" to "/index" (see net.liftweb.http.Req.parsePath)
       * lift also removes empty path segments
           * path(request) yields the original (client-sent) path
           */
           case RewriteRequest(_, GetRequest, request) =>
-               rewr(path(request) + "?" + query(request), ctype(request))
+               rewr(ReqHelpers.path(request) + "?" + ReqHelpers.query(request), ReqHelpers.ctype(request))
     }
   
     // requests that are not caught and handled here are passed on to the snippets/templates 
-    LiftRules.statelessDispatchTable.append {
-       case r : Req if List("xml","text") contains r.param("format").getOrElse("") =>
-          val doc = r.param("document").getOrElse("")
-          val mod = r.param("module").getOrElse("")
-          val sym = r.param("symbol").getOrElse("")
-          val act = r.param("action").getOrElse("")
-          try {
-             val node = Manager.doGet(doc, mod, sym, act)
-           r.param("format").get match {
-              case "xml" => () => Full(XmlResponse(node))
-              case "text" => () => Full(PlainTextResponse(node.toString))
-                case f => throw ParseError("illegal format: " + f)
-           }
-          } catch {
-             case e => () => Full(PlainTextResponse("get error\n\n" + e.getMessage))
-          }
-       case r : Req if r.path.partPath.headOption == Some(":pathtree") =>
-          val q = query(r.request)
-          val node = PathTree(q)
-          val ct = "Content-Type" -> "text/html; charset=utf-8"
-          () => Full(XmlResponse(node))
-       case r : Req if r.path.partPath.headOption == Some(":uom") =>
-          val q = query(r.request)
-          val node = q match {
-             case "register" => <error message="not implemented yet"/>
-             case "simplify" =>
-               val body = r.body.map(bytes => new String(bytes, "UTF-8")) openOr ""
-               val bodyNode = scala.xml.XML.loadString(body)
-//               val bodyNode = javax.xml.parsers.DocumentBuilderFactory
-//                .newInstance()
-//                .newDocumentBuilder()
-//                //.parse(new java.io.StringInputStream(body)
-//                .parse(new org.xml.sax.InputSource(new java.io.StringReader(body)))
-//                .getDocumentElement()
-
-               val input = objects.Obj.parseTerm(bodyNode, Manager.basepath)
-               val output = Manager.uom.simplify(input)
-               output.toNode
-               //<error message={body}/>
-             case _ => <error message="illegal command"/>
-          }
-          () => Full(XmlResponse(node))
-    }
+    LiftRules.statelessDispatchTable.append(Rest)
     
     // disable auto-include of lift-javascript for ajax
     LiftRules.autoIncludeAjax = _ => false
