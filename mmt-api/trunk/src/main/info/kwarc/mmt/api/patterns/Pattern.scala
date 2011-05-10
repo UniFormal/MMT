@@ -9,11 +9,13 @@ import info.kwarc.mmt.api.utils._
 import scala.io.Source
 
 
-class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, val con : Context) extends Symbol {
+class Pattern(val home: TheoryObj, val name : LocalName, val params: Option[Context], val con : Context) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
-       <parameters>{params.toNode}</parameters>
-   	   <declarations>{con.toNode}</declarations>
+   		{params match
+   			case Some(Context(t)) => <parameters>{params.toNode}</parameters>
+   			case None => Nil} 
+   	    <declarations>{con.toNode}</declarations>
      </pattern>
      
    def role = info.kwarc.mmt.api.Role_Pattern
@@ -40,6 +42,17 @@ object PRep {
 		case OMA(mmt.repetition,List(fn,OMI(n))) => Some((fn,n.toInt))
 		case _ => None
 	}
+}
+
+object Seq {
+	def apply(body: Term, name: String, from: Term, to: Term) =
+		OMBIND(OMA(mmt.seq,from,to), Context(OMV(name) % mmt.nat), body)
+	def unapply(t: Term) : Option[(Term,String,Term,Term)] = ... 
+}
+
+object Index {
+	def apply(seq: Term, ind: Term) = OMA(mmt.index, seq, ind)
+	def unapply(t: Term) : Option[(Term,Term)] = ... 
 }
 
 object Pattern {

@@ -12,7 +12,7 @@ object mmt {
    val composition = mmtsymbol("composition")
    val morphismapplication = mmtsymbol("morphismapplication")
    val emptymorphism = mmtsymbol("emptymorphism")
-/*   val poii = mmtsymbol("theory-union")
+/* val poii = mmtsymbol("theory-union")
    val poiim = mmtsymbol("morphism-union")
    val poi = mmtsymbol("theory-with")
    val poim = mmtsymbol("morphism-with")
@@ -20,5 +20,7 @@ object mmt {
    val jokerbinder = mmtsymbol("joker")
    val repetition = mmtsymbol("repetition")
    val index = mmtsymbol("index")
+   val seq = mmtsymbol("seq")
+   val nat = mmtsymbol("nat")
    val mimeBase = DPath(new xml.URI("http://www.iana.org/assignments/media-types/"))
 }
