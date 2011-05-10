@@ -28,7 +28,7 @@ case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs :
    def presentation(lpar : LocalParams) =
      ByNotation(NotationKey(None, role), components, lpar)
    /** converts to an OpenMath-style attributed variable using two special keys */
-   def varToOMATTR = attrs.toList.foldLeft[Term](OMV(n)) {case (v, (key,value)) => OMATTR(v, key, value)}
+   def varToOMATTR = attrs.toList.foldLeft[Term](OMV(n)) {(v,a) => OMATTR(v, a._1, a._2)}
    def toOMATTR : Term = {
       (tp, df) match {
          case (None, None) => varToOMATTR
