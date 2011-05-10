@@ -35,14 +35,14 @@ class Boot {
       // "xml": render and xml response; "text": render and text response; "xhtml": render via template/snippet and xml response
       val format = try { 
          Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, Manager.basepath) match {
-	         case DefaultGet(p) => p match {
-	            case Present(_,_) => ctype match {
+           case DefaultGet(p) => p match {
+              case Present(_,_) => ctype match {
                    case "text/xml" => "xml"
                    case _ => "xhtml"
                 }
-	            case ToNode(_) | Deps(_) => "xml"
-	            case ToString(_) => "text"
-	         }
+              case ToNode(_) | Deps(_) => "xml"
+              case ToString(_) => "text"
+           }
              case _ => "xml"
          }
       } catch {
@@ -77,13 +77,13 @@ class Boot {
          /* URI of the form CATALOG-AUTHORITY/;?doc?mod?sym?params
           * Ideally: URI of the form CATALOG-AUTHORITY?doc?mod?sym?params
           * But firefox transforms "path" to "/path" if path(0) != "/"
-		  * so the next best thing to an empty path is the path "/;"
-		  */
+      * so the next best thing to an empty path is the path "/;"
+      */
           case RewriteRequest(ParsePath(List(";"), _, _, _), GetRequest, request) => 
-      		 rewr(query(request), ctype(request))
+           rewr(query(request), ctype(request))
          /* URI of the form OMBASE-AUTHORITY/path?mod?sym?params where doc := OMBASE-AUTHORITY/path
           * lift transforms "" and "/" to "/index" (see net.liftweb.http.Req.parsePath)
-		  * lift also removes empty path segments
+      * lift also removes empty path segments
           * path(request) yields the original (client-sent) path
           */
           case RewriteRequest(_, GetRequest, request) =>
@@ -99,11 +99,11 @@ class Boot {
           val act = r.param("action").getOrElse("")
           try {
              val node = Manager.doGet(doc, mod, sym, act)
-	         r.param("format").get match {
-	            case "xml" => () => Full(XmlResponse(node))
-	            case "text" => () => Full(PlainTextResponse(node.toString))
+           r.param("format").get match {
+              case "xml" => () => Full(XmlResponse(node))
+              case "text" => () => Full(PlainTextResponse(node.toString))
                 case f => throw ParseError("illegal format: " + f)
-	         }
+           }
           } catch {
              case e => () => Full(PlainTextResponse("get error\n\n" + e.getMessage))
           }
@@ -117,10 +117,19 @@ class Boot {
           val node = q match {
              case "register" => <error message="not implemented yet"/>
              case "simplify" =>
-                val body = null // ???
-                val input = objects.Obj.parseTerm(body, Manager.basepath)
-                val output = Manager.uom.simplify(input)
-                output.toNode
+               val body = r.body.map(bytes => new String(bytes, "UTF-8")) openOr ""
+               val bodyNode = scala.xml.XML.loadString(body)
+//               val bodyNode = javax.xml.parsers.DocumentBuilderFactory
+//                .newInstance()
+//                .newDocumentBuilder()
+//                //.parse(new java.io.StringInputStream(body)
+//                .parse(new org.xml.sax.InputSource(new java.io.StringReader(body)))
+//                .getDocumentElement()
+
+               val input = objects.Obj.parseTerm(bodyNode, Manager.basepath)
+               val output = Manager.uom.simplify(input)
+               output.toNode
+               //<error message={body}/>
              case _ => <error message="illegal command"/>
           }
           () => Full(XmlResponse(node))
