@@ -12,9 +12,9 @@ import scala.io.Source
 class Pattern(val home: TheoryObj, val name : LocalName, val params: Option[Context], val con : Context) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
-   		{params match
-   			case Some(Context(t)) => <parameters>{params.toNode}</parameters>
-   			case None => Nil} 
+   		{params match {
+   			case Some(c) => <parameters>{c.toNode}</parameters>
+   			case None => Nil}}
    	    <declarations>{con.toNode}</declarations>
      </pattern>
      
@@ -44,15 +44,17 @@ object PRep {
 	}
 }
 
+/*
 object Seq {
 	def apply(body: Term, name: String, from: Term, to: Term) =
-		OMBIND(OMA(mmt.seq,from,to), Context(OMV(name) % mmt.nat), body)
-	def unapply(t: Term) : Option[(Term,String,Term,Term)] = ... 
+		OMBIND(OMA(OMID(mmt.seq),List(from,to)),Context(TermVarDecl(name,OMID(mmt.nat),None,null), body),)
+	//def unapply(t: Term) : Option[(Term,String,Term,Term)] = ... 
 }
-
+*/
+// TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs : (OMID, Term)*)
 object Index {
-	def apply(seq: Term, ind: Term) = OMA(mmt.index, seq, ind)
-	def unapply(t: Term) : Option[(Term,Term)] = ... 
+	def apply(seq: Term, ind: Term) = OMA(OMID(mmt.index), List(seq, ind))
+	//def unapply(t: Term) : Option[(Term,Term)] = ... 
 }
 
 object Pattern {
