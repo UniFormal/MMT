@@ -156,7 +156,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
     	 	  case None      => Context()
     	  }
     	  val cn = Context.parse(con, base)
-    	  val p = new Pattern(thy, name, pr, cn)
+    	  val p = new Pattern(thy, name, Some(pr), cn)
     	  add(p)
       }
       for (s <- symbols; name = Path.parseName(xml.attr(s,"name")).toLocalName) {

@@ -3,22 +3,12 @@ C:\frabe\MMT\src\uom\trunk\bin;C:\Program Files\eclipse\configuration\org.eclips
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala -> C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala
-C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\src\extracted.scala
+C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala
 C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\src\extracted.scala
 C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala
 -------
-C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Test$.class
-C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Test$$anonfun$main$1.class
-C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UOMServer.class
-C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Test.class
-C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UOMServer$$anonfun$1.class
-C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UOMServer$$anonfun$register$1.class
-C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists.class
-C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists$$anonfun$1.class
-C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists_ext.class
-C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists_ext$$anonfun$2.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Arguments$.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UOMError$.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UnitConvImplems$$anonfun$1.class
@@ -33,6 +23,12 @@ C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Implementation.scala -> C
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Synthesizer.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Synthesizer$.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Synthesizer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Synthesizer$$anonfun$main$1.class
+C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Test$.class
+C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Test$$anonfun$main$1.class
+C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UOMServer.class
+C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Test.class
+C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UOMServer$$anonfun$1.class
+C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\UOMServer.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\UOMServer$$anonfun$register$1.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$doTheory$1$$anonfun$apply$1.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$1.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$.class
@@ -41,3 +37,7 @@ C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\fra
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$main$1.class
 C:\frabe\MMT\src\uom\trunk\src\main\info\kwarc\mmt\uom\Extractor.scala -> C:\frabe\MMT\src\uom\trunk\bin\info\kwarc\mmt\uom\Extractor$$anonfun$doTheory$1.class
+C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists.class
+C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists$$anonfun$1.class
+C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists_ext.class
+C:\frabe\MMT\src\uom\trunk\src\extracted.scala -> C:\frabe\MMT\src\uom\trunk\bin\org\omdoc\cds\unsorted\uom\omdoc\lists_ext$$anonfun$2.class
