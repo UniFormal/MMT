@@ -5,7 +5,7 @@ import info.kwarc.mmt.uom._
 object Manager {
    val report = new frontend.FileReport(new java.io.File("server.log"))
    val controller = new frontend.Controller(libraries.NullChecker, report)
-   val uom = new UOMServer()
+   val uom = new UOMServer(report)
    
    protected def log(msg: => String) = report("manager", msg)
       
