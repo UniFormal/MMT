@@ -85,7 +85,7 @@ class Boot {
     }
   
     // requests that are not caught and handled here are passed on to the snippets/templates 
-    LiftRules.statelessDispatchTable.append(Rest)
+    LiftRules.statelessDispatchTable.append(Rest.handler)
     
     // disable auto-include of lift-javascript for ajax
     LiftRules.autoIncludeAjax = _ => false
