@@ -10,8 +10,8 @@ import net.liftweb.http.rest._
 import net.liftweb.common.{Box,Empty,Full}
 
 
-object Rest extends RestHelper {
-   serve {
+object Rest {
+   val handler : LiftRules.DispatchPF = r => r match {
        case r : Req if List("xml","text") contains r.param("format").getOrElse("") =>
           val doc = r.param("document").getOrElse("")
           val mod = r.param("module").getOrElse("")
@@ -34,7 +34,7 @@ object Rest extends RestHelper {
           () => Full(XmlResponse(node))
        case r: Req if r.path.partPath.headOption == Some(":uom") =>
           val q = ReqHelpers.query(r.request)
-          q match {
+          val resp = q match {
              case "register" => <error message="not implemented yet"/>
              case "simplify" =>
                  r.xml.toOption match {
@@ -56,5 +56,6 @@ object Rest extends RestHelper {
                  }
              case _ => <error message="illegal command"/>
           }
+          () => Full(XmlResponse(resp))
    }
 }

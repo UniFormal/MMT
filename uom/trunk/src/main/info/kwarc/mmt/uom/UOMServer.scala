@@ -10,13 +10,13 @@ import scala.collection.mutable.{HashMap,HashSet}
 
 class UOMServer {
   
+  val impls = new HashMap[GlobalName, Implementation]
   /* preload Unit conversion implementations  */
-  {
+  def init {
     impls(UnitConvImplems.plus.name) = UnitConvImplems.plus
     impls(UnitConvImplems.mult.name) = UnitConvImplems.mult
   }
 
-  val impls = new HashMap[GlobalName, Implementation]
   /** a set of associative operators (semigroup) (flex arity is assumed) */
   val assoc  = new HashSet[GlobalName]
   /** a set of commutative operators (commutative magma) */
