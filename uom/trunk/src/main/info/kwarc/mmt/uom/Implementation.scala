@@ -25,3 +25,40 @@ object Implementation {
 object Arguments {
    def unapplySeq(args: Seq[Term]) : Option[Seq[Term]] = Some(args)
 }
+
+object UnitConvImplems {
+  val base = DPath(new utils.xml.URI("http://cds.omdoc.org/foundations/lf/lf.omdoc"))
+
+  def plus_implem(l : Term*) : Term = {
+    def arithm(l : Term*) : BigInt = {
+      l.toList match {
+        case Nil => 0
+        case OMI(i) :: tl => i + arithm(tl :_*)
+        case _ => throw new Exception("plus_implem works only with integers")
+      }
+    }
+    
+    return OMI(arithm(l:_*))
+  }
+  val plus = new Implementation (
+    base ? "domain" ? "+",
+    plus_implem
+  )
+
+  
+  def mult_implem(l : Term*) : Term = {
+    def arithm(l : Term*) : BigInt = {
+      l.toList match {
+        case Nil => 1
+        case OMI(i) :: tl => i * arithm(tl :_*)
+        case _ => throw new Exception("plus_implem works only with integers")
+      }
+    }
+    
+    return OMI(arithm(l:_*))
+  }
+  val mult = new Implementation (
+    base ? "domain" ? "*",
+    mult_implem
+  )
+}
