@@ -5,9 +5,16 @@ import java.io._
 import java.util.jar._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.uom._
 import scala.collection.mutable.{HashMap,HashSet}
 
 class UOMServer {
+  
+  /* preload Unit conversion implementations  */
+  {
+    impls(UnitConvImplems.plus.name) = UnitConvImplems.plus
+    impls(UnitConvImplems.mult.name) = UnitConvImplems.mult
+  }
 
   val impls = new HashMap[GlobalName, Implementation]
   /** a set of associative operators (semigroup) (flex arity is assumed) */
