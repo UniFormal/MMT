@@ -37,21 +37,24 @@ class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalN
 }
 
 object PRep {
-	def apply(fn: Term, n: Int): Term = OMA(OMID(mmt.repetition),List(fn,OMI(n)))
-    def unapply(t: Term) : Option[(Term,Int)] = t match {
+	def apply(fn : Term, n : Int): Term = OMA(OMID(mmt.repetition),List(fn,OMI(n)))
+    def unapply(t : Term) : Option[(Term,Int)] = t match {
 		case OMA(mmt.repetition,List(fn,OMI(n))) => Some((fn,n.toInt))
 		case _ => None
 	}
 }
 
-/*
 object Seq {
-	def apply(body: Term, name: String, from: Term, to: Term) =
-		OMBIND(OMA(OMID(mmt.seq),List(from,to)),Context(TermVarDecl(name,OMID(mmt.nat),None,null), body),)
-	//def unapply(t: Term) : Option[(Term,String,Term,Term)] = ... 
+	def apply(body : Term, name : String, from : Term, to : Term) : Term =
+		OMBIND(OMA(OMID(mmt.seq),List(from,to)),Context(TermVarDecl(name,Some(OMID(mmt.nat)),None,null)), body)
+	def unapply(t : Term) : Option[(Term,String,Term,Term)] = 
+		t match {
+		case OMBIND(OMA(OMID(mmt.seq),List(k,l)),Context(TermVarDecl(i,Some(OMID(mmt.nat)),None,null)),tm) => 
+		  Some((tm,i,k,l))
+		case _ => None
+	}
 }
-*/
-// TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs : (OMID, Term)*)
+
 object Index {
 	def apply(seq: Term, ind: Term) = OMA(OMID(mmt.index), List(seq, ind))
 	//def unapply(t: Term) : Option[(Term,Term)] = ... 
