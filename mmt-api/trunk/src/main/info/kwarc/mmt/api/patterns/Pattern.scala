@@ -56,8 +56,12 @@ object Seq {
 }
 
 object Index {
-	def apply(seq: Term, ind: Term) = OMA(OMID(mmt.index), List(seq, ind))
-	//def unapply(t: Term) : Option[(Term,Term)] = ... 
+	def apply(seq : Term, ind : Term) : Term = OMA(OMID(mmt.index), List(seq, ind))
+	def unapply(t : Term) : Option[(Term,Term)] = 
+		t match {
+		case OMA(OMID(mmt.index), List(seq, ind)) => Some(seq,ind)
+		case _ => None
+	}
 }
 
 object Pattern {
