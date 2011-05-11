@@ -8,8 +8,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.uom._
 import scala.collection.mutable.{HashMap,HashSet}
 
-class UOMServer {
-  
+class UOMServer(report: frontend.Report) {
+  def log(msg: => String) {report("uom", msg)}
   val impls = new HashMap[GlobalName, Implementation]
   /* preload Unit conversion implementations  */
   def init {
@@ -81,6 +81,7 @@ class UOMServer {
  
   def simplify(term : Term) : Term = symbolicSimplify(term) match {
      case OMA(OMID(p), args) =>
+        log("simplifying " + term.toString)
         val recargs = args.map(simplify)
         impls.get(p) match {
            case Some(impl) => impl(recargs :_*)
@@ -92,7 +93,7 @@ class UOMServer {
 
 object Test {
   def main (args : Array[String]) {
-    val uom = new UOMServer
+    val uom = new UOMServer(new frontend.FileReport(new java.io.File("uom.log")))
     args.map(uom.register)
     
     /* Test with some example terms */
