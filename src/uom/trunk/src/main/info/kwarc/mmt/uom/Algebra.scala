@@ -1,4 +1,5 @@
-/*package main.info.kwarc.mmt.uom
+/*
+package main.info.kwarc.mmt.uom
 
 case class Factor(base: Term, power: Int) {
    def invert = Factor(base, - power)
@@ -30,17 +31,28 @@ abstract class Rule {
    def apply(t: Term) : Term
 }
 
-class Semigroup(val head: GlobalName) extends Rule {
-   def apply(t: Term) = t match {
-      case OMA(OMID(head), args) => 
-         val newargs = args flatMap {
-            case OMA(OMID(head), as) => as
-            case t => List(t)
-         }
-         OMA(OMID(head), newargs)
-      case t => t
-   }
+abstract class DepthResult
+case class LocalChange(inside: List[Term]) extends DepthResult
+case class GlobalChange(it: Term) extends DepthResult
+
+abstract DepthRule(outer: GlobalName, inner: GlobalName) {
+   def apply(before: List[Term], inside: List[Term], after: List[Term]) : DepthResult
 }
+
+class Associative(comp: GlobalName) extends DepthRule(comp, comp) {
+   val apply = (before, inside, after) => LocalChange(inside)
+}
+
+class Unit(comp: GlobalName, unit: GlobalName) extends DepthRule(comp, unit) {
+   val apply = (before, inside, after) =>
+      (before ::: after).length match {
+         case 0 => GlobalChange(OMID(unit))
+         case 1 => GlobalChange((before:::after).head)
+         case _  => LocalChange(Nil)
+      }
+}
+
+
 
 class Simplifier {
    def rules = new HashMap[GlobalName, List[GlobalName]]  
@@ -51,7 +63,6 @@ class Simplifier {
       }
    }
 }
-
 class Monoid
 
 class Group(mon : Monoid, inv: GlobalName, bininv) {
@@ -62,6 +73,4 @@ class Group(mon : Monoid, inv: GlobalName, bininv) {
       case t => OMA(OMID(inv), List(t))
    }
 }
-
-
 */
