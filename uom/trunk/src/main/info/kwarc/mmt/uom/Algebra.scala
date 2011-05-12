@@ -1,6 +1,8 @@
-/* package info.kwarc.mmt.uom
+package info.kwarc.mmt.uom
 import info.kwarc.mmt.api._
 import objects._
+
+import utils.MyList._
 
 abstract class Result
 case class LocalChange(inside: List[Term]) extends Result
@@ -69,20 +71,64 @@ abstract class BreadthRule(op: GlobalName) {
    type Rewrite = List[Term] => Result
 }
 
-class Cancellation(comp : GlobalName, inv: GlobalName, unit: GlobalName, quantifier: GlobalName) extends BreadthRule(comp) {
-   case class Quantity(unit: Term, amount: Term) {
-      def +(that: Quantity) = Quantity(unit, add(this.amount, that.amount))
-      def nonzero : Boolean = amount 
+/** Implementations of Counter permit basic counting and taking multiples of quantities */
+trait Counter {
+   val zero : Term // symbol or OMI(0)
+   val one  : Term // symbol or OMI(1)
+   val minusone : Term // symbol or OMI(-1)
+   val add: GlobalName // add amount
+   val of: GlobalName // apply amount to base
+   val simplify : Term => Term
+}
+
+/* a1 ... am is simplified by merging successive occurrences of a, k @ a, inv(a), and unit:
+ 1) a ---> 1 @ a
+ 1) unit ---> (remove)
+ 1) inv(a) ---> -1 @ a
+ 2) (k @ a)(l @ a) ---> (k + l) @ a
+ 3) k @ a ---> l @ a  by calling simplify
+ 4) 1 @ a ---> a
+ 4) 0 @ a ---> (remove)
+ // 4) -1 @ a ---> inv(a) 
+where k @ a = k of a
+If commutative == true, the elements are first reordered according to the hashcode of a.
+*/
+class Collect(comp : GlobalName, unit: Option[GlobalName], inv: Option[GlobalName], commutative: Boolean)(count: Counter) extends BreadthRule(comp) {
+   case class Quantity(base: Term, amount: Term) {
+      def add(that: Quantity) = Quantity(base, count.add(this.amount, that.amount))
    }
-   def fromTerm(t : Term) : Quantity = t match {
-      case OMA(OMID(inv), List(arg))                => Factor(arg, OMI(-1))
-      case OMA(OMID(quantifier), List(arg, amount)) => Factor(arg, amount)
-      case t => Factor(t, OMI(1))
+   def fromTerm(t : Term) : Option[Quantity] = {
+      unit match {
+         case Some(u) => if (t == OMID(u)) return None
+         case _ =>
+      }
+      inv match {
+         case Some(i) => t match {
+            case OMA(OMID(`i`), List(arg)) => return Some(Quantity(arg, count.minusone))
+            case _ =>
+         }
+         case _ =>
+      }
+      t match {
+         case OMA(OMID(action), List(arg, amount)) => Some(Quantity(arg, amount))
+         case t => Some(Quantity(t, count.one))
+      }
    }
-   def toTerm(f: Factor) = quantifier(f.unit, f.amount)
+   def toTerm(f: Quantity) = {
+      val newamount = count.simplify(f.amount)
+      newamount match {
+         case count.zero => None
+         case count.one => Some(f.base)
+         // case count.minusone => Some(inv(f.base))
+         case a => Some(count.of(f.base, a))
+      }
+   }
 
    val apply: Rewrite = args => {
-      val qs = args map fromTerm
+      var qs = args mapPartial fromTerm
+      if (commutative) {
+         qs = qs.sortBy(_.base.hashCode)(scala.math.Ordering.Int) // not optimal if there are hash collisions; a more subtle ordering might be provided  
+      }
       var done : List[Quantity] = Nil
       var current : Quantity = qs.head
       var todo : List[Quantity] = qs.init
@@ -90,20 +136,24 @@ class Cancellation(comp : GlobalName, inv: GlobalName, unit: GlobalName, quantif
       while (todo != Nil) {
          val next = todo.head
          todo = todo.tail
-         if (next.unit == current.unit)
-            current = current + next
+         if (next.base == current.base)
+            current = current.add(next)
          else {
             done = current :: done
             current = next
          }
       }
-      done = (current :: done).filter(nonzero)
-      val newargs = done.reverseMap(toTerm)
-      if (newargs.length == 1) GlobalChange(newargs.head) else LocalChange(newargs)
+      done = (current :: done)
+      val newargs = done.reverse.mapPartial(toTerm)
+      newargs.length match {
+         case 0 => GlobalChange(OMID(unit.get)) // only possible if args == Nil (forbidden) or if all terms cancelled (then inverse and thus unit must exist)
+         case 1 => GlobalChange(newargs.head)
+         case _ => LocalChange(newargs)
+      }
    }
 }
 
-
+/*
 class Simplifier {
    def rules = new HashMap[GlobalName, List[GlobalName]]  
    def apply(t: Term) : Term = {
@@ -112,6 +162,4 @@ class Simplifier {
          case None => 
       }
    }
-}
-
-*/
+}*/
