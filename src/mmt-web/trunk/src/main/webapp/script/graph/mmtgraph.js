@@ -338,6 +338,8 @@ function initGraph(json) {
     var fd = new $jit.ForceDirected({
         //Id of the visualization container
         injectInto: 'graph',
+        width: 600,
+		height:600,
         //Enable zooming and panning by scrolling and DnD
         Navigation: {
             enable: true,
@@ -353,14 +355,15 @@ function initGraph(json) {
         },
         Edge: {
             overridable: true,
-            color: '#23A4FF',
+            color: '#0000FF',
             lineWidth: 0.4
         },
         //Native canvas text styling
         Label: {
             type: labelType, //Native or HTML
             size: 10,
-            style: 'bold'
+            style: 'bold',
+            color: '#000000'
         },
         //Add Tips
         Tips: {
@@ -406,8 +409,7 @@ function initGraph(json) {
                     var msg = multipleURI;
                 else
                     msg = data.uri;
-                //Call latin_navigate() //XXX
-                Log.write(msg);
+                navigate(msg); //XXX
                 
             },
             //Handler for collapsing and expanding nodes - needs special behaviour for multiedges
@@ -434,7 +436,7 @@ function initGraph(json) {
             domElement.innerHTML = node.name;
             var style = domElement.style;
             style.fontSize = "0.8em";
-            style.color = "#ddd";
+            style.color = "#aaa";
         },
         //Change node styles when DOM labels are placed or moved.
         onPlaceLabel: function(domElement, node){
