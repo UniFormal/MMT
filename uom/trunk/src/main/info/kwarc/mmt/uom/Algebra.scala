@@ -152,14 +152,3 @@ class Collect(comp : GlobalName, unit: Option[GlobalName], inv: Option[GlobalNam
       }
    }
 }
-
-/*
-class Simplifier {
-   def rules = new HashMap[GlobalName, List[GlobalName]]  
-   def apply(t: Term) : Term = {
-      rules.get(t.head) match {
-         case Some(r) => r(t)
-         case None => 
-      }
-   }
-}*/

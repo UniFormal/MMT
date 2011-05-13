@@ -9,25 +9,16 @@ import info.kwarc.mmt.uom._
 import scala.collection.mutable.{HashMap,HashSet}
 
 class UOMServer(report: frontend.Report) {
-  def log(msg: => String) {report("uom", msg)}
   val impls = new HashMap[GlobalName, Implementation]
-  /* preload Unit conversion implementations  */
+  
+  def rules = new HashMap[(GlobalName,GlobalName), DepthRule]
+
+  def log(msg: => String) {report("uom", msg)}
   def init {
+    // preload Unit conversion implementations
     impls(UnitConvImplems.plus.name) = UnitConvImplems.plus
     impls(UnitConvImplems.mult.name) = UnitConvImplems.mult
   }
-
-  /** a set of associative operators (semigroup) (flex arity is assumed) */
-  val assoc  = new HashSet[GlobalName]
-  /** a set of commutative operators (commutative magma) */
-  val commut = new HashSet[GlobalName]
-  /** a partial map from associative operators to unit elements (monoid) */
-  val unit   = new HashMap[GlobalName,GlobalName]
-  /** a partial map from monoidal operators to unary and binary inversion operators (group) */
-  val inverse = new HashMap[GlobalName,(Option[GlobalName],Option[GlobalName])]
-  /** maps operators that should trigger symbolic simplification (magma operations and inverses)
-      to the main operator (the magma operation) */
-  val symbolic = new HashMap[GlobalName,GlobalName]
 
   def register(jarFileName : String) {
     val jarFile = new File(jarFileName)
@@ -68,18 +59,7 @@ class UOMServer(report: frontend.Report) {
     }
   }
   
-  def symbolicSimplify(term: Term) : Term = term
-/*   term match {
-        case OMA(OMID(p), args) => symbolic.get(p) match {
-           case Some(q)
-              flatten nested OMAs of p into a single OMA
-              if unit(p) is defined, remove all units from the list
-              if inverse(p) is defined, use it to simplify further (distribute, cancel, possibly using commutativity)
-           case None => term
-        }
-*/
- 
-  def simplify(term : Term) : Term = symbolicSimplify(term) match {
+  def simplify(term : Term) : Term = term match {
      case OMA(OMID(p), args) =>
         log("simplifying " + term.toString)
         val recargs = args.map(simplify)
@@ -87,6 +67,7 @@ class UOMServer(report: frontend.Report) {
            case Some(impl) => impl(recargs :_*)
            case None => OMA(OMID(p), recargs)
         }
+        
      case _ => term
   }
 }
