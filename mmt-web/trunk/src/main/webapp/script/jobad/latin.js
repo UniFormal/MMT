@@ -12,15 +12,17 @@ function notstyle(){
 	return (i != -1 ? window.location.search.substring(i+8) : '');   
 }
 /**
- * adaptMMTURI - convert MMTURI to URL using current catelog and notation style
+ * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
+ * act: String: action to call on MMTURI
+ * present: Boolean: add presentation to action
  */
-function adaptMMTURI(uri){
+function adaptMMTURI(uri, act, present){
 	var arr = uri.split("?");
 	var doc = (arr.length >= 1) ? arr[0] : "";
 	var mod = (arr.length >= 2) ? arr[1] : "";
 	var sym = (arr.length >= 3) ? arr[2] : "";
-	var act = (arr.length >= 4) ? arr[3] : "present_" + notstyle();
-	return catalog() + '/;?' + doc + '?' + mod + '?' + sym + '?' + act;
+	var pres = (present) ? "_present_" + notstyle() : "";
+	return catalog() + '/;?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
 };
 
 /**
@@ -354,11 +356,33 @@ latin.init = function(){
 	}
 	evaluateDocument(document);
 }
-
+var ffff = null;
+function load(elem) {
+   var url = adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
+   var res = null;
+   function cont(data) {res = data;};
+   proxyAjax('get', url, '', cont, false, 'text/xml');
+   elem.removeAttribute('jobad:load');
+   return res.firstChild;
+}
+function includeClick(elem) {
+   ffff = elem;
+   var container = $(elem).children('div.included-module')[0];
+   if (elem.hasAttribute('jobad:load')) {
+      var m = load(elem);
+      container.appendChild(m);
+      $(container).toggle();
+   } else {
+      $(container).toggle();
+   }
+}
+function remoteClick(elem) {
+   var ref = load(elem);
+   $(elem).replaceWith(ref);
+}
 function latin_navigate(uri) {
-		var url = adaptMMTURI(uri);
+		var url = adaptMMTURI(uri, '', true);
 		window.open(url, '_self', '', false);
-		return   
 }
 /* playing with Ajax update
 function latin_navigate(uri) {
@@ -399,26 +423,31 @@ latin.leftClick = function(target){
 
 /* used as auxiliary variable to communicate the MMTURI of the current symbol from the context menu entries to the methods
    this is not passed as an argument to avoid encoding problems */  
-var currentURI = "";
+var currentURI = null;
 latin.contextMenuEntries = function(target){
 	if (target.hasAttribute("jobad:href")) {
 		currentURI = target.getAttribute('jobad:href');
 		return [["show type", "showComp('type')"],
 		        ["show definition", "showComp('definition')"],
-		        ["open in new window", "openCurrent()"]]
+		        ["get OMDoc", "openCurrentOMDoc()"],
+		        ["open in new window", "openCurrent()"]];
 	} else
 		return []
 }
 
+/** opens current URI in a new window as OMDoc */
+function openCurrentOMDoc(){
+   var url = adaptMMTURI(currentURI, 'xml', false);  
+   window.open(url, '_blank', '', false);
+}
 /** opens current MMT URI in a new window */
 function openCurrent(){
-	var url = adaptMMTURI(currentURI);
+	var url = adaptMMTURI(currentURI, '', true);
 	window.open(url, '_blank', '', false);
 }
 /** shows a component of the current MMT URI in a dialog */
 function showComp(comp){
-	var uri = currentURI;
-	var target = catalog() + "/;?" + uri + "?component_" + comp + "_present_" + notstyle();
+	var target = adaptMMTURI(currentURI, 'component_' + comp, true);
 	if(comp == 'definition')
 		proxyAjax('get', target, '', continuationDef, false, 'text/xml');
 	if(comp == 'type')
