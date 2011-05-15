@@ -379,3 +379,8 @@ object Normalize extends Traverser[(Lookup,Morph)] {
 	}
 }
 */
+
+object Library {
+   def apply(rep: frontend.Report) = new Library(NullChecker, new RelStore(rep), rep)
+   def plain = apply(frontend.NullReport) 
+}

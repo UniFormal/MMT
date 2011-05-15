@@ -33,7 +33,7 @@ class Document(val path : DPath) extends NarrativeElement {
    }
    val parent = path ^!
    val role = Role_Document
-   def components = StringLiteral(path.toString) :: items
+   def components = StringLiteral(path.toString) :: StringLiteral(path.last) :: items
    override def toString = items.map(_.toString).mkString("","\n","")
    def toNode = <omdoc base={path.toPath}>{items.map(_.toNode)}</omdoc>
    /** prints document with all generated module references expanded (document references are not expanded) */
@@ -56,14 +56,14 @@ class Document(val path : DPath) extends NarrativeElement {
  */
 abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElement {
    val path = parent
-   val role = Role_XRef
-   def components = List(StringLiteral(target.toString))
+   def components = List(StringLiteral(target.toString), StringLiteral(target.last))
    def toNode : scala.xml.Node
    override def toString = "ref " +  target.toPath
 }
 
 /** reference to a document section */
 class DRef(p : DPath, override val target : DPath) extends XRef(p, target) {
+   val role = Role_DRef
    def toNode = <omdoc href={target.toPath}/>
 }
 object DRef {
@@ -75,6 +75,7 @@ object DRef {
 }
 /** reference to a module */
 class MRef(p : DPath, override val target : MPath) extends XRef(p, target) {
+   val role = Role_MRef
    def toNode = <mref target={target.toPath}/>
 }
 object MRef {

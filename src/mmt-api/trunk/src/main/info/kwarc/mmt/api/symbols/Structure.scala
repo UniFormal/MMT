@@ -82,8 +82,11 @@ class DefinedStructure(val home : TheoryObj, val name : LocalName, val from : Th
  */
 case class Include(val home: TheoryObj, val from: TheoryObj) extends DefinitionalLink with IncludeLink {
    val name = LocalName(IncludeStep(from))
-   val role = info.kwarc.mmt.api.Role_Include
-   protected def outerComponents : List[Content] = List(from)
+   val role = Role_Include
+   protected def outerComponents : List[Content] = from match {
+      case OMMOD(p) => List(from, StringLiteral(p.toPath))
+      case _ => List(from)
+   }
    protected def outerString : String = "include " + from  
    def toNode = from match {
       case OMMOD(p) => <include from={p.toPath}/> 

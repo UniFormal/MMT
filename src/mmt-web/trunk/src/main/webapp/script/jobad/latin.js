@@ -1,6 +1,6 @@
 /**
- * LATIN project module
- * @author: Catalin David
+ * The LATIN implementation of the JOBAD service class and functions
+ * @author: Florian Rabe, based on previous code by Catalin David
  */
 var latin = clone(Service);
 
@@ -26,9 +26,10 @@ function adaptMMTURI(uri, act, present){
 };
 
 /**
- * cond_parse - parses and evaluates the condition inside a jobad:conditional attribute
- * @param {Object} str - string to parse
- * @param {Object} arr - array of jobad:property values
+ * parses and evaluates the formula F inside a jobad:conditional attribute
+ * F ::= and(F,F) | or(F,F) | not(F) | p = V | p < V | p > V  
+ * @param {Object} str - F (string)
+ * @param {Object} arr - enviroment mapping symbols p to values V (boolean, string, or integer)
  */
 function cond_parse(str, arr){
 	if (str.substr(0, 3) == "and") {
@@ -79,13 +80,13 @@ function cond_parse(str, arr){
 					if (str.substr(0, 5).toLowerCase() == "false") {
 						return false;
 					}
-					else 
+					else
+					   // atomic formulas
 						if (str.indexOf('=') != -1) {
-							//if we have an equal, then it is of type property=value
 							var prop = str.split('=')[0];
 							var val = str.split('=')[1];
 							if (arr[prop] == null) 
-								return false;
+								return false; // undefined formulas go to false, should log a warning here
 							else 
 								if (arr[prop] == val) 
 									return true;
@@ -281,13 +282,6 @@ function changeTextBox(target, changer){
  * Initialize the latin service
  */
 latin.init = function(){
-	//handle the ref table links
-	var v = document.evaluate('//a[@class="refTable"]', document, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-	for (var i = 0; i < v.snapshotLength; i++) {
-		var x = v.snapshotItem(i).getAttribute("href").split(",");
-		v.snapshotItem(i).innerHTML = "Found in " + x[1];
-	}
-
 	//handle visibility
 	var result = document.evaluate('//*[@jobad:property]', document, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	for (var i = 0; i < result.snapshotLength; i++) {
@@ -356,7 +350,7 @@ latin.init = function(){
 	}
 	evaluateDocument(document);
 }
-var ffff = null;
+
 function load(elem) {
    var url = adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
    var res = null;
@@ -366,7 +360,6 @@ function load(elem) {
    return res.firstChild;
 }
 function includeClick(elem) {
-   ffff = elem;
    var container = $(elem).children('div.included-module')[0];
    if (elem.hasAttribute('jobad:load')) {
       var m = load(elem);
@@ -402,11 +395,13 @@ latin.leftClick = function(target){
 	//handling clicks on parts of the document - active only for elements that have jobad:href
 	if (target.hasAttribute('jobad:href')) {
 		latin_navigate(target.getAttribute('jobad:href'));
+		return true;
 	}
 	// highlight bracketed expression
 	if (getTagName(target) == 'mfenced') {
 		highlight(target);
 		setTimeout(function(){lowlight(target)}, 2000);
+		return true;
 	}
 	// highlight variable declaration
 	if (target.hasAttribute('jobad:varref')) {
@@ -417,11 +412,19 @@ latin.leftClick = function(target){
 		var v = res.singleNodeValue;
 		highlight(v);
 		setTimeout(function(){lowlight(v)}, 2000);
+		return true;
 	}
-	return true;
+	return false;
 }
 
-/* used as auxiliary variable to communicate the MMTURI of the current symbol from the context menu entries to the methods
+latin.hoverText = function(target){
+	if (target.hasAttribute('jobad:href')) {
+		return target.getAttribute('jobad:href');
+	} else
+	   return null;
+}
+
+/* currentURI is used as an auxiliary variable to communicate the MMTURI of the current symbol from the context menu entries to the methods
    this is not passed as an argument to avoid encoding problems */  
 var currentURI = null;
 latin.contextMenuEntries = function(target){
@@ -457,7 +460,10 @@ function showComp(comp){
 function continuationDef (data) {	continuation(data,'definition');}
 function continuationType (data) {	continuation(data,'type');}
 function continuation(data, comp){
-	populateDialog('latin-dialog',data, comp);	
+   var split = currentURI.split("?");
+   var name = split[split.length - 1];
+   var title = name + ((comp == 'type') ? ' : ' : ' = ');
+	setLatinDialog(data.firstChild, title);	
 }
 
 /*
@@ -469,24 +475,28 @@ There are some small UI problems left to fix:
  */
 function setLatinDialog(content, title){
 	var dia = $("#latin-dialog");
+	if (dia.length == 0) {
+	   dialog_init();
+  	   var dia = $("#latin-dialog");
+  	}
 	dia.dialog('option', 'title', title);
 	dia[0].replaceChild(content, dia[0].firstChild);
 	dia.dialog('open');
 }
 
-latin.hoverText = function(target){
-	if (target.hasAttribute('jobad:href')) {
-		return target.getAttribute('jobad:href');
-	}
-	return null;
+function dialog_init(){
+	//create and initialize the dialog
+	var div = document.createElement('div');
+	div.setAttribute("id", "latin-dialog");
+	document.body.appendChild(div);
+	var span = document.createElement('span');
+	div.appendChild(span)
+	$('#latin-dialog').dialog({ autoOpen: false});
 }
 
-
+// register service
 var latinMod = ['latin', '/script/jobad/services/latin.js', latin, ""];
 loadedModules.push(latinMod);
 
-$.getScript('/script/jobad/lib/mathml.js', function(){
-	$.getScript('/script/jobad/lib/ajax.js', function(){
-		latin.init();
-	})
-});
+// initialize display
+$(latin.init);

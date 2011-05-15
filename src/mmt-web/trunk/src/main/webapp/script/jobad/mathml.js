@@ -1,36 +1,6 @@
-/*
-     $Id: mathml.js 1686 2010-02-07 13:30:12Z cdavid $
-     $HeadURL: https://svn.omdoc.org/repos/jomdoc/src/prj/jobad/trunk/core/script/modules/utility/mathml.js $
-
-     Copyright (c) KWARC, Jacobs University Bremen, 2009
-     http://kwarc.info
-
-     This library is free software; you can redistribute it and/or
-     modify it under the terms of the GNU Lesser General Public
-     License as published by the Free Software Foundation; either
-     version 3 of the license, or (at your option) any later version.
-
-     For other licensing options, please contact Michael Kohlhase
-     <m.kohlhase@jacobs-university.de>.
-
-     This library is distributed in the hope that it will be useful,
-     but WITHOUT ANY WARRANTY; without even the implied warranty of
-     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     Lesser General Public License for more details.
-
-     You should have received a copy of the GNU Lesser General Public
-     License along with this library; if not, write to the Free Software
-     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
-
 /**
-* 
-* JOBAD - mathml.js module
-*
-* @author: Jana Giceva
-* @created: 21 Jan 2009
-* @description: utility functions for MathML elements
-*
+* utility functions for MathML elements
+* @author: Florian Rabe, based on previous code by Jana Giceva and Catalin David
 */
 
 /** @constant-field : string denoting the address of the mathml namespace */

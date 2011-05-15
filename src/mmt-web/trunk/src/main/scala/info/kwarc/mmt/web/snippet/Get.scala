@@ -27,9 +27,9 @@ class Get {
    }
 
    /** yields the requested MMT-URI (without action) */
-   def title : Node = scala.xml.Text(path.toString)
+   //def title : Node = scala.xml.Text(path.toString)
 
-   def linkOMDoc(xhtml : NodeSeq) = <span jobad:href={path.toPathLong + "?xml"}>as OMDoc</span>
+   //def linkOMDoc(xhtml : NodeSeq) = <span jobad:href={path.toPathLong + "?xml"}>as OMDoc</span>
 
    /** yields a breadcrumb navigation bar as a sequence of links */
    def breadcrumbs(xhtml : NodeSeq) : NodeSeq = {
@@ -48,7 +48,7 @@ class Get {
     	 sep ++ Get.link(xhtml, p)
       }
    }
-   def incoming(xhtml : NodeSeq) : NodeSeq = {
+   /*def incoming(xhtml : NodeSeq) : NodeSeq = {
       val deps = Manager.controller.depstore
       var result : NodeSeq = Nil
       val meta = deps.query(path, ToObject(HasMeta)).toList
@@ -61,7 +61,7 @@ class Get {
       val imps = deps.query(path, + HasOccurrenceOfInImport).toList
       result ++= imps.flatMap(p => BindHelpers.bind("i", Get.link(xhtml, p), "description" -> ""))
       result
-   }
+   }*/
    def outgoing(xhtml : NodeSeq) : NodeSeq = {
       val deps = Manager.controller.depstore
       val meta = deps.query(path, - HasMeta)

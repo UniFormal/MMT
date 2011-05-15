@@ -63,4 +63,34 @@ abstract class Lookup(val report : frontend.Report) {
    def importsTo(to : MPath) : List[objects.ModuleObj] */
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
+   
+   
+   /**
+    * A Traverser that recursively expands definitions of Constants.
+    * It carries along a test function that is used to determine when a constant should be expanded. 
+    */
+   object ExpandDefinitions extends Traverser[GlobalName => Boolean] {
+      def apply(cont: Continuation[GlobalName => Boolean], t: Term)
+               (implicit con: Context, expand: GlobalName => Boolean) = t match {
+         case OMID(p) if expand(p) => getConstant(p).df match {
+            case Some(t) => cont(this, t)
+            case None => OMID(p)
+         }
+         case t => cont(this, t)
+      }
+   }
+   
+   /**
+    * A Traverser that recursively eliminates all explicit morphism applications.
+    * apply(t,m) can be used to apply a morphism to a term.
+    */
+   object ApplyMorphs extends Traverser[Morph] {
+      def apply(cont: Continuation[Morph], t: Term)(implicit con: Context, morph: Morph) = t match {
+         case OMM(arg, via) => apply(this, arg)(con, morph * via)
+         case OMID(theo % ln) =>
+           val t = getConstantAssignment(morph % ln).target
+           apply(this,t)
+         case t => cont(this,t)
+      }
+   }
 }
