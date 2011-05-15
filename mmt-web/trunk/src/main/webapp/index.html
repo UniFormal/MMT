@@ -1,40 +1,87 @@
-<lift:surround with="wrapper" at="content">
-
-<div style="width:100%">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
+<head>
+  <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> -->
+  <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jobad.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jqcontextmenu.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/>
+  <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"/>
+  <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
+  <script type="text/javascript" src="/script/jquery/jquery-ui.min.js"/>
+  <script type="text/javascript" src="/script/jquery/jqcontextmenu.js"/>
+  <script type="text/javascript" src="/script/tree/jquery.hotkeys.js"/>
+  <script type="text/javascript" src="/script/tree/jquery.jstree.js"/>
+  <script type="text/javascript" src="/script/jobad/service.js"/>
+  <script type="text/javascript" src="/script/jobad/latin.js"/>
+  <script type="text/javascript" src="/script/jobad/mathml.js"/>
+  <script type="text/javascript" src="/script/jobad/folding.js"/>
   
- <div id="title">
- The MMT Browser
- </div>
+  <script type="text/javascript">
+    $(function () {
+       $("#pathtree").jstree({
+           "core" : {"animation": 0},
+           "xml_data" : {
+              "ajax" : {
+                 "url" : "/:pathtree",
+                 "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
+              },
+              "xsl" : "nest"
+           },
+           "themes" : {"theme" : "classic", "icons" : false},
+           "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
+       });
+   });
+   $(function () {
+       $("#crossrefs").jstree({
+           "core" : {"animation": 0},
+           "themes" : {"theme" : "classic", "icons" : false},
+           "plugins" : ["html_data", "themes", "ui", "hotkeys"]
+       });
+   });
+   var graphWindow = null;
+   function openGraph(focus) {
+      var graphWindow = window.open("/:graph?" + focus);
+   };
+  </script>
+</head>
 
- <div id="header">
-  <span>  
-    <lift:Get.breadcrumbs>
-      <i:last/>
-    </lift:Get.breadcrumbs>
-  </span>
-  <span style="margin-left:5%;margin-right:5%">
-    <lift:Get.linkOMDoc/>
-  </span>
-  <span><a href="/:admin">administration</a></span>
- </div>  
+<body>
 
- <div id="sidebar">
-
-    <div><button onclick="openGraph('')">show graph</button></div>
- 
-    <div id="pathtree"/>
-    
-    <div id="crossrefs"> 
-     <lift:Get.outgoing/>
+   <div style="width:100%">
+     
+    <div id="title">
+      <div>The MMT Web Server</div>
+      <div>
+        <span class="pagelink"><a href="/">Browser</a></span>
+        <span class="pagelink"><a href="javascript:openGraph('')">Graph View</a></span>
+        <span class="pagelink"><a href="/:uom">Universal Machine</a></span>
+        <span class="pagelink"><a href="/:admin">Administration</a></span>
+      </div>
     </div>
+   
+    <div id="navigation">
+       <lift:Get.breadcrumbs>
+         <i:last/>
+       </lift:Get.breadcrumbs>
+    </div>  
 
- </div>
+    <div id="sidebar">
+       <div id="pathtree"/>
+       <div id="crossrefs"> 
+         <lift:Get.outgoing/>
+       </div>
+    </div>
+   
+    <div id="main">
+       <lift:Get.get/>
+       <div id="dialog" title="Basic dialog"></div>
+    </div>
+   </div>
 
- <div id="main">
-    <lift:Get.get/>
-    <div id="dialog" title="Basic dialog"></div>
- </div>
-</div>
+ <lift:msgs/>
 
-</lift:surround>
+</body>
 
+</html>

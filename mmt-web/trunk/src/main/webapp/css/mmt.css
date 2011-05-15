@@ -12,11 +12,13 @@ span.omdoc-type {
 }
 
 math {
-    color: #000000;
+    color: blue;
+    font-weight: bold;
 }
 
 mo {
-    color: #0000F0;
+    color: black;
+    font-weight: normal;
 }
 
 mo.symdecl {
@@ -24,7 +26,8 @@ mo.symdecl {
 }
 
 mi {
-    color:#006600;
+    color:green;
+    font-weight: normal;
 }
 
 div.omdoc-view
@@ -34,4 +37,14 @@ div.omdoc-view
 div.omdoc-theory
 {
    border-style: none
+}
+
+span.operator {
+   color: blue;
+   font-weight: bold;
+}
+
+span.keyword {
+   color: black;
+   font-weight: bold;
 }

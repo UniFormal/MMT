@@ -11,7 +11,8 @@ abstract class Role(val bracketable : Boolean, override val toString : String, c
       componentNames.find(_._1 == s).map(_._2)
 }
 case object Role_Document            extends Role(false, "Document")
-case object Role_XRef                extends Role(false, "XRef")
+case object Role_DRef                extends Role(false, "DRef")
+case object Role_MRef                extends Role(false, "MRef")
 case object Role_DeclaredTheory      extends Role(false, "Theory", ("name", 0), ("meta", 1))
 case object Role_DefinedTheory       extends Role(false, "Theory", ("name", 0), ("definiens", 1))
 case object Role_View                extends Role(false, "View", ("name", 0), ("from", 1), ("to", 2))
@@ -50,7 +51,8 @@ object Role {
    /** parses a role from a string */
    def parse(s : String) = s match {
       case "Document" => Role_Document
-      case "XRef" => Role_XRef
+      case "DRef" => Role_DRef
+      case "MRef" => Role_MRef
       case "Theory" => Role_DeclaredTheory
       case "DefinedTheory" => Role_DefinedTheory
       case "View" => Role_View

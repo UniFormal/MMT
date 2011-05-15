@@ -1,5 +1,6 @@
 /**
- @author cdavid
+ * The JOBAD generic service class
+ * @author Florian Rabe, based on previous code by Catalin David
  */
 //not sure if we need all these variables. will keep track of them.
 
@@ -89,25 +90,8 @@ var Service = {
     }
 };
 
-
-/** @global-field loadedModules: array of loaded modules to prevent overloading + helping of module loading system*/
+/** the array of services; every services registers itself by adding itself to this array */ 
 var loadedModules = new Array();
-/** @global-field loadedLibs: array of loaded libs to prevent overloading */
-var loadedLibs = new Array();
-
-/** 
- * include - function that dynamically includes a javascript file in an xhtml document
- *
- * @param file : file path string of the javascript file to be included in the document, will be interpreted relatively to the location of the document
- *
- */
-function include(file){
-    var script = document.createElement('script');
-    script.src = file;
-    script.type = 'text/javascript';
-    script.defer = true;
-    document.getElementsByTagName('head').item(0).appendChild(script);
-}
 
 var cmenu;
 //creating the context menu
@@ -147,7 +131,6 @@ function lowlight(target){
     $(target).removeAttr('mathbackground');
     $(target).removeAttr('style'); // assuming there are no other styles
 }
-
 
 //Now bind all document events to the respective functions
 function keyPress(key){

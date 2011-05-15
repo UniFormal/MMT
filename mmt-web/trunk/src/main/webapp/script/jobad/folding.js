@@ -1,11 +1,6 @@
-
 /**
- * JOBAD - folding.js module
- *
+ * implementation of the JOBAD service class that realizes folding of math expressions
  * @author: Catalin David
- * @created: 08 Feb 2010
- * @description: provides folding support for a document
- *
  */
 var folding = clone(Service);
 
@@ -149,5 +144,5 @@ function unfoldAll(){
     }
 }
 
-var foldingMod = ['folding', '/script/jobad/services/folding.js', folding, ""];
+var foldingMod = ['folding', '/script/jobad/folding.js', folding, ""];
 loadedModules.push(foldingMod);

@@ -44,8 +44,8 @@ case class PList(items : List[Presentation]) extends Presentation {
 }
 
 /** test where component pos is equal to Omitted and branch accordingly */
-case class IfPresent(pos : Int, yes : Presentation, no : Presentation) extends Presentation {
-   override def fill(plug : Presentation*) = IfPresent(pos, yes.fill(plug : _*), no.fill(plug : _*))
+case class If(pos : Int, test: String, yes : Presentation, no : Presentation) extends Presentation {
+   override def fill(plug : Presentation*) = If(pos, test, yes.fill(plug : _*), no.fill(plug : _*))
 }
 
 /** test whether pos is Obj with head Some(path) and branch accordingly */
@@ -156,19 +156,25 @@ object Presentation {
       case "" => None
       case s => Some(Precedence.parse(s))
    }
+   private def parseTest(n: Node) = {
+      val t = xml.attr(n, "test")
+      if (List("present", "atomic") contains t) t
+      else throw ParseError("invalid test " + t)
+   }
    /** parses presentation from XML */
-   def parse(N : NodeSeq) : Presentation = {
+   def parse(N : NodeSeq)(implicit inAttr: Boolean = false) : Presentation = {
       val ps = for (n <- N) yield n match {
          case <text/> => Text(xml.attr(n, "value"))
 /*         case <procinstr/> => ProcInstr(xml.attr(n, "target"), xml.attr(n, "text")) */
          case <element>{pres @ _*}</element> =>
+            if (inAttr) throw ParseError("element not permitted within attribute")
             var atts : List[Attribute] = Nil
             var elems : List[Presentation] = Nil
             for (c <- n.child) c match {
                case <attribute/> =>
                   atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), Text(xml.attr(c, "value")))
                case <attribute>{value @ _*}</attribute> =>
-                  atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), parse(value))
+                  atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), parse(value)(true))
                case p => elems ::= parse(p)
             }
             Element(xml.attr(n,"prefix"), xml.attr(n,"name"), atts.reverse, elems.reverse)
@@ -197,10 +203,12 @@ object Presentation {
             Components(begin, pre, end, post, step, sep, body)
          case <nest><base>{base @ _*}</base><step>{step @ _*}</step></nest> =>
             Nest(int(xml.attr(n, "begin")), int(xml.attr(n, "end")), parse(step), parse(base))
-         case <ifpresent><then>{yes @ _*}</then><else>{no @ _*}</else></ifpresent> =>
-         	IfPresent(int(xml.attr(n,"index")), parse(yes), parse(no))
-         case <ifpresent><then>{yes @ _*}</then></ifpresent> =>
-            IfPresent(int(xml.attr(n,"index")), parse(yes), Empty)
+         case <if><then>{yes @ _*}</then><else>{no @ _*}</else></if> =>
+            val test = parseTest(n)
+         	If(int(xml.attr(n,"index")), test, parse(yes), parse(no))
+         case <if><then>{yes @ _*}</then></if> =>
+            val test = parseTest(n)
+            If(int(xml.attr(n,"index")), test, parse(yes), Empty)
          case <ifhead><then>{yes @ _*}</then><else>{no @ _*}</else></ifhead> =>
          	IfHead(int(xml.attr(n,"index")), Path.parse(xml.attr(n,"path"), mmt.mmtbase), parse(yes), parse(no))
          case <ifhead><then>{yes @ _*}</then></ifhead> =>

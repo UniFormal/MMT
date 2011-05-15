@@ -125,7 +125,11 @@ class XMLBuilder extends RenderingHandler {
       document.children = document.children ++ scala.xml.ProcInstr(target, text) 
    } */
    def elementStart(prefix : String, label : String) {
-      state = Elem(prefixOpt(prefix), label, Null, TopScope) :: state
+      inAttribute match {
+         case None => state = Elem(prefixOpt(prefix), label, Null, TopScope) :: state
+         case Some(_) => throw XMLError
+      }
+      
    }
    def elementEnd() {
       inAttribute match {
@@ -139,8 +143,12 @@ class XMLBuilder extends RenderingHandler {
       }
    }
    def attributeStart(prefix : String, name : String) {
-      inAttribute = Some(prefix, name)
-      attribute = ""
+      inAttribute match {
+         case None => 
+            inAttribute = Some(prefix, name)
+            attribute = ""
+         case Some(_) => throw XMLError
+      }
    }
    def attributeEnd() {
       inAttribute match {
