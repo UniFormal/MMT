@@ -1,6 +1,6 @@
 package info.kwarc.mmt.web.controller
 
-import info.kwarc.mmt.web.controller._
+import info.kwarc.mmt.web._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api._
 
@@ -30,7 +30,14 @@ object Rest {
        case r : Req if r.path.partPath.headOption == Some(":pathtree") =>
           val q = ReqHelpers.query(r.request)
           val node = PathTree(q)
-          val ct = "Content-Type" -> "text/html; charset=utf-8"
+          //val ct = "Content-Type" -> "text/html; charset=utf-8"
+          () => Full(XmlResponse(node))
+       case r : Req if r.path.partPath.headOption == Some(":query") =>
+          // for now: assume always incoming edges are desired
+          val q = ReqHelpers.query(r.request)
+          val p = Path.parse(q, Manager.basepath)
+          val node = snippet.Get.incoming(p)
+          //val ct = "Content-Type" -> "text/html; charset=utf-8"
           () => Full(XmlResponse(node))
        case r: Req if r.path.partPath.headOption == Some(":uom") =>
           val q = ReqHelpers.query(r.request)

@@ -373,23 +373,36 @@ function remoteClick(elem) {
    var ref = load(elem);
    $(elem).replaceWith(ref);
 }
+/*
 function latin_navigate(uri) {
 		var url = adaptMMTURI(uri, '', true);
 		window.open(url, '_self', '', false);
 }
-/* playing with Ajax update
-function latin_navigate(uri) {
-		var url = adaptMMTURI(uri);
-		proxyAjax('get', url, '', continuationMain, false, 'text/html');
-		// navigate to linked MMTURI (same window, with history entry)
-		//window.open(url, '_self', '', false);
-		return   
-}
-function continuationMain(data) {
-   var main = $('#main');
-   main.replaceWith(data.firstChild);
-}
 */
+// new version using ajax update
+function latin_navigate(uri) {
+		var url = adaptMMTURI(uri, '', true);
+		// main div
+      function cMain(data) {
+         var target = $('#main').children('div');
+         target.replaceWith(data.firstChild);
+      }
+		proxyAjax('get', url, '', cMain, false, 'text/xml');
+		// cross references
+		var refurl = catalog() + ':query/incoming?' + uri
+		function cRefs(data) {
+		   var target = $('#crossrefs').children('ul');
+		   target.replaceWith(data.firstChild);
+         target.jstree({
+              "core" : {"animation": 0},
+              "themes" : {"theme" : "classic", "icons" : false},
+              "plugins" : ["html_data", "themes", "ui", "hotkeys"]
+         });
+		}
+		proxyAjax('get', refurl, '', cRefs, false, 'text/xml');
+   });
+
+}
 
 latin.leftClick = function(target){
 	//handling clicks on parts of the document - active only for elements that have jobad:href

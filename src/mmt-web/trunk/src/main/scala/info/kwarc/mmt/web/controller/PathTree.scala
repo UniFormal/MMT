@@ -9,7 +9,7 @@ object PathTree {
 		</item>
 	def apply(q: String) : scala.xml.Node = {
 		if (q == ":root")
-             <root>{item(Manager.basepath, "open")}</root>
+             <root>{item(Manager.basepath, "closed")}</root>
           else {
         	  val path = Path.parse(q, Manager.basepath)
         	  Manager.controller.get(path)

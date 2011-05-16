@@ -33,13 +33,6 @@
            "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
        });
    });
-   $(function () {
-       $("#crossrefs").jstree({
-           "core" : {"animation": 0},
-           "themes" : {"theme" : "classic", "icons" : false},
-           "plugins" : ["html_data", "themes", "ui", "hotkeys"]
-       });
-   });
    var graphWindow = null;
    function openGraph(focus) {
       var graphWindow = window.open("/:graph?" + focus);
@@ -70,13 +63,12 @@
     <div id="sidebar">
        <div id="pathtree"/>
        <div id="crossrefs"> 
-         <lift:Get.outgoing/>
+         <ul/>
        </div>
     </div>
    
     <div id="main">
-       <lift:Get.get/>
-       <div id="dialog" title="Basic dialog"></div>
+       <div/>
     </div>
    </div>
 

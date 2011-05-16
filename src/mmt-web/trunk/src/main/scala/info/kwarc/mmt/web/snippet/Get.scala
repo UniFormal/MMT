@@ -62,7 +62,18 @@ class Get {
       result ++= imps.flatMap(p => BindHelpers.bind("i", Get.link(xhtml, p), "description" -> ""))
       result
    }*/
-   def outgoing(xhtml : NodeSeq) : NodeSeq = {
+}
+
+object Get {
+   def link(xhtml : NodeSeq, p : Path) = {
+	  val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
+	  <span jobad:href={p.toPath}>{text}</span>
+   }
+   def ahref(p: Path) =
+	   <a href="#" onclick={navigate(p)}>{p.last}</a>
+   def navigate(p: Path) = 
+	   "latin_navigate('" + p.toPath + "')"
+   def incoming(path: Path) : Node = {
       val deps = Manager.controller.depstore
       val meta = deps.query(path, - HasMeta)
       val imps = deps.query(path, - HasOccurrenceOfInImport)
@@ -70,10 +81,10 @@ class Get {
       val doms = deps.query(path, - HasDomain * HasType(IsView))
       val cods = deps.query(path, - HasCodomain * HasType(IsView))
       def refs(rel : String, subjs: List[Path]) : NodeSeq = {
-    	  val lis = subjs map {p =>
-    	    <li class="jstree-leaf">{Get.ahref(p)}</li>
-    	  }
-    	  <li><a href="">{rel}</a>{if (lis == Nil) Nil else <ul>{lis}</ul>}</li>
+        val lis = subjs map {p =>
+          <li class="jstree-leaf">{Get.ahref(p)}</li>
+        }
+        <li><a href="">{rel}</a>{if (lis == Nil) Nil else <ul>{lis}</ul>}</li>
       }
       <ul>
         <li class="jstree-open">
@@ -88,15 +99,4 @@ class Get {
         </li>
       </ul>
    }
-}
-
-object Get {
-   def link(xhtml : NodeSeq, p : Path) = {
-	  val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
-	  <span jobad:href={p.toPath}>{text}</span>
-   }
-   def ahref(p: Path) =
-	   <a href="#" onclick={navigate(p)}>{p.last}</a>
-   def navigate(p: Path) = 
-	   "latin_navigate('" + p.toPath + "')"
 }

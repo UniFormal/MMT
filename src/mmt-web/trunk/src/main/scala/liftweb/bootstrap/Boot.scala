@@ -66,7 +66,7 @@ class Boot {
                              true)
           //auxiliary files: css and javascript
           case RewriteRequest(ppath @ ParsePath(hd :: _, _, _, _), GetRequest, request)
-             if hd == "css" || hd == "script" || hd == ":pathtree" =>
+             if hd == "css" || hd == "script" || hd == ":pathtree" || hd == ":query" || hd == ":uom" =>
                 RewriteResponse(ppath, Map.empty, true)
          /* URI of the form CATALOG-AUTHORITY/;?doc?mod?sym?params
           * Ideally: URI of the form CATALOG-AUTHORITY?doc?mod?sym?params
@@ -92,7 +92,7 @@ class Boot {
     //LiftRules.ajaxPath = ":ajax_request"
     //LiftRules.resourceServerPath = "script"
     // disable auto-include of lift-javascript for comet actors
-    //LiftRules.autoIncludeComet = _ => false
+    LiftRules.autoIncludeComet = _ => false
     // disable GC to avoid javascript error
     LiftRules.enableLiftGC = false 
     
