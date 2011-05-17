@@ -290,6 +290,7 @@ function hover(e){
 
 document.onmouseover = hover;
 
+// TODO: remove these functions
 function proxyGet(URL, data, fun){
     if (typeof proxyURL == 'undefined') {
         //normal jQuery GET request
@@ -318,6 +319,7 @@ function proxyAjax(Atype, Aurl, Adata, Asuccess, Aasync, Aaccept){
             'type': Atype,
             'url': Aurl,
             'data': Adata,
+            'dataType': 'xml',
             'success': Asuccess,
             'async': Aasync,
             'beforeSend' : function(xhr){

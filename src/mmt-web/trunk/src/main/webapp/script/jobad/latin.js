@@ -50,28 +50,33 @@ function latin_navigate(uri) {
 		window.open(url, '_self', '', false);
 }
 */
+
+function ajaxReplaceIn(url, targetid) {
+   function cont(data) {
+         var targetnode = $('#' + targetid).children('div');
+         targetnode.replaceWith(data.firstChild);
+   }
+   $.ajax({ 'url': url,
+            'dataType': 'xml',
+            'success': cont
+        });
+}
 // new version using ajax update
 function latin_navigate(uri) {
-		var url = adaptMMTURI(uri, '', true);
 		// main div
-      function cMain(data) {
-         var target = $('#main').children('div');
-         target.replaceWith(data.firstChild);
-      }
-		proxyAjax('get', url, '', cMain, false, 'text/xml');
+		var url = adaptMMTURI(uri, '', true);
+		ajaxReplaceIn(url, 'main');
 		// cross references
-		var refurl = catalog + '/:query/incoming?' + uri;
-		function cRefs(data) {
-		   var target = $('#crossrefs');
-		   target.children('ul').replaceWith(data.firstChild);
-		   target.removeAttr('class');
-         target.jstree({
+		/* var refurl = catalog + '/:query/incoming?' + uri;
+		ajaxReplaceIn(refurl, 'crossrefs');
+      $('#crossrefs').jstree({
               "core" : {"animation": 0},
               "themes" : {"theme" : "classic", "icons" : false},
               "plugins" : ["html_data", "themes", "ui", "hotkeys"]
-         });
-		}
-		proxyAjax('get', refurl, '', cRefs, false, 'text/xml');
+      }); */
+		// breadcrumbs
+		var bcurl = catalog + '/:breadcrumbs?' + uri;
+		ajaxReplaceIn(bcurl, 'breadcrumbs');
 }
 
 function browserInit() {
@@ -464,10 +469,13 @@ var currentURI = null;
 latin.contextMenuEntries = function(target){
 	if (target.hasAttribute("jobad:href")) {
 		currentURI = target.getAttribute('jobad:href');
-		return [["show type", "showComp('type')"],
-		        ["show definition", "showComp('definition')"],
-		        ["get OMDoc", "openCurrentOMDoc()"],
-		        ["open in new window", "openCurrent()"]];
+		return [
+		         ["show type", "showComp('type')"],
+		         ["show definition", "showComp('definition')"],
+		         ["get OMDoc", "openCurrentOMDoc()"],
+		         ["open in new window", "openCurrent()"],
+		         ["full URI", "alert('" + currentURI + "')"]
+		        ];
 	} else
 		return []
 }

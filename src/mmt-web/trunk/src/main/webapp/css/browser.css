@@ -12,7 +12,7 @@
    border-color: black;
 }
 
-#navigation {
+#breadcrumbs {
    position: fixed;
    top: 12%;
    left: 15%;
@@ -20,6 +20,10 @@
    height: 4%;
    border-style: solid;
    border-width: thin;
+}
+span.crumb {
+   margin-left: 10px;
+   margin-right: 10px;
 }
 
 span.pagelink {
@@ -39,7 +43,9 @@ span.pagelink {
 #pathtree {
    margin-bottom:10px;
    background: lightgray;
-   
+}
+a.treerelation {
+  background: blue;
 }
 
 #crossrefs {
