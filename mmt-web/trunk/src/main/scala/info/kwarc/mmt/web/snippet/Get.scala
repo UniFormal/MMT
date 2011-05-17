@@ -21,10 +21,10 @@ class Get {
    private val basepath = Manager.basepath
    private val path = Path.parse(new info.kwarc.mmt.api.utils.xml.URI(doc), mod, sym, basepath)
    /** the main snippet retrieving the requested object and applying the requested action */
-   def get : Node = {
+   /*def get : Node = {
       try {Manager.doGet(doc, mod, sym, act)}
       catch {case e @ backend.NotFound(p) => scala.xml.Text(e.getMessage)}
-   }
+   }*/
 
    /** yields the requested MMT-URI (without action) */
    //def title : Node = scala.xml.Text(path.toString)
@@ -84,7 +84,7 @@ object Get {
         val lis = subjs map {p =>
           <li class="jstree-leaf">{Get.ahref(p)}</li>
         }
-        <li><a href="">{rel}</a>{if (lis == Nil) Nil else <ul>{lis}</ul>}</li>
+        <li class="jstree-leaf"><a href="">{rel}</a>{if (lis == Nil) Nil else <ul>{lis}</ul>}</li>
       }
       <ul>
         <li class="jstree-open">
@@ -99,4 +99,19 @@ object Get {
         </li>
       </ul>
    }
+   private def item(p : Path, state : String) =
+      <item id={p.toPath} state={state}>
+        <content><name href="#" onclick={navigate(p)}>{p.last}</name></content>
+      </item>
+   def tree(q: String) : scala.xml.Node = {
+      if (q == ":root")
+          <root>{item(Manager.basepath, "closed")}</root>
+      else {
+           val path = Path.parse(q, Manager.basepath)
+           Manager.controller.get(path)
+           val children = Manager.controller.depstore.query(path, + ontology.Declares) 
+           <root>{children.map{c => item(c, "closed")}}</root>
+          }
+   }
+
 }

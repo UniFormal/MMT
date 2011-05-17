@@ -24,7 +24,7 @@
            "core" : {"animation": 0},
            "xml_data" : {
               "ajax" : {
-                 "url" : "/:pathtree",
+                 "url" : "/:tree",
                  "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
               },
               "xsl" : "nest"
@@ -35,7 +35,7 @@
    });
    var graphWindow = null;
    function openGraph(focus) {
-      var graphWindow = window.open("/:graph?" + focus);
+      var graphWindow = window.open("/xhtml/graph?" + focus);
    };
   </script>
 </head>
@@ -47,10 +47,10 @@
     <div id="title">
       <div>The MMT Web Server</div>
       <div>
-        <span class="pagelink"><a href="/">Browser</a></span>
+        <span class="pagelink"><a href="/xhtml/browse">Browser</a></span>
         <span class="pagelink"><a href="javascript:openGraph('')">Graph View</a></span>
-        <span class="pagelink"><a href="/:uom">Universal Machine</a></span>
-        <span class="pagelink"><a href="/:admin">Administration</a></span>
+        <span class="pagelink"><a href="/xhtml/uom">Universal Machine</a></span>
+        <span class="pagelink"><a href="/xhtml/admin">Administration</a></span>
       </div>
     </div>
    

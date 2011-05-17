@@ -2,15 +2,12 @@
  * The LATIN implementation of the JOBAD service class and functions
  * @author: Florian Rabe, based on previous code by Catalin David
  */
-var latin = clone(Service);
 
-/** extracts the URI of the catalog server from the current URL */
-function catalog(){return window.location.protocol + '//' + window.location.host;}
-/** extracts the URI of the notation style from the current URL */
-function notstyle(){
-	var i = window.location.search.indexOf('present_', 0);
-	return (i != -1 ? window.location.search.substring(i+8) : '');   
-}
+// scheme + authority of the server
+var catalog;
+// notation style, empty if none
+var notstyle;
+
 /**
  * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
  * act: String: action to call on MMTURI
@@ -21,9 +18,83 @@ function adaptMMTURI(uri, act, present){
 	var doc = (arr.length >= 1) ? arr[0] : "";
 	var mod = (arr.length >= 2) ? arr[1] : "";
 	var sym = (arr.length >= 3) ? arr[2] : "";
-	var pres = (present) ? "_present_" + notstyle() : "";
-	return catalog() + '/;?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
-};
+	var pres = (present) ? "_present_" + notstyle : "";
+	return catalog + '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
+}
+
+function load(elem) {
+   var url = adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
+   var res = null;
+   function cont(data) {res = data;}
+   proxyAjax('get', url, '', cont, false, 'text/xml');
+   elem.removeAttribute('jobad:load');
+   return res.firstChild;
+}
+function includeClick(elem) {
+   var container = $(elem).children('div.included-module')[0];
+   if (elem.hasAttribute('jobad:load')) {
+      var m = load(elem);
+      container.appendChild(m);
+      $(container).toggle();
+   } else {
+      $(container).toggle();
+   }
+}
+function remoteClick(elem) {
+   var ref = load(elem);
+   $(elem).replaceWith(ref);
+}
+/*
+function latin_navigate(uri) {
+		var url = adaptMMTURI(uri, '', true);
+		window.open(url, '_self', '', false);
+}
+*/
+// new version using ajax update
+function latin_navigate(uri) {
+		var url = adaptMMTURI(uri, '', true);
+		// main div
+      function cMain(data) {
+         var target = $('#main').children('div');
+         target.replaceWith(data.firstChild);
+      }
+		proxyAjax('get', url, '', cMain, false, 'text/xml');
+		// cross references
+		var refurl = catalog + '/:query/incoming?' + uri;
+		function cRefs(data) {
+		   var target = $('#crossrefs');
+		   target.children('ul').replaceWith(data.firstChild);
+		   target.removeAttr('class');
+         target.jstree({
+              "core" : {"animation": 0},
+              "themes" : {"theme" : "classic", "icons" : false},
+              "plugins" : ["html_data", "themes", "ui", "hotkeys"]
+         });
+		}
+		proxyAjax('get', refurl, '', cRefs, false, 'text/xml');
+}
+
+function browserInit() {
+   // path (; at end of path is ignored; maybe use window.location.href and parse properly)
+   var path = window.location.pathname;
+   // query
+   var query = window.location.search.substring(1);
+   // will be the requested MMT URI
+   var uri = null;
+   catalog = window.location.protocol + '//' + window.location.host;
+	var i = query.indexOf('present_', 0);
+	if (i !== -1) {
+      uri = query.substring(0,i-1);
+	   notstyle = query.substring(i+8);
+	} else {
+	   uri = query;
+	   notstyle = '';
+   }
+   if ((path.indexOf("/xhtml") != 0) && (path !== "/;") && (path !== "/")) {
+      uri = path + '?' + uri;
+   }
+   latin_navigate(uri);
+}
 
 /**
  * parses and evaluates the formula F inside a jobad:conditional attribute
@@ -278,6 +349,8 @@ function changeTextBox(target, changer){
 	evaluateDocument(target);
 }
 
+var latin = clone(Service);
+
 /**
  * Initialize the latin service
  */
@@ -349,59 +422,7 @@ latin.init = function(){
 		}
 	}
 	evaluateDocument(document);
-}
-
-function load(elem) {
-   var url = adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
-   var res = null;
-   function cont(data) {res = data;};
-   proxyAjax('get', url, '', cont, false, 'text/xml');
-   elem.removeAttribute('jobad:load');
-   return res.firstChild;
-}
-function includeClick(elem) {
-   var container = $(elem).children('div.included-module')[0];
-   if (elem.hasAttribute('jobad:load')) {
-      var m = load(elem);
-      container.appendChild(m);
-      $(container).toggle();
-   } else {
-      $(container).toggle();
-   }
-}
-function remoteClick(elem) {
-   var ref = load(elem);
-   $(elem).replaceWith(ref);
-}
-/*
-function latin_navigate(uri) {
-		var url = adaptMMTURI(uri, '', true);
-		window.open(url, '_self', '', false);
-}
-*/
-// new version using ajax update
-function latin_navigate(uri) {
-		var url = adaptMMTURI(uri, '', true);
-		// main div
-      function cMain(data) {
-         var target = $('#main').children('div');
-         target.replaceWith(data.firstChild);
-      }
-		proxyAjax('get', url, '', cMain, false, 'text/xml');
-		// cross references
-		var refurl = catalog() + ':query/incoming?' + uri
-		function cRefs(data) {
-		   var target = $('#crossrefs').children('ul');
-		   target.replaceWith(data.firstChild);
-         target.jstree({
-              "core" : {"animation": 0},
-              "themes" : {"theme" : "classic", "icons" : false},
-              "plugins" : ["html_data", "themes", "ui", "hotkeys"]
-         });
-		}
-		proxyAjax('get', refurl, '', cRefs, false, 'text/xml');
-   });
-
+	browserInit();
 }
 
 latin.leftClick = function(target){

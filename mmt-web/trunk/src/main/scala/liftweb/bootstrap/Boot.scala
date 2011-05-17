@@ -43,7 +43,7 @@ class Boot {
          case _ => "xml" 
       }
       val params = Map( ("document", doc), ("module", mod), ("symbol", sym), ("action", act), ("format", format) )
-      RewriteResponse(Req.NilPath, params, true)
+      RewriteResponse(Req.NilPath, params, false)
    }
    
    /** init method */
@@ -53,35 +53,36 @@ class Boot {
 
      // add URL rewrites
      LiftRules.statelessRewrite.append {
-          //admin interface
-          case RewriteRequest(ParsePath(List(":admin"), _, _, _), GetRequest, request) =>
-             val command = ReqHelpers.query(request)
-             RewriteResponse(ParsePath(List("admin"), "html", true, false), 
-                             Map(("command", command), ("format", "xhtml")),
-                             true)
-          case RewriteRequest(ParsePath(List(":graph"), _, _, _), GetRequest, request) =>
-             val command = ReqHelpers.query(request)
-             RewriteResponse(ParsePath(List("graph"), "html", true, false), 
-                             Map(("command", command), ("format", "xhtml")),
-                             true)
-          //auxiliary files: css and javascript
-          case RewriteRequest(ppath @ ParsePath(hd :: _, _, _, _), GetRequest, request)
-             if hd == "css" || hd == "script" || hd == ":pathtree" || hd == ":query" || hd == ":uom" =>
-                RewriteResponse(ppath, Map.empty, true)
+          // empty path defaults to browser interface
+          case RewriteRequest(ParsePath(Nil, _, _, _), GetRequest, req) =>
+               val initial = ReqHelpers.query(req)
+               RewriteResponse(ParsePath(List("xhtml", "browse"), "html", true, false), Map(("query", initial)), false)
+          // files making up the user interface
+          case RewriteRequest(ParsePath(hd :: tl, s, a, e), GetRequest, request) 
+               if List("xhtml", "css", "script") contains hd =>
+                  //css and javascript paths cannot be rewritten here because they are served by the container, see fixCSS method 
+                  val p = ParsePath(hd :: tl, s, a, e)
+                  RewriteResponse(p, Map.empty, true)
+          // services making up the machine interface, also used via ajax
+          case RewriteRequest(ppath, GetRequest, request) 
+               if Rest.applicable(ppath) =>
+                  RewriteResponse(ppath, Map.empty, true)
          /* URI of the form CATALOG-AUTHORITY/;?doc?mod?sym?params
           * Ideally: URI of the form CATALOG-AUTHORITY?doc?mod?sym?params
           * But firefox transforms "path" to "/path" if path(0) != "/"
-      * so the next best thing to an empty path is the path "/;"
-      */
-          case RewriteRequest(ParsePath(List(";"), _, _, _), GetRequest, request) => 
-           rewr(ReqHelpers.query(request), ReqHelpers.ctype(request))
+          * so the next best thing to an empty path is the path "/;"
+          */
+          case RewriteRequest(ParsePath(List(";"), _, _, _), GetRequest, req) =>
+               val initial = ReqHelpers.query(req)
+               RewriteResponse(ParsePath(List("xhtml","browse"), "html", true, false), Map(("query", initial)), true)
          /* URI of the form OMBASE-AUTHORITY/path?mod?sym?params where doc := OMBASE-AUTHORITY/path
           * lift transforms "" and "/" to "/index" (see net.liftweb.http.Req.parsePath)
-      * lift also removes empty path segments
+          * lift also removes empty path segments
           * path(request) yields the original (client-sent) path
           */
-          case RewriteRequest(_, GetRequest, request) =>
-               rewr(ReqHelpers.path(request) + "?" + ReqHelpers.query(request), ReqHelpers.ctype(request))
+          case RewriteRequest(_, GetRequest, req) =>
+               val initial = ReqHelpers.path(req) + "?" + ReqHelpers.query(req)
+               RewriteResponse(ParsePath(List("xhtml","browse"), "html", true, false), Map(("query", initial)), true)
     }
   
     // requests that are not caught and handled here are passed on to the snippets/templates 
