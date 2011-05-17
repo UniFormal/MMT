@@ -11,7 +11,7 @@ import net.liftweb.common.{Box,Empty,Full}
 
 
 object Rest {
-   def applicable(p: ParsePath) = List(":tree", ":query", ":uom", ":mmt") contains p.partPath.headOption.getOrElse("")
+   def applicable(p: ParsePath) = List(":tree", ":query", ":uom", ":mmt", ":breadcrumbs") contains p.partPath.headOption.getOrElse("")
    val handler : LiftRules.DispatchPF = {case r : Req if applicable(r.path) =>
       val path : List[String] = r.path.wholePath
       val query : String = ReqHelpers.query(r.request) 
@@ -25,6 +25,10 @@ object Rest {
              val mmtpath = Path.parse(query, Manager.basepath)
              val node = snippet.Get.incoming(mmtpath)
              //val ct = "Content-Type" -> "text/html; charset=utf-8"
+             XmlResponse(node)
+          case ":breadcrumbs" :: _ =>
+             val mmtpath = Path.parse(query, Manager.basepath)
+             val node = scala.xml.Utility.trim(snippet.Get.breadcrumbs(mmtpath))
              XmlResponse(node)
           case ":uom" :: _ =>
              val resp = query match {
@@ -50,11 +54,6 @@ object Rest {
                 case _ => <error message="illegal command"/>
              }
              XmlResponse(resp)
-//          case r : Req if List("xml","text") contains r.param("format").getOrElse("") =>
-//             val doc = r.param("document").getOrElse("")
-  //           val mod = r.param("module").getOrElse("")
-    //         val sym = r.param("symbol").getOrElse("")
-      //       val act = r.param("action").getOrElse("")
           case ":mmt" :: _ =>
               val comps = query.split("\\?",-1)
               val (doc, mod, sym, act) = comps.length match {
@@ -88,9 +87,9 @@ object Rest {
                   else
                      XmlResponse(node)
                } catch {
-                 case e => XmlResponse(<error message={"get error\n\n" + e.getMessage}/>)
+                 case e => XmlResponse(<div>{"get error:\n\n" + e.getMessage}</div>)
                }
-          case p => XmlResponse(<error path ={p.toString}/>)  // impossible
+          case p => XmlResponse(<error path={p.toString}/>)  // impossible
       }
       () => Full(resp)
    }

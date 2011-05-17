@@ -7,7 +7,7 @@ object Manager {
    val controller = new frontend.Controller(libraries.NullChecker, report)
    val uom = new UOMServer(report)
    
-   protected def log(msg: => String) = report("manager", msg)
+   def log(msg: => String) = report("manager", msg)
       
    def start() {
       controller.handle(frontend.ExecFile(new java.io.File("startup.mmt")))

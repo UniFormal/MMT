@@ -42,6 +42,7 @@ object xml {
       ns match {
          case "xml" => "http://www.w3.org/XML/1998/namespace"
          case "omdoc" => "http://www.mathweb.org/omdoc"
+         case "jobad" => "http://omdoc.org/presentation"
          case "visib" => namespace("omdoc")
          case "om" => "http://www.openmath.org/OpenMath"
          case "xhtml" => "http://www.w3.org/1999/xhtml"
