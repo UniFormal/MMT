@@ -1,4 +1,4 @@
-package info.kwarc.mmt.web.controller
+package info.kwarc.mmt.web
 
 import info.kwarc.mmt.web._
 import info.kwarc.mmt.api.frontend._
@@ -17,18 +17,21 @@ object Rest {
       val query : String = ReqHelpers.query(r.request) 
       val resp : LiftResponse = path match {
           case ":tree" :: _ =>
-             val node = snippet.Get.tree(query)
+             val node = Get.tree(query)
              //val ct = "Content-Type" -> "text/html; charset=utf-8"
              XmlResponse(node)
           case ":query" :: _ =>
              // for now: assume always incoming edges are desired
              val mmtpath = Path.parse(query, Manager.basepath)
-             val node = snippet.Get.incoming(mmtpath)
-             //val ct = "Content-Type" -> "text/html; charset=utf-8"
+             val node = Get.incoming(mmtpath)
              XmlResponse(node)
+          case ":graph" :: _ =>
+             val mmtpath = Path.parse(query, Manager.basepath)
+             val json = Get.graph(mmtpath)
+             JsonResponse(json)
           case ":breadcrumbs" :: _ =>
              val mmtpath = Path.parse(query, Manager.basepath)
-             val node = scala.xml.Utility.trim(snippet.Get.breadcrumbs(mmtpath))
+             val node = scala.xml.Utility.trim(Get.breadcrumbs(mmtpath))
              XmlResponse(node)
           case ":uom" :: _ =>
              val resp = query match {

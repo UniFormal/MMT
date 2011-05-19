@@ -1,65 +1,27 @@
-package info.kwarc.mmt.web.snippet
+package info.kwarc.mmt.web
 
 import scala.xml._
 import net.liftweb._
 import net.liftweb.http._
 import net.liftweb.util._
 import net.liftweb.util.BindHelpers._
+import net.liftweb.json.JsonAST._
 
-import info.kwarc.mmt.web.controller._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api._
+import libraries._
+import ontology._
 import modules._
-
-/*
-/** A class encapsulating various snippets that are called from the templates. */
-class Get {
-   private def log(msg : String) = Manager.report("get", msg)
-   private val doc = S.param("document").getOrElse("")
-   private val mod = S.param("module").getOrElse("")
-   private val sym = S.param("symbol").getOrElse("")
-   private val act = S.param("action").getOrElse("")
-   private val basepath = Manager.basepath
-   private val path = Path.parse(new info.kwarc.mmt.api.utils.xml.URI(doc), mod, sym, basepath)
-   /** the main snippet retrieving the requested object and applying the requested action */
-   /*def get : Node = {
-      try {Manager.doGet(doc, mod, sym, act)}
-      catch {case e @ backend.NotFound(p) => scala.xml.Text(e.getMessage)}
-   }*/
-
-   /** yields the requested MMT-URI (without action) */
-   //def title : Node = scala.xml.Text(path.toString)
-
-   //def linkOMDoc(xhtml : NodeSeq) = <span jobad:href={path.toPathLong + "?xml"}>as OMDoc</span>
-
-   /*def incoming(xhtml : NodeSeq) : NodeSeq = {
-      val deps = Manager.controller.depstore
-      var result : NodeSeq = Nil
-      val meta = deps.query(path, ToObject(HasMeta)).toList
-      result ++= meta.flatMap(p =>
-        BindHelpers.bind("i", xhtml,
-          "href" -> p.toPath,
-          "description" -> "meta"
-        )
-      )
-      val imps = deps.query(path, + HasOccurrenceOfInImport).toList
-      result ++= imps.flatMap(p => BindHelpers.bind("i", Get.link(xhtml, p), "description" -> ""))
-      result
-   }*/
-}
-*/
 
 object Get {
    /*
    def link(xhtml : NodeSeq, p : Path) = {
-	  val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
-	  <span jobad:href={p.toPath}>{text}</span>
+     val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
+     <span jobad:href={p.toPath}>{text}</span>
    }*/
    def ahref(p: Path) =
-	   <a href="#" onclick={navigate(p)}>{p.last}</a>
+      <a href="#" onclick={navigate(p)}>{p.last}</a>
    def navigate(p: Path) = 
-	   "latin_navigate('" + p.toPath + "')"
+      "latin_navigate('" + p.toPath + "')"
    def incoming(path: Path) : Node = {
       val deps = Manager.controller.depstore
       val meta = deps.query(path, - HasMeta)
@@ -108,6 +70,7 @@ object Get {
                               NamespaceBinding("jobad", utils.xml.namespace("jobad"), TopScope)), crumbs : _*)
    }
    private val deps = Manager.controller.depstore
+   private val lib = Manager.controller.library
    private def item(p : Path, state : String) = 
       <item id={p.toPath} state={state}>
         <content><name href="#" onclick={navigate(p)}>{p.last}</name></content>
@@ -120,7 +83,7 @@ object Get {
            val elem = Manager.controller.get(path)
            path match {
               case p: DPath => 
-                 val children = deps.query(path, + ontology.Declares) 
+                 val children = deps.query(path, + Declares) 
                  <root>{children.map{c => item(c, "closed")}}</root>
               case p:MPath =>
                  val rels : List[(String,Query)] = elem match {
@@ -142,5 +105,24 @@ object Get {
                  }</root>
           }
       }
+   }
+   /**
+    * returns the Json object representing a graph
+    * @param p the MMT URI that is currently focused (ignore for now)
+    */
+   def graph(p: Path) : JValue = {
+      val nodes : Iterator[Path] = deps.getInds(IsTheory)
+      val views : Iterator[Path] = deps.getInds(IsView)
+      val structures : Iterator[Path] = deps.getInds(IsStructure)
+      def domain(p: Path) = deps.query(p, + HasDomain) match {
+         case Nil => utils.mmt.mmtbase  // At the moment I'm still using a precomputed dataset that might not be complete; for now, assume a dummy value if the lookup fails  
+         case hd :: _ => hd
+      }
+      def codomain(p: Path) = deps.query(p, + HasCodomain) match {
+         case Nil => 
+         case hd :: _ => hd
+      }
+      // dummy return value to make the code compile 
+      JNothing
    }
 }

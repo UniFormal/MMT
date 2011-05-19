@@ -1,7 +1,8 @@
 package bootstrap.liftweb
-import info.kwarc.mmt.web.controller._
-import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.web._
 import info.kwarc.mmt.api._
+import frontend._
+
 import net.liftweb._
 import net.liftweb.http._
 import net.liftweb.common.{Box,Empty,Full}
