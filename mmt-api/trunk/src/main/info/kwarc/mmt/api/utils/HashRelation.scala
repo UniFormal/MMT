@@ -2,15 +2,20 @@ package info.kwarc.mmt.api.utils
 import scala.collection.mutable._
 
 /**
-   This implements a mutable total map from A to the power set of B.
-   It returns the empty set by default.
-   The results are returned as mutable objects. 
-*/
+ * This implements a relation on A and B as a mutable total map from A to the power set of B.
+ */
 class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
+   /** returns the set of b such that (a,b) in this (returned as a mutable object)
+    *  It returns the empty set by default.
+    */
    override def apply(a : A) : HashSet[B] = getOrElseUpdate(a, HashSet.empty)
+   /** add a pair to the relation */
    def +=(a: A, b: B) {apply(a) += b}
+   /** remove a pair from the relation */
    def -=(a: A, b: B) {apply(a) -= b}
+   /** get an iterator over all pairs */
    def pairs : Iterator[(A,B)] = flatMap({case (a, s) => s.map(b => (a,b))}).iterator
+   /** remove the entry for a if there are no b such (a,b) is in the relation */
    def cleanup(a : A) {
       val bs = get(a)
       if (bs.isDefined && bs.get.isEmpty) this -= a

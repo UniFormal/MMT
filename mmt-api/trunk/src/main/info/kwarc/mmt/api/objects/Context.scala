@@ -7,7 +7,7 @@ import Context._
 import Substitution._
 
 /** represents an MMT variable declaration */
-abstract class VarDecl(val name : String) extends Content {
+sealed abstract class VarDecl(val name : String) extends Content {
    def ^(sub : Substitution) : VarDecl
    def toOMATTR : Term
    def toNodeID(pos : Position) : scala.xml.Node
@@ -79,7 +79,17 @@ case class Context(variables : VarDecl*) {
 	   case -1 => throw LookupError(name)
 	   case i => variables.length - i - 1 
    }
-   val id : Substitution = this.map(v => Sub(v.name,OMV(v.name)))  
+   def id : Substitution = this.map(v => Sub(v.name,OMV(v.name)))
+   /** substitutes in all variable declarations except for the previously declared variables
+    *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
+    */  
+   def ^(sub : Substitution) : Context = {
+      val id = this.id // precompute value
+      // sub ++ id.take(i) represents sub, x_1/x_1, ..., x_{i-1}/x_{i-1} 
+      val newvars = variables.zipWithIndex map {case (vd, i) => vd ^ (sub ++ id.take(i))}
+      Context(newvars :_*)
+   }
+
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode = toNodeID(Position.None)
    def toNodeID(pos : Position) =
@@ -111,10 +121,16 @@ case class Substitution(subs : Sub*) {
 	   case None => throw SubstitutionUndefined(v)
 	   case Some(s) => s.target 
    }
+   /** turns a substitution into a context by treating every substitute as a definiens
+    *  this permits seeing substitution application as a let-binding
+    */
+   def asContext = {
+      val decls = subs map {case Sub(n, t) => TermVarDecl(n, None, Some(t))}
+      Context(decls : _*)
+   }
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode = toNodeID(Position.None)
-   def toNodeID(pos : Position) =
-     <om:OMBVAR>{this.zipWithIndex.map({case (s,i) => s.toNodeID(pos + (i+1))})}</om:OMBVAR>
+   def toNodeID(pos : Position) = asContext.toNodeID(pos)
 }
 
 /** helper object */

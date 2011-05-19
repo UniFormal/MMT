@@ -1,10 +1,12 @@
 package info.kwarc.mmt.web.snippet
 
+import info.kwarc.mmt.web._
+import info.kwarc.mmt.api.frontend._
+
 import net.liftweb.http._
 import net.liftweb.util._
 import net.liftweb.util.BindHelpers._
-import info.kwarc.mmt.web.controller._
-import info.kwarc.mmt.api.frontend._
+
 
 class Admin {
    def exec : scala.xml.NodeSeq  = {

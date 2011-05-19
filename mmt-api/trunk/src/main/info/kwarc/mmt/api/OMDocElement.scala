@@ -6,7 +6,7 @@ import scala.xml.Node
  * A StructuralElement is any knowledge item on the document, module, or symbol level.
  * The structural elements are subdivided according to their dimension: content, presentation, or narration.
  */
-trait StructuralElement extends Content with MetaData {
+trait StructuralElement extends Content with metadata.HasMetaData {
    /** the MMT URI of the element */
    def path : Path
    /** the containing knowledge item, a URL if none */
@@ -70,12 +70,4 @@ trait Content {
    def presentation(lpar : LocalParams) : PresentationData
    /** XML representation */
    def toNode : Node
-}
-
-/**
- * The trait MetaData is mixed into any class that can carry metadata (not used yet)
- */
-trait MetaData {
-   /** the key-value set of metadata items */
-   val metadata = new scala.collection.mutable.HashMap[GlobalName,String]
 }

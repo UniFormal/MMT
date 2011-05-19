@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
 import libraries._
+import objects.Context._
 
 /** 
  * A Continuation wraps a function that traverses a Term.
@@ -17,20 +18,26 @@ abstract class Continuation[State] {
 /**
  * OneStep is an auxiliary Continuation that traverses one level into a Term doing nothing else.
  * Thus, OneStep.apply(OneStep, t)(con, state) = t
- * A Continuation can focus on the interesting cases of an induciton and delegate all the boring cases to OneStep.  
+ * A Continuation can focus on the interesting cases of an induction and delegate all the boring cases to OneStep.  
  */
 class OneStep[State] extends Continuation[State] {
 	def apply(cont : Continuation[State], t : Term)(implicit con : Context, state : State) : Term = {
-       def rec(t: Term)(implicit con : Context, state : State) = cont(this, t)(con, state)
+      def rec(t: Term)(implicit con : Context, state : State) = cont(this, t)(con, state)
+      def recCon(c: Context)(implicit con : Context, state : State) : Context =
+         c.zipWithIndex map {
+            case (TermVarDecl(n, t, d, attv @ _*), i) =>
+               val conci = con ++ c.take(i+1)
+               val newt = t.map(rec( _)(conci, state))
+               val newd = d.map(rec( _)(conci, state))
+               TermVarDecl(n, newt, newd, attv :_*)  //TODO traversal into attributions
+         }
 	   t match {
 		   case OMA(fun,args) => OMA(rec(fun), args.map(rec))
 		   case OME(err,args) => OMA(rec(err), args.map(rec))
 		   case OMM(arg,via) => OMM(rec(arg), via)
-		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value))
-		   case OMBINDC(b,vars,cond,body) =>
-		      val newvars = vars
-		      val newcon = con ++ vars
-		      OMBINDC(rec(b), newvars, cond.map(x => rec(x)(newcon, state)), rec(body)(newcon, state))
+		   case OMSub(arg, via) => OMSub(rec(arg)(con ++ via, state), recCon(via))
+		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)) //TODO traversal into key
+		   case OMBINDC(b,vars,cond,body) => OMBINDC(rec(b), recCon(vars), cond.map(x => rec(x)(con ++ vars, state)), rec(body)(con ++ vars, state))
 		   case OMID(_) => t
 		   case OMV(_) => t
 		   case OMHID => t
@@ -38,6 +45,12 @@ class OneStep[State] extends Continuation[State] {
 		   case OMI(_) => t
 		   case OMSTR(_) => t
 		   case OMF(_) => t
+		   case OMSemiFormal(tokens) => 
+		      val newtokens = tokens map {
+		         case Formal(t) => Formal(rec(t))
+		         case i => i  // One might want to recurse into informal objects here as well
+		      }
+		      OMSemiFormal(newtokens)
        }
    }
 }

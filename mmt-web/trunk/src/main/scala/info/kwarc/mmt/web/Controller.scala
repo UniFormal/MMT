@@ -1,4 +1,4 @@
-package info.kwarc.mmt.web.controller
+package info.kwarc.mmt.web
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.uom._
 

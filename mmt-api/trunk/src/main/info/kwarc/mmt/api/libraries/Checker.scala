@@ -346,6 +346,14 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
                throw Invalid("codomain of morphism is not imported into expected home theory")
             val occa = checkTerm(from, context, arg, uvcheck) // using the same context because variable attributions are ignored anyway
             occm ::: occa
+         case t @ OMSub(arg, via) =>
+            val bigcon = context ++ via
+            val occvia = via.variables.toList flatMap {
+               case TermVarDecl(n, t, d, atts @ _*) =>
+                  t.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil)
+               }
+            val occarg = checkTerm(home, bigcon, arg, uvcheck)
+            occvia ::: occarg
          case OMHID => Nil//TODO roles
          case OME(err, args) =>
             val occe = checkTerm(home, context, err, IsEqualTo(Error))
@@ -355,6 +363,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
          case OMI(i) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMSTR(s) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMF(d) => Nil //TODO roles; check import of pseudo-theories, dependencies?
+         case OMSemiFormal(t) => Nil //TODO
       }
    }
 }
