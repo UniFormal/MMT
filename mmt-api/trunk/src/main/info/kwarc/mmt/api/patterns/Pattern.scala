@@ -36,7 +36,7 @@ class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalN
      "Instance " + name.flat + " of pattern " + pattern.toString  
 }
 
-object PRep {
+object Rep {
 	def apply(fn : Term, n : Int): Term = OMA(OMID(mmt.repetition),List(fn,OMI(n)))
     def unapply(t : Term) : Option[(Term,Int)] = t match {
 		case OMA(mmt.repetition,List(fn,OMI(n))) => Some((fn,n.toInt))
@@ -44,12 +44,12 @@ object PRep {
 	}
 }
 
-object Seq {
+object Ellipsis {
 	def apply(body : Term, name : String, from : Term, to : Term) : Term =
-		OMBIND(OMA(OMID(mmt.seq),List(from,to)),Context(TermVarDecl(name,Some(OMID(mmt.nat)),None,null)), body)
+		OMBIND(OMA(OMID(mmt.ellipsis),List(from,to)),Context(TermVarDecl(name,Some(OMID(mmt.nat)),None,null)), body)
 	def unapply(t : Term) : Option[(Term,String,Term,Term)] = 
 		t match {
-		case OMBIND(OMA(OMID(mmt.seq),List(k,l)),Context(TermVarDecl(i,Some(OMID(mmt.nat)),None,null)),tm) => 
+		case OMBIND(OMA(OMID(mmt.ellipsis),List(k,l)),Context(TermVarDecl(i,Some(OMID(mmt.nat)),None,null)),tm) => 
 		  Some((tm,i,k,l))
 		case _ => None
 	}
@@ -61,6 +61,15 @@ object Index {
 		t match {
 		case OMA(OMID(mmt.index), List(seq, ind)) => Some(seq,ind)
 		case _ => None
+	}
+}
+
+object Seq {
+	def apply(seq : Term*) = OMA(OMID(mmt.seq),seq.toList)
+	def unapplySeq(tm : Term) : Option[Seq[Term]] = 
+		tm match {
+		case OMA(OMID(mmt.seq),l) => Some(l)
+		case _ => None 
 	}
 }
 
@@ -145,10 +154,27 @@ object Pattern {
 	 		  }
 	 		   )
   }
-   
-  def removeIndex(tm:Term): Term = {
+  
+ 
+  def expandSeq(seq : Term) : List[Term] = {
+	seq match {
+		case Ellipsis(tm,i,OMI(a),OMI(z)) => 
+		List.range(a.intValue,z.intValue).map(x => tm ^ Substitution(Sub(i,OMI(x))))
+		case _ => throw IllTerm //TODO Do the remaining cases.
+	}
+  }
+ 
+  
+  def removeIndex(seq : Term, ind : Term) : Term = {
+	  ind match {
+	       case OMI(i) => expandSeq(seq)(i.intValue)
+	       case _ => throw IllTerm
+	       }
+  }
+  
+  def removeIndex(tm : Term) : Term = {
 	   tm match {
-	  	   case OMA(OMID(mmt.index),List(OMI(i),fun)) => fun
+	  	   case OMA(OMID(mmt.index),List(OMI(i),fn)) => fn
 	  	   case OMA(fn,args) => OMA(removeIndex(fn),args.map(removeIndex))
 	  	   case OMBIND(bin,con,bdy) => OMBIND(bin,removeIndex(con),removeIndex(bdy))
 	 	   case OMATTR(arg,key,value)=> OMATTR(removeIndex(arg),key,removeIndex(value))
@@ -157,8 +183,8 @@ object Pattern {
 	 	   case obj => obj
 	   }
   }
-   
-  def removeIndex(con: Context): Context = {
+  
+  def removeIndex(con : Context) : Context = {
 	  con.map(
 	 		  {case TermVarDecl(n,tp,df,attrs @ _*) => 
 	 		   TermVarDecl(n,tp.map(removeIndex),df.map(removeIndex),attrs.map(x => (x._1,removeIndex(x._2))) : _*)
@@ -166,19 +192,19 @@ object Pattern {
 	 		  }
 	 		   )
   }
-  
-   
 }
-//abstract class Nat 
+
+case object IllTerm extends java.lang.Throwable
 case object NoMatch extends java.lang.Throwable 
 
+//val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution
 /*
 object Test {
-	val f1 = OMS()
+	val ex = DPath(new xml.URI("http", "cds.omdoc.org", "/logics/first-order/syntax/sfol.omdoc", null)) ? "SFOL"
+	val fn = Instance(OMMOD(sfol ? " LocalName("binary"))
 	val v1 = OMV("x")
 	def main(args : Array[String]) {
-		print(Pattern.checkTerm(OMA(f,List(v1))).toString)
+		print(Pattern.elaborate().toString)
 	}
-}
 }
 */
