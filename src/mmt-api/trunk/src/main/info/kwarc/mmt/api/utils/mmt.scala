@@ -20,7 +20,8 @@ object mmt {
    val jokerbinder = mmtsymbol("joker")
    val repetition = mmtsymbol("repetition")
    val index = mmtsymbol("index")
-   val seq = mmtsymbol("seq")
+   val ellipsis = mmtsymbol("ellipsis")
    val nat = mmtsymbol("nat")
+   val seq = mmtsymbol("seq")
    val mimeBase = DPath(new xml.URI("http://www.iana.org/assignments/media-types/"))
 }
