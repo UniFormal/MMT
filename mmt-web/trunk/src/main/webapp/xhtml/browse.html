@@ -36,7 +36,7 @@
    var graphWindow = null;
    function openGraph(focus) {
       var graphWindow = window.open("/xhtml/graph?" + focus);
-   };
+   };   
   </script>
 </head>
 
@@ -50,13 +50,18 @@
         <span class="pagelink"><a href="/xhtml/browse">Browser</a></span>
         <span class="pagelink"><a href="javascript:openGraph('')">Graph View</a></span>
         <span class="pagelink"><a href="/xhtml/uom">Universal Machine</a></span>
-        <span class="pagelink"><a href="/xhtml/admin">Administration</a></span>
+        <span class="pagelink"><a href="/xhtml/admin" target="_blank">Administration</a></span>
       </div>
     </div>
    
+    <div id="styleselector">
+      Style: <span id="currentstyle"/><br/>
+      <input type="text" size="30" id="inputstyle"/><button onclick="javascript:setStyle($('#inputstyle').val())">set</button>
+    </div>
+    
     <div id="breadcrumbs">
       <div/>
-    </div>  
+    </div>
 
     <div id="sidebar">
        <div id="pathtree"/>

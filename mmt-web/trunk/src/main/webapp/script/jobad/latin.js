@@ -6,8 +6,12 @@
 // scheme + authority of the server
 var catalog;
 // notation style, empty if none
-var notstyle;
+var notstyle = 'foundations/lf/mathml.omdoc?mathml';
 
+function setStyle(style) {
+   notstyle = style;
+   $('#currentstyle').text(style);
+}
 /**
  * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
  * act: String: action to call on MMTURI
@@ -18,7 +22,10 @@ function adaptMMTURI(uri, act, present){
 	var doc = (arr.length >= 1) ? arr[0] : "";
 	var mod = (arr.length >= 2) ? arr[1] : "";
 	var sym = (arr.length >= 3) ? arr[2] : "";
-	var pres = (present) ? "_present_" + notstyle : "";
+	if (present && notstyle !== null)
+	   var pres = "_present_" + notstyle;
+	else
+	   var pres = '';
 	return catalog + '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
 }
 
@@ -44,12 +51,6 @@ function remoteClick(elem) {
    var ref = load(elem);
    $(elem).replaceWith(ref);
 }
-/*
-function latin_navigate(uri) {
-		var url = adaptMMTURI(uri, '', true);
-		window.open(url, '_self', '', false);
-}
-*/
 
 function ajaxReplaceIn(url, targetid) {
    function cont(data) {
@@ -61,7 +62,6 @@ function ajaxReplaceIn(url, targetid) {
             'success': cont
         });
 }
-// new version using ajax update
 function latin_navigate(uri) {
 		// main div
 		var url = adaptMMTURI(uri, '', true);
@@ -90,10 +90,10 @@ function browserInit() {
 	var i = query.indexOf('present_', 0);
 	if (i !== -1) {
       uri = query.substring(0,i-1);
-	   notstyle = query.substring(i+8);
+	   setStyle(query.substring(i+8));
 	} else {
 	   uri = query;
-	   notstyle = '';
+	   setStyle(notstyle);
    }
    if ((path.indexOf("/xhtml") != 0) && (path !== "/;") && (path !== "/")) {
       uri = path + '?' + uri;

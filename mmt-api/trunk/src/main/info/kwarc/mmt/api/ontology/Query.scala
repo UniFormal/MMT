@@ -69,8 +69,7 @@ case class Relatives(of: Concept, by: Query) extends Concept
 object Query {
     /** S has a structure declaration with domain O, defined as an abbreviation */
    def HasStructureFrom = Sequence(- HasCodomain, HasType(IsStructure), + HasDomain)
-   def Imports = Choice(+ HasOccurrenceOfInImport, Query.HasStructureFrom)
+   def Imports = Choice(+ Includes, Query.HasStructureFrom)
     /** Disjunction of all binary relations, helpful for dependency closures */
-   def AnyDep = Choice(+HasOccurrenceOfInType, +HasOccurrenceOfInDefinition, +HasOccurrenceOfInTarget,
-   +IsAliasFor, +HasMeta, +HasOccurrenceOfInImport, +HasDomain, +HasCodomain)
+   def AnyDep = Choice(Binary.all.map(+ _) : _*)
 }

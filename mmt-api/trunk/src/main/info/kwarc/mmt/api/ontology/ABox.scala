@@ -107,7 +107,7 @@ class RelStore(report : frontend.Report) {
     * Returns the set of theories a theory depends on
     */
    def theoryClosure(p : MPath) : List[MPath] = {
-      val q = Transitive(+HasMeta | +HasOccurrenceOfInImport | Query.HasStructureFrom | Reflexive)
+      val q = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
       val l = query(p, q)
       //for well-formed MMT, l can only contain MPaths
       l.mapPartial {case p : MPath => Some(p) case _ => None}

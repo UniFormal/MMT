@@ -25,7 +25,7 @@ object Get {
    def incoming(path: Path) : Node = {
       val deps = Manager.controller.depstore
       val meta = deps.query(path, - HasMeta)
-      val imps = deps.query(path, - HasOccurrenceOfInImport)
+      val imps = deps.query(path, - Includes)
       val strs = deps.query(path, - Query.HasStructureFrom)
       val doms = deps.query(path, - HasDomain * HasType(IsView))
       val cods = deps.query(path, - HasCodomain * HasType(IsView))
@@ -88,10 +88,10 @@ object Get {
               case p:MPath =>
                  val rels : List[(String,Query)] = elem match {
                     case t: Theory =>
-                       List(("meta for",  - HasMeta), ("included into",  - HasOccurrenceOfInImport),
+                       List(("meta for",  - HasMeta), ("included into",  - Includes),
                             ("instantiated in",  - Query.HasStructureFrom),
                             ("views out of", - HasDomain * HasType(IsView)), ("views into",  - HasCodomain * HasType(IsView)))
-                    case v: View => List(("included into", - HasOccurrenceOfInImport), ("domain", + HasDomain), ("codomain", + HasCodomain))
+                    case v: View => List(("included into", - Includes), ("domain", + HasDomain), ("codomain", + HasCodomain))
                  }
                  val results = rels map {case (desc, rel) => (desc, deps.query(path, rel))}
                  val resultsNonNil = results.filterNot(_._2.isEmpty) 

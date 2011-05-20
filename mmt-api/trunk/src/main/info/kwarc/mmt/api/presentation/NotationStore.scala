@@ -103,7 +103,7 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
             depstore += ontology.HasCodomain(e.path, e.to)
          case e : NotationImport =>
             imports += (e.from, e.to)
-            depstore += ontology.HasOccurrenceOfInImport(e.to, e.from)
+            depstore += ontology.Includes(e.to, e.from)
             visible = scala.collection.mutable.HashMap.empty
          case e : Notation =>
             if (sets.isDefinedAt(e.nset))

@@ -1,17 +1,21 @@
 package info.kwarc.mmt.web
 
-import info.kwarc.mmt.web._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api._
+import info.kwarc.mmt._
+import web._
+import api._
+import frontend._
 
 import net.liftweb._
 import net.liftweb.http._
 import net.liftweb.http.rest._
 import net.liftweb.common.{Box,Empty,Full}
 
+import scala.xml._
 
 object Rest {
-   def applicable(p: ParsePath) = List(":tree", ":query", ":uom", ":mmt", ":breadcrumbs") contains p.partPath.headOption.getOrElse("")
+   def div(n: List[Node]) : Node = Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), n :_*)
+   def div(s: String) : Node = div(List(scala.xml.Text(s)))
+   def applicable(p: ParsePath) = List(":tree", ":query", ":uom", ":mmt", ":breadcrumbs", ":admin") contains p.partPath.headOption.getOrElse("")
    val handler : LiftRules.DispatchPF = {case r : Req if applicable(r.path) =>
       val path : List[String] = r.path.wholePath
       val query : String = ReqHelpers.query(r.request) 
@@ -33,6 +37,21 @@ object Rest {
              val mmtpath = Path.parse(query, Manager.basepath)
              val node = scala.xml.Utility.trim(Get.breadcrumbs(mmtpath))
              XmlResponse(node)
+          case ":admin" :: _ =>
+             try {
+                Manager.report.record
+                val c = query.replace("%20", " ")
+                val act = frontend.Action.parseAct(c, Manager.basepath)
+                Manager.controller.handle(act)
+                val r = Manager.report.recall
+                Manager.report.clear
+                XmlResponse(div(r reverseMap div))
+             } catch {
+                case e: api.Error =>
+                   Manager.report(e)
+                   Manager.report.clear
+                   XmlResponse(div("error: " + e.msg))
+             }
           case ":uom" :: _ =>
              val resp = query match {
                 case "register" => <error message="not implemented yet"/>
@@ -96,4 +115,13 @@ object Rest {
       }
       () => Full(resp)
    }
+}
+
+object ReqHelpers {
+   // extracts the URI query from a request
+   def query(r : net.liftweb.http.provider.HTTPRequest) = r.queryString.getOrElse("") //TODO query has to be decoded
+   // extracts the URI path from a request
+   def path(r : net.liftweb.http.provider.HTTPRequest) = new java.net.URI(r.uri).getPath()
+   // extracts the content Type from a request
+   def ctype(r : net.liftweb.http.provider.HTTPRequest) = r.header("Accept").getOrElse("")
 }

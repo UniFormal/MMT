@@ -46,33 +46,35 @@ sealed abstract class Binary(val desc : String) {
    def unary_+ = ToObject(this)
 }
 
-//symbol - symbol
-case object HasOccurrenceOfInType extends Binary("S refers to O in type")
-case object HasOccurrenceOfInDefinition extends Binary("S refers to O in definition")
-case object HasOccurrenceOfInCodomain extends Binary("S refers to O in codomain")
-case object HasOccurrenceOfInDomain extends Binary("S refers to O in domain")
-case object DependsOnTypeOf extends Binary("S depends on the type of O")
-case object DependsOnDefiniensOf extends Binary("S depends on the definiens of O")
-case object HasOccurrenceOfInTarget extends Binary("S refers to O")
-case object IsAliasFor extends Binary("S is alias for O")
-//module - module
-case object HasOccurrenceOfInImport extends Binary("S imports from O")
-//theory - theory 
+// module - module, symbol (assignment) - module
+case object DependsOn extends Binary("S depends on O")
+// theory - theory
 case object HasMeta extends Binary("S has meta-theory O")
+case object Includes extends Binary("S includes O")
 //link - theory, style - any
 case object HasDomain extends Binary("S has domain O")
 case object HasCodomain extends Binary("S has codomain O")
+// constant - constant (not used yet)
+case object DependsOnTypeOf extends Binary("S depends on the type of O")
+case object DependsOnDefiniensOf extends Binary("S depends on the definiens of O")
+
+// constant (assignment) - constant (deprecated)
+case object HasOccurrenceOfInType extends Binary("S refers to O in type")
+case object HasOccurrenceOfInDefinition extends Binary("S refers to O in definition")
+case object HasOccurrenceOfInTarget extends Binary("S refers to O")
+
 //parent - child (many-many relation because a declaration may be referenced in other documents)
 case object Declares extends Binary("S contains declaration of O")
+// symbol - symbol, module - module
+case object IsAliasFor extends Binary("S is alias for O") 
 
 /** helper methods for Binary items */
 object Binary {
-   private val all = List(HasOccurrenceOfInType,HasOccurrenceOfInDefinition,HasOccurrenceOfInCodomain,
-                          HasOccurrenceOfInDomain,DependsOnTypeOf,DependsOnDefiniensOf,HasOccurrenceOfInTarget,
-                          IsAliasFor,HasOccurrenceOfInImport,HasMeta,HasDomain,HasCodomain,Declares)
+   val all = List(HasOccurrenceOfInType,HasOccurrenceOfInDefinition,HasOccurrenceOfInTarget,
+                          DependsOnTypeOf,DependsOnDefiniensOf,DependsOn,Includes,IsAliasFor,HasMeta,HasDomain,HasCodomain,Declares)
    def parse(s: String) : Binary = all.find(_.toString == s) match {
       case Some(i) => i
-      case _ => throw ParseError("binary predicate expected, found: " + s)
+      case _ => HasOccurrenceOfInType // throw ParseError("binary predicate expected, found: " + s) //TODO temporary fix to parse obsolete data
    }
 }
 
