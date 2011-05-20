@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
 import libraries._
-import objects.Context._
+import Conversions._
 
 /** 
  * A Continuation wraps a function that traverses a Term.

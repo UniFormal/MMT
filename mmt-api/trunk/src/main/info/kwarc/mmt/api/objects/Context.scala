@@ -1,10 +1,8 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.presentation._
-
-import Context._
-import Substitution._
+import utils._
+import presentation._
+import Conversions._
 
 /** represents an MMT variable declaration */
 sealed abstract class VarDecl(val name : String) extends Content {
@@ -142,9 +140,6 @@ object Context {
 	}
    /** converts a list of OpenMath-style attributed variable to a context */
    def fromTerms(l : List[Term]) = Context(l.map(TermVarDecl.fromTerm) : _*)
-   /** implicit conversion between a context and a list of variable declarations */
-   implicit def list2context(l : List[VarDecl]) : Context = Context(l : _*)
-   implicit def context2list(c: Context) : List[VarDecl] = c.variables.toList
 }
 object Substitution {
 	/** parsers an OMBVAR into a substitution */
@@ -154,8 +149,4 @@ object Substitution {
 	}
    /** converts a list of OpenMath-style attributed variable to a substitution */
    def fromTerms(l : List[Term]) = Substitution(l.map(Sub.fromTerm) : _*)
-   /** implicit conversion between a substitution and a list of maps */
-   implicit def string2OMV(s: String) : OMV = OMV(s)
-   implicit def list2substitution(l : List[Sub]) : Substitution = Substitution(l:_*)
-   implicit def substitution2list(s: Substitution) : List[Sub] = s.subs.toList
 }

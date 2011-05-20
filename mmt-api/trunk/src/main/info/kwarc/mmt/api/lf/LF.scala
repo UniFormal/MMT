@@ -1,4 +1,3 @@
-
 package info.kwarc.mmt.api.lf
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
@@ -7,8 +6,7 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.frontend._
-import Context._
-import Substitution._
+import Conversions._
 
 /* Meta-variable names
    s, t: Terms

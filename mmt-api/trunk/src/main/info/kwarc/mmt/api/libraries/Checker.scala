@@ -55,7 +55,9 @@ abstract class ModuleChecker extends Checker {
             t.meta match {
                case Some(mt) =>
                   checkTheo(OMMOD(mt))
-                  Reconstructed(List(t, PlainInclude(mt, t.path)), HasMeta(t.path, mt) :: d)
+                  val mincl = PlainInclude(mt, t.path)
+                  mincl.setOrigin(MetaInclude)
+                  Reconstructed(List(t, mincl), HasMeta(t.path, mt) :: d)
                case _ =>
                   Success(d)
             }
@@ -67,11 +69,7 @@ abstract class ModuleChecker extends Checker {
             checkEmpty(l)
             Success(checkLink(l, e.path))
          case l : DefinedView =>
-            val (occs, from, to) = inferMorphism(l.df)
-            if (! lib.imports(l.from, from))
-               return Fail("definition of defined link does not type-check: " + l.from + " is not imported into " + from)
-            if (! lib.imports(to, l.to))
-               return Fail("definition of defined link does not type-check: " + to + " is not imported into " + l.to)
+            val occs = checkMorphism(l.df, l.from, l.to)
             val deps = occs.map(HasOccurrenceOfInDefinition(l.path, _))
             Success(checkLink(l, e.path) ::: deps)
          case l: Include =>
@@ -155,14 +153,20 @@ abstract class ModuleChecker extends Checker {
      case OMCOMP(hd :: Nil) => inferMorphism(hd)
      case OMCOMP(hd :: tl) =>
         val (l1, r,s1) = inferMorphism(hd)
-        val (l2, s2,t) = inferMorphism(OMCOMP(tl))
-        if (lib.imports(s1,s2))
-           (l1 ::: l2, r, t)
-        else
-           throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
+        val (l3, s2,t) = inferMorphism(OMCOMP(tl))
+        val l2 = checkInclude(s1,s2) match { 
+           case Some(l) => l
+           case None => throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
+        }
+        (l1 ::: l2 ::: l3, r, t)
      case OMEMPTY(f,t) =>
         val occs = checkTheo(f) ::: checkTheo(t)
         (occs, f,t)
+   }
+   def checkInclude(from: TheoryObj, to: TheoryObj)(implicit lib : Lookup) : Option[List[Path]] = {
+        if (from == to) Some(Nil)
+        else if (lib.imports(from,to)) Some(List(to % LocalName(IncludeStep(from))))
+        else None
    }
    /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
     *  @param lib the library
@@ -173,9 +177,10 @@ abstract class ModuleChecker extends Checker {
     */
    def checkMorphism(m : Morph, dom : TheoryObj, cod : TheoryObj)(implicit lib : Lookup) : List[Path] = {
       val (l, d,c) = inferMorphism(m)
-      if (! lib.imports(dom, d) || ! lib.imports(c, cod))
-         throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + c + " -> " + d)
-      l
+      (checkInclude(dom, d), checkInclude(c, cod)) match {
+         case (Some(l0), Some(l1)) => l0 ::: l ::: l1
+         case _ => throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + c + " -> " + d)
+      }
    }
 }
 
