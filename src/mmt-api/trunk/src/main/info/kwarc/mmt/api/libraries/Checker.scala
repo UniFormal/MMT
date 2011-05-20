@@ -54,7 +54,7 @@ abstract class ModuleChecker extends Checker {
             val d = List(IsTheory(t.path))
             t.meta match {
                case Some(mt) =>
-                  checkTheo(OMMOD(mt))
+                  checkTheo(OMMOD(mt), _ => null, _ => null)
                   val mincl = PlainInclude(mt, t.path)
                   mincl.setOrigin(MetaInclude)
                   Reconstructed(List(t, mincl), HasMeta(t.path, mt) :: d)
@@ -62,20 +62,18 @@ abstract class ModuleChecker extends Checker {
                   Success(d)
             }
          case t : DefinedTheory =>
-            val occs = checkTheo(t.df)
-            val deps = occs.map(HasOccurrenceOfInDefinition(t.path, _))
+            val deps = checkTheo(t.df, IsAliasFor(t.path, _), DependsOn(t.path, _))
             Success(IsTheory(t.path) :: deps)
          case l : DeclaredView =>
             checkEmpty(l)
             Success(checkLink(l, e.path))
          case l : DefinedView =>
             val occs = checkMorphism(l.df, l.from, l.to)
-            val deps = occs.map(HasOccurrenceOfInDefinition(l.path, _))
+            val deps = occs.map(DependsOn(l.path, _))
             Success(checkLink(l, e.path) ::: deps)
          case l: Include =>
             val par = checkAtomic(l.home)
-            val occs = checkTheo(l.from)
-            val deps = occs.map(HasOccurrenceOfInImport(par, _))
+            val deps = checkTheo(l.from, Includes(par, _), DependsOn(par, _))
             // flattening (transitive closure) of includes 
             val flat = lib.importsTo(l.from).toList.mapPartial {t =>
                if (lib.imports(t, l.home)) None
@@ -89,15 +87,12 @@ abstract class ModuleChecker extends Checker {
          case s: DeclaredStructure =>
             checkEmpty(s)
             val par = checkAtomic(s.home)
-            val occs = checkTheo(s.from)
-            val deps = occs.map(HasOccurrenceOfInImport(par, _))
-            Success(deps)
+            Success(checkLink(s, s.path))
          case s: DefinedStructure =>
-            val par = checkAtomic(s.home)
-            val foccs = checkTheo(s.from)
-            val doccs = checkMorphism(s.df, s.from, s.to)
-            val deps = foccs.map(HasOccurrenceOfInImport(par, _)) ::: doccs.map(HasOccurrenceOfInDefinition(par, _)) 
-            Success(deps)
+            checkAtomic(s.home)
+            val ldeps = checkLink(s, s.path)
+            val ddeps = checkMorphism(s.df, s.from, s.to).map(DependsOn(s.path, _))
+            Success(ldeps ::: ddeps)
          case e => checkSymbolLevel(e)
       }
    def checkSymbolLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult
@@ -105,11 +100,11 @@ abstract class ModuleChecker extends Checker {
    protected def checkLink(l : Link, path : Path)(implicit lib : Lookup) : List[RelationalElement] = {
 	  val todep = l match {
          case _ : View =>
-            val ds = checkTheo(l.to).map(HasOccurrenceOfInCodomain(path,_))
+            val ds = checkTheo(l.to, HasCodomain(path, _), DependsOn(path, _))
             IsView(path) :: ds
          case _ : Structure => List(IsStructure(path))
       }
-      val fromdep = checkTheo(l.from).map(HasOccurrenceOfInDomain(path,_))
+      val fromdep = checkTheo(l.to, HasDomain(path, _), DependsOn(path, _))
       todep ::: fromdep
    }
    protected def checkAtomic(m: ModuleObj) : MPath = m match {
@@ -121,14 +116,16 @@ abstract class ModuleChecker extends Checker {
    }
 
    /** checks whether a theory object is well-formed relative to a library
-    *  @param lib the library
     *  @param t the theory
-    *  @return the list of identifiers occurring in t
+    *  @parem atomic return value to construct if the theory is atomic
+    *  @param nonatomic return value to construct for all occurrences in a nonatomic theory 
+    *  @param lib the library
+    *  @return the list of return values
     */
-   def checkTheo(t : TheoryObj)(implicit lib : Lookup) : List[Path] = t match {
+   def checkTheo[A](t : TheoryObj, atomic: Path => A, nonatomic: Path => A)(implicit lib : Lookup) : List[A] = t match {
      case OMMOD(p) =>
        lib.getModule(p)
-       List(p)
+       List(atomic(p))
    }
   /** checks whether a morphism object is well-formed relative to a library and infers its type
     *  @param lib the library
@@ -140,14 +137,14 @@ abstract class ModuleChecker extends Checker {
         val l = lib.getLink(m)
         (List(m), l.from, l.to)
      case OMDL(to, name) =>
-        val occs = checkTheo(to)
+        val occs = checkTheo(to, p => p, p => p)
         val from = lib.get(to % name) match {
            case l: DefinitionalLink => l.from
            case _ => throw Invalid("invalid morphism " + m)
         }
         (occs, from, to)
      case OMIDENT(t) =>
-        val occs = checkTheo(t)
+        val occs = checkTheo(t, p => p, p => p)
         (occs, t, t)
      case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
      case OMCOMP(hd :: Nil) => inferMorphism(hd)
@@ -160,7 +157,7 @@ abstract class ModuleChecker extends Checker {
         }
         (l1 ::: l2 ::: l3, r, t)
      case OMEMPTY(f,t) =>
-        val occs = checkTheo(f) ::: checkTheo(t)
+        val occs = checkTheo(f, p => p, p => p) ::: checkTheo(t, p => p, p => p)
         (occs, f,t)
    }
    def checkInclude(from: TheoryObj, to: TheoryObj)(implicit lib : Lookup) : Option[List[Path]] = {
@@ -234,11 +231,11 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
                 case _ => return Fail("structure-assignment to non-structure")
             }
             val occs = checkMorphism(a.target, s.from, l.to)
-            val deps = IsStrAss(a.path) :: occs.map(HasOccurrenceOfInTarget(a.path, _))
+            val deps = IsStrAss(a.path) :: occs.map(DependsOn(a.path, _))
             // flattening of includes: this assignment also applies to every theory t included into s.from 
             val flat = lib.importsTo(s.from).toList.mapPartial {t =>
                val name = a.name.thenInclude(t)
-               if (l.declares(name)) None //here, the compatiblity check can be added
+               if (l.declares(name)) None //here, the compatibility check can be added
                else {
                   val r = new DefLinkAssignment(a.home, name, a.target)
                   r.setOrigin(IncludeClosure)
@@ -288,7 +285,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
     * @return the list of identifiers occurring in s (no duplicates, random order)
     */
    def checkTerm(home: TheoryObj, s : Term, univ : Universe)(implicit lib : Lookup) : List[Path] = {
-      checkTheo(home)
+      checkTheo(home, p => p, p => p)
       checkTerm(home, Context(), s, IsEqualTo(univ)).distinct
    }
    //TODO redesign role checking, currently not done

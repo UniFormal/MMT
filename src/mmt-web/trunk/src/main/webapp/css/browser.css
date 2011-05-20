@@ -12,6 +12,14 @@
    border-color: black;
 }
 
+#styleselector {
+   position: fixed;
+   top: 12%;
+   left: 0%;
+   width: 15%;
+   height: 4%;
+}
+
 #breadcrumbs {
    position: fixed;
    top: 12%;

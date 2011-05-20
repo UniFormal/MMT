@@ -12,41 +12,6 @@ import net.liftweb.common.{Box,Empty,Full}
   * It allows the application to modify lift's environment.
   */
 class Boot {
-   /**
-    * @param action MMTURI?PP where PP is the action (possibly with _ for space)
-    * @param ctype the accepted content type
-    * @return the rewritten request
-    */
-   private def rewr(action : String, ctype : String) = {
-      val comps = action.split("\\?",-1)
-      val (doc, mod, sym, act) = comps.length match {
-         case 1 => (comps(0), "", "", "")
-         case 2 => (comps(0), comps(1), "", "")
-         case 3 => (comps(0), comps(1), comps(2), "")
-         case _ =>
-           var rest = comps.drop(3).mkString("","?","")
-           (comps(0), comps(1), comps(2), rest.replace("_", " "))
-      }
-      // "xml": render and xml response; "text": render and text response; "xhtml": render via template/snippet and xml response
-      val format = try { 
-         Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, Manager.basepath) match {
-           case DefaultGet(p) => p match {
-              case Present(_,_) => ctype match {
-                   case "text/xml" => "xml"
-                   case _ => "xhtml"
-                }
-              case ToNode(_) | Deps(_) => "xml"
-              case ToString(_) => "text"
-           }
-             case _ => "xml"
-         }
-      } catch {
-         case _ => "xml" 
-      }
-      val params = Map( ("document", doc), ("module", mod), ("symbol", sym), ("action", act), ("format", format) )
-      RewriteResponse(Req.NilPath, params, false)
-   }
-   
    /** init method */
    def boot {
      // where to search snippets

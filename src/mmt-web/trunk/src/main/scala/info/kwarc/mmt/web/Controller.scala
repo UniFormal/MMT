@@ -26,12 +26,3 @@ object Manager {
    }
    def basepath = controller.getBase
 }
-
-object ReqHelpers {
-   // extracts the URI query from a request
-   def query(r : net.liftweb.http.provider.HTTPRequest) = r.queryString.getOrElse("")
-   // extracts the URI path from a request
-   def path(r : net.liftweb.http.provider.HTTPRequest) = new java.net.URI(r.uri).getPath()
-   // extracts the content Type from a request
-   def ctype(r : net.liftweb.http.provider.HTTPRequest) = r.header("Accept").getOrElse("")
-}

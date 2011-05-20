@@ -122,7 +122,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
         val act = Action.parseAct(l, base)
         handle(act)
    }
-   /** exectutes an Action */
+   /** executes an Action */
    def handle(act : Action) : Unit = {
 	  if (act != NoAction) report("user", act.toString)
 	   (act match {
@@ -136,7 +136,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	          backend.addStore(LocalSystem(b)) 
 	      case SetBase(b) =>
 	         base = b
-	         report("controller", "base: " + base)
+	         report("response", "base: " + base)
 	      case Clear => clear
 	      case ExecFile(f) =>
 	         val file = new java.io.BufferedReader(new java.io.FileReader(f))
@@ -154,8 +154,8 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	      case Read(f) => read(f)
 	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
-	      case PrintAllXML => report("library", library.toNode.toString)
-	      case PrintAll => report("library", library.toString)
+	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
+	      case PrintAll => report("response", "\n" + library.toString)
 	      case Exit => exit
       })
    }
