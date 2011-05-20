@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
+import utils._
+import libraries._
+import modules._
+import presentation._
+import Conversions._
+
 import scala.xml.{Node}
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.presentation._
-import Context._
-import Substitution._
 
 //import info.kwarc.mmt.api.utils.{log}
 
@@ -303,6 +303,7 @@ sealed trait ModuleObj extends Obj {
  */
 sealed trait TheoryObj extends ModuleObj {
    def ^ (sub : Substitution) : TheoryObj = this
+   def id = OMIDENT(this)
 }
 
 /**

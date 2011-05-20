@@ -1,13 +1,16 @@
 package info.kwarc.mmt.api.patterns
+
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects.Context._
-import info.kwarc.mmt.api.objects.Substitution._
-import info.kwarc.mmt.api.utils._
+import libraries._
+import objects._
+import objects.Conversions._
+import symbols._
+import utils._
+
 import scala.io.Source
 
+case object IllTerm extends java.lang.Throwable
+case object NoMatch extends java.lang.Throwable 
 
 class Pattern(val home: TheoryObj, val name : LocalName, val params: Option[Context], val con : Context) extends Symbol {
    def toNode =
@@ -193,9 +196,6 @@ object Pattern {
 	 		   )
   }
 }
-
-case object IllTerm extends java.lang.Throwable
-case object NoMatch extends java.lang.Throwable 
 
 //val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution
 /*

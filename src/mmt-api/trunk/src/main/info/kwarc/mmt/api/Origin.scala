@@ -7,6 +7,8 @@ abstract class Origin
  *  A DefLinkAssignment yields further DefLinkAssignment elements by adding those for the theories included into the domain.
  */
 case object IncludeClosure extends Origin
+/** include generated from meta-theory relation */
+case object MetaInclude extends Origin
 /** obtained by elaborating an instance of a pattern */
 case class InstanceElaboration(instance: GlobalName) extends Origin
 /** obtained by replacing document parts with references */
