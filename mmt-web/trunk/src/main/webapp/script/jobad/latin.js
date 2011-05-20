@@ -5,8 +5,8 @@
 
 // scheme + authority of the server
 var catalog;
-// notation style, empty if none
-var notstyle = 'foundations/lf/mathml.omdoc?mathml';
+// notation style, null if none
+var notstyle = 'foundations/lf/mathml.omdoc?mathml';  // hard-coding a default style for LF content
 
 function setStyle(style) {
    notstyle = style;
