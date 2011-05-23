@@ -1,16 +1,12 @@
 package info.kwarc.mmt.api.patterns
-
 import info.kwarc.mmt.api._
-import libraries._
-import objects._
-import objects.Conversions._
-import symbols._
-import utils._
-
+import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.utils._
 import scala.io.Source
 
-case object IllTerm extends java.lang.Throwable
-case object NoMatch extends java.lang.Throwable 
 
 class Pattern(val home: TheoryObj, val name : LocalName, val params: Option[Context], val con : Context) extends Symbol {
    def toNode =
@@ -90,6 +86,34 @@ object Pattern {
     }
   }
   
+  def normalizeTerm(tm : Term) : List[Term] = {
+	  tm match {
+	 	  case Ellipsis(ex,n,from,to) =>
+	 	     val f = normalizeNat(from).getOrElse(return List(tm)) 
+	 	     val t = normalizeNat(to).getOrElse(return List(tm))
+	 	     List.range(f,t).flatMap(i => normalizeTerm(ex ^ Substitution(Sub(n,OMI(i)))))
+	 	  case Index(seq,ind) => 
+	 	     val i = normalizeNat(ind).getOrElse(return List(tm))
+	 	     List(normalizeTerm(seq)(i))
+	 	  case Seq(tms @ _*) => tms.toList.flatMap(normalizeTerm)
+	 	  /* TODO Which terms do we need to recursively normalize?
+	 	  case OMA(fn,args) => OMA(normalizeTerm(fn),args.map(normalizeTerm))
+	 	  case OMBIND(bin,con,bdy) => OMBIND(bin,normalizeTerm(con),normalizeTerm(bdy))
+	 	  case OMATTR(arg,key,value)=> OMATTR(normalizeTerm(arg),key,normalizeTerm(value))
+	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via)
+	 	  case OME(err, args) => OME(normalizeTerm(err),args.map(normalizeTerm))
+	 	  */
+	 	  case obj => List(obj)
+	  }
+  }
+  
+  def normalizeNat(t : Term) : Option[Int] = {
+	  t match {
+	 	  case OMI(n) => Some(n.toInt)
+	 	  case _ => None
+	  }
+  }
+	  
   def expandRepetitionInd(tm: Term): Term = {
 	  tm match {
 	 	  case OMA(fun,args) => 
@@ -197,6 +221,10 @@ object Pattern {
   }
 }
 
+case object IllTerm extends java.lang.Throwable
+case object NoMatch extends java.lang.Throwable 
+
+abstract class Nat()
 //val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution
 /*
 object Test {
