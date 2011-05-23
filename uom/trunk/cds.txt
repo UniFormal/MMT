@@ -1,0 +1,55 @@
+We treat these symbols as constructors that introduce values.
+- logic1?true, logic1?false for booleans
+- OMI(_) for integers
+- maybe arith1?divide for rationals
+- OMF for floats
+- complex1?complex_cartesian for complex numbers
+- list1.list for lists
+- multiset1.multiset for finite multisets
+- set1.set for finite sets
+Their implementation only consists of recursively simplifying their arguments (if any).
+
+Then, with a few exceptions, all symbols in these CDs can be implemented for all reasonable terms that can be formed using only the constructors:
+- alg1
+- arith1
+- combinat1
+- complex1
+- integer1
+- integer2
+- list1
+- list2
+- list3
+- logic1
+- minmax1
+- multiset1
+- relation1
+- rounding1
+- set1
+We should write new OMDoc theories for them and add the implementations using the extractor/synthesizer work flow.
+
+All implementations should be n-ary when possible. 
+
+-------------------
+
+Additional notes
+
+1) There are some other - non-official - CDs that can be implemented.
+
+2) All objects are sets. Some sets have special names and can act as types:
+- setname1.{C,N,Q,Z} (There is also setname1.R, but we cannot handle any constructors for them.)
+- setname2.Boolean
+- lists, multisets, and sets have no type - they may contain arbitrary objects (i.e., sets)
+
+3) If we want to do physical quantities, we can add the following constructors
+- numbers
+- units_metric1.{amp,degree_Kelvin,gramme,metre,second}
+- arith1.times, arith1.divides
+  (used both for multiplication of numbers with a quantities (i.e., a unit) and of quantities with each other)
+The CDs are silent on how the non-linear unit units_metric1.degree_Celsius should be used to form quantities.
+
+Additional quantities can be formed using
+- units_ops1.prefix and units_siprefix1._
+- arith1.power
+These can be implemented, but simplification should reintroduce them wisely.
+
+4) We should permit multiple implementations per symbol. Then existing implementations, e.g., for arith1.times applied to numbers, can be extended, e.g., to add arith1.times for physical quantities.
