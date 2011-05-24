@@ -37,6 +37,7 @@
         <pathelement location="${lib}/lift-common_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-json_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="../../mmt-api/trunk/build/mmt-api.jar" />
+        <pathelement location="../../uom/trunk/build/uom.jar" />
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
