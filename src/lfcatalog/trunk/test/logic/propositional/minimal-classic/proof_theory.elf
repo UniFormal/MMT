@@ -1,0 +1,21 @@
+%*
+   View from Minimal propositional logic proof theory to Classical propositional logic proof theory 
+   @author Florian Rabe, Kristina Sojakova
+   @license LATIN
+*%
+
+%namespace "http://cds.omdoc.org/logics/propositional/minimal-classic/proof_theory.elf".
+%namespace view_syntax = "syntax.elf".
+%namespace minimal_pf = "../minimal/proof_theory.elf".
+%namespace classic_pf = "../classic/proof_theory.elf".
+
+
+%view Proof_theory : minimal_pf.MPL -> classic_pf.CPL = {
+  %include view_syntax.MPL-PL.
+  syllog := [P][Q][R] impI [pq] impI [qr] impI [p] impE qr (impE pq p).
+  peirce := [P][Q] impI [pqp] orE tnd ([p : ded P] p)
+                                      ([np : ded not P] impE pqp (impI [p: ded P] notE np p Q)).
+  weaken := [P][Q] impI [p] impI [q] p.
+  contra := [P] impI [f] falseE f P.
+  mp     := [P][Q][p][q] impE p q.
+}.

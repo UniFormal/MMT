@@ -1,0 +1,64 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <title>Crawler administration</title>
+  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta http-equiv="Pragma" content="no-cache" />
+</head>
+
+<body>
+
+<h4>Actions</h4>
+
+<p>
+  <form action="../exit" method="get">
+    &#160;&#160;&#160;
+    <input type="submit" value="Shutdown the server" />
+  </form>
+</p>
+
+<p>
+  <form action="../crawlAll" method="get">
+    &#160;&#160;&#160;
+    <input type="submit" value="Crawl all locations" />
+  </form>
+</p>
+
+<h4>Inclusion patterns</h4>
+<p>
+   <form action="admin" method="get">
+     &#160;&#160;&#160;&#160;&#160;&#160;
+     <input type="text" name="addInclusion" />
+     <input type="submit" value="Add" />
+   </form>
+</p>
+<inclusions/>
+
+<h4>Exclusion patterns</h4>
+<p>
+   <form action="admin" method="get">
+     &#160;&#160;&#160;&#160;&#160;&#160;
+     <input type="text" name="addExclusion" />
+     <input type="submit" value="Add" />
+   </form>
+</p>
+<exclusions/>
+
+<h4>Files and folders being watched</h4>
+<p>
+   <form action="admin" method="get">
+     &#160;&#160;&#160;&#160;&#160;&#160;
+     <input type="text" name="addLocation" />
+     <input type="submit" value="Add" />
+   </form>
+</p>
+<locations/>
+
+<p>
+   <a href="help" target="_top">Help</a>
+</p>
+
+</body>
+
+</html>

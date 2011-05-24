@@ -1,0 +1,55 @@
+%*
+   Views from Propositional logic to an older version of model theory.
+   @author Fulya Horozal, Florian Rabe
+   @license LATIN
+*%
+
+%namespace "http://cds.omdoc.org/logics/propositional/classic/model_theory_old/pl-mod.elf".
+%namespace syntax  = "../syntax.elf".
+%namespace mod     = "mod.elf".
+
+
+%view Base : syntax.Base -> mod.Base = {
+  o   := bool.
+  ded := [F : bool] ded F eq 1.
+}.
+
+%view Truth : syntax.Truth -> mod.Truth = {
+ %include Base.
+ true := true'.
+}.
+
+%view Falsity : syntax.Falsity -> mod.Falsity = {
+ %include Base.
+ false := false'.
+}.
+
+%view NEG : syntax.NEG -> mod.NEG = {
+  %include Base.
+  not := [A : bool] not' @ A.
+}.
+
+%view DISJ : syntax.DISJ -> mod.DISJ = {
+  %include Base.
+  or := [A][B] (or' @ A) @ B.
+}.
+
+%view CONJ : syntax.CONJ -> mod.CONJ = {
+  %include Base.
+  and := [A][B] (and' @ A) @ B.
+}.
+
+%view IMP : syntax.IMP -> mod.IMP = {
+  %include Base.
+  imp := [A][B] imp' @ A @ B.
+}.
+
+%view PL : syntax.PL -> mod.PL = {
+  %include Base.
+  %include Truth.
+  %include Falsity.
+  %include NEG.
+  %include IMP.
+  %include CONJ.
+  %include DISJ.
+}.

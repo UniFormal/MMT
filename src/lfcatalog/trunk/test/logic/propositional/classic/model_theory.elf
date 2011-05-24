@@ -1,0 +1,58 @@
+%*
+   Model theory for propositional logic.
+   Uses operations on booleans to interpret the connectives
+   @author Fulya Horozal, Florian Rabe
+   @license LATIN
+*%
+
+%namespace "http://cds.omdoc.org/logics/propositional/classic/model_theory.elf".
+%namespace bool = "../../meta/bool.elf".
+%namespace syntax = "syntax.elf".
+
+%* Propositional logic formulae are mapped to booleans.
+   Deductions are mapped to deductions over booleans *%
+%view Base-Bool : syntax.Base -> bool.Bool = {
+  o   := bool.
+  ded := [F : bool] ded F eq 1.
+}.
+
+%view Truth-Bool : syntax.Truth -> bool.Bool = {
+ %include Base-Bool.
+ true := 1.
+}.
+
+%view Falsity-Bool : syntax.Falsity -> bool.Bool = {
+ %include Base-Bool.
+ false := 0.
+}.
+
+%view NEG-Bool : syntax.NEG -> bool.Bool = {
+  %include Base-Bool.
+  not := ¬.
+}.
+
+%view DISJ-Bool : syntax.DISJ -> bool.Bool = {
+  %include Base-Bool.
+  or := [A][B] A ∨ B.
+}.
+
+%view CONJ-Bool : syntax.CONJ -> bool.Bool = {
+  %include Base-Bool.
+  and := [A][B] A ∧ B. 
+}.
+
+%view IMP-Bool : syntax.IMP -> bool.Bool = {
+  %include Base-Bool.
+  imp := [A][B] A ⇒ B.
+}.
+
+%view PL-Bool : syntax.PL -> bool.Bool = {
+  %include Base-Bool.
+  %include Truth-Bool.
+  %include Falsity-Bool.
+  %include NEG-Bool.
+  %include IMP-Bool.
+  %include CONJ-Bool.
+  %include DISJ-Bool.
+}.
+

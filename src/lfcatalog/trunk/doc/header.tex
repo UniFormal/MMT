@@ -1,0 +1,68 @@
+\documentclass[a4paper]{article}
+\usepackage{graphicx,wrapfig}
+\usepackage{enumerate}
+%\usepackage{proof} %for inference rules
+\usepackage{amsmath} %for align
+\usepackage{amssymb} %for a proper-sized entailment sign (\rhd)
+\usepackage{times} %for better looking font
+\usepackage[usenames]{color} %for colored text
+%\usepackage{arydshln} %for dashed lines in tables
+\usepackage{float} %for boxes 
+\usepackage[hang,small,bf]{caption}  %makes captions bold
+\usepackage[a4paper=true, bookmarks=true, linkcolor=blue, citecolor=blue, urlcolor=blue, colorlinks=true, breaklinks=true, bookmarksopen=true]{hyperref} %must be at the end
+\usepackage[all]{hypcap} %must be truly at the end, immediately after hyperref
+
+\textwidth = 440pt 
+\oddsidemargin = 0.2cm
+
+%\setlength{\parindent}{0pt} 
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex} %set paragraph interspacing
+
+
+\title{Knowledge Management for Twelf \\[5cm]
+				\large{Master Thesis Proposal}}
+\vspace*{3cm}
+\author{\Large{Alin Iacob}}
+\date{\today}
+
+\newcommand{\eqwnos}[2] {			%a new equation WITHOUT numbers
+	\begin{equation*}
+		\label{#1}
+		#2
+	\end{equation*} }
+
+\newcommand{\myref}[2] {			%proper hyperreference
+  \hyperref[#2]{#1~\ref{#2}} }
+
+\newcommand{\mmt} {\textsc{Mmt }}  % MMT in small caps
+\newcommand{\openmath} {\textsc{OpenMath }}
+\newcommand{\omdoc} {\textsc{OMDoc }}
+\newcommand{\mathml} {\textsc{MathML }}
+
+\newcommand{\calculus}[3] {		%list of unnumbered equations within a box, within a figure
+				\begin{figure}[ht]    % !NO empty lines anywhere inside!
+					\centering
+					\begin{equation*}
+ 						 \addtolength{\fboxsep}{5pt}
+   					 \boxed{
+   							\begin{gathered}
+   								#3
+   							\end{gathered}  
+   					 }
+					\end{equation*}
+  				\caption{#1}
+  				\label{#2}
+				\end{figure}
+}
+
+\newcommand{\nextinf}{\\ {} \\}		%next inference in a \calculus
+\newcommand{\blue}[1] {	%easy coloring in blue
+	\textcolor{blue}{#1}}
+
+\newcommand{\set}[1] {\left\{ {#1} \right\}}
+\newcommand{\pset}[2] {\left\{ {#1} ; {#2} \right\}}
+
+
+\begin{document}
+\maketitle
+%\newpage
