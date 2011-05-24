@@ -71,9 +71,10 @@ class UOMServer(report: frontend.Report) {
      case _ => term
   }
 }
-/*
+
 object Test {
   def main (args : Array[String]) {
+    /*
     val uom = new UOMServer(new frontend.FileReport(new java.io.File("uom.log")))
     args.map(uom.register)
     
@@ -113,6 +114,7 @@ object Test {
     // very composite, result should be a list with 10 el 
     val c4 = OMA(ext.append_many, c3::c2_equal::c1::Nil)
     println(uom.simplify(c4))
+    */
   }
 }
-*/
+

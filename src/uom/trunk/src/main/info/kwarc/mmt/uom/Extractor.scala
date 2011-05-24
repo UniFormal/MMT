@@ -57,7 +57,7 @@ object Extractor extends {
        if ( braces < 0 ) {
          System.err.println("Extractor: Inbalanced string found"+
            " in implementation")
-         System.exit(1)
+         sys.exit(1)
        }
        if ( braces == 0 ) {
          if (numberOfSequence > 1) {
@@ -176,7 +176,7 @@ object Extractor extends {
      /* semantic identifier of the document (given by base attribute) */
 	   val dpath = Path.parseD(args(1), base)	   
 	   val doc = try {docstore.get(dpath)} // get the content of the document as a list of reference elements
-	             catch {case NotFound(p) => println(p.toPath + " not found"); exit}
+	             catch {case NotFound(p) => println(p.toPath + " not found"); sys.exit(1)}
 	   val theos : List[DeclaredTheory] =  // dereference all and keep the theories
 	  	   doc.getItems mapPartial {r => get(r.target) match {
 	  	  	   case t : DeclaredTheory => Some(t)

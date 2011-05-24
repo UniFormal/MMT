@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="uom" default="build" basedir=".">
+
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!--       DISPLAY HELP                                              -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <target name="help">
+        <echo>
+      MMT API build file
+    -------------------------------------------------------
+
+      available targets:
+
+      help        - print this message
+      build       - compile, generate jars, deploy
+      docs        - generate documentation
+
+      compile     - compile sources to build/main and build/test
+      scaladoc    - generate scaladoc in build/apidocs
+      jar         - generate build/mmt-api.jar
+      clean       - clean up the build directories
+
+    -------------------------------------------------------
+        </echo>
+    </target>
+
+    <property environment="env" />
+    <property file="build.properties" />
+    <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+    <path id="scalac.classpath">
+        <pathelement location="${scala.dir}/scala-library.jar"/>
+        <pathelement location="${scala.dir}/scala-compiler.jar"/>
+    </path>
+    <path id="scaladoc.classpath">
+			<path refid="scalac.classpath"/>
+			<pathelement location="../../mmt-api/trunk/build/mmt-api.jar"/>
+    </path>
+    <!-- This defines the task scalac (which is similar to javac but for scala). -->
+    <taskdef resource="scala/tools/ant/antlib.xml"
+        classpathref="scalac.classpath"/>
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="build" depends="jar,docs"/>
+
+    <target name="compile" depends="init">
+        <mkdir dir="${build.main}"/>
+        <path id="compile.classpath">
+            <pathelement location="${scala.dir}/scala-library.jar"/>
+            <pathelement location="${build.main}"/>
+						<pathelement location="../../mmt-api/trunk/build/mmt-api.jar"/>
+        </path>
+        <scalac destdir="${build.main}" srcdir="${src.main}"
+            classpathref="compile.classpath" deprecation="yes"/>
+    </target>
+
+    <target name="jar" depends="compile">
+        <jar destfile="${build}/${jar}">
+            <manifest>
+                <attribute name="Main-Class" value="${main.class}"/>
+                <!-- DM TODO: this shouldn't really be here -->
+                <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar"/>
+            </manifest>
+            <fileset dir="${build.main}"/>
+        </jar>
+    </target>
+
+    <target name="docs" depends="scaladoc"/>
+
+    <target name="scaladoc" depends="init">
+        <mkdir dir="${apidocs}"/>
+        <scaladoc
+            destdir="${apidocs}"
+            doctitle="${prj}"
+            docversion="${mmt.version}"
+            sourcepath="${src.main}"
+            classpathref="scaladoc.classpath"
+            srcdir="${src.main}">
+            <include name="**/*.scala"/>
+        </scaladoc>
+    </target>
+
+    <target name="deploy" depends="build">
+        <copy todir="${deploy}/${prj}/apidocs">
+            <fileset dir="${apidocs}" includes="**/*"/>
+        </copy>
+        <copy todir="${deploy}/${prj}/lib">
+            <fileset file="${build}/${jar}"/>
+        </copy>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build}" />
+    </target>
+</project>
