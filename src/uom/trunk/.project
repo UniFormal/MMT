@@ -3,6 +3,7 @@
 	<name>uom</name>
 	<comment></comment>
 	<projects>
+		<project>mmt-api</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
