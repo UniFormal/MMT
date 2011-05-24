@@ -1,0 +1,3 @@
+grammar test;
+
+r	: 	'r'+;

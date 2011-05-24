@@ -1,0 +1,161 @@
+%* Some orthogonal features of type theories occurring in the lambda cube
+   @author Fulya Horozal, Florian Rabe *%
+
+%namespace "http://cds.omdoc.org/type_theories/modules-lambda.elf".
+%namespace base = "base.elf".
+%% %read "base.elf".
+
+%* generalized dependent abstraction *%
+%sig DepFun = {
+  %* the level of the bound variables (e.g., type-level for typed variables) *%
+  %struct domain : base.Level.
+  %* the level of the scope (e.g., types or kinds) *%
+  %struct scope : base.Level.
+
+  %* formation *%
+  Π   : (domain.exp A -> scope.cl) -> scope.cl.                                         %prefix 50 Π.
+
+  %* introduction *% 
+  λ  : ({x : domain.exp A} scope.exp B x) -> scope.exp Π [x : domain.exp A] B x.
+
+  %*  elimination *%
+  @    : scope.exp (Π [x : domain.exp A] B x) -> {a : domain.exp A} scope.exp B a.     %infix left 100 @.
+    
+  %* conversion (adding eta, which Barendregt omits) *%
+  beta : (λ F) @ T scope.== F T.
+  eta  : (λ [x](F @ x)) scope.== F.
+
+  %* non-dependent formation *%
+  →    : domain.cl -> scope.cl -> scope.cl = [A][B] Π ([x : domain.exp A] B).           %infix right 50 →.
+  
+  %*  compositions *%
+  %abbrev ; : (domain.exp A -> domain.exp B) -> (domain.exp B -> domain.exp C) -> domain.exp A -> domain.exp C
+            = [f][g][x] g (f x).
+            %infix left 5 ;.
+  %abbrev ∘ : (domain.exp B -> domain.exp C) -> (domain.exp A -> domain.exp B) -> domain.exp A -> domain.exp C
+            = [f][g][x] f (g x).
+            %infix left 5 ∘.
+}.
+
+%*  Barendregt's rule (star, star): function types/dependent types (terms occuring in types, terms applied to terms) *%
+%sig DepTypes = {
+  %include base.KindsTypesTerms %open kd tf === tp tm ==.
+  %struct deptypes : DepFun = {
+    %struct domain := KindsTypesTerms.types.
+    %struct scope  := KindsTypesTerms.types.
+  }.
+}.
+
+%* Barendregt's rule (star, box): dependent kinds (terms occuring in kinds, terms applied to types) *%
+%sig DepKinds = {
+  %include base.KindsTypesTerms %open kd tf === tp tm ==.
+  %struct depkinds : DepFun = {
+    %struct domain := KindsTypesTerms.types.
+    %struct scope  := KindsTypesTerms.kinds.
+  }.
+}.
+
+%*  Barendregt's rule (box, box): function kinds/type operators (types occuring in kinds, types applied to types) *%
+%sig TypeOper = {
+  %include base.KindsTypesTerms %open kd tf === tp tm ==.
+  %struct funkinds : DepFun = {
+    %struct domain := KindsTypesTerms.kinds.
+    %struct scope  := KindsTypesTerms.kinds.
+  }.
+}.
+
+%* Barendregt's rule (box, star): universal types/polymorphism (types occuring in types, terms applied to types) *%
+%sig PolyTypes = {
+  %include base.KindsTypesTerms %open kd tf === tp tm ==.
+  %struct poly : DepFun = {
+    %struct domain := KindsTypesTerms.kinds.
+    %struct scope  := KindsTypesTerms.types.
+  }.
+}.
+
+%* generalized simple abstraction *%
+%sig SimpFun = {
+  
+  %* the level of the scope (e.g., types or kinds) *%
+  %struct level : base.Level %open cl exp ==.
+
+  %* formation *%
+  →   : cl -> cl -> cl.                        %infix right 50 →.
+
+  %* introduction *%
+  λ  : (exp A -> exp B) -> exp A → B.
+
+  %* elimination *%
+  @    : exp A → B -> exp A -> exp B.          %infix left 100 @.
+
+  %*conversions (adding eta, which Barendregt omits) *%
+  beta : (λ F) @ T == F T.
+  eta  : (λ [x](F @ x)) == F.
+  
+  %* compositions *%
+  %abbrev ; : (exp A -> exp B) -> (exp B -> exp C) -> exp A -> exp C
+            = [f][g][x] g (f x).
+            %infix left 5 ;.
+  %abbrev ∘ : (exp B -> exp C) -> (exp A -> exp B) -> exp A -> exp C
+            = [f][g][x] f (g x).
+            %infix left 5 ∘.
+}.
+
+%* type-level simple abstraction (simple function types) *%
+%sig SimpTypes = {
+  %include base.TypesTerms %open tp tm.
+  %struct funtypes : SimpFun = {%struct level := TypesTerms.types.} %open → λ @ ; ∘.
+}.
+
+%* inclusion of simple functions types into dependent functions types *%
+%view SimpToDep : SimpTypes -> DepTypes = {
+  %include base.TypesToTypes.
+  funtypes.→       := [A][B] A deptypes.→ B.
+  funtypes.λ       := [A][B][f] deptypes.λ f.
+  funtypes.@       := [A][B][f][x] (f deptypes.@ x).
+  funtypes.beta    := [B][A][F][T] deptypes.beta.
+  funtypes.eta     := [B][A][F] deptypes.eta.
+}.
+
+%* kind-level simple abstraction (simple function kinds) *%
+%sig SimpKinds = {
+  %include base.KindsTypesTerms.
+  %struct funkinds : SimpFun = {%struct level := KindsTypesTerms.kinds.}.
+}.
+
+%* inclusion of simple functions kinds into dependent functions kinds *%
+%view SimpToOper : SimpKinds -> TypeOper = {
+  funkinds.→         := [A][B] A funkinds.→ B.
+  funkinds.λ         := [A][B][f] funkinds.λ f.
+  funkinds.@         := [A][B][f][x] (f funkinds.@ x).
+  funkinds.beta      := [B][A][F][T] funkinds.beta.
+  funkinds.eta       := [B][A][F] funkinds.eta.
+}.
+
+%* Universal types *%
+%sig UnivTypes = {
+  %include base.TypesTerms %open tp tm ==.
+
+  %* formation *%
+  ∀  : (tp -> tp) -> tp.
+
+  %* introduction *%
+  Λ : ({a : tp} tm A a) -> tm ∀ [a] A a. 
+
+  %* elimination *%
+  @   : tm ∀ ([a : tp] A a) -> {B : tp} tm A B.  %infix left 100 @.
+
+  %* conversions (adding eta, which Barendregt omits) *%
+  beta : (Λ F) @ T == F T.
+  eta  : (Λ [x](F @ x)) == F.
+}.
+
+%* inclusion of universal types into polymorphism: Universal is the special case of PolyTypes when "type" is the only kind *%
+%view UnivToPoly : UnivTypes -> PolyTypes = {
+  %include base.TypesToTypes.
+  ∀    := [A] poly.Π [a : tp] (A a).
+  Λ    := [A][f] poly.λ f.
+  @    := [A][f][x] f poly.@ x.
+  beta := [A][F][T] poly.beta.
+  eta  := [A][F] poly.eta.
+}.

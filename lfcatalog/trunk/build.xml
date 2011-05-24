@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="lfcatalog" default="build" basedir=".">
+
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!--       DISPLAY HELP                                              -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <target name="help">
+        <echo>
+      LF catalog build file
+    -------------------------------------------------------
+
+      available targets:
+
+      help        - print this message
+      build       - compile, generate jar, docs
+      docs        - generate documentation
+
+      compile     - compile sources to build
+      scaladoc    - generate scaladoc in build/apidocs
+      deploy      - copy jar, docs to deploy
+      jar         - generate build/lfcatalog.jar
+      clean       - clean up the build directories
+
+    -------------------------------------------------------
+        </echo>
+    </target>
+
+    <property environment="env" />
+    <property file="build.properties" />
+    <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+    <path id="scalac.classpath">
+        <pathelement location="${scala.dir}/scala-library.jar"/>
+        <pathelement location="${scala.dir}/scala-compiler.jar"/>
+    </path>
+    <path id="scaladoc.classpath">
+        <path refid="scalac.classpath"/>
+        <pathelement location="${deploy}/lib/tiscaf.jar"/>
+    </path>
+    <!-- This defines the task scalac (which is similar to javac but for scala). -->
+    <taskdef resource="scala/tools/ant/antlib.xml"
+        classpathref="scalac.classpath"/>
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="build" depends="jar,docs"/>
+
+    <target name="compile" depends="init">
+        <mkdir dir="${build.main}"/>
+        <path id="compile.classpath">
+            <pathelement location="${scala.dir}/scala-library.jar"/>
+            <pathelement location="${deploy}/lib/tiscaf.jar"/>
+            <pathelement location="${build.main}"/>
+        </path>
+        <scalac destdir="${build.main}" srcdir="${src.main}"
+            classpathref="compile.classpath" deprecation="yes"/>
+		<mkdir dir="${build.resources}"/>
+		<copy todir="${build.resources}">
+			<fileset dir="${src.resources}" includes="**/*"/>
+        </copy>
+    </target>
+
+    <target name="jar" depends="compile">
+        <jar destfile="${build}/${jar}">
+            <manifest>
+                <attribute name="Main-Class" value="${main.class}"/>
+                <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar ../../../../deploy/lib/tiscaf.jar"/>
+            </manifest>
+            <fileset dir="${build.main}"/>
+            <fileset dir="${src.main}"/>
+        </jar>
+    </target>
+
+    <target name="docs" depends="scaladoc"/>
+
+    <target name="scaladoc" depends="init">
+		<delete dir="${apidocs}"/>
+        <mkdir dir="${apidocs}"/>
+        <scaladoc
+            destdir="${apidocs}"
+            doctitle="${prj}"
+            sourcepath="${src.main}"
+            classpathref="scaladoc.classpath"
+            srcdir="${src.main}">
+            <include name="**/*.scala"/>
+        </scaladoc>
+    </target>
+
+    <target name="deploy" depends="build">
+        <copy todir="${deploy}/${prj}/apidocs">
+            <fileset dir="${apidocs}" includes="**/*"/>
+        </copy>
+		<mkdir dir="${deploy}/${prj}/lib"/>
+		<jar destfile="${deploy}/${prj}/lib/${jar}">
+            <manifest>
+                <attribute name="Main-Class" value="${main.class}"/>
+                <attribute name="Class-Path" value="../../lib/scala/scala-library.jar ../../lib/tiscaf.jar"/>
+            </manifest>
+            <fileset dir="${build.main}"/>
+            <fileset dir="${src.main}"/>
+        </jar>
+		<mkdir dir="${deploy}/${prj}/lib/resources"/>
+		<copy todir="${deploy}/${prj}/lib/resources">
+			<fileset dir="${build.resources}" includes="**/*"/>
+        </copy>
+		<copy todir="${deploy}/${prj}">
+			<fileset file="readme.txt"/>
+		</copy>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build}" />
+    </target>
+</project>

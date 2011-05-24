@@ -1,0 +1,112 @@
+%*
+   Derived rules for propositional logic
+   @author Florian Rabe, Kristina Sojakova
+   @license LATIN
+*%
+
+%namespace "http://cds.omdoc.org/logics/propositional/classic/proof_theory_derived.elf".
+%namespace pf = "proof_theory.elf".
+%namespace syntax = "syntax.elf".
+
+%* False elimination *%
+%sig FalsityPFExt = {
+  %include pf.FalsityPF %open.  
+  falseE' : ded false -> ded A = [p] falseE p A.
+}.
+
+%* TND, double negation introduction (inside formulae ("built-in") and as a deduction rule), double negation elimination *%
+%sig NEGPFExt = {
+  %include pf.NEGPF %open.
+  
+  notE'   : ded A -> ded not A -> ded B = [p][q] notE q p B.
+  nn : o -> o = [x] not not x.
+  notnotI : ded A -> ded nn A = [p] notI ([q][_] notE' p q).
+  int_notnotE : ded nn not A -> ded not A = [p] notI [q][_] notE' (notnotI q) p.
+}.
+
+%* Further rules for implication introduction and elimination *%
+%sig IMPPFExt = {
+  %include pf.IMPPF %open.
+  
+  imp2I  : (ded A -> ded B -> ded C) -> ded A imp (B imp C) = [f] impI [p] impI [q] f p q.
+  imp2E  : ded A imp (B imp C)  -> ded A -> ded B -> ded C = [p][q][r] impE (impE p q) r.
+}.
+
+%* Further rules for conjunction implication and elimination
+   Conjunction commutativity, associativity and idempotence *%
+%sig CONJPFExt = {
+  %include pf.CONJPF %open.
+  
+  and3I  : ded A -> ded B -> ded C -> ded A and B and C
+         = [p][q][r] andI (andI p q) r.
+  and3El : ded A and B and C -> ded A = [p] andEl (andEl p).
+  and3Em : ded A and B and C -> ded B = [p] andEr (andEl p).
+  and3Er : ded A and B and C -> ded C = andEr.
+  and_comm : ded A and B -> ded B and A = [p] andI (andEr p) (andEl p).
+  and_assl : ded (A and B) and C -> ded A and (B and C) 
+           = [p] andI (and3El p) (andI (and3Em p) (and3Er p)).
+  and_assr : ded A and (B and C) -> ded (A and B) and C
+           = [p] and3I (andEl p) (andEl (andEr p)) (andEr (andEr p)).
+  and_idem : ded A -> ded A and A = [p] andI p p.
+}.
+
+%* Further rules for disjunction implication and elimination
+   Disjunction commutativity, associativity and idempotence *%
+%sig DISJPFExt = {
+  %include pf.DISJPF %open. 
+  
+  or3Il : ded A -> ded A or B or C = [p] orIl (orIl p).
+  or3Im : ded B -> ded A or B or C = [p] orIl (orIr p).
+  or3Ir : ded C -> ded A or B or C = orIr.
+  or3E  : ded A or B or C -> (ded A -> ded D) -> (ded B -> ded D) -> (ded C -> ded D) -> ded D
+        = [p][f][g][h] orE p ([q] orE q f g) h.
+  or_comm : ded A or B -> ded B or A = [p] orE p orIr orIl.
+  or_assl : ded (A or B) or C -> ded A or (B or C)
+          = [p] or3E p orIl ([r] orIr (orIl r)) ([r] orIr (orIr r)).
+  or_assr : ded A or (B or C) -> ded (A or B) or C 
+          = [p] orE p or3Il ([q] orE q or3Im or3Ir).
+  or_idem : ded A or A -> ded A = [p] orE p ([q]q) ([q]q).
+}.
+
+%* Further rules for equality implication and elimination
+   Equality reflexivity, symmetry and transitivity *%
+%sig EquivPF = {
+  %include syntax.Equiv  %open.
+  %include pf.CONJPF %open.
+  %include pf.IMPPF  %open.
+  
+  equivI      : (ded A -> ded B) -> (ded B -> ded A) -> ded A equiv B 
+              = [f][g] andI (impI f) (impI g).
+  equivEl     : ded A equiv B -> ded A -> ded B = [p] [a] impE (andEl p) a.
+  equivEr     : ded A equiv B -> ded B -> ded A = [p] [b] impE (andEr p) b.
+  equiv_refl  : ded A equiv A = equivI ([a] a) ([a] a).
+  equiv_sym   : ded A equiv B -> ded B equiv A
+              = [p] equivI ([b] equivEr p b) ([a] equivEl p a).
+  equiv_trans : ded A equiv B -> ded B equiv C -> ded A equiv C
+              = [p][q] equivI ([a] equivEl q (equivEl p a)) ([c] equivEr p (equivEr q c)).
+}.
+
+%* Signature gathering all the derived rules for propositional logic.
+   Further rules: double negation elimination, various contradiction rules, de Morgan rules *%
+%sig PLPFExt = {
+   %include pf.CPLPF        %open.
+   %include FalsityPFExt %open.
+   %include NEGPFExt     %open.
+   %include IMPPFExt     %open.
+   %include CONJPFExt    %open.
+   %include DISJPFExt    %open.
+   %include EquivPF      %open.
+   
+   nnotE   : ded not (not A) -> ded A = [p] orE tnd ([q:ded A] q) ([q: ded not A] notE' q p). 
+   indir   : (ded not A -> {B} ded B) -> ded A = [f] nnotE (notI ([p: ded not A] f p)).
+   orEl    : ded A or B -> ded not A -> ded B = [p][q] orE p ([r] notE q r B) ([r] r).
+   orEr    : ded A or B -> ded not B -> ded A = [p][q] orEl (or_comm p) q.   
+   norEl   : ded not (A or B) -> ded not A = [p] notI [q] notE p (orIl q).
+   norEr   : ded not (A or B) -> ded not B = [p] notI [q] notE p (orIr q).
+   nimpEl  : ded not (A imp B) -> ded A = [p] indir [q] notE p (impI ([r] notE' r q)).
+   nimpEr  : ded not (A imp B) -> ded not B = [p] notI [q] notE p (impI [r] q).
+   contrapos    : ded A imp B -> ded not B -> ded not A = [p][q] notI [r] notE q (impE p r).
+   deMorgan_or  : ded not (A or B) -> ded not A and not B = [p] andI (norEl p) (norEr p).
+   deMorgan_and : ded not (A and B) -> ded not A or not B 
+                = [p] indir [q : ded not (not A or not B)] notE p (andI (nnotE (norEl q)) (nnotE (norEr q))).   
+}.

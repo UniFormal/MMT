@@ -1,0 +1,90 @@
+%*
+   The encoding of Booleans in STTIFOLEQ - a fragment of the ZFC encoding of Booleans
+   @author Florian Rabe, Kristina Sojakova, Alin Iacob
+   @license LATIN
+*%
+
+%namespace "http://cds.omdoc.org/logics/meta/bool.elf".
+%namespace sttifol = "sttifol.elf".
+
+%* The encoding of Booleans in STTIFOLEQ - a fragment of the ZFC encoding of Booleans *%
+%sig Bool = {
+  %include sttifol.STTIFOLEQ.
+  bool': set.
+  bool : type = elem bool'.
+  1 : bool.
+  0 : bool.
+  cons   : ded not (1 eq 0).
+  boole  : ded (A eq 1 or A eq 0).
+  
+  contra : ded A eq 0 -> ded A eq 1 -> ded false 
+         = [p][q] (notE' (trans (sym q) p) cons).
+  
+  boole-false : ded 1 eq 0 -> ded false = [p] contra p refl.
+  false-boole : ded false -> ded 1 eq 0 = [p] falseE' p.
+         
+  boole-not1 : ded A eq 1 -> ded not (A eq 0)
+             = [p] notI [q][_] falseE' (contra q p). 
+  boole-not0 : ded A eq 0 -> ded not (A eq 1)
+             = [p] notI [q][_] falseE' (contra p q).
+  not-boole1 : ded not (A eq 0) -> ded A eq 1
+             = [p] orEr boole p.
+  not-boole0 : ded not (A eq 1) -> ded A eq 0
+             = [p] orEl boole p.         
+
+  %% if-then-else
+  ifte   : elem (bool' → bool' → bool' → bool').
+  ifteT  : ded C eq 1 imp (ifte @ C @ T @ E) eq T.
+  ifteE  : ded C eq 0 imp (ifte @ C @ T @ E) eq E.
+  
+  ¬      : bool -> bool = [a] ifte @ a @ 0 @ 1.
+  ∧      : bool -> bool -> bool = [a][b] ifte @ a @ b @ 0.                    %infix left 10 ∧. 
+  ∨      : bool -> bool -> bool = [a][b] ifte @ a @ 1 @ b.                    %infix left 10 ∨.
+  ⇒      : bool -> bool -> bool = [a][b] ifte @ a @ b @ 1.                    %infix none 10 ⇒.
+
+  not1I : ded A eq 0 -> ded (¬ A) eq 1 = [p] impE ifteE p.
+  not0I : ded A eq 1 -> ded (¬ A) eq 0 = [p] impE ifteT p.
+  not1E : ded (¬ A) eq 1 -> ded A eq 0 
+        = [p] not-boole0 (contrapos (impI not0I) (boole-not1 p)).
+  not0E : ded (¬ A) eq 0 -> ded A eq 1 
+        = [p] not-boole1 (contrapos (impI not1I) (boole-not0 p)).
+        
+  imp1I : ded A eq 0 or B eq 1 -> ded (A ⇒ B) eq 1
+        = [p] orE p ([q] impE ifteE q) ([q] orE boole ([r: ded A eq 1] trans (impE ifteT r) q)
+          ([r: ded A eq 0] impE ifteE r)).
+  imp0I : ded A eq 1 and B eq 0 -> ded (A ⇒ B) eq 0 
+        = [p] trans (impE ifteT (andEl p)) (andEr p).
+  imp1E : ded (A ⇒ B) eq 1 -> ded A eq 0 or B eq 1
+        = [p] orE (deMorgan_and (contrapos (impI imp0I) (boole-not1 p)))
+          ([q : ded not (A eq 1)] orIl (not-boole0 q)) 
+          ([q : ded not (B eq 0)] orIr (not-boole1 q)).
+  imp10 : ded (A ⇒ B) eq 0 -> ded A eq 1 and B eq 0
+        = [p] andI (not-boole1 (norEl (contrapos (impI imp1I) (boole-not0 p))))
+          (not-boole0 (norEr (contrapos (impI imp1I) (boole-not0 p)))). 
+  
+  and1I : ded A eq 1 and B eq 1 -> ded (A ∧ B) eq 1 
+        = [p] trans (impE ifteT (andEl p)) (andEr p).
+  and0I : ded A eq 0 or B eq 0 -> ded (A ∧ B) eq 0
+        = [p] orE p ([q] impE ifteE q) ([q] orE boole ([r: ded A eq 1] trans (impE ifteT r) q)
+          ([r: ded A eq 0] impE ifteE r)).
+  and1E : ded (A ∧ B) eq 1 -> ded A eq 1 and B eq 1
+        = [p] andI (not-boole1 (norEl (contrapos (impI and0I) (boole-not1 p))))
+          (not-boole1 (norEr (contrapos (impI and0I) (boole-not1 p)))).
+  and0E : ded (A ∧ B) eq 0 -> ded A eq 0 or B eq 0
+        = [p] orE (deMorgan_and (contrapos (impI and1I) (boole-not0 p)))
+          ([q : ded not (A eq 1)] orIl (not-boole0 q)) 
+          ([q : ded not (B eq 1)] orIr (not-boole0 q)).
+                                                         
+  or1I : ded A eq 1 or B eq 1 -> ded (A ∨ B) eq 1
+       = [p] orE p ([q] impE ifteT q) ([q] orE boole ([r: ded A eq 1] impE ifteT r)
+         ([r: ded A eq 0] trans (impE ifteE r) q)).
+  or0I : ded A eq 0 and B eq 0 -> ded (A ∨ B) eq 0 
+       = [p] trans (impE ifteE (andEl p)) (andEr p).
+  or1E : ded (A ∨ B) eq 1 -> ded A eq 1 or B eq 1
+       = [p] orE (deMorgan_and (contrapos (impI or0I) (boole-not1 p)))
+         ([q : ded not (A eq 0)] orIl (not-boole1 q)) 
+         ([q : ded not (B eq 0)] orIr (not-boole1 q)).
+  or0E : ded (A ∨ B) eq 0 -> ded A eq 0 and B eq 0
+       = [p] andI (not-boole0 (norEl (contrapos (impI or1I) (boole-not0 p))))
+         (not-boole0 (norEr (contrapos (impI or1I) (boole-not0 p)))).
+}.

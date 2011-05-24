@@ -1,0 +1,335 @@
+// TODO: in ContinuousEliminator: also check whether the filename or a directory name between the location and the file is now excluded
+
+package info.kwarc.mmt.lf
+
+import zgs.httpd._
+import zgs.httpd.let._
+import java.io._
+import scala.xml._
+import scala.collection.mutable._
+import java.net._
+import java.util.jar.JarInputStream
+
+
+/** For synchronization of update operations */
+object ConflictGuard 
+
+
+/** Web server administration.
+  * @param port the port on which the server runs */
+class Server(port : Int) extends HServer {
+  
+  // Read the XML for the admin page from admin.html. Exit if not found.
+  var adminFile = new File("resources" + File.separator + "admin.html")
+  if (adminFile == null || !adminFile.canRead) {
+    println(getOriginalPath(adminFile) + ": critical error: admin file does not exist or cannot be read")
+    exit(1)
+  }
+  
+  // The Html data from the admin file
+  var adminHtml : scala.xml.Elem = null
+  try {
+    adminHtml = scala.xml.parsing.XhtmlParser(scala.io.Source.fromFile(adminFile, "utf-8")).head.asInstanceOf[scala.xml.Elem]
+  } catch {
+    case _ => { 
+      println(getOriginalPath(adminFile) + ": critical error: admin file cannot be read or contains malformed XML")
+      exit(1)
+    }
+  }
+  
+  // Read the readme.txt file. Exit if not found.
+  var readmeFile = new File("resources" + File.separator + "readme.txt")
+  if (readmeFile == null || !readmeFile.canRead) {
+    println(getOriginalPath(readmeFile) + ": critical error: readme.txt does not exist or cannot be read")
+    exit(1)
+  }
+  
+  // Get the text data from readme.txt
+  var readmeText : String = null
+  try {
+    val source = scala.io.Source.fromFile(readmeFile, "utf-8")
+    readmeText = source.getLines.toArray.mkString("\n")
+    source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it                           
+  } catch {
+    case e => throw FileOpenError("error: readme.txt cannot be opened or the encoding is not UTF-8")
+  }
+  
+  /** A recursive function that replaces:
+    * 1. <locations/> with the bullet list of locations
+    * 2. <inclusions/> with the bullet list of inclusion patterns 
+    * 3. <exclusions/> with the bullet list of exclusion patterns */
+  private def updateLocations(node : Node) : Node = node match {
+     case <locations/> => {<ul>{ Storage.locations.flatMap(f => <li>{ getOriginalPath(f) }</li>) }</ul> }
+     case <inclusions/> => {<ul>{ Storage.getInclusions.flatMap(s => <li>{ s }</li>) }</ul> }
+     case <exclusions/> => {<ul>{ Storage.getExclusions.flatMap(s => <li>{ s }</li>) }</ul> }
+     case Elem(a, b, c, d, ch @_*) => Elem(a, b, c, d, ch.map(updateLocations) : _*)
+     case other => other
+  }
+  
+  override def name = "lfserver"
+  override def writeBufSize = 16*1024
+  override def tcpNoDelay = true      // make this false if you have extremely frequent requests
+  protected def ports = List(port)    // port to listen to
+  protected def apps  = List(new RequestHandler) // the request handler
+  protected def talkPoolSize = 4
+  protected def talkQueueSize = Int.MaxValue
+  protected def selectorPoolSize = 2
+  
+  /** Request handler */
+  protected class RequestHandler extends HApp {
+    //override def buffered = true
+    def resolve(req : HReqHeaderData) : Option[HLet] = req.uriPath match {
+      case "help" | "" => {
+        Some(TextResponse(readmeText))
+      }
+      case "admin" => {
+        if (req.query == "") {
+          Some(HTMLResponse(updateLocations(adminHtml).toString))
+        }
+        else if (req.query.startsWith("addLocation=")) { ConflictGuard.synchronized { 
+          try {
+            Storage.addStringLocation(java.net.URLDecoder.decode(req.query.substring("addLocation=".length), "UTF-8"))
+          } catch {
+            case InexistentLocation(msg) => println(msg)
+          }
+          Some(HTMLResponse(updateLocations(adminHtml).toString))
+        }}
+        else if (req.query.startsWith("addInclusion=")) { ConflictGuard.synchronized { 
+          Storage.addInclusion(java.net.URLDecoder.decode(req.query.substring("addInclusion=".length), "UTF-8"))
+          Some(HTMLResponse(updateLocations(adminHtml).toString))
+        }}
+        else if (req.query.startsWith("addExclusion=")) { ConflictGuard.synchronized { 
+          Storage.addExclusion(java.net.URLDecoder.decode(req.query.substring("addExclusion=".length), "UTF-8"))
+          Some(HTMLResponse(updateLocations(adminHtml).toString))
+        }}
+        else Some(TextResponse("Invalid query: " + req.query))
+      }
+      case "crawlAll"  => { ConflictGuard.synchronized { 
+        Storage.crawlAll
+        Some(HTMLResponse(updateLocations(adminHtml).toString))
+      }}
+      case "exit"   => {stop         // stop the server
+                         exit(0)      // exit the program
+                         None}
+      case "getMetaText" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val commentText = Storage.getMeta(stringUri, true)
+            Some(TextResponse(commentText))
+          } catch {
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri))
+            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+      }
+      case "getMeta" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val commentText = Storage.getMeta(stringUri)
+            Some(TextResponse(commentText))
+          } catch {
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri))
+            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+      }
+      case "getText" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val text = Storage.getText(stringUri)
+            Some(TextResponse(text))
+          } catch {
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri))
+            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri))
+            case FileOpenError(s)   => Some(TextResponse(s))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+      }
+      case "getDependencies" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val dependencies = Storage.getDependencies(stringUri)
+            Some(TextResponse(dependencies.mkString("\n")))
+          } catch {
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri))
+            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+      }
+      case "getChildren" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val children = Storage.getChildren(stringUri)
+            Some(TextResponse(children.mkString("\n")))
+          } catch {
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri))
+            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+      }
+      case "getPosition" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val position = Storage.getPosition(stringUri)
+            Some(TextResponse(position))
+          } catch {
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri))
+            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+      }
+      case "getOmdoc" => {
+        if (req.query.startsWith("url=")) {
+          var stringUrl : String = null
+          try {
+            stringUrl = java.net.URLDecoder.decode(req.query.substring("url=".length), "UTF-8")
+            val omdoc = Storage.getOmdoc(stringUrl)
+            Some(TextResponse(omdoc))
+          } catch {
+            case StorageError(s)    => Some(TextResponse(s))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected"))
+      }
+      case "getNSIntroduced" => {
+        if (req.query.startsWith("url=")) {
+          var stringUrl : String = null
+          try {
+            stringUrl = java.net.URLDecoder.decode(req.query.substring("url=".length), "UTF-8")
+            val URIs = Storage.getNSIntroduced(stringUrl)
+            Some(TextResponse(URIs.mkString("\n")))
+          } catch {
+            case StorageError(s)    => Some(TextResponse(s))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected"))
+      }
+      case _        => Some(TextResponse("Invalid path: " + req.uriPath))
+    }
+  }
+  private def TextResponse(text : String) : HLet = new HLet {
+    def act(tk : HTalk) {
+      val out = text.getBytes("UTF-8")
+      // !sending data in the header as well!
+      // prepare data for sending within a header: replace \r with `r, \n with `n, ` with `o
+      val escapedText : String = text.replaceAll("`","`o")
+                                     .replaceAll("\r","`r")
+                                     .replaceAll("\n","`n")
+      tk.setContentLength(out.size) // if not buffered
+        .setContentType("text/plain; charset=utf8")
+        .setHeader("mydata", escapedText)  
+        .write(out)
+        .close
+    }
+  }
+  private def HTMLResponse(text : String) : HLet = new HLet {
+    def act(tk : HTalk) {
+      val out = text.getBytes("UTF-8")
+      tk.setContentLength(out.size) // if not buffered
+        .setContentType("text/html; charset=utf8")
+        .write(out)
+        .close
+    }
+  }
+}
+
+/** Run the web server */
+object Run {
+  val usage = """Usage: java -jar lfcatalog.jar (--port <port>)? (location|+inclusion|-exclusion)*
+  
+  location === absolute path to a file or directory
+  inclusion === name
+  exclusion === name
+  name === file or directory name pattern, without its path. Star is the only special character and matches any sequence of characters.
+  
+  A folder is crawled iff it doesn't match any exclusion pattern.
+  A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains.
+  The default port is 8080."""
+  
+  /** The port on which the server runs */
+  var port = 8080
+  
+  /** The interval, in seconds, between two automatic crawls */
+  var shortInterval = 5
+  
+  /** The interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk */
+  var longInterval = 17
+  
+  /** A thread that checks for updated files and crawls them every shortInterval seconds */
+  object ContinuousCrawler extends Thread {
+    override def run {
+      while(true) {
+        Thread.sleep(shortInterval * 1000)
+        Storage.crawlAll
+      }
+    }
+  }
+  
+  /** A thread that checks for deleted files every longInterval seconds and eliminates them from the hashes */
+  object ContinuousEliminator extends Thread {
+    override def run {
+      while(true) {
+        Thread.sleep(longInterval * 1000)
+        for ((url,_) <- Storage.urlToDocument) {
+          val file = new File(URLDecoder.decode(url.toString, "UTF-8"))
+          if (!file.exists) {
+            println(getOriginalPath(file) + ": cannot find file. Uncrawling...")
+            Storage.uncrawl(url.toString)
+          }
+        }
+      }
+    }
+  }
+  
+  
+  def main(args : Array[String]) {
+    var patternsAndLocations : Array[String] = args
+    if (!args.isEmpty) {
+      // read the optional --port argument
+      if (args.head == "--port")
+        if (args.length < 2) { 
+          println(usage); exit(1)
+        }
+        else {
+          try { port = Integer.parseInt(args(1)) }
+          catch { case _ => println(usage); exit(1) }
+          patternsAndLocations = patternsAndLocations.drop(2)
+        } 
+      // read the patterns and locations
+      for (s <- patternsAndLocations)
+        if (s.startsWith("-"))   // an exclusion pattern
+          Storage.addExclusion(s.drop(1))
+        else if (s.startsWith("+")) // an inclusion pattern
+          Storage.addInclusion(s.drop(1))
+        else {   // a location
+          try {
+            Storage.addStringLocation(s)
+          } catch {
+            case InexistentLocation(msg) => println(msg)
+          }
+        }
+    }
+    (new Server(port)).start
+    println("go to: http://127.0.0.1:8080")
+    ContinuousCrawler.start
+    ContinuousEliminator.start
+  }
+}

@@ -1,0 +1,89 @@
+%*
+   Views from the older version of model theory for propositional logic to ZF set theory
+   @author Fulya Horozal, Florian Rabe
+   @license LATIN
+*%
+
+%namespace "http://cds.omdoc.org/logics/propositional/classic/model_theory_old/mod-zf.elf".
+%namespace sttifol = "../../../meta/sttifol.elf".
+%namespace sttifol-zf = "../../../meta/sttifol-zf.elf".
+%namespace bool    = "../../../meta/bool.elf".
+%namespace bool-zf = "../../../meta/bool-zf.elf".
+%namespace zf      = "../../../../set_theories/zfc/bool.elf".
+%namespace mod     = "mod.elf".
+
+
+%view Base-ZF : mod.Base -> zf.Boolean = {
+   %include sttifol-zf.STTIFOLEQ-ZF.
+   %include bool-zf.Bool-ZF.  
+}.
+
+%view Truth-ZF : mod.Truth -> zf.Boolean = {
+   %include Base-ZF.
+   true' := ⊤.
+   true1 := refl.
+}.
+
+%view Falsity-ZF : mod.Falsity -> zf.Boolean = {
+   %include Base-ZF.
+   false' := ⊥.
+   false0 := refl.
+}.
+
+%view NEG-ZF : mod.NEG -> zf.Boolean = {
+   %include Base-ZF.
+   not' := lambda [a] ¬ a.
+   not1 := [A:ℬ] impI [p: ded A Eq ⊥] trans beta (EqcongEr ([a] ¬ a Eq ⊤) p ∖neut).
+   not0 := [A:ℬ] impI [p: ded A Eq ⊤] trans beta (EqcongEr ([a] ¬ a Eq ⊥) p ∖rep).
+}.
+
+%view IMP-ZF : mod.IMP -> zf.Boolean = {
+   %include Base-ZF.
+   imp' := Lambda [a] Lambda [b] a → b.
+   imp1 := [A][B] impI [p] trans beta2 (EqcongEr ([x] ⊤ ∖ x Eq ⊤)
+                                                  (orE p ([q: ded A Eq ⊥] EqcongEr ([a] a ∖ B Eq ⊥) q ∖attr)
+                                                         ([q: ded B Eq ⊤] EqcongEr ([b] A ∖ b Eq ⊥) q ∖rep )
+                                                 ) ∖neut).         
+   imp0 := [A][B] impI [p] trans beta2 (EqcongEr ([x] ⊤ ∖ x Eq ⊥)
+                                                (trans (EqcongEr ([x] A ∖ x Eq A) (andEr p) ∖neut) (andEl p))
+                                                ∖rep).
+}.
+
+%view CONJ-ZF : mod.CONJ -> zf.Boolean = {
+   %include Base-ZF.
+   and' := Lambda [a] Lambda [b] a ∧ b.
+   and1 := [A][B] impI [p : ded A Eq ⊤ and B Eq ⊤] trans beta2 
+             (EqcongEr ([x:ℬ] A ∧ x Eq ⊤) 
+                       (andEr p)             
+                       (EqcongEr ([x:ℬ] x ∧ ⊤ Eq ⊤) (andEl p) ∩idem)
+              ).
+   and0 := [A][B] impI [p : ded A Eq ⊥ or B Eq ⊥] trans beta2
+            (orE p
+                 ([pl : ded A Eq ⊥] EqcongEr ([x:ℬ] x ∧ B Eq ⊥) pl (EqcongEl ([x:ℬ] x Eq ⊥) ∩comm ∩attr))
+                 ([pr : ded B Eq ⊥] EqcongEr ([x:ℬ] A ∧ x Eq ⊥) pr ∩attr)
+             ).
+}.
+
+%view DISJ-ZF : mod.DISJ -> zf.Boolean = {
+   %include Base-ZF.
+   or' := Lambda [a] Lambda [b] a ∨ b.
+   or1 := [A][B] impI [p : ded A Eq ⊤ or B Eq ⊤] trans beta2
+            (orE p
+                 ([pl : ded A Eq ⊤] EqcongEr ([x:ℬ] x ∨ B Eq ⊤) pl (EqcongEl ([x:ℬ] x Eq ⊤) ∪comm ∪attr))
+                 ([pr : ded B Eq ⊤] EqcongEr ([x:ℬ] A ∨ x Eq ⊤) pr ∪attr)
+             ).
+   or0 := [A][B] impI [p : ded A Eq ⊥ and B Eq ⊥] trans beta2 
+             (EqcongEr ([x:ℬ] A ∨ x Eq ⊥) 
+                       (andEr p)             
+                       (EqcongEr ([x:ℬ] x ∨ ⊥ Eq ⊥) (andEl p) ∪idem)).
+}.
+
+%view PL-ZF : mod.PL -> zf.Boolean = {
+  %include Base-ZF.
+  %include Truth-ZF.
+  %include Falsity-ZF.
+  %include NEG-ZF.
+  %include IMP-ZF.  
+  %include CONJ-ZF.
+  %include DISJ-ZF.  
+}.

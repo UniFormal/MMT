@@ -1,0 +1,16 @@
+%*
+   View from Minimal propositional logic to proppositional logic
+   @author Florian Rabe
+   @license LATIN
+   
+*%
+
+%namespace "http://cds.omdoc.org/logics/propositional/minimal-classic/syntax.elf".
+%namespace minimal = "../minimal/syntax.elf".
+%namespace classic = "../classic/syntax.elf".
+
+%* View from Minimal propositional logic mapped to Classic propositional logic *%
+%view MPL-PL : minimal.MPL -> classic.PL = {
+  ⊥ := false.
+  ⇒ := [x][y] x imp y.
+}.

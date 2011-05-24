@@ -1,0 +1,27 @@
+%*
+   Minimal propositional logic syntax
+   @author Florian Rabe
+   @license LATIN
+*%
+
+%namespace "http://cds.omdoc.org/logics/propositional/minimal/syntax.elf".
+%namespace base = "../classic/syntax.elf".
+
+%*
+  Minimal propositional logic
+  following Tarski, Bernays, and Wajsberg with primitive ⇒ and ⊥
+*%
+%sig MPL = {
+  %include base.Base %open.
+  
+  %% primitive symbols
+  ⊥ : o.
+  ⇒ : o -> o -> o.                                 %infix right 5 ⇒.
+  
+  %% derived symbols
+  ¬ : o -> o = [x] x ⇒ ⊥.                          %prefix 20 ¬.
+  ⊤ : o = ¬ ⊥.
+  ∧ : o -> o -> o = [x][y] ¬ (x ⇒ ¬ y).            %infix left 10 ∧.
+  ∨ : o -> o -> o = [x][y] ¬ x ⇒ y.                %infix left 10 ∨.
+  ⇔ : o -> o -> o = [x][y] (x ⇒ y) ∧ (y ⇒ x).      %infix none 5 ⇔.
+}.
