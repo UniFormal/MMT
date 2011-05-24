@@ -18,6 +18,8 @@ class UOMServer(report: frontend.Report) {
     // preload Unit conversion implementations
     impls(UnitConvImplems.plus.name) = UnitConvImplems.plus
     impls(UnitConvImplems.mult.name) = UnitConvImplems.mult
+    impls(UnitConvImplems.minus.name) = UnitConvImplems.minus
+    impls(UnitConvImplems.divide.name) = UnitConvImplems.divide
   }
 
   def register(jarFileName : String) {
