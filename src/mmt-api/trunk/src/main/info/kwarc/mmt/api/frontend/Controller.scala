@@ -90,14 +90,19 @@ class Controller(checker : Checker, report : Report) extends ROController {
          case d : NarrativeElement => docstore.add(d) 
       })
    }
-/*   def delete(p: Path) = p match {
+   /**
+    * deletes a document or module
+    * no change management except that the deletion of a document also deletes its subdocuments and modules 
+    */
+   def delete(p: Path) {p match {
       case d: DPath =>
-         docstore.delete(m)
+         val orphaned = docstore.delete(d)
+         orphaned foreach delete
       case m: MPath =>
          library.delete(m)
          notstore.delete(m)
       case s: GlobalName => throw DeleteError("deleting symbols not possible")
-   }*/
+   }}
    /** clears the state */
    def clear {
       docstore.clear

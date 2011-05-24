@@ -117,6 +117,10 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
             }
       }
    }
+   /** deletes a style */
+   def delete(m: MPath) {
+      sets -= m
+   }
    /** empties the store */
    def clear {
       imports.clear

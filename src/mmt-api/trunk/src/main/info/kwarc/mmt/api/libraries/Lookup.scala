@@ -11,6 +11,7 @@ abstract class Lookup(val report : frontend.Report) {
 
    def getModule(p : MPath, die: Boolean = false) : Module
    def get(path : Path) : ContentElement
+   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case GetError(_) => None}
    //typed access methods
    private def defmsg(path : Path) : String = "no element of required type found at " + path
    def getTheory(path : Path, msg : Path => String = defmsg) : Theory =

@@ -22,6 +22,19 @@ class DocStore(abox : ontology.RelStore, report : Report) {
       try {documents(p)}
       catch {case _ => throw NotFound(p)}
    }
+   /**
+    * deletes a document
+    * @param the document to be deleted
+    * @return the list now orphaned documents and modules that are declared in this documents
+    * */
+   def delete(p: DPath) : List[Path] = {
+      documents.get(p) match {
+         case None => Nil
+         case Some(doc) =>
+            documents -= p
+            doc.getLocalItems map (_.target)
+      }
+   }
    /** deletes all documents */
    def clear {documents.clear}
 }
