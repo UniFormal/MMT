@@ -124,7 +124,7 @@ abstract class ModuleChecker extends Checker {
     */
    def checkTheo[A](t : TheoryObj, atomic: Path => A, nonatomic: Path => A)(implicit lib : Lookup) : List[A] = t match {
      case OMMOD(p) =>
-       lib.getModule(p)
+       checkTheoRef(p)
        List(atomic(p))
    }
   /** checks whether a morphism object is well-formed relative to a library and infers its type
@@ -134,7 +134,7 @@ abstract class ModuleChecker extends Checker {
     */
    def inferMorphism(m : Morph)(implicit lib : Lookup) : (List[Path], TheoryObj, TheoryObj) = m match {
      case OMMOD(m : MPath) =>
-        val l = lib.getLink(m)
+        val l = checkLinkRef(m)
         (List(m), l.from, l.to)
      case OMDL(to, name) =>
         val occs = checkTheo(to, p => p, p => p)
@@ -179,6 +179,10 @@ abstract class ModuleChecker extends Checker {
          case _ => throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + c + " -> " + d)
       }
    }
+   /** called for every reference to a theory */
+   def checkTheoRef(p: MPath)(implicit lib : Lookup) : Theory = lib.getTheory(p)
+   /** called for every reference to a link */
+   def checkLinkRef(p: MPath)(implicit lib : Lookup) : Link = lib.getLink(p)
 }
 
 object SimpleChecker extends ModuleChecker {
@@ -186,7 +190,7 @@ object SimpleChecker extends ModuleChecker {
 }
 
 /**
- * A Checker that implements MMT-wellformedness relative to a foundation.
+ * A Checker that implements MMT-well-formedness relative to a foundation.
  */
 class FoundChecker(foundation : Foundation) extends ModuleChecker {
    /** checks whether a content element may be added to a library
@@ -369,3 +373,5 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
       }
    }
 }
+
+object StructuralChecker extends FoundChecker(DefaultFoundation)

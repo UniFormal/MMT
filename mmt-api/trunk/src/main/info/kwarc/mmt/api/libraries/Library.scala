@@ -139,12 +139,15 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
         }
         imported ++ local
    }*/
+   /** iterator over all includes into a theory
+    * a new iterator is needed once e this has been traversed 
+    */
    def importsTo(to: TheoryObj) : Iterator[TheoryObj] = to match {
       case OMMOD(p) =>
          getTheory(p) match {
             case t: DefinedTheory => importsTo(t.df)
-            case t: DeclaredTheory =>
-               new Iterator[TheoryObj] {
+            case t: DeclaredTheory => t.iterator filter {case i: Include => true case _ => false} map {case i: Include => i.from}
+/*               new Iterator[TheoryObj] {
                   private val i = t.iterator
                   private def takeNext : Option[TheoryObj] = {
                      if (i.hasNext)
@@ -162,14 +165,13 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
                      f
                   }
                   def hasNext = n.isDefined
-               }
+               }*/
          }
    }
    def imports(from: TheoryObj, to: TheoryObj) : Boolean = {
       from == to || ((from,to) match {
          case (OMMOD(f), OMMOD(t)) => importsTo(to) contains from
       })
-            
    }
 	 /*  
 	   
