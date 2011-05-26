@@ -21,8 +21,8 @@ OMV / Term => Substitution // substituting for a variable °°
 OMV % Term => Context      // typed variable °°
 °° A string can be used instead of an OMV using import objects.Conversions._
 
-Context + Context => Context // concatenation
-Substitution + Substitution => Substitution  // concatenation
+Context ++ Context => Context // concatenation
+Substitution ++ Substitution => Substitution  // concatenation
 Substitution ^ Substitution => Substitution  // composition
 Context.id => Substitution   // identity
 Term ^ Substitution => Term  // substitution application, computed recursively
