@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.owl
 
 import org.semanticweb.owlapi.apibinding.OWLManager
@@ -15,7 +16,7 @@ import jomdoc.symbols.Constant
 import jomdoc.frontend._
 import jomdoc.modules._
 import jomdoc.libraries._
-import jomdoc.documents._
+import jomdoc.documents._ 
 import jomdoc.lf._
 import jomdoc.objects.{Term,OMS}
 
@@ -487,3 +488,4 @@ object Test {
 		}
 
 }
+*/
