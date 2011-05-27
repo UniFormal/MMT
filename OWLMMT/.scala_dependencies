@@ -1,0 +1,33 @@
+E:\Fall10\CompSem\Project\OWLMMT\bin;C:\Program Files\eclipse-SDK-3.5.1-win32\eclipse\configuration\org.eclipse.osgi\bundles\199\1\.cp\lib\scala-library.jar;C:\Program Files\eclipse-SDK-3.5.1-win32\eclipse\configuration\org.eclipse.osgi\bundles\199\1\.cp\lib\scala-dbc.jar;C:\Program Files\eclipse-SDK-3.5.1-win32\eclipse\configuration\org.eclipse.osgi\bundles\199\1\.cp\lib\scala-swing.jar;C:\Program Files\Java\jre6\lib\resources.jar;C:\Program Files\Java\jre6\lib\rt.jar;C:\Program Files\Java\jre6\lib\jsse.jar;C:\Program Files\Java\jre6\lib\jce.jar;C:\Program Files\Java\jre6\lib\charsets.jar;C:\Program Files\Java\jre6\lib\ext\dnsns.jar;C:\Program Files\Java\jre6\lib\ext\localedata.jar;C:\Program Files\Java\jre6\lib\ext\sunjce_provider.jar;C:\Program Files\Java\jre6\lib\ext\sunmscapi.jar;C:\Program Files\Java\jre6\lib\ext\sunpkcs11.jar;E:\Fall10\CompSem\Project\OWLMMT\lib\owlapi-bin.jar;\deploy\lib\scala\scala-library.jar;E:\Fall10\CompSem\Project\OWLMMT\lib\mmt-api\mmt-api.jar
+-------
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Saving.scala -> E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Saving.scala
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Loading.scala -> E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Loading.scala
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Entities.scala -> E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Entities.scala
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges2.scala -> E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges2.scala
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges1.scala -> E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges1.scala
+-------
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Saving.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Saving$.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Saving.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Saving.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\DataRanges2.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\DataRanges2$.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges1.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\DataRanges1.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\DataRanges1.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\DataRanges1$.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Loading.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Loading.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Loading.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Loading$.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$1.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$10.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$2.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$3.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$ontologyToLF$1.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$6.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$8.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$11.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$7.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$9.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$5.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2$$anonfun$4.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Test2.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Test2.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Entities.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Entities$.class
+E:\Fall10\CompSem\Project\OWLMMT\src\info\kwarc\mmt\owl\Entities.scala -> E:\Fall10\CompSem\Project\OWLMMT\bin\info\kwarc\mmt\owl\Entities.class
