@@ -3,7 +3,7 @@
 
     <target name="init">
 	<!-- The variable scala.home holds the directory in which to find the scala compiler. -->
-        <property name="scala.home" value="../../../deploy/lib/scala" />
+        <property name="scala.home" value="lib/scala" />
 	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
         <path id="scalac.classpath">
             <pathelement location="${scala.home}/scala-library.jar"/>
