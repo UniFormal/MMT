@@ -34,6 +34,12 @@ object LF {
    val arrow = constant("arrow")
 }
 
+/* apply methods and extractor methods for Scala
+   constructor and pattern matcher: Lambda("x", tp, scope)
+   accordingly for Pi, Apply, Arrow
+   Univ(1), Univ(2) are type and kind
+ */
+
 object Lambda {
    def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("lambda"), OMV(name) % tp, body)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
