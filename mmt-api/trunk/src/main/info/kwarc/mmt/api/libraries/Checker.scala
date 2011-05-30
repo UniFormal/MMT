@@ -308,11 +308,11 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             s match {
                case a : Alias =>
                   if (! lib.imports(a.home, home))
-                     throw Invalid("constant " + s + " is not imported into home theory " + home)
+                     throw Invalid("constant " + s.path + " is not imported into home theory " + home)
                   List(path)
                case c : Constant =>
                   if (! lib.imports(c.home, home))
-                     throw Invalid("constant " + s + " is not imported into home theory " + home)
+                     throw Invalid("constant " + s.path + " is not imported into home theory " + home)
 /*                  uvcheck(c.uv) match {
                      case None => ()
                      case Some(msg) => //throw Invalid(msg)
