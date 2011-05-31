@@ -47,7 +47,16 @@ abstract class ModuleChecker extends Checker {
       case GetError(msg) => Fail("content element contains ill-formed object: get error: " + msg)
       //case e => Fail("error during checking: " + e.msg)
    }
-   def checkModuleLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult = 
+   def checkModuleLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult = {
+      def flattenIncl(l: Include, o: Origin) : List[Include] =
+         lib.importsTo(l.from).toList.mapPartial {t =>
+            if (lib.imports(t, l.to)) None
+            else {
+               val i = new Include(l.to, t)
+               i.setOrigin(o)
+               Some(i)
+            }
+      }
       e match {
          case t: DeclaredTheory =>
             checkEmpty(t)
@@ -57,7 +66,8 @@ abstract class ModuleChecker extends Checker {
                   checkTheo(OMMOD(mt), _ => null, _ => null)
                   val mincl = PlainInclude(mt, t.path)
                   mincl.setOrigin(MetaInclude)
-                  Reconstructed(List(t, mincl), HasMeta(t.path, mt) :: d)
+                  val minclflat = flattenIncl(mincl, MetaInclude)
+                  Reconstructed(t :: mincl :: minclflat, HasMeta(t.path, mt) :: d)
                case _ =>
                   Success(d)
             }
@@ -75,14 +85,7 @@ abstract class ModuleChecker extends Checker {
             val par = checkAtomic(l.home)
             val deps = checkTheo(l.from, Includes(par, _), DependsOn(par, _))
             // flattening (transitive closure) of includes 
-            val flat = lib.importsTo(l.from).toList.mapPartial {t =>
-               if (lib.imports(t, l.home)) None
-               else {
-                  val i = new Include(l.home, t)
-                  i.setOrigin(IncludeClosure)
-                  Some(i)
-               }
-            }
+            val flat = flattenIncl(l, IncludeClosure)
             Reconstructed(l:: flat.toList, deps)
          case s: DeclaredStructure =>
             checkEmpty(s)
@@ -95,6 +98,7 @@ abstract class ModuleChecker extends Checker {
             Success(ldeps ::: ddeps)
          case e => checkSymbolLevel(e)
       }
+   }
    def checkSymbolLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult
    
    protected def checkLink(l : Link, path : Path)(implicit lib : Lookup) : List[RelationalElement] = {
