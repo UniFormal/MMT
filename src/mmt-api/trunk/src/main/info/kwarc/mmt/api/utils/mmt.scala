@@ -2,8 +2,8 @@ package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api._
 
 object mmt {
-   val baseURI = new xml.URI("http", "cds.omdoc.org", "/", null)
-   val mmtbase = DPath(baseURI.resolve("omdoc/mmt.omdoc"))
+   val baseURI = URI("http", "cds.omdoc.org")
+   val mmtbase = DPath(baseURI / "omdoc" / "mmt.omdoc")
    val mmtcd = mmtbase ? "mmt"
    def mmtsymbol(name : String) = mmtcd ? name
    val mmttype = mmtsymbol("type")
@@ -24,5 +24,5 @@ object mmt {
    val ellipsis = mmtsymbol("ellipsis")
    val nat = mmtsymbol("nat")
    val seq = mmtsymbol("seq")
-   val mimeBase = DPath(new xml.URI("http://www.iana.org/assignments/media-types/"))
+   val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }

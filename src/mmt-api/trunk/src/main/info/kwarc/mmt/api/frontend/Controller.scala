@@ -112,7 +112,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
    }
    def read(f: java.io.File) : DPath = {
       val N = utils.xml.readFile(f)
-      reader.readDocument(DPath(xml.URI(f.toURI)), N)
+      reader.readDocument(DPath(URI.fromJava(f.toURI)), N)
    }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
@@ -137,7 +137,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
-	          val b = new xml.URI(currentDir.toURI)
+	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
 	      case SetBase(b) =>
 	         base = b

@@ -239,6 +239,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
     * @param e the element to be added
     */
    def add(e : ContentElement) {
+      log("adding: " + e.toString)
       try {checker.check(e)(this) match {
          case Fail(msg) => throw AddError(msg)
          case Success(deps) =>

@@ -263,7 +263,7 @@ case class OMF(value : Double) extends OMLiteral {
 case class OMSTR(value : String) extends OMLiteral {
    def tag = "OMSTR"
 }
-case class OMURI(value: utils.xml.URI) extends OMLiteral {
+case class OMURI(value: URI) extends OMLiteral {
    def tag = "OMURI"
 }
 
@@ -553,7 +553,7 @@ object Obj {
   }
   
   private def parseOMS(N : Node, base : Path) : Path = {
-     val doc = new xml.URI(xml.attr(N,"base"))
+     val doc = URI(xml.attr(N,"base"))
      val mod = xml.attr(N,"module")
      val name = xml.attr(N,"name")
      Path.parse(doc, mod, name, base)
