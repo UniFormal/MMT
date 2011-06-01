@@ -29,19 +29,15 @@ import info.kwarc.mmt.api.utils._
 
 object Test2 {
 	var num : Int = 1
-	//val OWL = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl.omdoc"))
-	val OWL = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl2.omdoc")) 
+	val OWL = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl.omdoc"))
+	val OWL2 = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl2.omdoc")) 
 	var currThy : MPath = null
-	
-/*	Puyoya sor
-	http://cds.omdoc.org/tntbase/logics/description/owl/owl2.omdoc
-	http://srv.tntbase.org/repos/cds/
-	https://tnt.kwarc.info/repos/cds/	
-*/
-	val checker = new FoundChecker(DefaultFoundation) 	
-	val controller = new Controller(checker, new ConsoleReport)
-	
-	
+
+	val checker = new FoundChecker(DefaultFoundation)
+	val report = new FileReport(new java.io.File("controller.log"))
+	val controller = new Controller(checker, report)
+	report("owl", "message")
+		
 	def printClass(c : OWLClassExpression ){println(c)}
 	def printIndividual(i : OWLIndividual){println(i)}
 	def printProperty(p : OWLObjectPropertyExpression){println(p)} //boyle olmali def printProperty(p : OWLPropertyExpression ){println(p)} 
@@ -61,13 +57,13 @@ object Test2 {
 				new MPath(dpath, LocalPath(List(i.toString + "?" + "_"))) // mmturi
 	}
 	
-	//def OWLOMS (t: String, s: String) = {  OMID(OWL ? t ? s) }
 	def OWLOMS (t: String, s: String) = {  OMID(OWL ? t ? s) }
+	def OWL2OMS (t: String, s: String) = {  OMID(OWL2 ? t ? s) }
 
 	def CurrOMS(i: IRI) : Term = { OMID(currThy ? IRItoLocalPath(i))}
 		
 	def addConstant(name: LocalName, tp: Term) {
-			val con = new Constant(OMMOD(currThy), name, Some(tp), None, null)
+			val con = new Constant( OMMOD(currThy), name, Some(tp), None, null)
 			//theory name: ex, class name:woman, type, none for definition
 			controller.add(con)
 			println(con.toString)
@@ -79,27 +75,31 @@ object Test2 {
 			case c : OWLClass =>
 		        CurrOMS(c.getIRI)
 		        
-		    case c : OWLObjectIntersectionOf =>
-		        val args = c.getOperandsAsList.map(classToLF)
-		        ApplySpine(OWLOMS("OWL2SUB", "objectIntersectionOf"), args : _*)
-		             		         
-		    case c : OWLObjectUnionOf =>  
-		        val args = c.getOperandsAsList.map(classToLF)
-		        ApplySpine(OWLOMS("OWL2QL", "objectUnionOf"), args : _*)
-		    		     
-		    case c : OWLObjectComplementOf =>
-		        val arg = c.getOperand
-		        ApplySpine(OWLOMS("OWL2QL", "objectComplementOf"), classToLF(arg) )
-		  				       		        
-		    case c : OWLObjectAllValuesFrom => //hasChild son
+			case c : OWLBooleanClassExpression => 
+		    	c match {
+					case c : OWLNaryBooleanClassExpression =>
+		        		val (sig,dec) = c match {
+		        			case c : OWLObjectIntersectionOf => ("OWL2SUB","objectIntersectionOf")    
+		        			case c : OWLObjectSomeValuesFrom => ("OWL2QL","objectUnionOf" )   
+		        		}
+		        		val args = c.getOperandsAsList.map(classToLF)
+		        		ApplySpine(OWL2OMS(sig,dec), args : _*)
+		    
+					case c : OWLObjectComplementOf =>
+		        		val arg = c.getOperand
+		        		ApplySpine(OWL2OMS("OWL2QL", "objectComplementOf"), classToLF(arg) )
+		    	}	
+		
+		    case c : OWLQuantifiedObjectRestriction => 
+		        val (sig,dec) = c match {
+		        	case c : OWLObjectAllValuesFrom => ("OWL2QL","OWLObjectAllValuesFrom")  // hasChild son  
+		        	case c : OWLObjectSomeValuesFrom => ("OWL2EL","OWLObjectSomeValuesFrom") // hasPet dog  
+		        }
 		        val arg1 = c.getProperty
 		        val arg2 = c.getFiller
-		        ApplySpine(OWLOMS("OWL2QL", "OWLObjectAllValuesFrom"), propertyToLF(arg1), classToLF(arg2) )  
+		        ApplySpine(OWL2OMS(sig,dec), propertyToLF(arg1), classToLF(arg2))
 		        
-		    case c : OWLObjectSomeValuesFrom => //hasPet dog
-		        val arg1 = c.getProperty
-		        val arg2 = c.getFiller
-		        ApplySpine(OWLOMS("OWL2QL", "OWLObjectSomeValuesFrom"), propertyToLF(arg1), classToLF(arg2) )
+		    
 		      	
    	     /* case c : OWLDataAllValuesFrom => */ 
 		       		        
@@ -108,7 +108,7 @@ object Test2 {
 		        
      		//	Arbitrary (Full) cardinality   
 		    case c : OWLObjectCardinalityRestriction =>
-		        val name = c match {
+		        val dec = c match {
 		        	case c: OWLObjectExactCardinality => "objectExactCardinality"
 		        	case c: OWLObjectMinCardinality => "objectMinCardinality"
 		        	case c: OWLObjectMaxCardinality => "objectMaxCardinality"
@@ -118,10 +118,10 @@ object Test2 {
 		        
 		      if(c.isQualified) { // isQualified???????!!!!! Quantified ?????
 		        val arg3 = c.getFiller
-		        ApplySpine(OWLOMS("OWL2SUB", name  + "Qualified"), arg1, arg2, classToLF(arg3) )
+		        ApplySpine(OWL2OMS("OWL2SUB", dec  + "Qualified"), arg1, arg2, classToLF(arg3) )
 		      } 
 		      else {
-		     	  ApplySpine(OWLOMS("OWL2SUB", name), arg1, arg2)
+		     	  ApplySpine(OWL2OMS("OWL2SUB", dec), arg1, arg2)
 		      }
 		     	
 		 /* case c : OWLDataCardinalityRestriction =>
@@ -136,17 +136,17 @@ object Test2 {
 	        
 	       case c : OWLObjectOneOf =>
 		        val args = c.getIndividuals.map(individualToLF)
-		        ApplySpine(OWLOMS("OWL2QL", "objectOneOf"), args.toList : _*)
+		        ApplySpine(OWL2OMS("OWL2SUB", "objectOneOf"), args.toList : _*)
 		    
 		   case c : OWLObjectHasValue =>
 		    	val arg1 = c.getProperty
 		        val arg2 = c.getValue
-		        ApplySpine(OWLOMS("OWL2SUB", "objectHasValue"), propertyToLF(arg1), individualToLF(arg2))
+		        ApplySpine(OWL2OMS("OWL2SUB", "objectHasValue"), propertyToLF(arg1), individualToLF(arg2))
 		        
 				    	
 		   case c : OWLObjectHasSelf =>
 		        val arg = c.getProperty
-		        ApplySpine(OWLOMS("OWL2SUB", "objectHasSelf"), propertyToLF(arg))
+		        ApplySpine(OWL2OMS("OWL2SUB", "objectHasSelf"), propertyToLF(arg))
 		        
 
 		 }
@@ -169,7 +169,7 @@ object Test2 {
 /*				
 			case p : OWLObjectInverseOf =>
 		        val arg = p.getInverse
-		        ApplySpine(OWLOMS("OWL2QL", "objectInverseOf"), propertyToLF(arg) )
+		        ApplySpine(OWL2OMS("OWL2QL", "objectInverseOf"), propertyToLF(arg) )
 */
 		}
 	}
@@ -191,7 +191,7 @@ object Test2 {
 				
 				case p : OWLObjectInverseOf =>
 		        val arg = p.getInverse
-		        ApplySpine(OWLOMS("OWL2QL", "objectInverseOf"), propertyToLF(arg) )
+		        ApplySpine(OWL2OMS("OWL2QL", "objectInverseOf"), propertyToLF(arg) )
 			}
 			
 			case p : OWLDataPropertyExpression =>
@@ -255,26 +255,25 @@ object Test2 {
 		dr match {
 			 case dr : OWLDatatype =>
 			 	 CurrOMS(dr.getIRI)
-			 	 
-			 case dr : OWLDataIntersectionOf =>
-			 	  val args = dr.getOperands.map(dataRangeToLF)
-		          ApplySpine(OWLOMS("OWL2SUB", "dataIntersectionOf"), args.toList : _*)
-		          
-			 case dr : OWLDataUnionOf =>
-			 	  val args = dr.getOperands.map(dataRangeToLF)
-		          ApplySpine(OWLOMS("OWL2QL", "dataUnionOf"), args.toList : _*)
-		          
+			 	
+			 case dr : OWLNaryDataRange => 
+			 	val name = dr match {
+			 		case dr : OWLDataIntersectionOf => "dataIntersectionOf"
+			 		case dr : OWLDataUnionOf => "dataUnionOf"
+			 	}
+			 	val args = dr.getOperands.map(dataRangeToLF)
+		        ApplySpine(OWL2OMS("OWL2SUB", name), args.toList : _*)
+			         
 			 case dr : OWLDataComplementOf =>
 			 	  val arg = dr.getDataRange()
-		          ApplySpine(OWLOMS("OWL2QL", "dataComplementOf"), dataRangeToLF(arg) )
+		          ApplySpine(OWL2OMS("OWL2QL", "dataComplementOf"), dataRangeToLF(arg) )
 		          
 		  // case dr : OWLDataOneOf =>  takes literals (lt1,...,ltn)
 		 	    
 		  // case dr : OWLDatatypeRestriction => takes (datatype, F1 lt1, ...,Fn ltn)
 		          
 		}
-		
-		
+				
 	}
 	
 	def ontologyToLF(manager : OWLOntologyManager, controller : Controller, ontology : OWLOntology) {
@@ -286,7 +285,7 @@ object Test2 {
 	    val document = new Document(dpath)
 		controller.add(document)
 		
-		val theory = new DeclaredTheory(dpath, LocalPath(List("_")), Some(OWL ? "OWL2Full")) //constructor. doc, name, meta
+		val theory = new DeclaredTheory(dpath, LocalPath(List("_")), Some(OWL2 ? "OWL2Full")) //constructor. doc, name, meta
 		controller.add(theory)
 		currThy = theory.path
 		controller.add(MRef(dpath, currThy, true))
@@ -328,57 +327,31 @@ object Test2 {
 
 	def axiomToLF(ax : OWLAxiom) = { // def axiomToLF(ax : OWLAxiom) : Constant = {} constant donduruyor mu kontrol et
 		ax match {
-
+/*	if(isAnnotated()) AnnotationToLF(ax) */
 // Declaration
 				case ax : OWLDeclarationAxiom =>
 				 	println(ax.getAxiomType)
 				 	var entity : OWLEntity = ax.getEntity
-				 	
-				 	if(entity.isBuiltIn())
-				 		   println(entity.toStringID())
-				 		   
-				 	else if(entity.isOWLAnnotationProperty())
-					       println(entity.toStringID() + ":" + "annotationProperty" + "." )
-						   					       
-					else if(entity.isOWLClass) {
-						   //println("old: " + entity.toStringID()+ " : " + "class" + "." )
-						   val name = IRItoLocalPath(entity.getIRI)
-						   // woman  
-						   val tp  = OWLOMS("OWLBase", "class")     // type , module and name //OWLBase or OWL2SUB?????? 
-						   addConstant(name, tp)
-					} 
-					
-					else if(entity.isOWLDataProperty) {
-				    	   //println("old: " + entity.toStringID() + " : " + "dataProperty" + "." )
-				    	   
-				    	   val name = IRItoLocalPath(entity.getIRI) 
-						   val tp  = OWLOMS("OWL2SUB", "dataProperty")  
-						   addConstant(name, tp)
-					}
-				 	
-				    else if(entity.isOWLDatatype) {
-				    	   //println(entity.toStringID() + " : " + "dataType" + "." )
-				    	   
-				    	   val name = IRItoLocalPath(entity.getIRI) 
-						   val tp  = OWLOMS("D2", "dataType")    
-		  			       addConstant(name, tp)
-				    }   
-						
-				    else if(entity.isOWLNamedIndividual){
-				    	   // println("old: " + entity.toStringID()+ " : " + "individual" + "." )
-						   
-				    	   val name = IRItoLocalPath(entity.getIRI)  // John
-						   val tp  = OWLOMS("OWLBase", "individual") // type , module and name
-						   addConstant(name, tp)
-				    }
-				    else if(entity.isOWLObjectProperty){
-				    	   // println("old: " + entity.toStringID()+ " : " + "objectProperty" + "." )
-				    	   
-				    	   val name = IRItoLocalPath(entity.getIRI) // hasWife
-						   val tp  = OWLOMS("OWLBase", "objectProperty")     // type , module and name
-   						   addConstant(name, tp)
-				    }
-				    else  println("none")   
+				    val (sig,dec) = 
+				    	if(entity.isBuiltIn())
+				    		("signame","BuiltIn") // have to extend this
+				    	else if(entity.isOWLAnnotationProperty()) // comment
+				    		("OWL2SUB","annotationProperty")
+				    	else if(entity.isOWLClass) // Woman 
+				    		("OWLBase", "class")
+				    	else if(entity.isOWLDataProperty) // hasAge
+				    		("OWL2SUB", "dataProperty")
+				    	else if(entity.isOWLDatatype) 
+				    		("D1", "dataType")
+				    	else if(entity.isOWLNamedIndividual)// John
+				    		("OWLBase", "individual")
+				    	else if(entity.isOWLObjectProperty) // hasWife
+				    		("OWLBase", "objectProperty")
+				    	else  ("none","none") 
+				    	  
+				    val name = IRItoLocalPath(entity.getIRI)
+				    val tp  = OWLOMS(sig,dec) // type , module and name
+				    addConstant(name, tp)
 				    
 				/* en match {
 				 	  case en : OWLIndividual =>
@@ -387,58 +360,50 @@ object Test2 {
 				 	    println("works")
 				   }
 				*/
+							
+// ClassAxiom	
+				case ax : OWLClassAxiom =>
+				    ax match {
+				    	case ax : OWLSubClassOfAxiom =>
+							val name = LocalName("ax" + number()) //num = num+1 
+							val tp = ApplySpine(OWLOMS("OWL2SUB", "subClassOf"), classToLF(ax.getSubClass), classToLF(ax.getSuperClass)) 
+							addConstant(name, tp)
+				
+					/*	case ax : OWLDisjointUnionAxiom =>  */
+			
+				    	case ax : OWLNaryClassAxiom =>	
+							val (sig,dec) = ax match {
+								case ax : OWLEquivalentClassesAxiom => ("OWL2SUB","equivalentClasses")
+								case ax : OWLDisjointClassesAxiom => ("OWL2SUB","disjointClasses")
+							} 
+							val name = LocalName("ax" + number()) 
+							val args = ax.getClassExpressionsAsList.map(classToLF)		
+							val tp = ApplySpine(OWL2OMS(sig,dec), args : _*) 
+							addConstant(name, tp) 
+				   
+				    }	
 				    
-// ClassAxiom		   
-				case ax : OWLSubClassOfAxiom =>
-				  /*println(ax.getAxiomType)
-				  	printClass(ax.getSubClass)
-				  	printClass(ax.getSuperClass)
-				  	println("_" + " : " + "(" + "subClassOf" + ax.getSubClass + ax.getSuperClass + ")" + ".")
-				  */
-				  val name = LocalName("ax" + number()) 
-				  //num = num+1
-				  val tp = ApplySpine(OWLOMS("OWL2SUB", "subClassOf"), classToLF(ax.getSubClass), classToLF(ax.getSuperClass)) 
-				  addConstant(name, tp)
-			     
 				 //Apply(Apply(f,a),b),  ApplySpine(f,a,b)
 				 //con //p* //println
-				  
-			/*	  if(isAnnotated())
-				 	  AnnotationToLF(ax)
-			*/	 	  
-				 
-				case ax : OWLEquivalentClassesAxiom =>	
-				   val name = LocalName("ax" + number()) 
-				   val args = ax.getClassExpressionsAsList.map(classToLF) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "equivalentClasses"), args : _*) 
-				   addConstant(name, tp) 
-				
-				case ax : OWLDisjointClassesAxiom =>
-				   val name = LocalName("ax" + number()) 
-				   val args = ax.getClassExpressionsAsList.map(classToLF) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "disjointClasses"), args : _*) 
-				   addConstant(name, tp)
-				   
-				/*	case ax : OWLDisjointUnionAxiom => */
 				   
 // ObjectPropertyAxiom
 				   
 				case ax : OWLSubObjectPropertyOfAxiom =>
 				  // println("_" + " : " + "(" + "subObjectPropertyOf" + ax.getSubProperty + ax.getSuperProperty + ")" + ".")
 				  val name = LocalName("ax" + number()) 
-				  val tp = ApplySpine(OWLOMS("OWL2SUB", "subObjectPropertyOf"), propertyToLF(ax.getSubProperty), propertyToLF(ax.getSuperProperty))
+				  val tp = ApplySpine(OWL2OMS("OWL2SUB", "subObjectPropertyOf"), propertyToLF(ax.getSubProperty), propertyToLF(ax.getSuperProperty))
 				  addConstant(name, tp)
 				  
 			    case ax : OWLEquivalentObjectPropertiesAxiom =>	
 			       val name = LocalName("ax" + number()) 
 				   val args = ax.getProperties.map(propertyToLF) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "equivalentObjectProperty"), args.toList : _*)
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "equivalentObjectProperty"), args.toList : _*)
 				   addConstant(name, tp)
 			   
 			    case ax : OWLDisjointObjectPropertiesAxiom =>
 				   val name = LocalName("ax" + number()) 
 				   val args = ax.getProperties.map(propertyToLF) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "disjointObjectProperty"), args.toList : _*)
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "disjointObjectProperty"), args.toList : _*)
 				   addConstant(name, tp)
 				   
 			    case ax : OWLInverseObjectPropertiesAxiom => 
@@ -448,63 +413,46 @@ object Test2 {
 				 */  				   
 				   //println("_" + " : " + "(" + "inverseObjectProperties" + ax.getFirstProperty + ax.getSecondProperty + ")" + ".")
 				   val name = LocalName("ax" + number())
-				   val tp = ApplySpine(OWLOMS("OWL2QL", "inverseObjectProperties"), propertyToLF(ax.getFirstProperty), propertyToLF(ax.getSecondProperty)) //?
+				   val tp = ApplySpine(OWL2OMS("OWL2QL", "inverseObjectProperties"), propertyToLF(ax.getFirstProperty), propertyToLF(ax.getSecondProperty)) //?
 				   addConstant(name, tp)
 				   
 				case ax : OWLObjectPropertyDomainAxiom =>
 				  //println("_" + " : " + "(" + "objectPropertyDomain" + ax.getProperty + ax.getDomain + ")" + ".")
 				  val name = LocalName("ax" + number()) 
-				  val tp = ApplySpine(OWLOMS("OWL2SUB", "objectPropertyDomain"), propertyToLF(ax.getProperty), classToLF(ax.getDomain)) 
+				  val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyDomain"), propertyToLF(ax.getProperty), classToLF(ax.getDomain)) 
 			      addConstant(name, tp)
 			  
 			/*	case ax : OWLObjectPropertyRangeAxiom =>
 			      //println("_" + " : " + "(" + "objectPropertyRange" + ax.getProperty + ax.getRange + ")" + ".")
 				  val name =  LocalName("ax" + num)
 			      num = num+1
-				  //?R val tp = ApplySpine(OWLOMS("OWL2SUB", "objectPropertyRange"), propertyToLF(ax.getProperty), classToLF(ax.getRange))
+				  //?R val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyRange"), propertyToLF(ax.getProperty), classToLF(ax.getRange))
 			   	  addConstant(name, tp)
 			*/
-			    case ax : OWLFunctionalObjectPropertyAxiom =>	
-				   // println("_" + " : " + "(" + "functionalObjectProperty" + ax.getProperty +  ")" + ".")
-				   val name = LocalName("ax" + number())
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "functionalObjectProperty"), propertyToLF(ax.getProperty)) 
-				   addConstant(name, tp)
+				case ax : OWLObjectPropertyCharacteristicAxiom =>  
+			    	val (sig,dec) = ax match {
+						case ax : OWLFunctionalObjectPropertyAxiom => ("OWL2SUB","functionalObjectProperty")
+						case ax : OWLInverseFunctionalObjectPropertyAxiom => ("OWL2QL","inverseFunctionalObjectProperty")
+						case ax : OWLReflexiveObjectPropertyAxiom => ("OWL2SUB","reflexiveObjectProperty")
+						case ax : OWLIrreflexiveObjectPropertyAxiom => ("OWL2SUB","irreflexiveObjectProperty")
+						case ax : OWLSymmetricObjectPropertyAxiom => ("OWL2SUB","symmetricObjectProperty")
+						case ax : OWLAsymmetricObjectPropertyAxiom => ("OWL2SUB","asymmetricObjetProperty")
+						case ax : OWLTransitiveObjectPropertyAxiom => ("OWL2SUB","transitiveObjectProperty")
+					}  
+			    	val name = LocalName("ax" + number())
+			    	val tp = ApplySpine(OWL2OMS(sig,dec), propertyToLF(ax.getProperty)) 
+			    	addConstant(name, tp)
 				   
-			    case ax : OWLInverseFunctionalObjectPropertyAxiom =>	
-				   // println("_" + " : " + "(" + "inverseFunctionalObjectProperty" + ax.getProperty +  ")" + ".")
-				   val name = LocalName("ax" + number()) 
-				   val tp = ApplySpine(OWLOMS("OWL2QL", "inverseFunctionalObjectProperty"), propertyToLF(ax.getProperty)) 
-				   addConstant(name, tp)
+			    
 				   
-				case ax : OWLReflexiveObjectPropertyAxiom =>	
-				   // println("_" + " : " + "(" + "reflexiveObjectProperty" + ax.getProperty +  ")" + ".")
-				   val name = LocalName("ax" + number()) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "reflexiveObjectProperty"), propertyToLF(ax.getProperty)) 
-				   addConstant(name, tp)	
+			   
 				   
-				case ax : OWLIrreflexiveObjectPropertyAxiom =>	
-				   // println("_" + " : " + "(" + "irreflexiveObjectProperty" + ax.getProperty +  ")" + ".")
-				   val name = LocalName("ax" + number()) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "irreflexiveObjectProperty"), propertyToLF(ax.getProperty)) 
-				   addConstant(name, tp)   
+					
+				   
+				  
 				
-				case ax : OWLSymmetricObjectPropertyAxiom =>	
-				   // println("_" + " : " + "(" + "symmetricObjectProperty" + ax.getProperty +  ")" + ".")
-				   val name = LocalName("ax" + number()) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "symmetricObjectProperty"), propertyToLF(ax.getProperty)) 
-				   addConstant(name, tp)
-							     
-				case ax : OWLAsymmetricObjectPropertyAxiom =>	
-				   // println("_" + " : " + "(" + "asymmetricObjetProperty" + ax.getProperty +  ")" + ".")
-				   val name = LocalName("ax" + number()) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "asymmetricObjetProperty"), propertyToLF(ax.getProperty)) 
-				   addConstant(name, tp)
-				   
-				case ax : OWLTransitiveObjectPropertyAxiom =>	
-				   // println("_" + " : " + "(" + "transitiveObjectProperty" + ax.getProperty +  ")" + ".")
-				   val name = LocalName("ax" + number()) //p*
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "transitiveObjectProperty"), propertyToLF(ax.getProperty)) 
-				   addConstant(name, tp)
+				
+			
 			
 // DataPropertyAxiom
 				   
@@ -517,7 +465,7 @@ object Test2 {
 			/*    case ax : OWLDataPropertyDomainAxiom =>
 				  //println("_" + " : " + "(" + "dataPropertyDomain" + ax.getProperty + ax.getDomain + ")" + ".")
 				  val name = LocalName("ax" + number()) 
-				  val tp = ApplySpine(OWLOMS("OWL2SUB", "dataPropertyDomain"), propertyToLF(ax.getProperty), classToLF(ax.getDomain)) 
+				  val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataPropertyDomain"), propertyToLF(ax.getProperty), classToLF(ax.getDomain)) 
 			      addConstant(name, tp) 
 			*/
 				   
@@ -525,7 +473,7 @@ object Test2 {
 			      //println("_" + " : " + "(" + "dataPropertyRange" + ax.getProperty + ax.getRange + ")" + ".")
 				  val name = LocalName("ax" + num)
 			      num = num+1
-				  //?R val tp = ApplySpine(OWLOMS("OWL2SUB", "dataPropertyRange"), propertyToLF(ax.getProperty), classToLF(ax.getRange))
+				  //?R val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataPropertyRange"), propertyToLF(ax.getProperty), classToLF(ax.getRange))
 			   	  addConstant(name, tp)
  			*/
 			
@@ -546,13 +494,13 @@ object Test2 {
 				case ax : OWLSameIndividualAxiom =>	
 				   val name = LocalName("ax" + number()) 
 				   val args = ax.getIndividualsAsList.map(individualToLF) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "sameIndividual"), args : _*) 
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "sameIndividual"), args : _*) 
 				   addConstant(name, tp)
 				
 				case ax : OWLDifferentIndividualsAxiom =>	
 				   val name = LocalName("ax" + number()) 
 				   val args = ax.getIndividualsAsList.map(individualToLF) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "differentIndividuals"), args : _*)
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "differentIndividuals"), args : _*)
 				   addConstant(name, tp)
 				   
 				case ax : OWLClassAssertionAxiom => 
@@ -562,7 +510,7 @@ object Test2 {
 			     */
 			       //println("_" + " : " + "(" + "classAssertion" + ax.getClassExpression + ax.getIndividual + ")" + ".")
 				  val name = LocalName("ax" + number()) 
-				  val tp = ApplySpine(OWLOMS("OWL2SUB", "classAssertion"), classToLF(ax.getClassExpression), individualToLF(ax.getIndividual)) 
+				  val tp = ApplySpine(OWL2OMS("OWL2SUB", "classAssertion"), classToLF(ax.getClassExpression), individualToLF(ax.getIndividual)) 
 				  addConstant(name, tp)
 				  
 			    case ax : OWLObjectPropertyAssertionAxiom => 
@@ -573,7 +521,7 @@ object Test2 {
 				 */   
 				   // println("_" + " : " + "(" + "objectPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
 				   val name = LocalName("ax" + number()) 
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "objectPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject))
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject))
 				   addConstant(name, tp)
 				   
 				case ax : OWLNegativeObjectPropertyAssertionAxiom => 
@@ -584,7 +532,7 @@ object Test2 {
 				 */  
 				   // println("_" + " : " + "(" + "negativeObjectPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
 				   val name = LocalName("ax" + number())
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "negativeObjectPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject)) //?
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "negativeObjectPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject)) //?
 				   addConstant(name, tp)
 				      
 			/*  case ax : OWLDataPropertyAssertionAxiom =>
@@ -595,7 +543,7 @@ object Test2 {
 				   
 				   println("_" + " : " + "(" + "dataPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
 				   val name = LocalName("ax" + number())
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "dataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getIndividual), objectToLF(ax.getObject)) //?
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getIndividual), objectToLF(ax.getObject)) //?
                 
 				case ax : OWLNegativeDataPropertyAssertionAxiom => 
 				 /*println("negativeDataPropertyAssertion")
@@ -605,7 +553,7 @@ object Test2 {
 				 */  
 				   // println("_" + " : " + "(" + "negativeDataPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
 				   val name = LocalName("ax" + number())
-				   val tp = ApplySpine(OWLOMS("OWL2SUB", "negativeDataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject)) //?
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "negativeDataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject)) //?
 				   addConstant(name, tp)
 								   
 			 */
@@ -625,9 +573,19 @@ object Test2 {
 		}
 	}
 /*	
+    bu fonksiyonu cagirmadan once isAnnotated diye sor, oyle ise cagir
 	def AnnotationToLF(ax : OWLAxiom) : Term = {
 		val annots = ax.getAnnotations()
-		annots.foreach { ann =>
+		annots.foreach { ann => 
+			val annp: OWLAnnotationProperty = ann.getProperty() 
+			if(annp.isBuiltIn())
+			else if(annp.isComment())
+			else if(annp.isDeprecated())
+			else if(annp.isValue())
+			
+			val annv : OWLAnnotationValue = ann.getValue()
+			val anna : OWLAnnotation = ann.getAnnotations()
+			//isdeprecatedIRIAnnotation()
 		}
 	
 	}	
@@ -653,13 +611,14 @@ object Test2 {
 			//Create a file object that points to the local copy
 			*/
 			
-			val file : File = new File("E:\\Fall10\\CompSem\\Project\\class.owl");
+			
+			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology.owl");
 			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\deneme2.owl");
 			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\MMTtrunk\\implementation\\OWLMMT\\examples\\import.owl");
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\MMTtrunk\\implementation\\OWLMMT\\examples\\ex2.owl");
+			val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\examples\\ex2.owl");
 			
 			//Now load the local copy
-			val test : OWLOntology  = manager.loadOntologyFromOntologyDocument(file);
+		    val test : OWLOntology  = manager.loadOntologyFromOntologyDocument(file);
 			println("Loaded ontology: " + test);
 			
 /*			val arg = args(0)
@@ -684,7 +643,7 @@ object Test2 {
 			println(controller.get(currThy).toNode)
 			println(controller.get(currThy).toString)
 
-		  /*
+					  /*
 			// We can always obtain the location where an ontology was loaded from
 			val documentIRI : IRI  = manager.getOntologyDocumentIRI(localPizza);
 			println("    from: " + documentIRI);
