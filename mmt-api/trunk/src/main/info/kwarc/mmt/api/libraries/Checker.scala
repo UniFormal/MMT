@@ -43,20 +43,10 @@ abstract class ModuleChecker extends Checker {
    def check(s : ContentElement)(implicit lib : Lookup) : CheckResult = try {
       checkModuleLevel(s)
    } catch {
-      case Invalid(msg) => Fail("content element contains ill-formed object: " + msg)
-      case GetError(msg) => Fail("content element contains ill-formed object: get error: " + msg)
+      case e : Error => Fail("content element contains ill-formed object\n" + e.msg)
       //case e => Fail("error during checking: " + e.msg)
    }
    def checkModuleLevel(e: ContentElement)(implicit lib : Lookup) : CheckResult = {
-      def flattenIncl(l: Include, o: Origin) : List[Include] =
-         lib.importsTo(l.from).toList.mapPartial {t =>
-            if (lib.imports(t, l.to)) None
-            else {
-               val i = new Include(l.to, t)
-               i.setOrigin(o)
-               Some(i)
-            }
-      }
       e match {
          case t: DeclaredTheory =>
             checkEmpty(t)
@@ -66,7 +56,11 @@ abstract class ModuleChecker extends Checker {
                   checkTheo(OMMOD(mt), _ => null, _ => null)
                   val mincl = PlainInclude(mt, t.path)
                   mincl.setOrigin(MetaInclude)
-                  val minclflat = flattenIncl(mincl, MetaInclude)
+                  val minclflat = lib.importsTo(OMMOD(mt)).toList.map {from =>
+                     val i = new Include(OMMOD(t.path), from)
+                     i.setOrigin(MetaInclude)
+                     i
+                  }
                   Reconstructed(t :: mincl :: minclflat, HasMeta(t.path, mt) :: d)
                case _ =>
                   Success(d)
@@ -85,8 +79,15 @@ abstract class ModuleChecker extends Checker {
             val par = checkAtomic(l.home)
             val deps = checkTheo(l.from, Includes(par, _), DependsOn(par, _))
             // flattening (transitive closure) of includes 
-            val flat = flattenIncl(l, IncludeClosure)
-            Reconstructed(l:: flat.toList, deps)
+            val flat = lib.importsTo(l.from).toList.mapPartial {t =>
+               if (lib.imports(t, l.home)) None
+               else {
+                  val i = new Include(l.home, t)
+                  i.setOrigin(IncludeClosure)
+                  Some(i)
+               }
+            }
+            Reconstructed(l :: flat, deps)
          case s: DeclaredStructure =>
             checkEmpty(s)
             val par = checkAtomic(s.home)
@@ -274,14 +275,14 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
       val p = a.home match {
          case OMMOD(p) => p
          case OMDL(OMMOD(p), name) => OMMOD(p) % name 
-         case _ => throw Invalid("adding assignment to non-declared-view")
+         case _ => throw Invalid("adding assignment to non-atomic link")
       }
       val l = lib.get(p) match {
          case l: DeclaredLink => l
-         case _ => throw Invalid("adding assignment to non-declared-view") 
+         case _ => throw Invalid("adding assignment to non-declared link") 
       }
       val s = try {lib.get(l.from % a.name)}
-              catch {case _ => throw Invalid("assignment to undeclared name")}
+              catch {case e : Error => throw Invalid("assignment to undeclared name").setCausedBy(e)}
       (l, s)
    }
    /**
@@ -306,8 +307,8 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
          case OMID(path) =>
             //val toccs = checkTheo(path.parent) TODO check theory?
             val s = try {lib.get(path)}
-                    catch {case GetError(msg) =>
-                                throw Invalid("ill-formed constant reference: " + msg)
+                    catch {case e: GetError =>
+                                throw Invalid("ill-formed constant reference").setCausedBy(e)
                     }
             s match {
                case a : Alias =>

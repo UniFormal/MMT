@@ -92,7 +92,7 @@ object MetaDatum {
    def parse(node: Node, base: Path) : MetaDatum = node match {
       case <link/> =>
          val key = Path.parseS(xml.attr(node, "rel"), base)
-         Link(key, new xml.URI(xml.attr(node, "resource")))
+         Link(key, URI(xml.attr(node, "resource")))
       case <meta>{literal}</meta> =>
          val key = Path.parseS(xml.attr(node, "property"), base)
          literal match {
@@ -106,8 +106,8 @@ object MetaDatum {
 
 /** Helper object to distinguish MetaDatum's whose objects are URIs (<link>) from other ones (<meta>) */
 object Link {
-   def apply(key: GlobalName, uri: utils.xml.URI) = new MetaDatum(key, OMURI(uri))
-   def unapply(d: MetaDatum) : Option[(GlobalName, utils.xml.URI)] = d.value match {
+   def apply(key: GlobalName, uri: utils.URI) = new MetaDatum(key, OMURI(uri))
+   def unapply(d: MetaDatum) : Option[(GlobalName, utils.URI)] = d.value match {
       case OMURI(uri) => Some((d.key, uri))
       case _ => None
    }

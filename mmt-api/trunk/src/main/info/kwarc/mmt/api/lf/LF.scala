@@ -26,7 +26,7 @@ import Conversions._
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
 object LF {
-   val lfbase = new DPath(new xml.URI("http", "cds.omdoc.org", "/logical_frameworks/lf/lf.omdoc", null))
+   val lfbase = new DPath(URI("http", "cds.omdoc.org") / "logical_frameworks" / "lf" / "lf.omdoc")
    val lftheory = lfbase ? "lf"
    def constant(name : String) = OMID(lftheory ? name)
    val ktype = constant("type")
