@@ -438,7 +438,7 @@ object Test {
 				   controller.add(con)
 				   
 				   println(con.toString)
-				   
+				  
 				  
 				case ax : OWLSameIndividualAxiom =>	
 							  
