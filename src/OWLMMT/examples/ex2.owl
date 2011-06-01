@@ -75,7 +75,7 @@
     <Declaration>
         <NamedIndividual IRI="/Bill"/>
     </Declaration>
-    
+   <!-- 
     
     <ClassAssertion>
         <Class IRI="/Woman"/>
@@ -138,7 +138,7 @@
     <FunctionalObjectProperty>
      <ObjectProperty IRI="hasWife"/>
     </FunctionalObjectProperty>
-   
+
     <InverseFunctionalObjectProperty>
      <ObjectProperty IRI="hasWife"/>
     </InverseFunctionalObjectProperty>
@@ -146,7 +146,7 @@
     <TransitiveObjectProperty>
      <ObjectProperty IRI="hasAncestor"/>
     </TransitiveObjectProperty>
-    
+   
     <EquivalentClasses>
      <Class IRI="Person"/>
      <Class IRI="Human"/>
@@ -219,7 +219,7 @@
      <NamedIndividual IRI="Mary"/>
    </ObjectOneOf>
   </EquivalentClasses>
-
+-->
 </Ontology>
 
 
