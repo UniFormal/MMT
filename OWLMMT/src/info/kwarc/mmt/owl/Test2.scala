@@ -28,7 +28,7 @@ import info.kwarc.mmt.api.objects._  //import jomdoc.objects.{Term,OMS,OMI}
 import info.kwarc.mmt.api.utils._
 
 object Test2 {
-	var num : Int = 1
+	var num : Int = 0
 	//val OWL = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl.omdoc"))
 	val OWL = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl.omdoc") 
    val OWL2 = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl2.omdoc") 
@@ -44,9 +44,9 @@ object Test2 {
 	def printProperty(p : OWLObjectPropertyExpression){println(p)} //boyle olmali def printProperty(p : OWLPropertyExpression ){println(p)} 
 	def printObject(o: OWLPropertyAssertionObject){println(o)}
 	
-	def number() {
-		print(num)
+	def number() : String = {
 		num = num+1
+		num.toString
 	}
 	
 	def IRItoLocalPath(i: IRI) = {
