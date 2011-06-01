@@ -29,8 +29,9 @@ import info.kwarc.mmt.api.utils._
 
 object Test2 {
 	var num : Int = 1
-	val OWL = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl.omdoc"))
-	val OWL2 = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl2.omdoc")) 
+	//val OWL = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl.omdoc"))
+	val OWL = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl.omdoc") 
+   val OWL2 = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl2.omdoc") 
 	var currThy : MPath = null
 
 	val checker = new FoundChecker(DefaultFoundation)
@@ -49,11 +50,16 @@ object Test2 {
 	}
 	
 	def IRItoLocalPath(i: IRI) = {
-		 LocalName(i.toString) 
+	   val uri = utils.URI.fromJava(i.toURI)
+	   val name = uri.fragment match {
+	      case Some(s) => s
+         case None => uri.path.last
+	   }
+		LocalName(name) 
 	}
 	
 	def IRItoMMTURI(i: IRI) : MPath = {
-				val dpath = DPath(new xml.URI(i.toURI)) 
+				val dpath = DPath(utils.URI.fromJava(i.toURI)) 
 				new MPath(dpath, LocalPath(List(i.toString + "?" + "_"))) // mmturi
 	}
 	
@@ -281,7 +287,7 @@ object Test2 {
 		val documentIRI : IRI  = manager.getOntologyDocumentIRI(ontology)
 		println("from: " + documentIRI)
 			
-		val dpath = DPath(new xml.URI(documentIRI.toURI)) 
+		val dpath = DPath(utils.URI.fromJava(documentIRI.toURI)) 
 	    val document = new Document(dpath)
 		controller.add(document)
 		
@@ -611,14 +617,14 @@ object Test2 {
 			//Create a file object that points to the local copy
 			*/
 			
-			
+			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\class.owl");
 			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology.owl");
 			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\deneme2.owl");
 			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\MMTtrunk\\implementation\\OWLMMT\\examples\\import.owl");
-			val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\examples\\ex2.owl");
+			val file : File = new File("examples\\ex2.owl");
 			
 			//Now load the local copy
-		    val test : OWLOntology  = manager.loadOntologyFromOntologyDocument(file);
+		   val test : OWLOntology  = manager.loadOntologyFromOntologyDocument(file);
 			println("Loaded ontology: " + test);
 			
 /*			val arg = args(0)
