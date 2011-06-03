@@ -69,7 +69,7 @@ class DRef(p : DPath, override val target : DPath) extends XRef(p, target) {
    def toNode = <omdoc href={target.toPath}/>
 }
 object DRef {
-   def apply(p : DPath, target : DPath, generated: Boolean): DRef = {
+   def apply(p : DPath, target : DPath, generated: Boolean = false): DRef = {
       val r = new DRef(p, target)
       if (generated) r.setOrigin(DocumentSkeleton)
       r
@@ -81,7 +81,7 @@ class MRef(p : DPath, override val target : MPath) extends XRef(p, target) {
    def toNode = <mref target={target.toPath}/>
 }
 object MRef {
-   def apply(p : DPath, target : MPath, generated: Boolean): MRef = {
+   def apply(p : DPath, target : MPath, generated: Boolean = false): MRef = {
       val r = new MRef(p, target) 
       if (generated) r.setOrigin(DocumentSkeleton)
       r

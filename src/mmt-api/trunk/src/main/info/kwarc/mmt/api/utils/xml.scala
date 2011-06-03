@@ -101,6 +101,7 @@ object URI {
    def apply(s: String, a: String) : URI = URI(Some(s), Some(a), Nil, false, None, None)
    def apply(scheme : String, authority : String, path : List[String], query : String) : URI =
       (URI(scheme, authority) / path) ? query
+   def file(absolute : Boolean, path: String*) = URI(Some("file"), None, path.toList, absolute, None, None)
    implicit def toJava(u : URI) : java.net.URI = u.toJava
    implicit def fromJava(u : java.net.URI) = apply(u)
 }
