@@ -28,7 +28,6 @@ case class Exception(msg : String) extends java.lang.Throwable
 
 object Test2 {
 	var num : Int = 0
-	//val OWL = new DPath(new xml.URI("http://cds.omdoc.org/logics/description/owl/owl.omdoc"))
 	val OWL = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl.omdoc") 
     val OWL2 = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl2.omdoc") 
 	var currThy : MPath = null
@@ -40,7 +39,7 @@ object Test2 {
 		
 	def printClass(c : OWLClassExpression ){println(c)}
 	def printIndividual(i : OWLIndividual){println(i)}
-	def printProperty(p : OWLObjectPropertyExpression){println(p)} //boyle olmali def printProperty(p : OWLPropertyExpression ){println(p)} 
+	def printProperty[R <: OWLPropertyRange, P <: OWLPropertyExpression[R,P]](p : OWLPropertyExpression[R,P]){println(p)} 
 	def printObject(o: OWLPropertyAssertionObject){println(o)}
 	
 	def number() : String = {
@@ -92,8 +91,9 @@ object Test2 {
 					case c : OWLObjectComplementOf =>
 		        		val arg = c.getOperand
 		        		ApplySpine(OWL2OMS("OWL2QL", "objectComplementOf"), classToLF(arg) )
-		     	}	
-		
+		     	}
+		    	
+		    //OWLQuantifiedRestriction 	
 		    case c : OWLQuantifiedObjectRestriction => 
 		        val (sig,dec) = c match {
 		        	case c : OWLObjectAllValuesFrom => ("OWL2QL","objectAllValuesFrom")  // hasChild son  
@@ -112,42 +112,44 @@ object Test2 {
 		        val arg2 = c.getFiller
 		        ApplySpine(OWL2OMS(sig,dec), propertyToLF(arg1), dataRangeToLF(arg2))
 		               
-     		//	Arbitrary (Full) cardinality   
-		    case c : OWLObjectCardinalityRestriction =>
+     		/*   
+		    case c : OWLObjectCardinalityRestriction => //Arbitrary (Full) cardinality
 		    	val dec = c match {
-		        	case c: OWLObjectExactCardinality => "objectExactCardinality"
+		        	case c: OWLObjectExactCardinality => "objectExactCardinality" //4 hasChild
 		        	case c: OWLObjectMinCardinality => "objectMinCardinality" 
 		        	case c: OWLObjectMaxCardinality => "objectMaxCardinality"
-		        	//objectMaxCardinality   : tm nonNegativeInteger -> objectProperty -> class. %%4 hasChild
+		        	//objectMaxCardinality   : tm nonNegativeInteger -> objectProperty -> class. 
 		        }
 		        
 //? intToLF ne olacak?
 		        
-		        val arg1 = intToLF(c.getCardinality) //non-negative integer 
+		        val arg1 = c.getCardinality //non-negative integer 
 		        val arg2 = c.getProperty
-		       // objectMaxCardinalityQualified   : tm nonNegativeInteger -> objectProperty -> class -> class. %%4 hasChild parent 
+		       
 		        if(c.isQualified) { 
 		        	val arg3 = c.getFiller
-		        	ApplySpine(OWL2OMS("OWL2SUB", dec  + "Qualified"), arg1, propertyToLF(arg2), classToLF(arg3) ) //4 hasChild parent
+		        	ApplySpine(OWL2OMS("OWL2SUB", dec  + "Qualified"), intToLF(arg1), propertyToLF(arg2), classToLF(arg3) ) //4 hasChild parent
 		        } 
 		        else 
-		        	ApplySpine(OWL2OMS("OWL2SUB", dec), arg1, propertyToLF(arg2))  //4 hasChild
-		       
-		     	
-		 /* case c : OWLDataCardinalityRestriction =>
+		        	ApplySpine(OWL2OMS("OWL2SUB", dec), intToLF(arg1), propertyToLF(arg2))  
+		      
+		    case c : OWLDataCardinalityRestriction =>
 		        val name = c match {
 		        	case c: OWLDataExactCardinality => "dataExactCardinality"
 		        	case c: OWLDataMinCardinality => "dataMinCardinality"
 		        	case c: OWLDataMaxCardinality => "dataMaxCardinality"
 		        }
-		         dataMinCardinality     : tm nonNegativeInteger -> dataProperty -> class.
-		        if (c.isQualified){
+		        val arg1 = c.getCardinality //non-negative integer 
+		        val arg2 = c.getProperty
 		        
+		            if (c.isQualified){
+		        	val arg3 = c.getFiller
+		        	ApplySpine(OWL2OMS("OWL2SUB", dec  + "Qualified"), intToLF(arg1), propertyToLF(arg2), dataRangeToLF(arg3) ) 
 		        }
 		        else
+		        	ApplySpine(OWL2OMS("OWL2SUB", dec), intToLF(arg1), propertyToLF(arg2))
 		 */		        		     	
-		     
-	        
+		           
 	        case c : OWLObjectOneOf =>
 		        val args = c.getIndividuals.map(individualToLF)
 		        ApplySpine(OWL2OMS("OWL2SUB", "objectOneOf"), args.toList : _*)
@@ -161,9 +163,7 @@ object Test2 {
 		    case c : OWLObjectHasSelf =>
 		        val arg = c.getProperty
 		        ApplySpine(OWL2OMS("OWL2SUB", "objectHasSelf"), propertyToLF(arg))
-		        
-
-		 }
+		  }
 	}
 		
 	def individualToLF (i : OWLIndividual) : Term = { 
@@ -175,26 +175,7 @@ object Test2 {
 		       
 		}
 	}
-/*
-	def propertyToLF (p : OWLObjectPropertyExpression ) : Term = {  
-		p match {
-			case p : OWLObjectProperty =>
-				CurrOMS(p.getIRI)
-			/*				
-			case p : OWLObjectInverseOf =>
-		        val arg = p.getInverse
-		        ApplySpine(OWL2OMS("OWL2QL", "objectInverseOf"), propertyToLF(arg) )
-			*/
-		}
-	}
 
-	def dataPropertyToLF (dp : OWLDataPropertyExpression ) : Term = {  
-		dp match {
-			case dp : OWLDataProperty =>
-				CurrOMS(dp.getIRI)
-		}
-	}
-*/
 	def propertyToLF[R <: OWLPropertyRange, P <: OWLPropertyExpression[R,P]] (p : OWLPropertyExpression[R,P]) : Term = {  
 		p match {
 			case p : OWLObjectPropertyExpression =>
@@ -284,12 +265,12 @@ object Test2 {
 				 //CurrOMS(dr.getIRI) buna gerek kalmadi sanirim?
 			
 			case dr : OWLNaryDataRange => 
-			 	val name = dr match {
+			 	val dec = dr match {
 			 		case dr : OWLDataIntersectionOf => "dataIntersectionOf"
 			 		case dr : OWLDataUnionOf => "dataUnionOf"
 			 	}
 			 	val args = dr.getOperands.map(dataRangeToLF)
-		        ApplySpine(OWL2OMS("OWL2SUB", name), args.toList : _*)
+		        ApplySpine(OWL2OMS("OWL2SUB", dec), args.toList : _*)
 			         
 			case dr : OWLDataComplementOf =>
 			 	val arg = dr.getDataRange()
@@ -299,56 +280,14 @@ object Test2 {
 			 	val args = dr.getValues.map(literalToLF)
 			 	ApplySpine(OWL2OMS("OWL2SUB","dataOneOf"),args.toList : _*)
 			 	   
-		    case dr : OWLDatatypeRestriction =>    //xsd:integer xsd:minInclusive "5"^^xsd:integer xsd:maxExclusive "10"^^xsd:integer 
+		    case dr : OWLDatatypeRestriction =>  //xsd:integer xsd:minInclusive "5"^^xsd:integer xsd:maxExclusive "10"^^xsd:integer 
 		    	val arg1 = dr.getDatatype
 		    	val args = dr.getFacetRestrictions.map(facetToLF)
 		    	ApplySpine (OWL2OMS("OWL2SUB","dataTypeRestriction"),  dataRangeToLF(arg1) :: args.toList : _*)
 		}
 	}
 	
-	def ontologyToLF(manager : OWLOntologyManager, controller : Controller, ontology : OWLOntology) {
-	  
-		val documentIRI : IRI  = manager.getOntologyDocumentIRI(ontology)
-		println("from: " + documentIRI)
-			
-		val dpath = DPath(utils.URI.fromJava(documentIRI.toURI)) 
-	    val document = new Document(dpath)
-		controller.add(document)
-		
-		val theory = new DeclaredTheory(dpath, LocalPath(List("_")), Some(OWL2 ? "OWL2Full")) //constructor. doc, name, meta
-		controller.add(theory)
-		currThy = theory.path
-		controller.add(MRef(dpath, currThy, true))
-		
-		//manager.method
-		//java.util.Set<OWLOntology> 	getImportsClosure(OWLOntology ontology) 
-		
-		//java.util.List<OWLOntology> getSortedImportsClosure(OWLOntology ontology)
-		//A list that represents a topological ordering of the imports closure. The first element in the list will be the specified ontology.
-				
-		//ontology.method
-		//java.util.Set<OWLOntology> 	getDirectImports() 
-		//java.util.Set<IRI> 	getDirectImportsDocuments() 
-		
-/* 2		val imports : java.util.List[OWLOntology] = manager.getSortedImportsClosure(ontology) // var type ?
-		imports.foreach {imp =>  // first element is the ontology itself ?
-				val from = IRItoMMTURI(imp.getOntologyID.getOntologyIRI())
-				controller.add(PlainImport(from, currThy))
-		}
-		
-*/
 	
-		// val imports : Set[IRI] = ontology.getDirectImportsDocuments()
-		// imports.foreach { i => 
-	    // cok onemli //if (not in controller zet) ontologyToLF(i)
-        //      val from = IRItoMMTURI(i)
-		//		controller.add(PlainImport(from, currThy))
-		// }
-			
-				val axioms : Set[OWLAxiom] = ontology.getAxioms
-				axioms.foreach(axiom => axiomToLF(axiom)) //axioms.foreach(axiom => controller.add(axiomToLF(axiom)))
-	}
-
 	
 	def axiomToLF(ax : OWLAxiom) = { // def axiomToLF(ax : OWLAxiom) : Constant = {} constant donduruyor mu kontrol et
 		ax match {
@@ -377,15 +316,7 @@ object Test2 {
 				    	  
 				    val name = IRItoLocalPath(entity.getIRI)
 				    addConstant(name, tp)
-				    
-				/* en match {
-				 	  case en : OWLIndividual =>
-				 	     //ax.toString
-				 	     // println(ax.name + " : " + "individual" + ".")
-				 	    println("works")
-				   }
-				*/
-							
+				
 // ClassAxiom	
 				case ax : OWLClassAxiom =>
 				    ax match {
@@ -407,12 +338,8 @@ object Test2 {
 							val args = ax.getClassExpressionsAsList.map(classToLF)		
 							val tp = ApplySpine(OWL2OMS(sig,dec), args : _*) 
 							addConstant(name, tp) 
-				   
 				    }	
 				    
-				 //Apply(Apply(f,a),b),  ApplySpine(f,a,b)
-				 //con //p* //println
-				   
 // ObjectPropertyAxiom
 				   
 				case ax : OWLSubObjectPropertyOfAxiom =>
@@ -448,9 +375,7 @@ object Test2 {
 				case ax : OWLObjectPropertyDomainAxiom =>
 				  //println("_" + " : " + "(" + "objectPropertyDomain" + ax.getProperty + ax.getDomain + ")" + ".")
 				  val name = LocalName("ax" + number()) 
-				  val arg1 = ax.getProperty()
-				  val arg2 = ax.getDomain
-				  val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyDomain"), propertyToLF(arg1), classToLF(arg2)) 
+				  val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyDomain"), propertyToLF(ax.getProperty), classToLF(ax.getDomain)) 
 			      addConstant(name, tp)
 			      
 			    // R? <- getRange
@@ -542,7 +467,10 @@ object Test2 {
 			   		addConstant(name, tp)
 			   
 			    //OWLPeopertyAssertionAxiom
-			   			// OWLObjectPropertyAssertionAxiom, OWLNegativeObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLNegativeDataPropertyAssertionAxiom
+			   			/* OWLObjectPropertyAssertionAxiom, 
+			   			   OWLNegativeObjectPropertyAssertionAxiom,
+			   			   OWLDataPropertyAssertionAxiom, 
+			   			   OWLNegativeDataPropertyAssertionAxiom */
 			    case ax : OWLObjectPropertyAssertionAxiom => 
 				   val name = LocalName("ax" + number()) 
 				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject))
@@ -555,35 +483,43 @@ object Test2 {
 				      
 			 /*  case ax : OWLDataPropertyAssertionAxiom =>
 				   val name = LocalName("ax" + number())
-				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), ?(ax.getObject))
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), ?objectToLF(ax.getObject))
 				   addConstant(name, tp)
-			 */	   
+			 	   
 				  
-				   /*    
+				     
 				case ax : OWLNegativeDataPropertyAssertionAxiom => 
-				 /*println("negativeDataPropertyAssertion")
-				   printIndividual(ax.getSubject)
-				   printProperty(ax.getProperty)
-				   printObject(ax.getObject)
-				 */  
-				   // println("_" + " : " + "(" + "negativeDataPropertyAssertion" + ax.getProperty + ax.getSubject + ax.getObject + ")" + ".")
 				   val name = LocalName("ax" + number())
-				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "negativeDataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), objectToLF(ax.getObject)) //?
+				   val tp = ApplySpine(OWL2OMS("OWL2SUB", "negativeDataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), ?objectToLF(ax.getObject))
 				   addConstant(name, tp)
 								   
-			 */
+			  */
                
 // AnnotationAxiom
 							    
-			 /* case ax : OWLAnnotationAssertionAxiom => */
+			 /* case ax : OWLAnnotationAssertionAxiom => 
+			  * getAnnotation, getProperty, getSubject, getValue
+			  * AnnotationAssertion( AP as av ) as: IRI or anonyind 
+			  * AnnotationAssertion( rdfs:label a:Person "Represents the set of all people." ) */
+				   
 
-			 /*	case ax : OWLSubAnnotationPropertyOfAxiom => */
+			 /*	case ax : OWLSubAnnotationPropertyOfAxiom => 
+			  * getSubProperty, getSuperProperty
+			  * SubAnnotationPropertyOf( AP1 AP2 ) */
 				   
-			 /*	case ax : OWLAnnotationPropertyDomainAxiom => */ 
+			 /*	case ax : OWLAnnotationPropertyDomainAxiom =>
+			  * getDomain, getProperty
+			  * AnnotationPropertyDomain( AP U ) */ 
+			  
 				
-			 /* case ax : OWLAnnotationPropertyRangeAxiom  => */ 
+			 /* case ax : OWLAnnotationPropertyRangeAxiom  => 
+			  * getProperty, getRange
+			  * AnnotationPropertyRange( AP U ), U means IRI*/ 
 				   
-			    case _ => println("else")	
+			    //Apply(Apply(f,a),b),  ApplySpine(f,a,b)
+				   
+				case _ => throw Exception("None of the axioms")	
+			    
 			    
 		}
 	}
@@ -605,7 +541,49 @@ object Test2 {
 	
 	}	
 */
+	def ontologyToLF(manager : OWLOntologyManager, controller : Controller, ontology : OWLOntology) {
+	  
+		val documentIRI : IRI  = manager.getOntologyDocumentIRI(ontology)
+		println("from: " + documentIRI)
+			
+		val dpath = DPath(utils.URI.fromJava(documentIRI.toURI)) 
+	    val document = new Document(dpath)
+		controller.add(document)
+		
+		val theory = new DeclaredTheory(dpath, LocalPath(List("_")), Some(OWL2 ? "OWL2Full")) //constructor. doc, name, meta
+		controller.add(theory)
+		currThy = theory.path
+		controller.add(MRef(dpath, currThy, true))
+		
+		//manager.method
+		//java.util.Set<OWLOntology> 	getImportsClosure(OWLOntology ontology) 
+		
+		//java.util.List<OWLOntology> getSortedImportsClosure(OWLOntology ontology)
+		//A list that represents a topological ordering of the imports closure. The first element in the list will be the specified ontology.
+				
+		//ontology.method
+		//java.util.Set<OWLOntology> 	getDirectImports() 
+		//java.util.Set<IRI> 	getDirectImportsDocuments() 
+		
+/* 2		val imports : java.util.List[OWLOntology] = manager.getSortedImportsClosure(ontology) // var type ?
+		imports.foreach {imp =>  // first element is the ontology itself ?
+				val from = IRItoMMTURI(imp.getOntologyID.getOntologyIRI())
+				controller.add(PlainImport(from, currThy))
+		}
+		
+*/
 	
+		// val imports : Set[IRI] = ontology.getDirectImportsDocuments()
+		// imports.foreach { i => 
+	    // cok onemli //if (not in controller zet) ontologyToLF(i)
+        //      val from = IRItoMMTURI(i)
+		//		controller.add(PlainImport(from, currThy))
+		// }
+			
+				val axioms : Set[OWLAxiom] = ontology.getAxioms
+				axioms.foreach(axiom => axiomToLF(axiom)) //axioms.foreach(axiom => controller.add(axiomToLF(axiom)))
+	}
+
 	def main(args: Array[String]) {
      
 		    //Get hold of an ontology manager
