@@ -30,6 +30,10 @@ mi {
     font-weight: normal;
 }
 
+.math-selected {
+    background: silver;
+}
+
 div.omdoc-view
 {
    border-style: none
