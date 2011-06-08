@@ -430,16 +430,25 @@ latin.init = function(){
 	browserInit();
 }
 
+function unsetSelected(){
+   $('.math-selected').removeAttr('class');
+}
+function setSelected(target){
+   unsetSelected();
+   $(target).attr('class', 'math-selected');
+}
+
 latin.leftClick = function(target){
 	//handling clicks on parts of the document - active only for elements that have jobad:href
 	if (target.hasAttribute('jobad:href')) {
-		latin_navigate(target.getAttribute('jobad:href'));
+		var mr = $(target).closest('mrow');
+		var select = (mr.length == 0) ? target : mr[0];
+		setSelected(select);
 		return true;
 	}
 	// highlight bracketed expression
 	if (getTagName(target) == 'mfenced') {
-		highlight(target);
-		setTimeout(function(){lowlight(target)}, 2000);
+		setSelected(target);
 		return true;
 	}
 	// highlight variable declaration
@@ -449,10 +458,10 @@ latin.leftClick = function(target){
 				document, nsResolver, XPathResult.ANY_UNORDERED_NODE_TYPE, null
 		);
 		var v = res.singleNodeValue;
-		highlight(v);
-		setTimeout(function(){lowlight(v)}, 2000);
+		setSelected(v);
 		return true;
 	}
+	unsetSelected();
 	return false;
 }
 
