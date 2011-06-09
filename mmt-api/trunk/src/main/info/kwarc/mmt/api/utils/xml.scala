@@ -105,13 +105,14 @@ object URI {
    def apply(uri : java.net.URI) : URI = {
       val scheme = nullToNone(uri.getScheme)
       val authority = nullToNone(uri.getAuthority)
-      var jpath = uri.getPath
-      val absolute = jpath.startsWith("/")
-      var path = jpath.split("/",-1).toList
+      val jpath = uri.getPath
+      val (pathString, absolute) = {
+         if (jpath.startsWith("/")) (jpath.substring(1), true)
+         else (jpath, false)
+      }
+      var path = pathString.split("/",-1).toList
       if (path == List(""))  //note: split returns at least List(""), never Nil
          path = Nil
-      if (absolute)
-         path = path.drop(1)
       val query = nullToNone(uri.getQuery)
       val fragment = nullToNone(uri.getFragment)
       URI(scheme, authority, path, absolute, query, fragment)
