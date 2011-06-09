@@ -27,7 +27,7 @@ object Arguments {
 }
 
 object UnitConvImplems {
-  val base = DPath(new utils.xml.URI("http://cds.omdoc.org/foundations/lf/lf.omdoc"))
+  val base = DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
 
   def plus_implem(l : Term*) : Term = {
     def arithm(l : Term*) : Double = {
