@@ -54,6 +54,9 @@ class Boot {
     // requests that are not caught and handled here are passed on to the snippets/templates 
     LiftRules.statelessDispatchTable.append(Rest.handler)
     
+    // Use HTML5 for rendering
+    //LiftRules.htmlProperties.default.set((r: Req) => new Html5Properties(r.userAgent))
+    
     // disable auto-include of lift-javascript for ajax
     LiftRules.autoIncludeAjax = _ => false
     //LiftRules.ajaxPath = ":ajax_request"
