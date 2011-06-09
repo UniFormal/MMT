@@ -91,7 +91,7 @@ object Extractor extends {
        new FileWriter("extracted.scala", true)))
      out.println(UriToPackage(t.parent.toString) + "{")
      out.println("class " + t.name + " {")
-     out.println("  val base = DPath(new utils.xml.URI(\"" +
+     out.println("  val base = DPath(utils.URI(\"" +
        t.parent.toString  + "\"))\n")
 	   t.valueList map {
 	      case c: Constant =>  { // handle constants here
@@ -172,7 +172,7 @@ object Extractor extends {
      }
 
 	   handle(Local)
-	   val file = utils.xml.URI(new java.io.File(args(0)).toURI) // physical location of the file
+	   val file = utils.URI(new java.io.File(args(0)).toURI) // physical location of the file
 	   handle(Read(new java.io.File(args(0))))
 
      /* semantic identifier of the document (given by base attribute) */
