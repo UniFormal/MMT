@@ -345,18 +345,18 @@ case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    override def toString = path.toPath
 }
 
-/*
-case object OMINIT extends TheoryObj with ComposedModuleObject {
-   def role = Role_initial
-    def components = Nil
+case class TEmpty(meta: Option[MPath]) extends TheoryObj with MMTObject {
+   def args = meta match {case Some(m) => List(OMMOD(m)) case None => Nil}
+   def path = mmt.tempty
 }
 
-case class OMPII(left: TheoryObj, right: TheoryObj) extends TheoryObj with ComposedModuleObject {
-   def role = Role_pushout_ii
-   def components = List(left, right)
+case class TUnion(left: TheoryObj, right: TheoryObj) extends TheoryObj with MMTObject {
+   def args = List(left,right)
+   def path = mmt.tunion
    override def toString = left.toString + " + " + right.toString
 }
 
+/*
 case class OMPI(push: TheoryObj, along: Morph, wth: TheoryObj) extends TheoryObj with ComposedModuleObject {
    def role = Role_pushout_i
    def components = List(push, along, wth)
@@ -402,26 +402,19 @@ case class OMIDENT(theory : TheoryObj) extends Morph with MMTObject {
    def path = mmt.identity
 }
 
-case class OMEMPTY(from: TheoryObj, to: TheoryObj) extends Morph with MMTObject {
+case class MEmpty(from: TheoryObj, to: TheoryObj) extends Morph with MMTObject {
    def args = List(from,to)
-   def path = mmt.emptymorphism
+   def path = mmt.mempty
 }
 
-/*
-object OMINITM {
-   def apply(thy : TheoryObj) = OMEMPTY(OMINITIAL, thy)
-   def unapply(t: Obj) : Option[TheoryObj] = t match {
-      case OMEMPTY(OMINITIAL, thy) => Some(thy)
-   }
-}
-
-case class OMUNION(morphs: left: Morph, right: Morph) extends Morph with ComposedModuleObject {
-   def role = Role_pushout_iim
-   def components = List(left, right)
+case class MUnion(left: Morph, right: Morph) extends Morph with MMTObject {
+   def args = List(left, right)
+   def path = mmt.munion
    override def toString = left.toString + " + " + right.toString
 }
 
-case class OMPIM(push: Morph, along: Morph, wth: Morph) extends Morph with ComposedModuleObject {
+/*
+case class OMUNIONPIM(push: Morph, along: Morph, wth: Morph) extends Morph with ComposedModuleObject {
    def role = Role_pushout_im
    def components = List(push, along, wth)
    override def toString = push.toString + " + " + along.toString + " with " + wth.toString 
@@ -565,7 +558,8 @@ object Morph {
       case OMIDENT(t) => t
       case OMCOMP(m :: _) => domain(m)
       case OMCOMP(Nil) => throw ImplementationError("cannot infer domain of empty composition")
-      case OMEMPTY(f,_) => f
+      case MEmpty(f,_) => f
+      case MUnion(l,r) => TUnion(domain(l), domain(r))
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.from}
       } catch {
@@ -582,7 +576,12 @@ object Morph {
       case OMIDENT(t) => t
       case OMCOMP(Nil) => throw ImplementationError("cannot infer codomain of empty composition")
       case OMCOMP(l) => codomain(l.last)
-      case OMEMPTY(_,t) => t
+      case MEmpty(_,t) => t
+      case MUnion(l,r) =>
+         val lc = codomain(l)
+         val rc = codomain(r)
+         if (lc == rc) lc
+         else TUnion(lc, rc)
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.to}
       } catch {

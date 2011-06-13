@@ -157,6 +157,7 @@ case class IncludeStep(from: TheoryObj) extends LNStep {
    def toPath = "[include " + from.toString + "]"
 }
 
+/*
 object LNEmpty {
    def apply() = LocalName(Nil)
    def unapply(n: LocalName) : Option[Unit] = n match {
@@ -164,6 +165,9 @@ object LNEmpty {
       case _ => None
    }
 }
+*/
+
+
 
 /**
  * A LocalRef represents a qualified local possibly relative reference to an MMT module or symbol.
