@@ -5,7 +5,7 @@ import org.semanticweb.owlapi.io._
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.util.SimpleIRIMapper
 
-import java.io.File
+import java.io.{File,FileWriter}
 import java.net.URI
 
 import scala.collection.mutable.Set // 
@@ -27,17 +27,12 @@ import scala.collection.immutable.List //
 
 case class Exception(msg : String) extends java.lang.Throwable
 
-object Test2 {
+class Import (manager : OWLOntologyManager , controller : Controller) {
 	var num : Int = 0
 	val OWL = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl.omdoc") 
     val OWL2 = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl2.omdoc") 
 	var currThy : MPath = null
 
-	val checker = new FoundChecker(DefaultFoundation)
-	val report = new FileReport(new java.io.File("controller.log"))
-	val controller = new Controller(checker, report)
-	//report("owl", "message")
-		
 	def printClass(c : OWLClassExpression ){println(c)}
 	def printIndividual(i : OWLIndividual){println(i)}
 	def printProperty[R <: OWLPropertyRange, P <: OWLPropertyExpression[R,P]](p : OWLPropertyExpression[R,P]){println(p)} 
@@ -48,14 +43,7 @@ object Test2 {
 		num.toString
 	}
 	
-	def IRItoLocalPath(i: IRI) = {
-	   val uri = utils.URI.fromJava(i.toURI)
-	   val name = uri.fragment match {
-	     case Some(s) => s
-         case None => uri.path.last
-	   }
-		LocalName(name) 
-	}
+	def IRItoLocalPath(i: IRI) = LocalName(Utils.IRILast(i)) 
 	
 	def IRItoMMTURI(i: IRI) : MPath = {
 		val dpath = DPath(utils.URI.fromJava(i.toURI)) 
@@ -520,8 +508,7 @@ object Test2 {
 	
 	}	
 */
-	def ontologyToLF(manager : OWLOntologyManager, controller : Controller, ontology : OWLOntology) {
-	  
+	def ontologyToLF(ontology : OWLOntology) : DPath = {
 		val documentIRI : IRI  = manager.getOntologyDocumentIRI(ontology)
 		println("from: " + documentIRI)
 			
@@ -551,6 +538,7 @@ object Test2 {
 		}
 		
 */
+		
 	
 		// val imports : Set[IRI] = ontology.getDirectImportsDocuments()
 		// imports.foreach { i => 
@@ -563,88 +551,40 @@ object Test2 {
 				val (logicals,nonLogicals) = axioms.partition((a : OWLAxiom) => a.isLogicalAxiom)
 				nonLogicals.foreach(axiom => axiomToLF(axiom))
 				logicals.foreach(axiom => axiomToLF(axiom)) //axioms.foreach(axiom => controller.add(axiomToLF(axiom)))
+				dpath
 	}
+}
 
+object Import {
 	def main(args: Array[String]) {
-     
-		    //Get hold of an ontology manager
-			val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
-			controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
-
-			/*	
-		    //Load an ontology from the web
-			val iri : IRI = IRI.create("http://www.co-ode.org/ontologies/pizza/pizza.owl");
-			val pizzaOntology : OWLOntology  = manager.loadOntologyFromOntologyDocument(iri); 
-			println("Loaded ontology: " + pizzaOntology);
-			
-			//Remove the ontology so that we can load a local copy.
-			manager.removeOntology(pizzaOntology);
 		
-			//Load ontologies from files.  Download the pizza ontology from
-			//http://www.co-ode.org/ontologies/pizza/pizza.owl and put it somewhere on your hard drive
-			//Create a file object that points to the local copy
-			*/
-
-			//val file : File = new File("examples\\ex2.owl");
-			
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\declarationAxiom.owl");
-			val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\classAxiom.owl");
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\dataRange.owl");
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\classExpressions.owl");
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology.owl");
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\deneme2.owl");
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\MMTtrunk\\implementation\\OWLMMT\\examples\\import.owl");
-			//val file : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\ex2.owl");
-			
-			//Now load the local copy
-		   val test : OWLOntology  = manager.loadOntologyFromOntologyDocument(file);
-			println("Loaded ontology: " + test);
-			
-/*			val arg = args(0)
-			val file : File = new File(arg)
-			val test : OWLOntology  = manager.loadOntologyFromOntologyDocument(file)
-			println("Loaded ontology: " + test)
-*/
-			
-// 1		val imports : java.util.List[OWLOntology] = manager.getSortedImportsClosure(test) 
-			
-			//manager.getOntologies.foreach {onto => ontologyToLF(manager, controller, onto )} sor ?
-			ontologyToLF(manager, controller, test )
-			
-		    //println("%" + "sig" + "ex" + "=" + "{" )
-		    //%include OWL2SUB %open.
-	
-		/*	val axioms : Set[OWLAxiom] = test.getAxioms
-			//lambda ax.F  ax => F
-			axioms.foreach(ax => ax match {
-				case ax : OWLDeclarationAxiom => ...
-		*/	
-			println(controller.get(currThy).toNode)
-			println(controller.get(currThy).toString)
-
-					  /*
-			// We can always obtain the location where an ontology was loaded from
-			val documentIRI : IRI  = manager.getOntologyDocumentIRI(localPizza);
-			println("    from: " + documentIRI);
-			
-			// Remove the ontology again so we can reload it later
-			manager.removeOntology(pizzaOntology);
+		val checker = new FoundChecker(DefaultFoundation)
+		val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
+		val controller = new Controller(checker, report)
+		controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
+		val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
+		val importer = new Import (manager, controller)
 		
-			// In cases where a local copy of one of more ontologies is used, an ontology IRI mapper can be used
-			// to provide a redirection mechanism.  This means that ontologies can be loaded as if they were located
-			// on the web.
-			// In this example, we simply redirect the loading from http://www.co-ode.org/ontologies/pizza/pizza.owl
-			// to our local copy above.
-			 
-			manager.addIRIMapper(new SimpleIRIMapper(iri, IRI.create(file)));
-			// Load the ontology as if we were loading it from the web (from its ontology IRI)
-			pizzaOntologyIRI : IRI = IRI.create("http://www.co-ode.org/ontologies/pizza/pizza.owl");
-			redirectedPizza : OWLOntology = manager.loadOntology(pizzaOntologyIRI);
-			println("Loaded ontology: " + redirectedPizza);
-			println("    from: " + manager.getOntologyDocumentIRI(redirectedPizza));
+		/*	
+		    
+			val source : File = new File(arg(0))
+			val target : File = new File(arg(1))
 			
-			// Note that when imports are loaded an ontology manager will be searched for mappings
- 		 */
-	}
+		*/
+		//val file : File = new File("examples\\ex2.owl");
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\classAxiom.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\classAxiom.omdoc") 
+		
+		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
+		println("Loaded ontology: " + ontology)
 
-} //object Test2 nin parantezi
+		//manager.getOntologies.foreach {onto => ontologyToLF(manager, controller, onto )} sor ?
+		val dpath = importer.ontologyToLF(ontology)
+		val doc = controller.getDocument(dpath).toNodeResolved(controller.library)
+		println(doc.toString)	
+		
+		val file = new FileWriter(target)
+		file.write(doc.toString)
+		file.close
+   }
+}
