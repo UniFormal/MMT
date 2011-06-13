@@ -131,6 +131,16 @@ abstract class ModuleChecker extends Checker {
      case OMMOD(p) =>
        checkTheoRef(p)
        List(atomic(p))
+     case TEmpty(mt) => mt match {
+        case None => Nil
+        case Some(mt) =>
+           checkTheo(OMMOD(mt), _ => null, _ => null)
+           List(atomic(mt))
+     }
+     case TUnion(l,r) =>
+        //TODO check same meta-theory?
+        val lr = checkTheo(l, atomic, nonatomic) ::: checkTheo(r, atomic, nonatomic)
+        lr.distinct
    }
   /** checks whether a morphism object is well-formed relative to a library and infers its type
     *  @param lib the library
@@ -161,9 +171,18 @@ abstract class ModuleChecker extends Checker {
            case None => throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
         }
         (l1 ::: l2 ::: l3, r, t)
-     case OMEMPTY(f,t) =>
+     case MEmpty(f,t) =>
         val occs = checkTheo(f, p => p, p => p) ::: checkTheo(t, p => p, p => p)
         (occs, f,t)
+     case MUnion(l,r) =>
+        val (loccs, ld, lc) = inferMorphism(l)
+        val (roccs, rd, rc) = inferMorphism(r)
+        // TODO l === r on (intersection ld rd)
+        val dom = TUnion(ld, rd)
+        val cod = if (lib.imports(lc, rc)) rc
+           else if (lib.imports(rc, lc)) lc
+           else TUnion(rc, lc)
+        (loccs ::: roccs, dom ,cod)
    }
    def checkInclude(from: TheoryObj, to: TheoryObj)(implicit lib : Lookup) : Option[List[Path]] = {
         if (from == to) Some(Nil)
