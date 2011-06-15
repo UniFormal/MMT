@@ -122,7 +122,7 @@ abstract class ModuleChecker extends Checker {
 
    /** checks whether a theory object is well-formed relative to a library
     *  @param t the theory
-    *  @parem atomic return value to construct if the theory is atomic
+    *  @param atomic return value to construct if the theory is atomic
     *  @param nonatomic return value to construct for all occurrences in a nonatomic theory 
     *  @param lib the library
     *  @return the list of return values
