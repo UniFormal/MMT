@@ -1,12 +1,14 @@
 package info.kwarc.mmt.uom
 import info.kwarc.mmt.api._
 import objects._
+import Conversions._
 
 import utils.MyList._
 
 abstract class Result
 case class LocalChange(inside: List[Term]) extends Result
 case class GlobalChange(it: Term) extends Result
+case object NoChange extends Result
 
 abstract class DepthRule(outer: GlobalName, inner: GlobalName) {
    type Rewrite = (List[Term], List[Term], List[Term]) => Result
@@ -65,6 +67,39 @@ class MonoidAction(unit: GlobalName, act: GlobalName) extends DepthRule(act, uni
          case Nil => GlobalChange(after.last)
          case l => LocalChange(Nil)
       }
+}
+
+// beta and eta reduction, this class only applies to the case where application is a special symbol
+class Lambda(lambda: GlobalName, app: GlobalName) {
+   // (lambda x1:A1, ..., xm:Am.s) a1 ... an ---> s[x1/a1, ..., xm/am] a{m+1} ... an   if n >= m
+   // (lambda x1:A1, ..., xm:Am.s) a1 ... an ---> lambda x{n+1}:A{n+1}, ..., xm:Am. s[x1/a1, ..., xn/an]   if n < m
+   object Beta extends DepthRule(app, lambda) {
+      val apply: Rewrite = (before, inside, after) => {
+         if (! before.isEmpty) NoChange else {
+            val vars = inside.init.asInstanceOf[List[VarDecl]]
+            val numvars = vars.length
+            val scope = inside.last
+            val numargs = after.length
+            val reds = if (numvars > numargs)
+               vars.take(numargs).zip(after)
+            else
+               vars.zip(after.take(numvars))
+            val sub = reds map {case (v,a) => Sub(v.name, a)}
+            val reduced = scope ^ sub
+            if (numvars > numargs)
+               GlobalChange(OMBIND(OMID(lambda), vars.drop(numargs), reduced))
+            else if (numvars == numargs)
+               GlobalChange(reduced)
+            else
+               LocalChange(reduced :: after.drop(numvars))      
+         }
+      }
+   }
+   object Eta extends DepthRule(lambda, app) {
+      val apply: Rewrite = (before, inside, after) => {
+         NoChange //TODO eta reduction
+      }
+   }
 }
 
 abstract class BreadthRule(op: GlobalName) {
