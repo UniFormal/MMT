@@ -15,5 +15,5 @@ class TptpParser {
     parser = new tptp.TptpParser(lexer)
   }
 
-  def parseNext: TptpParserOutput.TptpInput = parser.topLevelItem(outputManager)
+  def parseNext = parser.topLevelItem(outputManager)
 }
