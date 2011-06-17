@@ -78,9 +78,11 @@ class Server(port : Int) extends HServer {
   /** Request handler */
   protected class RequestHandler extends HApp {
     //override def buffered = true
-    def resolve(req : HReqHeaderData) : Option[HLet] = req.uriPath match {
+    def resolve(req : HReqHeaderData) : Option[HLet] = {
+      println("Query: " + req.uriPath + "?" + req.query)
+      req.uriPath match {
       case "help" | "" => {
-        Some(TextResponse(readmeText))
+        Some(TextResponse(readmeText, None))
       }
       case "admin" => {
         if (req.query == "") {
@@ -102,7 +104,7 @@ class Server(port : Int) extends HServer {
           Storage.addExclusion(java.net.URLDecoder.decode(req.query.substring("addExclusion=".length), "UTF-8"))
           Some(HTMLResponse(updateLocations(adminHtml).toString))
         }}
-        else Some(TextResponse("Invalid query: " + req.query))
+        else Some(TextResponse("Invalid query: " + req.query, None))
       }
       case "crawlAll"  => { ConflictGuard.synchronized { 
         Storage.crawlAll
@@ -117,13 +119,13 @@ class Server(port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val commentText = Storage.getMeta(stringUri, true)
-            Some(TextResponse(commentText))
+            Some(TextResponse(commentText, None))
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri))
-            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri))
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri, None))
+            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
       }
       case "getMeta" => {
         if (req.query.startsWith("uri=")) {
@@ -131,13 +133,13 @@ class Server(port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val commentText = Storage.getMeta(stringUri)
-            Some(TextResponse(commentText))
+            Some(TextResponse(commentText, None))
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri))
-            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri))
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri, None))
+            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
       }
       case "getText" => {
         if (req.query.startsWith("uri=")) {
@@ -145,14 +147,24 @@ class Server(port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val text = Storage.getText(stringUri)
-            Some(TextResponse(text))
+            var position : Option[String] = None
+            try {
+                position = Some(Storage.getPosition(stringUri))
+            }
+            catch {
+                case StorageError(s) =>  // if the uri does not point to a module, cst or structure declaration, don't return the position
+            }
+            if (position.isDefined)
+                Some(TextResponse(text, Some(Pair("X-Source-url", "file:" + position.get))))
+            else
+                Some(TextResponse(text, None))
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri))
-            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri))
-            case FileOpenError(s)   => Some(TextResponse(s))
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri, None))
+            case StorageError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri, None))
+            case FileOpenError(s)   => Some(TextResponse(s, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
       }
       case "getDependencies" => {
         if (req.query.startsWith("uri=")) {
@@ -160,13 +172,13 @@ class Server(port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val dependencies = Storage.getDependencies(stringUri)
-            Some(TextResponse(dependencies.mkString("\n")))
+            Some(TextResponse(dependencies.mkString("\n"), None))
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri))
-            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri))
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri, None))
+            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
       }
       case "getChildren" => {
         if (req.query.startsWith("uri=")) {
@@ -174,13 +186,13 @@ class Server(port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val children = Storage.getChildren(stringUri)
-            Some(TextResponse(children.mkString("\n")))
+            Some(TextResponse(children.mkString("\n"), None))
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri))
-            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri))
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri, None))
+            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
       }
       case "getPosition" => {
         if (req.query.startsWith("uri=")) {
@@ -188,13 +200,13 @@ class Server(port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val position = Storage.getPosition(stringUri)
-            Some(TextResponse(position))
+            Some(TextResponse(position, None))
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri))
-            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri))
+            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri, None))
+            case StorageError(s)    => Some(TextResponse("Unknown URI: " + stringUri, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
       }
       case "getOmdoc" => {
         if (req.query.startsWith("url=")) {
@@ -202,12 +214,12 @@ class Server(port : Int) extends HServer {
           try {
             stringUrl = java.net.URLDecoder.decode(req.query.substring("url=".length), "UTF-8")
             val omdoc = Storage.getOmdoc(stringUrl)
-            Some(TextResponse(omdoc))
+            Some(TextResponse(omdoc, None))
           } catch {
-            case StorageError(s)    => Some(TextResponse(s))
+            case StorageError(s)    => Some(TextResponse(s, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected", None))
       }
       case "getNSIntroduced" => {
         if (req.query.startsWith("url=")) {
@@ -215,31 +227,46 @@ class Server(port : Int) extends HServer {
           try {
             stringUrl = java.net.URLDecoder.decode(req.query.substring("url=".length), "UTF-8")
             val URIs = Storage.getNSIntroduced(stringUrl)
-            Some(TextResponse(URIs.mkString("\n")))
+            Some(TextResponse(URIs.mkString("\n"), None))
           } catch {
-            case StorageError(s)    => Some(TextResponse(s))
+            case StorageError(s)    => Some(TextResponse(s, None))
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected"))
+        else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected", None))
       }
-      case _        => Some(TextResponse("Invalid path: " + req.uriPath))
-    }
+      case _        => Some(TextResponse("Invalid path: " + req.uriPath, None))
+    }}
   }
-  private def TextResponse(text : String) : HLet = new HLet {
+  
+  /** A text response that the server sends back to the browser
+    * @param text the message that is sent in the HTTP body
+    * @param header optionally, a custom header tag, given as Pair(tag, content) that is added to the HTTP header
+    */
+  private def TextResponse(text : String, header : Option[Pair[String, String]]) : HLet = new HLet {
     def act(tk : HTalk) {
       val out = text.getBytes("UTF-8")
       // !sending data in the header as well!
       // prepare data for sending within a header: replace \r with `r, \n with `n, ` with `o
-      val escapedText : String = text.replaceAll("`","`o")
+      /*val escapedText : String = text.replaceAll("`","`o")
                                      .replaceAll("\r","`r")
-                                     .replaceAll("\n","`n")
+                                     .replaceAll("\n","`n")*/
       tk.setContentLength(out.size) // if not buffered
         .setContentType("text/plain; charset=utf8")
-        .setHeader("mydata", escapedText)  
-        .write(out)
+      if (header.isDefined) {
+          val headerTag = header.get._1
+          val headerContent = header.get._2
+          println(headerTag + ": " + headerContent)
+          tk.setHeader(headerTag, headerContent)
+      }
+      println(text)
+      tk.write(out)
         .close
     }
   }
+  
+  /** An HTML response that the server sends back to the browser
+    * @param text the HTML message that is sent in the HTTP body
+    */
   private def HTMLResponse(text : String) : HLet = new HLet {
     def act(tk : HTalk) {
       val out = text.getBytes("UTF-8")

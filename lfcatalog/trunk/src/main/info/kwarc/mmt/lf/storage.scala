@@ -102,19 +102,20 @@ object Storage {
       case _ => {
         uri = new URI(stringUri) 
         if (uriToNamedBlock.isDefinedAt(uri)) {
-          val url = uriToNamedBlock(uri).url
+          val namedBlock = uriToNamedBlock(uri)    // presumably a theory or a view
+          val url = namedBlock.url
           val fileUrl = url.getPath
-          val pos = url.getFragment.split("[(,)]").filter(_.nonEmpty).map(_.toInt)   // Array(firstLine, firstCol, lastLine, lastCol)
-          println("position: " + pos.mkString(" "))
+          val pos = namedBlock.pos
+          //println("position: " + pos)
           val doc = new File(fileUrl)
           if (!doc.canRead)
             throw FileOpenError("error: file cannot be opened")
           try {
             val source = scala.io.Source.fromFile(doc, "utf-8")
-            val lines = source.getLines.toArray.slice(pos(0), pos(2)+1)      // get the desired lines from the file
-            println(lines.mkString("\n"))
+            val lines = source.getLines.toArray.slice(pos._1._1, pos._2._1 + 1)      // get the desired lines from the file
+            //println(lines.mkString("\n"))
             source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
-            return lines.mkString("\n").drop(pos(1)).dropRight(lines.last.length - pos(3) - 1)
+            return lines.mkString("\n").drop(pos._1._2).dropRight(lines.last.length - pos._2._2 - 1)
           } catch {
             case e => throw FileOpenError(e + "error: file cannot be opened or the encoding is not UTF-8")
           }

@@ -13,6 +13,7 @@ class Position(a: Int, b: Int, c: Int, d: Int) extends Pair(Pair(a,b), Pair(c,d)
   /** @param x start position (line and column)
       @param y end position (line and column) */
   def this(x: Pair[Int,Int], y: Pair[Int,Int]) = this(x._1, x._2, y._1, y._2)
+  override def toString = a + "." + b + "-" + c + "." + d
 }
 
 
