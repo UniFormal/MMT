@@ -577,8 +577,8 @@ object Import {
 			
 		*/
 		//val file : File = new File("examples\\ex2.owl");
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DeclarationAxiom.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DeclarationAxiom.omdoc") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\declarationAxiom.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\declarationAxiom.omdoc") 
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
 		println("Loaded ontology: " + ontology)
