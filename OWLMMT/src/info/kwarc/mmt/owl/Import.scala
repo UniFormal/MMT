@@ -511,15 +511,20 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 	def ontologyToLF(ontology : OWLOntology) : DPath = {
 		val documentIRI : IRI  = manager.getOntologyDocumentIRI(ontology)
 		println("from: " + documentIRI)
-			
-		val dpath = DPath(utils.URI.fromJava(documentIRI.toURI)) 
-	    val document = new Document(dpath)
+		
+		val ontologyIRI : IRI  = ontology.getOntologyID.getOntologyIRI
+		println("ontology iri: " + ontologyIRI)
+		
+		val docDPath = DPath(utils.URI.fromJava(documentIRI.toURI))
+		val ontoDPath = DPath(utils.URI.fromJava(ontologyIRI.toURI))
+				
+	    val document = new Document(docDPath) // phys
 		controller.add(document)
 		
-		val theory = new DeclaredTheory(dpath, LocalPath(List("_")), Some(OWL2 ? "OWL2Full")) //constructor. doc, name, meta
+		val theory = new DeclaredTheory(ontoDPath, LocalPath(List("_")), Some(OWL2 ? "OWL2Full")) //log. constructor. doc, name, meta
 		controller.add(theory)
 		currThy = theory.path
-		controller.add(MRef(dpath, currThy, true))
+		controller.add(MRef(docDPath,currThy, true)) // phys, log
 		
 		//manager.method
 		//java.util.Set<OWLOntology> 	getImportsClosure(OWLOntology ontology) 
@@ -551,7 +556,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 				val (logicals,nonLogicals) = axioms.partition((a : OWLAxiom) => a.isLogicalAxiom)
 				nonLogicals.foreach(axiom => axiomToLF(axiom))
 				logicals.foreach(axiom => axiomToLF(axiom)) //axioms.foreach(axiom => controller.add(axiomToLF(axiom)))
-				dpath
+				docDPath
 	}
 }
 
@@ -572,14 +577,14 @@ object Import {
 			
 		*/
 		//val file : File = new File("examples\\ex2.owl");
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\classAxiom.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\classAxiom.omdoc") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DeclarationAxiom.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DeclarationAxiom.omdoc") 
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
 		println("Loaded ontology: " + ontology)
 
 		//manager.getOntologies.foreach {onto => ontologyToLF(manager, controller, onto )} sor ?
-		val dpath = importer.ontologyToLF(ontology)
+		val dpath : DPath = importer.ontologyToLF(ontology)
 		val doc = controller.getDocument(dpath).toNodeResolved(controller.library)
 		println(doc.toString)	
 		
