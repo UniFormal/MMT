@@ -17,7 +17,10 @@ sealed abstract class Obj extends Content {
    /** prints to OpenMath (with OMOBJ wrapper) */
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.None)
-   def toOBJNode = <OMOBJ xmlns:om={xml.namespace("om")}>{toNode}</OMOBJ>
+   def toOBJNode = {
+      val om = xml.namespace("om") // inlining this into XML literal does not work
+      <OMOBJ xmlns:om={om}>{toNode}</OMOBJ>
+   }
    /** applies a substitution to an object (computed immediately) */
    def ^ (sub : Substitution) : Obj
    def head : Option[Path]
