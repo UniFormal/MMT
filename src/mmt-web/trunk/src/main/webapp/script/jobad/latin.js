@@ -431,11 +431,11 @@ latin.init = function(){
 }
 
 function unsetSelected(){
-   $('.math-selected').removeAttr('class');
+   $('.math-selected').removeMClass('math-selected');
 }
 function setSelected(target){
    unsetSelected();
-   $(target).attr('class', 'math-selected');
+   $(target).addMClass('math-selected');
 }
 
 latin.leftClick = function(target){
@@ -443,7 +443,7 @@ latin.leftClick = function(target){
 	if (target.hasAttribute('jobad:href')) {
 		var mr = $(target).closest('mrow');
 		var select = (mr.length == 0) ? target : mr[0];
-		setSelected(select);
+		setSelected(select)
 		return true;
 	}
 	// highlight bracketed expression
@@ -453,12 +453,8 @@ latin.leftClick = function(target){
 	}
 	// highlight variable declaration
 	if (target.hasAttribute('jobad:varref')) {
-		var res = document.evaluate(
-				"//*[@jobad:xref='#" + target.getAttribute('jobad:varref') + "']",
-				document, nsResolver, XPathResult.ANY_UNORDERED_NODE_TYPE, null
-		);
-		var v = res.singleNodeValue;
-		setSelected(v);
+	   var v = $(target).parents('mrow').children().filterMAttr('jobad:xref', '#' + target.getAttribute('jobad:varref'));
+		setSelected(v[0]);
 		return true;
 	}
 	unsetSelected();
@@ -475,18 +471,38 @@ latin.hoverText = function(target){
 /* currentURI is used as an auxiliary variable to communicate the MMTURI of the current symbol from the context menu entries to the methods
    this is not passed as an argument to avoid encoding problems */  
 var currentURI = null;
+var visibCMenu = [
+		         ["hide reconstructed types", "visibHide('reconstructed')"],
+		         ["show reconstructed types", "visibShow('reconstructed')"],
+		         ["inherit reconstructed types", "visibInherit('reconstructed')"],
+		         ["implicit arguments", "visibShow('implicit')"],
+		        ];
 latin.contextMenuEntries = function(target){
 	if (target.hasAttribute("jobad:href")) {
 		currentURI = target.getAttribute('jobad:href');
 		return [
 		         ["show type", "showComp('type')"],
 		         ["show definition", "showComp('definition')"],
-		         ["get OMDoc", "openCurrentOMDoc()"],
+		         ["(un)mark occurrences", "showOccurs()"],
 		         ["open in new window", "openCurrent()"],
-		         ["full URI", "alert('" + currentURI + "')"]
+		         ["show URI", "alert('" + currentURI + "')"],
+		         ["get OMDoc", "openCurrentOMDoc()"],
 		        ];
 	} else
-		return []
+		return visibCMenu;
+}
+
+function visibHide(prop){
+   $(focus).attr('jobad:' + prop,'false');
+   evaluateDocument(focus);
+}
+function visibShow(prop){
+   $(focus).attr('jobad:' + prop,'true');
+   evaluateDocument(focus);
+}
+function visibInherit(prop){
+   $(focus).removeAttr('jobad:' + prop);
+   evaluateDocument(focus);
 }
 
 /** opens current URI in a new window as OMDoc */
@@ -498,6 +514,10 @@ function openCurrentOMDoc(){
 function openCurrent(){
 	var url = adaptMMTURI(currentURI, '', true);
 	window.open(url, '_blank', '', false);
+}
+/** highlights all occurrences of the current URI */
+function showOccurs(){
+   var occs = $('mo').filterMAttr('jobad:href', currentURI).toggleMClass('math-occurrence')
 }
 /** shows a component of the current MMT URI in a dialog */
 function showComp(comp){

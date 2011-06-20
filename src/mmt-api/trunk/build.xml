@@ -1,30 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-api" default="build" basedir=".">
 
-
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <!--       DISPLAY HELP                                              -->
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <target name="help">
-        <echo>
-      MMT API build file
-    -------------------------------------------------------
-
-      available targets:
-
-      help        - print this message
-      build       - compile, generate jars, deploy
-      docs        - generate documentation
-
-      compile     - compile sources to build/main and build/test
-      scaladoc    - generate scaladoc in build/apidocs
-      jar         - generate build/mmt-api.jar
-      clean       - clean up the build directories
-
-    -------------------------------------------------------
-        </echo>
-    </target>
-
     <property environment="env" />
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->

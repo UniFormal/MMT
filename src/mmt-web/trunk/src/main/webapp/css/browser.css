@@ -72,44 +72,16 @@ a.treerelation {
    padding: 2px;
 }
 
-table
-{
-	font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
-	font-size: 12px;
-	margin: 45px;
-	width: 100%;
-	text-align: left;
-	border-collapse: collapse;
-}
-th
-{
-	font-size: 13px;
-	font-weight: normal;
-	padding: 8px;
-	background: #b9c9fe;
-	border-top: 4px solid #aabcfe;
- 	border-bottom: 1px solid #fff;
-	color: #039;
-}
-td
-{
-	padding: 8px;
-	background: #e8edff; 
-	border-bottom: 1px solid #fff;
-	color: #669;
-	border-top: 1px solid transparent;
-}
-tr:hover td
-{
-	background: #d0dafd;
-	color: #339;
+table.decllist {
+  border-left-style: solid;
+  border-left-width: 1px;
+  margin-left:5px;
+  padding-left:25px;
 }
 
-ul.decllist {
-       list-style-type: none;
-       border-width: thin;
-       border-left-style: solid;
+table.decllist td {
 }
+
 div.included-module {
        border-style: dotted;
        border-width: thin;
