@@ -196,162 +196,65 @@ function cond_parse(str, arr){
 								}
 }
 
-/**
- * evaluateDocument - evaluates all conditions under the target node
- * @param {Object} target - the element from which to start the parsing
- */
-function evaluateDocument(target){
-	//add an argument to function to make document not default
-	var result = document.evaluate('.//*[@jobad:conditional]', target, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null); //TODO modify here to support m: define in nsResolver a h:"html namespace"... select here only html fragments which have jobad:conditional -- then handle math display lower
-	for (var i = 0; i < result.snapshotLength; i++) {
-		var res = result.snapshotItem(i);
-
-		if (!checkMathMLEncapsulation('math', res)) {
-			//for each of the elements with jobad:conditional
-			//find the parents that have a jobad:property
-			var arr = new Array();
-
-			while (res != null && res.parentNode != document.body) {
-				var tmp = res.parentNode;
-				if (tmp != null && tmp.hasAttribute('jobad:property')) {
-					var b = tmp.attributes['jobad:property'].value.split(':')[0];
-					if (arr[b] == null) {
-						arr[b] = tmp.attributes['jobad:value'].value;
-					}
-				}
-				res = tmp;
-			}
-			//and parse the conditional string
-			var visible = cond_parse(result.snapshotItem(i).attributes['jobad:conditional'].value, arr);
-			if (visible == false) {
-				//remove all children of the current node from the result
-				result.snapshotItem(i).setAttribute("style", "display:none");
-			}
-			else {
-				if (result.snapshotItem(i).hasAttribute('style')) 
-					result.snapshotItem(i).removeAttribute('style');
-			}
-		}
-		else {
-			//is child of maction?
-			if (getTagName(res.parentNode) != 'maction') {
-				//if not, wrap in maction @actiontype=conditional and select it.
-				createMactionElement(null, 'conditional', res);
-			}
-			//if yes, do nothing
-
-		}
-	}
-	//TODO handle math <maction> here
-	var result = document.evaluate('.//mathml:maction[@actiontype="conditional"] | .[@actiontype="conditional"]', target, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-	var i = 0;
-	for (i = 0; i < result.snapshotLength; i++) {
-		//for each <maction type="conditional" select="i">
-		//check the children in order to see which is the first one that evaluates to true and select it
-		var res1 = result.snapshotItem(i);
-		var ok = false;
-		for (var j = 0; j < res1.childNodes.length; j++) {
-			var res = res1.childNodes[j];
-			if (res.hasAttribute('jobad:conditional')) {
-				//for each of the children that has a jobad:conditional
-				//find the parents that have a jobad:property
-				var arr = new Array();
-				while (res.parentNode != document.body) {
-					var tmp = res.parentNode;
-					if (tmp.hasAttribute('jobad:property')) {
-						var b = tmp.attributes['jobad:property'].value.split(':')[0];
-						if (arr[b] == null) {
-							arr[b] = tmp.attributes['jobad:value'].value;
-						}
-					}
-					res = tmp;
-				}
-				var visible = cond_parse(result.snapshotItem(i).childNodes[j].attributes['jobad:conditional'].value, arr);
-				if (visible) {
-					ok = true;
-					break;
-				}
-			}
-			else {
-				//res does not have a jobad:conditional, therefore it is always visible
-				ok = true;
-				break;
-			}
-		}
-		//if no child evaluates to true, add an <mspace/> and select this one
-		if (!ok) {
-			var ms = document.createElementNS(NS_MATHML, 'mspace');
-			res1.appendChild(ms);
-		}
-		res1.attributes['selection'].value = j + 1;
-	}
-
-	//handle bracket elision: find mfenced with jobad:brackets 
-	var result = document.evaluate('.//mathml:mfenced[@jobad:brackets]', target, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-	for (var i = 0; i < result.snapshotLength; i++) {
-		var res = result.snapshotItem(i);
-		var arr = new Array();
-		while (res != null && res.parentNode != document.body) {
-			var tmp = res.parentNode;
-			if (tmp != null && tmp.hasAttribute('jobad:property')) {
-				var b = tmp.attributes['jobad:property'].value.split(':')[0];
-				if (arr[b] == null) {
-					arr[b] = tmp.attributes['jobad:value'].value;
-				}
-			}
-			res = tmp;
-		}
-		//and parse the conditional string
-		var visible = cond_parse(result.snapshotItem(i).attributes['jobad:brackets'].value, arr);
-		res = result.snapshotItem(i);
-		if (visible == false) {
-			//brackets should not be visible
-			//if they were visible, make them invisible
-			//otherwise do nothing
-			if (res.attributes['open'].value != "") {
-				res.setAttribute('jobad:open', res.attributes['open'].value);
-				res.setAttribute('open', '');
-			}
-			if (res.attributes['close'].value != "") {
-				res.setAttribute('jobad:close', res.attributes['close'].value);
-				res.setAttribute('close', '');
-			}
-		}
-		else {
-			//brackets are visible
-			//if they were invisible, make them visible
-			//otherwise do nothing
-			if (res.attributes['jobad:open'].value != "") {
-				res.setAttribute('open', res.attributes['jobad:open'].value);
-				res.setAttribute('jobad:open', '');
-			}
-			if (res.attributes['jobad:close'].value != "") {
-				res.setAttribute('close', res.attributes['jobad:close'].value);
-				res.setAttribute('jobad:close', '');
-			}
-		}
-
-	}
+// for initialization: wrap all jobad:conditional elements in mactions
+function createMactions(root) {
+   $(root).find('[jobad:conditional]').filter(function(){
+      return (getTagName(this.parent) !== 'maction');
+   }).each(function(){
+      createMactionElement(null, 'conditional', this);
+   });
 }
 
-/**
- * changeCheckBox - change the value of the corresponding jobad:value of a textbox and evaluate the conditions underneath
- * @param {Object} target - the target element that has to be set the jobad:value attribute
- * @param {Object} changer - the corresponding modified checkbox
- */
-function changeCheckBox(target, changer){
-	target.setAttribute('jobad:value', changer.checked);
-	evaluateDocument(target);
-}
+var visibKeys = ["implicit", "reconstructed", "elevel"];
 
-/**
- * changeTextBox - same as changeCheckBox, applied to a TextBox instead of CheckBox
- * @param {Object} target - the target element that has to be set the jobad:value attribute
- * @param {Object} changer - the corresponding modified textbox
- */
-function changeTextBox(target, changer){
-	target.setAttribute('jobad:value', changer.value);
-	evaluateDocument(target);
+// update visibility status of all elements below target
+function setVisibility(target){
+   //build the context: all properties set in ancestors, false by default
+   var context = new Array();
+   visibKeys.forEach(function(k){context[k] == false});
+   //parents is inner->outer, but andSelf inverts
+	var ancestors = $(target).parents().andSelf();
+   ancestors.each(function(index, elem){
+      visibKeys.forEach(function(k){
+         if (elem.hasAttribute('jobad:' + k))
+            context[k] = elem.getAttribute('jobad:' + k);
+      });
+   });
+
+   //get all maction@conditional descendants, select the first child that is visible, hide if none
+	var mactions = $(target).find("maction[@actiontype='conditional']");
+   mactions.each(function(index, maction) {
+      var found = false;
+      var show = 1;
+		$(maction).children().each(function(i, child) {
+		    var c = child.attr('jobad:conditional');
+		    if (c == undefined || cond_parse(c, context)) {
+		       found = true;
+		       return false;
+		    } else {
+		       show++;
+		       return true;
+		    }
+		});
+		if (! found) {
+  			var ms = document.createElementNS(NS_MATHML, 'mspace');
+			maction.appendChild(ms);
+      }
+		maction.attr('selection', show);
+	});
+
+   //handle bracket elision: find mfenced with jobad:brackets 
+	var mfenceds = $(target).find('mfenced').filterMAttr('jobad:brackets');
+	mfenceds.each(function(index, mfenced){
+	   var visible = cond_parse(mfenced.attr('jobad:brackets'), context);
+		if (visible) {
+			mfenced.attr('open', mfenced.attr('jobad:open'));
+         mfenced.attr('close', mfenced.attr('jobad:close')); 
+		} else {
+         mfenced.attr('open', '');
+         mfenced.attr('close', '');
+      }
+	});
 }
 
 var latin = clone(Service);
@@ -360,73 +263,7 @@ var latin = clone(Service);
  * Initialize the latin service
  */
 latin.init = function(){
-	//handle visibility
-	var result = document.evaluate('//*[@jobad:property]', document, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-	for (var i = 0; i < result.snapshotLength; i++) {
-		var tmp = result.snapshotItem(i);
-		var b = tmp.attributes['jobad:property'].value.split(':')[1]; //recover the type of the property
-		var span = document.createElement('span');
-		var label = document.createElement('label');
-		switch (b) {
-		case 'boolean':
-			label.setAttribute('for', escape(tmp.attributes['jobad:description'].value) + 'CheckBox');
-			label.innerHTML = tmp.attributes['jobad:description'].value;
-			span.appendChild(label);
-			//default action - put the label + checkbox + br before the actual element				
-			var newcb = document.createElement('input');
-			newcb.setAttribute('type', 'checkbox');
-			newcb.setAttribute('name', escape(tmp.attributes['jobad:description'].value + 'CheckBox'));
-			newcb.setAttribute('onclick', 'changeCheckBox(this.parentNode.nextSibling, this)');//this.parent needs change
-			if (tmp.attributes['jobad:value'].value == 'true') {
-				newcb.setAttribute('checked', 'true');
-			}
-			else {
-				//newcb.setAttribute('checked', 'false');
-			}
-			span.appendChild(newcb);
-			var br = document.createElement('br');
-			span.appendChild(br);
-			//then append the current element with jobad:property to the parent
-			var parent = tmp.parentNode;
-			parent.insertBefore(span, tmp);
-			break;
-		case 'string':
-			label.setAttribute('for', escape(tmp.attributes['jobad:description'].value + 'TextBox'));
-			label.innerHTML = tmp.attributes['jobad:description'].value;
-			span.appendChild(label);
-			var newtb = document.createElement('input');
-			newtb.setAttribute('type', 'text');
-			newtb.setAttribute('name', escape(tmp.attributes['jobad:description'].value + 'TextBox'));
-			newtb.setAttribute('onchange', 'changeTextBox(this.parentNode.nextSibling, this)');
-			newtb.setAttribute('value', tmp.attributes['jobad:value'].value);
-			newtb.setAttribute('size', '15');
-			span.appendChild(newtb);
-			var br = document.createElement('br');
-			span.appendChild(br);
-			//then append the current element with jobad:property to the parent
-			var parent = tmp.parentNode;
-			parent.insertBefore(span, tmp);
-			break;
-		case 'integer':
-			label.setAttribute('for', escape(tmp.attributes['jobad:description'].value + 'TextBox'));
-			label.innerHTML = tmp.attributes['jobad:description'].value;
-			span.appendChild(label);
-			var newtb = document.createElement('input');
-			newtb.setAttribute('type', 'text');
-			newtb.setAttribute('name', escape(tmp.attributes['jobad:description'].value + 'TextBox'));
-			newtb.setAttribute('onchange', 'changeTextBox(this.parentNode.nextSibling, this)');
-			newtb.setAttribute('value', tmp.attributes['jobad:value'].value);
-			newtb.setAttribute('size', '5');
-			span.appendChild(newtb);
-			var br = document.createElement('br');
-			span.appendChild(br);
-			//then append the current element with jobad:property to the parent
-			var parent = tmp.parentNode;
-			parent.insertBefore(span, tmp);
-			break;
-		}
-	}
-	evaluateDocument(document);
+	setVisibility(document.documentElement);
 	browserInit();
 }
 
@@ -494,15 +331,15 @@ latin.contextMenuEntries = function(target){
 
 function visibHide(prop){
    $(focus).attr('jobad:' + prop,'false');
-   evaluateDocument(focus);
+   setVisibility(focus);
 }
 function visibShow(prop){
    $(focus).attr('jobad:' + prop,'true');
-   evaluateDocument(focus);
+   setVisibility(focus);
 }
 function visibInherit(prop){
    $(focus).removeAttr('jobad:' + prop);
-   evaluateDocument(focus);
+   setVisibility(focus);
 }
 
 /** opens current URI in a new window as OMDoc */
