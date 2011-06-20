@@ -1,26 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-web" default="build" basedir=".">
 
-    <target name="help">
-        <echo>
-      MMT WEB build file
-    -------------------------------------------------------
-
-      available targets:
-
-      help        - print this message
-      build       - compile, generate war, deploy
-      docs        - generate documentation
-
-      compile     - compile sources to build/main and build/test
-      scaladoc    - generate scaladoc in build/apidocs
-      war         - generate build/mmt-web.war
-      clean       - clean up the build directories
-
-    -------------------------------------------------------
-        </echo>
-    </target>
-
     <property environment="env" />
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
@@ -51,15 +31,13 @@
         <tstamp />
     </target>
 
-    <target name="build" depends="war,docs"/>
-
     <!-- This target compiles the library using the task scalac and the classpath compile.classpath. -->
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
         <scalac destdir="${build.main}" srcdir="${src.main}" classpathref="compile.classpath"/>
     </target>
 
-    <target name="war" depends="compile">
+    <target name="war" depends="init">
         <war destfile="${build}/${jar}" webxml="${web}/WEB-INF/web.xml">
             <fileset dir="${web}" />
             <classes dir="${build.main}" />
@@ -72,7 +50,16 @@
         </war>
     </target>
 
-    <target name="docs" depends="scaladoc"/>
+    <target name="build" depends="compile,war"/>
+
+    <target name="deploy" depends="build">
+        <copy todir="${deploy}/${prj}/apidocs">
+            <fileset dir="${apidocs}" includes="**/*"/>
+        </copy>
+        <copy todir="${deploy}/${prj}/lib">
+            <fileset file="${build}/${jar}"/>
+        </copy>
+    </target>
 
     <target name="scaladoc" depends="init">
         <mkdir dir="${apidocs}"/>
@@ -87,16 +74,8 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="build">
-        <copy todir="${deploy}/${prj}/apidocs">
-            <fileset dir="${apidocs}" includes="**/*"/>
-        </copy>
-        <copy todir="${deploy}/${prj}/lib">
-            <fileset file="${build}/${jar}"/>
-        </copy>
-    </target>
-
     <target name="clean">
         <delete dir="${build}" />
     </target>
+
 </project>

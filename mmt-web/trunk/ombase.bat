@@ -1,0 +1,2 @@
+rem java -jar ..\..\..\deploy\lib\jetty-runner.jar build\mmt-web.war 1>2 > jetty.log
+java -jar ..\..\..\deploy\lib\jetty-runner.jar --classes build\main\ --lib lib\ --jar ..\..\mmt-api\trunk\build\mmt-api.jar --classes ..\..\uom\trunk\build\main --lib ..\..\..\deploy\lib\scala src\main\webapp 1>2 > jetty.log

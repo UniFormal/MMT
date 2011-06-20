@@ -1,30 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="uom" default="build" basedir=".">
 
-
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <!--       DISPLAY HELP                                              -->
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <target name="help">
-        <echo>
-      MMT API build file
-    -------------------------------------------------------
-
-      available targets:
-
-      help        - print this message
-      build       - compile, generate jars, deploy
-      docs        - generate documentation
-
-      compile     - compile sources to build/main and build/test
-      scaladoc    - generate scaladoc in build/apidocs
-      jar         - generate build/mmt-api.jar
-      clean       - clean up the build directories
-
-    -------------------------------------------------------
-        </echo>
-    </target>
-
     <property environment="env" />
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
@@ -44,8 +20,6 @@
         <tstamp />
     </target>
 
-    <target name="build" depends="jar,docs"/>
-
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
         <path id="compile.classpath">
@@ -57,7 +31,7 @@
             classpathref="compile.classpath" deprecation="yes"/>
     </target>
 
-    <target name="jar" depends="compile">
+    <target name="jar" depends="init">
         <jar destfile="${build}/${jar}">
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
@@ -68,7 +42,7 @@
         </jar>
     </target>
 
-    <target name="docs" depends="scaladoc"/>
+    <target name="build" depends="compile,jar"/>
 
     <target name="scaladoc" depends="init">
         <mkdir dir="${apidocs}"/>
@@ -83,7 +57,7 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="build">
+    <target name="deploy" depends="build,scaladoc">
         <copy todir="${deploy}/${prj}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>

@@ -132,6 +132,60 @@ function lowlight(target){
     $(target).removeAttr('style'); // assuming there are no other styles
 }
 
+function getClassArray(elem) {
+   var classes = (elem.hasAttribute('class')) ? $(elem).attr('class') : "";
+   return classes.split(/\s+/);
+}
+
+$.fn.addMClass = function(cl){
+   this.each(function(){
+      if (this.hasAttribute('class'))
+         $(this).attr('class', $(this).attr('class') + ' ' + cl);   
+      else
+         $(this).attr('class', cl);
+   });
+   return this;
+}
+$.fn.removeMClass = function(cl){
+   this.each(function(){
+      var classes = getClassArray(this);
+      var newclasses = classes.filter(function(elem){return (elem !== cl) && (elem !== "")});
+      var newclassesAttr = newclasses.join(' ');
+      if (newclassesAttr == "")
+         $(this).removeAttr('class');
+      else
+         $(this).attr('class', newclassesAttr);
+   });
+   return this;
+}
+$.fn.toggleMClass = function(cl){
+   this.each(function(){
+      var classes = getClassArray(this);
+      if (classes.indexOf(cl) == -1)
+         $(this).addMClass(cl);
+      else
+         $(this).removeMClass(cl);
+   });
+   return this;
+}
+$.fn.filterMClass = function(cl){
+   return this.filter(function(){
+      var classes = getClassArray(this);
+      return (classes.indexOf(cl) !== -1)
+   });
+}
+$.fn.hasMAttr = function(attr) {
+    return this.filter(function() {
+        return $(this).attr(attr) !== undefined;
+    });
+};
+$.fn.filterMAttr = function(attr, value) {
+    return this.filter(function() {
+        return $(this).attr(attr) == value;
+    });
+};
+
+
 //Now bind all document events to the respective functions
 function keyPress(key){
     for (x in loadedModules) {

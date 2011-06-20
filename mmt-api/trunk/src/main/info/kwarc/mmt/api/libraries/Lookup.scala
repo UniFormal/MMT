@@ -71,13 +71,12 @@ abstract class Lookup(val report : frontend.Report) {
     * It carries along a test function that is used to determine when a constant should be expanded. 
     */
    object ExpandDefinitions extends Traverser[GlobalName => Boolean] {
-      def apply(cont: Continuation[GlobalName => Boolean], t: Term)
-               (implicit con: Context, expand: GlobalName => Boolean) = t match {
+      def apply(t: Term)(implicit con: Context, expand: GlobalName => Boolean) = t match {
          case OMID(p) if expand(p) => getConstant(p).df match {
-            case Some(t) => cont(this, t)
+            case Some(t) => apply(t)
             case None => OMID(p)
          }
-         case t => cont(this, t)
+         case t => Traverser(this, t)(con, expand)
       }
    }
    
@@ -86,12 +85,12 @@ abstract class Lookup(val report : frontend.Report) {
     * apply(t,m) can be used to apply a morphism to a term.
     */
    object ApplyMorphs extends Traverser[Morph] {
-      def apply(cont: Continuation[Morph], t: Term)(implicit con: Context, morph: Morph) = t match {
-         case OMM(arg, via) => apply(this, arg)(con, morph * via)
+      def apply(t: Term)(implicit con: Context, morph: Morph) = t match {
+         case OMM(arg, via) => apply(arg)(con, morph * via)
          case OMID(theo % ln) =>
            val t = getConstantAssignment(morph % ln).target
-           apply(this,t)
-         case t => cont(this,t)
+           apply(t)
+         case t => Traverser(this,t)(con, morph)
       }
    }
 }
