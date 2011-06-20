@@ -1,4 +1,5 @@
-// TODO: in ContinuousEliminator: also check whether the filename or a directory name between the location and the file is now excluded
+// TO*not*DO: in BackgroundEliminator: also check whether the filename or a directory name between the location and the file is now excluded
+// correction: don't allow patterns to be removed. Don't even allow them to be added later via the web interface (security problem).
 
 package info.kwarc.mmt.lf
 
@@ -289,34 +290,34 @@ object Run {
   
   A folder is crawled iff it doesn't match any exclusion pattern.
   A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains.
-  The default port is 8080."""
+  The default port is 8080 on localhost."""
   
-  /** The port on which the server runs */
+  /** The port on which the server runs. Default value is 8080 */
   var port = 8080
   
-  /** The interval, in seconds, between two automatic crawls */
-  var shortInterval = 5
+  /** The interval, in seconds, between two automatic crawls. Default value is 5 sec */
+  var crawlingInterval = 5
   
-  /** The interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk */
-  var longInterval = 17
+  /** The interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec */
+  var deletingInterval = 17
   
-  /** A thread that checks for updated files and crawls them every shortInterval seconds */
-  object ContinuousCrawler extends Thread {
+  /** A thread that checks for updated files and crawls them every crawlingInterval seconds */
+  object BackgroundCrawler extends Thread {
     override def run {
       while(true) {
-        Thread.sleep(shortInterval * 1000)
+        Thread.sleep(crawlingInterval * 1000)
         Storage.crawlAll
       }
     }
   }
   
-  /** A thread that checks for deleted files every longInterval seconds and eliminates them from the hashes */
-  object ContinuousEliminator extends Thread {
+  /** A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes */
+  object BackgroundEliminator extends Thread {
     override def run {
       while(true) {
-        Thread.sleep(longInterval * 1000)
+        Thread.sleep(deletingInterval * 1000)
         for ((url,_) <- Storage.urlToDocument) {
-          val file = new File(URLDecoder.decode(url.toString, "UTF-8"))
+          val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
           if (!file.exists) {
             println(getOriginalPath(file) + ": cannot find file. Uncrawling...")
             Storage.uncrawl(url.toString)
@@ -333,11 +334,11 @@ object Run {
       // read the optional --port argument
       if (args.head == "--port")
         if (args.length < 2) { 
-          println(usage); exit(1)
+          println("error: port number expected\n\n" + usage); exit(1)
         }
         else {
           try { port = Integer.parseInt(args(1)) }
-          catch { case _ => println(usage); exit(1) }
+          catch { case _ => println("error: port number expected\n\n" + usage); exit(1) }
           patternsAndLocations = patternsAndLocations.drop(2)
         } 
       // read the patterns and locations
@@ -356,7 +357,7 @@ object Run {
     }
     (new Server(port)).start
     println("go to: http://127.0.0.1:8080")
-    ContinuousCrawler.start
-    ContinuousEliminator.start
+    BackgroundCrawler.start
+    BackgroundEliminator.start
   }
 }

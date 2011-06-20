@@ -27,11 +27,12 @@ case class URI(var uri : java.net.URI) {
 
 object URI {
       implicit def toMyURI(u : info.kwarc.mmt.lf.URI) : java.net.URI = u.uri
-      implicit def javaURItoMyURI(u : java.net.URI) = new URI(u)
+      implicit def javaURItoMyURI(u : java.net.URI) : info.kwarc.mmt.lf.URI = new URI(u)
 }
 
-object testme extends Application {
+/*object testme extends Application {
   val u = new URI("file:/C:/courses/Twelf/logics/a?m")
   println(URI(u) / "s")
   println(URI(u) ? "s")
-}
+  println(u.^ + "\n" + new URI("/a").^ + "\n" + new URI("/").^ + "\n" + new URI("/c:").^ + "\n" + new URI("/c:/a").^)
+}*/
