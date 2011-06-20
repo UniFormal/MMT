@@ -7,4 +7,4 @@ Usage: java -jar lfcatalog.jar (--port <port>)? (location|+inclusion|-exclusion)
   
   A folder is crawled iff it doesn't match any exclusion pattern.
   A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains.
-  The default port is 8080.
+  The default port is 8080 on localhost.

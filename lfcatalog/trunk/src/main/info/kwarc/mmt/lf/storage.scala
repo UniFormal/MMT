@@ -1,5 +1,3 @@
-// TODO: see how to delete dependencies, etc, when a file disappears or no longer compiles: simply delete all the things associated with that file
-
 package info.kwarc.mmt.lf
 
 import scala.collection.mutable.{HashSet, LinkedHashSet, HashMap}
