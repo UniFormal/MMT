@@ -2,26 +2,11 @@
  * The JOBAD generic service class
  * @author Florian Rabe, based on previous code by Catalin David
  */
-//not sure if we need all these variables. will keep track of them.
 
-/** @constant-field xmlns.ML: declaring the shorthand notation to be used for the MathML namespace */
-//$.xmlns.ML = "http://www.w3.org/1998/Math/MathML";
-
-//TODO: use  window.getSelection().getRangeAt(0).startContainer.parentNode to get the current selected text's parent
-
-/** @global-field focus: holds a reference to the object that was clicked by the user. Initialized to null */
+/** @global-field focus: holds a reference to the object that was clicked by the user */
 var focus = null;
-
-/** @global-field xpos: holds the value of the x coordinate of the registered event. Initialized to zero. */
-var xpos = 0;
-/** @global-field ypos: holds the value of the y coordinate of the registered event. Initialized to zero. */
-var ypos = 0;
-
-/** @global-field populated: holds a value if the context dialog is populated or not. Initialized to false. */
-var populated = false;
-/** @global-field gContext: holds a value to the general context of the last loaded service */
-var gContext = null;
-var gHost = null;
+/** @global-field focus: true if focus is within a math object */
+var focusIsMath = false;
 
 // if console is not defined, e.g., Firebug console is not enabled or Non-Firefox browser
 if (typeof console == 'undefined') {
@@ -34,13 +19,13 @@ if (typeof console == 'undefined') {
     };
 }
 
-
 /** 
  * nsResolver - function that resolves which prefix corresponds to which namespace
  *
  * @param prefix : a string value of the prefix to be resolved
  * @returns the corresponding namespace or null if prefix undefined
  */
+// used (only) by folding
 function nsResolver(prefix){
     var ns = {
         'xhtml': 'http://www.w3.org/1999/xhtml',
@@ -56,6 +41,7 @@ function nsResolver(prefix){
  * Clones an object into another object (useful for prototypal inheritance)
  * @param {Object} object - the object to be cloned
  */
+ // seems like a strange way of cloning, not sure if it works correctly
 function clone(object){
     function F(){
     }
@@ -132,11 +118,15 @@ function lowlight(target){
     $(target).removeAttr('style'); // assuming there are no other styles
 }
 
+/** helper function for the methods below: gets the classes of an element as an array */
 function getClassArray(elem) {
    var classes = (elem.hasAttribute('class')) ? $(elem).attr('class') : "";
    return classes.split(/\s+/);
 }
 
+// the following functions f add functionality to jQuery and can be used as $(...).f
+// contrary to the built-in jQuery analogues, these work for 'pref:name' attributes and math elements
+/** add a class cl to all matched elements */
 $.fn.addMClass = function(cl){
    this.each(function(){
       if (this.hasAttribute('class'))
@@ -146,6 +136,7 @@ $.fn.addMClass = function(cl){
    });
    return this;
 }
+/** remove a class cl from all matched elements */
 $.fn.removeMClass = function(cl){
    this.each(function(){
       var classes = getClassArray(this);
@@ -158,6 +149,7 @@ $.fn.removeMClass = function(cl){
    });
    return this;
 }
+/** toggle class cl in all matched elements */
 $.fn.toggleMClass = function(cl){
    this.each(function(){
       var classes = getClassArray(this);
@@ -168,17 +160,20 @@ $.fn.toggleMClass = function(cl){
    });
    return this;
 }
+/** keep elements that have class cl */
 $.fn.filterMClass = function(cl){
    return this.filter(function(){
       var classes = getClassArray(this);
       return (classes.indexOf(cl) !== -1)
    });
 }
+/** keep elements that have attribute attr */
 $.fn.hasMAttr = function(attr) {
     return this.filter(function() {
         return $(this).attr(attr) !== undefined;
     });
 };
+/** keep elements that have attribute attr=value */
 $.fn.filterMAttr = function(attr, value) {
     return this.filter(function() {
         return $(this).attr(attr) == value;
@@ -186,13 +181,12 @@ $.fn.filterMAttr = function(attr, value) {
 };
 
 
-//Now bind all document events to the respective functions
+//bind all document events to the respective functions
 function keyPress(key){
     for (x in loadedModules) {
         loadedModules[x][2].keyPressed(key);
     }
 }
-
 document.onkeypress = keyPress;
 
 /**
@@ -205,60 +199,6 @@ function cmClear(){
         b.removeChild(b.childNodes[0]);
     }
 }
-
-///**
-// *  retrieved from http://stackoverflow.com/questions/1482832/javascript-how-to-get-all-elements-that-are-highlighted
-// * @param {Object} range
-// * @param {Object} node
-// */
-//function rangeIntersectsNode(range, node){
-//    var nodeRange;
-//    if (range.intersectsNode) {
-//        return range.intersectsNode(node);
-//    }
-//    else {
-//        nodeRange = node.ownerDocument.createRange();
-//        try {
-//            nodeRange.selectNode(node);
-//        } 
-//        catch (e) {
-//            nodeRange.selectNodeContents(node);
-//        }
-//        
-//        return range.compareBoundaryPoints(Range.END_TO_START, nodeRange) == -1 &&
-//        range.compareBoundaryPoints(Range.START_TO_END, nodeRange) == 1;
-//    }
-//}
-//
-///**
-// * retrieved from http://stackoverflow.com/questions/1482832/javascript-how-to-get-all-elements-that-are-highlighted
-// * @param {Object} win - the scope of searching
-// */
-//function getSelectedElementTags(win){
-//    var range, sel, elmlist, treeWalker, containerElement;
-//    sel = win.getSelection();
-//    if (sel.rangeCount > 0) {
-//        range = sel.getRangeAt(0);
-//    }
-//    
-//    if (range) {
-//        containerElement = range.commonAncestorContainer;
-//        if (containerElement.nodeType != 1) {
-//            containerElement = containerElement.parentNode;
-//        }
-//        
-//        treeWalker = win.document.createTreeWalker(containerElement, NodeFilter.SHOW_ELEMENT, function(node){
-//            return rangeIntersectsNode(range, node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-//        }, false);
-//        
-//        elmlist = [treeWalker.currentNode];
-//        while (treeWalker.nextNode()) {
-//            elmlist.push(treeWalker.currentNode);
-//        }
-//        
-//        console.log(elmlist);
-//    }
-//}
 
 //a is an array with elements of form ['name','fun', [_subitems_like_'name','fun',[subitems]_]] 
 function expandCMsubItems(a, subitem){
@@ -294,6 +234,7 @@ function click(e){
     if (e.which == 3) {//we have a right click
         //var selection = getSelectedElementTags(window);
         focus = e.target;
+        focusIsMath = ($(focus).closest('math').length !== 0);
         xpos = e.clientX;
         ypos = e.clientY;
         //clear the contextMenu

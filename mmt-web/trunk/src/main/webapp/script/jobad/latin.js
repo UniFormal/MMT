@@ -206,29 +206,35 @@ function createMactions(root) {
 }
 
 var visibKeys = ["implicit", "reconstructed", "elevel"];
+function setKeys(elems, con){
+   elems.each(function(index, elem){
+      visibKeys.forEach(function(k){
+         if (elem.hasAttribute('jobad:' + k))
+            con[k] = elem.getAttribute('jobad:' + k);
+      });
+   });
+}
 
 // update visibility status of all elements below target
-function setVisibility(target){
+function updateVisibility(target){
    //build the context: all properties set in ancestors, false by default
    var context = new Array();
    visibKeys.forEach(function(k){context[k] == false});
    //parents is inner->outer, but andSelf inverts
 	var ancestors = $(target).parents().andSelf();
-   ancestors.each(function(index, elem){
-      visibKeys.forEach(function(k){
-         if (elem.hasAttribute('jobad:' + k))
-            context[k] = elem.getAttribute('jobad:' + k);
-      });
-   });
+   setKeys(ancestors, context);
 
    //get all maction@conditional descendants, select the first child that is visible, hide if none
-	var mactions = $(target).find("maction[@actiontype='conditional']");
+	var mactions = $(target).find("maction[actiontype='conditional']");
    mactions.each(function(index, maction) {
+      var ancs = $(target).parentsUntil(target).andSelf();
+      var cont = clone(context);
+      setKeys(ancs, cont);
       var found = false;
       var show = 1;
 		$(maction).children().each(function(i, child) {
-		    var c = child.attr('jobad:conditional');
-		    if (c == undefined || cond_parse(c, context)) {
+		    var c = $(child).attr('jobad:conditional');
+		    if (c == undefined || cond_parse(c, cont)) {
 		       found = true;
 		       return false;
 		    } else {
@@ -240,13 +246,17 @@ function setVisibility(target){
   			var ms = document.createElementNS(NS_MATHML, 'mspace');
 			maction.appendChild(ms);
       }
-		maction.attr('selection', show);
+		$(maction).attr('selection', show);
 	});
 
    //handle bracket elision: find mfenced with jobad:brackets 
-	var mfenceds = $(target).find('mfenced').filterMAttr('jobad:brackets');
-	mfenceds.each(function(index, mfenced){
-	   var visible = cond_parse(mfenced.attr('jobad:brackets'), context);
+	var mfenceds = $(target).find('mfenced').hasMAttr('jobad:brackets');
+	mfenceds.each(function(index, mf){
+	   var mfenced = $(mf);
+      var ancs = $(target).parentsUntil(target).andSelf();
+      var cont = clone(context);
+      setKeys(ancs, cont);
+	   var visible = cond_parse(mfenced.attr('jobad:brackets'), cont);
 		if (visible) {
 			mfenced.attr('open', mfenced.attr('jobad:open'));
          mfenced.attr('close', mfenced.attr('jobad:close')); 
@@ -263,7 +273,7 @@ var latin = clone(Service);
  * Initialize the latin service
  */
 latin.init = function(){
-	setVisibility(document.documentElement);
+	updateVisibility(document.documentElement);
 	browserInit();
 }
 
@@ -308,12 +318,20 @@ latin.hoverText = function(target){
 /* currentURI is used as an auxiliary variable to communicate the MMTURI of the current symbol from the context menu entries to the methods
    this is not passed as an argument to avoid encoding problems */  
 var currentURI = null;
-var visibCMenu = [
-		         ["hide reconstructed types", "visibHide('reconstructed')"],
-		         ["show reconstructed types", "visibShow('reconstructed')"],
-		         ["inherit reconstructed types", "visibInherit('reconstructed')"],
-		         ["implicit arguments", "visibShow('implicit')"],
-		        ];
+function quoteSetVisib(prop, val){
+   return "setVisib('" + prop + "','" + val + "')";
+}
+function visibSubmenu(prop) {
+   return [["show", quoteSetVisib(prop, 'true')],
+		      ["hide", quoteSetVisib(prop, 'false')],
+		      ["inherit", quoteSetVisib(prop, '')]
+	        ];
+}
+var visibMenu = [
+   ["reconstructed types", '', visibSubmenu('reconstructed')],
+   ["implicit arguments", '', visibSubmenu('implicit')],
+   ["redundant brackets", '', visibSubmenu('brackets')],
+];
 latin.contextMenuEntries = function(target){
 	if (target.hasAttribute("jobad:href")) {
 		currentURI = target.getAttribute('jobad:href');
@@ -325,21 +343,19 @@ latin.contextMenuEntries = function(target){
 		         ["show URI", "alert('" + currentURI + "')"],
 		         ["get OMDoc", "openCurrentOMDoc()"],
 		        ];
-	} else
-		return visibCMenu;
+	} else if ($(target).hasClass('folder') || focusIsMath)
+		return visibMenu;
+   else
+      return [];
 }
 
-function visibHide(prop){
-   $(focus).attr('jobad:' + prop,'false');
-   setVisibility(focus);
-}
-function visibShow(prop){
-   $(focus).attr('jobad:' + prop,'true');
-   setVisibility(focus);
-}
-function visibInherit(prop){
-   $(focus).removeAttr('jobad:' + prop);
-   setVisibility(focus);
+function setVisib(prop, val){
+   var target = focusIsMath ? focus : focus.parentNode;
+   if (val == '')
+      $(target).removeAttr('jobad:' + prop);
+   else
+      $(target).attr('jobad:' + prop, val);
+   updateVisibility(target);
 }
 
 /** opens current URI in a new window as OMDoc */
