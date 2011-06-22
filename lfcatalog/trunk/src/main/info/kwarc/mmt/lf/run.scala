@@ -60,7 +60,14 @@ class Server(port : Int) extends HServer {
     * 2. <inclusions/> with the bullet list of inclusion patterns 
     * 3. <exclusions/> with the bullet list of exclusion patterns */
   private def updateLocations(node : Node) : Node = node match {
-     case <locations/> => {<ul>{ Storage.locations.flatMap(f => <li>{ getOriginalPath(f) }</li>) }</ul> }
+     case <locations/> => {<ul>{ Storage.locations.flatMap(f => 
+                                    <li> 
+                                        <form action="admin" method="get">
+                                            <input type="hidden" name="deleteLocation" value={ getPath(f) } />
+                                            <input type="submit" value="Delete" />
+                                        </form>
+                                        { getOriginalPath(f) }
+                                    </li>) }</ul> }
      case <inclusions/> => {<ul>{ Storage.getInclusions.flatMap(s => <li>{ s }</li>) }</ul> }
      case <exclusions/> => {<ul>{ Storage.getExclusions.flatMap(s => <li>{ s }</li>) }</ul> }
      case Elem(a, b, c, d, ch @_*) => Elem(a, b, c, d, ch.map(updateLocations) : _*)
@@ -80,8 +87,11 @@ class Server(port : Int) extends HServer {
   protected class RequestHandler extends HApp {
     //override def buffered = true
     def resolve(req : HReqHeaderData) : Option[HLet] = {
-      println("Query: " + req.uriPath + "?" + req.query)
+      if (req.uriPath != "favicon.ico")
+        println("Query: " + req.uriPath + "?" + req.query)
+        
       req.uriPath match {
+      case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
       case "help" | "" => {
         Some(TextResponse(readmeText, None))
       }
@@ -92,6 +102,14 @@ class Server(port : Int) extends HServer {
         else if (req.query.startsWith("addLocation=")) { ConflictGuard.synchronized { 
           try {
             Storage.addStringLocation(java.net.URLDecoder.decode(req.query.substring("addLocation=".length), "UTF-8"))
+          } catch {
+            case InexistentLocation(msg) => println(msg)
+          }
+          Some(HTMLResponse(updateLocations(adminHtml).toString))
+        }}
+        else if (req.query.startsWith("deleteLocation=")) { ConflictGuard.synchronized { 
+          try {
+            Storage.deleteStringLocation(java.net.URLDecoder.decode(req.query.substring("deleteLocation=".length), "UTF-8"))
           } catch {
             case InexistentLocation(msg) => println(msg)
           }

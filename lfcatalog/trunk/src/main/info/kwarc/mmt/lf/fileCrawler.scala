@@ -111,6 +111,12 @@ class FileCrawler(file : File) {
         i = positionAfterBlock
         modules = modules += block
       }
+      else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown top-level %-declaration => ignore it
+        i = skipUntilDot(i)
+      }
+      else if (isIdentifierPartCharacter(flat.codePointAt(i))) {    // top-level constant declaration => ignore it
+        i = skipUntilDot(i)
+      }
       else
         throw ParseError(toPair(i, lineStarts) + ": error: unknown entity. Module, comment or namespace declaration expected")
       
@@ -152,14 +158,18 @@ class FileCrawler(file : File) {
     var i = skipws(start)
     var break = false
     while (i < flat.length && !break) {
-      if (flat.startsWith("%{", i))
+        if (flat.startsWith("%{", i))     // %{ comment
         i = crawlCommentThrowBlock(i)
-      else if (flat.startsWith("%*", i)) {
+      else if (flat.startsWith("%*", i)) {    // %* comment
         val (comment, positionAfter) = crawlSemanticCommentBlock(i)
         keepComment = Some(comment)
         i = positionAfter
       }
-      else if (flat.startsWith("%%", i))
+      else if (flat.startsWith("%%", i))   // %% comment
+        i = skipline(i)
+      else if (flat.startsWith("%", i) && (i < flat.length && Character.isWhitespace(flat.charAt(i + 1))))  // %space comment
+        i = skipline(i)
+      else if (flat.startsWith("%", i) && (i == flat.length || flat.charAt(i + 1) == '\n' || flat.charAt(i + 1) == '\r' || flat.charAt(i + 1) == '\f')) // %newline comment
         i = skipline(i)
       else break = true
       i = skipws(i)
@@ -554,6 +564,9 @@ class FileCrawler(file : File) {
           deps.add(strDecl.domain.get)
         i = positionAfter
       }
+      else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
+        i = skipUntilDot(i)
+      }
       else if (flat.codePointAt(i) == '}')
         return i + 1
       else 
@@ -673,6 +686,9 @@ class FileCrawler(file : File) {
           cstAssignment.associatedComment = oldComment
         children += cstAssignment
         i = positionAfter
+      }
+      else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
+        i = skipUntilDot(i)
       }
       else if (flat.codePointAt(i) == '}')
         return i + 1
