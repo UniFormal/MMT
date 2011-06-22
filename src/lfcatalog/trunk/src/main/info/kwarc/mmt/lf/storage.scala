@@ -355,6 +355,24 @@ object Storage {
   
   
   
+  /** Delete from watch list a location given by its string address.
+    * @param locationName the (absolute or relative) address of the location on disk
+    * @throws InexistentLocation if the location is not in the watch list */
+  def deleteStringLocation(locationName : String) {
+    val location = new File(locationName)
+    if (location == null || !location.canRead)
+      throw InexistentLocation(getOriginalPath(location) + ": error: location does not exist or cannot be read, hence it cannot be deleted")
+    
+    if (locations contains location) {
+        locations -= location
+        uncrawl(getPath(location))
+        println("Location deleted: " + getOriginalPath(location))
+    }
+    else throw InexistentLocation(getOriginalPath(location) + ": error: location is not in the watch list, hence it cannot be deleted")
+  }
+  
+  
+  
   /** Check whether a location matches the stored patterns.
     * @param locationName the file or folder name, excluding its path
     * @param isDirectory set it to true if the location is a directory name, otherwise set it to false
@@ -381,6 +399,7 @@ object Storage {
   /** Crawl through all stored locations, ignoring (but logging) errors */
   def crawlAll { ConflictGuard.synchronized {
     locations.foreach(crawl)
+    println("Crawled all modified files")
   }}
   
   
