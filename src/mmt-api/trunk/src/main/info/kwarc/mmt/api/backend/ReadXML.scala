@@ -249,8 +249,8 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                val roles : List[String] = xml.attr(N,"role").split("\\s").toList
                roles.map {case r =>
                   val role = info.kwarc.mmt.api.Role.parse(r)
-	              val key = NotationKey(forpath, role)
-	              log("notation read for " + key)
+	               val key = NotationKey(forpath, role)
+	               log("notation read for " + key)
                   val not = Notation.parse(N, nset, key)
                   add(not)
                }

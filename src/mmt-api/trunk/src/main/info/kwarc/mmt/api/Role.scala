@@ -44,7 +44,7 @@ case object Role_binding             extends Role(true,  "binding" )
 case object Role_value               extends Role(false, "value")
 case object Role_foreign             extends Role(false, "foreign")
 case object Role_ObjToplevel         extends Role(false, "toplevel")
-case class  Role_Fragment(kind : String) extends Role(false, kind)
+case class  Role_Fragment(kind : String) extends Role(false, "fragment:" + kind)
 
 /** helper object for roles */
 object Role {
