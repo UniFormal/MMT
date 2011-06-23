@@ -60,10 +60,10 @@ case class ComplexNotation(nset : MPath, key : NotationKey,
       val oper = Component(0, oPrec)
       val impargs = Iterate(1, impl, ArgSep(), oPrec)
       val args = Iterate(impl + 1, -1, ArgSep(), oPrec)
-      val operimp = Fragment("operimp", oper, impargs)
+      val operimp = if (impl == 0) oper else Fragment("operimp", oper, impargs)
       fix match {
-         case Pre => Fragment("pre", oper, impargs, args)
-         case Post => Fragment("post", oper, impargs, args)
+         case Pre => Fragment("pre", operimp, args)
+         case Post => Fragment("post", operimp, args)
          case In(i) => Iterate(impl + 1, impl + i, ArgSep(), oPrec) + OpSep() + operimp + OpSep() + 
                        Iterate(impl + i + 1, -1, ArgSep(), oPrec)
          case Inter => assoc match {
