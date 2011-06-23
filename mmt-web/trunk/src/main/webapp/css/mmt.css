@@ -38,6 +38,15 @@ mi {
     background: silver;
 }
 
+.reconstructed mo, .implicit-arg mo, .implicit-binder mo,
+.reconstructed mi, .implicit-arg mi, .implicit-binder mi,
+.reconstructed, .implicit-arg, .implicit-binder {
+   color : gray;
+}
+.reconstructed-hidden, .implicit-arg-hidden, .implicit-binder-hidden{
+   display: none;
+}
+
 div.omdoc-view
 {
    border-style: none

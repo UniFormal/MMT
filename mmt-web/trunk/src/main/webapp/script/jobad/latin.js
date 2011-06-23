@@ -323,13 +323,13 @@ function quoteSetVisib(prop, val){
 }
 function visibSubmenu(prop) {
    return [["show", quoteSetVisib(prop, 'true')],
-		      ["hide", quoteSetVisib(prop, 'false')],
-		      ["inherit", quoteSetVisib(prop, '')]
+		      ["hide", quoteSetVisib(prop, 'false')]
 	        ];
 }
 var visibMenu = [
    ["reconstructed types", '', visibSubmenu('reconstructed')],
-   ["implicit arguments", '', visibSubmenu('implicit')],
+   ["implicit arguments", '', visibSubmenu('implicit-arg')],
+   ["implicit binders", '', visibSubmenu('implicit-binder')],
    ["redundant brackets", '', visibSubmenu('brackets')],
 ];
 latin.contextMenuEntries = function(target){
@@ -350,12 +350,11 @@ latin.contextMenuEntries = function(target){
 }
 
 function setVisib(prop, val){
-   var target = focusIsMath ? focus : focus.parentNode;
-   if (val == '')
-      $(target).removeAttr('jobad:' + prop);
-   else
-      $(target).attr('jobad:' + prop, val);
-   updateVisibility(target);
+   var root = focusIsMath ? focus : focus.parentNode;
+   if (val == 'true')
+      $(root).find('.' + prop).removeMClass(prop + '-hidden');
+   if (val == 'false')
+      $(root).find('.' + prop).addMClass(prop + '-hidden');
 }
 
 /** opens current URI in a new window as OMDoc */
