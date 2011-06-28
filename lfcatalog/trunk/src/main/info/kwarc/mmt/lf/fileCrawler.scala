@@ -1,4 +1,5 @@
 // TODO: catch certain exceptions earlier, e.g. just ignore a module if possible, but parse the rest, or at least return those already parsed
+// TODO: views can be from a morphism to a morphism (module identifiers separated by space)
 
 package info.kwarc.mmt.lf
 
