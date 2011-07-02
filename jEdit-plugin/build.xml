@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="jEdit-Plugin" default="build" basedir=".">
+
+    <property environment="env" />
+    <property file="build.properties" />
+    <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+    <path id="scalac.classpath">
+        <pathelement location="${scala.dir}/scala-library.jar"/>
+        <pathelement location="${scala.dir}/scala-compiler.jar"/>
+    </path>
+    <!-- This defines the task scalac (which is similar to javac but for scala). -->
+    <taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
+
+    <target name="compile">
+        <mkdir dir="build"/>
+        <path id="compile.classpath">
+          <pathelement location="${scala.dir}/scala-library.jar"/>
+          <pathelement location="${deploy}/mmt-api.jar"/>
+          <pathelement location="build"/>
+        </path>
+        <scalac destdir="build" srcdir="src" classpathref="compile.classpath" deprecation="yes"/>
+    </target>
+
+    <target name="build" depends="compile">
+        <jar destfile="MMTPlugin.jar">
+          	<!-- <zipfileset includes="**/*.class" src="${scala.dir}/scala-library.jar"/>
+        	   <zipfileset includes="**/*.class" src="${deploy}/mmt-api.jar"/> -->
+            <fileset dir="build"/>
+            <fileset dir="src/resources"/>
+        </jar>
+    </target>
+
+   <target name="deploy" depends="build">
+      <copy todir="E:\homedir\Program_Data\jEdit\jars">
+          <fileset file="MMTPlugin.jar"/>
+      </copy>
+   </target>
+
+	<target name="scaladoc">
+        <mkdir dir="apidocs"/>
+        <scaladoc
+            destdir="apidocs"
+            doctitle="jEdit Plugin"
+            sourcepath="src"
+            classpathref="scalac.classpath"
+            srcdir="src">
+            <include name="**/*.scala"/>
+        </scaladoc>
+    </target>
+
+    <target name="clean">
+        <delete dir="build" />
+    </target>
+</project>
