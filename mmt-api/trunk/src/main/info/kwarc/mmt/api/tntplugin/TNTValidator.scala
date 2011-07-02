@@ -6,9 +6,8 @@ import info.kwarc.tntbase.pluginapi._
 //import scala.collection.jcl.Conversions.convertList
 
 /** TNT plugin that validates an MMT document using the default foundation */
-class TNTValidation extends {
-   val checker = new libraries.FoundChecker(libraries.DefaultFoundation)
-} with Controller(checker, NullReport) with TntIntegrationPlugin[String] {
+class TNTValidation extends 
+   Controller(new libraries.FoundChecker(libraries.DefaultFoundation), NullReport) with TntIntegrationPlugin[String] {
    def init(lookup : TntPluginDocumentResolver[String]) {
       backend.addStore(TNTLookup(lookup))
    }

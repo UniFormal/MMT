@@ -10,6 +10,8 @@ import scala.util.parsing.combinator._
  */
 object Action extends RegexParsers {
    private var base : Path = null
+   private var home : java.io.File = null
+   
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
    private def comment = "//.*"r
@@ -45,11 +47,12 @@ object Action extends RegexParsers {
    
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
-   private def file = str ^^ {s => new java.io.File(s)}
+   private def file = str ^^ {s => new java.io.File(home, s)}
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
    /** parses an action from a string, relative to a base path */
-   def parseAct(s:String, b : Path) : Action = {
+   def parseAct(s:String, b : Path, h: java.io.File) : Action = {
       base = b
+      home = h
       val p = parseAll(commented,s)
       p match {
          case Success(tree, _) => tree

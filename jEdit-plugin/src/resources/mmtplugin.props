@@ -18,7 +18,8 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.activate=defer
 plugin.info.kwarc.mmt.jedit.MMTPlugin.jars=mmt-api.jar scala-library.jar
 plugin.info.kwarc.mmt.jedit.MMTPlugin.version=1
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.0=jedit 04.02.99.00
-plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.1=plugin sidekick.SideKickPlugin 0.1
+plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.1=plugin errorlist.ErrorListPlugin 1.4.2
+plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.2=plugin sidekick.SideKickPlugin 0.6.7
 
 # labels for actions defined in actions.xml
 plugin.info.kwarc.mmt.jedit.MMTPlugin.read=Read content
@@ -31,3 +32,7 @@ mmt.read.label=Read
 # toolbar buttons
 # mmt.read.icon=read.png
 
+# sidekick
+sidekick.parser.mmt.label=MMT parser
+mode.mmt.sidekick.parser=mmt
+mode.lf.sidekick.parser=mmt
