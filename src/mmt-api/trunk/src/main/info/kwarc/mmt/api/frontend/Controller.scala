@@ -32,7 +32,7 @@ abstract class ROController {
 /** A Controller is the central class maintaining all MMT knowledge items.
   * It stores all stateful entities and executes Action commands.
   */  
-class Controller(checker : Checker, report : Report) extends ROController {
+class Controller(val checker : Checker, val report : Report) extends ROController {
    protected def log(s : => String) = report("controller", s)
    /** maintains all relational elements */
    val depstore = new RelStore(report)
@@ -116,6 +116,9 @@ class Controller(checker : Checker, report : Report) extends ROController {
    }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
+   protected var home = new java.io.File(".")
+   def getHome = home
+   def setHome(h: java.io.File) {home = h}
    protected def handleExc[A](a: => A) {
        try {a}
        catch {
@@ -124,7 +127,7 @@ class Controller(checker : Checker, report : Report) extends ROController {
        }
    }
    protected def handleLine(l : String) {
-        val act = Action.parseAct(l, base)
+        val act = Action.parseAct(l, base, home)
         handle(act)
    }
    /** executes an Action */
