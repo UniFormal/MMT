@@ -66,7 +66,7 @@ case class SigBlock(override val uri: URI, override val url: URI, override val n
 
 
 /** A view */
-case class ViewBlock(override val uri: URI, override val url: URI, override val name: String, val children: MutableList[AssignmentBlock], override val deps: LinkedHashSet[URI], val domain: URI, val codomain: URI, override val pos: Position)
+case class ViewBlock(override val uri: URI, override val url: URI, override val name: String, val children: MutableList[AssignmentBlock], override val deps: LinkedHashSet[URI], val domain: URI, val codomain: LinkedHashSet[URI], override val pos: Position)
   extends ModuleBlock(uri, url, name, deps, pos) {
   override def toOmdoc : Elem =  
   <view name={name} uri={uri.toString}>

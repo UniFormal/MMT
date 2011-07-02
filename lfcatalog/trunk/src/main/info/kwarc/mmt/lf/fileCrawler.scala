@@ -115,6 +115,8 @@ class FileCrawler(file : File) {
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown top-level %-declaration => ignore it
         i = skipUntilDot(i)
       }
+      else if (flat.startsWith("%.", i))  // this marks the end of file; ignore everything after
+        i = flat.length
       else if (isIdentifierPartCharacter(flat.codePointAt(i))) {    // top-level constant declaration => ignore it
         i = skipUntilDot(i)
       }
@@ -492,7 +494,7 @@ class FileCrawler(file : File) {
       throw ParseError(toPair(start, lineStarts) + ": error: structure has no definiens and its domain is not specified")
     
     
-    val endsAt = skipUntilDot(i) - 1
+    val endsAt = skipUntilDot(i) - 1       // skip over %open statement
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(getPath(file) + "#" + position)
     return Pair(StrDeclBlock(parentURI ? structureName, url, structureName, children, domain, position), endsAt + 1)
@@ -544,6 +546,16 @@ class FileCrawler(file : File) {
         children += cstDecl
         i = positionAfter
       }
+      else if (flat.startsWith("%meta", i)) {
+        if (i + "%meta".length + 2 >= flat.length)
+          throw ParseError(toPair(i, lineStarts) + ": error: %meta statement does not end")
+        i += "%meta".length
+        i = skipws(i)
+        val (metaTheoryName, positionAfter) = crawlIdentifier(i)    // read meta theory name
+        deps += moduleToAbsoluteURI(i, metaTheoryName, currentNS, prefixes)
+        i = positionAfter
+        i = skipUntilDot(i)
+      }
       else if (flat.startsWith("%include", i)) {
         if (i + "%include".length + 2 >= flat.length)
           throw ParseError(toPair(i, lineStarts) + ": error: %include statement does not end")
@@ -552,7 +564,7 @@ class FileCrawler(file : File) {
         val (importName, positionAfter) = crawlIdentifier(i)    // read import name
         deps += moduleToAbsoluteURI(i, importName, currentNS, prefixes)
         i = positionAfter
-        i = skipUntilDot(i)
+        i = skipUntilDot(i)    // skip over the optional %open statement 
       }
       else if (flat.startsWith("%struct", i)) {
         // Read structure declaration
@@ -701,6 +713,31 @@ class FileCrawler(file : File) {
     return i
   }
   
+  /** Reads a sequence of linespace-separated signature references, ended by either =, -> or a non-identifier-part-character
+    * @param start the position of the first character in the sequence
+    * @param currentNS the current namespace
+    * @param prefixes the mapping from aliases to namespaces
+    * @return Pair(the set of URIs of the signatures in the sequence, position after the sequence) */
+  private def crawlSignatureUnion(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[LinkedHashSet[URI], Int] =
+  {
+    var sigs = LinkedHashSet[URI] ()
+    var i = start
+    var break = false
+    while (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i)) && !break) {
+      val (sigRef, positionAfter) = crawlIdentifier(i)    // read signature reference
+      if (sigRef == "=" || sigRef == "->")                // the sequence has ended, stop here
+        break = true
+      if (!break) {
+        sigs += moduleToAbsoluteURI(i, sigRef, currentNS, prefixes)    // add its URI to the returned LinkedHashSet
+        i = positionAfter  // go to the space after the identifier
+        i = skipws(i)      // don't allow comments between two signature references
+      }
+    }
+    val endsAt = i
+    return Pair(sigs, endsAt)
+  }
+  
+  
   /** Reads a view.
     * @param start the position of the initial '%'
     * @param currentNS the current namespace
@@ -733,9 +770,8 @@ class FileCrawler(file : File) {
     
     i = skipwscomments(i)
     
-    val (viewCodomain, positionAfterCodomain) = crawlIdentifier(i)          // read view codomain
-    val viewCodomainURI = moduleToAbsoluteURI(i, viewCodomain, currentNS, prefixes)
-    deps += viewCodomainURI
+    val (viewCodomain, positionAfterCodomain) = crawlSignatureUnion(i, currentNS, prefixes)    // read view codomain
+    deps ++= viewCodomain.toTraversable
     i = positionAfterCodomain     // jump over codomain
     
     i = expectNext(i, "=", toPair(start, lineStarts) + ": error: view does not have '=' after its name")
@@ -749,7 +785,7 @@ class FileCrawler(file : File) {
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(getPath(file) + "#" + position)
     
-    return Pair(new ViewBlock(uri, url, viewName, children, deps, viewDomainURI, viewCodomainURI, position), endsAt + 1)
+    return Pair(new ViewBlock(uri, url, viewName, children, deps, viewDomainURI, viewCodomain, position), endsAt + 1)
   }
   
   
