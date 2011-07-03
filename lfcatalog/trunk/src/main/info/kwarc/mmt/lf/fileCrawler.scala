@@ -354,6 +354,7 @@ class FileCrawler(file : File) {
     }
   }
   
+  
   /** Jump over a non-semantic %{ comment }%
     * @param start the position of the initial %
     * @return the position after the final % */
@@ -365,6 +366,7 @@ class FileCrawler(file : File) {
       throw ParseError(toPair(start, lineStarts) + ": error: comment does not close")
       return i + "}%".length
   }
+  
   
   /** Read a semantic %* comment *%
     * @param start the position of the initial %
@@ -448,7 +450,6 @@ class FileCrawler(file : File) {
   }
   
   
-  
   /** Reads a structure declaration.
     * @param start the position of the initial % from %struct
     * @param parentURI the URI of the parent module
@@ -485,7 +486,7 @@ class FileCrawler(file : File) {
         // If the structure is defined via a list of assignments
         if (domain.isEmpty)
           throw ParseError(toPair(start, lineStarts) + ": error: structure is defined via a list of assignments, but its domain is not specified")
-        i = crawlLinkBody(i, parentURI / structureName, children, new LinkedHashSet[URI](), currentNS, prefixes)
+        i = crawlLinkBody(i, parentURI / structureName, children, new LinkedHashSet[URI](), currentNS, prefixes, false)
       }
       else if (!isIdentifierPartCharacter(flat.codePointAt(i)))
         throw ParseError(toPair(i, lineStarts) + ": error: morphism or assignment list expected after '='")
@@ -590,6 +591,7 @@ class FileCrawler(file : File) {
     return i
   }
   
+  
   /** Reads a theory.
     * @param start the position of the initial '%'
     * @param currentNS the current namespace
@@ -667,8 +669,9 @@ class FileCrawler(file : File) {
     * @param deps set of dependencies, updated with the information read in the body
     * @param currentNS the current namespace
     * @param prefixes the mapping from aliases to namespaces
+    * @param isView true if we are crawling a view, false if we are crawling a structure declaration body
     * @return the position after the closing } */
-  private def crawlLinkBody(start: Int, parentURI: URI, children: MutableList[AssignmentBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Int =
+  private def crawlLinkBody(start: Int, parentURI: URI, children: MutableList[AssignmentBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI], isView: Boolean) : Int =
   {
     var i = start + 1       // jump over '{'
     keepComment = None          // reset the last semantic comment stored
@@ -680,7 +683,11 @@ class FileCrawler(file : File) {
         i += "%include".length    // jump over %include
         i = skipws(i)
         val (importName, positionAfter) = crawlIdentifier(i)    // read import name
-        deps += moduleToAbsoluteURI(i, importName, currentNS, prefixes)
+        try {
+            deps += moduleToAbsoluteURI(i, importName, currentNS, prefixes)
+        } catch {
+            case e : ParseError => if (isView) throw e else {} // if this is a structure body, just ignore prefixes you don't know
+        }
         i = positionAfter
         i = skipUntilDot(i)
       }
@@ -712,6 +719,7 @@ class FileCrawler(file : File) {
     }
     return i
   }
+  
   
   /** Reads a sequence of linespace-separated signature references, ended by either =, -> or a non-identifier-part-character
     * @param start the position of the first character in the sequence
@@ -746,6 +754,9 @@ class FileCrawler(file : File) {
   private def crawlViewBlock(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[ViewBlock, Int] = 
   {
     var i = start + "%view".length     // jump over %view
+    i = skipws(i)
+    if (flat.startsWith("%implicit", i))
+      i = skipws(i + "%implicit".length)
     
     val children = new MutableList[AssignmentBlock] ()
     val deps = LinkedHashSet[URI] ()
@@ -778,7 +789,7 @@ class FileCrawler(file : File) {
     i += 1     // jump over "="
     i = expectNext(i, "{", toPair(start, lineStarts) + ": error: view does not have an initial '{'")
     
-    i = crawlLinkBody(i, uri, children, deps, currentNS, prefixes) // read the { body } of the view
+    i = crawlLinkBody(i, uri, children, deps, currentNS, prefixes, true) // read the { body } of the view
     
     i = expectNext(i, ".", toPair(start, lineStarts) + ": error: view does not end with a dot")
     val endsAt = i
