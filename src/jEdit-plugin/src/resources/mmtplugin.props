@@ -14,7 +14,7 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.description=Support for editing MMT docume
 plugin.info.kwarc.mmt.jedit.MMTPlugin.longdescription=This plugin provides support for editing MMT, in particular LF files, documents.
 plugin.info.kwarc.mmt.jedit.MMTPlugin.docs=doc.html
 
-plugin.info.kwarc.mmt.jedit.MMTPlugin.activate=defer
+plugin.info.kwarc.mmt.jedit.MMTPlugin.activate=startup
 plugin.info.kwarc.mmt.jedit.MMTPlugin.jars=mmt-api.jar scala-library.jar
 plugin.info.kwarc.mmt.jedit.MMTPlugin.version=1
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.0=jedit 04.02.99.00
