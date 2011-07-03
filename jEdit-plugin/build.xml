@@ -11,11 +11,12 @@
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
     <taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
 
-    <target name="compile">
+    <target name="compile" depends="clean">
         <mkdir dir="build"/>
         <path id="compile.classpath">
           <pathelement location="${scala.dir}/scala-library.jar"/>
           <pathelement location="${deploy}/mmt-api.jar"/>
+        	 <fileset dir="lib" includes="*.jar"/>
           <pathelement location="build"/>
         </path>
         <scalac destdir="build" srcdir="src" classpathref="compile.classpath" deprecation="yes"/>
