@@ -1,0 +1,46 @@
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/classAxiom.owl">
+        <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
+         <constant name="Father">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Person">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Man">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Mother">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Human">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Parent">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Woman">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax1">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="equivalentClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Human" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Person" base="http://example.com/owl/families"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax2">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Person" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Man" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax3">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Person" base="http://example.com/owl/families"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax4">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Man" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant>
+      </theory>
+     </omdoc>
