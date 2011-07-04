@@ -1,29 +1,37 @@
 package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.modules._
+import frontend._
+import modules._
+import lf._
 
-abstract class Dimension
-case class Source(label: String)
-case object Content
-case object Narration
-case class Presentation(label: String, style: MPath)
-case object Relational
+import java.io.File
+import scala.collection.mutable._
 
-class Archive(root: java.io.File, report: Report) {
+class Archive(root: File, report: Report) {
     private var base : Path = null
-    private var dimensions : List[Dimension] = Nil
+    private val files = new LinkedHashSet[File]
+    private val modules = new HashMap[MPath,File]
     def log(msg: => String) = report("archive", msg)
-    def init {
+/*    def init {
        val conf = utils.xml.readFile(new java.io.File(root, "META-INF.xml"))
        conf match {
-          case <archive>{dims}</archive> =>
+          case <archive>{dims @ _*}</archive> =>
              base = Path.parse(utils.xml.attr(conf, "base"), null)
-             
+             dims foreach {
+                case s @ <source/> =>
+                  val label = utils.xml.attr(s, "language")
+                  if (label == "twelf") {
+                     val catalog = new Catalog(File(root, "source"), "elf")
+                     catalog.start()
+                     source = Some(catalog)
+                  }
+             }
        }
-    }
+    }*/
     def MMTPathToFilePath(m: MPath) : java.io.File = null
     def narrToCont(controller : Controller) {
+        // create content folder, iterate over all narration files using "files", put one theory per file into content folder (subfolder structure according to namespaces)
+        // build index of all URIs
         val omdocfile = new java.io.File("")
         // controller.delete(omdocfile) or controller.clear
         val doc = controller.read(omdocfile)
@@ -40,6 +48,13 @@ class Archive(root: java.io.File, report: Report) {
          //java.io.writeFile(trg, ... xml)
     }
     def toMar(target: java.io.File) {}
+}
+
+class TwelfArchive(root: File, report: Report, twelf : Twelf) extends Archive(root, report) {
+    def srcToNarr(controller: Controller) {
+       // create narration folder, iterate over all source files, call Twelf, put omdoc into narration folder (some subfolder structure)
+       // build HashSet of all files
+    }
 }
 
 object Test {
