@@ -224,7 +224,8 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   })
 	  val path = constant.path
 	  	  
-	 /* val entity = consType match {
+	 /* 
+	   val entity = consType match {
 	  	  case OWLOMS("OWLBase", "class") =>
 	  	   	  dataFactory.getOWLClass(globalNameToIRI(path))
 	  	  case OWLOMS("OWLBase", "individual") =>
@@ -238,222 +239,179 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   }
 	   val declarationAxiom = dataFactory.getOWLDeclarationAxiom(entity) 			  	   		
 	   manager.addAxiom(ontology, declarationAxiom)
+  
  	  */ 
-	   consType match {
-	  	   
+	   val axiom = consType match {
 // DeclarationAxiom	  	  
 	  	  case OWLOMS("OWLBase", "class") =>
 	  	      val clss = dataFactory.getOWLClass(globalNameToIRI(path))
-	  	      val declarationAxiom = dataFactory.getOWLDeclarationAxiom(clss) 			  	   		
-	  	      manager.addAxiom(ontology, declarationAxiom)
-	  	       
+	  	      dataFactory.getOWLDeclarationAxiom(clss) 			  	   		
+	  	      	  	       
 	  	  case OWLOMS("OWLBase", "individual") =>
 	  	   	  val individual = dataFactory.getOWLNamedIndividual(globalNameToIRI(path)) 
-	  	   	  val declarationAxiom = dataFactory.getOWLDeclarationAxiom(individual) 			  	   		
-	  	   	  manager.addAxiom(ontology, declarationAxiom)
-	  	   	  
+	  	   	  dataFactory.getOWLDeclarationAxiom(individual) 			  	   		
+	  	   	  	  	   	  
 	      case OWLOMS("OWLBase", "objectProperty") => 	
 	  	   	  val objectProperty = dataFactory.getOWLObjectProperty(globalNameToIRI(path)) 
-	  	   	  val declarationAxiom = dataFactory.getOWLDeclarationAxiom(objectProperty)
-	  	   	  manager.addAxiom(ontology, declarationAxiom)
-	  	   	   
+	  	   	  dataFactory.getOWLDeclarationAxiom(objectProperty)
+	  	   	  	  	   	   
 	  	  case OWL2OMS("OWL2SUB", "dataProperty") => 		
 	  	   	  val dataProperty = dataFactory.getOWLDataProperty(globalNameToIRI(path)) 
-	  	   	  val declarationAxiom = dataFactory.getOWLDeclarationAxiom(dataProperty)
-	  	   	  manager.addAxiom(ontology, declarationAxiom)
-	  	   	  
+	  	   	  dataFactory.getOWLDeclarationAxiom(dataProperty)
+	  	   	  	  	   	  
 	  	  case OWLOMS("D1", "dataType") =>
 	  	   	  val dataType = dataFactory.getOWLDatatype(globalNameToIRI(path))
-	  	   	  val declarationAxiom = dataFactory.getOWLDeclarationAxiom(dataType)
-	  	   	  manager.addAxiom(ontology, declarationAxiom)
+	  	   	  dataFactory.getOWLDeclarationAxiom(dataType)
 // ClassAxiom	     
- 	   
-	   // consType match {
-	      case OMA(OWL2OMS("OWL2SUB", "subClassOf"), args) =>
-	  	      	val subClass = classToOWL(args(0))
-	  	      	val superClass = classToOWL(args(1))
-	  	        val subClassOfAxiom = dataFactory.getOWLSubClassOfAxiom(subClass, superClass) 
-	  	        manager.addAxiom(ontology, subClassOfAxiom)	
-	  	   
+	  	  case OMA(OWL2OMS("OWL2SUB", "subClassOf"), args) =>
+	  	   	   val subClass = classToOWL(args(0))
+	  	       val superClass = classToOWL(args(1))
+	  	       dataFactory.getOWLSubClassOfAxiom(subClass, superClass) 
+	  	       	  	        
+	  	  case OMA(OWL2OMS("OWL2SUB", "disjointUnionOf"), args) =>
+	  	       val firstClass = classToOWL(args(0)) match {
+	  	      					case c : OWLClass => c
+	  	      					case _ => throw Exception("not a class")
+	  	       }
+	  	       val argsList = args.tail.map(classToOWL)
+	  	       dataFactory.getOWLDisjointUnionAxiom(firstClass, asJavaSet(argsList.toSet))
+	  	       	  	   	       
 	  	  case OMA(OWL2OMS("OWL2SUB", "equivalentClasses"), args) =>
 	  	      	val argsList = args.map(classToOWL)
-	  	      	val equivalentClassesAxiom = dataFactory.getOWLEquivalentClassesAxiom(argsList.toSet)
-	  	      	manager.addAxiom(ontology, equivalentClassesAxiom)
-	  	      	
+	  	      	dataFactory.getOWLEquivalentClassesAxiom(argsList.toSet)
+	  	      	  	      	
 	  	  case OMA(OWL2OMS("OWL2SUB", "disjointClasses"), args) =>
 	  	      	val argsList = args.map(classToOWL)
-	  	      	val disjointClassesAxiom = dataFactory.getOWLDisjointClassesAxiom(argsList.toSet)
-	  	      	manager.addAxiom(ontology, disjointClassesAxiom)
-	  	      	
-     	  case OMA(OWL2OMS("OWL2SUB", "disjointUnionOf"), args) =>
-	  	      	val firstClass = classToOWL(args(0)) match {
-	  	      			case c : OWLClass => c
-	  	      			case _ => throw Exception("not a class")
-	  	      	}
-	  	      	val argsList = args.tail.map(classToOWL)
-	  	      	val disjointUnionOfAxiom = dataFactory.getOWLDisjointUnionAxiom(firstClass, asJavaSet(argsList.toSet))
-	  	      	manager.addAxiom(ontology, disjointUnionOfAxiom)
-
+	  	      	dataFactory.getOWLDisjointClassesAxiom(argsList.toSet)
 // ObjectPropertyAxiom
     	  case OMA(OWL2OMS("OWL2SUB", "subObjectPropertyOf"),args) =>
 	  	      	val subProperty = propertyToOWL(args(0))
 	  	      	val superProperty = propertyToOWL(args(1))
-	  	      	val subObjectPropertyOfAxiom = dataFactory.getOWLSubObjectPropertyOfAxiom(subProperty, superProperty)
-	  	      	manager.addAxiom(ontology, subObjectPropertyOfAxiom)
-	  	      	
+	  	      	dataFactory.getOWLSubObjectPropertyOfAxiom(subProperty, superProperty)
+	  	      		  	      	
 	  	  case OMA(OWL2OMS("OWL2SUB", "equivalentObjectProperty"),args) =>
 	  	      	val argsList = args.map(propertyToOWL)
-	  	      	val equivalentObjectPropertyAxiom = dataFactory.getOWLEquivalentObjectPropertiesAxiom(argsList.toSet)
-	  	      	manager.addAxiom(ontology, equivalentObjectPropertyAxiom)
-	  	  	  	      	
+	  	      	dataFactory.getOWLEquivalentObjectPropertiesAxiom(argsList.toSet)
+	  	      		  	  	  	      	
 	  	  case OMA(OWL2OMS("OWL2SUB", "disjointObjectProperty"),args) =>
 	  	      	val argsList = args.map(propertyToOWL)
-	  	      	val disjointObjectPropertyAxiom = dataFactory.getOWLDisjointObjectPropertiesAxiom(argsList.toSet)
-  	      		manager.addAxiom(ontology, disjointObjectPropertyAxiom)
-  	      		
+	  	      	dataFactory.getOWLDisjointObjectPropertiesAxiom(argsList.toSet)
+  	      		  	      		
   	      case OMA(OWL2OMS("OWL2QL", "inverseObjectProperties"),args) =>
 	  	      	val forwardProperty = propertyToOWL(args(0))
 	  	      	val inverseProperty = propertyToOWL(args(1))
-	  	      	val inverseObjectPropertiesAxiom = dataFactory.getOWLInverseObjectPropertiesAxiom(forwardProperty, inverseProperty)
-	  	      	manager.addAxiom(ontology, inverseObjectPropertiesAxiom)
-	  	      	
+	  	      	dataFactory.getOWLInverseObjectPropertiesAxiom(forwardProperty, inverseProperty)
+	  	      		  	      	
 	  	  case OMA(OWL2OMS("OWL2SUB", "objectPropertyDomain"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	      	val domain = classToOWL(args(1))
-	  	      	val objectPropertyDomainAxiom = dataFactory.getOWLObjectPropertyDomainAxiom(property, domain)
-	  	        manager.addAxiom(ontology, objectPropertyDomainAxiom)
-	  	        
+	  	      	dataFactory.getOWLObjectPropertyDomainAxiom(property, domain)
+	  	        	  	        
 	  	   case OMA(OWL2OMS("OWL2SUB", "objectPropertyRange"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	      	val range = classToOWL(args(1))
-	  	      	val objectPropertyRangeAxiom = dataFactory.getOWLObjectPropertyRangeAxiom(property, range)
-	  	        manager.addAxiom(ontology, objectPropertyRangeAxiom)
-	 
+	  	      	dataFactory.getOWLObjectPropertyRangeAxiom(property, range)
+	  	        
 	  	   case OMA(OWL2OMS("OWL2SUB","functionalObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
-	  	      	val functionalObjectPropertyAxiom = dataFactory.getOWLFunctionalObjectPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, functionalObjectPropertyAxiom)
-	  	      	
+	  	      	dataFactory.getOWLFunctionalObjectPropertyAxiom(property)
+	  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2QL","inverseFunctionalObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
-	  	      	val inverseFunctionalObjectPropertyAxiom = dataFactory.getOWLInverseFunctionalObjectPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, inverseFunctionalObjectPropertyAxiom)
-	  	      	
+	  	      	dataFactory.getOWLInverseFunctionalObjectPropertyAxiom(property)
+	  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB","reflexiveObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
-	  	      	val reflexiveObjectPropertyAxiom = dataFactory.getOWLReflexiveObjectPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, reflexiveObjectPropertyAxiom)
-	  	      		  	      	
+	  	        dataFactory.getOWLReflexiveObjectPropertyAxiom(property)
+	  	      		  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB","irreflexiveObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
-	  	      	val irreflexiveObjectPropertyAxiom = dataFactory.getOWLIrreflexiveObjectPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, irreflexiveObjectPropertyAxiom)
-	  	      	
+	  	      	dataFactory.getOWLIrreflexiveObjectPropertyAxiom(property)
+	  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB","symmetricObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
-	  	      	val symmetricObjectPropertyAxiom = dataFactory.getOWLSymmetricObjectPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, symmetricObjectPropertyAxiom)
-	  	      	
+	  	      	dataFactory.getOWLSymmetricObjectPropertyAxiom(property)
+	  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB","asymmetricObjetProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
-	  	        val asymmetricObjectPropertyAxiom = dataFactory.getOWLAsymmetricObjectPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, asymmetricObjectPropertyAxiom)
-	  	      	
+	  	        dataFactory.getOWLAsymmetricObjectPropertyAxiom(property)
+	  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB","transitiveObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
-	  	      	val transitiveObjectPropertyAxiom = dataFactory.getOWLTransitiveObjectPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, transitiveObjectPropertyAxiom)
+	  	      	dataFactory.getOWLTransitiveObjectPropertyAxiom(property)
 // DataPropertyAxiom	  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB", "subDataPropertyOf"),args) =>
 	  	      	val subProperty = dataPropertyToOWL(args(0))
 	  	      	val superProperty = dataPropertyToOWL(args(1))
-	  	      	val subDataPropertyOfAxiom = dataFactory.getOWLSubDataPropertyOfAxiom(subProperty, superProperty)
-	  	      	manager.addAxiom(ontology, subDataPropertyOfAxiom)
-	  	      	
+	  	      	dataFactory.getOWLSubDataPropertyOfAxiom(subProperty, superProperty)
+	  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB", "equivalentDataProperty"),args) =>
 	  	      	val argsList = args.map(dataPropertyToOWL)
-	  	      	val equivalentDataPropertyAxiom = dataFactory.getOWLEquivalentDataPropertiesAxiom(argsList.toSet)
-	  	      	manager.addAxiom(ontology, equivalentDataPropertyAxiom)	  	      	
-	  	      	
+	  	      	dataFactory.getOWLEquivalentDataPropertiesAxiom(argsList.toSet)
+	  	      		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB", "disjointDataProperties"),args) =>
 	  	      	val argsList = args.map(dataPropertyToOWL)
-	  	      	val disjointDataPropertiesAxiom = dataFactory.getOWLDisjointDataPropertiesAxiom(argsList.toSet)
-  	      		manager.addAxiom(ontology, disjointDataPropertiesAxiom)	 
-  	      		
+	  	      	dataFactory.getOWLDisjointDataPropertiesAxiom(argsList.toSet)
+  	      		  	      		
   	       case OMA(OWL2OMS("OWL2SUB", "dataPropertyDomain"),args) =>
 	  	      	val property = dataPropertyToOWL(args(0))
 	  	      	val domain = classToOWL(args(1))
-	  	      	val dataPropertyDomainAxiom = dataFactory.getOWLDataPropertyDomainAxiom(property, domain)
-	  	        manager.addAxiom(ontology, dataPropertyDomainAxiom)
-	  	        
+	  	      	dataFactory.getOWLDataPropertyDomainAxiom(property, domain)
+	  	        	  	        
 	  	   case OMA(OWL2OMS("OWL2SUB", "dataPropertyRange"),args) =>
 	  	      	val property = dataPropertyToOWL(args(0))
 	  	      	val range = dataRangeToOWL(args(1))
-	  	      	val dataPropertyRangeAxiom = dataFactory.getOWLDataPropertyRangeAxiom(property, range)
-	  	        manager.addAxiom(ontology, dataPropertyRangeAxiom)
-	  	        
+	  	      	dataFactory.getOWLDataPropertyRangeAxiom(property, range)
+	  	        	  	        
 	  	   case OMA(OWL2OMS("OWL2SUB","functionalDataProperty"),args) =>
 	  	      	val property = dataPropertyToOWL(args(0))
-	  	      	val functionalDataPropertyAxiom = dataFactory.getOWLFunctionalDataPropertyAxiom(property)
-	  	      	manager.addAxiom(ontology, functionalDataPropertyAxiom)
-	  	         	      		
+	  	      	dataFactory.getOWLFunctionalDataPropertyAxiom(property)
 // AssertionAxiom
 	  	   case OMA(OWL2OMS("OWL2SUB", "classAssertion"), args) =>
 	  	     	val clss = classToOWL(args(0))
 	  	     	val individual = individualToOWL(args(1))
-	  	     	val classAssertionAxiom = dataFactory.getOWLClassAssertionAxiom(clss, individual)
-	  	     	manager.addAxiom(ontology, classAssertionAxiom)
-	  	      	
+	  	     	dataFactory.getOWLClassAssertionAxiom(clss, individual)
+	  	     		  	      	
 	  	   case OMA(OWL2OMS("OWL2SUB","sameIndividual"), args) =>
 	  	     	val argsList = args.map(individualToOWL)
-	  	      	val sameIndividualAxiom = dataFactory.getOWLSameIndividualAxiom(argsList.toSet)
-  	      		manager.addAxiom(ontology, sameIndividualAxiom)
-  	      
+	  	      	dataFactory.getOWLSameIndividualAxiom(argsList.toSet)
+  	      		  	      
   	      case OMA(OWL2OMS("OWL2SUB","differentIndividuals"), args) =>
 	  	     	val argsList = args.map(individualToOWL)
-	  	      	val differentIndividualsAxiom = dataFactory.getOWLDifferentIndividualsAxiom(argsList.toSet)
-  	      		manager.addAxiom(ontology, differentIndividualsAxiom)
-  	      		
+	  	      	dataFactory.getOWLDifferentIndividualsAxiom(argsList.toSet)
+  	      		  	      		
   	      case OMA(OWL2OMS("OWL2SUB", "objectPropertyAssertion"), args) =>
 	  	     	val property = propertyToOWL(args(0))
 	  	     	val individual = individualToOWL(args(1))
 	  	     	val obj = individualToOWL(args(2))
-	  	     	val objectPropertyAssertionAxiom = dataFactory.getOWLObjectPropertyAssertionAxiom(property,individual,obj)
-	  	     	manager.addAxiom(ontology, objectPropertyAssertionAxiom)
-	  	     	
+	  	     	dataFactory.getOWLObjectPropertyAssertionAxiom(property,individual,obj)
+	  	     		  	     	
   	      case OMA(OWL2OMS("OWL2SUB", "negativeObjectPropertyAssertion"), args) =>
 	  	     	val property = propertyToOWL(args(0))
 	  	     	val subj = individualToOWL(args(1))
 	  	     	val obj = individualToOWL(args(2))
-	  	     	val negativeObjectPropertyAssertionAxiom = dataFactory.getOWLNegativeObjectPropertyAssertionAxiom(property,subj,obj)
-	  	     	manager.addAxiom(ontology, negativeObjectPropertyAssertionAxiom)	  	     	
+	  	     	dataFactory.getOWLNegativeObjectPropertyAssertionAxiom(property,subj,obj)
 	  	     	
   	      case OMA(OWL2OMS("OWL2SUB", "dataPropertyAssertion"), args) =>
 	  	     	val property = dataPropertyToOWL(args(0))
 	  	     	val subj = individualToOWL(args(1))
 	  	     	val obj = literalToOWL(args(2)) //   float value icin ayri method var
-	  	     	val dataPropertyAssertionAxiom = dataFactory.getOWLDataPropertyAssertionAxiom(property,subj,obj)
-	  	     	manager.addAxiom(ontology, dataPropertyAssertionAxiom)	  	     	
-  	      		
+	  	     	dataFactory.getOWLDataPropertyAssertionAxiom(property,subj,obj)
+ 	      		
   	      case OMA(OWL2OMS("OWL2SUB", "negativeDataPropertyAssertion"), args) =>
 	  	     	val property = dataPropertyToOWL(args(0))
 	  	     	val subj = individualToOWL(args(1))
 	  	     	val obj = literalToOWL(args(2))
-	  	     	val negativeDataPropertyAssertionAxiom = dataFactory.getOWLNegativeDataPropertyAssertionAxiom(property,subj,obj)
-	  	     	manager.addAxiom(ontology, negativeDataPropertyAssertionAxiom)		
-  	  
-	  	     	
-	  	     	
+	  	     	dataFactory.getOWLNegativeDataPropertyAssertionAxiom(property,subj,obj)
 /*
-
 // DatatypeDefinitionAxiom
 // HasKeyAxiom
 // AnnotationAxiom 
- 
-  	  	  case OMA(OWL2OMS(),args) =>
+	  	  case OMA(OWL2OMS(),args) =>
 */	  	     
      	  case _ => throw Exception("none of the classAxioms")       
-	     }
+	     } 
+	      manager.addAxiom(ontology, axiom)
         //case consType : Option[OMSTR]
 	  	//case consType : Option[OMI]
 	   null
