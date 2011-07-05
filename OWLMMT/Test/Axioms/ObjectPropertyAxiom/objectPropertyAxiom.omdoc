@@ -1,4 +1,4 @@
-<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/objectPropertyAxiom.owl">
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/ObjectPropertyAxiom/objectPropertyAxiom.owl">
         <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
          <constant name="hasParent">
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
@@ -92,13 +92,13 @@
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax12">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="symmetricObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="hasSpouse" base="http://example.com/owl/families"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax13">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="symmetricObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasSpouse" base="http://example.com/owl/families"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant>

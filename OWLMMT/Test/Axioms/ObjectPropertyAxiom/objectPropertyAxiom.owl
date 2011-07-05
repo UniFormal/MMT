@@ -4,7 +4,6 @@
      xml:base="http://example.com/owl/families/"
      ontologyIRI="http://example.com/owl/families">
  
- 
  <Declaration>
   <Class IRI="Man"/>
  </Declaration>
