@@ -48,6 +48,7 @@
         <Class IRI="/Man"/>
         <Class IRI="/Woman"/>
     </DisjointUnion>
+    
 </Ontology>
 
 
