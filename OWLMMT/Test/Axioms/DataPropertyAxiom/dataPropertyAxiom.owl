@@ -1,9 +1,64 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+     
+  <Declaration>
+   <Class IRI="Person"/>
+  </Declaration>
+ 
+  <Declaration>
+   <DataProperty IRI="hasAge"/>
+  </Declaration>
+ 
+  <Declaration>
+   <DataProperty IRI="Age"/>
+  </Declaration>
+  
+  <Declaration>
+   <DataProperty IRI="hasHusband"/>
+  </Declaration>
+  
+  <Declaration>
+  	<DataProperty IRI="hasName"/> 
+  </Declaration>
+  
+  <Declaration>
+   <DataProperty IRI="hasLastName"/> 
+  </Declaration>
+  
+  <Declaration>
+   <DataProperty IRI="hasAdress"/> 
+  </Declaration>
+    
+	<DataPropertyDomain>
+   <DataProperty IRI="hasAge"/>
+   <Class IRI="Person"/>
+  </DataPropertyDomain>
 <!--
+  <DataPropertyRange>
+   <DataProperty IRI="hasAge"/>
+   <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
+  </DataPropertyRange>
+ --> 
+  <FunctionalDataProperty>
+   <DataProperty IRI="hasHusband"/>
+  </FunctionalDataProperty>
 
-subDataPropertyOf
-equivalentDataProperty
-disjointDataProperties
-dataPropertyDomain
-dataPropertyRange
-
--->
+  <EquivalentDataProperties>
+   <DataProperty IRI="hasAge"/>
+   <DataProperty IRI = "Age"/>
+  </EquivalentDataProperties>
+  
+  <SubDataPropertyOf>
+   <DataProperty IRI="hasLastName"/>
+   <DataProperty IRI="hasName"/>
+  </SubDataPropertyOf>
+  
+  <DisjointDataProperties>
+   <DataProperty IRI="hasName"/>
+   <DataProperty IRI="hasAdress"/>
+  </DisjointDataProperties>
+    
+</Ontology>
