@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+     
+      
+</Ontology>
