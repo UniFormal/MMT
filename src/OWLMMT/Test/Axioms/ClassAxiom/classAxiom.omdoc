@@ -1,4 +1,4 @@
-<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/classAxiom.owl">
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/ClassAxiom/classAxiom.owl">
         <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
          <constant name="Father">
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
@@ -27,13 +27,13 @@
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax2">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="Person" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Man" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Person" base="http://example.com/owl/families"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax3">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Person" base="http://example.com/owl/families"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Person" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Man" base="http://example.com/owl/families"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax4">
