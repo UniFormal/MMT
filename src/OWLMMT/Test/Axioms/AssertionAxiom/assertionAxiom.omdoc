@@ -1,4 +1,4 @@
-<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/assertionAxiom.owl">
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/AssertionAxiom/assertionAxiom.owl">
         <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
          <constant name="Bill">
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
@@ -48,8 +48,18 @@
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax5">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasAge" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="John" base="http://example.com/owl/families"></om:OMS><om:OMI>51</om:OMI>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax6">
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
               <om:OMS module="_" name="hasWife" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="John" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Mary" base="http://example.com/owl/families"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax7">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="negativeDataPropertyAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasAge" base="http://example.com/owl/families"></om:OMS><om:OMS module="_" name="Jack" base="http://example.com/owl/families"></om:OMS><om:OMI>53</om:OMI>
       </om:OMA></OMOBJ></type>
        
      </constant>
