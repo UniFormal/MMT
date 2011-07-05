@@ -59,6 +59,16 @@
         <NamedIndividual IRI="/Bill"/>
         <NamedIndividual IRI="/Mary"/>
     </NegativeObjectPropertyAssertion>
+    <DataPropertyAssertion>
+        <DataProperty IRI="/hasAge"/>
+        <NamedIndividual IRI="/John"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">51</Literal>
+    </DataPropertyAssertion>
+    <NegativeDataPropertyAssertion>
+        <DataProperty IRI="/hasAge"/>
+        <NamedIndividual IRI="/Jack"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">53</Literal>
+    </NegativeDataPropertyAssertion>
 </Ontology>
 
 
