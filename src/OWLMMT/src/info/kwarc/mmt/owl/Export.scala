@@ -110,19 +110,75 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      val property = dataPropertyToOWL(args(0))
 	  	      val filler = dataRangeToOWL(args(1))
 	  	      dataFactory.getOWLDataSomeValuesFrom(property, filler)
-/*
+
 	  	 case OMA(OWL2OMS("OWL2SUB","objectExactCardinality"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = propertyToOWL(args(1))
+	  	      dataFactory.getOWLObjectExactCardinality(cardinality, property)
+	  	      
 	  	 case OMA(OWL2OMS("OWL2SUB","objectMinCardinality"), args) =>
-	  	 case OMA(OWL2OMS("OWL2SUB","objectMaxCardinality"), args) =>      
-	  	 // isQualified
+	  	      val cardinality = termToInt(args(0)) 
+	  	      val property = propertyToOWL(args(1))
+	  	      dataFactory.getOWLObjectMinCardinality(cardinality, property)
+	  	      
+	  	 case OMA(OWL2OMS("OWL2SUB","objectMaxCardinality"), args) =>  
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = propertyToOWL(args(1))
+	  	      dataFactory.getOWLObjectMaxCardinality(cardinality, property)
 	  	 
+	  	 case OMA(OWL2OMS("OWL2SUB","objectExactCardinalityQualified"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = propertyToOWL(args(1))
+	  	      val filler = classToOWL(args(2))
+	  	      dataFactory.getOWLObjectExactCardinality(cardinality, property, filler)
+	  	      
+	  	 case OMA(OWL2OMS("OWL2SUB","objectMinCardinalityQualified"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = propertyToOWL(args(1))
+	  	      val filler = classToOWL(args(2))
+	  	      dataFactory.getOWLObjectMinCardinality(cardinality, property, filler)
+	  	      
+	  	 case OMA(OWL2OMS("OWL2SUB","objectMaxCardinalityQualified"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = propertyToOWL(args(1))
+	  	      val filler = classToOWL(args(2))
+	  	      dataFactory.getOWLObjectMinCardinality(cardinality, property, filler)
+	  	     
 	  	 case OMA(OWL2OMS("OWL2SUB","dataExactCardinality"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = dataPropertyToOWL(args(1))
+	  	      dataFactory.getOWLDataExactCardinality(cardinality, property)
+	  	       
 	  	 case OMA(OWL2OMS("OWL2SUB","dataMinCardinality"), args) =>
-	  	 case OMA(OWL2OMS("OWL2SUB","dataMaxCardinality"), args) =>      
-	  	 // isQualified
-*/	  	 
-    	 case OMA(OWL2OMS("OWL2SUB", "objectOneOf"), args) =>
-	  	 	  val argsList = args.map(individualToOWL)
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = dataPropertyToOWL(args(1))
+	  	      dataFactory.getOWLDataMinCardinality(cardinality, property)
+	  	      
+	  	 case OMA(OWL2OMS("OWL2SUB","dataMaxCardinality"), args) => 
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = dataPropertyToOWL(args(1))
+	  	      dataFactory.getOWLDataMaxCardinality(cardinality, property)
+	  	 
+	  	 case OMA(OWL2OMS("OWL2SUB","dataExactCardinalityQualified"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = dataPropertyToOWL(args(1))
+	  	      val dataRange = dataRangeToOWL(args(2))
+	  	      dataFactory.getOWLDataExactCardinality(cardinality, property, dataRange)
+	  	      
+	  	 case OMA(OWL2OMS("OWL2SUB","dataMinCardinalityQualified"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = dataPropertyToOWL(args(1))
+	  	      val dataRange = dataRangeToOWL(args(2))
+	  	      dataFactory.getOWLDataMinCardinality(cardinality, property, dataRange)
+	  	      
+	  	 case OMA(OWL2OMS("OWL2SUB","dataMaxCardinalityQualified"), args) =>
+	  	      val cardinality = termToInt(args(0))
+	  	      val property = dataPropertyToOWL(args(1))
+	  	      val dataRange = dataRangeToOWL(args(2))
+	  	      dataFactory.getOWLDataMaxCardinality(cardinality, property, dataRange)
+	  	
+  	 	 case OMA(OWL2OMS("OWL2SUB", "objectOneOf"), args) =>
+	  	  	  val argsList = args.map(individualToOWL)
 	  	      dataFactory.getOWLObjectOneOf(argsList.toSet)
 	  	      
 	     case OMA(OWL2OMS("OWL2SUB", "objectHasValue"), args) =>
@@ -189,16 +245,16 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	   case OMA(OWL2OMS("OWL2QL", "dataComplementOf"), args) =>
 	  	        val dataRange = dataRangeToOWL(args(0))
 	  	        dataFactory.getOWLDataComplementOf(dataRange)
- /* 	  	  	        	  	        
+ 	  	  	        	  	        
 	  	  case OMA(OWL2OMS("OWL2SUB","dataOneOf"), args) =>
 	  	        val argsList = args.map(literalToOWL)
-	  	        dataFactory.getOWLDataComplementOf(argsList.toSet)
-	  	        
+	  	        dataFactory.getOWLDataOneOf(argsList.toSet)
+	 /*  	        
 	  	  case OMA(OWL2OMS("OWL2SUB","dataTypeRestriction"), args) =>
 	  	        val dataType = dataRangeToOWL(args(0))
 	  	        val argsList =  args.tail.map(facetToOWL)
 	  	        dataFactory.getOWLDatatypeRestriction(dataType :: asJavaSet(argsList.toSet))
-*/	  	   
+  	 */ 
           case _ => throw Exception("none of the data ranges")
    	   }
    }
@@ -206,13 +262,22 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
    def literalToOWL(t : Term) : OWLLiteral = {
 	    t match {
 		case OMF(lt) => dataFactory.getOWLLiteral(lt)
-		//case OMI(lt) => dataFactory.getOWLLiteral(lt)
+		case OMI(lt) => dataFactory.getOWLLiteral(lt.toInt)
+		//string and others
  	    case _ => throw Exception("none of the literals")
 	    }
 	}
 
    def facetToOWL(t : Term) : OWLFacetRestriction = {
+	   //facets
 	   null
+   }
+   
+   def termToInt (t: Term) : Int = {
+	   t match { 
+	  	 case OMI(i) => i.toInt 
+	  	 case _ => throw Exception("not an integer")
+	   }
    }
    
    def constantToOWL(constant : Constant) {
@@ -224,24 +289,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   })
 	  val path = constant.path
 	  	  
-	 /* 
-	   val entity = consType match {
-	  	  case OWLOMS("OWLBase", "class") =>
-	  	   	  dataFactory.getOWLClass(globalNameToIRI(path))
-	  	  case OWLOMS("OWLBase", "individual") =>
-	  	   	  dataFactory.getOWLNamedIndividual(globalNameToIRI(path)) 
-	      case OWLOMS("OWLBase", "objectProperty") => 	
-	  	   	  dataFactory.getOWLObjectProperty(globalNameToIRI(path)) 
-	  	  case OWL2OMS("OWL2SUB", "dataProperty") => 		
-	  	   	  dataFactory.getOWLDataProperty(globalNameToIRI(path)) 
-	  	  case OWLOMS("D1", "dataType") =>
-	  	   	  dataFactory.getOWLDatatype(globalNameToIRI(path))
-	   }
-	   val declarationAxiom = dataFactory.getOWLDeclarationAxiom(entity) 			  	   		
-	   manager.addAxiom(ontology, declarationAxiom)
-  
- 	  */ 
-	   val axiom = consType match {
+	  val axiom = consType match {
 // DeclarationAxiom	  	  
 	  	  case OWLOMS("OWLBase", "class") =>
 	  	      val clss = dataFactory.getOWLClass(globalNameToIRI(path))
@@ -366,6 +414,15 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	   case OMA(OWL2OMS("OWL2SUB","functionalDataProperty"),args) =>
 	  	      	val property = dataPropertyToOWL(args(0))
 	  	      	dataFactory.getOWLFunctionalDataPropertyAxiom(property)
+// DatatypeDefinitionAxiom	  	     	
+  	      case OMA(OWL2OMS("OWL2SUB", "dataTypeDefinition"), args) =>
+	  	     	val dataType = dataRangeToOWL(args(0)) match {
+	  	     		case d : OWLDatatype => d
+	  	     		case _ => throw Exception("not a data type")
+	  	     	}
+	  	     	val dataRange = dataRangeToOWL(args(1))
+	  	     	dataFactory.getOWLDatatypeDefinitionAxiom(dataType, dataRange)	
+// HasKeyAxiom	    	     	
 // AssertionAxiom
 	  	   case OMA(OWL2OMS("OWL2SUB", "classAssertion"), args) =>
 	  	     	val clss = classToOWL(args(0))
@@ -403,12 +460,9 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	     	val subj = individualToOWL(args(1))
 	  	     	val obj = literalToOWL(args(2))
 	  	     	dataFactory.getOWLNegativeDataPropertyAssertionAxiom(property,subj,obj)
-/*
-// DatatypeDefinitionAxiom
-// HasKeyAxiom
 // AnnotationAxiom 
-	  	  case OMA(OWL2OMS(),args) =>
-*/	  	     
+	  	  //case OMA(OWL2OMS(),args) =>
+	  	     
      	  case _ => throw Exception("none of the classAxioms")       
 	     } 
 	      manager.addAxiom(ontology, axiom)
