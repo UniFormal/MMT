@@ -1,5 +1,13 @@
 // TODO: catch certain exceptions earlier, e.g. just ignore a module if possible, but parse the rest, or at least return those already parsed
-// TODO: views should be from a morphism to a morphism (module identifiers separated by space)
+/* TODO: any scheme is valid for URIs, so do not use URL parsing
+s://... => authority (possibly empty)
+s:/...  => no authority, absolute path (possibly empty)
+s:...   => no authority, relative path (possibly empty)
+the path is never missing
+*/
+
+// TODO: if there is an error, don't recrawl unless it's modified ;)
+// TODO: put timestamp before "Crawled all modified files"
 
 package info.kwarc.mmt.lf
 
