@@ -23,5 +23,10 @@
  <Declaration>
   <ObjectProperty IRI="hasChild"/>
  </Declaration>
-   
+<!-- 
+builtin
+annotation property
+-->
+ 	
+ 
  </Ontology>
