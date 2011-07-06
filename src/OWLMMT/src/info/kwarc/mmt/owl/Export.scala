@@ -222,23 +222,24 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
    def dataRangeToOWL(t : Term) : OWLDataRange = {
    	   t match {
 		 case OMID(p) =>
-   		     val s = p match {
-   		    	 case OWLOMS("D1","boolean") => "xsd:boolean"
-   		    	 case OWLOMS("D1","double") => "xsd:double"
-   		    	 case OWLOMS("D1","float") => "xsd:float"
-   		    	 case OWLOMS("D1","integer") => "xsd:integer"
-   		    	 case OWL2OMS("D2","PlainLiteral") => "rdf:PlainLiteral"
-   		    	 case OWLOMS("D1","string") => "xsd:string"
-   		    	 case _ => throw Exception("none of the data types")
+   		     val iri : IRI = t match {
+   		    	 case OWLOMS("D1","boolean") => IRI.create("xsd:boolean")
+   		    	 case OWLOMS("D1","double") => IRI.create("xsd:double")
+   		    	 case OWLOMS("D1","float") => IRI.create("http://www.w3.org/2001/XMLSchema#float")
+   		    	 case OWLOMS("D1","integer") => IRI.create("http://www.w3.org/2001/XMLSchema#integer")
+   		    	 case OWL2OMS("D2","PlainLiteral") => IRI.create("rdf:PlainLiteral")
+   		    	 case OWLOMS("D1","string") => IRI.create("xsd:string")
+   		    	 case _ => println("other")
+   		    	 globalNameToIRI(p)
+   		    	 	
    		      }
-   		      val iri : IRI = IRI.create(s)
-   		      dataFactory.getOWLDatatype(iri)
+   		     dataFactory.getOWLDatatype(iri)
    		      		   
    		   case OMA(OWL2OMS("OWL2SUB", "dataIntersectionOf"), args) =>
 	  	        val argsList = args.map(dataRangeToOWL)
 	  	        dataFactory.getOWLDataIntersectionOf(argsList.toSet)
 	  	        
-	  	   case OMA(OWL2OMS("OWL2SUB", "dataUnionOf"), args) =>     
+	  	   case OMA(OWL2OMS("OWL2QL", "dataUnionOf"), args) =>     
 	  	        val argsList = args.map(dataRangeToOWL)
 	  	        dataFactory.getOWLDataUnionOf(argsList.toSet)
 	  	        
@@ -393,7 +394,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      	val superProperty = dataPropertyToOWL(args(1))
 	  	      	dataFactory.getOWLSubDataPropertyOfAxiom(subProperty, superProperty)
 	  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB", "equivalentDataProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2SUB", "equivalentDataProperties"),args) =>
 	  	      	val argsList = args.map(dataPropertyToOWL)
 	  	      	dataFactory.getOWLEquivalentDataPropertiesAxiom(argsList.toSet)
 	  	      		  	      	
@@ -486,8 +487,8 @@ object Export {
 			val target : File = new File(arg(1))			
 		*/
 		//val file : File = new File("examples\\ex2.owl");
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.omdoc")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiomToOWL.owl") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRange.omdoc")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRangeToOWL.owl") 
 		
 		val doc : DPath  = controller.read(source)
 		
