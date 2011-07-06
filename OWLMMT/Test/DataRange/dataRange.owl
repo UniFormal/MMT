@@ -20,10 +20,11 @@
   <Datatype IRI="toddlerAge"/>
  </Declaration>
  
- <!--
- dataUnionOf
+ <Declaration>
+  <Datatype IRI="UnionDI"/>
+ </Declaration>
  
-  <DatatypeDefinition>
+ <DatatypeDefinition>
   <Datatype IRI="majorAge"/>
    <DataIntersectionOf>
     <Datatype IRI="personAge"/>
@@ -32,7 +33,7 @@
     </DataComplementOf>
    </DataIntersectionOf>
  </DatatypeDefinition>
-  
+ 
  <DatatypeDefinition>
   <Datatype IRI="toddlerAge"/>
   <DataOneOf>
@@ -40,7 +41,16 @@
    <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">2</Literal>
   </DataOneOf>
  </DatatypeDefinition>
-  
+ 
+  <DatatypeDefinition>
+   <Datatype IRI="UnionDI"/>
+   <DataUnionOf>
+    <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
+    <Datatype IRI="http://www.w3.org/2001/XMLSchema#double"/>
+  </DataUnionOf> 
+  </DatatypeDefinition>
+ <!--
+ 
  <DatatypeDefinition>
   <Datatype IRI="personAge"/>
   <DatatypeRestriction>
