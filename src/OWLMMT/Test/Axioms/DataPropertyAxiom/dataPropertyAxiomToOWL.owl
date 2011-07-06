@@ -46,6 +46,10 @@
         <DataProperty IRI="/hasAge"/>
         <Class IRI="/Person"/>
     </DataPropertyDomain>
+    <DataPropertyRange>
+        <DataProperty IRI="/hasAge"/>
+        <Datatype abbreviatedIRI="xsd:integer"/>
+    </DataPropertyRange>
     <DisjointDataProperties>
         <DataProperty IRI="/hasAdress"/>
         <DataProperty IRI="/hasName"/>
