@@ -1,6 +1,6 @@
 <omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DeclarationAxiom/declarationAxiom.owl">
         <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
-         <constant name="personAge">
+         <constant name="SSN">
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
        
      </constant><constant name="Person">

@@ -24,7 +24,7 @@
         <NamedIndividual IRI="/John"/>
     </Declaration>
     <Declaration>
-        <Datatype IRI="/personAge"/>
+        <Datatype IRI="/SSN"/>
     </Declaration>
 </Ontology>
 
