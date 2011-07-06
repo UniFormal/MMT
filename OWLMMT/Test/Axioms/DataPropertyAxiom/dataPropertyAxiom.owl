@@ -36,12 +36,12 @@
    <DataProperty IRI="hasAge"/>
    <Class IRI="Person"/>
   </DataPropertyDomain>
-<!--
+
   <DataPropertyRange>
    <DataProperty IRI="hasAge"/>
    <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
   </DataPropertyRange>
- --> 
+ 
   <FunctionalDataProperty>
    <DataProperty IRI="hasHusband"/>
   </FunctionalDataProperty>
