@@ -265,24 +265,26 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 					    OWLOMS("D1","double")
 				else if(dr.isFloat())
 					    OWLOMS("D1","float")
-				else if(dr.isInteger())
+				else if(dr.isInteger())  //dataRange is "integer"
 					    OWLOMS("D1","integer")
 				else if(dr.isRDFPlainLiteral())
 					    OWL2OMS("D2","PlainLiteral")
 				else if(dr.isString())
 					    OWLOMS("D1","string") 
 				else 
-					 throw Exception("none of the data types")
+					CurrOMS(dr.getIRI)	
+					 //throw Exception("none of the data types")
 			
+			    
 				 //CurrOMS(dr.getIRI) buna gerek kalmadi?
 			
 		   case dr : OWLNaryDataRange => 
-			 	val dec = dr match {
-			 				 case dr : OWLDataIntersectionOf => "dataIntersectionOf"
-			 				 case dr : OWLDataUnionOf => "dataUnionOf"
+			 	val (sig,dec) = dr match {
+			 				 case dr : OWLDataIntersectionOf => ("OWL2SUB","dataIntersectionOf")
+			 				 case dr : OWLDataUnionOf => ("OWL2QL","dataUnionOf")
 			 	}
 			 	val args = dr.getOperands.map(dataRangeToLF)
-		        ApplySpine(OWL2OMS("OWL2SUB", dec), args.toList : _*)
+		        ApplySpine(OWL2OMS(sig, dec), args.toList : _*)
 			         
 		   case dr : OWLDataComplementOf =>
 			 	val arg = dr.getDataRange()
@@ -321,10 +323,11 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 				    		OWLOMS("OWLBase", "individual")
 				    else if(entity.isOWLObjectProperty) // hasWife
 				    		OWLOMS("OWLBase", "objectProperty")
-				    else  throw Exception("none of the declaration axioms") 
+				    else throw Exception("none of the entities") 
 				   	  
 				    val name = IRItoLocalName(entity.getIRI)
 				    addConstant(name, tp)
+				    
 // ClassAxiom	
 		   case ax : OWLClassAxiom =>
 			    ax match {
@@ -351,7 +354,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 						val args = ax.getClassExpressionsAsList.map(classToLF)		
 						val tp = ApplySpine(OWL2OMS(sig,dec), args : _*) 
 						addConstant(name, tp) 
-				 }	
+			      }	
 // ObjectPropertyAxiom
 		   case ax : OWLSubObjectPropertyOfAxiom =>
 				val name = LocalName("ax" + number()) 
@@ -414,7 +417,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 		  case ax : OWLEquivalentDataPropertiesAxiom => 
 		   	   val name = LocalName("ax" + number()) 
 		   	   val args = ax.getProperties.map(propertyToLF) 
-		       val tp = ApplySpine(OWL2OMS("OWL2SUB", "equivalentDataProperty"), args.toList : _*)
+		       val tp = ApplySpine(OWL2OMS("OWL2SUB", "equivalentDataProperties"), args.toList : _*)
 		       addConstant(name, tp)
 				
 		  case ax : OWLDisjointDataPropertiesAxiom => //hasName  hasAddress
@@ -534,8 +537,8 @@ object Import {
 		*/
 		//val file : File = new File("examples\\ex2.owl");
 		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.omdoc") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRange.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRange.omdoc") 
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
 		println("Loaded ontology: " + ontology)
