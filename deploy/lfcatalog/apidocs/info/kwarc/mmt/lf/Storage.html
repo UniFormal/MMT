@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.lf.Run</title>
+          <title>info.kwarc.mmt.lf.Storage</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
@@ -12,25 +12,25 @@
       <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body class="value" onload="windowTitle();">
+        <body class="type" onload="windowTitle();">
 
       <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.lf">lf</a></p>
 
       <div id="definition">
-        <img src="../../../../lib/object_big.png" />
-        <h1>Run</h1>
+        <img src="../../../../lib/class_big.png" />
+        <h1>Storage</h1>
       </div>
 
       <h4 class="signature" id="signature">
-      <span class="kind">object</span>
+      <span class="kind">class</span>
       <span class="symbol">
-        <span class="name">Run</span>
+        <span class="name">Storage</span>
         
         
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment" id="comment"><div class="comment cmt"><p>Run the web server</p></div><div class="block">
+      <div class="fullcomment" id="comment"><div class="comment cmt"><p>Object containing the information obtained by crawling all the locations</p></div><div class="block">
             linear super types: AnyRef, <span class="extype" name="scala.Any">Any</span>
           </div>
             
@@ -49,7 +49,7 @@
           <div id="ancestors">
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall">Hide All</li><li class="showall">Show all</li></ol>
-                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.Run">Run</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
+                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.Storage">Storage</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -61,48 +61,24 @@
             </div>
         </div>
 
-        
-
-        <div class="types members" id="types">
-              <h3>Type Members</h3>
-              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.BackgroundCrawler">
-      <a id="BackgroundCrawler:BackgroundCrawler"></a>
-      <h4 class="signature"><a href="Run$$BackgroundCrawler.html">
-      <span class="kind">class</span>
+        <div class="members" id="constructors">
+              <h3>Instance constructors</h3>
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#this">
+      <a id="this:Storage"></a>
+      <h4 class="signature">
+      <span class="kind">new</span>
       <span class="symbol">
-        <span class="name">BackgroundCrawler</span>
+        <span class="name">Storage</span>
         
+        <span class="params">()</span>
         
-        <span class="result"> extends Thread</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">A thread that checks for updated files and crawls them every crawlingInterval seconds</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.BackgroundEliminator">
-      <a id="BackgroundEliminator:BackgroundEliminator"></a>
-      <h4 class="signature"><a href="Run$$BackgroundEliminator.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">BackgroundEliminator</span>
-        
-        
-        <span class="result"> extends Thread</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.ConsoleInput">
-      <a id="ConsoleInput:ConsoleInput"></a>
-      <h4 class="signature"><a href="Run$$ConsoleInput.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">ConsoleInput</span>
-        
-        
-        <span class="result"> extends Thread</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">A thread that reads commands from standard input</p>
+      </h4>
+      
     </li></ol>
             </div>
+
+        
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
@@ -254,6 +230,65 @@
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#addExclusion">
+      <a id="addExclusion(String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">addExclusion</span>
+        
+        <span class="params">(<span name="pattern">pattern: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Add an exclusion pattern to the storage</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Add an exclusion pattern to the storage</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#addInclusion">
+      <a id="addInclusion(String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">addInclusion</span>
+        
+        <span class="params">(<span name="pattern">pattern: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Add an inclusion pattern to the storage</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Add an inclusion pattern to the storage</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#addStringLocation">
+      <a id="addStringLocation(String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">addStringLocation</span>
+        
+        <span class="params">(<span name="locationName">locationName: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Add a location by its string address.</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Add a location by its string address.
+If the location is a descendant of an already watched folder, it is not added.
+If the location is an ancestor of an already watched location, then it is added and the already watched location is removed.</p></div><dl class="paramcmts block"><dt class="param">locationName</dt><dd class="cmt"><p>the (absolute or relative) address of the location on disk</p></dd></dl>
+            
+            
+            
+          </div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.Any#asInstanceOf">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -298,6 +333,82 @@ part of compilation it is not possible to check whether the contents of the list
         </div><div class="block">
           definition classes: AnyRef
         </div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#crawl">
+      <a id="crawl(File):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">crawl</span>
+        
+        <span class="params">(<span name="location">location: <span class="extype" name="java.io.File">File</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Crawl through a specific file or folder</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Crawl through a specific file or folder</p></div><dl class="paramcmts block"><dt class="param">location</dt><dd class="cmt"><p>the file or folder descriptor</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#crawlAll">
+      <a id="crawlAll:Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">crawlAll</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Crawl through all stored locations, ignoring (but logging) errors</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Crawl through all stored locations, ignoring (but logging) errors</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#deleteStringLocation">
+      <a id="deleteStringLocation(String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">deleteStringLocation</span>
+        
+        <span class="params">(<span name="locationName">locationName: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Delete from watch list a location given by its string address.</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Delete from watch list a location given by its string address.</p></div><dl class="paramcmts block"><dt class="param">locationName</dt><dd class="cmt"><p>the (absolute or relative) address of the location on disk</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#emptyAll">
+      <a id="emptyAll:Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">emptyAll</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Empty all the hashes</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Empty all the hashes</p></div>
             
             
             
@@ -397,6 +508,25 @@ there are no more references to the object.</p><p>The details of when and if the
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getChildren">
+      <a id="getChildren(String):Array[String]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getChildren</span>
+        
+        <span class="params">(<span name="stringUri">stringUri: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Array">Array</span>[String]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get all children of a namespace URI, module, constant or structure</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get all children of a namespace URI, module, constant or structure</p></div><dl class="paramcmts block"><dt class="param">stringUri</dt><dd class="cmt"><p>URI of a module / constant / structure, given as a string</p></dd><dt>returns</dt><dd class="cmt"><p>an array of children URIs, given as strings</p></dd></dl>
+            
+            
+            
+          </div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#getClass">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -416,6 +546,165 @@ there are no more references to the object.</p><p>The details of when and if the
         </div><div class="block">
           definition classes: AnyRef
         </div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getDependencies">
+      <a id="getDependencies(String):Array[String]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getDependencies</span>
+        
+        <span class="params">(<span name="stringUri">stringUri: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Array">Array</span>[String]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get all dependencies of a module, constant or structure</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get all dependencies of a module, constant or structure</p></div><dl class="paramcmts block"><dt class="param">stringUri</dt><dd class="cmt"><p>URI of a module / constant / structure, given as a string</p></dd><dt>returns</dt><dd class="cmt"><p>an array of dependency URIs, given as strings</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getExclusions">
+      <a id="getExclusions:HashSet[String]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getExclusions</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Exclusion patterns for files and folders.</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Exclusion patterns for files and folders.
+Star is the only special character and matches any sequence of characters.
+A folder is crawled iff it doesn't match any exclusion pattern.
+A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains.</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getInclusions">
+      <a id="getInclusions:HashSet[String]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getInclusions</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Inclusion patterns for files
+Star is the only special character and matches any sequence of characters.</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Inclusion patterns for files
+Star is the only special character and matches any sequence of characters.
+A folder is crawled iff it doesn't match any exclusion pattern.
+A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains.</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getMeta">
+      <a id="getMeta(String,Boolean):String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getMeta</span>
+        
+        <span class="params">(<span name="stringUri">stringUri: String</span>, <span name="asText">asText: <span class="extype" name="scala.Boolean">Boolean</span> =<span class="symbol">false</span></span>)</span>
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get the semantic comment associated with a document, module, constant or structure</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get the semantic comment associated with a document, module, constant or structure</p></div><dl class="paramcmts block"><dt class="param">stringUri</dt><dd class="cmt"><p>URI of a module or URL of a document, given as string</p></dd><dt class="param">asText</dt><dd class="cmt"><p>set it to true for text output and to false for XML output</p></dd><dt>returns</dt><dd class="cmt"><p>if asText is true, the semantic comment, copied character by character from the file. Otherwise, an XML representation of the comment</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getNSIntroduced">
+      <a id="getNSIntroduced(String):Array[String]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getNSIntroduced</span>
+        
+        <span class="params">(<span name="stringUrl">stringUrl: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Array">Array</span>[String]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get all namespaces URIs introduced by a document</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get all namespaces URIs introduced by a document</p></div><dl class="paramcmts block"><dt class="param">stringUrl</dt><dd class="cmt"><p>URL (location on disk) of a document, given as a string</p></dd><dt>returns</dt><dd class="cmt"><p>an array of module URIs introduced, given as strings</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getOmdoc">
+      <a id="getOmdoc(String):String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getOmdoc</span>
+        
+        <span class="params">(<span name="stringUrl">stringUrl: String</span>)</span>
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get a document skeleton as Omdoc</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get a document skeleton as Omdoc</p></div><dl class="paramcmts block"><dt class="param">stringUrl</dt><dd class="cmt"><p>URL (location on disk) of a document, given as a string</p></dd><dt>returns</dt><dd class="cmt"><p>the document as Omdoc</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getPosition">
+      <a id="getPosition(String):String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getPosition</span>
+        
+        <span class="params">(<span name="stringUri">stringUri: String</span>)</span>
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get the position of a module, constant or structure</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get the position of a module, constant or structure</p></div><dl class="paramcmts block"><dt class="param">stringUri</dt><dd class="cmt"><p>URI of a module / constant / structure, given as a string</p></dd><dt>returns</dt><dd class="cmt"><p>an URL encoding the file and the position within that file</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#getText">
+      <a id="getText(String):String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getText</span>
+        
+        <span class="params">(<span name="stringUri">stringUri: String</span>)</span>
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get the text of an entity.</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get the text of an entity. Warning: this function reads the disk, since the text is not stored in memory.</p></div><dl class="paramcmts block"><dt class="param">stringUri</dt><dd class="cmt"><p>URI of a module or URL of a document, given as string</p></dd><dt>returns</dt><dd class="cmt"><p>the actual content, read from the file</p></dd></dl>
             
             
             
@@ -473,18 +762,25 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#main">
-      <a id="main(Array[String]):Unit"></a>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#locations">
+      <a id="locations:HashSet[File]"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
+      <span class="kind">val</span>
       <span class="symbol">
-        <span class="name">main</span>
+        <span class="name">locations</span>
         
-        <span class="params">(<span name="args">args: <span class="extype" name="scala.Array">Array</span>[String]</span>)</span>
-        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        
+        <span class="result">: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[<span class="extype" name="java.io.File">File</span>]</span>
       </span>
       </h4>
       
+            <p class="shortcomment cmt">Locations (files and folders) being watched</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Locations (files and folders) being watched</p></div>
+            
+            
+            
+          </div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#ne">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -596,18 +892,82 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#usage">
-      <a id="usage:String"></a>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#uncrawl">
+      <a id="uncrawl(String):Unit"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
+      <span class="kind">def</span>
       <span class="symbol">
-        <span class="name">usage</span>
+        <span class="name">uncrawl</span>
         
-        
-        <span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+        <span class="params">(<span name="url">url: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       
+            <p class="shortcomment cmt">Delete all the hash entries associated with a specific file or folder</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Delete all the hash entries associated with a specific file or folder</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#uriToModulesDeclared">
+      <a id="uriToModulesDeclared:HashMap[URI, LinkedHashSet[URI]]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol">
+        <span class="name">uriToModulesDeclared</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>, <span class="extype" name="scala.collection.mutable.LinkedHashSet">LinkedHashSet</span>[<a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>]]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Map from namespace URIs to modules declared in that URI</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Map from namespace URIs to modules declared in that URI</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#uriToNamedBlock">
+      <a id="uriToNamedBlock:HashMap[URI, NamedBlock]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol">
+        <span class="name">uriToNamedBlock</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>, <a href="NamedBlock.html" class="extype" name="info.kwarc.mmt.lf.NamedBlock">NamedBlock</a>]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Map from URIs to named blocks (modules, declarations or assignments)</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Map from URIs to named blocks (modules, declarations or assignments)</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#urlToDocument">
+      <a id="urlToDocument:HashMap[URI, Document]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol">
+        <span class="name">urlToDocument</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>, <a href="Document.html" class="extype" name="info.kwarc.mmt.lf.Document">Document</a>]</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Map from URLs to documents</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Map from URLs to documents</p></div>
+            
+            
+            
+          </div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#wait">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -664,6 +1024,25 @@ possible to check whether the contents of the list are of the requested typed.
         </div><div class="block">
           definition classes: AnyRef
         </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Storage#writeOmdocToFile">
+      <a id="writeOmdocToFile(String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">writeOmdocToFile</span>
+        
+        <span class="params">(<span name="stringUrl">stringUrl: String</span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Write the Omdoc skeleton to a file with the same name as the original and in the same folder, but with extension .</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Write the Omdoc skeleton to a file with the same name as the original and in the same folder, but with extension .omdocsk</p></div><dl class="paramcmts block"><dt class="param">stringUrl</dt><dd class="cmt"><p>the URL of the .elf file to be converted.</p></dd></dl>
+            
+            
+            
+          </div>
           
     </li></ol>
             </div>

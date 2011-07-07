@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.lf.Run</title>
+          <title>info.kwarc.mmt.lf.Run.ConsoleInput</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
@@ -12,26 +12,26 @@
       <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body class="value" onload="windowTitle();">
+        <body class="type" onload="windowTitle();">
 
-      <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.lf">lf</a></p>
+      <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.lf">lf</a>.<a href="Run$.html" class="extype" name="info.kwarc.mmt.lf.Run">Run</a></p>
 
       <div id="definition">
-        <img src="../../../../lib/object_big.png" />
-        <h1>Run</h1>
+        <img src="../../../../lib/class_big.png" />
+        <h1>ConsoleInput</h1>
       </div>
 
       <h4 class="signature" id="signature">
-      <span class="kind">object</span>
+      <span class="kind">class</span>
       <span class="symbol">
-        <span class="name">Run</span>
+        <span class="name">ConsoleInput</span>
         
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends <span class="extype" name="java.lang.Thread">Thread</span></span>
       </span>
       </h4>
-      <div class="fullcomment" id="comment"><div class="comment cmt"><p>Run the web server</p></div><div class="block">
-            linear super types: AnyRef, <span class="extype" name="scala.Any">Any</span>
+      <div class="fullcomment" id="comment"><div class="comment cmt"><p>A thread that reads commands from standard input</p></div><div class="block">
+            linear super types: <span class="extype" name="java.lang.Thread">Thread</span>, <span class="extype" name="java.lang.Runnable">Runnable</span>, AnyRef, <span class="extype" name="scala.Any">Any</span>
           </div>
             
             
@@ -49,7 +49,7 @@
           <div id="ancestors">
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall">Hide All</li><li class="showall">Show all</li></ol>
-                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.Run">Run</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
+                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.Run.ConsoleInput">ConsoleInput</li><li class="in" name="java.lang.Thread">Thread</li><li class="in" name="java.lang.Runnable">Runnable</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -61,48 +61,24 @@
             </div>
         </div>
 
-        
-
-        <div class="types members" id="types">
-              <h3>Type Members</h3>
-              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.BackgroundCrawler">
-      <a id="BackgroundCrawler:BackgroundCrawler"></a>
-      <h4 class="signature"><a href="Run$$BackgroundCrawler.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">BackgroundCrawler</span>
-        
-        
-        <span class="result"> extends Thread</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">A thread that checks for updated files and crawls them every crawlingInterval seconds</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.BackgroundEliminator">
-      <a id="BackgroundEliminator:BackgroundEliminator"></a>
-      <h4 class="signature"><a href="Run$$BackgroundEliminator.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">BackgroundEliminator</span>
-        
-        
-        <span class="result"> extends Thread</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.ConsoleInput">
-      <a id="ConsoleInput:ConsoleInput"></a>
-      <h4 class="signature"><a href="Run$$ConsoleInput.html">
-      <span class="kind">class</span>
+        <div class="members" id="constructors">
+              <h3>Instance constructors</h3>
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.ConsoleInput#this">
+      <a id="this:ConsoleInput"></a>
+      <h4 class="signature">
+      <span class="kind">new</span>
       <span class="symbol">
         <span class="name">ConsoleInput</span>
         
+        <span class="params">(<span name="catalog">catalog: <a href="Catalog.html" class="extype" name="info.kwarc.mmt.lf.Catalog">Catalog</a></span>, <span name="server">server: <a href="Server.html" class="extype" name="info.kwarc.mmt.lf.Server">Server</a></span>)</span>
         
-        <span class="result"> extends Thread</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">A thread that reads commands from standard input</p>
+      </h4>
+      
     </li></ol>
             </div>
+
+        
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
@@ -279,6 +255,37 @@ part of compilation it is not possible to check whether the contents of the list
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.ConsoleInput#catalog">
+      <a id="catalog:Catalog"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol">
+        <span class="name">catalog</span>
+        
+        
+        <span class="result">: <a href="Catalog.html" class="extype" name="info.kwarc.mmt.lf.Catalog">Catalog</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#checkAccess">
+      <a id="checkAccess():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">checkAccess</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
     </li><li visbl="prt" data-isabs="false" name="scala.AnyRef#clone">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -302,6 +309,44 @@ part of compilation it is not possible to check whether the contents of the list
             
             
           </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#countStackFrames">
+      <a id="countStackFrames():Int"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name deprecated">countStackFrames</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div><div class="block"><ol>deprecated:
+          <li><p>see corresponding Javadoc for more information.</p></li>
+        </ol></div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#destroy">
+      <a id="destroy():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name deprecated">destroy</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div><div class="block"><ol>deprecated:
+          <li><p>see corresponding Javadoc for more information.</p></li>
+        </ol></div></div>
           
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#eq">
       <a id="eq(AnyRef):Boolean"></a>
@@ -421,6 +466,148 @@ there are no more references to the object.</p><p>The details of when and if the
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getContextClassLoader">
+      <a id="getContextClassLoader():ClassLoader"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getContextClassLoader</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="java.lang.ClassLoader">ClassLoader</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getId">
+      <a id="getId():Long"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getId</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getName">
+      <a id="getName():String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getName</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getPriority">
+      <a id="getPriority():Int"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getPriority</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getStackTrace">
+      <a id="getStackTrace():Array[StackTraceElement]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getStackTrace</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="java.lang.StackTraceElement">StackTraceElement</span>]</span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getState">
+      <a id="getState():State"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getState</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="java.lang.Thread.State">State</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getThreadGroup">
+      <a id="getThreadGroup():ThreadGroup"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getThreadGroup</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="java.lang.ThreadGroup">ThreadGroup</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#getUncaughtExceptionHandler">
+      <a id="getUncaughtExceptionHandler():UncaughtExceptionHandler"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getUncaughtExceptionHandler</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="java.lang.Thread.UncaughtExceptionHandler">UncaughtExceptionHandler</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#hashCode">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -446,6 +633,61 @@ to verify that the behavior is consistent with the <code>equals</code> method.
             
             
           </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#interrupt">
+      <a id="interrupt():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">interrupt</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#isAlive">
+      <a id="isAlive():Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">isAlive</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#isDaemon">
+      <a id="isDaemon():Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">isDaemon</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
           
     </li><li visbl="pub" data-isabs="false" name="scala.Any#isInstanceOf">
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -473,18 +715,80 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#main">
-      <a id="main(Array[String]):Unit"></a>
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#isInterrupted">
+      <a id="isInterrupted():Boolean"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol">
-        <span class="name">main</span>
+        <span class="name">isInterrupted</span>
         
-        <span class="params">(<span name="args">args: <span class="extype" name="scala.Array">Array</span>[String]</span>)</span>
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#join">
+      <a id="join():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">join</span>
+        
+        <span class="params">()</span>
         <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#join">
+      <a id="join(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">join</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#join">
+      <a id="join(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">join</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#ne">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -555,6 +859,227 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#resume">
+      <a id="resume():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name deprecated">resume</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div><div class="block"><ol>deprecated:
+          <li><p>see corresponding Javadoc for more information.</p></li>
+        </ol></div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.ConsoleInput#run">
+      <a id="run():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">run</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: <a href="" class="extype" name="info.kwarc.mmt.lf.Run.ConsoleInput">ConsoleInput</a> → Thread → Runnable
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.ConsoleInput#server">
+      <a id="server:Server"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol">
+        <span class="name">server</span>
+        
+        
+        <span class="result">: <a href="Server.html" class="extype" name="info.kwarc.mmt.lf.Server">Server</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#setContextClassLoader">
+      <a id="setContextClassLoader(ClassLoader):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">setContextClassLoader</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.ClassLoader">ClassLoader</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#setDaemon">
+      <a id="setDaemon(Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">setDaemon</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#setName">
+      <a id="setName(String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">setName</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#setPriority">
+      <a id="setPriority(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">setPriority</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#setUncaughtExceptionHandler">
+      <a id="setUncaughtExceptionHandler(UncaughtExceptionHandler):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">setUncaughtExceptionHandler</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.Thread.UncaughtExceptionHandler">UncaughtExceptionHandler</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#start">
+      <a id="start():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">start</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: Thread
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#stop">
+      <a id="stop(Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name deprecated">stop</span>
+        
+        <span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.Throwable">Throwable</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div><div class="block"><ol>deprecated:
+          <li><p>see corresponding Javadoc for more information.</p></li>
+        </ol></div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#stop">
+      <a id="stop():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name deprecated">stop</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div><div class="block"><ol>deprecated:
+          <li><p>see corresponding Javadoc for more information.</p></li>
+        </ol></div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#suspend">
+      <a id="suspend():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name deprecated">suspend</span>
+        
+        <span class="params">()</span>
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: final 
+        </div><div class="block">
+          definition classes: Thread
+        </div><div class="block"><ol>deprecated:
+          <li><p>see corresponding Javadoc for more information.</p></li>
+        </ol></div></div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#synchronized">
       <a id="synchronized[T0](T0):T0"></a>
       <h4 class="signature">
@@ -574,7 +1099,7 @@ possible to check whether the contents of the list are of the requested typed.
           definition classes: AnyRef
         </div></div>
           
-    </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#toString">
+    </li><li visbl="pub" data-isabs="false" name="java.lang.Thread#toString">
       <a id="toString():String"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -589,25 +1114,13 @@ possible to check whether the contents of the list are of the requested typed.
             <p class="shortcomment cmt">Returns a string representation of the object.</p>
             <div class="fullcomment"><div class="comment cmt"><p>Returns a string representation of the object.</p><p>The default representation is platform dependent.
 </p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a string representation of the object.</p></dd></dl><div class="block">
-          definition classes: AnyRef → Any
+          definition classes: Thread → AnyRef → Any
         </div>
             
             
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#usage">
-      <a id="usage:String"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol">
-        <span class="name">usage</span>
-        
-        
-        <span class="result">: <span class="extype" name="java.lang.String">String</span></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#wait">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -668,7 +1181,11 @@ possible to check whether the contents of the list are of the requested typed.
     </li></ol>
             </div>
 
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="java.lang.Thread">
+              <h3>Inherited from <span class="extype" name="java.lang.Thread">Thread</span></h3>
+            </div><div class="parent" name="java.lang.Runnable">
+              <h3>Inherited from <span class="extype" name="java.lang.Runnable">Runnable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from AnyRef</h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>

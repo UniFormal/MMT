@@ -27,10 +27,10 @@ class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock]
                 val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI]) {
   var lastModified : Long = -1
   def toOmdoc : Elem = 
-  <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={declaredNamespaces.head.toString}>
-    {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
-    {modules.map(_.toOmdoc)}
-  </omdoc>
+    <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={declaredNamespaces.head.toString}>
+      {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
+      {modules.map(_.toOmdoc)}
+    </omdoc>
 }
 
 
@@ -58,10 +58,10 @@ abstract class ModuleBlock(override val uri: URI, override val url: URI, overrid
 case class SigBlock(override val uri: URI, override val url: URI, override val name: String, val children: MutableList[DeclBlock], override val deps: LinkedHashSet[URI], override val pos: Position) 
   extends ModuleBlock(uri, url, name, deps, pos) {
   override def toOmdoc : Elem = 
-  <theory name={name} uri={uri.toString}>
-    {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
-    {children.map(_.toOmdoc)}
-  </theory>
+    <theory name={name} uri={uri.toString}>
+      {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
+      {children.map(_.toOmdoc)}
+    </theory>
 }
 
 
@@ -69,10 +69,10 @@ case class SigBlock(override val uri: URI, override val url: URI, override val n
 case class ViewBlock(override val uri: URI, override val url: URI, override val name: String, val children: MutableList[AssignmentBlock], override val deps: LinkedHashSet[URI], val domain: URI, val codomain: LinkedHashSet[URI], override val pos: Position)
   extends ModuleBlock(uri, url, name, deps, pos) {
   override def toOmdoc : Elem =  
-  <view name={name} uri={uri.toString}>
-    {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
-    {children.map(_.toOmdoc)}
-  </view>
+    <view name={name} uri={uri.toString}>
+      {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
+      {children.map(_.toOmdoc)}
+    </view>
 }
   
   
@@ -102,7 +102,10 @@ abstract class DeclBlock(override val uri: URI, override val url: URI, override 
 /** A constant declaration */
 case class CstDeclBlock(override val uri: URI, override val url: URI, override val name: String, override val pos: Position) 
   extends DeclBlock(uri, url, name, pos) {
-  override def toOmdoc : Elem = <constant name={name} uri={uri.toString}>{associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}</constant>
+  override def toOmdoc : Elem =
+    <constant name={name} uri={uri.toString}>
+      {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
+    </constant>
 }
   
 
@@ -122,5 +125,8 @@ case class StrDeclBlock(override val uri: URI, override val url: URI, override v
   * The "long" property is the text starting on the second line of the comment, until the first line that starts with '@' 
   * Each subsequent lines must start with '@'. The first word after '@' is the key, the rest of the line is the value. */
 case class SemanticCommentBlock(val comment: String, val properties: LinkedHashMap[String, String], val pos: Position) extends Block(pos) {
-  def toOmdoc : Elem = <metadata>{properties.map(x => <metadatum key={x._1}>{x._2}</metadatum>)}</metadata>
+  def toOmdoc : Elem =
+    <metadata>
+      {properties.map(x => <metadatum key={x._1}>{x._2}</metadatum>)}
+    </metadata>
 }

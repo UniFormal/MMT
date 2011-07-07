@@ -10,41 +10,76 @@ import java.net._
 case class InexistentLocation(s : String) extends Exception(s)
 case class ParseError(s: String) extends Exception(s)
 case class FileOpenError(s: String) extends Exception(s)
-case class StorageError(s: String) extends Exception(s)
+case class CatalogError(s: String) extends Exception(s)
 
 
-/** Get the physical path to a file or folder, NOT %-encoded
-  * @param location the file descriptor
-  * @return the path as a string */
-object getOriginalPath {
-  def apply(location: File) : String = location.toURI.normalize.getPath
+object Catalog {
+    /** Get the physical path to a file or folder, NOT %-encoded
+      * @param location the file descriptor
+      * @return the path as a string */
+    def getOriginalPath(location: File) : String = location.toURI.normalize.getPath
+
+    /** Get the physical path to a file or folder, %-encoded
+      * @param location the file descriptor
+      * @return the path as a string */
+    def getPath(location: File) : String = location.toURI.normalize.getRawPath
 }
 
 
-/** Get the physical path to a file or folder, %-encoded
-  * @param location the file descriptor
-  * @return the path as a string */
-object getPath {
-  def apply(location: File) : String = location.toURI.normalize.getRawPath
-}
+/** The information maintained by crawling all the locations */
+class Catalog {
+  import Catalog._
 
+  /** Exclusion patterns for files and folders. */
+  private val exclusions = HashSet[String] ()
+  
+  /** Inclusion patterns for files */
+  private val inclusions = HashSet[String] ()
+  
+  /** Processed exclusion and inclusion patterns (for internal use)
+    * Everything is quoted, except *, which are replaced with .* 
+    */
+  private val processedExclusions = HashSet[String] ()
+  private val processedInclusions = HashSet[String] ()
+  
+  /** Locations (files and folders) being watched */
+  val locations = HashSet[File] ()
+  
+  /** Map from URIs to named blocks (modules, declarations or assignments) */
+  val uriToNamedBlock = HashMap[URI, NamedBlock] ()
+  
+  /** Map from URLs to documents */
+  val urlToDocument = HashMap[URI, Document] ()
+  
+  /** Map from namespace URIs to modules declared in that URI */
+  val uriToModulesDeclared = HashMap[URI, LinkedHashSet[URI]] ()
+    
+  /** Exclusion patterns for files and folders. 
+    * Star is the only special character and matches any sequence of characters. 
+    * A folder is crawled iff it doesn't match any exclusion pattern.
+    * A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains. */
+  def getExclusions = exclusions
+  
+  /** Inclusion patterns for files
+    * Star is the only special character and matches any sequence of characters. 
+    * A folder is crawled iff it doesn't match any exclusion pattern.
+    * A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains. */
+  def getInclusions = inclusions
 
-/** Object containing the information obtained by crawling all the locations */
-object Storage {
   
   /** Get the semantic comment associated with a document, module, constant or structure
     * @param stringUri URI of a module or URL of a document, given as string
     * @param asText set it to true for text output and to false for XML output
     * @return if asText is true, the semantic comment, copied character by character from the file. Otherwise, an XML representation of the comment
     * @throws java.net.URISyntaxException if stringUri does not point to a location on disk and, as a URI, it is not valid 
-    * @throws StorageError(s: String) if the URI/URL is unknown */
+    * @throws CatalogError(s: String) if the URI/URL is unknown */
   def getMeta(stringUri : String, asText : Boolean = false) : String = {
     val document = new File(stringUri)
     var uri : URI = null
     try {
       // First see whether stringUri points to a file on the disk
       if (document == null)
-        throw StorageError("")
+        throw CatalogError("")
       uri = new URI(getPath(document))
       if (urlToDocument.isDefinedAt(uri))
         if (asText == true)
@@ -52,7 +87,7 @@ object Storage {
         else
           urlToDocument(uri).associatedComment.map(x => new PrettyPrinter(80,2).format(x.toOmdoc)).getOrElse("")
       else
-        throw StorageError("")
+        throw CatalogError("")
     } catch {   // If it doesn't point to a file on the disk, maybe it's a module URI
       case _ => {
         uri = new URI(stringUri) 
@@ -62,7 +97,7 @@ object Storage {
           else
             uriToNamedBlock(uri).associatedComment.map(x => new PrettyPrinter(80,2).format(x.toOmdoc)).getOrElse("")
         else
-          throw StorageError("")
+          throw CatalogError("")
       }
     }
   }
@@ -72,7 +107,7 @@ object Storage {
     * @param stringUri URI of a module or URL of a document, given as string
     * @return the actual content, read from the file
     * @throws java.net.URISyntaxException if stringUri does not point to a location on disk which is also stored in memory and, as a URI, it is not valid 
-    * @throws StorageError(s: String) if the URI/URL is unknown
+    * @throws CatalogError(s: String) if the URI/URL is unknown
     * @throws FileOpenError(s) if the file cannot be read */
   def getText(stringUri : String) : String = {
     val document = new File(stringUri)
@@ -80,7 +115,7 @@ object Storage {
     try {
       // First see whether stringUri points to a file on the disk
       if (document == null)
-        throw StorageError("")
+        throw CatalogError("")
       uri = new URI(getPath(document))
       if (urlToDocument.isDefinedAt(uri)) {
         if (!document.canRead)
@@ -95,7 +130,7 @@ object Storage {
         } 
       }
       else
-        throw StorageError("")
+        throw CatalogError("")
     } catch {   // If it doesn't point to a file on the disk, maybe it's a module URI
       case _ => {
         uri = new URI(stringUri) 
@@ -119,7 +154,7 @@ object Storage {
           }
         }
         else
-          throw StorageError("")
+          throw CatalogError("")
       }
     }
   }
@@ -130,7 +165,7 @@ object Storage {
     * @param stringUri URI of a module / constant / structure, given as a string
     * @return an array of dependency URIs, given as strings
     * @throws java.net.URISyntaxException if the URI is not valid 
-    * @throws StorageError(s: String) if the URI is unknown */
+    * @throws CatalogError(s: String) if the URI is unknown */
   def getDependencies(stringUri : String) : Array[String] = {
     val uri = new URI(stringUri)
     if (uriToNamedBlock.isDefinedAt(uri))
@@ -141,7 +176,7 @@ object Storage {
             case _ => Array[String]()
         }
     else
-      throw StorageError("")
+      throw CatalogError("")
   }
   
   
@@ -149,7 +184,7 @@ object Storage {
     * @param stringUri URI of a module / constant / structure, given as a string
     * @return an array of children URIs, given as strings
     * @throws java.net.URISyntaxException if the URI is not valid 
-    * @throws StorageError(s: String) if the URI is unknown */
+    * @throws CatalogError(s: String) if the URI is unknown */
   def getChildren(stringUri : String) : Array[String] = {
     val uri = new URI(stringUri)
     if (uriToNamedBlock.isDefinedAt(uri))
@@ -160,7 +195,7 @@ object Storage {
             case _ => Array[String]()
         }
     else
-      throw StorageError("")
+      throw CatalogError("")
   }
   
   
@@ -168,13 +203,13 @@ object Storage {
     * @param stringUri URI of a module / constant / structure, given as a string
     * @return an URL encoding the file and the position within that file
     * @throws java.net.URISyntaxException if the URI is not valid 
-    * @throws StorageError(s: String) if the URI is unknown */
+    * @throws CatalogError(s: String) if the URI is unknown */
   def getPosition(stringUri : String) : String = {
     val uri = new URI(stringUri)
     if (uriToNamedBlock.isDefinedAt(uri))
         uriToNamedBlock(uri).url.toString
     else
-      throw StorageError("")
+      throw CatalogError("")
   }
   
   
@@ -182,65 +217,65 @@ object Storage {
   /** Get a document skeleton as Omdoc
     * @param stringUrl URL (location on disk) of a document, given as a string
     * @return the document as Omdoc
-    * @throws StorageError(s: String) if the URL is unknown */
+    * @throws CatalogError(s: String) if the URL is unknown */
   def getOmdoc(stringUrl : String) : String = {
     val document = new File(stringUrl)
     if (document == null)
-      throw StorageError("Invalid URL: " + stringUrl)
+      throw CatalogError("Invalid URL: " + stringUrl)
     var url : URI = null
     try {
       url = new URI(getPath(document))
     } catch {
-      case _ => throw StorageError("Invalid URL: " + stringUrl)
+      case _ => throw CatalogError("Invalid URL: " + stringUrl)
     }
     if (urlToDocument.isDefinedAt(url))
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + new PrettyPrinter(80,2).format(urlToDocument(url).toOmdoc)
     else
-      throw StorageError("Unknown URL: " + stringUrl)
+      throw CatalogError("Unknown URL: " + stringUrl)
   }
   
   
   /** Get all namespaces URIs introduced by a document
     * @param stringUrl URL (location on disk) of a document, given as a string
     * @return an array of module URIs introduced, given as strings
-    * @throws StorageError(s: String) if the URL is unknown */
+    * @throws CatalogError(s: String) if the URL is unknown */
   def getNSIntroduced(stringUrl : String) : Array[String] = {
     val document = new File(stringUrl)
     if (document == null)
-      throw StorageError("Invalid URL: " + stringUrl)
+      throw CatalogError("Invalid URL: " + stringUrl)
     var url : URI = null
     try {
       url = new URI(getPath(document))
     } catch {
-      case _ => throw StorageError("Invalid URL: " + stringUrl)
+      case _ => throw CatalogError("Invalid URL: " + stringUrl)
     }
     if (urlToDocument.isDefinedAt(url))
       urlToDocument(url).declaredNamespaces.toArray.map(_.toString)
     else
-      throw StorageError("Unknown URL: " + stringUrl)
+      throw CatalogError("Unknown URL: " + stringUrl)
   }
   
   
   /** Write the Omdoc skeleton to a file with the same name as the original and in the same folder, but with extension .omdocsk
     * @param stringUrl the URL of the .elf file to be converted.
-    * @throws StorageError(s) if the URL is not OK or not crawled already */
+    * @throws CatalogError(s) if the URL is not OK or not crawled already */
   def writeOmdocToFile(stringUrl : String) {
     val realUrl : String = java.net.URLDecoder.decode(stringUrl, "UTF-8")
     val document = new File(realUrl)
     if (document == null)
-      throw StorageError("Invalid URL: " + realUrl)
+      throw CatalogError("Invalid URL: " + realUrl)
     var url : URI = null
     try {
       url = new URI(getPath(document)).normalize
     } catch {
-      case _ => throw StorageError("Invalid URL: " + realUrl)
+      case _ => throw CatalogError("Invalid URL: " + realUrl)
     }
     
     var toWrite : String = ""
     if (urlToDocument.isDefinedAt(url))
       toWrite = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + new PrettyPrinter(80,2).format(urlToDocument(url).toOmdoc)
     else
-      throw StorageError("Unknown URL: " + realUrl)
+      throw CatalogError("Unknown URL: " + realUrl)
     
     var newName : String = "" 
     if (document.getName.lastIndexOf(".") == -1)
@@ -282,41 +317,6 @@ object Storage {
       processedExclusions += quotePattern(pattern)
     }
   }
-  
-  /** Exclusion patterns for files and folders. 
-    * Star is the only special character and matches any sequence of characters. 
-    * A folder is crawled iff it doesn't match any exclusion pattern.
-    * A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains. */
-  def getExclusions = exclusions
-  
-  /** Inclusion patterns for files */
-  def getInclusions = inclusions
-  
-  /** Exclusion patterns for files and folders. */
-  private val exclusions = HashSet[String] ()
-  
-  /** Inclusion patterns for files */
-  private val inclusions = HashSet[String] ()
-  
-  
-  /** Processed exclusion and inclusion patterns (for internal use)
-    * Everything is quoted, except *, which are replaced with .* 
-    */
-  private val processedExclusions = HashSet[String] ()
-  private val processedInclusions = HashSet[String] ()
-  
-  
-  /** Locations (files and folders) being watched */
-  val locations = HashSet[File] ()
-  
-  /** Map from URIs to named blocks (modules, declarations or assignments) */
-  val uriToNamedBlock = HashMap[URI, NamedBlock] ()
-  
-  /** Map from URLs to documents */
-  val urlToDocument = HashMap[URI, Document] ()
-  
-  /** Map from namespace URIs to modules declared in that URI */
-  val uriToModulesDeclared = HashMap[URI, LinkedHashSet[URI]] ()
   
   
   /** Add a location by its string address.
@@ -492,16 +492,16 @@ object Storage {
           
           // Check whether anything has been already read
           if (urlToDocument.isDefinedAt(document.url))
-            throw StorageError("error: the url of this document (" + document.url + ") has already been encountered elsewhere")
+            throw CatalogError("error: the url of this document (" + document.url + ") has already been encountered elsewhere")
             
           for (m <- document.modules) {
             if (uriToNamedBlock.isDefinedAt(m.uri))
-              throw StorageError(m.pos + ": error: the uri of this module (" + m.uri + ") has already been encountered elsewhere")
+              throw CatalogError(m.pos + ": error: the uri of this module (" + m.uri + ") has already been encountered elsewhere")
             m match {
               case SigBlock(_,_,_,children,_,_)  => for (c <- children) if (uriToNamedBlock.isDefinedAt(c.uri))
-                throw StorageError(c.pos + ": error: the uri of this declaration (" + c.uri + ") has already been encountered elsewhere")
+                throw CatalogError(c.pos + ": error: the uri of this declaration (" + c.uri + ") has already been encountered elsewhere")
               case ViewBlock(_,_,_,children,_,_,_,_)  => for (c <- children) if (uriToNamedBlock.isDefinedAt(c.uri))
-                throw StorageError(c.pos + ": error: the uri of this assignment (" + c.uri + ") has already been encountered elsewhere")
+                throw CatalogError(c.pos + ": error: the uri of this assignment (" + c.uri + ") has already been encountered elsewhere")
             }
           }
             
@@ -526,7 +526,7 @@ object Storage {
         } catch {
           case ParseError(s) => println(getOriginalPath(location) + ":" + s)
           case FileOpenError(s) => println(getOriginalPath(location) + ":" + s)
-          case StorageError(s) => println(getOriginalPath(location) + ":" + s)
+          case CatalogError(s) => println(getOriginalPath(location) + ":" + s)
           case e : Exception => println(getOriginalPath(location) + ": error: " + e)
         }
       }

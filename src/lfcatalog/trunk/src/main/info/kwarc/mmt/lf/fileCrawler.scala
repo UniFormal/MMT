@@ -1,6 +1,5 @@
 // TODO: catch certain exceptions earlier, e.g. just ignore a module if possible, but parse the rest, or at least return those already parsed
 
-
 // TODO: if there is an error, don't recrawl unless it's modified ;)
 // TODO: put timestamp before "Crawled all modified files"
 
@@ -129,7 +128,7 @@ class FileCrawler(file : File) {
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
     }
-    return new Document(new URI(getPath(file)), associatedComment, modules, prefixes, declaredNamespaces)
+    return new Document(new URI(Catalog.getPath(file)), associatedComment, modules, prefixes, declaredNamespaces)
   }
   
   
@@ -500,7 +499,7 @@ class FileCrawler(file : File) {
     
     val endsAt = skipUntilDot(i) - 1       // skip over %open statement
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(getPath(file) + "#" + position)
+    val url = new URI(Catalog.getPath(file) + "#" + position)
     return Pair(StrDeclBlock(parentURI ? structureName, url, structureName, children, domain, position), endsAt + 1)
   }
   
@@ -520,7 +519,7 @@ class FileCrawler(file : File) {
     i = positionAfter
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(getPath(file) + "#" + position)
+    val url = new URI(Catalog.getPath(file) + "#" + position)
     return Pair(CstDeclBlock(parentURI ? cstName, url, cstName, position), endsAt + 1)
   }
   
@@ -616,7 +615,7 @@ class FileCrawler(file : File) {
     
     val endsAt = expectNext(i, ".", toPair(start, lineStarts) + ": error: signature does not end with a dot")
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(getPath(file) + "#" + position)
+    val url = new URI(Catalog.getPath(file) + "#" + position)
     return Pair(new SigBlock(uri, url, sigName, children, deps, position), endsAt + 1)
   }
   
@@ -636,7 +635,7 @@ class FileCrawler(file : File) {
     i += ":=".length
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(getPath(file) + "#" + position)
+    val url = new URI(Catalog.getPath(file) + "#" + position)
     return Pair(CstAssignmentBlock(parentURI ? constantName, url, constantName, position), endsAt + 1)
   }
   
@@ -660,7 +659,7 @@ class FileCrawler(file : File) {
     i += ":=".length
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(getPath(file) + "#" + position)
+    val url = new URI(Catalog.getPath(file) + "#" + position)
     return Pair(StrAssignmentBlock(parentURI ? structureName, url, structureName, position), endsAt + 1)
   }
   
@@ -797,7 +796,7 @@ class FileCrawler(file : File) {
     i = expectNext(i, ".", toPair(start, lineStarts) + ": error: view does not end with a dot")
     val endsAt = i
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(getPath(file) + "#" + position)
+    val url = new URI(Catalog.getPath(file) + "#" + position)
     
     return Pair(new ViewBlock(uri, url, viewName, children, deps, viewDomainURI, viewCodomain, position), endsAt + 1)
   }

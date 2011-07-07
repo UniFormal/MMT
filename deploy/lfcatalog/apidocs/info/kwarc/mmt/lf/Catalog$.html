@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.lf.Run</title>
+          <title>info.kwarc.mmt.lf.Catalog</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
@@ -18,25 +18,23 @@
 
       <div id="definition">
         <img src="../../../../lib/object_big.png" />
-        <h1>Run</h1>
+        <h1>Catalog</h1>
       </div>
 
       <h4 class="signature" id="signature">
       <span class="kind">object</span>
       <span class="symbol">
-        <span class="name">Run</span>
+        <span class="name">Catalog</span>
         
         
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment" id="comment"><div class="comment cmt"><p>Run the web server</p></div><div class="block">
+      <div class="fullcomment" id="comment"><div class="block">
+            go to: <a href="Catalog.html">companion</a>
+          </div><div class="block">
             linear super types: AnyRef, <span class="extype" name="scala.Any">Any</span>
-          </div>
-            
-            
-            
-          </div>
+          </div></div>
 
       <div id="template">
 
@@ -49,7 +47,7 @@
           <div id="ancestors">
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall">Hide All</li><li class="showall">Show all</li></ol>
-                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.Run">Run</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
+                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.Catalog">Catalog</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -63,46 +61,7 @@
 
         
 
-        <div class="types members" id="types">
-              <h3>Type Members</h3>
-              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.BackgroundCrawler">
-      <a id="BackgroundCrawler:BackgroundCrawler"></a>
-      <h4 class="signature"><a href="Run$$BackgroundCrawler.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">BackgroundCrawler</span>
         
-        
-        <span class="result"> extends Thread</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">A thread that checks for updated files and crawls them every crawlingInterval seconds</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.BackgroundEliminator">
-      <a id="BackgroundEliminator:BackgroundEliminator"></a>
-      <h4 class="signature"><a href="Run$$BackgroundEliminator.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">BackgroundEliminator</span>
-        
-        
-        <span class="result"> extends Thread</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run.ConsoleInput">
-      <a id="ConsoleInput:ConsoleInput"></a>
-      <h4 class="signature"><a href="Run$$ConsoleInput.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">ConsoleInput</span>
-        
-        
-        <span class="result"> extends Thread</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">A thread that reads commands from standard input</p>
-    </li></ol>
-            </div>
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
@@ -421,6 +380,44 @@ there are no more references to the object.</p><p>The details of when and if the
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#getOriginalPath">
+      <a id="getOriginalPath(File):String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getOriginalPath</span>
+        
+        <span class="params">(<span name="location">location: <span class="extype" name="java.io.File">File</span></span>)</span>
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get the physical path to a file or folder, NOT %-encoded</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get the physical path to a file or folder, NOT %-encoded</p></div><dl class="paramcmts block"><dt class="param">location</dt><dd class="cmt"><p>the file descriptor</p></dd><dt>returns</dt><dd class="cmt"><p>the path as a string</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#getPath">
+      <a id="getPath(File):String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">getPath</span>
+        
+        <span class="params">(<span name="location">location: <span class="extype" name="java.io.File">File</span></span>)</span>
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Get the physical path to a file or folder, %-encoded</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Get the physical path to a file or folder, %-encoded</p></div><dl class="paramcmts block"><dt class="param">location</dt><dd class="cmt"><p>the file descriptor</p></dd><dt>returns</dt><dd class="cmt"><p>the path as a string</p></dd></dl>
+            
+            
+            
+          </div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#hashCode">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -473,18 +470,6 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#main">
-      <a id="main(Array[String]):Unit"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol">
-        <span class="name">main</span>
-        
-        <span class="params">(<span name="args">args: <span class="extype" name="scala.Array">Array</span>[String]</span>)</span>
-        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#ne">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -596,18 +581,6 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#usage">
-      <a id="usage:String"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol">
-        <span class="name">usage</span>
-        
-        
-        <span class="result">: <span class="extype" name="java.lang.String">String</span></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#wait">
       <a id="wait():Unit"></a>
       <h4 class="signature">
