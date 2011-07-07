@@ -4,18 +4,6 @@ import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHash
 import java.io.{File, FileWriter, BufferedWriter}
 import scala.xml._
 
-/** Start and end two-dimensional coordinates of a block
-  * @param a start line
-  * @param b start column
-  * @param c end line
-  * @param d end column */
-class Position(a: Int, b: Int, c: Int, d: Int) extends Pair(Pair(a,b), Pair(c,d)) {
-  /** @param x start position (line and column)
-      @param y end position (line and column) */
-  def this(x: Pair[Int,Int], y: Pair[Int,Int]) = this(x._1, x._2, y._1, y._2)
-  override def toString = a + "." + b + "-" + c + "." + d
-}
-
 
 /** All information extracted from a file
   * @param url the local file address
@@ -129,4 +117,17 @@ case class SemanticCommentBlock(val comment: String, val properties: LinkedHashM
     <metadata>
       {properties.map(x => <metadatum key={x._1}>{x._2}</metadatum>)}
     </metadata>
+}
+
+
+/** Start and end two-dimensional coordinates of a block
+  * @param a start line
+  * @param b start column
+  * @param c end line
+  * @param d end column */
+class Position(a: Int, b: Int, c: Int, d: Int) extends Pair(Pair(a,b), Pair(c,d)) {
+  /** @param x start position (line and column)
+      @param y end position (line and column) */
+  def this(x: Pair[Int,Int], y: Pair[Int,Int]) = this(x._1, x._2, y._1, y._2)
+  override def toString = a + "." + b + "-" + c + "." + d
 }
