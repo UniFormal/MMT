@@ -136,6 +136,9 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
+	      case AddArchive(f) =>
+	         val arch = new archives.Archive(f, report)
+	         backend.addStore(arch)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>

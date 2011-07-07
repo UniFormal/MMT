@@ -1,19 +1,23 @@
 package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import frontend._
+import backend._
 import modules._
 import lf._
 
 import java.io.File
 import scala.collection.mutable._
 
-class Archive(root: File, report: Report) {
-    private var base : Path = null
+class Archive(root: File, report: Report) extends Storage {
+    // the base URI of the documents in the narration folder, should be read from the meta-file and set in the init method
+    private var narrationBase : utils.URI = null
+    // the base path of the modules in the content folder, should be read from the meta-file and set in the init method
+    private var contentBase : DPath = null
     private val files = new LinkedHashSet[File]
     private val modules = new HashMap[MPath,File]
     def log(msg: => String) = report("archive", msg)
-/*    def init {
-       val conf = utils.xml.readFile(new java.io.File(root, "META-INF.xml"))
+    def init {}
+/*       val conf = utils.xml.readFile(new java.io.File(root, "META-INF.xml"))
        conf match {
           case <archive>{dims @ _*}</archive> =>
              base = Path.parse(utils.xml.attr(conf, "base"), null)
@@ -48,6 +52,12 @@ class Archive(root: File, report: Report) {
          //java.io.writeFile(trg, ... xml)
     }
     def toMar(target: java.io.File) {}
+    val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, root)
+    def get(p: Path, reader: Reader) {p match {
+       case doc : DPath => narrationBackend.get(doc, reader)  
+       case mod : MPath => reader.readModules(contentBase, None, get(mod))
+       case sym : GlobalName => get(sym.mod, reader)
+    }}
 }
 
 class TwelfArchive(root: File, report: Report, twelf : Twelf) extends Archive(root, report) {

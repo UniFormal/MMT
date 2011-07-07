@@ -11,27 +11,14 @@ case class NotFound(p : Path) extends info.kwarc.mmt.api.Error("Cannot find ress
 
 /** Storage is an abstraction over backends that can provide MMT content
  * A storage declares a URI u and must answer to all URIs that start with u.
- * @param scheme the scheme of u
- * @param authority the authority part of u
- * @param prefix the path of u
  */
-abstract class Storage(scheme : String, authority : String, prefix : String) {
-   /**
-    * a storage may send arbitrary initial content to the reader
-    */
+abstract class Storage {
+   /** called automatically when added; a storage may send arbitrary content to the reader during intialization */
    def init(reader : Reader) {}
    /** dereferences a path and sends the content to a reader
-    * a storage may send more content than the path references, e.g., the whole file
+    * a storage may send more content than the path references, e.g., the whole file or a dependency closure
     */
    def get(path : Path, reader : Reader)
-   private val length = prefix.length
-   protected def getSuffix(uri : URI) : String = {
-      val p = uri.pathAsString
-      if (uri.scheme == Some(scheme) && uri.authority == Some(authority) && p.startsWith(prefix))
-         p.substring(length)
-      else
-         throw NotApplicable
-      }
 }
 
 /** convenience methods for backends */
@@ -49,6 +36,7 @@ object Storage {
       }
 	  l.flatten    
    }
+   /** reads an OMBase description file and returns the described OMBases */
    def fromOMBaseCatalog(file : java.io.File) : List[OMBase] = {
       val N = utils.xml.readFile(file)
       N.child.toList mapPartial {
@@ -79,6 +67,17 @@ object Storage {
          case n => throw ParseError("illegal ombase: " + n)
       }
    }
+   def virtDoc(entries : List[String], prefix : String) =
+      <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
+   def getSuffix(base : utils.URI, uri : utils.URI) : String = {
+      val b = base.pathAsString
+      val u = uri.pathAsString
+      if (uri.scheme == base.scheme && uri.authority == base.authority && u.startsWith(b))
+         u.substring(b.length)
+      else
+         throw NotApplicable
+      }
+
 }
 
 object OMQuery {
@@ -107,10 +106,10 @@ case class Doc(base : String, p : String, q : String) extends OMQuery(p, q)
 case class Mod(p : String, q : String) extends OMQuery(p, q)
 case class Ass(p : String, q : String) extends OMQuery(p, q)
 
-/** a trait for URL-addressed storages that can serve MMT document fragments */
+/** a trait for URL-addressed Storages that can serve MMT document fragments */
 abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : URI,
                       val dpats : List[OMQuery], mpats : List[OMQuery], spats : List[OMQuery], ipats : List[OMQuery])
-         extends Storage(scheme, authority, prefix) {
+         extends Storage {
      def sendRequest(p : String, b : String) : NodeSeq = {
         val url = new java.net.URI(ombase.scheme.getOrElse(null), ombase.authority.getOrElse(null), ombase.pathAsString + p, null, null).toURL
         if (b == "") {
@@ -168,40 +167,37 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
 }
 
 /** a Storage that retrieves file URIs from the local system */
-case class LocalSystem(base : URI) extends Storage("file", null, "/") {
+case class LocalSystem(base : URI) extends Storage {
+   val localBase = URI(Some("file"), None, Nil, true, None, None)
    def get(path : Path, reader : Reader) {
       val uri = base.resolve(path.doc.uri)
-      val test = getSuffix(uri)
+      val test = Storage.getSuffix(localBase, uri)
       val file = new java.io.File(uri.toJava)
       val N = utils.xml.readFile(file)
       reader.readDocuments(DPath(uri), N)
    }
 }
 
-trait VirtualDocServer {
-   def virtDoc(entries : List[String], prefix : String) =
-      <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
-}
-
 /** a Storage that retrieves repository URIs from the local working copy */
-case class LocalCopy(scheme : String, authority : String, prefix : String, base : java.io.File)
-   extends Storage(scheme, authority, prefix) with VirtualDocServer {
+case class LocalCopy(scheme : String, authority : String, prefix : String, base : java.io.File) extends Storage  {
+   def localBase = URI(scheme + "://" + authority + prefix) 
    def get(path : Path, reader : Reader) {
       val uri = path.doc.uri
-      val target = new java.io.File(base, getSuffix(uri))
+      val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
           val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern
           val prefix = if (target != base) target.getName + "/" else ""
-          virtDoc(entries, prefix)
+          Storage.virtDoc(entries, prefix)
       } else throw NotFound(path)
       reader.readDocuments(DPath(uri), N)
    }
 }
 
+/** a Storage that retrieves content from a TNTBase database */
 case class TNTBase(scheme : String, authority : String, prefix : String, ombase : URI,
                    dp : List[OMQuery], mp : List[OMQuery], sp : List[OMQuery], ip : List[OMQuery])
-           extends OMBase(scheme, authority, prefix, ombase, dp, mp, sp, ip) with VirtualDocServer {
+           extends OMBase(scheme, authority, prefix, ombase, dp, mp, sp, ip) {
    def handleResponse(msg : => String, N : NodeSeq) : NodeSeq = {
       N(0) match {
          case <results>{child @ _*}</results> => child map {
@@ -214,12 +210,12 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
             var p = xml.attr(N(0), "path")
             if (p.endsWith("/")) p = p.substring(0,p.length - 1)
             val prefix = p.split("/").toList.last + "/" //prefix is directory name + "/" or "/" if root
-            virtDoc(entries.toList.map(e => xml.attr(e, "name")), prefix)
+            Storage.virtDoc(entries.toList.map(e => xml.attr(e, "name")), prefix)
       }
    }
 }
-   
-/** a Backend holds a list of Storages and uses them to read Paths */
+
+/** a Backend holds a list of Storages and uses them to dereference Paths */
 class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
    private def log(msg : String) = report("backend", msg)

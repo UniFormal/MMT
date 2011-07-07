@@ -90,7 +90,8 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
  */
 case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
    def doc = utils.mmt.mmtbase
-   def ^! = if (name.length == 1) parent.toMPath else parent % name.init
+   def mod = parent.toMPath
+   def ^! = if (name.length == 1) mod else parent % name.init
    def last = name.last.toPath
    def apply(args: List[Term]) = OMA(OMID(this), args)
    def apply(args: Term*) = OMA(OMID(this), args.toList)
