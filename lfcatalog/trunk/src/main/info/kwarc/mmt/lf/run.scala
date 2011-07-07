@@ -77,7 +77,7 @@ object Run {
     server.start
     println("go to: http://127.0.0.1:" + port)
     
-    // start the console input
+    // accept console input
     while (true) {
           val input = Console.readLine.trim
           val words : Array[String] = input.split("\\s")
@@ -96,6 +96,8 @@ object Run {
                 else
                     println(Time + "error: delete must be followed by a location address")
             }
+            else if (words(0) == "errors")    // print files with errors
+                println(catalog.urlToDocument.filter(_._2.lastError.isDefined).toSeq.sortBy(_._1.toString).map(_._2.lastError.get).mkString("\n"))
             else {          // add a location
                 try {
                     catalog.addStringLocation(words(0))

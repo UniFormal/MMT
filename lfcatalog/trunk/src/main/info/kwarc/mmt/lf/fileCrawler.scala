@@ -1,10 +1,8 @@
 // TODO: catch certain exceptions earlier, e.g. just ignore a module if possible, but parse the rest, or at least return those already parsed
 
-// TODO: if there is an error, don't recrawl unless it's modified ;)
-
 package info.kwarc.mmt.lf
 
-import java.io._
+import java.io.File
 import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet}
 
 

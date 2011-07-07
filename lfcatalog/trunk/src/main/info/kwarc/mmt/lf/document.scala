@@ -15,8 +15,14 @@ import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHash
   * @param declaredNamespaces list of current namespaces declared in the document */
 class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock], val modules: MutableList[ModuleBlock], 
                 val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI]) {
+  
   /** Time, in miliseconds, when the file was last modified */
   var lastModified : Long = -1
+  
+  /** None, if the document was parsed without any error.
+    * Some(last error message), otherwise */
+  var lastError : Option[String] = None
+  
   def toOmdoc : Elem = 
     <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={declaredNamespaces.head.toString}>
       {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
