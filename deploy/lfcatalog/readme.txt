@@ -20,6 +20,7 @@ Command-line user input
 
 absolute-disk-path          // add a location
 delete absolute-disk-path   // delete a location
+errors                      // print all files with errors, together with the last error message for each
 exit                        // exit the server
 
 

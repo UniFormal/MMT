@@ -1,11 +1,11 @@
 package info.kwarc.mmt.lf
 
-import java.io._
-import java.net._
+import java.io.{File, BufferedWriter, OutputStreamWriter, FileOutputStream}
+import java.net.URLDecoder
 import java.util.regex.Pattern
 
 import scala.xml._
-import scala.collection.mutable.{HashSet, LinkedHashSet, HashMap}
+import scala.collection.mutable.{HashSet, LinkedHashSet, LinkedHashMap, HashMap, MutableList}
 
 
 /** Utility object */
@@ -50,6 +50,7 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   // ------------------------------- public methods -------------------------------
   
   // ------------------------------- getter methods -------------------------------
+  
   
   /** Exclusion patterns for files and folders. 
     * Star is the only special character and matches any sequence of characters. 
@@ -374,7 +375,6 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   /** Crawl through all stored locations, ignoring (but logging) errors */
   def crawlAll {
     locations.foreach(crawl)
-    println(Time + "Crawled all modified files")
   }
 
   
@@ -416,7 +416,6 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
     if (location.isDirectory()) {
       // It's a folder. Crawl it iff it doesn't match any exclusion pattern.
       if (isLegalLocation(locationName, true)) {
-          //println(Time + getOriginalPath(location) + ": crawling folder...")
         
           // Get list of children
           var fileList : Array[File] = null
@@ -452,25 +451,35 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
         
       // Crawl the file iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, then all files are crawled.
       if (isLegalLocation(locationName, false)) {
-        println(Time + getOriginalPath(location) + ": crawling file...")
         try {
           // Get the Document instance
           val lastModified = location.lastModified
-          val document = FileCrawler(location)
+          var document : Document = null
+          try {
+              document = FileCrawler(location)          // <-------------------- the actual parsing --------------------
+              document.lastError = None
+          } catch {
+              case ParseError(s) => {
+                println(Time + getOriginalPath(location) + ":" + s)
+                if (document == null)     // store an empty Document
+                    document = new Document(new URI(Catalog.getPath(location)), None, new MutableList(), new LinkedHashMap(), new LinkedHashSet())
+                    document.lastError = Some(Time + getOriginalPath(location) + ":" + s)
+              }
+          }
           document.lastModified = lastModified
           
-          // Check whether anything has been already read
+          // Throw CatalogError if the file has been read before or any component URI is defined elsewhere
           if (urlToDocument.isDefinedAt(document.url))
             throw CatalogError("error: the url of this document (" + document.url + ") has already been encountered elsewhere")
             
           for (m <- document.modules) {
             if (uriToNamedBlock.isDefinedAt(m.uri))
-              throw CatalogError(m.pos + ": error: the uri of this module (" + m.uri + ") has already been encountered elsewhere")
+              throw CatalogError(m.pos + ": error: the uri of this module (" + m.uri + ") has already been encountered at " + getPosition(m.uri.toString))
             m match {
               case SigBlock(_,_,_,children,_,_)  => for (c <- children) if (uriToNamedBlock.isDefinedAt(c.uri))
-                throw CatalogError(c.pos + ": error: the uri of this declaration (" + c.uri + ") has already been encountered elsewhere")
+                throw CatalogError(c.pos + ": error: the uri of this declaration (" + c.uri + ") has already been encountered at " + getPosition(c.uri.toString))
               case ViewBlock(_,_,_,children,_,_,_,_)  => for (c <- children) if (uriToNamedBlock.isDefinedAt(c.uri))
-                throw CatalogError(c.pos + ": error: the uri of this assignment (" + c.uri + ") has already been encountered elsewhere")
+                throw CatalogError(c.pos + ": error: the uri of this assignment (" + c.uri + ") has already been encountered at " + getPosition(c.uri.toString))
             }
           }
             
@@ -491,12 +500,11 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
                   case ViewBlock(_,_,_,children,_,_,_,_) => children.foreach(c => uriToNamedBlock.update(c.uri, c))
           }})
             
-          println(Time + getOriginalPath(location) + ": success")
+          println(Time + getOriginalPath(location) + ": OK")
         } catch {
-          case ParseError(s) => println(Time + getOriginalPath(location) + ":" + s)
           case FileOpenError(s) => println(Time + getOriginalPath(location) + ":" + s)
           case CatalogError(s) => println(Time + getOriginalPath(location) + ":" + s)
-          case e : Exception => println(Time + getOriginalPath(location) + ": error: " + e)
+          //case e : Exception => println(Time + getOriginalPath(location) + ": error: " + e)
         }
       }
     }

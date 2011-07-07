@@ -1,6 +1,6 @@
 package info.kwarc.mmt.lf
 
-import java.util.regex.{Pattern,Matcher}
+import java.util.regex.{Pattern, Matcher}
 
 
 case class URI(var uri : java.net.URI) {
