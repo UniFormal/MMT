@@ -3,7 +3,7 @@
      xmlns="http://www.w3.org/2002/07/owl#"
      xml:base="http://example.com/owl/families/"
      ontologyIRI="http://example.com/owl/families">
- 
+
  <Declaration>
   <Class IRI="Person"/>
  </Declaration>
@@ -67,7 +67,7 @@
  <Declaration>
   <Class IRI="JohnsChildren"/>
  </Declaration>
- 
+
  <EquivalentClasses>
   <Class IRI="ChildlessPerson"/>
   <ObjectIntersectionOf>
@@ -118,6 +118,15 @@
    </ObjectHasSelf>
  </EquivalentClasses>
  
+ <EquivalentClasses>
+  <Class IRI="MyBirthdayGuests"/>
+  <ObjectOneOf>
+   <NamedIndividual IRI="Bill"/>
+   <NamedIndividual IRI="John"/>
+   <NamedIndividual IRI="Mary"/>
+  </ObjectOneOf>
+ </EquivalentClasses>
+ 
  <ClassAssertion>
   <ObjectExactCardinality cardinality="3">
    <ObjectProperty IRI="hasChild"/>
@@ -125,8 +134,8 @@
   </ObjectExactCardinality>
   <NamedIndividual IRI="John"/>
  </ClassAssertion>
-  <!--
- <ClassAssertion>
+ 
+  <ClassAssertion>
   <ObjectMinCardinality cardinality="2">
    <ObjectProperty IRI="hasChild"/>
    <Class IRI="Parent"/>
@@ -140,17 +149,37 @@
    <Class IRI="Parent"/>
   </ObjectMaxCardinality>
   <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+
+ <ClassAssertion>
+  <ObjectExactCardinality cardinality="3">
+   <ObjectProperty IRI="hasChild"/>
+   </ObjectExactCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+  
+ <ClassAssertion>
+  <ObjectMinCardinality cardinality="2">
+   <ObjectProperty IRI="hasChild"/>
+   </ObjectMinCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+  
+ <ClassAssertion>
+  <ObjectMaxCardinality cardinality="4">
+   <ObjectProperty IRI="hasChild"/>
+    </ObjectMaxCardinality>
+  <NamedIndividual IRI="John"/>
  </ClassAssertion> 
  
-  <EquivalentClasses>
-  <Class IRI="MyBirthdayGuests"/>
-  <ObjectOneOf>
-   <NamedIndividual IRI="Bill"/>
-   <NamedIndividual IRI="John"/>
-   <NamedIndividual IRI="Mary"/>
-  </ObjectOneOf>
- </EquivalentClasses>
-    
+ 
+ <!--
+all work, just write proper examples   
+dataAllValuesFrom:
+hasZip
+integer
+
+dataSomeValuesFrom:
  <SubClassOf>
   <Class IRI="Teenager"/>
   <DataSomeValuesFrom>
@@ -166,10 +195,6 @@
     </DatatypeRestriction>
   </DataSomeValuesFrom>
 </SubClassOf>
-
-
-objectcardinalities qualified
-dataAllValuesFrom
 
  datacardinalities qualified
  dataExactCardinality
