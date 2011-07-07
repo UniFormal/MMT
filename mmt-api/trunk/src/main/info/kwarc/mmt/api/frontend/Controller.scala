@@ -51,7 +51,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       report.indent
-      backend.get(path, false)
+      backend.get(path)
       report.unindent
       log("retrieved " + path)
    }
@@ -110,9 +110,16 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       notstore.clear
       depstore.clear
    }
+   /** reads a file and returns the Path of the document found in it */
    def read(f: java.io.File) : DPath = {
       val N = utils.xml.readFile(f)
       reader.readDocument(DPath(URI.fromJava(f.toURI)), N)
+   }
+   /** opens an archive and returns it */
+   def openArchive(f: java.io.File) : Archive = { 
+      val arch = Storage.fromArchive(f, report)
+      backend.addStore(arch)
+      arch
    }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
@@ -136,9 +143,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
-	      case AddArchive(f) =>
-	         val arch = new archives.Archive(f, report)
-	         backend.addStore(arch)
+	      case AddArchive(f) => openArchive(f)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>

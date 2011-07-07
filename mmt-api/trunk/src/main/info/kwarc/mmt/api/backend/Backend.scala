@@ -67,6 +67,12 @@ object Storage {
          case n => throw ParseError("illegal ombase: " + n)
       }
    }
+   def fromArchive(file: java.io.File, report: frontend.Report) : Archive = {
+      //TODO: check if "file" is mar, folder, or meta-inf file, branch accordingly
+      //read the meta-inf file, and then use to construct the Archive
+      // the meta-inf file may contain id (default to folder/file name), information that lets us decide whether it's a twelf archive 
+      new Archive(file, "", report)
+   }
    def virtDoc(entries : List[String], prefix : String) =
       <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
    def getSuffix(base : utils.URI, uri : utils.URI) : String = {
@@ -226,8 +232,8 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
          d.init(reader)
       }
    }
-   /** a path is looked up in the first Storage that is applicable and the content sent to the reader */
-   def get(p : Path, eager : Boolean) = {
+   /** look up a path in the first Storage that is applicable and send the content to the reader */
+   def get(p : Path) = {
       def getInList(l : List[Storage], p : Path) {l match {
          case Nil => throw NotFound(p)
          case hd :: tl =>
@@ -239,5 +245,10 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
             }
       }}
       getInList(stores, p)
+   }
+   /** retrieve an Archive by its id */
+   def getArchive(id: String) = stores find {
+      case a: Archive => a.id == id
+      case _ => false
    }
 }

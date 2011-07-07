@@ -1,14 +1,13 @@
-package info.kwarc.mmt.api.archives
+package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
 import frontend._
-import backend._
 import modules._
 import lf._
 
 import java.io.File
 import scala.collection.mutable._
 
-class Archive(root: File, report: Report) extends Storage {
+class Archive(val root: File, val id: String, report: Report) extends Storage {
     // the base URI of the documents in the narration folder, should be read from the meta-file and set in the init method
     private var narrationBase : utils.URI = null
     // the base path of the modules in the content folder, should be read from the meta-file and set in the init method
@@ -60,20 +59,9 @@ class Archive(root: File, report: Report) extends Storage {
     }}
 }
 
-class TwelfArchive(root: File, report: Report, twelf : Twelf) extends Archive(root, report) {
+class TwelfArchive(root: File, id: String, report: Report, twelf : Twelf) extends Archive(root, id, report) {
     def srcToNarr(controller: Controller) {
        // create narration folder, iterate over all source files, call Twelf, put omdoc into narration folder (some subfolder structure)
        // build HashSet of all files
     }
-}
-
-object Test {
-   def main(args: Array[String]) {
-      val report = new frontend.FileReport(new java.io.File("archives.log"))
-      report.groups += "archive"
-      //val checker = new libraries.FoundChecker(libraries.DefaultFoundation)
-      val controller = new Controller(libraries.NullChecker, report)
-      val archive = new Archive(new java.io.File(""), report)
-      archive.narrToCont(controller)
-   }
 }
