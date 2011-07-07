@@ -1,7 +1,7 @@
-Crawler server commands
-
+HTTP get server commands
+-------               -----                  ------
 Request               Query                  Effect
-----------------------------------------------------------
+-------               -----                  ------
  <none>                                 print this readme
  help                                   print this readme
  admin                                  print the admin page
