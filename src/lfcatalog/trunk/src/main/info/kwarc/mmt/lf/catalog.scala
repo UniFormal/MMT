@@ -6,28 +6,6 @@ import java.util.regex.Pattern
 import scala.xml._
 import java.net._
 
-/** Exception thrown when a location specified does not exist on disk */
-case class InexistentLocation(s : String) extends Exception(s)
-/** Exception related to parsing */
-case class ParseError(s: String) extends Exception(s)
-/** Exception thrown if a file cannot be opened */
-case class FileOpenError(s: String) extends Exception(s)
-/** Exception thrown by the catalog if a query is unsuccessul */
-case class CatalogError(s: String) extends Exception(s)
-
-
-/** Current time as a string */
-object Time {
-    import java.util.Calendar
-    /** Make sure each time component has 2 digits */
-    private def formatNumber(n : Int) : String = if (n < 10) ("0" + n.toString) else n.toString
-    /** Current time as a string */
-    override def toString = {
-        val t = Calendar.getInstance
-        "[" + formatNumber(t.get(Calendar.HOUR_OF_DAY)) + ":" + formatNumber(t.get(Calendar.MINUTE)) + ":" + formatNumber(t.get(Calendar.SECOND)) + "] "
-    }
-}
-
 
 /** Utility object */
 object Catalog {
@@ -44,8 +22,13 @@ object Catalog {
 
 
 /** The information maintained by crawling all the locations */
-class Catalog {
+class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   import Catalog._
+  
+  // start background threads that make sure this catalog is synchronized with the disk
+  new BackgroundCrawler(this, crawlingInterval).start
+  new BackgroundEliminator(this, deletingInterval).start
+  
 
   /** Exclusion patterns for files and folders. */
   private val exclusions = HashSet[String] ()
@@ -549,4 +532,31 @@ class Catalog {
       }
     }
   }}
+}
+
+
+/** A thread that checks for updated files and crawls them every crawlingInterval seconds */
+class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends Thread {
+  override def run {
+    while(true) {
+      Thread.sleep(crawlingInterval * 1000)
+      catalog.crawlAll
+    }
+  }
+}
+
+/** A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes */
+class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) extends Thread {
+  override def run {
+    while(true) {
+      Thread.sleep(deletingInterval * 1000)
+      for ((url,_) <- catalog.urlToDocument) {
+        val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
+        if (!file.exists) {
+          println(Time + Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
+          catalog.uncrawl(url.toString)
+        }
+      }
+    }
+  }
 }
