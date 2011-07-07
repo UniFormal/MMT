@@ -22,17 +22,20 @@ object Catalog {
 }
 
 
-/** The information maintained by crawling all the locations */
-class Catalog(crawlingInterval: Int, deletingInterval: Int) {
+/** The information maintained by crawling all the locations
+  * @param locationsParam set of disk locations to scan, given as strings
+  * @param inclusionsParam set of inclusion patterns, given as strings
+  * @param exclusionsParam set of exclusion patterns, given as strings
+  * @param port port on which the server runs. Default value is 8080
+  * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 5 sec
+  * @param deletingInterval interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
+  * @throws PortUnavailable if the web server cannot be started because the specified port is already in use*/
+class Catalog(locationsParam: HashSet[String] = new HashSet[String](), 
+               inclusionsParam: HashSet[String] = new HashSet[String](), exclusionsParam: HashSet[String] = new HashSet[String](), 
+               port: Int = 8080, crawlingInterval: Int = 5, deletingInterval: Int = 17) {
+  
+  // ------------------------------- public and private members -------------------------------
 
-  // ------------------------------- initialization code -------------------------------
-  
-  import Catalog._
-  // start background threads that make sure this catalog is synchronized with the disk
-  new BackgroundCrawler(this, crawlingInterval).start
-  new BackgroundEliminator(this, deletingInterval).start
-  
-  // ------------------------------- public members -------------------------------
   
   /** Locations (files and folders) being watched */
   val locations = HashSet[File] ()
@@ -46,8 +49,60 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   /** Map from namespace URIs to modules declared in that URI */
   val uriToModulesDeclared = HashMap[URI, LinkedHashSet[URI]] ()
   
+  /** Exclusion patterns for files and folders. */
+  private val exclusions = HashSet[String] ()
+  
+  
+  /** Inclusion patterns for files */
+  private val inclusions = HashSet[String] ()
+  
+  
+  /** Processed exclusion and inclusion patterns (for internal use)
+    * Everything is quoted, except *, which are replaced with .*       */
+  private val processedExclusions = HashSet[String] ()
+  private val processedInclusions = HashSet[String] ()
+  
+  
+  
+  // ------------------------------- initialization code -------------------------------
+  
+  import Catalog._
+  
+  // check if port is available
+  if (isTaken(port))
+      throw PortUnavailable("")
+  
+  // start background threads that make sure this catalog is synchronized with the disk
+  new BackgroundCrawler(this, crawlingInterval).start
+  new BackgroundEliminator(this, deletingInterval).start
+  
+  // add inclusion and exclusion patterns
+  inclusionsParam.foreach(addInclusion)
+  exclusionsParam.foreach(addExclusion)
+  
+  // add locations
+  for (l <- locationsParam) {
+      try {
+          addStringLocation(l)
+      } catch {
+          case InexistentLocation(msg) => println(msg)
+      }
+  }
+  
+  // start the web server (different threads)
+  var server = new WebServer(this, port)
+  server.start
+  println("go to: http://127.0.0.1:" + port)
+  
   
   // ------------------------------- public methods -------------------------------
+  
+  
+  /** Stop the web server */
+  def stopServer {
+      server.stop
+  }
+  
   
   // ------------------------------- getter methods -------------------------------
   
@@ -511,21 +566,7 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   }}
   
   
-  // ------------------------------- private members and methods -------------------------------
-  
-  
-  /** Exclusion patterns for files and folders. */
-  private val exclusions = HashSet[String] ()
-  
-  
-  /** Inclusion patterns for files */
-  private val inclusions = HashSet[String] ()
-  
-  
-  /** Processed exclusion and inclusion patterns (for internal use)
-    * Everything is quoted, except *, which are replaced with .*       */
-  private val processedExclusions = HashSet[String] ()
-  private val processedInclusions = HashSet[String] ()
+  // ------------------------------- private methods -------------------------------
   
   
   /** Check whether a location matches the stored patterns.
