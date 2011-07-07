@@ -1,7 +1,6 @@
 // TO*not*DO: in BackgroundEliminator: also check whether the filename or a directory name between the location and the file is now excluded
 // correction: don't allow patterns to be removed. Don't even allow them to be added later via the web interface (security problem).
 
-// TODO: check if port is in use BEFORE starting the server
 
 package info.kwarc.mmt.lf
 
@@ -90,7 +89,7 @@ class Server(catalog : Catalog, port : Int) extends HServer {
     //override def buffered = true
     def resolve(req : HReqHeaderData) : Option[HLet] = {
       if (req.uriPath != "favicon.ico")
-        println("Query: " + req.uriPath + "?" + req.query)
+        println(Time + "Query: " + req.uriPath + "?" + req.query)
         
       req.uriPath match {
       case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
@@ -105,7 +104,7 @@ class Server(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.addStringLocation(java.net.URLDecoder.decode(req.query.substring("addLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => println(msg)
+            case InexistentLocation(msg) => println(Time + msg)
           }
           Some(HTMLResponse(updateLocations(adminHtml).toString))
         }}
@@ -113,7 +112,7 @@ class Server(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.deleteStringLocation(java.net.URLDecoder.decode(req.query.substring("deleteLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => println(msg)
+            case InexistentLocation(msg) => println(Time + msg)
           }
           Some(HTMLResponse(updateLocations(adminHtml).toString))
         }}
@@ -276,10 +275,10 @@ class Server(catalog : Catalog, port : Int) extends HServer {
       if (header.isDefined) {
           val headerTag = header.get._1
           val headerContent = header.get._2
-          println(headerTag + ": " + headerContent)
+          //println(Time + headerTag + ": " + headerContent)
           tk.setHeader(headerTag, headerContent)
       }
-      println(text)
+      //println(Time + text)
       tk.write(out)
         .close
     }
@@ -365,16 +364,16 @@ object Run {
                         try {
                             catalog.deleteStringLocation(words(1))
                         } catch {
-                            case InexistentLocation(msg) => println(msg)
+                            case InexistentLocation(msg) => println(Time + msg)
                         }
                     else
-                        println("error: delete must be followed by a location address")
+                        println(Time + "error: delete must be followed by a location address")
                 }
                 else {          // add a location
                     try {
                         catalog.addStringLocation(words(0))
                     } catch {
-                        case InexistentLocation(msg) => println(msg)
+                        case InexistentLocation(msg) => println(Time + msg)
                     }
                 }
           }
@@ -399,7 +398,7 @@ object Run {
         for ((url,_) <- catalog.urlToDocument) {
           val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
           if (!file.exists) {
-            println(Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
+            println(Time + Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
             catalog.uncrawl(url.toString)
           }
         }

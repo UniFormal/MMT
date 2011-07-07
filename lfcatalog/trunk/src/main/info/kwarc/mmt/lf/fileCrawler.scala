@@ -1,7 +1,6 @@
 // TODO: catch certain exceptions earlier, e.g. just ignore a module if possible, but parse the rest, or at least return those already parsed
 
 // TODO: if there is an error, don't recrawl unless it's modified ;)
-// TODO: put timestamp before "Crawled all modified files"
 
 package info.kwarc.mmt.lf
 
@@ -9,7 +8,11 @@ import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, 
 import java.io._
 
 
-/** Crawl a file with FileCrawler(fileDescriptor) in order to get a document */
+/** Crawl a file
+  * @param file the file descriptor (not open)
+  * @return a Document object with the information extracted from the file
+  * @throws ParseError for syntactical errors in the file
+  * @throws FileOpenError if the file cannot be opened */
 object FileCrawler {
   def apply(file : File) : Document = (new FileCrawler(file)).crawl
 }
@@ -21,8 +24,10 @@ class FileCrawler(file : File) {
   
   /** array containing all the lines in the file */
   private var lines : Array[String] = null
+  
   /** all the lines in a single string, with " " instead of newline. */
   private var flat  : String = ""
+  
   /** array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
   private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
   
@@ -48,7 +53,8 @@ class FileCrawler(file : File) {
   
   
   /** Crawl a file.
-    * @return a Document object containing the extracted information */
+    * @return a Document object containing the extracted information
+    * @throws ParseError for syntactical errors in the file */
   private def crawl() : Document =              // line and column numbers start from 0
   {
     // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
@@ -157,7 +163,8 @@ class FileCrawler(file : File) {
   /** Jump over all comments and white spaces. 
     * Side-effect: the last %* ... *% comment is saved in keepComment 
     * @param start the starting position
-    * @return the first position >= start which is NOT white space or part of a comment */
+    * @return the first position >= start which is NOT white space or part of a comment
+    * @throws ParseError for syntactical errors in the comments encountered */
   private def skipwscomments(start: Int) : Int = 
   {
     var i = skipws(start)
@@ -206,7 +213,8 @@ class FileCrawler(file : File) {
   /** Jump over a block surrounded by curly brackets.
     * Skips over comments, strings and everything else.
     * @param start the position of an open {
-    * @return the position after the corresponding } (note: it might be a whitespace) */
+    * @return the position after the corresponding } (note: it might be a whitespace)
+    * @throws ParseError if the curly bracket doesn't close */
   private def closeCurlyBracket(start: Int) : Int = {
     var i = start + 1       // skip over the initial bracket
     while (i < flat.length) {
@@ -245,9 +253,9 @@ class FileCrawler(file : File) {
   }
   
   
-  /** Check whether a character is part of an identifier (but not a dot)
-    * @param ch a Unicode code point 
-    * @return true or false */
+  /** Check whether a character, given as a unicode (UTF-8) code point is valid within an identifier part
+    * @param c a Unicode code point 
+    * @return true iff c not one of .:()[]{}%" or white space */
   private def isIdentifierPartCharacter(c: Int) : Boolean = 
     !Character.isWhitespace(c) && c != '.' && c != ':' && c != '(' && c != ')' && c != '[' && c != ']' &&
               c != '{' && c != '}' && c != '%' && c != '"'
@@ -256,7 +264,8 @@ class FileCrawler(file : File) {
   /** Find the first dot which is not part of an identifier. Useful for jumping over a declaration.
     * Skips over comments and quote-surrounded strings, so dots inside them do not count.
     * @param start the position where to start looking
-    * @return the position after the first dot with the desired properties */
+    * @return the position after the first dot with the desired properties
+    * @throws ParseError if end of file was encountered before finding a dot */
   private def skipUntilDot(start: Int) : Int =
   {
     var j = start
@@ -285,7 +294,8 @@ class FileCrawler(file : File) {
   
   /** Read a quote-surrounded string
     * @param start the position of the quotes at the beginning of the string
-    * @return a pair of the string and the position after the final " */
+    * @return a pair of the string and the position after the final "
+    * @throws ParseError if the string does not close */
   private def crawlString(start: Int) : Pair[String, Int] = 
   {
     val endsAt = flat.indexOf('"', start + 1)    // position of the final quotes
@@ -297,7 +307,8 @@ class FileCrawler(file : File) {
   
   /** Read an identifier.
     * @param start the position of the first character of the identifier
-    * @return Pair(identifier as a string, position after the last character of the identifier) */
+    * @return Pair(identifier as a string, position after the last character of the identifier)
+    * @throws ParseError if the current position does not start an identifier */
   private def crawlIdentifier(start: Int) : Pair[String, Int] = 
   {
     var i = start                     // the current position
@@ -321,7 +332,8 @@ class FileCrawler(file : File) {
   
   /** Read a namespace block 
     * @param start the position of the initial %
-    * @return (Option[alias], URI, position). If this is a namespace alias declaration, then URI is the relative URI that alias points to. If this is an absolute namespace declaration, then the first return value is None and URI is the absolute URI that was read. In all cases, position is the position after the closing dot  */
+    * @return (Option[alias], URI, position). If this is a namespace alias declaration, then URI is the relative URI that alias points to. If this is an absolute namespace declaration, then the first return value is None and URI is the absolute URI that was read. In all cases, position is the position after the closing dot
+    * @throws ParseError for syntactical errors */
   private def crawlNamespaceBlock(start: Int) : Triple[Option[String], URI, Int] = 
   {
     var i = skipws(start + "%namespace".length)    // jump over %namespace
@@ -359,7 +371,8 @@ class FileCrawler(file : File) {
   
   /** Jump over a non-semantic %{ comment }%
     * @param start the position of the initial %
-    * @return the position after the final % */
+    * @return the position after the final % 
+    * @throws ParseError if the comment does not close */
   private def crawlCommentThrowBlock(start: Int) : Int = 
   {
     var i = start + "%{".length
@@ -373,6 +386,7 @@ class FileCrawler(file : File) {
   /** Read a semantic %* comment *%
     * @param start the position of the initial %
     * @return The first return value is the structured comment, saved in a block, whose end position is on the final %. The second return value is the position after the block.
+    * @throws ParseError for syntactical errors
     */
   private def crawlSemanticCommentBlock(start: Int) : Pair[SemanticCommentBlock, Int] = 
   {
@@ -456,7 +470,8 @@ class FileCrawler(file : File) {
     * @param start the position of the initial % from %struct
     * @param parentURI the URI of the parent module
     * @param currentNS the current namespace
-    * @return Pair(a StrDecl containing the information from the structure declaration, position after the block) */
+    * @return Pair(a StrDecl containing the information from the structure declaration, position after the block)
+    * @throws ParseError for syntactical errors */
   private def crawlStrDecl(start: Int, parentURI: URI, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[StrDeclBlock, Int] = 
   {
     var i = start
@@ -507,7 +522,8 @@ class FileCrawler(file : File) {
   /** Reads a constant declaration.
     * @param start the position of the first character in the constant identifier
     * @param parentURI the URI of the parent module
-    * @return Pair(a CstDecl containing the information from the constant declaration, position after the block) */
+    * @return Pair(a CstDecl containing the information from the constant declaration, position after the block)
+    * @throws ParseError for syntactical errors */
   private def crawlCstDecl(start: Int, parentURI: URI) : Pair[CstDeclBlock, Int] = 
   {
     var i = start
@@ -531,7 +547,8 @@ class FileCrawler(file : File) {
     * @param deps set of dependencies, updated with the information read in the body
     * @param currentNS the current namespace
     * @param prefixes the mapping from aliases to namespaces
-    * @return the position after the closing } */
+    * @return the position after the closing }
+    * @throws ParseError for syntactical errors */
   private def crawlSigBody(start: Int, parentURI: URI, children: MutableList[DeclBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Int =
   {
     var i = start + 1       // jump over '{'
@@ -598,7 +615,8 @@ class FileCrawler(file : File) {
     * @param start the position of the initial '%'
     * @param currentNS the current namespace
     * @param prefixes the mapping from aliases to namespaces
-    * @return Pair(a SigBlock containing the information from the theory, position after the block) */
+    * @return Pair(a SigBlock containing the information from the theory, position after the block)
+    * @throws ParseError for syntactical errors */
   private def crawlSigBlock(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[SigBlock, Int] = 
   {
     var i = skipwscomments(start + "%sig".length)   // jump over %sig
@@ -623,7 +641,8 @@ class FileCrawler(file : File) {
   /** Reads a constant assignment.
     * @param start the position of the first character in the constant identifier
     * @param parentURI the URI of the parent module
-    * @return Pair(a CstAssignment containing the information from the constant assignment, position after the block) */
+    * @return Pair(a CstAssignment containing the information from the constant assignment, position after the block)
+    * @throws ParseError for syntactical errors */
   private def crawlCstAssignment(start: Int, parentURI: URI) : Pair[CstAssignmentBlock, Int] = 
   {
     var i = start
@@ -643,7 +662,8 @@ class FileCrawler(file : File) {
   /** Reads a structure assignment.
     * @param start the position of the initial % from %struct
     * @param parentURI the URI of the parent module
-    * @return Pair(a StrAssignment containing the information from the structure assignment, position after the block) */
+    * @return Pair(a StrAssignment containing the information from the structure assignment, position after the block)
+    * @throws ParseError for syntactical errors */
   private def crawlStrAssignment(start: Int, parentURI: URI) : Pair[StrAssignmentBlock, Int] = 
   {
     var i = start
@@ -672,7 +692,8 @@ class FileCrawler(file : File) {
     * @param currentNS the current namespace
     * @param prefixes the mapping from aliases to namespaces
     * @param isView true if we are crawling a view, false if we are crawling a structure declaration body
-    * @return the position after the closing } */
+    * @return the position after the closing }
+    * @throws ParseError for syntactical errors */
   private def crawlLinkBody(start: Int, parentURI: URI, children: MutableList[AssignmentBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI], isView: Boolean) : Int =
   {
     var i = start + 1       // jump over '{'
@@ -727,7 +748,8 @@ class FileCrawler(file : File) {
     * @param start the position of the first character in the sequence
     * @param currentNS the current namespace
     * @param prefixes the mapping from aliases to namespaces
-    * @return Pair(the set of URIs of the signatures in the sequence, position after the sequence) */
+    * @return Pair(the set of URIs of the signatures in the sequence, position after the sequence)
+    * @throws ParseError for syntactical errors */
   private def crawlSignatureUnion(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[LinkedHashSet[URI], Int] =
   {
     var sigs = LinkedHashSet[URI] ()
@@ -752,7 +774,8 @@ class FileCrawler(file : File) {
     * @param start the position of the initial '%'
     * @param currentNS the current namespace
     * @param prefixes the mapping from aliases to namespaces
-    * @return Pair(a ViewBlock containing the information from the view, position after the block) */
+    * @return Pair(a ViewBlock containing the information from the view, position after the block)
+    * @throws ParseError for syntactical errors */
   private def crawlViewBlock(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[ViewBlock, Int] = 
   {
     var i = start + "%view".length     // jump over %view
@@ -804,7 +827,8 @@ class FileCrawler(file : File) {
   
   /** Get the (line, column) that represents the same position as the given one-dimensional coordinate
   * @param index the one-dimensional coordinate to be transformed into two-dimensional
-  * @param lineStarts array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
+  * @param lineStarts array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based.
+  * @return Pair(line, column) */
   def toPair(index: Int, lineStarts: ArraySeq[(Int, Int)]) : Pair[Int,Int] = 
   {
     val pair  = lineStarts.filter(p => (p._1 <= index)).last

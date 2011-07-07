@@ -6,13 +6,30 @@ import java.util.regex.Pattern
 import scala.xml._
 import java.net._
 
-/** */
+/** Exception thrown when a location specified does not exist on disk */
 case class InexistentLocation(s : String) extends Exception(s)
+/** Exception related to parsing */
 case class ParseError(s: String) extends Exception(s)
+/** Exception thrown if a file cannot be opened */
 case class FileOpenError(s: String) extends Exception(s)
+/** Exception thrown by the catalog if a query is unsuccessul */
 case class CatalogError(s: String) extends Exception(s)
 
 
+/** Current time as a string */
+object Time {
+    import java.util.Calendar
+    /** Make sure each time component has 2 digits */
+    private def formatNumber(n : Int) : String = if (n < 10) ("0" + n.toString) else n.toString
+    /** Current time as a string */
+    override def toString = {
+        val t = Calendar.getInstance
+        "[" + formatNumber(t.get(Calendar.HOUR_OF_DAY)) + ":" + formatNumber(t.get(Calendar.MINUTE)) + ":" + formatNumber(t.get(Calendar.SECOND)) + "] "
+    }
+}
+
+
+/** Utility object */
 object Catalog {
     /** Get the physical path to a file or folder, NOT %-encoded
       * @param location the file descriptor
@@ -139,14 +156,14 @@ class Catalog {
           val url = namedBlock.url
           val fileUrl = url.getPath
           val pos = namedBlock.pos
-          //println("position: " + pos)
+          //println(Time + "position: " + pos)
           val doc = new File(fileUrl)
           if (!doc.canRead)
             throw FileOpenError("error: file cannot be opened")
           try {
             val source = scala.io.Source.fromFile(doc, "utf-8")
             val lines = source.getLines.toArray.slice(pos._1._1, pos._2._1 + 1)      // get the desired lines from the file
-            //println(lines.mkString("\n"))
+            //println(Time + lines.mkString("\n"))
             source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
             return lines.mkString("\n").drop(pos._1._2).dropRight(lines.last.length - pos._2._2 - 1)
           } catch {
@@ -288,7 +305,7 @@ class Catalog {
     try {
       out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile),"UTF8"));
     } catch {
-      case e => { println(outFile + ": error: cannot write to file"); System.exit(3) }
+      case e => { println(Time + outFile + ": error: cannot write to file"); System.exit(3) }
     }
     out.write(toWrite)
     out.close
@@ -298,9 +315,9 @@ class Catalog {
   /** Add an inclusion pattern to the storage */
   def addInclusion(pattern : String) {
     if (pattern.isEmpty)
-      println("error: empty inclusion patern")
+      println(Time + "error: empty inclusion patern")
     else {
-      println("New inclusion pattern: " + pattern)
+      println(Time + "New inclusion pattern: " + pattern)
       inclusions += pattern
       processedInclusions += quotePattern(pattern)
     }
@@ -310,9 +327,9 @@ class Catalog {
   /** Add an exclusion pattern to the storage */
   def addExclusion(pattern : String) {
     if (pattern.isEmpty)
-      println("error: empty exclusion patern")
+      println(Time + "error: empty exclusion patern")
     else {
-      println("New exclusion pattern: " + pattern)
+      println(Time + "New exclusion pattern: " + pattern)
       exclusions += pattern
       processedExclusions += quotePattern(pattern)
     }
@@ -332,19 +349,19 @@ class Catalog {
     val path : String = getPath(location)
     
     if (!isLegalLocation(location.getName, location.isDirectory))
-      println(getOriginalPath(location) + ": warning: location is ignored because it does not match the given patterns")
+      println(Time + getOriginalPath(location) + ": warning: location is ignored because it does not match the given patterns")
     else {
       // Check whether the location is already watched via an ancestor
       if (locations.exists(f => path.startsWith(getPath(f))))
-        println("Location already watched: " + getOriginalPath(location))
+        println(Time + "Location already watched: " + getOriginalPath(location))
       else {
-        println("New location: " + getOriginalPath(location))
+        println(Time + "New location: " + getOriginalPath(location))
         // Delete descendants from the watch list
         for (f <- locations)
           if (getPath(f).startsWith(path)) {
-            println("Location deleted: " + getOriginalPath(f))
+            println(Time + "Location deleted: " + getOriginalPath(f))
             locations -= f
-            println(getOriginalPath(f) + ": uncrawling...")
+            println(Time + getOriginalPath(f) + ": uncrawling...")
             uncrawl(getPath(f))
           }
         locations += location
@@ -366,7 +383,7 @@ class Catalog {
     if (locations contains location) {
         locations -= location
         uncrawl(getPath(location))
-        println("Location deleted: " + getOriginalPath(location))
+        println(Time + "Location deleted: " + getOriginalPath(location))
     }
     else throw InexistentLocation(getOriginalPath(location) + ": error: location is not in the watch list, hence it cannot be deleted")
   }
@@ -399,7 +416,7 @@ class Catalog {
   /** Crawl through all stored locations, ignoring (but logging) errors */
   def crawlAll { ConflictGuard.synchronized {
     locations.foreach(crawl)
-    println("Crawled all modified files")
+    println(Time + "Crawled all modified files")
   }}
   
   
@@ -440,7 +457,7 @@ class Catalog {
     * @param location the file or folder descriptor */
   def crawl(location: File) { ConflictGuard.synchronized { 
     if (!location.canRead) {
-      println(getOriginalPath(location) + ": error: file/folder does not exist or cannot be read")
+      println(Time + getOriginalPath(location) + ": error: file/folder does not exist or cannot be read")
       return
     }
     val locationName = location.getName    // name without the path
@@ -448,7 +465,7 @@ class Catalog {
     if (location.isDirectory()) {
       // Crawl the folder iff it doesn't match any exclusion pattern.
       if (isLegalLocation(locationName, true)) {
-          //println(getOriginalPath(location) + ": crawling folder...")
+          //println(Time + getOriginalPath(location) + ": crawling folder...")
         
           // Get list of children
           var fileList : Array[File] = null
@@ -456,12 +473,12 @@ class Catalog {
             fileList = location.listFiles()
           } catch {
             case e : SecurityException => { 
-              println(getOriginalPath(location) + ": error: folder cannot be read")
+              println(Time + getOriginalPath(location) + ": error: folder cannot be read")
               return
             }
           }
           if (fileList == null) {
-            println(getOriginalPath(location) + ": error: folder cannot be read")
+            println(Time + getOriginalPath(location) + ": error: folder cannot be read")
             return
           }
           
@@ -476,14 +493,14 @@ class Catalog {
         if (location.lastModified == urlToDocument(path).lastModified)
           return                      // the file was NOT modified after the last crawl
         else {           // remove the file from the hashes first
-          println(getOriginalPath(location) + ": uncrawling...")
+          println(Time + getOriginalPath(location) + ": uncrawling...")
           uncrawl(path.toString)
         }
       }
         
       // Crawl the file iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, then all files are crawled.
       if (isLegalLocation(locationName, false)) {
-        println(getOriginalPath(location) + ": crawling file...")
+        println(Time + getOriginalPath(location) + ": crawling file...")
         try {
           // Crawl the file to get the document structure
           val lastModified = location.lastModified
@@ -522,12 +539,12 @@ class Catalog {
                   case ViewBlock(_,_,_,children,_,_,_,_) => children.foreach(c => uriToNamedBlock.update(c.uri, c))
           }})
             
-          println(getOriginalPath(location) + ": success")
+          println(Time + getOriginalPath(location) + ": success")
         } catch {
-          case ParseError(s) => println(getOriginalPath(location) + ":" + s)
-          case FileOpenError(s) => println(getOriginalPath(location) + ":" + s)
-          case CatalogError(s) => println(getOriginalPath(location) + ":" + s)
-          case e : Exception => println(getOriginalPath(location) + ": error: " + e)
+          case ParseError(s) => println(Time + getOriginalPath(location) + ":" + s)
+          case FileOpenError(s) => println(Time + getOriginalPath(location) + ":" + s)
+          case CatalogError(s) => println(Time + getOriginalPath(location) + ":" + s)
+          case e : Exception => println(Time + getOriginalPath(location) + ": error: " + e)
         }
       }
     }
