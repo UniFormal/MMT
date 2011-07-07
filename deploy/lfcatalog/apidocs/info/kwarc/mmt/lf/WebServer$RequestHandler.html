@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.lf.Run</title>
+          <title>info.kwarc.mmt.lf.WebServer.RequestHandler</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
@@ -12,26 +12,28 @@
       <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body class="value" onload="windowTitle();">
+        <body class="type" onload="windowTitle();">
 
-      <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.lf">lf</a></p>
+      <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.lf">lf</a>.<a href="WebServer.html" class="extype" name="info.kwarc.mmt.lf.WebServer">WebServer</a></p>
 
       <div id="definition">
-        <img src="../../../../lib/object_big.png" />
-        <h1>Run</h1>
+        <img src="../../../../lib/class_big.png" />
+        <h1>RequestHandler</h1>
       </div>
 
       <h4 class="signature" id="signature">
-      <span class="kind">object</span>
+      <span class="kind">class</span>
       <span class="symbol">
-        <span class="name">Run</span>
+        <span class="name">RequestHandler</span>
         
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends <span class="extype" name="zgs.httpd.HApp">HApp</span></span>
       </span>
       </h4>
-      <div class="fullcomment" id="comment"><div class="comment cmt"><p>Run the web server and console input</p></div><div class="block">
-            linear super types: AnyRef, <span class="extype" name="scala.Any">Any</span>
+      <div class="fullcomment" id="comment"><div class="comment cmt"><p>Request handler</p></div><div class="block">
+          attributes: protected 
+        </div><div class="block">
+            linear super types: <span class="extype" name="zgs.httpd.HApp">HApp</span>, AnyRef, <span class="extype" name="scala.Any">Any</span>
           </div>
             
             
@@ -49,7 +51,7 @@
           <div id="ancestors">
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall">Hide All</li><li class="showall">Show all</li></ol>
-                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.Run">Run</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
+                <ol id="linearization"><li class="in" name="info.kwarc.mmt.lf.WebServer.RequestHandler">RequestHandler</li><li class="in" name="zgs.httpd.HApp">HApp</li><li class="in" name="scala.AnyRef">AnyRef</li><li class="in" name="scala.Any">Any</li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -61,7 +63,22 @@
             </div>
         </div>
 
+        <div class="members" id="constructors">
+              <h3>Instance constructors</h3>
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.WebServer.RequestHandler#this">
+      <a id="this:RequestHandler"></a>
+      <h4 class="signature">
+      <span class="kind">new</span>
+      <span class="symbol">
+        <span class="name">RequestHandler</span>
         
+        <span class="params">()</span>
+        
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
 
         
 
@@ -240,6 +257,40 @@ part of compilation it is not possible to check whether the contents of the list
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#buffered">
+      <a id="buffered:Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">buffered</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#chunked">
+      <a id="chunked:Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">chunked</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
     </li><li visbl="prt" data-isabs="false" name="scala.AnyRef#clone">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -382,6 +433,23 @@ there are no more references to the object.</p><p>The details of when and if the
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#gzip">
+      <a id="gzip:Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">gzip</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#hashCode">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -434,18 +502,40 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#main">
-      <a id="main(Array[String]):Unit"></a>
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#keepAlive">
+      <a id="keepAlive:Boolean"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol">
-        <span class="name">main</span>
+        <span class="name">keepAlive</span>
         
-        <span class="params">(<span name="args">args: <span class="extype" name="scala.Array">Array</span>[String]</span>)</span>
-        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#maxSessionsCount">
+      <a id="maxSessionsCount:Int"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">maxSessionsCount</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#ne">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -516,6 +606,57 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#paramsEncoding">
+      <a id="paramsEncoding:String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">paramsEncoding</span>
+        
+        
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.WebServer.RequestHandler#resolve">
+      <a id="resolve(HReqHeaderData):Option[HLet]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">resolve</span>
+        
+        <span class="params">(<span name="req">req: <span class="extype" name="zgs.httpd.HReqHeaderData">HReqHeaderData</span></span>)</span>
+        <span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="zgs.httpd.HLet">HLet</span>]</span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: <a href="" class="extype" name="info.kwarc.mmt.lf.WebServer.RequestHandler">RequestHandler</a> → HApp
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#sessionTimeoutMinutes">
+      <a id="sessionTimeoutMinutes:Int"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">sessionTimeoutMinutes</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#synchronized">
       <a id="synchronized[T0](T0):T0"></a>
       <h4 class="signature">
@@ -557,18 +698,23 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Run#usage">
-      <a id="usage:String"></a>
+    </li><li visbl="pub" data-isabs="false" name="zgs.httpd.HApp#tracking">
+      <a id="tracking:Value"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
+      <span class="kind">def</span>
       <span class="symbol">
-        <span class="name">usage</span>
+        <span class="name">tracking</span>
         
         
-        <span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+        <span class="result">: <span class="extype" name="scala.Enumeration.Value">Value</span></span>
       </span>
       </h4>
       
+            
+            <div class="fullcomment"><div class="block">
+          definition classes: HApp
+        </div></div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#wait">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -629,7 +775,9 @@ possible to check whether the contents of the list are of the requested typed.
     </li></ol>
             </div>
 
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="zgs.httpd.HApp">
+              <h3>Inherited from <span class="extype" name="zgs.httpd.HApp">HApp</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from AnyRef</h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
