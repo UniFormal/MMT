@@ -313,13 +313,48 @@ object Run {
   The default port is 8080 on localhost."""
   
   /** The port on which the server runs. Default value is 8080 */
-  var port = 8080
+  private var port = 8080
   
   /** The interval, in seconds, between two automatic crawls. Default value is 5 sec */
-  var crawlingInterval = 5
+  private var crawlingInterval = 5
   
   /** The interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec */
-  var deletingInterval = 17
+  private var deletingInterval = 17
+  
+  /** Handle for the server thread */
+  private var server : Server = null
+  
+  /** A thread that reads commands from standard input */
+  object ConsoleInput extends Thread {
+      override def run {
+          while (true) {
+              val input = scala.Console.readLine.trim
+              val words : Array[String] = input.split("\\s")
+              if (words.length >= 1)
+                if (words(0) == "exit") {          // exit
+                    server.stop   // stop the server
+                    exit(0)       // exit the program
+                }
+                else if (words(0) == "delete") {    // delete a location
+                    if (words.length >= 2)
+                        try {
+                            Storage.deleteStringLocation(words(1))
+                        } catch {
+                            case InexistentLocation(msg) => println(msg)
+                        }
+                    else
+                        println("error: delete must be followed by a location address")
+                }
+                else {          // add a location
+                    try {
+                        Storage.addStringLocation(words(0))
+                    } catch {
+                        case InexistentLocation(msg) => println(msg)
+                    }
+                }
+          }
+      }
+  }
   
   /** A thread that checks for updated files and crawls them every crawlingInterval seconds */
   object BackgroundCrawler extends Thread {
@@ -375,9 +410,18 @@ object Run {
           }
         }
     }
-    (new Server(port)).start
-    println("go to: http://127.0.0.1:8080")
+    try {
+        server = new Server(port)
+        server.start
+    } catch {
+        case e : java.net.BindException => {
+            println("error: port " + port + " is already in use. Choose a different port with the --port argument")
+            exit(1)
+        }
+    }
+    ConsoleInput.start
     BackgroundCrawler.start
     BackgroundEliminator.start
+    println("go to: http://127.0.0.1:8080")
   }
 }
