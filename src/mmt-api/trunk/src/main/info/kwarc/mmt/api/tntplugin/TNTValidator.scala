@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.tntplugin
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.backend._
+import frontend._
+import backend._
 import info.kwarc.tntbase.pluginapi._
 //import scala.collection.jcl.Conversions.convertList
 
@@ -21,9 +21,10 @@ class TNTValidation extends
 }
 
 /** implementation of Storage in terms of TntPluginDocumentResolver provided by TNTBase */
-case class TNTLookup(lookup : TntPluginDocumentResolver[String]) extends Storage("http", "cds.omdoc.org", "/") {
+case class TNTLookup(lookup : TntPluginDocumentResolver[String]) extends Storage {
+   val base = utils.URI("http", "cds.omdoc.org", Nil)
    def get(path : Path, reader : Reader) {
-	   val content = lookup.resolveDocument("/" + getSuffix(path.doc.uri), null)
+	   val content = lookup.resolveDocument("/" + Storage.getSuffix(base, path.doc.uri), null)
        if (content == null) throw backend.NotFound(path)
 	   val src = scala.io.Source.fromString(content)
 	   val node = scala.xml.parsing.ConstructingParser.fromSource(src, false).document();

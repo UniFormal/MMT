@@ -16,12 +16,13 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | tntbase | execfile
+   private def controller = logon | logoff | local | catalog | archive | tntbase | execfile
    private def shell = setbase | read | printall | printallxml | clear | exit
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
+   private def archive = "archive" ~> file ^^ {f => AddArchive(f)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
@@ -76,6 +77,8 @@ case class Read(f : java.io.File) extends Action {override def toString = "read 
 case object Local extends Action {override def toString = "local"}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddCatalog(file : java.io.File) extends Action {override def toString = "catalog " + file}
+/** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
+case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
 /** load a file containing commands and execute them, fails on first error if any */

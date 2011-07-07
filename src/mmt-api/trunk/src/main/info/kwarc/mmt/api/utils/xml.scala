@@ -88,6 +88,10 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
    }
    /** returns the whole path as a string (/-separated, possibly with a leading /) */
    def pathAsString : String = path.mkString(if (absolute) "/" else "", "/", "")
+   /** convenience: the scheme or null */
+   def schemeNull : String = scheme.getOrElse(null)
+   /** convenience: the authority or null */
+   def authorityNull : String = authority.getOrElse(null)
    /*def resolve(u : java.net.URI) : URI = {
       //resolve implements old URI RFC, therefore special case for query-only URI needed
       if (u.getScheme == null && u.getAuthority == null && u.getPath == "")
@@ -119,8 +123,10 @@ object URI {
    }
    /** parses a URI (using the java.net.URI parser) */
    def apply(s : String) : URI = apply(new java.net.URI(s))
-   /** returns a URI with scheme and authority only */
+   /** returns a relative URI with scheme and authority only */
    def apply(s: String, a: String) : URI = URI(Some(s), Some(a), Nil, false, None, None)
+   /** returns an absolute URI with scheme, authority, and path */
+   def apply(s: String, a: String, p: List[String]) : URI = URI(Some(s), Some(a), p, true, None, None)
    /** returns a URI with scheme, authority, absolute path, and query */
    def apply(scheme : String, authority : String, path : List[String], query : String) : URI =
       (URI(scheme, authority) / path) ? query
