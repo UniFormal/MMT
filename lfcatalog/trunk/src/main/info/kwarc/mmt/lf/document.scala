@@ -1,9 +1,11 @@
 package info.kwarc.mmt.lf
 
-import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHashMap}
 import java.io.{File, FileWriter, BufferedWriter}
 import scala.xml._
+import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHashMap}
 
+
+// ------------------------------- document-level -------------------------------
 
 /** All information extracted from a file
   * @param url the local file address
@@ -13,12 +15,32 @@ import scala.xml._
   * @param declaredNamespaces list of current namespaces declared in the document */
 class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock], val modules: MutableList[ModuleBlock], 
                 val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI]) {
+  /** Time, in miliseconds, when the file was last modified */
   var lastModified : Long = -1
   def toOmdoc : Elem = 
     <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={declaredNamespaces.head.toString}>
       {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
       {modules.map(_.toOmdoc)}
     </omdoc>
+}
+
+
+// ------------------------------- general -------------------------------
+
+
+/** Start and end two-dimensional coordinates of a block
+  * @param a start line
+  * @param b start column
+  * @param c end line
+  * @param d end column */
+class Position(a: Int, b: Int, c: Int, d: Int) extends Pair(Pair(a,b), Pair(c,d)) {
+    
+  /** @param x start position (line and column)
+      @param y end position (line and column) */
+  def this(x: Pair[Int,Int], y: Pair[Int,Int]) = this(x._1, x._2, y._1, y._2)
+  
+  /** Format: startline.startcol-endline.endcol */
+  override def toString = a + "." + b + "-" + c + "." + d
 }
 
 
@@ -29,6 +51,18 @@ abstract class Block(pos: Position) {
 }
 
 
+/** A semantic comment
+  * The "short" property is the text on the first line of the comment, if it is not preceded by a '@' 
+  * The "long" property is the text starting on the second line of the comment, until the first line that starts with '@' 
+  * Each subsequent lines must start with '@'. The first word after '@' is the key, the rest of the line is the value. */
+case class SemanticCommentBlock(val comment: String, val properties: LinkedHashMap[String, String], val pos: Position) extends Block(pos) {
+  def toOmdoc : Elem =
+    <metadata>
+      {properties.map(x => <metadatum key={x._1}>{x._2}</metadatum>)}
+    </metadata>
+}
+
+
 /** A block with name and URI */
 abstract class NamedBlock(val uri: URI, val url: URI, val name: String, val pos: Position) extends Block(pos) {
   /** the optional semantic comment associated with the block */
@@ -36,10 +70,12 @@ abstract class NamedBlock(val uri: URI, val url: URI, val name: String, val pos:
 }
 
 
+// ------------------------------- module-level -------------------------------
+
+
 /** A theory or view */
 abstract class ModuleBlock(override val uri: URI, override val url: URI, override val name: String, val deps: LinkedHashSet[URI], override val pos: Position) 
-  extends NamedBlock(uri, url, name, pos) {
-}
+  extends NamedBlock(uri, url, name, pos)
 
   
 /** A theory */
@@ -63,6 +99,9 @@ case class ViewBlock(override val uri: URI, override val url: URI, override val 
     </view>
 }
   
+
+// ------------------------------- symbol-level -------------------------------
+
   
 /** A constant or structure assignment */
 abstract class AssignmentBlock(override val uri: URI, override val url: URI, override val name: String, override val pos: Position) 
@@ -71,13 +110,19 @@ abstract class AssignmentBlock(override val uri: URI, override val url: URI, ove
 /** A constant assignment */
 case class CstAssignmentBlock(override val uri: URI, override val url: URI, override val name: String, override val pos: Position) 
   extends AssignmentBlock(uri, url, name, pos) {
-  override def toOmdoc : Elem = <conass name={name} uri={uri.toString}>{associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}</conass>
+  override def toOmdoc : Elem = 
+    <conass name={name} uri={uri.toString}>
+      {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
+    </conass>
 }
   
 /** A structure assignment */
 case class StrAssignmentBlock(override val uri: URI, override val url: URI, override val name: String, override val pos: Position) 
   extends AssignmentBlock(uri, url, name, pos) {
-  override def toOmdoc : Elem = <strass name={name} uri={uri.toString}>{associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}</strass>
+  override def toOmdoc : Elem = 
+    <strass name={name} uri={uri.toString}>
+      {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
+    </strass>
 }
   
   
@@ -105,29 +150,4 @@ case class StrDeclBlock(override val uri: URI, override val url: URI, override v
       {associatedComment.map(_.toOmdoc).getOrElse(Seq.empty)}
       {children.map(_.toOmdoc)}
     </structure>
-}
-  
-  
-/** A semantic comment
-  * The "short" property is the text on the first line of the comment, if it is not preceded by a '@' 
-  * The "long" property is the text starting on the second line of the comment, until the first line that starts with '@' 
-  * Each subsequent lines must start with '@'. The first word after '@' is the key, the rest of the line is the value. */
-case class SemanticCommentBlock(val comment: String, val properties: LinkedHashMap[String, String], val pos: Position) extends Block(pos) {
-  def toOmdoc : Elem =
-    <metadata>
-      {properties.map(x => <metadatum key={x._1}>{x._2}</metadatum>)}
-    </metadata>
-}
-
-
-/** Start and end two-dimensional coordinates of a block
-  * @param a start line
-  * @param b start column
-  * @param c end line
-  * @param d end column */
-class Position(a: Int, b: Int, c: Int, d: Int) extends Pair(Pair(a,b), Pair(c,d)) {
-  /** @param x start position (line and column)
-      @param y end position (line and column) */
-  def this(x: Pair[Int,Int], y: Pair[Int,Int]) = this(x._1, x._2, y._1, y._2)
-  override def toString = a + "." + b + "-" + c + "." + d
 }

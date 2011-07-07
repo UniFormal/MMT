@@ -1,5 +1,7 @@
 package info.kwarc.mmt.lf
+
 import java.util.regex.{Pattern,Matcher}
+
 
 case class URI(var uri : java.net.URI) {
     /** Create an valid URI where the illegal or non-ascii character in path, query and fragment are quoted

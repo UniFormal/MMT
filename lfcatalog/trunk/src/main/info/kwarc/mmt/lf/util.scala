@@ -1,5 +1,6 @@
 package info.kwarc.mmt.lf
 
+
 /** Exception thrown when a location specified does not exist on disk */
 case class InexistentLocation(s : String) extends Exception(s)
 

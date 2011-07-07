@@ -4,8 +4,8 @@
 
 package info.kwarc.mmt.lf
 
-import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet}
 import java.io._
+import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet}
 
 
 /** Crawl a file
@@ -21,6 +21,8 @@ object FileCrawler {
 /** Algorithms for crawling a file
   * @param file the file descriptor */
 class FileCrawler(file : File) {
+  
+  // ------------------------------- private members -------------------------------
   
   /** array containing all the lines in the file */
   private var lines : Array[String] = null
@@ -50,6 +52,9 @@ class FileCrawler(file : File) {
     flat += x + "\n"
     lineNumber += 1
   }
+  
+  
+  // ------------------------------- main method -------------------------------
   
   
   /** Crawl a file.
@@ -138,6 +143,9 @@ class FileCrawler(file : File) {
   }
   
   
+  // ------------------------------- crawl-forward -------------------------------
+  
+  
   /** Jump over a line.
     * @param start a position within a line
     * @return the index of the beginning of the next line */
@@ -190,26 +198,6 @@ class FileCrawler(file : File) {
   }
       
   
-  /** Find the position of the given string, after some white space and (possibly) some comments.
-    * @param start the starting position
-    * @param whatToExpect the string to find
-    * @param error the error that will be sent along with the exception if the string after the white space is not whatToExpect
-    * @param acceptComments if true, then all comments are ignored. If false, then only white space is allowed before whatToExpect.
-    * @return the position of the first character in the whatToExpect string, if it is right after white space (and possibly comments).
-    * @throws ParseError if the string after white space is not whatToExpect. */
-  private def expectNext(start: Int, whatToExpect: String, error: String, acceptComments: Boolean = true) : Int = 
-  {
-    var i = 0
-    if (acceptComments)
-      i = skipwscomments(start)
-    else
-      i = skipws(start)
-    if (i == flat.length || /*flat.indexOf(whatToExpect, i) == -1)*/ flat.substring(i, i + whatToExpect.length) != whatToExpect)
-      throw ParseError(error)
-    return i
-  }
-  
-  
   /** Jump over a block surrounded by curly brackets.
     * Skips over comments, strings and everything else.
     * @param start the position of an open {
@@ -252,14 +240,6 @@ class FileCrawler(file : File) {
     return i
   }
   
-  
-  /** Check whether a character, given as a unicode (UTF-8) code point is valid within an identifier part
-    * @param c a Unicode code point 
-    * @return true iff c not one of .:()[]{}%" or white space */
-  private def isIdentifierPartCharacter(c: Int) : Boolean = 
-    !Character.isWhitespace(c) && c != '.' && c != ':' && c != '(' && c != ')' && c != '[' && c != ']' &&
-              c != '{' && c != '}' && c != '%' && c != '"'
-  
             
   /** Find the first dot which is not part of an identifier. Useful for jumping over a declaration.
     * Skips over comments and quote-surrounded strings, so dots inside them do not count.
@@ -291,6 +271,41 @@ class FileCrawler(file : File) {
     // We now reached the end of file without encountering a dot
     throw ParseError("error: dot expected before end of file")
   }
+
+  
+  // ------------------------------- peek-forward -------------------------------
+  
+  
+  /** Find the position of the given string, after some white space and (possibly) some comments.
+    * @param start the starting position
+    * @param whatToExpect the string to find
+    * @param error the error that will be sent along with the exception if the string after the white space is not whatToExpect
+    * @param acceptComments if true, then all comments are ignored. If false, then only white space is allowed before whatToExpect.
+    * @return the position of the first character in the whatToExpect string, if it is right after white space (and possibly comments).
+    * @throws ParseError if the string after white space is not whatToExpect. */
+  private def expectNext(start: Int, whatToExpect: String, error: String, acceptComments: Boolean = true) : Int = 
+  {
+    var i = 0
+    if (acceptComments)
+      i = skipwscomments(start)
+    else
+      i = skipws(start)
+    if (i == flat.length || /*flat.indexOf(whatToExpect, i) == -1)*/ flat.substring(i, i + whatToExpect.length) != whatToExpect)
+      throw ParseError(error)
+    return i
+  }
+  
+  
+  // ------------------------------- object-level -------------------------------
+  
+  
+  /** Check whether a character, given as a unicode (UTF-8) code point is valid within an identifier part
+    * @param c a Unicode code point 
+    * @return true iff c not one of .:()[]{}%" or white space */
+  private def isIdentifierPartCharacter(c: Int) : Boolean = 
+    !Character.isWhitespace(c) && c != '.' && c != ':' && c != '(' && c != ')' && c != '[' && c != ']' &&
+              c != '{' && c != '}' && c != '%' && c != '"'
+  
   
   /** Read a quote-surrounded string
     * @param start the position of the quotes at the beginning of the string
@@ -330,6 +345,9 @@ class FileCrawler(file : File) {
   }
   
   
+  // ------------------------------- namespace declarations -------------------------------
+  
+  
   /** Read a namespace block 
     * @param start the position of the initial %
     * @return (Option[alias], URI, position). If this is a namespace alias declaration, then URI is the relative URI that alias points to. If this is an absolute namespace declaration, then the first return value is None and URI is the absolute URI that was read. In all cases, position is the position after the closing dot
@@ -367,6 +385,9 @@ class FileCrawler(file : File) {
       return Triple(Some(alias), uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
     }
   }
+  
+  
+  // ------------------------------- comments -------------------------------
   
   
   /** Jump over a non-semantic %{ comment }%
@@ -436,33 +457,28 @@ class FileCrawler(file : File) {
                  endsAt + 1)
   }
   
-  private def min(a: Int, b: Int) = if (a <= b) a else b
-  
-  
-  /** Convert a module name to its URI. Only namespace prefixes are checked.
-    * @param start position of the first character of the module name (for error reporting)
-    * @param moduleName the module name as a string
-    * @param currentNS the optional current namespace
-    * @param prefixes map from aliases to remote absolute URIs
-    * @return the absolute URI of the module
-    * @throws ParseError if the module name has a prefix and the prefix is not a valid namespace alias, or if the module name has no prefix and the current namespace is not defined */
-  private def moduleToAbsoluteURI(start: Int, moduleName: String, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : URI = { 
-    // the URI of the module is *not* used to compute the absolute URI of its dependencies
-    // Replace dots with question marks
-    val relativeURI : String = moduleName.trim().replaceAll("\\056", "?")
-    val j = relativeURI.indexOf("?")
-    // If it has no prefix, it belongs to the current namespace, so simply prepend the current namespace URI
-    if (j == -1) {
-      if (currentNS == None)
-        throw ParseError(toPair(start, lineStarts) + ": error: cannot compute an absolute URI for this module " + moduleName + " since no current namespace is defined")
-      return currentNS.get ? relativeURI
+
+  // ------------------------------- symbol-level -------------------------------
+
+
+  /** Reads a constant declaration.
+    * @param start the position of the first character in the constant identifier
+    * @param parentURI the URI of the parent module
+    * @return Pair(a CstDecl containing the information from the constant declaration, position after the block)
+    * @throws ParseError for syntactical errors */
+  private def crawlCstDecl(start: Int, parentURI: URI) : Pair[CstDeclBlock, Int] = 
+  {
+    var i = start
+    if (flat.startsWith("%abbrev", i)) {
+      i += "%abbrev".length
+      i = skipwscomments(i)
     }
-    // If it has a prefix, it belongs to a different namespace, which must have been declared before in the document
-    val prefix : String = relativeURI.substring(0, j)
-    if (!prefixes.contains(prefix))                      // check if the alias is known
-      throw ParseError(toPair(start, lineStarts) + ": error: " + prefix + " is not a valid namespace alias")
-    val realURI = prefixes.get(prefix).get
-    return new URI(realURI.toString() + relativeURI.substring(j))
+    val (cstName, positionAfter) = crawlIdentifier(i)  // read constant name
+    i = positionAfter
+    val endsAt = skipUntilDot(i) - 1
+    val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
+    val url = new URI(Catalog.getPath(file) + "#" + position)
+    return Pair(CstDeclBlock(parentURI ? cstName, url, cstName, position), endsAt + 1)
   }
   
   
@@ -519,27 +535,55 @@ class FileCrawler(file : File) {
   }
   
   
-  /** Reads a constant declaration.
+  /** Reads a constant assignment.
     * @param start the position of the first character in the constant identifier
     * @param parentURI the URI of the parent module
-    * @return Pair(a CstDecl containing the information from the constant declaration, position after the block)
+    * @return Pair(a CstAssignment containing the information from the constant assignment, position after the block)
     * @throws ParseError for syntactical errors */
-  private def crawlCstDecl(start: Int, parentURI: URI) : Pair[CstDeclBlock, Int] = 
+  private def crawlCstAssignment(start: Int, parentURI: URI) : Pair[CstAssignmentBlock, Int] = 
   {
     var i = start
-    if (flat.startsWith("%abbrev", i)) {
-      i += "%abbrev".length
-      i = skipwscomments(i)
-    }
     val (cstName, positionAfter) = crawlIdentifier(i)  // read constant name
+    val constantName = cstName.replaceAll("\\Q.\\E", "/")
     i = positionAfter
+        
+    i = expectNext(i, ":=", toPair(i, lineStarts) + ": error: ':=' expected")
+    i += ":=".length
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(CstDeclBlock(parentURI ? cstName, url, cstName, position), endsAt + 1)
+    return Pair(CstAssignmentBlock(parentURI ? constantName, url, constantName, position), endsAt + 1)
   }
   
   
+  /** Reads a structure assignment.
+    * @param start the position of the initial % from %struct
+    * @param parentURI the URI of the parent module
+    * @return Pair(a StrAssignment containing the information from the structure assignment, position after the block)
+    * @throws ParseError for syntactical errors */
+  private def crawlStrAssignment(start: Int, parentURI: URI) : Pair[StrAssignmentBlock, Int] = 
+  {
+    var i = start
+    if (i + "%struct".length + 2 >= flat.length)
+      throw ParseError(toPair(i, lineStarts) + ": error: %struct assignment does not end")
+    i += "%struct".length    // jump over %struct
+    i = skipwscomments(i)
+    val (strName, positionAfter) = crawlIdentifier(i)  // read structure name
+    val structureName = strName.replaceAll("\\Q.\\E", "/")
+    i = positionAfter
+        
+    i = expectNext(i, ":=", toPair(i, lineStarts) + ": error: ':=' expected")
+    i += ":=".length
+    val endsAt = skipUntilDot(i) - 1
+    val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
+    val url = new URI(Catalog.getPath(file) + "#" + position)
+    return Pair(StrAssignmentBlock(parentURI ? structureName, url, structureName, position), endsAt + 1)
+  }
+  
+  
+  // ------------------------------- module-level -------------------------------
+  
+    
   /** Reads a theory body
     * @param start the position of the opening { 
     * @param parentURI the URI of the enclosing signature
@@ -635,52 +679,6 @@ class FileCrawler(file : File) {
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
     return Pair(new SigBlock(uri, url, sigName, children, deps, position), endsAt + 1)
-  }
-  
-  
-  /** Reads a constant assignment.
-    * @param start the position of the first character in the constant identifier
-    * @param parentURI the URI of the parent module
-    * @return Pair(a CstAssignment containing the information from the constant assignment, position after the block)
-    * @throws ParseError for syntactical errors */
-  private def crawlCstAssignment(start: Int, parentURI: URI) : Pair[CstAssignmentBlock, Int] = 
-  {
-    var i = start
-    val (cstName, positionAfter) = crawlIdentifier(i)  // read constant name
-    val constantName = cstName.replaceAll("\\Q.\\E", "/")
-    i = positionAfter
-        
-    i = expectNext(i, ":=", toPair(i, lineStarts) + ": error: ':=' expected")
-    i += ":=".length
-    val endsAt = skipUntilDot(i) - 1
-    val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(CstAssignmentBlock(parentURI ? constantName, url, constantName, position), endsAt + 1)
-  }
-  
-  
-  /** Reads a structure assignment.
-    * @param start the position of the initial % from %struct
-    * @param parentURI the URI of the parent module
-    * @return Pair(a StrAssignment containing the information from the structure assignment, position after the block)
-    * @throws ParseError for syntactical errors */
-  private def crawlStrAssignment(start: Int, parentURI: URI) : Pair[StrAssignmentBlock, Int] = 
-  {
-    var i = start
-    if (i + "%struct".length + 2 >= flat.length)
-      throw ParseError(toPair(i, lineStarts) + ": error: %struct assignment does not end")
-    i += "%struct".length    // jump over %struct
-    i = skipwscomments(i)
-    val (strName, positionAfter) = crawlIdentifier(i)  // read structure name
-    val structureName = strName.replaceAll("\\Q.\\E", "/")
-    i = positionAfter
-        
-    i = expectNext(i, ":=", toPair(i, lineStarts) + ": error: ':=' expected")
-    i += ":=".length
-    val endsAt = skipUntilDot(i) - 1
-    val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
-    val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(StrAssignmentBlock(parentURI ? structureName, url, structureName, position), endsAt + 1)
   }
   
   
@@ -822,6 +820,39 @@ class FileCrawler(file : File) {
     val url = new URI(Catalog.getPath(file) + "#" + position)
     
     return Pair(new ViewBlock(uri, url, viewName, children, deps, viewDomainURI, viewCodomain, position), endsAt + 1)
+  }
+  
+  
+  // ------------------------------- auxiliary methods -------------------------------
+  
+  
+  private def min(a: Int, b: Int) = if (a <= b) a else b
+  
+  
+  /** Convert a module name to its URI. Only namespace prefixes are checked.
+    * @param start position of the first character of the module name (for error reporting)
+    * @param moduleName the module name as a string
+    * @param currentNS the optional current namespace
+    * @param prefixes map from aliases to remote absolute URIs
+    * @return the absolute URI of the module
+    * @throws ParseError if the module name has a prefix and the prefix is not a valid namespace alias, or if the module name has no prefix and the current namespace is not defined */
+  private def moduleToAbsoluteURI(start: Int, moduleName: String, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : URI = { 
+    // the URI of the module is *not* used to compute the absolute URI of its dependencies
+    // Replace dots with question marks
+    val relativeURI : String = moduleName.trim().replaceAll("\\056", "?")
+    val j = relativeURI.indexOf("?")
+    // If it has no prefix, it belongs to the current namespace, so simply prepend the current namespace URI
+    if (j == -1) {
+      if (currentNS == None)
+        throw ParseError(toPair(start, lineStarts) + ": error: cannot compute an absolute URI for this module " + moduleName + " since no current namespace is defined")
+      return currentNS.get ? relativeURI
+    }
+    // If it has a prefix, it belongs to a different namespace, which must have been declared before in the document
+    val prefix : String = relativeURI.substring(0, j)
+    if (!prefixes.contains(prefix))                      // check if the alias is known
+      throw ParseError(toPair(start, lineStarts) + ": error: " + prefix + " is not a valid namespace alias")
+    val realURI = prefixes.get(prefix).get
+    return new URI(realURI.toString() + relativeURI.substring(j))
   }
   
   

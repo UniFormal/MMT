@@ -1,10 +1,11 @@
 package info.kwarc.mmt.lf
 
-import scala.collection.mutable.{HashSet, LinkedHashSet, HashMap}
 import java.io._
-import java.util.regex.Pattern
-import scala.xml._
 import java.net._
+import java.util.regex.Pattern
+
+import scala.xml._
+import scala.collection.mutable.{HashSet, LinkedHashSet, HashMap}
 
 
 /** Utility object */
@@ -23,37 +24,33 @@ object Catalog {
 
 /** The information maintained by crawling all the locations */
 class Catalog(crawlingInterval: Int, deletingInterval: Int) {
-  import Catalog._
+
+  // ------------------------------- initialization code -------------------------------
   
+  import Catalog._
   // start background threads that make sure this catalog is synchronized with the disk
   new BackgroundCrawler(this, crawlingInterval).start
   new BackgroundEliminator(this, deletingInterval).start
   
-
-  /** Exclusion patterns for files and folders. */
-  private val exclusions = HashSet[String] ()
-  
-  /** Inclusion patterns for files */
-  private val inclusions = HashSet[String] ()
-  
-  /** Processed exclusion and inclusion patterns (for internal use)
-    * Everything is quoted, except *, which are replaced with .* 
-    */
-  private val processedExclusions = HashSet[String] ()
-  private val processedInclusions = HashSet[String] ()
+  // ------------------------------- public members -------------------------------
   
   /** Locations (files and folders) being watched */
   val locations = HashSet[File] ()
   
+  /** Map from URLs to documents. Its key set is the set of file URLs that are currently indexed */
+  val urlToDocument = HashMap[URI, Document] ()
+  
   /** Map from URIs to named blocks (modules, declarations or assignments) */
   val uriToNamedBlock = HashMap[URI, NamedBlock] ()
   
-  /** Map from URLs to documents */
-  val urlToDocument = HashMap[URI, Document] ()
-  
   /** Map from namespace URIs to modules declared in that URI */
   val uriToModulesDeclared = HashMap[URI, LinkedHashSet[URI]] ()
-    
+  
+  
+  // ------------------------------- public methods -------------------------------
+  
+  // ------------------------------- getter methods -------------------------------
+  
   /** Exclusion patterns for files and folders. 
     * Star is the only special character and matches any sequence of characters. 
     * A folder is crawled iff it doesn't match any exclusion pattern.
@@ -295,6 +292,9 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   }
   
   
+  // ------------------------------- setter methods -------------------------------
+  
+  
   /** Add an inclusion pattern to the storage */
   def addInclusion(pattern : String) {
     if (pattern.isEmpty)
@@ -354,7 +354,6 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   }
   
   
-  
   /** Delete from watch list a location given by its string address.
     * @param locationName the (absolute or relative) address of the location on disk
     * @throws InexistentLocation if the location is not in the watch list */
@@ -372,48 +371,17 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
   }
   
   
-  
-  /** Check whether a location matches the stored patterns.
-    * @param locationName the file or folder name, excluding its path
-    * @param isDirectory set it to true if the location is a directory name, otherwise set it to false
-    * @return For directories: true if and only if it doesn't match any exclusion pattern.
-              For files: true if and only if it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains. */
-  private def isLegalLocation(locationName: String, isDirectory: Boolean) : Boolean = 
-    if (isDirectory)
-      !processedExclusions.exists(locationName.matches)
-    else 
-      (processedInclusions.isEmpty || processedInclusions.exists(locationName.matches)) && !processedExclusions.exists(locationName.matches)
-  
-      
-  /** Translates a given pattern into a Java regexp.
-    * @param pattern the pattern to be processed, given as a string. The only special character is *, which is interpreted as any sequence of characters.
-    * @return a Java regexp pattern with the same meaning as the one given as parameter */
-  private def quotePattern(pattern : String) : String = {
-    var result = pattern.split("\\Q*\\E").map(Pattern.quote).mkString(".*")
-    if (pattern.endsWith("*"))
-      result += ".*"
-    result
-  }
-  
-  
   /** Crawl through all stored locations, ignoring (but logging) errors */
-  def crawlAll { ConflictGuard.synchronized {
+  def crawlAll {
     locations.foreach(crawl)
     println(Time + "Crawled all modified files")
-  }}
-  
-  
-  /** Empty all the hashes */
-  def emptyAll { ConflictGuard.synchronized { 
-    uriToNamedBlock.clear
-    urlToDocument.clear
-  }}
-  
+  }
+
   
   /** Delete all the hash entries associated with a specific file or folder
     * @param location the file or folder URL, as a string */
   def uncrawl(url: String) { ConflictGuard.synchronized { 
-    val crawledFiles = urlToDocument.filterKeys(_.toString.startsWith(url))
+    val crawledFiles = urlToDocument.filterKeys(_.toString.startsWith(url)) // the file itself, or all files in the given folder
     for ((url, doc) <- crawledFiles) {
       doc.modules.foreach(m => {
         m match {
@@ -446,7 +414,7 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
     val locationName = location.getName    // name without the path
     
     if (location.isDirectory()) {
-      // Crawl the folder iff it doesn't match any exclusion pattern.
+      // It's a folder. Crawl it iff it doesn't match any exclusion pattern.
       if (isLegalLocation(locationName, true)) {
           //println(Time + getOriginalPath(location) + ": crawling folder...")
         
@@ -469,12 +437,13 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
           fileList.foreach(crawl)
       }
     }
+    // It's a file. Crawl it iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, then all files are crawled.
     else {
       // Check whether this is a recrawl
       val path = new URI(getPath(location))
       if (urlToDocument.contains(path)) {
         if (location.lastModified == urlToDocument(path).lastModified)
-          return                      // the file was NOT modified after the last crawl
+          return    // the file was NOT modified after the last crawl
         else {           // remove the file from the hashes first
           println(Time + getOriginalPath(location) + ": uncrawling...")
           uncrawl(path.toString)
@@ -485,7 +454,7 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
       if (isLegalLocation(locationName, false)) {
         println(Time + getOriginalPath(location) + ": crawling file...")
         try {
-          // Crawl the file to get the document structure
+          // Get the Document instance
           val lastModified = location.lastModified
           val document = FileCrawler(location)
           document.lastModified = lastModified
@@ -532,6 +501,46 @@ class Catalog(crawlingInterval: Int, deletingInterval: Int) {
       }
     }
   }}
+  
+  
+  // ------------------------------- private members and methods -------------------------------
+  
+  
+  /** Exclusion patterns for files and folders. */
+  private val exclusions = HashSet[String] ()
+  
+  
+  /** Inclusion patterns for files */
+  private val inclusions = HashSet[String] ()
+  
+  
+  /** Processed exclusion and inclusion patterns (for internal use)
+    * Everything is quoted, except *, which are replaced with .*       */
+  private val processedExclusions = HashSet[String] ()
+  private val processedInclusions = HashSet[String] ()
+  
+  
+  /** Check whether a location matches the stored patterns.
+    * @param locationName the file or folder name, excluding its path
+    * @param isDirectory set it to true if the location is a directory name, otherwise set it to false
+    * @return For directories: true if and only if it doesn't match any exclusion pattern.
+              For files: true if and only if it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains. */
+  private def isLegalLocation(locationName: String, isDirectory: Boolean) : Boolean = 
+    if (isDirectory)
+      !processedExclusions.exists(locationName.matches)
+    else 
+      (processedInclusions.isEmpty || processedInclusions.exists(locationName.matches)) && !processedExclusions.exists(locationName.matches)
+  
+      
+  /** Translates a given pattern into a Java regexp.
+    * @param pattern the pattern to be processed, given as a string. The only special character is *, which is interpreted as any sequence of characters.
+    * @return a Java regexp pattern with the same meaning as the one given as parameter */
+  private def quotePattern(pattern : String) : String = {
+    var result = pattern.split("\\Q*\\E").map(Pattern.quote).mkString(".*")
+    if (pattern.endsWith("*"))
+      result += ".*"
+    result
+  }
 }
 
 
@@ -550,7 +559,7 @@ class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) exte
   override def run {
     while(true) {
       Thread.sleep(deletingInterval * 1000)
-      for ((url,_) <- catalog.urlToDocument) {
+      for (url <- catalog.urlToDocument.keySet) {
         val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
         if (!file.exists) {
           println(Time + Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
