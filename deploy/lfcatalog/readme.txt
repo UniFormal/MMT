@@ -55,4 +55,40 @@ Request               Query                  Effect
                                         disk address
  getNSIntroduced ? url=                 print the namespaces introduced by the document given by 
                                         its disk address
- 
+
+-------------------------------
+API (see apidocs for more details)
+-------------------------------
+
+// create a Catalog and web server
+catalog = new info.kwarc.mmt.lf.Catalog(locations: HashSet[String] = new HashSet(), 
+                                        inclusions: HashSet[String] = new HashSet(), 
+                                        exclusions: HashSet[String] = new HashSet(), 
+                                        port: Int = 8080, 
+                                        crawlingInterval: Int = 5, 
+                                        deletingInterval: Int = 17)                            
+// getters
+catalog.urlToDocument         : HashMap[URI, Document] 
+catalog.uriToNamedBlock       : HashMap[URI, NamedBlock]
+catalog.uriToModulesDeclared  : HashMap[URI, LinkedHashSet[URI]]
+catalog.getPosition(stringUri : String) : String
+catalog.getText(stringUri : String) : String
+catalog.getMeta(stringUri : String, asText : Boolean = false) : String
+catalog.getDependencies(stringUri : String) : Array[String]
+catalog.getChildren(stringUri : String) : Array[String]
+catalog.getNSIntroduced(stringUrl : String) : Array[String]
+catalog.getOmdoc(stringUrl : String) : String    // only a skeleton
+catalog.writeOmdocToFile(stringUrl : String)     // only a skeleton
+
+// setters
+catalog.addInclusion(pattern : String)
+catalog.addExclusion(pattern : String)
+catalog.addStringLocation(locationName : String)
+catalog.deleteStringLocation(locationName : String)
+
+// crawling on demand
+catalog.crawlAll
+catalog.crawl(location: File)
+catalog.uncrawl(url: String)
+
+catalog.stopServer

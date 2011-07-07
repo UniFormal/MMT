@@ -6,12 +6,13 @@ import java.io.File
 import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet}
 
 
-/** Crawl a file
+/** Crawl a file */
+object FileCrawler {
+  /** Crawl a file
   * @param file the file descriptor (not open)
   * @return a Document object with the information extracted from the file
   * @throws ParseError for syntactical errors in the file
   * @throws FileOpenError if the file cannot be opened */
-object FileCrawler {
   def apply(file : File) : Document = (new FileCrawler(file)).crawl
 }
 

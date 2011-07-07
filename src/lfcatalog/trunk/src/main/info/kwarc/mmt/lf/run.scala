@@ -8,7 +8,7 @@ import scala.collection.mutable.HashSet
 
 /** Run the web server and console input */
 object Run {
-  val usage = """Usage: java -jar lfcatalog.jar (--port <port>)? (location|+inclusion|-exclusion)*
+  private val usage = """Usage: java -jar lfcatalog.jar (--port <port>)? (location|+inclusion|-exclusion)*
   
   location === absolute path to a file or directory
   inclusion === name
