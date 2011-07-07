@@ -3,6 +3,8 @@
 
 package info.kwarc.mmt.lf
 
+import scala.collection.mutable.HashSet
+
 
 /** Run the web server and console input */
 object Run {
@@ -26,21 +28,14 @@ object Run {
   /** Interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec */
   private var deletingInterval = 17
   
-  /** WebServer thread */
-  private var server : WebServer = null
-  
-  /** Catalog (catalog) */
-  private var catalog : Catalog = null
-  
-  
   def main(args : Array[String]) {
     
-    // the main storage and controller (this also starts 2 background threads)
-    catalog = new Catalog(crawlingInterval, deletingInterval)
-    
     // parse program arguments
-    if (!args.isEmpty) {
-      var patternsAndLocations : Array[String] = args
+    var patternsAndLocations : Array[String] = args
+    val locations = new HashSet[String] ()
+    val inclusions = new HashSet[String] ()
+    val exclusions = new HashSet[String] ()
+    if (!args.isEmpty) {      
       // read the optional --port argument
       if (args.head == "--port")
         if (args.length < 2) { 
@@ -50,41 +45,35 @@ object Run {
           try { port = Integer.parseInt(args(1)) }
           catch { case _ => println("error: port number expected\n\n" + usage); exit(1) }
           patternsAndLocations = patternsAndLocations.drop(2)
-        } 
+        }   
       // read the patterns and locations
       for (s <- patternsAndLocations)
-        if (s.startsWith("-"))   // an exclusion pattern
-          catalog.addExclusion(s.drop(1))
+        if (s.startsWith("-"))      // an exclusion pattern
+          exclusions += s.drop(1)
         else if (s.startsWith("+")) // an inclusion pattern
-          catalog.addInclusion(s.drop(1))
-        else {   // a location
-          try {
-            catalog.addStringLocation(s)
-          } catch {
-            case InexistentLocation(msg) => println(msg)
-          }
+          inclusions += s.drop(1)
+        else locations += s         // a location
+    }
+    
+    // the main storage and controller (this also starts background threads)
+    var catalog : Catalog = null
+    try {
+        catalog = new Catalog(locations, inclusions, exclusions, port, crawlingInterval, deletingInterval)
+    } catch {
+        case PortUnavailable(s) => {
+            println("error: port " + port + " is already used. Choose a different port number using the --port argument")
+            exit(1)
         }
     }
-    
-    // check if port is available
-    if (isTaken(port)) {
-        println("error: port " + port + " is already used. Choose a different port number using the --port argument")
-        exit(1)
-    }
-    
-    // start the web server (different threads)
-    server = new WebServer(catalog, port)
-    server.start
-    println("go to: http://127.0.0.1:" + port)
     
     // accept console input
     while (true) {
           val input = Console.readLine.trim
           val words : Array[String] = input.split("\\s")
           if (words.length >= 1)
-            if (words(0) == "exit") {          // exit
-                server.stop   // stop the server
-                exit(0)       // exit the program
+            if (words(0) == "exit") {          // exit the program
+                catalog.stopServer   // stop the server
+                exit(0)
             }
             else if (words(0) == "delete") {    // delete a location
                 if (words.length >= 2)

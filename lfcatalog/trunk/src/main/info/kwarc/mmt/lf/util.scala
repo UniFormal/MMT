@@ -13,6 +13,9 @@ case class FileOpenError(s: String) extends Exception(s)
 /** Exception thrown by the catalog if a query is unsuccessul */
 case class CatalogError(s: String) extends Exception(s)
 
+/** Exception thrown when the web server cannot be started because the specified port is already in use */
+case class PortUnavailable(s: String) extends Exception(s)
+
 
 /** Current time as a string */
 object Time {
