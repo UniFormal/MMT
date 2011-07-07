@@ -56,6 +56,7 @@ object URI {
     implicit def javaURItoMyURI(u : java.net.URI) : URI = new URI(u)
 }
 
+
 /*
 object testme extends Application {
   //val u = new URI("file:/C:/courses/Twelf/logics/a?m")
@@ -66,4 +67,6 @@ object testme extends Application {
   val s = "www.test.org/a^?q #f+a"
   val u = new info.kwarc.mmt.lf.URI(s)
   println(s + "     " + u.toString)
+
+  println(isTaken(8080))
 }*/

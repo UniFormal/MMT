@@ -327,6 +327,28 @@ object Run {
   /** Catalog (catalog) */
   private var catalog : Catalog = null
   
+  
+  /** Checks if a port is used
+  * @param port port number to be checked
+  * @return true if the port is used, false if it is available */
+  def isTaken(port: Int) : Boolean = {
+      var portTaken = false
+      var socket : java.net.ServerSocket = null
+      try {
+          socket = new java.net.ServerSocket(port)
+      } catch {
+          case e : java.io.IOException => portTaken = true
+      } finally {
+          // Clean up
+          if (socket != null) {
+              socket.setReuseAddress(true)    // sets an OS flag that the port is available again
+              socket.close
+          }
+      }
+      return portTaken
+  }
+  
+  
   /** A thread that reads commands from standard input */
   class ConsoleInput(val catalog: Catalog, val server: Server) extends Thread {
       override def run {
@@ -387,7 +409,11 @@ object Run {
   
   
   def main(args : Array[String]) {
+    
+    // the main storage and controller (same thread)
     catalog = new Catalog
+    
+    // parse program arguments
     if (!args.isEmpty) {
       var patternsAndLocations : Array[String] = args
       // read the optional --port argument
@@ -414,18 +440,24 @@ object Run {
           }
         }
     }
-    try {
-        server = new Server(catalog, port)
-        server.start
-    } catch {
-        case e : java.net.BindException => {
-            println("error: port " + port + " is already in use. Choose a different port with the --port argument")
-            exit(1)
-        }
+    
+    // check if port is available
+    if (isTaken(port)) {
+        println("error: port " + port + " is already used. Choose a different port number using the --port argument")
+        exit(1)
     }
+    
+    // start the web server (different threads)
+    server = new Server(catalog, port)
+    server.start
+    
+    // start the console input (different thread)
     new ConsoleInput(catalog, server).start
+    
+    // start background threads that make sure we are synchronized with the disk
     new BackgroundCrawler(catalog, crawlingInterval).start
     new BackgroundEliminator(catalog, deletingInterval).start
-    println("go to: http://127.0.0.1:8080")
+    
+    println("go to: http://127.0.0.1:" + port)
   }
 }
