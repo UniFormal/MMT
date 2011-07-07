@@ -339,7 +339,7 @@ class FileCrawler(file : File) {
       try {
         uri = new URI(string.trim)
       } catch {
-        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + uri + " is a malformed URI")
+        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + exc.getMessage)
       }
       return Triple(None, uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
       
@@ -356,7 +356,7 @@ class FileCrawler(file : File) {
       try {
         uri = new URI(string.trim)
       } catch {
-        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + uri + " is a malformed URI")
+        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + exc.getMessage)
       }
       return Triple(Some(alias), uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
     }
