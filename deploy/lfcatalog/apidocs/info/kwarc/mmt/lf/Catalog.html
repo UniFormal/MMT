@@ -78,7 +78,8 @@
       </h4>
       
             <p class="shortcomment cmt"></p>
-            <div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">locationsParam</dt><dd class="cmt"><p>set of disk locations to scan, given as strings</p></dd><dt class="param">inclusionsParam</dt><dd class="cmt"><p>set of inclusion patterns, given as strings</p></dd><dt class="param">exclusionsParam</dt><dd class="cmt"><p>set of exclusion patterns, given as strings</p></dd><dt class="param">port</dt><dd class="cmt"><p>port on which the server runs. Default value is 8080</p></dd><dt class="param">crawlingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic crawls. Default value is 5 sec</p></dd><dt class="param">deletingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec</p></dd></dl>
+            <div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">locationsParam</dt><dd class="cmt"><p>set of disk locations to scan, given as strings</p></dd><dt class="param">inclusionsParam</dt><dd class="cmt"><p>set of inclusion patterns, given as strings. Default value is *.elf</p></dd><dt class="param">exclusionsParam</dt><dd class="cmt"><p>set of exclusion patterns, given as strings. Default value is .svn</p></dd><dt class="param">port</dt><dd class="cmt"><p>port on which the server runs. Default value is 8080</p></dd><dt class="param">crawlingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic crawls. Default value is 5 sec</p></dd><dt class="param">deletingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
+</p></dd></dl>
             
             
             
@@ -399,6 +400,25 @@ part of compilation it is not possible to check whether the contents of the list
       
             <p class="shortcomment cmt">Delete from watch list a location given by its string address.</p>
             <div class="fullcomment"><div class="comment cmt"><p>Delete from watch list a location given by its string address.</p></div><dl class="paramcmts block"><dt class="param">locationName</dt><dd class="cmt"><p>the (absolute or relative) address of the location on disk</p></dd></dl>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#destroy">
+      <a id="destroy:Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">destroy</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Stop the web server</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Stop the web server</p></div>
             
             
             
@@ -726,6 +746,25 @@ to verify that the behavior is consistent with the <code>equals</code> method.
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#init">
+      <a id="init:Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">init</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Start the web server, background threads, add given patterns &amp; locations</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Start the web server, background threads, add given patterns &amp; locations</p></div>
+            
+            
+            
+          </div>
+          
     </li><li visbl="pub" data-isabs="false" name="scala.Any#isInstanceOf">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -747,6 +786,25 @@ possible to check whether the contents of the list are of the requested typed.
         </div><div class="block">
           definition classes: Any
         </div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#keepRunning">
+      <a id="keepRunning:Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">var</span>
+      <span class="symbol">
+        <span class="name">keepRunning</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">tells the background processes whether they should keep running or not</p>
+            <div class="fullcomment"><div class="comment cmt"><p>tells the background processes whether they should keep running or not</p></div>
             
             
             
@@ -841,37 +899,6 @@ possible to check whether the contents of the list are of the requested typed.
             
           </div>
           
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#server">
-      <a id="server:WebServer"></a>
-      <h4 class="signature">
-      <span class="kind">var</span>
-      <span class="symbol">
-        <span class="name">server</span>
-        
-        
-        <span class="result">: <a href="WebServer.html" class="extype" name="info.kwarc.mmt.lf.WebServer">WebServer</a></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#stopServer">
-      <a id="stopServer:Unit"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol">
-        <span class="name">stopServer</span>
-        
-        
-        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
-            <p class="shortcomment cmt">Stop the web server</p>
-            <div class="fullcomment"><div class="comment cmt"><p>Stop the web server</p></div>
-            
-            
-            
-          </div>
-          
     </li><li visbl="pub" data-isabs="false" name="scala.AnyRef#synchronized">
       <a id="synchronized[T0](T0):T0"></a>
       <h4 class="signature">
@@ -927,6 +954,25 @@ possible to check whether the contents of the list are of the requested typed.
       
             <p class="shortcomment cmt">Delete all the hash entries associated with a specific file or folder</p>
             <div class="fullcomment"><div class="comment cmt"><p>Delete all the hash entries associated with a specific file or folder</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#uncrawlAll">
+      <a id="uncrawlAll:Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol">
+        <span class="name">uncrawlAll</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">Clear the storage</p>
+            <div class="fullcomment"><div class="comment cmt"><p>Clear the storage</p></div>
             
             
             

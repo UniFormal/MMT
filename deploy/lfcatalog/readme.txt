@@ -62,8 +62,8 @@ API (see apidocs for more details)
 
 // create a Catalog and web server
 catalog = new info.kwarc.mmt.lf.Catalog(locations: HashSet[String] = new HashSet(), 
-                                        inclusions: HashSet[String] = new HashSet(), 
-                                        exclusions: HashSet[String] = new HashSet(), 
+                                        inclusions: HashSet[String] = new HashSet("*.elf"), 
+                                        exclusions: HashSet[String] = new HashSet(".svn"), 
                                         port: Int = 8080, 
                                         crawlingInterval: Int = 5, 
                                         deletingInterval: Int = 17)                            

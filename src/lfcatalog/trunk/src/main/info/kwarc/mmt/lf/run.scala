@@ -56,9 +56,9 @@ object Run {
     }
     
     // the main storage and controller (this also starts background threads)
-    var catalog : Catalog = null
+    var catalog = new Catalog(locations, inclusions, exclusions, port, crawlingInterval, deletingInterval)
     try {
-        catalog = new Catalog(locations, inclusions, exclusions, port, crawlingInterval, deletingInterval)
+        catalog.init
     } catch {
         case PortUnavailable(s) => {
             println("error: port " + port + " is already used. Choose a different port number using the --port argument")
@@ -71,8 +71,8 @@ object Run {
           val input = Console.readLine.trim
           val words : Array[String] = input.split("\\s")
           if (words.length >= 1)
-            if (words(0) == "exit") {          // exit the program
-                catalog.stopServer   // stop the server
+            if (words(0) == "exit") {       // exit the program
+                catalog.destroy             // stop the server
                 exit(0)
             }
             else if (words(0) == "delete") {    // delete a location
