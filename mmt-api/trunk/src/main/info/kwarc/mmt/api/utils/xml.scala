@@ -99,13 +99,7 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
    def schemeNull : String = scheme.getOrElse(null)
    /** convenience: the authority or null */
    def authorityNull : String = authority.getOrElse(null)
-   /*def resolve(u : java.net.URI) : URI = {
-      //resolve implements old URI RFC, therefore special case for query-only URI needed
-      if (u.getScheme == null && u.getAuthority == null && u.getPath == "")
-         URI(scheme, authority, path, absolute, URI.nullToNone(u.getQuery), URI.nullToNone(u.getFragment))
-      else
-         URI(toJava.resolve(u))
-   }*/
+
    def toJava = new java.net.URI(scheme.getOrElse(null), authority.getOrElse(null), pathAsString, query.getOrElse(null), fragment.getOrElse(null))
    override def toString = toJava.toString
 }
@@ -128,8 +122,13 @@ object URI {
       val fragment = nullToNone(uri.getFragment)
       URI(scheme, authority, path, absolute, query, fragment)
    }
-   /** parses a URI (using the java.net.URI parser) */
-   def apply(s : String) : URI = apply(new java.net.URI(s))
+   /** parses a URI (using the java.net.URI multiple-argument parser) */
+   def apply(s : String) : URI = {
+       val m : Matcher = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?").matcher(s) // pattern taken from RFC 3986
+       if (m.matches == false)
+          throw new java.net.URISyntaxException(s, "malformed URI reference")
+       return new java.net.URI(m.group(2), m.group(4), m.group(5), m.group(7), m.group(9))
+   }
    /** returns a relative URI with scheme and authority only */
    def apply(s: String, a: String) : URI = URI(Some(s), Some(a), Nil, false, None, None)
    /** returns an absolute URI with scheme, authority, and path */
