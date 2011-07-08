@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.utils
-import scala.xml.Node
+import scala.xml.{Node, PrettyPrinter}
 
 object xml {
    /** reads an XML file and returns the first Node in it */
@@ -9,6 +9,13 @@ object xml {
       val N = cp.document()(0)
       src.close
       N
+   }
+   
+   /** writes an XML Node to a file */
+   def writeFile(N : scala.xml.Node, file : java.io.File) {
+      val out = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file),"UTF8"))
+      out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + new PrettyPrinter(160,2).format(N))
+      out.close
    }
   
    /** returns attribute value, "" if attribute not present */
