@@ -24,17 +24,18 @@ object Catalog {
 
 /** The information maintained by crawling all the locations
   * @param locationsParam set of disk locations to scan, given as strings
-  * @param inclusionsParam set of inclusion patterns, given as strings
-  * @param exclusionsParam set of exclusion patterns, given as strings
+  * @param inclusionsParam set of inclusion patterns, given as strings. Default value is *.elf
+  * @param exclusionsParam set of exclusion patterns, given as strings. Default value is .svn
   * @param port port on which the server runs. Default value is 8080
   * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 5 sec
   * @param deletingInterval interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
-  * @throws PortUnavailable if the web server cannot be started because the specified port is already in use*/
+  */
 class Catalog(locationsParam: HashSet[String] = new HashSet[String](), 
-               inclusionsParam: HashSet[String] = new HashSet[String](), exclusionsParam: HashSet[String] = new HashSet[String](), 
+               inclusionsParam: HashSet[String] = new HashSet[String]() + "*.elf", exclusionsParam: HashSet[String] = new HashSet[String]() + ".svn", 
                port: Int = 8080, crawlingInterval: Int = 5, deletingInterval: Int = 17) {
+  import Catalog._
   
-  // ------------------------------- public and private members -------------------------------
+  // ------------------------------- public members -------------------------------
 
   
   /** Locations (files and folders) being watched */
@@ -48,59 +49,71 @@ class Catalog(locationsParam: HashSet[String] = new HashSet[String](),
   
   /** Map from namespace URIs to modules declared in that URI */
   val uriToModulesDeclared = HashMap[URI, LinkedHashSet[URI]] ()
+    
+  /** tells the background processes whether they should keep running or not */
+  var keepRunning = true
+                       
+  
+  // ------------------------------- private members -------------------------------
+  
   
   /** Exclusion patterns for files and folders. */
   private val exclusions = HashSet[String] ()
   
-  
   /** Inclusion patterns for files */
   private val inclusions = HashSet[String] ()
-  
   
   /** Processed exclusion and inclusion patterns (for internal use)
     * Everything is quoted, except *, which are replaced with .*       */
   private val processedExclusions = HashSet[String] ()
   private val processedInclusions = HashSet[String] ()
   
+  /** the RESTful web server */
+  private var server = new WebServer(this, port)
+  
+  /** background processes */
+  private var bkgCrawler = new BackgroundCrawler(this, crawlingInterval)
+  private var bkgEliminator = new BackgroundEliminator(this, deletingInterval)
   
   
-  // ------------------------------- initialization code -------------------------------
+  // ------------------------------- initialization and destruction -------------------------------
   
-  import Catalog._
   
-  // check if port is available
-  if (isTaken(port))
-      throw PortUnavailable("")
-  
-  // start background threads that make sure this catalog is synchronized with the disk
-  new BackgroundCrawler(this, crawlingInterval).start
-  new BackgroundEliminator(this, deletingInterval).start
-  
-  // add inclusion and exclusion patterns
-  inclusionsParam.foreach(addInclusion)
-  exclusionsParam.foreach(addExclusion)
-  
-  // add locations
-  for (l <- locationsParam) {
-      try {
-          addStringLocation(l)
-      } catch {
-          case InexistentLocation(msg) => println(msg)
+  /** Start the web server, background threads, add given patterns & locations
+    * @throws PortUnavailable if the web server cannot be started because the specified port is already in use */
+  def init {
+      // check if port is available
+      if (isTaken(port))
+        throw PortUnavailable("")
+        
+      // start background threads that make sure this catalog is synchronized with the disk
+      bkgCrawler.start
+      bkgEliminator.start
+      
+      // add inclusion and exclusion patterns
+      inclusionsParam.foreach(addInclusion)
+      exclusionsParam.foreach(addExclusion)
+      
+      // add locations
+      for (l <- locationsParam) {
+          try {
+              addStringLocation(l)
+          } catch {
+              case InexistentLocation(msg) => println(msg)
+          }
       }
+      
+      // start the web server (different threads)
+      server.start
+      println("go to: http://127.0.0.1:" + port)
   }
-  
-  // start the web server (different threads)
-  var server = new WebServer(this, port)
-  server.start
-  println("go to: http://127.0.0.1:" + port)
-  
-  
-  // ------------------------------- public methods -------------------------------
   
   
   /** Stop the web server */
-  def stopServer {
+  def destroy {
+      keepRunning = false  // tells the background processes that they should stop
       server.stop
+      uncrawlAll
   }
   
   
@@ -427,9 +440,18 @@ class Catalog(locationsParam: HashSet[String] = new HashSet[String](),
   }
   
   
+  // ------------------------------- crawling -------------------------------
+  
+  
   /** Crawl through all stored locations, ignoring (but logging) errors */
   def crawlAll {
     locations.foreach(crawl)
+  }
+  
+  
+  /** Clear the storage */
+  def uncrawlAll {
+    locations.map(getPath).foreach(uncrawl)
   }
 
   
@@ -596,7 +618,7 @@ class Catalog(locationsParam: HashSet[String] = new HashSet[String](),
 /** A thread that checks for updated files and crawls them every crawlingInterval seconds */
 class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends Thread {
   override def run {
-    while(true) {
+    while(catalog.keepRunning == true) {
       Thread.sleep(crawlingInterval * 1000)
       catalog.crawlAll
     }
@@ -606,7 +628,7 @@ class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends
 /** A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes */
 class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) extends Thread {
   override def run {
-    while(true) {
+    while(catalog.keepRunning == true) {
       Thread.sleep(deletingInterval * 1000)
       for (url <- catalog.urlToDocument.keySet) {
         val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
