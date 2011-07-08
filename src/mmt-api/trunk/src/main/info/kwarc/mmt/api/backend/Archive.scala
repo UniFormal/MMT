@@ -1,8 +1,10 @@
 package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
+import libraries._
 import frontend._
 import modules._
 import lf._
+import utils._
 
 import java.io.File
 import scala.collection.mutable._
@@ -32,13 +34,14 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        }
     }*/
     def MMTPathToFilePath(m: MPath) : java.io.File = null
-    def narrToCont(controller : Controller) {
+    def narrToCont {
+        val controller = new Controller(NullChecker, report)
         // create content folder, iterate over all narration files using "files", put one theory per file into content folder (subfolder structure according to namespaces)
         // build index of all URIs
         val omdocfile = new java.io.File("")
-        // controller.delete(omdocfile) or controller.clear
         val doc = controller.read(omdocfile)
         controller.getDocument(doc).getModulesResolved(controller.library) foreach put
+        controller.clear
     }
     def contToRel(controller: Controller) {}
     def contToPres(controller: Controller, label: String, style: MPath) {}
@@ -46,9 +49,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        utils.xml.readFile(MMTPathToFilePath(m))
     }
     def put(mod: Module) {
-       val trg = MMTPathToFilePath(mod.path)
-       val xml = mod.toNode
-         //java.io.writeFile(trg, ... xml)
+       xml.writeFile(mod.toNode, MMTPathToFilePath(mod.path))
     }
     def toMar(target: java.io.File) {}
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, root)
