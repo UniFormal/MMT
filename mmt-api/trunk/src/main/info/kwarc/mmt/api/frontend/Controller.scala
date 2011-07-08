@@ -110,6 +110,10 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       notstore.clear
       depstore.clear
    }
+   /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
+   def cleanup {
+      backend.cleanup
+   }
    /** reads a file and returns the Path of the document found in it */
    def read(f: java.io.File) : DPath = {
       val N = utils.xml.readFile(f)
@@ -128,7 +132,13 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
        }
    }
    protected def handleLine(l : String) {
-        val act = Action.parseAct(l, base, home)
+        val act = try {
+           Action.parseAct(l, base, home)
+        } catch {
+           case ParseError(msg) =>
+              log(msg)
+              return
+        }
         handle(act)
    }
    /** executes an Action */
@@ -138,13 +148,9 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
 	      case AddArchive(f) => backend.openArchive(f)
-	      case AddCompiler(k,f) => k match {
-	         case "twelf" =>
-	            val c = new lf.Twelf(f)
-	            backend.addCompiler(c)
-	         case _ => throw ParseError("unsupported compiler " + k)
-	      }
-         case RemoveCompiler(k) => backend.removeCompiler(k)
+	      case AddTwelf(f) =>
+            val c = new lf.Twelf(f)
+            backend.addCompiler(c)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
@@ -173,7 +179,9 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)
-	      case Exit => exit
+	      case Exit =>
+	         cleanup 
+	         exit
       })
    }
 }

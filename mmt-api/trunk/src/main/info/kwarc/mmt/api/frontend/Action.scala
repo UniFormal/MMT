@@ -17,7 +17,7 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | archive | tntbase | compilerAdd | compilerRemove | execfile
+   private def controller = logon | logoff | local | catalog | archive | tntbase | twelf | execfile
    private def shell = setbase | read | printall | printallxml | clear | exit
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
@@ -25,8 +25,7 @@ object Action extends RegexParsers {
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
    private def archive = "archive" ~> file ^^ {f => AddArchive(f)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
-   private def compilerAdd = "compiler+" ~> str ~ file ^^ {case s ~ f => AddCompiler(s,f)}
-   private def compilerRemove = "compiler-" ~> str ^^ {s => RemoveCompiler(s)}
+   private def twelf = "twelf" ~> file ^^ {f => AddTwelf(f)}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
@@ -83,9 +82,7 @@ case class AddCatalog(file : java.io.File) extends Action {override def toString
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
 /** register a compiler */
-case class AddCompiler(kind: String, location: File) extends Action {override def toString = "compiler+ " + kind + " location"}
-/** unregister a compiler */
-case class RemoveCompiler(kind: String) extends Action {override def toString = "compiler- " + kind}
+case class AddTwelf(location: File) extends Action {override def toString = "twelf " + location}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
 /** load a file containing commands and execute them, fails on first error if any */
