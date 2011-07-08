@@ -115,12 +115,6 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       val N = utils.xml.readFile(f)
       reader.readDocument(DPath(URI.fromJava(f.toURI)), N)
    }
-   /** opens an archive and returns it */
-   def openArchive(f: java.io.File) : Archive = { 
-      val arch = Storage.fromArchive(f, report)
-      backend.addStore(arch)
-      arch
-   }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
    protected var home = new java.io.File(".")
@@ -143,7 +137,14 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
-	      case AddArchive(f) => openArchive(f)
+	      case AddArchive(f) => backend.openArchive(f)
+	      case AddCompiler(k,f) => k match {
+	         case "twelf" =>
+	            val c = new lf.Twelf(f)
+	            backend.addCompiler(c)
+	         case _ => throw ParseError("unsupported compiler " + k)
+	      }
+         case RemoveCompiler(k) => backend.removeCompiler(k)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>

@@ -7,7 +7,7 @@ import lf._
 import java.io.File
 import scala.collection.mutable._
 
-class Archive(val root: File, val id: String, report: Report) extends Storage {
+class Archive(val root: File, val properties: Map[String,String], compiler: Option[Compiler], report: Report) extends Storage {
     // the base URI of the documents in the narration folder, should be read from the meta-file and set in the init method
     private var narrationBase : utils.URI = null
     // the base path of the modules in the content folder, should be read from the meta-file and set in the init method
@@ -57,11 +57,4 @@ class Archive(val root: File, val id: String, report: Report) extends Storage {
        case mod : MPath => reader.readModules(contentBase, None, get(mod))
        case sym : GlobalName => get(sym.mod, reader)
     }}
-}
-
-class TwelfArchive(root: File, id: String, report: Report, twelf : Twelf) extends Archive(root, id, report) {
-    def srcToNarr(controller: Controller) {
-       // create narration folder, iterate over all source files, call Twelf, put omdoc into narration folder (some subfolder structure)
-       // build HashSet of all files
-    }
 }

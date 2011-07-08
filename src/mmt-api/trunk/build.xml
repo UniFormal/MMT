@@ -26,6 +26,7 @@
             <pathelement location="${scala.dir}/scala-library.jar"/>
             <pathelement location="${build.main}"/>
             <pathelement location="${lib}/tntbase-plugin-api.jar"/>
+            <pathelement location="${lib}/lfcatalog.jar"/>
         </path>
         <scalac destdir="${build.main}" srcdir="${src.main}"
             classpathref="compile.classpath" deprecation="yes"/>

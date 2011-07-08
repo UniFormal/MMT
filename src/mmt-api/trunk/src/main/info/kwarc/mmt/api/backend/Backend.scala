@@ -4,6 +4,8 @@ import info.kwarc.mmt.api.utils._
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
 
+import java.io.File
+
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
 case object NotApplicable extends java.lang.Throwable
@@ -66,12 +68,6 @@ object Storage {
          case scala.xml.Comment(_) => None
          case n => throw ParseError("illegal ombase: " + n)
       }
-   }
-   def fromArchive(file: java.io.File, report: frontend.Report) : Archive = {
-      //TODO: check if "file" is mar, folder, or meta-inf file, branch accordingly
-      //read the meta-inf file, and then use to construct the Archive
-      // the meta-inf file may contain id (default to folder/file name), information that lets us decide whether it's a twelf archive 
-      new Archive(file, "", report)
    }
    def virtDoc(entries : List[String], prefix : String) =
       <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
@@ -224,13 +220,56 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
 /** a Backend holds a list of Storages and uses them to dereference Paths */
 class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
+   private var compilers : List[Compiler] = Nil
    private def log(msg : String) = report("backend", msg)
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
       s.foreach {d =>
-         log("adding " + d.toString)
+         log("adding storage " + d.toString)
          d.init(reader)
       }
+   }
+   def addCompiler(c: Compiler) {
+       log("adding compiler " + c.toString)
+       compilers ::= c
+       c.init
+   }
+   def removeCompiler(kind: String) {
+      compilers = compilers.filter(c =>
+         if (c.kind == kind) {
+            log("removing compiler " + c.toString)
+            c.destroy
+            false
+         } else
+            true
+      )
+   }
+   def openArchive(root: java.io.File) : Archive = {
+      //TODO: check if "file" is mar, folder, or meta-inf file, branch accordingly
+      var properties = new scala.collection.mutable.ListMap[String,String]
+      var compiler : Option[Compiler] = None 
+      val manifest = new File(new File(root, "META-INF"), "MANIFEST.MF")
+      if (manifest.isFile) {
+         // read "key: value" list from "manifest" into properties
+         val in = new java.io.BufferedReader(new java.io.FileReader(manifest))
+         var line : String = null
+         while ({line = in.readLine(); line != null}) {
+            val p = line.indexOf(":")
+            val key = line.substring(0,p).trim
+            val value = line.substring(p+1).trim
+            properties(key) = value
+         }
+         in.close
+         properties.get("source") foreach (
+            src => compilers.find(_.kind == src) match {
+               case Some(c) => compiler = Some(c)
+               case None => log("no compiler registered for source " + src)
+            }
+         )
+      }
+      val arch = new Archive(root, properties, compiler, report)
+      addStore(arch)
+      arch
    }
    /** look up a path in the first Storage that is applicable and send the content to the reader */
    def get(p : Path) = {
@@ -248,7 +287,7 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
    }
    /** retrieve an Archive by its id */
    def getArchive(id: String) = stores find {
-      case a: Archive => a.id == id
+      case a: Archive => a.properties.get("id") == Some(id)
       case _ => false
    }
 }

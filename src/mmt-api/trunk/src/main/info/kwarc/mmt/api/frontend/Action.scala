@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.documents._
 import scala.util.parsing.combinator._
+import java.io.File
 
 /** helper object for Actions
  * This object provides a combinator parser for Actions that is used when commands are sent to a controller as strings.
@@ -16,7 +17,7 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | archive | tntbase | execfile
+   private def controller = logon | logoff | local | catalog | archive | tntbase | compilerAdd | compilerRemove | execfile
    private def shell = setbase | read | printall | printallxml | clear | exit
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
@@ -24,6 +25,8 @@ object Action extends RegexParsers {
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
    private def archive = "archive" ~> file ^^ {f => AddArchive(f)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
+   private def compilerAdd = "compiler+" ~> str ~ file ^^ {case s ~ f => AddCompiler(s,f)}
+   private def compilerRemove = "compiler-" ~> str ^^ {s => RemoveCompiler(s)}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
@@ -57,7 +60,7 @@ object Action extends RegexParsers {
       val p = parseAll(commented,s)
       p match {
          case Success(tree, _) => tree
-         case e: NoSuccess => throw ParseError(s + "\n  error: " + e.msg)          
+         case e: NoSuccess => throw ParseError(s + "\n  error: " + e.msg)
       }
    }
 }
@@ -79,6 +82,10 @@ case object Local extends Action {override def toString = "local"}
 case class AddCatalog(file : java.io.File) extends Action {override def toString = "catalog " + file}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
+/** register a compiler */
+case class AddCompiler(kind: String, location: File) extends Action {override def toString = "compiler+ " + kind + " location"}
+/** unregister a compiler */
+case class RemoveCompiler(kind: String) extends Action {override def toString = "compiler- " + kind}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
 /** load a file containing commands and execute them, fails on first error if any */
