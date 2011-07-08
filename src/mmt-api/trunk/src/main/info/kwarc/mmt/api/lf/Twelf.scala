@@ -5,7 +5,9 @@ import info.kwarc.mmt.api.backend._
 import java.io.File
 import scala.collections.mutable.HashSet
 
-/** Utility for starting the catalog and calling the Twelf compiler */
+/** Utility for starting the catalog and calling the Twelf compiler
+  * @param path the Twelf compiler executable
+  */
 class Twelf(path : java.io.File) extends Compiler {
    val kind = "twelf"
    
