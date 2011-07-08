@@ -66,7 +66,9 @@ catalog = new info.kwarc.mmt.lf.Catalog(locations: HashSet[String] = new HashSet
                                         exclusions: HashSet[String] = new HashSet(".svn"), 
                                         port: Int = 8080, 
                                         crawlingInterval: Int = 5, 
-                                        deletingInterval: Int = 17)                            
+                                        deletingInterval: Int = 17)
+catalog.init      // throws PortUnavailable if the port is in use
+
 // getters
 catalog.urlToDocument         : HashMap[URI, Document] 
 catalog.uriToNamedBlock       : HashMap[URI, NamedBlock]
@@ -91,4 +93,4 @@ catalog.crawlAll
 catalog.crawl(location: File)
 catalog.uncrawl(url: String)
 
-catalog.stopServer
+catalog.destroy
