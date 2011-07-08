@@ -113,7 +113,10 @@ class Catalog(locationsParam: HashSet[String] = new HashSet[String](),
   def destroy {
       keepRunning = false  // tells the background processes that they should stop
       server.stop
-      uncrawlAll
+      locations.clear
+      urlToDocument.clear
+      uriToNamedBlock.clear
+      uriToModulesDeclared.clear
   }
   
   
