@@ -79,7 +79,6 @@ object Storage {
       else
          throw NotApplicable
       }
-
 }
 
 object OMQuery {
@@ -234,19 +233,9 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
        compilers ::= c
        c.init
    }
-   def removeCompiler(kind: String) {
-      compilers = compilers.filter(c =>
-         if (c.kind == kind) {
-            log("removing compiler " + c.toString)
-            c.destroy
-            false
-         } else
-            true
-      )
-   }
    def openArchive(root: java.io.File) : Archive = {
       //TODO: check if "file" is mar, folder, or meta-inf file, branch accordingly
-      var properties = new scala.collection.mutable.ListMap[String,String]
+      val properties = new scala.collection.mutable.ListMap[String,String]
       var compiler : Option[Compiler] = None 
       val manifest = new File(new File(root, "META-INF"), "MANIFEST.MF")
       if (manifest.isFile) {
@@ -271,6 +260,10 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
       addStore(arch)
       arch
    }
+   def cleanup {
+      compilers.foreach(_.destroy)
+      compilers = Nil
+   } 
    /** look up a path in the first Storage that is applicable and send the content to the reader */
    def get(p : Path) = {
       def getInList(l : List[Storage], p : Path) {l match {
