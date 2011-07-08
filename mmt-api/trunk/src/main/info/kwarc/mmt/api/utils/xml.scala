@@ -124,7 +124,7 @@ object URI {
    }
    /** parses a URI (using the java.net.URI multiple-argument parser) */
    def apply(s : String) : URI = {
-       val m : Matcher = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?").matcher(s) // pattern taken from RFC 3986
+       val m : java.util.regex.Matcher = java.util.regex.Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?").matcher(s) // pattern taken from RFC 3986
        if (m.matches == false)
           throw new java.net.URISyntaxException(s, "malformed URI reference")
        return new java.net.URI(m.group(2), m.group(4), m.group(5), m.group(7), m.group(9))

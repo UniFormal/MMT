@@ -3,7 +3,7 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.api.backend._
 
 import java.io.File
-import scala.collections.mutable.HashSet
+import scala.collection.mutable.HashSet
 
 /** Utility for starting the catalog and calling the Twelf compiler
   * @param path the Twelf compiler executable

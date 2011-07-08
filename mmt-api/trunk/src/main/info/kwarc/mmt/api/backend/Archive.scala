@@ -10,6 +10,9 @@ import java.io.File
 import scala.collection.mutable._
 
 
+case class CompilationError(s: String) extends Exception(s)
+
+
 // source can miss, narration is always there
 
 /** MAR archive management
@@ -55,7 +58,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @param m the MPath of the module 
       * @return the File descriptor of the destination .omdoc file
       */    
-    def MMTPathToContentPath(m: MPath) : java.io.File = new File(root.getPath + File.separator + "content" + File.separator + m.parent.uri + File.separator + name + ".omdoc") 
+    def MMTPathToContentPath(m: MPath) : java.io.File = new File(root.getPath + File.separator + "content" + File.separator + m.parent.uri + File.separator + m.name + ".omdoc") 
     
     /** Generate narration from source */
     def sourceToNarr {
