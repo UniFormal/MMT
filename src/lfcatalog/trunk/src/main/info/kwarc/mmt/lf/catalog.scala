@@ -30,9 +30,12 @@ object Catalog {
   * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 5 sec
   * @param deletingInterval interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
   */
-class Catalog(locationsParam: HashSet[String] = new HashSet[String](), 
-               inclusionsParam: HashSet[String] = new HashSet[String]() + "*.elf", exclusionsParam: HashSet[String] = new HashSet[String]() + ".svn", 
-               port: Int = 8080, crawlingInterval: Int = 5, deletingInterval: Int = 17) {
+class Catalog(val locationsParam: HashSet[String] = new HashSet[String](), 
+               val inclusionsParam: HashSet[String] = new HashSet[String]() + "*.elf", 
+               val exclusionsParam: HashSet[String] = new HashSet[String]() + ".svn", 
+               val port: Int = 8080, 
+               val crawlingInterval: Int = 5, 
+               val deletingInterval: Int = 17) {
   import Catalog._
   
   // ------------------------------- public members -------------------------------
