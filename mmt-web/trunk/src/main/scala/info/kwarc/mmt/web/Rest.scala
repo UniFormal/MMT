@@ -41,7 +41,7 @@ object Rest {
              try {
                 Manager.report.record
                 val c = query.replace("%20", " ")
-                val act = frontend.Action.parseAct(c, Manager.basepath)
+                val act = frontend.Action.parseAct(c, Manager.basepath, Manager.controller.getHome)
                 Manager.controller.handle(act)
                 val r = Manager.report.recall
                 Manager.report.clear
@@ -88,7 +88,7 @@ object Rest {
               }
               // "xml": render and xml response; "text": render and text response; "xhtml": render via template/snippet and xml response
               val textresponse : Boolean = try {
-                  Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, Manager.basepath) match {
+                  Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, Manager.basepath, Manager.controller.getHome) match {
                   case DefaultGet(p) => p match {
                      case Present(_,_) => ReqHelpers.ctype(r.request) match {
                         case "text/xml" => false
