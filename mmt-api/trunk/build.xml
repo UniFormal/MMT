@@ -11,7 +11,7 @@
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
         <pathelement location="${lib}/tntbase-plugin-api.jar"/>
-        <pathelement location="${deploy}/lfcatalog/lib/lfcatalog.jar"/>
+        <pathelement location="${deploy}/lfcatalog/lfcatalog.jar"/>
     </path>
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
     <taskdef resource="scala/tools/ant/antlib.xml"
@@ -27,7 +27,7 @@
             <pathelement location="${scala.dir}/scala-library.jar"/>
             <pathelement location="${build.main}"/>
             <pathelement location="${lib}/tntbase-plugin-api.jar"/>
-            <pathelement location="${deploy}/lfcatalog/lib/lfcatalog.jar"/>
+            <pathelement location="${deploy}/lfcatalog/lfcatalog.jar"/>
         </path>
         <scalac destdir="${build.main}" srcdir="${src.main}"
             classpathref="compile.classpath" deprecation="yes"/>
