@@ -4,7 +4,8 @@ import info.kwarc.mmt.api.utils._
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
 
-import java.io.File
+import utils.File
+import utils.FileConversion._
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
@@ -237,7 +238,7 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
       //TODO: check if "file" is mar, folder, or meta-inf file, branch accordingly
       val properties = new scala.collection.mutable.ListMap[String,String]
       var compiler : Option[Compiler] = None 
-      val manifest = new File(new File(root, "META-INF"), "MANIFEST.MF")
+      val manifest = root / "META-INF" / "MANIFEST.MF"
       if (manifest.isFile) {
          // read "key: value" list from "manifest" into properties
          val in = new java.io.BufferedReader(new java.io.FileReader(manifest))

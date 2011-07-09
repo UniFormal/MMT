@@ -121,9 +121,9 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
-   protected var home = new java.io.File(".")
+   protected var home = File(".")
    def getHome = home
-   def setHome(h: java.io.File) {home = h}
+   def setHome(h: File) {home = h}
    protected def handleExc[A](a: => A) {
        try {a}
        catch {
@@ -149,7 +149,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
 	      case AddArchive(f) => backend.openArchive(f)
 	      case AddTwelf(f) =>
-            val c = new lf.Twelf(f)
+            val c = new lf.Twelf(File(f))
             backend.addCompiler(c)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)

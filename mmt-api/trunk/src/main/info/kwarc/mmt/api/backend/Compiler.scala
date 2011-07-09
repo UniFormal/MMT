@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.backend
-import java.io.File
+import info.kwarc.mmt.api._
+import utils.File
 
 abstract class Compiler {
    val kind : String
