@@ -21,7 +21,7 @@ object Twelf {
 }
 
 /** Utility for starting the catalog and calling the Twelf compiler
-  * @param path the Twelf check-some script
+  * @param path the twelf-server script
   */
 class Twelf(path : File) extends Compiler {
    def isApplicable(src: String) = src == "twelf"
@@ -31,22 +31,28 @@ class Twelf(path : File) extends Compiler {
    /** Twelf setting "set chatter ..." */
    var chatter : Int = 5
    var catalogOpt : Option[Catalog] = None
+   var port = 8081
    
    /** creates and intializes a Catalog
      */
    override def init {
-      val cat = new Catalog(new HashSet[String]()+path.toJava.getPath, new HashSet[String]+"*.elf", new HashSet[String]+".svn", 8081)
+      val cat = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port)
       cat.init    //  throws PortUnavailable
       catalogOpt = Some(cat)
    }
    override def destroy {
       catalogOpt.foreach(_.destroy)
    }
+   
+   /** add a location to the catalog */
+   def addCatalogLocation(f: File) {
+       catalogOpt.foreach(_.addStringLocation(f.getPath))
+   }
 
    /** 
      * Compile a Twelf file to OMDoc
      * @param in the input Twelf file 
-     * @param targetdir the directory in which to put a generated OMDoc file with the same name as the input file
+     * @param out the output (generated OMDoc file)
      */
    def compile(in: File, out: File) : List[CompilerError] = {
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
@@ -83,8 +89,13 @@ class Twelf(path : File) extends Compiler {
 /*
 object TwelfTest {
    def main(args: Array[String]) {
-      val twelf = new Twelf(File("e:\\other\\twelf-mod\\bin\\twelf-server.bat"))
-      twelf.check(File("e:\\other\\twelf-mod\\examples-mod\\test.elf"), File(".")) 
+      val twelf = new Twelf(File("c:\\twelf-mod\\bin\\twelf-server.bat"))
+      twelf.init
+      twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
+      //twelf.check(File("e:\\other\\twelf-mod\\examples-mod\\test.elf"), File(".")) 
+      val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
+      println(errors.mkString("\n"))
+      twelf.destroy
    }
 }
 */

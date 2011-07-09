@@ -37,16 +37,81 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @return the File descriptor of the destination .omdoc file
       */
     def MMTPathToContentPath(m: MPath) : java.io.File =
-       root / "content" / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc") 
+       root / "content" / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc")
     
-    /** Generate narration from source */
+    /** Generate narration from source
+      * ********************** WARNING:  .svn folders are ignored ************* only .elf files are taken ********************** 
+      */
     def sourceToNarr {
         compiler match {
             case None => throw CompilationError("no compiler defined")
-            case Some(c) => {
+            case Some(c) => 
+                // make sure the source folder exists
+                val srcdir = root / "source"
+                if (!srcdir.exists) {                                  
+                    log("source to narration: error: no source folder found")
+                    return                                                                                      
+                }
+                // make sure the narration folder exists
+                val narrdir = root / "narration"
+                if (!narrdir.exists) {
+                    val success : Boolean = narrdir.mkdir   // create /narration
+                    if (success == false) {
+                        log("source to narration: error: cannot create narration folder")
+                        return
+                    }
+                }
+                // add the source folder to the catalog
+                c.asInstanceOf[Twelf].addCatalogLocation(srcdir)
                 
-                ////c.compile(sourceFile, narrDir / (name + ".omdoc"))
+                // compile the Twelf files in the source folder
+                processFolder(root / "source", srcfile => {
+                    // relative path of the destination file in the narration folder (with old suffix)
+                    val rel : String = srcfile.toString.substring((root / "source").toString.length)
+                    // replace suffix .elf with .omdoc
+                    val relativePath : String = rel.substring(0, rel.length - "elf".length) + "omdoc"
+                    // replace the first part of the path of srcfile with narrdir to get the destination file path
+                    val destfile = narrdir / relativePath
+                    val destfolder = destfile.getParentFile
+                    // make sure the destination folder exists
+                    if (!destfolder.exists) {
+                        val success : Boolean = destfolder.mkdirs  // create the destination folder (and its parents, if necessary)
+                        if (success == false) {
+                            log("source to narration: error: cannot create a narration subfolder")
+                            return
+                        }
+                    }
+                    // compile the file
+                    val errors : List[CompilerError] = c.compile(srcfile, destfile)
+                    println("TWELF: " + srcfile + " -> " + destfile)
+                    // update 
+                    files.update(destfile, errors)
+                })
+        }
+    }
+    
+    /** Apply a function on each file in the given folder or its subfolders. 
+      * ********************** WARNING:  .svn folders are ignored ************* only .elf files are taken **********************
+      * This only works for physical folders and files on a disk */
+    private def processFolder(f: File, actOn: File => Unit) {
+        if (!f.canRead) return
+        else if (f.isFile) {
+            if (f.getName.endsWith(".elf"))
+                actOn(f)         // process the file
+        }
+        else if (f.isDirectory && f.getName != ".svn") {
+            // Get list of children
+            var fileList : Array[File] = null
+            try {
+                fileList = f.listFiles.map(x => File(x))
+            } catch {
+                case e : SecurityException => return
             }
+            if (fileList == null) 
+                return
+            else
+                // process each child
+                fileList.foreach(child => processFolder(child, actOn))
         }
     }
     
@@ -87,4 +152,17 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        case mod : MPath => reader.readModules(utils.mmt.mmtbase, None, get(mod))
        case sym : GlobalName => get(sym.mod, reader)
     }}
+}
+
+
+object ArchiveTest extends Application {
+    val controller = new Controller(NullChecker, new ConsoleReport)
+    val twelf = new Twelf(File("c:/twelf-mod/bin/twelf-server.bat"))
+    controller.backend.addCompiler(twelf)
+    val archive = controller.backend.openArchive(File("c:/CDS"))
+    //twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
+    //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
+    //println(errors.mkString("\n"))
+    archive.sourceToNarr
+    controller.cleanup
 }
