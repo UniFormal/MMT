@@ -82,7 +82,7 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="build">
+    <target name="deploy" depends="compile,docs">
         <copy todir="${deploy}/${prj}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>
@@ -103,6 +103,9 @@
             <zipfileset src="${tiscaf}" includes="zgs/**/*"/>
             <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
         </jar>
+        <copy todir="${deploy}/mmt">
+            <fileset file="${deploy}/${prj}/${jar}"/>
+        </copy>
     </target>
 
     <target name="clean">

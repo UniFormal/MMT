@@ -5,31 +5,32 @@
           <title>info.kwarc.mmt.api.presentation</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
+      <link href="../../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
       <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body class="value">
+        <body class="value" onload="windowTitle();">
+
+      <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
+
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
         <h1>presentation</h1>
       </div>
 
       <h4 class="signature" id="signature">
       <span class="kind">package</span>
-      <span class="symbol"> 
+      <span class="symbol">
         <span class="name">presentation</span>
+        
         
         
       </span>
       </h4>
-      
-          <div class="fullcommenttop" id="comment"></div>
-        
+      <div class="fullcomment" id="comment"></div>
 
       <div id="template">
 
@@ -39,7 +40,11 @@
           
           <div id="visbl">
               <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+              <ol><li class="public in">Public</li><li class="all out">All</li></ol>
+            </div>
+          <div id="impl">
+              <span class="filtertype">Impl.</span>
+              <ol><li class="concrete in">Concrete</li><li class="abstract in">Abstract</li></ol>
             </div>
         </div>
 
@@ -47,898 +52,981 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.presentation.AppStyle" data-isabs="true">
+              <ol><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.AppStyle">
       <a id="AppStyle:AppStyle"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="AppStyle.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="AppStyle.html"><span class="name">AppStyle</span></a>
+      <span class="symbol">
+        <span class="name">AppStyle</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">The application style of a prefix of postfix notation determines how operator and arguments are connected.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Associativity" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.Associativity">
       <a id="Associativity:Associativity"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Associativity.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Associativity.html"><span class="name">Associativity</span></a>
+      <span class="symbol">
+        <span class="name">Associativity</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">The associativity of an infix or interfix notation determines how brackets are restored.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Attribute" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Attribute">
       <a id="Attribute:Attribute"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Attribute.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Attribute.html"><span class="name">Attribute</span></a>
+      <span class="symbol">
+        <span class="name">Attribute</span>
         
-        <span class="params">(<span name="prefix">prefix: String</span>, <span name="name">name: String</span>, <span name="value">value: Presentation</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="prefix">prefix: String</span>, <span name="name">name: String</span>, <span name="value">value: Presentation</span>)</span>
+        <span class="result"> extends Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">produces an XML attribute</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.ByNotation" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ByNotation">
       <a id="ByNotation:ByNotation"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ByNotation.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="ByNotation.html"><span class="name">ByNotation</span></a>
+      <span class="symbol">
+        <span class="name">ByNotation</span>
         
-        <span class="params">(<span name="key">key: NotationKey</span>, <span name="components">components: List[Content]</span>, <span name="lpar">lpar: LocalParams</span>)</span><span class="result"> extends PresentationData with Product with Serializable</span>
+        <span class="params">(<span name="key">key: NotationKey</span>, <span name="components">components: List[Content]</span>, <span name="lpar">lpar: LocalParams</span>)</span>
+        <span class="result"> extends PresentationData with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">a content expression provides a key that yields a notation, which is rendered in the context of some components</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.ComplexNotation" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ComplexNotation">
       <a id="ComplexNotation:ComplexNotation"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ComplexNotation.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="ComplexNotation.html"><span class="name">ComplexNotation</span></a>
+      <span class="symbol">
+        <span class="name">ComplexNotation</span>
         
-        <span class="params">(<span name="nset">nset: MPath</span>, <span name="key">key: NotationKey</span>, <span name="fix">fix: Fixity</span>, <span name="assoc">assoc: Associativity</span>, <span name="appstyle">appstyle: AppStyle</span>, <span name="impl">impl: Int</span>, <span name="oPrec">oPrec: Option[Precedence]</span>)</span><span class="result"> extends Notation with Product with Serializable</span>
+        <span class="params">(<span name="nset">nset: MPath</span>, <span name="key">key: NotationKey</span>, <span name="fix">fix: Fixity</span>, <span name="assoc">assoc: Associativity</span>, <span name="appstyle">appstyle: AppStyle</span>, <span name="impl">impl: Int</span>, <span name="oPrec">oPrec: Option[Precedence]</span>)</span>
+        <span class="result"> extends Notation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Representation of a declarative notation where the presentation is computed from parameters</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Components" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Components">
       <a id="Components:Components"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Components.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Components.html"><span class="name">Components</span></a>
+      <span class="symbol">
+        <span class="name">Components</span>
         
-        <span class="params">(<span name="begin">begin: Int</span>, <span name="pre">pre: Presentation</span>, <span name="end">end: Int</span>, <span name="post">post: Presentation</span>, <span name="step">step: Int</span>, <span name="sep">sep: Presentation</span>, <span name="body">body: Presentation</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="begin">begin: Int</span>, <span name="pre">pre: Presentation</span>, <span name="end">end: Int</span>, <span name="post">post: Presentation</span>, <span name="step">step: Int</span>, <span name="sep">sep: Presentation</span>, <span name="body">body: Presentation</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">loop over a presentation expression, Recurse Neighbor may be used to recurse into individual components</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Defaults" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.Defaults">
       <a id="Defaults:Defaults"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Defaults.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Defaults.html"><span class="name">Defaults</span></a>
+      <span class="symbol">
+        <span class="name">Defaults</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Element" data-isabs="false">
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: sealed abstract 
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Element">
       <a id="Element:Element"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Element.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Element.html"><span class="name">Element</span></a>
+      <span class="symbol">
+        <span class="name">Element</span>
         
-        <span class="params">(<span name="prefix">prefix: String</span>, <span name="label">label: String</span>, <span name="attributes">attributes: List[Attribute]</span>, <span name="children">children: List[Presentation]</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="prefix">prefix: String</span>, <span name="label">label: String</span>, <span name="attributes">attributes: List[Attribute]</span>, <span name="children">children: List[Presentation]</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">produces an XML element</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Elidability" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Elidability">
       <a id="Elidability:Elidability"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Elidability.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Elidability.html"><span class="name">Elidability</span></a>
+      <span class="symbol">
+        <span class="name">Elidability</span>
         
-        <span class="params">(<span name="level">level: Int</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="level">level: Int</span>)</span>
+        <span class="result"> extends Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Elidability is modelled by positive numbers.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.FileWriter" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.FileWriter">
       <a id="FileWriter:FileWriter"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="FileWriter.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="FileWriter.html"><span class="name">FileWriter</span></a>
+      <span class="symbol">
+        <span class="name">FileWriter</span>
+        
         
         <span class="result"> extends TextHandler with FileWriter</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">writes text output to a file</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Finite" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Finite">
       <a id="Finite:Finite"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Finite.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Finite.html"><span class="name">Finite</span></a>
+      <span class="symbol">
+        <span class="name">Finite</span>
         
-        <span class="params">(<span name="ones">ones: Int</span>)</span><span class="result"> extends InfInt with Product with Serializable</span>
+        <span class="params">(<span name="ones">ones: Int</span>)</span>
+        <span class="result"> extends InfInt with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">integer</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Fixity" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.Fixity">
       <a id="Fixity:Fixity"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Fixity.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Fixity.html"><span class="name">Fixity</span></a>
+      <span class="symbol">
+        <span class="name">Fixity</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">The fixity of a notation determines the relative placement of operator and arguments.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Fragment" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Fragment">
       <a id="Fragment:Fragment"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Fragment.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Fragment.html"><span class="name">Fragment</span></a>
+      <span class="symbol">
+        <span class="name">Fragment</span>
         
-        <span class="params">(<span name="name">name: String</span>, <span name="args">args: Presentation*</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="name">name: String</span>, <span name="args">args: Presentation*</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">a call to a macro that is defined as fragment notation</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.GlobalParams" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.GlobalParams">
       <a id="GlobalParams:GlobalParams"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="GlobalParams.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="GlobalParams.html"><span class="name">GlobalParams</span></a>
+      <span class="symbol">
+        <span class="name">GlobalParams</span>
         
-        <span class="params">(<span name="rh">rh: RenderingHandler</span>, <span name="nset">nset: MPath</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="rh">rh: RenderingHandler</span>, <span name="nset">nset: MPath</span>)</span>
+        <span class="result"> extends Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">This class collects the parameters that are globally fixed during one presentation task.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Hole" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Hole">
       <a id="Hole:Hole"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Hole.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Hole.html"><span class="name">Hole</span></a>
+      <span class="symbol">
+        <span class="name">Hole</span>
         
-        <span class="params">(<span name="index">index: Int</span>, <span name="default">default: Presentation</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="index">index: Int</span>, <span name="default">default: Presentation</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">used to indicate a hole that can be filled later, used with Nest and Fragment</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.If" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.If">
       <a id="If:If"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="If.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="If.html"><span class="name">If</span></a>
+      <span class="symbol">
+        <span class="name">If</span>
         
-        <span class="params">(<span name="pos">pos: Int</span>, <span name="test">test: String</span>, <span name="yes">yes: Presentation</span>, <span name="no">no: Presentation</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="pos">pos: Int</span>, <span name="test">test: String</span>, <span name="yes">yes: Presentation</span>, <span name="no">no: Presentation</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">test where component pos is equal to Omitted and branch accordingly</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.IfHead" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.IfHead">
       <a id="IfHead:IfHead"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="IfHead.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="IfHead.html"><span class="name">IfHead</span></a>
+      <span class="symbol">
+        <span class="name">IfHead</span>
         
-        <span class="params">(<span name="pos">pos: Int</span>, <span name="path">path: Path</span>, <span name="yes">yes: Presentation</span>, <span name="no">no: Presentation</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="pos">pos: Int</span>, <span name="path">path: Path</span>, <span name="yes">yes: Presentation</span>, <span name="no">no: Presentation</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">test whether pos is Obj with head Some(path) and branch accordingly</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.In" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.In">
       <a id="In:In"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="In.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="In.html"><span class="name">In</span></a>
+      <span class="symbol">
+        <span class="name">In</span>
         
-        <span class="params">(<span name="pos">pos: Int</span>)</span><span class="result"> extends Fixity with Product with Serializable</span>
+        <span class="params">(<span name="pos">pos: Int</span>)</span>
+        <span class="result"> extends Fixity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">infix: operator after a certain number of arguments</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.InfInt" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.InfInt">
       <a id="InfInt:InfInt"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="InfInt.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="InfInt.html"><span class="name">InfInt</span></a>
+      <span class="symbol">
+        <span class="name">InfInt</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">InfInt: integers with positive and negative infinity
 satisfies x - x = 0</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.IsLiteral" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.IsLiteral">
       <a id="IsLiteral:IsLiteral"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="IsLiteral.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="IsLiteral.html"><span class="name">IsLiteral</span></a>
+      <span class="symbol">
+        <span class="name">IsLiteral</span>
         
-        <span class="params">(<span name="l">l: Literal</span>)</span><span class="result"> extends PresentationData with Product with Serializable</span>
+        <span class="params">(<span name="l">l: Literal</span>)</span>
+        <span class="result"> extends PresentationData with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">a content expressions provides a literal rendering, used, e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Literal" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.Literal">
       <a id="Literal:Literal"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Literal.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Literal.html"><span class="name">Literal</span></a>
+      <span class="symbol">
+        <span class="name">Literal</span>
+        
         
         <span class="result"> extends Content</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">some literal values that IsLiteral may use</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.LocalParams" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.LocalParams">
       <a id="LocalParams:LocalParams"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="LocalParams.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="LocalParams.html"><span class="name">LocalParams</span></a>
+      <span class="symbol">
+        <span class="name">LocalParams</span>
         
-        <span class="params">(<span name="pos">pos: Position</span>, <span name="iPrec">iPrec: Option[Precedence]</span>, <span name="context">context: List[VarData]</span>, <span name="inObject">inObject: Boolean</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="pos">pos: Position</span>, <span name="iPrec">iPrec: Option[Precedence]</span>, <span name="context">context: List[VarData]</span>, <span name="inObject">inObject: Boolean</span>)</span>
+        <span class="result"> extends Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">This class collects the parameters that vary locally during one presentation task.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Neighbor" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Neighbor">
       <a id="Neighbor:Neighbor"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Neighbor.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Neighbor.html"><span class="name">Neighbor</span></a>
+      <span class="symbol">
+        <span class="name">Neighbor</span>
         
-        <span class="params">(<span name="offset">offset: Int</span>, <span name="prec">prec: Option[Precedence]</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="offset">offset: Int</span>, <span name="prec">prec: Option[Precedence]</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">recurses into a component</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Nest" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Nest">
       <a id="Nest:Nest"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Nest.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Nest.html"><span class="name">Nest</span></a>
+      <span class="symbol">
+        <span class="name">Nest</span>
         
-        <span class="params">(<span name="begin">begin: Int</span>, <span name="end">end: Int</span>, <span name="step">step: Presentation</span>, <span name="base">base: Presentation</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="begin">begin: Int</span>, <span name="end">end: Int</span>, <span name="step">step: Presentation</span>, <span name="base">base: Presentation</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">like Components but nests instead of concatenating, step should contain Hole to indicate nesting</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Notation" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.Notation">
       <a id="Notation:Notation"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Notation.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Notation.html"><span class="name">Notation</span></a>
+      <span class="symbol">
+        <span class="name">Notation</span>
+        
         
         <span class="result"> extends PresentationElement</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Abstract representation of notations
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.NotationImport" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.NotationImport">
       <a id="NotationImport:NotationImport"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="NotationImport.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="NotationImport.html"><span class="name">NotationImport</span></a>
+      <span class="symbol">
+        <span class="name">NotationImport</span>
         
-        <span class="params">(<span name="from">from: MPath</span>, <span name="to">to: MPath</span>)</span><span class="result"> extends PresentationElement with Product with Serializable</span>
+        <span class="params">(<span name="from">from: MPath</span>, <span name="to">to: MPath</span>)</span>
+        <span class="result"> extends PresentationElement with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">import between two styles</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.NotationKey" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.NotationKey">
       <a id="NotationKey:NotationKey"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="NotationKey.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="NotationKey.html"><span class="name">NotationKey</span></a>
+      <span class="symbol">
+        <span class="name">NotationKey</span>
         
-        <span class="params">(<span name="path">path: Option[Path]</span>, <span name="role">role: Role</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="path">path: Option[Path]</span>, <span name="role">role: Role</span>)</span>
+        <span class="result"> extends Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">A NotationKey identifies the situation when a notation should be applied.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.NotationStore" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.NotationStore">
       <a id="NotationStore:NotationStore"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="NotationStore.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="NotationStore.html"><span class="name">NotationStore</span></a>
+      <span class="symbol">
+        <span class="name">NotationStore</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">The NotationStore holds all styles and notations.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.ObjToplevel" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ObjToplevel">
       <a id="ObjToplevel:ObjToplevel"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ObjToplevel.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="ObjToplevel.html"><span class="name">ObjToplevel</span></a>
+      <span class="symbol">
+        <span class="name">ObjToplevel</span>
         
-        <span class="params">(<span name="c">c: Obj</span>, <span name="pos">pos: Position</span>)</span><span class="result"> extends Content with Product with Serializable</span>
+        <span class="params">(<span name="c">c: Obj</span>, <span name="pos">pos: Position</span>)</span>
+        <span class="result"> extends Content with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">A special presentable object that is wrapped around the math objects encountered during presentation</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.PList" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.PList">
       <a id="PList:PList"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="PList.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="PList.html"><span class="name">PList</span></a>
+      <span class="symbol">
+        <span class="name">PList</span>
         
-        <span class="params">(<span name="items">items: List[Presentation]</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="items">items: List[Presentation]</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">groups a list of presentation expressions that are rendered in order into a single expressions</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Precedence" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Precedence">
       <a id="Precedence:Precedence"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Precedence.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Precedence.html"><span class="name">Precedence</span></a>
+      <span class="symbol">
+        <span class="name">Precedence</span>
         
-        <span class="params">(<span name="prec">prec: InfInt</span>, <span name="loseTie">loseTie: Boolean</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="prec">prec: InfInt</span>, <span name="loseTie">loseTie: Boolean</span>)</span>
+        <span class="result"> extends Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">binding precedences of operators are represented</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Presentation" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.Presentation">
       <a id="Presentation:Presentation"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Presentation.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Presentation.html"><span class="name">Presentation</span></a>
+      <span class="symbol">
+        <span class="name">Presentation</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">This is the type of a simple language of presentation expressions that may be used in Notation and are evaluated by Presenter</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.PresentationData" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.PresentationData">
       <a id="PresentationData:PresentationData"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="PresentationData.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PresentationData.html"><span class="name">PresentationData</span></a>
+      <span class="symbol">
+        <span class="name">PresentationData</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">information provided by a content expression about how it is to be presented</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Presenter" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Presenter">
       <a id="Presenter:Presenter"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Presenter.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Presenter.html"><span class="name">Presenter</span></a>
+      <span class="symbol">
+        <span class="name">Presenter</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">The presentation class</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.RenderingHandler" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.RenderingHandler">
       <a id="RenderingHandler:RenderingHandler"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="RenderingHandler.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="RenderingHandler.html"><span class="name">RenderingHandler</span></a>
+      <span class="symbol">
+        <span class="name">RenderingHandler</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">A RenderingHandler collects output generated during presentation</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.SimpleNotation" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.SimpleNotation">
       <a id="SimpleNotation:SimpleNotation"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="SimpleNotation.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="SimpleNotation.html"><span class="name">SimpleNotation</span></a>
+      <span class="symbol">
+        <span class="name">SimpleNotation</span>
         
-        <span class="params">(<span name="nset">nset: MPath</span>, <span name="key">key: NotationKey</span>, <span name="pres">pres: Presentation</span>, <span name="oPrec">oPrec: Option[Precedence]</span>, <span name="wrap">wrap: Boolean</span>)</span><span class="result"> extends Notation with Product with Serializable</span>
+        <span class="params">(<span name="nset">nset: MPath</span>, <span name="key">key: NotationKey</span>, <span name="pres">pres: Presentation</span>, <span name="oPrec">oPrec: Option[Precedence]</span>, <span name="wrap">wrap: Boolean</span>)</span>
+        <span class="result"> extends Notation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Main representation of a notation</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.StrToplevel" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.StrToplevel">
       <a id="StrToplevel:StrToplevel"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="StrToplevel.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="StrToplevel.html"><span class="name">StrToplevel</span></a>
+      <span class="symbol">
+        <span class="name">StrToplevel</span>
         
-        <span class="params">(<span name="c">c: Content</span>)</span><span class="result"> extends Content with Product with Serializable</span>
+        <span class="params">(<span name="c">c: Content</span>)</span>
+        <span class="result"> extends Content with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">A special presentable object that is wrapped around the toplevel of the presented expression if it is a declaration.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.StringLiteral" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.StringLiteral">
       <a id="StringLiteral:StringLiteral"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="StringLiteral.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="StringLiteral.html"><span class="name">StringLiteral</span></a>
+      <span class="symbol">
+        <span class="name">StringLiteral</span>
         
-        <span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Literal with Product with Serializable</span>
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Literal with Product</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Style" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Style">
       <a id="Style:Style"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Style.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Style.html"><span class="name">Style</span></a>
+      <span class="symbol">
+        <span class="name">Style</span>
+        
         
         <span class="result"> extends PresentationElement</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Text" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Text">
       <a id="Text:Text"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Text.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Text.html"><span class="name">Text</span></a>
+      <span class="symbol">
+        <span class="name">Text</span>
         
-        <span class="params">(<span name="text">text: String</span>)</span><span class="result"> extends Presentation with Product with Serializable</span>
+        <span class="params">(<span name="text">text: String</span>)</span>
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">produces a string</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.TextHandler" data-isabs="true">
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.presentation.TextHandler">
       <a id="TextHandler:TextHandler"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="TextHandler.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="TextHandler.html"><span class="name">TextHandler</span></a>
+      <span class="symbol">
+        <span class="name">TextHandler</span>
+        
         
         <span class="result"> extends RenderingHandler</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">collects the output as text, XML is converted to a string, does not specify what to do with that string</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.ValueLiteral" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ValueLiteral">
       <a id="ValueLiteral:ValueLiteral"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ValueLiteral.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="ValueLiteral.html"><span class="name">ValueLiteral</span></a>
+      <span class="symbol">
+        <span class="name">ValueLiteral</span>
         
-        <span class="params">(<span name="v">v: AnyVal</span>)</span><span class="result"> extends Literal with Product with Serializable</span>
+        <span class="params">(<span name="v">v: AnyVal</span>)</span>
+        <span class="result"> extends Literal with Product</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.VarData" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.VarData">
       <a id="VarData:VarData"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="VarData.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="VarData.html"><span class="name">VarData</span></a>
+      <span class="symbol">
+        <span class="name">VarData</span>
         
-        <span class="params">(<span name="name">name: String</span>, <span name="binder">binder: GlobalName</span>, <span name="decl">decl: Position</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="name">name: String</span>, <span name="binder">binder: GlobalName</span>, <span name="decl">decl: Position</span>)</span>
+        <span class="result"> extends Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">This class stores information about a bound variable.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.XMLBuilder" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.XMLBuilder">
       <a id="XMLBuilder:XMLBuilder"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="XMLBuilder.html">
       <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="XMLBuilder.html"><span class="name">XMLBuilder</span></a>
+      <span class="symbol">
+        <span class="name">XMLBuilder</span>
+        
         
         <span class="result"> extends RenderingHandler</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">collects the output as XML and stores it in memory</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.XMLLiteral" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.XMLLiteral">
       <a id="XMLLiteral:XMLLiteral"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="XMLLiteral.html">
       <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="XMLLiteral.html"><span class="name">XMLLiteral</span></a>
+      <span class="symbol">
+        <span class="name">XMLLiteral</span>
         
-        <span class="params">(<span name="toNode">toNode: Node</span>)</span><span class="result"> extends Literal with Product with Serializable</span>
+        <span class="params">(<span name="toNode">toNode: Node</span>)</span>
+        <span class="result"> extends Literal with Product</span>
       </span>
-      </h4>
+      </a></h4>
       
     </li></ol>
             </div>
-        
-        
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.presentation.ArgSep" data-isabs="false">
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ArgSep">
       <a id="ArgSep:ArgSep"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ArgSep$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="ArgSep$.html"><span class="name">ArgSep</span></a>
+      <span class="symbol">
+        <span class="name">ArgSep</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.AssocNone" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.AssocNone">
       <a id="AssocNone:AssocNone"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="AssocNone$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="AssocNone$.html"><span class="name">AssocNone</span></a>
+      <span class="symbol">
+        <span class="name">AssocNone</span>
         
-        <span class="result"> extends Associativity with Product with Serializable</span>
+        
+        <span class="result"> extends Associativity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">associative, i.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Bind" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Bind">
       <a id="Bind:Bind"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Bind$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Bind$.html"><span class="name">Bind</span></a>
+      <span class="symbol">
+        <span class="name">Bind</span>
         
-        <span class="result"> extends Fixity with Product with Serializable</span>
+        
+        <span class="result"> extends Fixity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">bindfix (a special fixity useful for binders):
 the operator has a hole that is filled with the arguments except for the last one, which is appened
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Brackets" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Brackets">
       <a id="Brackets:Brackets"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Brackets$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Brackets$.html"><span class="name">Brackets</span></a>
+      <span class="symbol">
+        <span class="name">Brackets</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Component" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Component">
       <a id="Component:Component"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Component$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Component$.html"><span class="name">Component</span></a>
+      <span class="symbol">
+        <span class="name">Component</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">short hand to recurse into a single component</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.ConsoleWriter" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ConsoleWriter">
       <a id="ConsoleWriter:ConsoleWriter"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ConsoleWriter$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="ConsoleWriter$.html"><span class="name">ConsoleWriter</span></a>
+      <span class="symbol">
+        <span class="name">ConsoleWriter</span>
+        
         
         <span class="result"> extends TextHandler</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">writes text output to the console</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Defaults" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Defaults">
       <a id="Defaults:Defaults"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Defaults$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Defaults$.html"><span class="name">Defaults</span></a>
+      <span class="symbol">
+        <span class="name">Defaults</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.EBrackets" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.EBrackets">
       <a id="EBrackets:EBrackets"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="EBrackets$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="EBrackets$.html"><span class="name">EBrackets</span></a>
+      <span class="symbol">
+        <span class="name">EBrackets</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Elidability" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Elidability">
       <a id="Elidability:Elidability"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Elidability$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Elidability$.html"><span class="name">Elidability</span></a>
+      <span class="symbol">
+        <span class="name">Elidability</span>
         
-        <span class="result"> extends Serializable</span>
+        
+        <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">helper object for elidabilities</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Id" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Id">
       <a id="Id:Id"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Id$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Id$.html"><span class="name">Id</span></a>
+      <span class="symbol">
+        <span class="name">Id</span>
         
-        <span class="result"> extends Presentation with Product with Serializable</span>
+        
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">produces the position of the current expression as a string, can be used for unique ids</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.IgnoresDefaults" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.IgnoresDefaults">
       <a id="IgnoresDefaults:IgnoresDefaults"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="IgnoresDefaults$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="IgnoresDefaults$.html"><span class="name">IgnoresDefaults</span></a>
+      <span class="symbol">
+        <span class="name">IgnoresDefaults</span>
         
-        <span class="result"> extends Defaults with Product with Serializable</span>
+        
+        <span class="result"> extends Defaults with Product</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.ImpArgs" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ImpArgs">
       <a id="ImpArgs:ImpArgs"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ImpArgs$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="ImpArgs$.html"><span class="name">ImpArgs</span></a>
+      <span class="symbol">
+        <span class="name">ImpArgs</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.ImportsDefaults" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.ImportsDefaults">
       <a id="ImportsDefaults:ImportsDefaults"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="ImportsDefaults$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="ImportsDefaults$.html"><span class="name">ImportsDefaults</span></a>
+      <span class="symbol">
+        <span class="name">ImportsDefaults</span>
         
-        <span class="result"> extends Defaults with Product with Serializable</span>
+        
+        <span class="result"> extends Defaults with Product</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Index" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Index">
       <a id="Index:Index"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Index$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Index$.html"><span class="name">Index</span></a>
+      <span class="symbol">
+        <span class="name">Index</span>
         
-        <span class="result"> extends Presentation with Product with Serializable</span>
+        
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">produces the current index in a loop</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.InfInt" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.InfInt">
       <a id="InfInt:InfInt"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="InfInt$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="InfInt$.html"><span class="name">InfInt</span></a>
+      <span class="symbol">
+        <span class="name">InfInt</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">helper object for InfInts</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Infinite" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Infinite">
       <a id="Infinite:Infinite"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Infinite$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Infinite$.html"><span class="name">Infinite</span></a>
+      <span class="symbol">
+        <span class="name">Infinite</span>
         
-        <span class="result"> extends InfInt with Product with Serializable</span>
+        
+        <span class="result"> extends InfInt with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">positively infinite InfInt</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Inter" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Inter">
       <a id="Inter:Inter"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Inter$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Inter$.html"><span class="name">Inter</span></a>
+      <span class="symbol">
+        <span class="name">Inter</span>
         
-        <span class="result"> extends Fixity with Product with Serializable</span>
+        
+        <span class="result"> extends Fixity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">interfix: operator duplicated in between all arguments</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Iterate" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Iterate">
       <a id="Iterate:Iterate"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Iterate$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Iterate$.html"><span class="name">Iterate</span></a>
+      <span class="symbol">
+        <span class="name">Iterate</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">short hand to iterate over a list of components</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.LC" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.LC">
       <a id="LC:LC"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="LC$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="LC$.html"><span class="name">LC</span></a>
+      <span class="symbol">
+        <span class="name">LC</span>
         
-        <span class="result"> extends AppStyle with Product with Serializable</span>
+        
+        <span class="result"> extends AppStyle with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Lambda calculus application: a separator is placed between operator and arguments
  as in f a1 .</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Left" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Left">
       <a id="Left:Left"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Left$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Left$.html"><span class="name">Left</span></a>
+      <span class="symbol">
+        <span class="name">Left</span>
         
-        <span class="result"> extends Associativity with Product with Serializable</span>
+        
+        <span class="result"> extends Associativity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">left-associative, i.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Math" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Math">
       <a id="Math:Math"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Math$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Math$.html"><span class="name">Math</span></a>
+      <span class="symbol">
+        <span class="name">Math</span>
         
-        <span class="result"> extends AppStyle with Product with Serializable</span>
+        
+        <span class="result"> extends AppStyle with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Mathematical application: the arguments are bracketed as in f(a1,.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.MathArgs" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.MathArgs">
       <a id="MathArgs:MathArgs"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="MathArgs$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="MathArgs$.html"><span class="name">MathArgs</span></a>
+      <span class="symbol">
+        <span class="name">MathArgs</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.NegInfinite" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.NegInfinite">
       <a id="NegInfinite:NegInfinite"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="NegInfinite$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="NegInfinite$.html"><span class="name">NegInfinite</span></a>
+      <span class="symbol">
+        <span class="name">NegInfinite</span>
         
-        <span class="result"> extends InfInt with Product with Serializable</span>
+        
+        <span class="result"> extends InfInt with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">positively infinite InfInt</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.NoBrackets" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.NoBrackets">
       <a id="NoBrackets:NoBrackets"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="NoBrackets$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="NoBrackets$.html"><span class="name">NoBrackets</span></a>
+      <span class="symbol">
+        <span class="name">NoBrackets</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Notation" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Notation">
       <a id="Notation:Notation"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Notation$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Notation$.html"><span class="name">Notation</span></a>
+      <span class="symbol">
+        <span class="name">Notation</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Helper object for notations
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Omitted" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Omitted">
       <a id="Omitted:Omitted"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Omitted$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Omitted$.html"><span class="name">Omitted</span></a>
+      <span class="symbol">
+        <span class="name">Omitted</span>
         
-        <span class="result"> extends Literal with Product with Serializable</span>
+        
+        <span class="result"> extends Literal with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">a special literal with a function similar to None, it produces no output if rendered, and notations can test for it</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.OpSep" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.OpSep">
       <a id="OpSep:OpSep"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="OpSep$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="OpSep$.html"><span class="name">OpSep</span></a>
+      <span class="symbol">
+        <span class="name">OpSep</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Post" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Post">
       <a id="Post:Post"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Post$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Post$.html"><span class="name">Post</span></a>
+      <span class="symbol">
+        <span class="name">Post</span>
         
-        <span class="result"> extends Fixity with Product with Serializable</span>
+        
+        <span class="result"> extends Fixity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">prefix: operator after arguments</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Pre" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Pre">
       <a id="Pre:Pre"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Pre$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Pre$.html"><span class="name">Pre</span></a>
+      <span class="symbol">
+        <span class="name">Pre</span>
         
-        <span class="result"> extends Fixity with Product with Serializable</span>
+        
+        <span class="result"> extends Fixity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">prefix: operator before arguments</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Precedence" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Precedence">
       <a id="Precedence:Precedence"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Precedence$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Precedence$.html"><span class="name">Precedence</span></a>
+      <span class="symbol">
+        <span class="name">Precedence</span>
         
-        <span class="result"> extends Serializable</span>
+        
+        <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">helper object for precedences</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Presentation" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Presentation">
       <a id="Presentation:Presentation"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Presentation$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Presentation$.html"><span class="name">Presentation</span></a>
+      <span class="symbol">
+        <span class="name">Presentation</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">Helper object for presentation s</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Recurse" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Recurse">
       <a id="Recurse:Recurse"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Recurse$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Recurse$.html"><span class="name">Recurse</span></a>
+      <span class="symbol">
+        <span class="name">Recurse</span>
+        
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">short hand to recurse into the current component</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.Right" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.Right">
       <a id="Right:Right"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="Right$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Right$.html"><span class="name">Right</span></a>
+      <span class="symbol">
+        <span class="name">Right</span>
         
-        <span class="result"> extends Associativity with Product with Serializable</span>
+        
+        <span class="result"> extends Associativity with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">right-associative, i.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.TheNotationSet" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.TheNotationSet">
       <a id="TheNotationSet:TheNotationSet"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="TheNotationSet$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="TheNotationSet$.html"><span class="name">TheNotationSet</span></a>
+      <span class="symbol">
+        <span class="name">TheNotationSet</span>
         
-        <span class="result"> extends Presentation with Product with Serializable</span>
+        
+        <span class="result"> extends Presentation with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">produces the name of the used style</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.presentation.XMLError" data-isabs="false">
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation.XMLError">
       <a id="XMLError:XMLError"></a>
-      <h4 class="signature">
+      <h4 class="signature"><a href="XMLError$.html">
       <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="XMLError$.html"><span class="name">XMLError</span></a>
+      <span class="symbol">
+        <span class="name">XMLError</span>
         
-        <span class="result"> extends Throwable with Product with Serializable</span>
+        
+        <span class="result"> extends Throwable with Product</span>
       </span>
-      </h4>
+      </a></h4>
       <p class="comment cmt">excpetion thrown by XML builder if methods are called that would lead to ill-formed XML</p>
     </li></ol>
             </div>
