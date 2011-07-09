@@ -10,7 +10,7 @@ import scala.collection.mutable.HashSet
   * @param path the Twelf compiler executable
   */
 class Twelf(path : File) extends Compiler {
-   val kind = "twelf"
+   def isApplicable(src: String) = src == "twelf"
    
    /** Handle for the catalog */
    val catalog = new Catalog(new HashSet[String]()+path.toJava.getPath, new HashSet[String]+"*.elf", new HashSet[String]+".svn", 8081)

@@ -251,7 +251,7 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
          }
          in.close
          properties.get("source") foreach (
-            src => compilers.find(_.kind == src) match {
+            src => compilers.find(_.isApplicable(src)) match {
                case Some(c) => compiler = Some(c)
                case None => log("no compiler registered for source " + src)
             }
