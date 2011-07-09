@@ -30,17 +30,17 @@ class Twelf(path : File) extends Compiler {
    var unsafe : Boolean = true
    /** Twelf setting "set chatter ..." */
    var chatter : Int = 5
-//   var catalog : Option[Catalog] = None
+   var catalogOpt : Option[Catalog] = None
    
    /** creates and intializes a Catalog
      */
    override def init {
-  //    val cat = new Catalog(new HashSet[String]()+path.toJava.getPath, new HashSet[String]+"*.elf", new HashSet[String]+".svn", 8081)
-    //  catalog.init    //  throws PortUnavailable
-      //catalog = Some(cat)
+      val cat = new Catalog(new HashSet[String]()+path.toJava.getPath, new HashSet[String]+"*.elf", new HashSet[String]+".svn", 8081)
+      cat.init    //  throws PortUnavailable
+      catalogOpt = Some(cat)
    }
    override def destroy {
-      //catalog.foreach(_.destroy)
+      catalogOpt.foreach(_.destroy)
    }
 
    /** 
@@ -56,9 +56,9 @@ class Twelf(path : File) extends Compiler {
       val output = new BufferedReader(new InputStreamReader(proc.getInputStream()))
       input.println("set chatter " + chatter)
       input.println("set unsafe " + unsafe)
-      /* catalogOpt foreach {cat =>
-         input.println("set catalog " + cat.catalogURI)
-      }*/
+      catalogOpt foreach {cat =>
+         input.println("set catalog " + cat.queryURI)
+      }
       input.println("loadFile " + in)
       input.println("Print.OMDoc.printDoc " + in + " " + out)
       input.println("OS.exit")
