@@ -1,18 +1,19 @@
 package info.kwarc.mmt.api.lf
+import info.kwarc.mmt.api._
+import backend._
+import utils.File
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.api.backend._
 
-import java.io.File
 import scala.collection.mutable.HashSet
 
 /** Utility for starting the catalog and calling the Twelf compiler
   * @param path the Twelf compiler executable
   */
-class Twelf(path : java.io.File) extends Compiler {
+class Twelf(path : File) extends Compiler {
    val kind = "twelf"
    
    /** Handle for the catalog */
-   val catalog = new Catalog(new HashSet[String]()+path.getPath, new HashSet[String]+"*.elf", new HashSet[String]+".svn", 8081)
+   val catalog = new Catalog(new HashSet[String]()+path.toJava.getPath, new HashSet[String]+"*.elf", new HashSet[String]+".svn", 8081)
    
    /** The URI with which to query the catalog's web server */
    val catalogURI = "http://localhost:" + catalog.port + "/getText"

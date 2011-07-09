@@ -5,8 +5,8 @@ import frontend._
 import modules._
 import lf._
 import utils._
+import FileConversion._
 
-import java.io.File
 import scala.collection.mutable._
 
 
@@ -38,7 +38,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @param m the MPath of the module 
       * @return the File descriptor of the destination .omdoc file
       */    
-    def MMTPathToContentPath(m: MPath) : java.io.File = new File(root.getPath + File.separator + "content" + File.separator + m.parent.uri + File.separator + m.name + ".omdoc") 
+    def MMTPathToContentPath(m: MPath) : java.io.File =
+       root / "content" / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc") 
     
     /** Generate narration from source */
     def sourceToNarr {
@@ -58,7 +59,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         
         // create content folder, iterate over all narration files using "files", put one theory per file into content folder (subfolder structure according to namespaces)
         
-        val omdocfile = new File("")
+        val omdocfile = File("")
         val doc = controller.read(omdocfile)
         controller.getDocument(doc).getModulesResolved(controller.library) foreach put
         controller.clear
@@ -82,7 +83,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     /** Pack everything in a MAR archive */
     def toMar(target: java.io.File) {}
-    val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, new File(root, "narration"))
+    val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, root / "narration")
     def get(p: Path, reader: Reader) {p match {
        case doc : DPath => narrationBackend.get(doc, reader)  
        case mod : MPath => reader.readModules(utils.mmt.mmtbase, None, get(mod))

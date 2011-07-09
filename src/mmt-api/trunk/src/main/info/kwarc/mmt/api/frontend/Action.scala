@@ -1,9 +1,11 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.documents._
+import presentation._
+import documents._
+import utils._
+import utils.FileConversion._
+
 import scala.util.parsing.combinator._
-import java.io.File
 
 /** helper object for Actions
  * This object provides a combinator parser for Actions that is used when commands are sent to a controller as strings.
@@ -11,7 +13,7 @@ import java.io.File
  */
 object Action extends RegexParsers {
    private var base : Path = null
-   private var home : java.io.File = null
+   private var home : File = null
    
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
@@ -50,10 +52,10 @@ object Action extends RegexParsers {
    
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
-   private def file = str ^^ {s => new java.io.File(home, s)}
+   private def file = str ^^ {s => home.resolve(s)}
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
    /** parses an action from a string, relative to a base path */
-   def parseAct(s:String, b : Path, h: java.io.File) : Action = {
+   def parseAct(s:String, b : Path, h: File) : Action = {
       base = b
       home = h
       val p = parseAll(commented,s)
@@ -82,7 +84,7 @@ case class AddCatalog(file : java.io.File) extends Action {override def toString
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
 /** register a compiler */
-case class AddTwelf(location: File) extends Action {override def toString = "twelf " + location}
+case class AddTwelf(location: java.io.File) extends Action {override def toString = "twelf " + location}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
 /** load a file containing commands and execute them, fails on first error if any */
