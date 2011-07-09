@@ -82,7 +82,7 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="compile,docs">
+    <target name="deploy" depends="jar,docs">
         <copy todir="${deploy}/${prj}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>

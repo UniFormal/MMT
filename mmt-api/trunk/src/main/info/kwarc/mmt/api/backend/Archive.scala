@@ -83,9 +83,11 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                     }
                     // compile the file
                     val errors : List[CompilerError] = c.compile(srcfile, destfile)
-                    println("TWELF: " + srcfile + " -> " + destfile)
+                    println("[TWELF] " + srcfile + " -> " + destfile)
                     // update 
                     files.update(destfile, errors)
+                    if (!errors.isEmpty)
+                        println(errors.mkString("[TWELF] ", "\n[TWELF] ", ""))
                 })
         }
     }
@@ -155,14 +157,16 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
 }
 
 
-object ArchiveTest extends Application {
+object ArchiveTest {
+    def main(args: Array[String]) {
     val controller = new Controller(NullChecker, new ConsoleReport)
     val twelf = new Twelf(File("c:/twelf-mod/bin/twelf-server.bat"))
     controller.backend.addCompiler(twelf)
-    val archive = controller.backend.openArchive(File("c:/CDS"))
+    val archive = controller.backend.openArchive(File(args(0)))
     //twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
     //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
     //println(errors.mkString("\n"))
     archive.sourceToNarr
     controller.cleanup
+    }
 }
