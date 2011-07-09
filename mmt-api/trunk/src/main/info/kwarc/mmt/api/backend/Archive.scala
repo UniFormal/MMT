@@ -47,7 +47,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
             case None => throw CompilationError("no compiler defined")
             case Some(c) => {
                 
-                //c.check(sourceFile, narrDir)
+                ////c.compile(sourceFile, narrDir / (name + ".omdoc"))
             }
         }
     }
