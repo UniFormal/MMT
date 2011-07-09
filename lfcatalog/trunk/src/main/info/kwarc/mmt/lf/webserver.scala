@@ -231,7 +231,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val position = catalog.getPosition(stringUri)
-            Some(TextResponse(position, None))
+            Some(TextResponse(position, Some(Pair("X-Source-url", "file:" + position))))
           } catch {
             case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri, None))
             case CatalogError(s)    => Some(TextResponse("Unknown URI: " + stringUri, None))

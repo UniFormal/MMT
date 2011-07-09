@@ -129,17 +129,21 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   // ------------------------------- getter methods -------------------------------
   
   
+  /** The URI for querying the catalog with getText */
+  def queryURI : String = "http://localhost:" + port + "/getText"
+  
+  
   /** Exclusion patterns for files and folders. 
     * Star is the only special character and matches any sequence of characters. 
     * A folder is crawled iff it doesn't match any exclusion pattern.
     * A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains. */
-  def getExclusions = exclusions
+  def getExclusions : HashSet[String] = exclusions
   
   /** Inclusion patterns for files
     * Star is the only special character and matches any sequence of characters. 
     * A folder is crawled iff it doesn't match any exclusion pattern.
     * A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains. */
-  def getInclusions = inclusions
+  def getInclusions : HashSet[String] = inclusions
 
   
   /** Get the semantic comment associated with a document, module, constant or structure
@@ -178,7 +182,8 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   }
   
   
-  /** Get the text of an entity. Warning: this function reads the disk, since the text is not stored in memory.
+  /** Get the text of an entity. The HTTP header also has a field X-Source-url, followed by the position of the entity as returned by getPosition
+    * Warning: this function reads the disk, since the text is not stored in memory.
     * @param stringUri URI of a module or URL of a document, given as string
     * @return the actual content, read from the file
     * @throws java.net.URISyntaxException if stringUri does not point to a location on disk which is also stored in memory and, as a URI, it is not valid 
@@ -274,7 +279,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   }
   
   
-  /** Get the position of a module, constant or structure
+  /** Get the position of a module, constant or structure. The HTTP header also has a field X-Source-url, followed by the same information
     * @param stringUri URI of a module / constant / structure, given as a string
     * @return an URL encoding the file and the position within that file
     * @throws java.net.URISyntaxException if the URI is not valid 
