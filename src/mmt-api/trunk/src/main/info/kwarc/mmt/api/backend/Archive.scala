@@ -9,9 +9,7 @@ import FileConversion._
 
 import scala.collection.mutable._
 
-
 case class CompilationError(s: String) extends Exception(s)
-
 
 // source can miss, narration is always there
 
@@ -26,7 +24,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     private val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
     
     /** set of files in the narration folder, built in sourceToNarr */
-    private val files = new LinkedHashSet[File]
+    private val files = new LinkedHashMap[File, List[CompilerError]]
     
     /** map from module MPaths found in narrToCont to its file in the narration folder */
     private val modules = new LinkedHashMap[MPath, File]
@@ -37,7 +35,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     /** Get the disk path of the module in the content folder
       * @param m the MPath of the module 
       * @return the File descriptor of the destination .omdoc file
-      */    
+      */
     def MMTPathToContentPath(m: MPath) : java.io.File =
        root / "content" / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc") 
     
