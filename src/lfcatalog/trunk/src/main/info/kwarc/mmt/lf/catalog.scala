@@ -52,9 +52,6 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   
   /** Map from namespace URIs to modules declared in that URI */
   val uriToModulesDeclared = HashMap[URI, LinkedHashSet[URI]] ()
-    
-  /** tells the background processes whether they should keep running or not */
-  var keepRunning = true
                        
   
   // ------------------------------- private members -------------------------------
@@ -101,13 +98,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
       exclusionsParam.foreach(addExclusion)
       
       // add locations
-      for (l <- locationsParam) {
+      for (l <- locationsParam)
           try {
               addStringLocation(l)
           } catch {
               case InexistentLocation(msg) => println(msg)
           }
-      }
       
       // start the web server (different threads)
       server.start
@@ -117,8 +113,9 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   
   /** Stop the web server */
   def destroy {
-      keepRunning = false  // tells the background processes that they should stop
       server.stop
+      bkgCrawler.stop
+      bkgEliminator.stop
       locations.clear
       urlToDocument.clear
       uriToNamedBlock.clear
@@ -632,7 +629,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 /** A thread that checks for updated files and crawls them every crawlingInterval seconds */
 class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends Thread {
   override def run {
-    while(catalog.keepRunning == true) {
+    while(true) {
       Thread.sleep(crawlingInterval * 1000)
       catalog.crawlAll
     }
@@ -642,7 +639,7 @@ class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends
 /** A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes */
 class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) extends Thread {
   override def run {
-    while(catalog.keepRunning == true) {
+    while(true) {
       Thread.sleep(deletingInterval * 1000)
       for (url <- catalog.urlToDocument.keySet) {
         val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
