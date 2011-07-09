@@ -30,9 +30,9 @@ object Catalog {
   * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 5 sec
   * @param deletingInterval interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
   */
-class Catalog(val locationsParam: HashSet[String] = new HashSet[String](), 
-               val inclusionsParam: HashSet[String] = new HashSet[String]() + "*.elf", 
-               val exclusionsParam: HashSet[String] = new HashSet[String]() + ".svn", 
+class Catalog(val locationsParam: HashSet[String] = HashSet(), 
+               val inclusionsParam: HashSet[String] = HashSet("*.elf"), 
+               val exclusionsParam: HashSet[String] = HashSet(".svn"), 
                val port: Int = 8080, 
                val crawlingInterval: Int = 5, 
                val deletingInterval: Int = 17) {
@@ -72,11 +72,11 @@ class Catalog(val locationsParam: HashSet[String] = new HashSet[String](),
   private val processedInclusions = HashSet[String] ()
   
   /** the RESTful web server */
-  private var server = new WebServer(this, port)
+  private var server : WebServer = null
   
   /** background processes */
-  private var bkgCrawler = new BackgroundCrawler(this, crawlingInterval)
-  private var bkgEliminator = new BackgroundEliminator(this, deletingInterval)
+  private val bkgCrawler = new BackgroundCrawler(this, crawlingInterval)
+  private val bkgEliminator = new BackgroundEliminator(this, deletingInterval)
   
   
   // ------------------------------- initialization and destruction -------------------------------
@@ -88,6 +88,9 @@ class Catalog(val locationsParam: HashSet[String] = new HashSet[String](),
       // check if port is available
       if (isTaken(port))
         throw PortUnavailable("")
+        
+      // construct server (it reads the resource pages when constructed)
+      server = new WebServer(this, port)
         
       // start background threads that make sure this catalog is synchronized with the disk
       bkgCrawler.start
