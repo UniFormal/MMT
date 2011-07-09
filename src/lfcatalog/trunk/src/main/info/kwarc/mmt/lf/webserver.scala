@@ -100,9 +100,9 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     //override def buffered = true
     def resolve(req : HReqHeaderData) : Option[HLet] = {
       if (req.uriPath != "favicon.ico")
-        println(Time + "Query: " + req.uriPath + "?" + req.query)
+        print(Time + "Query: " + req.uriPath + "?" + req.query + " ")
         
-      req.uriPath match {
+      val response : Option[HLet] = req.uriPath match {
       case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
       case "help" | "" => {
         Some(TextResponse(readmeText.getOrElse(readmeError), None))
@@ -185,17 +185,21 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
             catch {
                 case CatalogError(s) =>  // if the uri does not point to a module, cst or structure declaration, don't return the position
             }
-            if (position.isDefined)
+            if (position.isDefined) {
+                print("OK")
                 Some(TextResponse(text, Some(Pair("X-Source-url", "file:" + position.get))))
-            else
+            }
+            else {
+                print("NOT FOUND")
                 Some(TextResponse(text, None))
+            }
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI or URL: " + stringUri, None))
-            case CatalogError(s)    => Some(TextResponse("Unknown URI or URL: " + stringUri, None))
-            case FileOpenError(s)   => Some(TextResponse(s, None))
+              case e: java.net.URISyntaxException => {print("NOT FOUND"); Some(TextResponse("Invalid URI or URL: " + stringUri, None))}
+              case CatalogError(s)    => {print("NOT FOUND"); Some(TextResponse("Unknown URI or URL: " + stringUri, None))}
+              case FileOpenError(s)   => {print("NOT FOUND"); Some(TextResponse(s, None))}
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
+        else {print("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
       }
       case "getDependencies" => {
         if (req.query.startsWith("uri=")) {
@@ -231,13 +235,14 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val position = catalog.getPosition(stringUri)
+            print("OK")
             Some(TextResponse(position, Some(Pair("X-Source-url", "file:" + position))))
           } catch {
-            case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri, None))
-            case CatalogError(s)    => Some(TextResponse("Unknown URI: " + stringUri, None))
+              case e: java.net.URISyntaxException => {print("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
+              case CatalogError(s)    => {print("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
           }
         }
-        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
+        else {print("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
       }
       case "getOmdoc" => {
         if (req.query.startsWith("url=")) {
@@ -266,7 +271,10 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
         else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected", None))
       }
       case _        => Some(TextResponse("Invalid path: " + req.uriPath, None))
-    }}
+    }
+    println("")
+    response
+    }
   }
   
   /** A text response that the server sends back to the browser
