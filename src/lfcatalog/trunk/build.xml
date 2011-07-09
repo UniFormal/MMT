@@ -61,7 +61,7 @@
             </manifest>
             <fileset dir="${build.main}"/>
             <zipfileset dir="${src.main}" prefix="src"/>
-            <zipfileset dir="${build.resources}" prefix="resources"/>
+            <zipfileset dir="${src.resources}" prefix="resources"/>
             <zipfileset src="${tiscaf}" includes="zgs/**/*"/>
             <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
         </jar>
@@ -87,7 +87,10 @@
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>
         <copy todir="${deploy}/${prj}">
-			<fileset file="readme.txt"/>
+			   <fileset file="readme.txt"/>
+		  </copy>
+		  <copy todir="${mmtapi}/lib">
+			   <fileset file="${build}/${jar}"/>
 		  </copy>
 		  <jar destfile="${deploy}/${prj}/${jar}">
             <manifest>
@@ -96,7 +99,7 @@
             </manifest>
             <fileset dir="${build.main}"/>
             <zipfileset dir="${src.main}" prefix="src"/>
-            <zipfileset dir="${build.resources}" prefix="resources"/>
+            <zipfileset dir="${src.resources}" prefix="resources"/>
             <zipfileset src="${tiscaf}" includes="zgs/**/*"/>
             <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
         </jar>
