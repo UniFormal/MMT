@@ -22,12 +22,6 @@ object Run {
   /** Port on which the server runs. Default value is 8080 */
   private var port = 8080
   
-  /** Interval, in seconds, between two automatic crawls. Default value is 5 sec */
-  private var crawlingInterval = 5
-  
-  /** Interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec */
-  private var deletingInterval = 17
-  
   def main(args : Array[String]) {
     
     // parse program arguments
@@ -55,8 +49,11 @@ object Run {
         else locations += s         // a location
     }
     
+    if (inclusions.isEmpty) inclusions += "*.elf"
+    if (exclusions.isEmpty) exclusions += ".svn"
+    
     // the main storage and controller (this also starts background threads)
-    var catalog = new Catalog(locations, inclusions, exclusions, port, crawlingInterval, deletingInterval)
+    var catalog = new Catalog(locations, inclusions, exclusions, port)
     try {
         catalog.init
     } catch {

@@ -15,40 +15,65 @@ import scala.collection.mutable._
   * @param port the port on which the server runs */
 class WebServer(catalog : Catalog, port : Int) extends HServer {
   
-  // Read the XML for the admin page from admin.html. Exit if not found.
-  var adminFile = new File("resources" + File.separator + "admin.html")
-  if (adminFile == null || !adminFile.canRead) {
-    println(Catalog.getOriginalPath(adminFile) + ": critical error: admin file does not exist or cannot be read")
-    exit(1)
+  /** Administration page, read from jar://resources/admin.html */
+  var adminHtml : Option[scala.xml.Elem] = None
+  
+  /** Error page returned by the server */
+  val adminError = "<html><body>Bummer, can't find jar://resources/admin.html.</body></html>"
+  
+  /** Readme page, read from jar://resources/readme.txt */
+  var readmeText : Option[String] = None
+  
+  /** Error page returned by the server */
+  val readmeError = "Bummer, can't find jar://resources/readme.html."
+    
+  
+  // Read jar://resources/admin.html
+  Option(getClass.getResourceAsStream("/resources/admin.html")) match {
+    case None => 
+      println("warning: /resources/admin.html inside JAR does not exist")   // ignore if not found
+    case Some(adminFile) =>
+      var source : scala.io.BufferedSource = null
+      try {
+        source = scala.io.Source.fromInputStream(adminFile, "UTF-8")
+        adminHtml = Option(scala.xml.parsing.XhtmlParser(source).head.asInstanceOf[scala.xml.Elem])
+      } catch {
+        case _ =>
+          println("critical error: /resources/admin.html inside JAR contains malformed XML")   // this should never happen
+          exit(1)
+      } finally {
+          source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
+      }
   }
   
-  // The Html data from the admin file
-  var adminHtml : scala.xml.Elem = null
-  try {
-    adminHtml = scala.xml.parsing.XhtmlParser(scala.io.Source.fromFile(adminFile, "utf-8")).head.asInstanceOf[scala.xml.Elem]
-  } catch {
-    case _ => { 
-      println(Catalog.getOriginalPath(adminFile) + ": critical error: admin file cannot be read or contains malformed XML")
-      exit(1)
-    }
+  // Read jar://resources/readme.txt
+  Option(getClass.getResourceAsStream("/resources/readme.txt")) match {
+    case None => 
+      println("warning: /resources/readme.txt inside JAR does not exist or cannot be read")   // ignore if not found
+    case Some(readmeFile) =>
+      var source : scala.io.BufferedSource = null
+      try {
+        source = scala.io.Source.fromInputStream(readmeFile, "UTF-8")
+        readmeText = Option(source.getLines.toArray.mkString("\n"))                           
+      } catch {
+          case e =>
+            println("critical error: /resources/readme.txt inside JAR cannot be opened in the UTF-8 encoding")    // this should never happen
+            exit(1)
+      } finally {
+          source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
+      }
   }
+ 
   
-  // Read the readme.txt file. Exit if not found.
-  var readmeFile = new File("resources" + File.separator + "readme.txt")
-  if (readmeFile == null || !readmeFile.canRead) {
-    println(Catalog.getOriginalPath(readmeFile) + ": critical error: readme.txt does not exist or cannot be read")
-    exit(1)
-  }
+  override def name = "lfserver"
+  override def writeBufSize = 16*1024
+  override def tcpNoDelay = true      // make this false if you have extremely frequent requests
+  protected def ports = List(port)    // port to listen to
+  protected def apps  = List(new RequestHandler) // the request handler
+  protected def talkPoolSize = 4
+  protected def talkQueueSize = Int.MaxValue
+  protected def selectorPoolSize = 2
   
-  // Get the text data from readme.txt
-  var readmeText : String = null
-  try {
-    val source = scala.io.Source.fromFile(readmeFile, "utf-8")
-    readmeText = source.getLines.toArray.mkString("\n")
-    source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it                           
-  } catch {
-    case e => throw FileOpenError("error: readme.txt cannot be opened or the encoding is not UTF-8")
-  }
   
   /** A recursive function that replaces:
     * 1. <locations/> with the bullet list of locations
@@ -69,14 +94,6 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
      case other => other
   }
   
-  override def name = "lfserver"
-  override def writeBufSize = 16*1024
-  override def tcpNoDelay = true      // make this false if you have extremely frequent requests
-  protected def ports = List(port)    // port to listen to
-  protected def apps  = List(new RequestHandler) // the request handler
-  protected def talkPoolSize = 4
-  protected def talkQueueSize = Int.MaxValue
-  protected def selectorPoolSize = 2
   
   /** Request handler */
   protected class RequestHandler extends HApp {
@@ -88,11 +105,11 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
       req.uriPath match {
       case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
       case "help" | "" => {
-        Some(TextResponse(readmeText, None))
+        Some(TextResponse(readmeText.getOrElse(readmeError), None))
       }
       case "admin" => {
         if (req.query == "") {
-          Some(HTMLResponse(updateLocations(adminHtml).toString))
+          Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }
         else if (req.query.startsWith("addLocation=")) { ConflictGuard.synchronized { 
           try {
@@ -100,7 +117,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           } catch {
             case InexistentLocation(msg) => println(Time + msg)
           }
-          Some(HTMLResponse(updateLocations(adminHtml).toString))
+          Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
         else if (req.query.startsWith("deleteLocation=")) { ConflictGuard.synchronized { 
           try {
@@ -108,21 +125,21 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           } catch {
             case InexistentLocation(msg) => println(Time + msg)
           }
-          Some(HTMLResponse(updateLocations(adminHtml).toString))
+          Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
         else if (req.query.startsWith("addInclusion=")) { ConflictGuard.synchronized { 
           catalog.addInclusion(java.net.URLDecoder.decode(req.query.substring("addInclusion=".length), "UTF-8"))
-          Some(HTMLResponse(updateLocations(adminHtml).toString))
+          Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
         else if (req.query.startsWith("addExclusion=")) { ConflictGuard.synchronized { 
           catalog.addExclusion(java.net.URLDecoder.decode(req.query.substring("addExclusion=".length), "UTF-8"))
-          Some(HTMLResponse(updateLocations(adminHtml).toString))
+          Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
         else Some(TextResponse("Invalid query: " + req.query, None))
       }
       case "crawlAll"  => { ConflictGuard.synchronized { 
         catalog.crawlAll
-        Some(HTMLResponse(updateLocations(adminHtml).toString))
+        Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
       }}
       case "exit"   => {stop         // stop the server
                          exit(0)      // exit the program

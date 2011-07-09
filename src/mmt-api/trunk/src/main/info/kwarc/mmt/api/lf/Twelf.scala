@@ -21,7 +21,7 @@ object Twelf {
 }
 
 /** Utility for starting the catalog and calling the Twelf compiler
-  * @param path the Twelf compiler executable
+  * @param path the Twelf check-some script
   */
 class Twelf(path : File) extends Compiler {
    def isApplicable(src: String) = src == "twelf"
