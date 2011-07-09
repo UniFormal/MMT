@@ -70,6 +70,7 @@ catalog = new info.kwarc.mmt.lf.Catalog(locations: HashSet[String] = new HashSet
 catalog.init      // throws PortUnavailable if the port is in use
 
 // getters
+catalog.queryURI = "http://localhost:"+port+"/getText"
 catalog.urlToDocument         : HashMap[URI, Document] 
 catalog.uriToNamedBlock       : HashMap[URI, NamedBlock]
 catalog.uriToModulesDeclared  : HashMap[URI, LinkedHashSet[URI]]
