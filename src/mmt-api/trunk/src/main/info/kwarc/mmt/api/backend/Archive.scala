@@ -32,6 +32,9 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     /** map from module MPaths found in narrToCont to its file in the narration folder */
     private val modules = new LinkedHashMap[MPath, File]
     
+    val sourceDir = root / "source"
+    val contentDir = root / "content"
+    
     /** Report a message using the given report handler */
     def log(msg: => String) = report("archive", msg)
 
@@ -64,9 +67,6 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                         return
                     }
                 }
-                // add the source folder to the catalog
-                c.asInstanceOf[Twelf].addCatalogLocation(srcdir)
-                
                 // compile the Twelf files in the source folder
                 processFolder(root / "source", srcfile => {
                     // relative path of the destination file in the narration folder (with old suffix)

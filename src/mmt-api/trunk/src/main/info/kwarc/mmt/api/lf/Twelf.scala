@@ -40,6 +40,9 @@ class Twelf(path : File) extends Compiler {
       cat.init    //  throws PortUnavailable
       catalogOpt = Some(cat)
    }
+   override def register(arch: Archive) {
+      addCatalogLocation(arch.sourceDir)
+   }
    override def destroy {
       catalogOpt.foreach(_.destroy)
    }

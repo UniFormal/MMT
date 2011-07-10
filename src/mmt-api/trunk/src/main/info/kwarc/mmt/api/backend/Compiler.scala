@@ -12,6 +12,8 @@ abstract class Compiler {
    def compile(in: File, out: File) : List[CompilerError]
    /** initialization (empty by default) */
    def init {}
+   /** registers an archive with this compiler */
+   def register(arch: Archive) {}
    /** termination (empty by default)
     * Compilers may create persistent data structures and processes,
     * but they must clean up after themselves in this method

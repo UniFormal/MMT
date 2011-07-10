@@ -258,6 +258,7 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
          )
       }
       val arch = new Archive(root, properties, compiler, report)
+      compiler foreach {_.register(arch)}
       addStore(arch)
       arch
    }
