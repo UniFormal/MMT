@@ -11,5 +11,6 @@
   <DatatypeDefinition>
    <Datatype IRI = "SSN"/>
    <Datatype IRI= "http://www.w3.org/2001/XMLSchema#integer"/>
-  </DatatypeDefinition> 
-</Ontology>
+  </DatatypeDefinition>
+  
+ </Ontology>
