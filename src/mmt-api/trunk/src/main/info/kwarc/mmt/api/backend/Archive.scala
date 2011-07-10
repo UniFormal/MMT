@@ -36,7 +36,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @param m the MPath of the module 
       * @return the File descriptor of the destination .omdoc file
       */
-    def MMTPathToContentPath(m: MPath) : java.io.File =
+    def MMTPathToContentPath(m: MPath) : java.io.File =              // TODO: Use narrationBase instead of "NONE"?
        root / "content" / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc")
     
     /** Generate narration from source
@@ -118,16 +118,32 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
     
     /** Generate content from narration */
-    def narrToCont {    // TODO: build index of all URIs
+    def narrToCont {
+        // make sure the narration folder exists
+        val narrdir = root / "narration"
+        if (!narrdir.exists) {                                  
+            log("narration to content: error: no narration folder found")
+            return                                                                                      
+        }
+        // make sure the content folder exists
+        val contentdir = root / "content"
+        if (!contentdir.exists) {
+            val success : Boolean = contentdir.mkdir   // create /content
+            if (success == false) {
+                log("narration to content: error: cannot create content folder")
+                return
+            }
+        }
+        
         // use a controller that accepts every file, i.e. doesn't check anything
         val controller = new Controller(NullChecker, report)
         
-        // create content folder, iterate over all narration files using "files", put one theory per file into content folder (subfolder structure according to namespaces)
-        
-        val omdocfile = File("")
-        val doc = controller.read(omdocfile)
-        controller.getDocument(doc).getModulesResolved(controller.library) foreach put
-        controller.clear
+        // iterate over all narration files, put one theory per file into content folder (subfolder structure according to namespaces)
+        for (omdocfile <- files.keySet) {
+            val doc = controller.read(omdocfile)
+            controller.getDocument(doc).getModulesResolved(controller.library) foreach put
+            controller.clear
+        }
     }
     
     /** Generate relation from content */
@@ -143,7 +159,17 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     /** Write a module to content folder */
     def put(mod: Module) {
-       xml.writeFile(mod.toNode, MMTPathToContentPath(mod.path))
+       val destfile = MMTPathToContentPath(mod.path)
+       val destfolder = destfile.getParentFile
+       // make sure the destination folder exists
+       if (!destfolder.exists) {
+           val success : Boolean = destfolder.mkdirs  // create the destination folder (and its parents, if necessary)
+           if (success == false) {
+               log("narration to content: error: cannot create a content subfolder")
+               return
+           }
+       }
+       xml.writeFile(mod.toNode, destfile)
     }
     
     /** Pack everything in a MAR archive */
@@ -167,6 +193,7 @@ object ArchiveTest {
     //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
     //println(errors.mkString("\n"))
     archive.sourceToNarr
+    archive.narrToCont
     controller.cleanup
     }
 }
