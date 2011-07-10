@@ -11,7 +11,7 @@ class Shell(foundation : libraries.Foundation) extends {
       val filereport = new frontend.FileReport(new java.io.File("jomdoc.log"))
       val consreport = new ConsoleReport
       val r = new MultipleReports(filereport, consreport)
-      val c = new libraries.FoundChecker(foundation)
+      val c = libraries.NullChecker //new libraries.FoundChecker(foundation)
 } with Controller(c, r) {
    def main(args : Array[String]) : Unit = {
       val command = args.mkString("", " ", "")

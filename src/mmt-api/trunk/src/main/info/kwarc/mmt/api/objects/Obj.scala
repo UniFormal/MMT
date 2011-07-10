@@ -358,6 +358,13 @@ case class TUnion(left: TheoryObj, right: TheoryObj) extends TheoryObj with MMTO
    def path = mmt.tunion
    override def toString = left.toString + " + " + right.toString
 }
+object TUnion {
+   def apply(thys: List[TheoryObj]) : TheoryObj = thys match {
+      case Nil => TEmpty(None)
+      case hd :: Nil => hd
+      case hd :: tl => TUnion(hd, apply(tl))
+   }
+}
 
 /*
 case class OMPI(push: TheoryObj, along: Morph, wth: TheoryObj) extends TheoryObj with ComposedModuleObject {
@@ -414,6 +421,13 @@ case class MUnion(left: Morph, right: Morph) extends Morph with MMTObject {
    def args = List(left, right)
    def path = mmt.munion
    override def toString = left.toString + " + " + right.toString
+}
+object MUnion {
+   def apply(mors: List[Morph]) : Morph = mors match {
+      case Nil => throw ImplementationError("union of 0 morphisms")
+      case hd :: Nil => hd
+      case hd :: tl => MUnion(hd, apply(tl))
+   }
 }
 
 /*
@@ -528,10 +542,13 @@ object Obj {
          case <OMA>{child @ _*}</OMA> if child.length == 2 && parseOMS(child(0), base) == mmt.identity =>
             val theory = parseTheory(child(1), nbase, callback)
             OMIDENT(theory)
+         case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.munion =>
+            val mors = child.toList.tail.map(parseMorphism(_, nbase, callback))
+            MUnion(mors)
          case _ => throw ParseError("not a well-formed morphism: " + N.toString)
       }
    }
-
+<om:OMA xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns"><om:OMS name="theory-union" module="mmt" base="http://cds.omdoc.org/omdoc/mmt.omdoc"></om:OMS><om:OMS module="TND"></om:OMS><om:OMS module="EqLogic"></om:OMS></om:OMA>
   /** parses a theory object relative to a base address */
   def parseTheory(N : Node, base : Path) : TheoryObj = parseTheory(N, base, p => ())
   /** parses a theory object relative to a base address and calls a function on every encountered identifier */
@@ -544,6 +561,9 @@ object Obj {
                case p : MPath => callback(p); OMMOD(p)
                case _ => throw ParseError("not a well-formed theory reference: " + N.toString)
            }
+        case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.tunion =>
+            val thys = child.toList.tail.map(parseTheory(_, nbase, callback))
+            TUnion(thys)
         case _ => throw ParseError("not a well-formed theory: " + N.toString)
     }
   }
