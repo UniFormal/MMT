@@ -149,15 +149,25 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         if (files.isEmpty)  // if the files index is empty, run over the narration folder
             processFolder(narrationDir, narrExtension, narrExclusions, narrFile => {
                 println("[NARR->CONT] " + narrFile.getPath)        // TODO: replace println with log
-                val doc = controller.read(narrFile)
-                controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+                var doc : DPath = null
+                try {
+                    doc = controller.read(narrFile)
+                    controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+                } catch {
+                    case e: Error => println(e.getMessage); e.printStackTrace
+                }
                 controller.clear
             })
         else       // if the filex index exists, use it instead
             for (narrFile <- files.keySet) {
                 println("[NARR->CONT] " + narrFile.getPath)        // TODO: replace println with log
-                val doc = controller.read(narrFile)
-                controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+                var doc : DPath = null
+                try {
+                    doc = controller.read(narrFile)
+                    controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+                } catch {
+                    case e: Error => println(e.getMessage); e.printStackTrace
+                }
                 controller.clear
             }
     }
