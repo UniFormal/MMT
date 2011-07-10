@@ -167,7 +167,7 @@ object URI {
        val m : java.util.regex.Matcher = java.util.regex.Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?").matcher(s) // pattern taken from RFC 3986
        if (m.matches == false)
           throw new java.net.URISyntaxException(s, "malformed URI reference")
-       return new java.net.URI(m.group(2), m.group(4), m.group(5), m.group(7), m.group(9))
+       return URI(new java.net.URI(m.group(2), m.group(4), m.group(5), m.group(7), m.group(9)))
    }
    /** returns a relative URI with scheme and authority only */
    def apply(s: String, a: String) : URI = URI(Some(s), Some(a), Nil, false, None, None)

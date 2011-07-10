@@ -242,7 +242,7 @@ object ArchiveTest {
     //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
     //println(errors.mkString("\n"))
     //archive.sourceToNarr
-    //archive.narrToCont
+    archive.narrToCont
     archive.toMar()
     controller.cleanup
     }
