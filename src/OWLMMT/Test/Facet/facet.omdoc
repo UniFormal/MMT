@@ -1,0 +1,29 @@
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Facet/facet.owl">
+   <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
+   
+     <constant name="personAge">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+     </constant>
+     
+     <constant name="ax1">
+      <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+       <om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="personAge" base="http://example.com/owl/families"></om:OMS>
+              
+              <om:OMA><om:OMS module="OWL2SUB" name="dataTypeRestriction" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              				<om:OMS module="D1" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+              				
+              				<om:OMA><om:OMS module="OWL2SUB" name="facetRestriction" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              								<om:OMS module="OWL2SUB" name="minInclusive" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              								<om:OMI>0</om:OMI>
+              			 </om:OMA>
+              			 
+              			 <om:OMA><om:OMS module="OWL2SUB" name="facetRestriction" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              			 				 <om:OMS module="OWL2SUB" name="maxInclusive" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              			 				 <om:OMI>150</om:OMI>
+              			 </om:OMA>			
+            </om:OMA>
+      </om:OMA></OMOBJ></type>
+     </constant>
+    </theory>
+   </omdoc>
