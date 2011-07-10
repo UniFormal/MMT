@@ -34,47 +34,54 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     val sourceDir = root / "source"
     val contentDir = root / "content"
+    val narrationDir = root / "narration"                                
+    
+    // TODO: get these from the Twelf class
+    /** the extension of the source files */
+    val srcExtension = ".elf"
+    /** which folder names in the source folder to exclude */
+    val srcExclusions = LinkedHashSet(".svn")
+    /** the extension of the narration files */
+    val narrExtension = ".omdoc"
+    /** which folder names in the narration folder to exclude */
+    val narrExclusions = LinkedHashSet(".svn")
     
     /** Report a message using the given report handler */
     def log(msg: => String) = report("archive", msg)
 
     /** Get the disk path of the module in the content folder
       * @param m the MPath of the module 
-      * @return the File descriptor of the destination .omdoc file
+      * @return the File descriptor of the destination  file in the content folder
       */
     def MMTPathToContentPath(m: MPath) : java.io.File =              // TODO: Use narrationBase instead of "NONE"?
-       root / "content" / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc")
+       contentDir / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + narrExtension)
     
-    /** Generate narration from source
-      * ********************** WARNING:  .svn folders are ignored ************* only .elf files are taken ********************** 
-      */
+    /** Generate narration from source */
     def sourceToNarr {
         compiler match {
             case None => throw CompilationError("no compiler defined")
             case Some(c) => 
                 // make sure the source folder exists
-                val srcdir = root / "source"
-                if (!srcdir.exists) {                                  
+                if (!sourceDir.exists) {                                  
                     log("source to narration: error: no source folder found")
                     return                                                                                      
                 }
                 // make sure the narration folder exists
-                val narrdir = root / "narration"
-                if (!narrdir.exists) {
-                    val success : Boolean = narrdir.mkdir   // create /narration
+                if (!narrationDir.exists) {
+                    val success : Boolean = narrationDir.mkdir   // create /narration
                     if (success == false) {
                         log("source to narration: error: cannot create narration folder")
                         return
                     }
                 }
-                // compile the Twelf files in the source folder
-                processFolder(root / "source", srcfile => {
+                // compile the files in the source folder
+                processFolder(sourceDir, srcExtension, srcExclusions, srcFile => {
                     // relative path of the destination file in the narration folder (with old suffix)
-                    val rel : String = srcfile.toString.substring((root / "source").toString.length)
-                    // replace suffix .elf with .omdoc
-                    val relativePath : String = rel.substring(0, rel.length - "elf".length) + "omdoc"
-                    // replace the first part of the path of srcfile with narrdir to get the destination file path
-                    val destfile = narrdir / relativePath
+                    val rel : String = srcFile.toString.substring(sourceDir.toString.length)
+                    // replace suffix srcExtension with narrExtension
+                    val relativePath : String = rel.substring(0, rel.length - srcExtension.length) + narrExtension
+                    // replace the first part of the path of srcfile with narrationDir to get the destination file path
+                    val destfile = narrationDir / relativePath
                     val destfolder = destfile.getParentFile
                     // make sure the destination folder exists
                     if (!destfolder.exists) {
@@ -85,26 +92,25 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                         }
                     }
                     // compile the file
-                    val errors : List[CompilerError] = c.compile(srcfile, destfile)
-                    println("[TWELF] " + srcfile + " -> " + destfile)
+                    val errors : List[CompilerError] = c.compile(srcFile, destfile)
+                    println("[SRC->NARR] " + srcFile + " -> " + destfile)
                     // update 
                     files.update(destfile, errors)
                     if (!errors.isEmpty)
-                        println(errors.mkString("[TWELF] ", "\n[TWELF] ", ""))
+                        println(errors.mkString("[SRC->NARR] ", "\n[SRC->NARR] ", ""))
                 })
         }
     }
     
     /** Apply a function on each file in the given folder or its subfolders. 
-      * ********************** WARNING:  .svn folders are ignored ************* only .elf files are taken **********************
       * This only works for physical folders and files on a disk */
-    private def processFolder(f: File, actOn: File => Unit) {
+    private def processFolder(f: File, extension: String, exclusions: LinkedHashSet[String], actOn: File => Unit) {
         if (!f.canRead) return
         else if (f.isFile) {
-            if (f.getName.endsWith(".elf"))
+            if (f.getName.endsWith(extension))
                 actOn(f)         // process the file
         }
-        else if (f.isDirectory && f.getName != ".svn") {
+        else if (f.isDirectory && exclusions.forall(_ != f.getName)) {
             // Get list of children
             var fileList : Array[File] = null
             try {
@@ -116,22 +122,20 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                 return
             else
                 // process each child
-                fileList.foreach(child => processFolder(child, actOn))
+                fileList.foreach(child => processFolder(child, extension, exclusions, actOn))
         }
     }
     
     /** Generate content from narration. It uses the files map generated in srcToNarr */
     def narrToCont {
         // make sure the narration folder exists
-        val narrdir = root / "narration"
-        if (!narrdir.exists) {                                  
+        if (!narrationDir.exists) {                                  
             log("narration to content: error: no narration folder found")
             return                                                                                      
         }
         // make sure the content folder exists
-        val contentdir = root / "content"
-        if (!contentdir.exists) {
-            val success : Boolean = contentdir.mkdir   // create /content
+        if (!contentDir.exists) {
+            val success : Boolean = contentDir.mkdir   // create /content
             if (success == false) {
                 log("narration to content: error: cannot create content folder")
                 return
@@ -142,11 +146,20 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         val controller = new Controller(NullChecker, report)
         
         // iterate over all narration files, put one theory per file into content folder (subfolder structure according to namespaces)
-        for (omdocfile <- files.keySet) {
-            val doc = controller.read(omdocfile)
-            controller.getDocument(doc).getModulesResolved(controller.library) foreach put
-            controller.clear
-        }
+        if (files.isEmpty)  // if the files index is empty, run over the narration folder
+            processFolder(narrationDir, narrExtension, narrExclusions, narrFile => {
+                println("[NARR->CONT] " + narrFile.getPath)        // TODO: replace println with log
+                val doc = controller.read(narrFile)
+                controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+                controller.clear
+            })
+        else       // if the filex index exists, use it instead
+            for (narrFile <- files.keySet) {
+                println("[NARR->CONT] " + narrFile.getPath)        // TODO: replace println with log
+                val doc = controller.read(narrFile)
+                controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+                controller.clear
+            }
     }
     
     /** Generate relation from content */
@@ -161,8 +174,9 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
     
     /** Write a module to content folder */
-    def put(mod: Module) {
+    def writeToContent(mod: Module) {
        val destfile = MMTPathToContentPath(mod.path)
+       println("[NARR->CONT]        -> " + destfile.getPath)        // TODO: replace println with log
        val destfolder = destfile.getParentFile
        // make sure the destination folder exists
        if (!destfolder.exists) {
@@ -223,7 +237,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         out.close
     }
     
-    val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, root / "narration")
+    val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, narrationDir)
     def get(p: Path, reader: Reader) {p match {
        case doc : DPath => narrationBackend.get(doc, reader)  
        case mod : MPath => reader.readModules(utils.mmt.mmtbase, None, get(mod))
@@ -241,7 +255,7 @@ object ArchiveTest {
     //twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
     //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
     //println(errors.mkString("\n"))
-    //archive.sourceToNarr
+    archive.sourceToNarr
     archive.narrToCont
     archive.toMar()
     controller.cleanup

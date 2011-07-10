@@ -234,33 +234,47 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
        compilers ::= c
        c.init
    }
+   /** @throws NotFound if the root file cannot be read
+     * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
    def openArchive(root: java.io.File) : Archive = {
-      //TODO: check if "file" is mar, folder, or meta-inf file, branch accordingly
-      val properties = new scala.collection.mutable.ListMap[String,String]
-      var compiler : Option[Compiler] = None 
-      val manifest = root / "META-INF" / "MANIFEST.MF"
-      if (manifest.isFile) {
-         // read "key: value" list from "manifest" into properties
-         val in = new java.io.BufferedReader(new java.io.FileReader(manifest))
-         var line : String = null
-         while ({line = in.readLine(); line != null}) {
-            val p = line.indexOf(":")
-            val key = line.substring(0,p).trim
-            val value = line.substring(p+1).trim
-            properties(key) = value
-         }
-         in.close
-         properties.get("source") foreach (
-            src => compilers.find(_.isApplicable(src)) match {
-               case Some(c) => compiler = Some(c)
-               case None => log("no compiler registered for source " + src)
-            }
-         )
+      //TODO: check if "root" is meta-inf file, branch accordingly
+      if (!root.canRead)
+          throw NotFound(DPath(root.toURI))
+      if (root.isDirectory) {
+          val properties = new scala.collection.mutable.ListMap[String,String]
+          var compiler : Option[Compiler] = None 
+          val manifest = root / "META-INF" / "MANIFEST.MF"
+          if (manifest.isFile) {
+              // read "key: value" list from "manifest" into properties
+              val in = new java.io.BufferedReader(new java.io.FileReader(manifest))
+              var line : String = null
+              while ({line = in.readLine(); line != null}) {
+                  val p = line.indexOf(":")
+                  val key = line.substring(0,p).trim
+                  val value = line.substring(p+1).trim
+                  properties(key) = value
+              }
+              in.close
+              properties.get("source") foreach (
+              src => compilers.find(_.isApplicable(src)) match {
+                  case Some(c) => compiler = Some(c)
+                  case None => log("no compiler registered for source " + src)
+              }
+              )
+          }
+          val arch = new Archive(root, properties, compiler, report)
+          compiler foreach {_.register(arch)}
+          addStore(arch)
+          arch
       }
-      val arch = new Archive(root, properties, compiler, report)
-      compiler foreach {_.register(arch)}
-      addStore(arch)
-      arch
+      else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
+          // unpack it
+          val newRoot = new java.io.File(root.getParent + java.io.File.separator + (root.getName + "-unpacked"))
+          // TODO: the unpacking...
+          // open the archive in newRoot
+          openArchive(newRoot)
+      }
+      else throw NotApplicable
    }
    def cleanup {
       compilers.foreach(_.destroy)
