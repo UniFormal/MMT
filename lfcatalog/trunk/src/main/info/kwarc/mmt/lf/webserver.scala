@@ -244,6 +244,21 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
         }
         else {print("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
       }
+      case "getPositionInHeader" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val position = catalog.getPosition(stringUri)
+            print("OK")
+            Some(TextResponse("", Some(Pair("X-Source-url", "file:" + position))))
+          } catch {
+              case e: java.net.URISyntaxException => {print("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
+              case CatalogError(s)    => {print("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
+          }
+        }
+        else {print("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
+      }
       case "getOmdoc" => {
         if (req.query.startsWith("url=")) {
           var stringUrl : String = null
@@ -310,9 +325,9 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     def act(tk : HTalk) {
       val out = text.getBytes("UTF-8")
       tk.setContentLength(out.size) // if not buffered
-        .setContentType("text/html; charset=utf8")
-        .write(out)
-        .close
+            .setContentType("text/html; charset=utf8")
+            .write(out)
+            .close
     }
   }
 }
