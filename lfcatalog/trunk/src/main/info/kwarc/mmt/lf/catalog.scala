@@ -127,7 +127,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   
   
   /** The URI for querying the catalog with getText */
-  def queryURI : String = "http://localhost:" + port + "/getText"
+  def queryURI : String = "http://localhost:" + port + "/getPositionInHeader"
   
   
   /** Exclusion patterns for files and folders. 
