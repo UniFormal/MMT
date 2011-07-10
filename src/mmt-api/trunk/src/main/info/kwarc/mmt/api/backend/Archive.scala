@@ -7,6 +7,9 @@ import lf._
 import utils._
 import FileConversion._
 
+import java.io.{FileInputStream, FileOutputStream}
+import java.util.zip._
+
 import scala.collection.mutable._
 
 case class CompilationError(s: String) extends Exception(s)
@@ -117,7 +120,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
-    /** Generate content from narration */
+    /** Generate content from narration. It uses the files map generated in srcToNarr */
     def narrToCont {
         // make sure the narration folder exists
         val narrdir = root / "narration"
@@ -172,8 +175,54 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        xml.writeFile(mod.toNode, destfile)
     }
     
-    /** Pack everything in a MAR archive */
-    def toMar(target: java.io.File) {}
+    
+    /** Add a file to a MAR file (only used internally by toMar)
+      * @throws java.io.IOException */
+    private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte] = new Array(100000)) {
+        var bytesRead = 0
+        val in = new FileInputStream(f)
+        out.putNextEntry(new ZipEntry(f.getPath.substring(base.getPath.length + 1)))
+        var stop = false
+        while (bytesRead != -1) {
+            bytesRead = in.read(buffer)
+            if (bytesRead != -1)
+                out.write(buffer, 0, bytesRead)
+        }   
+        in.close
+    }
+      
+    
+    /** Add a folder to a MAR file (only used internally by toMar). Caution: empty folders are not put in the archive.
+      * @throws java.io.IOException */
+    private def addFolderToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte] = new Array(100000)) {
+        val childList = f.listFiles
+        // if the folder is empty, add a special entry for it
+        //if (childList.isEmpty)
+        //    out.putNextEntry(new ZipEntry(f.getPath.substring(base.getPath.length + 1)))
+        for (child <- childList) {
+            if (child.isDirectory)
+                addFolderToMar(child, base, out, buffer)
+            else
+                addFileToMar(child, base, out, buffer)
+        }
+    }
+    
+    /** Pack everything in a MAR archive. Caution: empty folders are not put in the archive.
+      * @param target the target MAR file. Default is <name>.mar in the root folder, where <name> is the name of the root */
+    def toMar(target: java.io.File = root / (root.getName + ".mar")) {
+        val out = new ZipOutputStream(new FileOutputStream(target))
+        val buffer = new Array[Byte] (100000)   // 100KB buffer size
+        try {
+            for (component <- List("META-INF", "source", "narration", "content", "presentation", "relation"))
+                if ((root/component).canRead)
+                    addFolderToMar(root/component, root, out, buffer)
+        } catch {
+            case e: java.io.IOException => log("error when packing into a MAR file: " + (if (e.getCause == null) "" else e.getCause))
+        }
+        log("Created " + target.getPath)
+        out.close
+    }
+    
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, root / "narration")
     def get(p: Path, reader: Reader) {p match {
        case doc : DPath => narrationBackend.get(doc, reader)  
@@ -192,8 +241,9 @@ object ArchiveTest {
     //twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
     //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
     //println(errors.mkString("\n"))
-    archive.sourceToNarr
-    archive.narrToCont
+    //archive.sourceToNarr
+    //archive.narrToCont
+    archive.toMar()
     controller.cleanup
     }
 }
