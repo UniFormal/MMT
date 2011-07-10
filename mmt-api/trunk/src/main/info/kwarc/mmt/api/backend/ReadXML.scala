@@ -65,7 +65,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	         val r = MRef(docParent.get, Path.parseM(t,modParent), false)
 	         add(r)
          case scala.xml.Comment(_) =>
-         case <metadata>{_*}</metadata> => 
+         case <metadata>{_*}</metadata> => //TODO
          case _ =>
            val name = Path.parseName(xml.attr(m,"name")).toLocalPath
            val base = Path.parse(xml.attr(m,"base"), modParent)
@@ -201,7 +201,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
             val inst = new Instance(thy,name,Path.parseS(p,base),Substitution.parse(sb,base))
             add(inst, md)
          case scala.xml.Comment(_) =>
-         case _ => throw new ParseError("symbol level element expected: " + s)
+         case _ => throw new ParseError("symbol level element expected: " + s2)
          }
       }
    }
