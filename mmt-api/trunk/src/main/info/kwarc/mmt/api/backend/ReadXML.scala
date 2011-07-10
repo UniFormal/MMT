@@ -93,12 +93,12 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                        readSymbols(tpath, tpath, d)
         	              report.unindent
         	     }
-	         case (base : DPath, <view>{seq @ _*}</view>) =>
+	         case (base : DPath, <view>{_*}</view>) =>
 	            log("view " + name + " found")
 	            val vpath = base ? name
-	            val from = OMMOD(Path.parseM(xml.attr(m, "from"), base))
-	            val to = OMMOD(Path.parseM(xml.attr(m, "to"), base))
-	            val (v, body) = seq match {
+	            val (m2, from) = Reader.getTheoryFromAttributeOrChild(m, "from", base)
+	            val (m3, to) = Reader.getTheoryFromAttributeOrChild(m2, "to", base)
+	            val (v, body) = m3.child match {
                   case <definition>{d}</definition> =>
 		            val df = Obj.parseMorphism(d, vpath)
 		            (new DefinedView(modParent, name, from, to, df), None)
@@ -184,9 +184,9 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
             log("found alias " + name + " for " + forpath)
             add(new Alias(thy, name, forpath), md)
          case <include/> =>
-            val from = Path.parseM(xml.attr(s, "from"), base)
+            val (_, from) = Reader.getTheoryFromAttributeOrChild(s, "from", base)
             log("include from " + from + " found")
-            add(PlainInclude(from, tpath), md)
+            add(Include(OMMOD(tpath), from), md)
          case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols
             readNotations(tpath, base, s)
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
@@ -280,5 +280,36 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	         case  _ => throw ParseError("ABox assertion expected: " + ass)
          }
       }
+   }
+}
+
+object Reader {
+   /** parses a theory using the attribute or child "component" of "n", returns the remaining node and the TheoryObj */
+   def getTheoryFromAttributeOrChild(n: Node, component: String, base: Path) : (Node, TheoryObj) = {
+      if (n.attribute(component).isDefined) {
+         (n, OMMOD(Path.parseM(xml.attr(n, component), base)))
+      } else {
+          val (newnode, tOpt) = splitOffChild(n, component)
+          tOpt match {
+             case Some(t) =>
+                if (t.child.length == 1) (newnode, Obj.parseTheory(t.child(0), base))
+                else throw ParseError("ill-formed theory: " + t)
+             case _ => throw ParseError("no component " + component + " found: " + n)
+         }
+      }
+   }
+   /** removes the child with label "label" from "node" (if any), returns the remaining node and that child */
+   def splitOffChild(node: Node, label : String) : (Node, Option[Node]) = node match { 
+       case scala.xml.Elem(p,l,a,s,cs @ _*) =>
+           var n : Option[Node] = None
+           val cs2 = cs flatMap {e =>
+              if (e.label == label) {
+                 n = Some(e)
+                 Nil
+              } else
+                 e
+           }
+           (scala.xml.Elem(p,l,a,s,cs2 : _*), n)
+       case n => (n, None)
    }
 }
