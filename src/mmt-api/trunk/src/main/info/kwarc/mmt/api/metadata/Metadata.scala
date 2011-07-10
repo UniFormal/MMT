@@ -67,7 +67,7 @@ object MetaData {
       case <metadata>{mdxml @ _*}</metadata> =>
          val lang = Path.parseM(xml.attr(node, "language"), base)
          val mdata = new MetaData(lang)
-         mdxml foreach {n => mdata.add(MetaDatum.parse(n, base))}
+         mdxml foreach {n => mdata.add(MetaDatum.parse(n, lang))}
          mdata
       case _ => throw ParseError("metadata expected: " + node) // TODO parse meta and link
    }
@@ -93,12 +93,10 @@ object MetaDatum {
       case <link/> =>
          val key = Path.parseS(xml.attr(node, "rel"), base)
          Link(key, URI(xml.attr(node, "resource")))
-      case <meta>{literal}</meta> =>
+      case Elem(_,"meta",_,_,literal @ _*) => //strangely, XML matching does not work
          val key = Path.parseS(xml.attr(node, "property"), base)
-         literal match {
-            case Text(s) => new MetaDatum(key, OMSTR(s)) // TODO: for now parsing everything into a string
-            case _ => throw ParseError("object in metadatum must be text node:" + node)
-         }
+         new MetaDatum(key, OMSTR(literal.text)) // TODO: for now parsing everything into a string
+         //throw ParseError("object in metadatum must be text node:" + node)
       case _ => throw ParseError("meta or link expected: " + node)
    }
 }
