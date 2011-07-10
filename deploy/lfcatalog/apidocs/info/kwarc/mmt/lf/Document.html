@@ -70,7 +70,7 @@
       <span class="symbol">
         <span class="name">Document</span>
         
-        <span class="params">(<span name="url">url: <a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a></span>, <span name="associatedComment">associatedComment: <span class="extype" name="scala.Option">Option</span>[<a href="SemanticCommentBlock.html" class="extype" name="info.kwarc.mmt.lf.SemanticCommentBlock">SemanticCommentBlock</a>]</span>, <span name="modules">modules: <span class="extype" name="scala.collection.mutable.MutableList">MutableList</span>[<a href="ModuleBlock.html" class="extype" name="info.kwarc.mmt.lf.ModuleBlock">ModuleBlock</a>]</span>, <span name="prefixes">prefixes: <span class="extype" name="scala.collection.mutable.LinkedHashMap">LinkedHashMap</span>[String, <a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>]</span>, <span name="declaredNamespaces">declaredNamespaces: <span class="extype" name="scala.collection.mutable.LinkedHashSet">LinkedHashSet</span>[<a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>]</span>)</span>
+        <span class="params">(<span name="url">url: <a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a></span>, <span name="associatedComment">associatedComment: <span class="extype" name="scala.Option">Option</span>[<a href="SemanticCommentBlock.html" class="extype" name="info.kwarc.mmt.lf.SemanticCommentBlock">SemanticCommentBlock</a>]</span>, <span name="modules">modules: <span class="extype" name="scala.collection.mutable.MutableList">MutableList</span>[<a href="ModuleBlock.html" class="extype" name="info.kwarc.mmt.lf.ModuleBlock">ModuleBlock</a>]</span>, <span name="prefixes">prefixes: <span class="extype" name="scala.collection.mutable.LinkedHashMap">LinkedHashMap</span>[String, <a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>]</span>, <span name="declaredNamespaces">declaredNamespaces: <span class="extype" name="scala.collection.mutable.LinkedHashSet">LinkedHashSet</span>[<a href="URI.html" class="extype" name="info.kwarc.mmt.lf.URI">URI</a>]</span>, <span name="errors">errors: <span class="extype" name="scala.collection.mutable.LinkedList">LinkedList</span>[<a href="ParseError.html" class="extype" name="info.kwarc.mmt.lf.ParseError">ParseError</a>]</span>)</span>
         
       </span>
       </h4>
@@ -393,6 +393,18 @@ scala.Int
             
           </div>
           
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Document#errors">
+      <a id="errors:LinkedList[ParseError]"></a>
+      <h4 class="signature">
+      <span class="kind">var</span>
+      <span class="symbol">
+        <span class="name">errors</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.collection.mutable.LinkedList">LinkedList</span>[<a href="ParseError.html" class="extype" name="info.kwarc.mmt.lf.ParseError">ParseError</a>]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="prt" data-isabs="false" name="scala.AnyRef#finalize">
       <a id="finalize():Unit"></a>
       <h4 class="signature">
@@ -489,26 +501,6 @@ possible to check whether the contents of the list are of the requested typed.
         </div><div class="block">
           definition classes: Any
         </div>
-            
-            
-            
-          </div>
-          
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Document#lastError">
-      <a id="lastError:Option[String]"></a>
-      <h4 class="signature">
-      <span class="kind">var</span>
-      <span class="symbol">
-        <span class="name">lastError</span>
-        
-        
-        <span class="result">: <span class="extype" name="scala.Option">Option</span>[String]</span>
-      </span>
-      </h4>
-      
-            <p class="shortcomment cmt">None, if the document was parsed without any error.</p>
-            <div class="fullcomment"><div class="comment cmt"><p>None, if the document was parsed without any error.
-Some(last error message), otherwise</p></div>
             
             
             

@@ -5,7 +5,7 @@ import java.net.URLDecoder
 import java.util.regex.Pattern
 
 import scala.xml._
-import scala.collection.mutable.{HashSet, LinkedHashSet, LinkedHashMap, HashMap, MutableList}
+import scala.collection.mutable.{HashSet, LinkedHashSet, LinkedHashMap, HashMap, MutableList, LinkedList}
 
 
 /** Utility object */
@@ -545,13 +545,14 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
           var document : Document = null
           try {
               document = FileCrawler(location)          // <-------------------- the actual parsing --------------------
-              document.lastError = None
+              // prepend the timestamp and file path to each error
+              document.errors = document.errors.map(x => ParseError(Time + getOriginalPath(location) + ":" + x))
           } catch {
               case ParseError(s) => {
-                println(Time + getOriginalPath(location) + ":" + s)
-                if (document == null)     // store an empty Document
-                    document = new Document(new URI(Catalog.getPath(location)), None, new MutableList(), new LinkedHashMap(), new LinkedHashSet())
-                    document.lastError = Some(Time + getOriginalPath(location) + ":" + s)
+                if (document == null) {    // then store an empty Document with this error
+                    val theError = ParseError(Time + getOriginalPath(location) + ":" + s)
+                    document = new Document(new URI(Catalog.getPath(location)), None, new MutableList(), new LinkedHashMap(), new LinkedHashSet(), LinkedList(theError))
+                }
               }
           }
           document.lastModified = lastModified
@@ -587,8 +588,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
                   })
                   case ViewBlock(_,_,_,children,_,_,_,_) => children.foreach(c => uriToNamedBlock.update(c.uri, c))
           }})
-            
-          println(Time + getOriginalPath(location) + ": OK")
+         
+          // Print the parsing errors; if there are none, print "OK"
+          if (document.errors.isEmpty)
+                println(Time + getOriginalPath(location) + ": OK")
+          else
+                document.errors.foreach(println)
         } catch {
           case FileOpenError(s) => println(Time + getOriginalPath(location) + ":" + s)
           case CatalogError(s) => println(Time + getOriginalPath(location) + ":" + s)

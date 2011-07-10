@@ -2,7 +2,7 @@ package info.kwarc.mmt.lf
 
 import java.io.{File, FileWriter, BufferedWriter}
 import scala.xml._
-import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHashMap}
+import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHashMap, LinkedList}
 
 
 // ------------------------------- document-level -------------------------------
@@ -12,16 +12,13 @@ import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHash
   * @param associatedComment the optional semantic comment associated with the document
   * @param modules theories and views declared in the document
   * @param prefixes mapping from namespace prefixes to their URI
-  * @param declaredNamespaces list of current namespaces declared in the document */
+  * @param declaredNamespaces list of current namespaces declared in the document
+  * @param The errors that occurred during parsing */
 class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock], val modules: MutableList[ModuleBlock], 
-                val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI]) {
+                val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI], var errors: LinkedList[ParseError]) {
   
   /** Time, in miliseconds, when the file was last modified */
   var lastModified : Long = -1
-  
-  /** None, if the document was parsed without any error.
-    * Some(last error message), otherwise */
-  var lastError : Option[String] = None
   
   def toOmdoc : Elem = 
     <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={declaredNamespaces.head.toString}>

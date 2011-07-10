@@ -2,19 +2,29 @@ package info.kwarc.mmt.lf
 
 
 /** Exception thrown when a location specified does not exist on disk */
-case class InexistentLocation(s : String) extends Exception(s)
+case class InexistentLocation(s : String) extends Exception(s) {
+    override def toString = s
+}
 
 /** Exception related to parsing */
-case class ParseError(s: String) extends Exception(s)
+case class ParseError(s: String) extends Exception(s) {
+    override def toString = s
+}
 
 /** Exception thrown if a file cannot be opened */
-case class FileOpenError(s: String) extends Exception(s)
+case class FileOpenError(s: String) extends Exception(s) {
+    override def toString = s
+}
 
 /** Exception thrown by the catalog if a query is unsuccessul */
-case class CatalogError(s: String) extends Exception(s)
+case class CatalogError(s: String) extends Exception(s) {
+    override def toString = s
+}
 
 /** Exception thrown when the web server cannot be started because the specified port is already in use */
-case class PortUnavailable(s: String) extends Exception(s)
+case class PortUnavailable(s: String) extends Exception(s) {
+    override def toString = s
+}
 
 
 /** Current time as a string */

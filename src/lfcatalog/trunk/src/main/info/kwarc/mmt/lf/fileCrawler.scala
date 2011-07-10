@@ -3,14 +3,14 @@
 package info.kwarc.mmt.lf
 
 import java.io.File
-import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet}
+import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet, LinkedList}
 
 
 /** Crawl a file */
 object FileCrawler {
   /** Crawl a file
   * @param file the file descriptor (not open)
-  * @return a Document object with the information extracted from the file
+  * @return a Document object with the information extracted from the file, which includes a LinkedList of errors occurred during parsing
   * @throws ParseError for syntactical errors in the file
   * @throws FileOpenError if the file cannot be opened */
   def apply(file : File) : Document = (new FileCrawler(file)).crawl
@@ -31,6 +31,9 @@ class FileCrawler(file : File) {
   
   /** array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
   private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
+  
+  /** list of parsing errors in the file */
+  private var errors = LinkedList[ParseError] ()
   
   /** temporary variable used during parsing: saves the last SemanticCommentBlock */
   private var keepComment : Option[SemanticCommentBlock] = None
@@ -57,7 +60,7 @@ class FileCrawler(file : File) {
   
   
   /** Crawl a file.
-    * @return a Document object containing the extracted information
+    * @return a Document object containing the extracted information, which includes a LinkedList of errors occurred during parsing
     * @throws ParseError for syntactical errors in the file */
   private def crawl() : Document =              // line and column numbers start from 0
   {
@@ -138,7 +141,7 @@ class FileCrawler(file : File) {
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
     }
-    return new Document(new URI(Catalog.getPath(file)), associatedComment, modules, prefixes, declaredNamespaces)
+    return new Document(new URI(Catalog.getPath(file)), associatedComment, modules, prefixes, declaredNamespaces, errors)
   }
   
   
@@ -406,7 +409,7 @@ class FileCrawler(file : File) {
   /** Read a semantic %* comment *%
     * @param start the position of the initial %
     * @return The first return value is the structured comment, saved in a block, whose end position is on the final %. The second return value is the position after the block.
-    * @throws ParseError for syntactical errors
+    * @throws ParseError if the comment does not close. Syntactical errors are only printed
     */
   private def crawlSemanticCommentBlock(start: Int) : Pair[SemanticCommentBlock, Int] = 
   {
@@ -437,19 +440,23 @@ class FileCrawler(file : File) {
     
     // Add the key-value properties
     var propertyLines : Array[String] = null
-    for (line <- commentLines.drop(firstPropertyLine).map(_.trim)) {
-      if (!line.startsWith("@"))
-        throw ParseError(toPair(start, lineStarts) + ": error: key-value properties (starting with '@') must be grouped at the end of the comment")
-      val keyValue = line.drop(1).trim
-      if (keyValue.isEmpty)
-        throw ParseError(toPair(start, lineStarts) + ": error: empty key in @-starting property")
-      var i = 0
-      var c = keyValue.codePointAt(i)
-      while (!Character.isWhitespace(c) && i < keyValue.length) {
-        c = keyValue.codePointAt(i)
-        i += Character.charCount(c);
-      }
-      properties += Pair(keyValue.take(i).trim, keyValue.drop(i).trim)
+    try {
+        for (line <- commentLines.drop(firstPropertyLine).map(_.trim)) {
+            if (!line.startsWith("@"))
+                throw ParseError(toPair(start, lineStarts) + ": error: key-value properties (starting with '@') must be grouped at the end of the comment")
+            val keyValue = line.drop(1).trim
+            if (keyValue.isEmpty)
+                throw ParseError(toPair(start, lineStarts) + ": error: empty key in @-starting property")
+            var i = 0
+            var c = keyValue.codePointAt(i)
+            while (!Character.isWhitespace(c) && i < keyValue.length) {
+                c = keyValue.codePointAt(i)
+                i += Character.charCount(c);
+            }
+            properties += Pair(keyValue.take(i).trim, keyValue.drop(i).trim)
+        }
+    } catch {
+        case e : ParseError => errors = (errors :+ e)   // add to the list of errors returned
     }
     return Pair(new SemanticCommentBlock(entireComment, properties, 
                                           new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))), 
