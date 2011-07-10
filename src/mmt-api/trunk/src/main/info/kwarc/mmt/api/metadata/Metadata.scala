@@ -48,7 +48,7 @@ object MetaData {
    /** returns the argument Node without its metadata child (if any), at most one such child allowed, may occur anywhere */
    def parseMetaDataChild(node : Node, base: Path) : (Node, Option[MetaData]) = {
       val (newnode, mdxml) = node match {
-        case scala.xml.Elem(p,l,a,s,cs) =>
+        case scala.xml.Elem(p,l,a,s,cs @ _*) =>
            var md : Option[Node] = None
            val cs2 = cs flatMap {
               case e @ <metadata>{_*}</metadata> => md match {
@@ -69,7 +69,7 @@ object MetaData {
          val mdata = new MetaData(lang)
          mdxml foreach {n => mdata.add(MetaDatum.parse(n, base))}
          mdata
-      case _ => throw ParseError("meta or link expected: " + node)
+      case _ => throw ParseError("metadata expected: " + node) // TODO parse meta and link
    }
 }
 

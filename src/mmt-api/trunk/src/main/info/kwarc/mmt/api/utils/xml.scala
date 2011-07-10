@@ -31,6 +31,46 @@ object xml {
       else
          l.map(_.text).mkString("","","")
    }
+   
+   // decode all occurrences of %HH
+   def decodeURI(s: String) : String = {
+      var in = s
+      var out = ""
+      // invariant: s = out + in
+      while (in != "") {
+         val c = in(0)
+         if (c == '%') {
+            val hh = Integer.parseInt(in.substring(1,3), 16).toChar
+            in = in.substring(3)
+            out = out + hh
+         }
+         else {
+            in = in.substring(1)
+            out = out + c
+         }
+      }
+      out
+   }
+   // encode all occurrences of ?/%# as %HH
+   def encodeURI(s: String) : String = {
+      var in = s
+      var out = ""
+      // invariant: s = out + in
+      while (in != "") {
+         val c = in(0)
+         val enc = c match {
+            case '?' => "%3F"
+            case '/' => "2F"
+            case '%' => "%25"
+            case '#' => "%23"
+            case c => c
+         }
+         in = in.substring(1)
+         out = out + enc
+      }
+      out
+   }
+   
    /**
     * Checks whether an XML element has illegal attribute keys.
     * Prefixed attributes are ignored.
