@@ -57,7 +57,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        contentDir / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + narrExtension)
     
     /** Generate narration from source */
-    def sourceToNarr {
+    def sourceToNarr(in : List[String] = Nil) {
         compiler match {
             case None => throw CompilationError("no compiler defined")
             case Some(c) => 
@@ -93,11 +93,11 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                     }
                     // compile the file
                     val errors : List[CompilerError] = c.compile(srcFile, destfile)
-                    println("[SRC->NARR] " + srcFile + " -> " + destfile)
+                    log("[SRC->NARR] " + srcFile + " -> " + destfile)
                     // update 
                     files.update(destfile, errors)
                     if (!errors.isEmpty)
-                        println(errors.mkString("[SRC->NARR] ", "\n[SRC->NARR] ", ""))
+                        log(errors.mkString("[SRC->NARR] ", "\n[SRC->NARR] ", ""))
                 })
         }
     }
@@ -127,8 +127,23 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
     
     /** Generate content from narration. It uses the files map generated in srcToNarr */
-    def narrToCont {
-        // make sure the narration folder exists
+    def narrToCont(in : List[String] = Nil) {
+        val controller = new Controller(NullChecker, report)
+        val inFile = narrationDir / in
+        if (inFile.isDirectory) {
+           inFile.list foreach {n =>
+              if (n != ".svn") narrToCont(in ::: List(n))
+           }
+        } else {
+           try {
+              val doc = controller.read(inFile)
+              controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+           } catch {
+              case e: Error => report(e)
+           }
+           // controller.clear
+        }
+/*        // make sure the narration folder exists
         if (!narrationDir.exists) {                                  
             log("narration to content: error: no narration folder found")
             return                                                                                      
@@ -141,35 +156,33 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                 return
             }
         }
-        
         // use a controller that accepts every file, i.e. doesn't check anything
-        val controller = new Controller(NullChecker, report)
-        
         // iterate over all narration files, put one theory per file into content folder (subfolder structure according to namespaces)
         if (files.isEmpty)  // if the files index is empty, run over the narration folder
             processFolder(narrationDir, narrExtension, narrExclusions, narrFile => {
-                println("[NARR->CONT] " + narrFile.getPath)        // TODO: replace println with log
+                log("[NARR->CONT] " + narrFile.getPath)
                 var doc : DPath = null
                 try {
                     doc = controller.read(narrFile)
                     controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
                 } catch {
-                    case e: Error => println(e.getMessage); e.printStackTrace
+                    case e: Error => report(e)
                 }
                 controller.clear
             })
         else       // if the filex index exists, use it instead
             for (narrFile <- files.keySet) {
-                println("[NARR->CONT] " + narrFile.getPath)        // TODO: replace println with log
+                log("[NARR->CONT] " + narrFile.getPath)
                 var doc : DPath = null
                 try {
                     doc = controller.read(narrFile)
                     controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
                 } catch {
-                    case e: Error => println(e.getMessage); e.printStackTrace
+                    case e: Error => report(e)
                 }
                 controller.clear
             }
+  */      
     }
     
     /** Generate relation from content */
@@ -186,7 +199,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     /** Write a module to content folder */
     def writeToContent(mod: Module) {
        val destfile = MMTPathToContentPath(mod.path)
-       println("[NARR->CONT]        -> " + destfile.getPath)        // TODO: replace println with log
+       log("[NARR->CONT]        -> " + destfile.getPath)
        val destfolder = destfile.getParentFile
        // make sure the destination folder exists
        if (!destfolder.exists) {
@@ -259,14 +272,13 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
 object ArchiveTest {
     def main(args: Array[String]) {
     val controller = new Controller(NullChecker, new ConsoleReport)
-    val twelf = new Twelf(File("c:/twelf-mod/bin/twelf-server.bat"))
-    controller.backend.addCompiler(twelf)
-    val archive = controller.backend.openArchive(File(args(0)))
+    controller.handle(ExecFile(File("test.mmt")))
+    val archive = controller.backend.getArchive("latin").get
     //twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
     //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
     //println(errors.mkString("\n"))
-    archive.sourceToNarr
-    archive.narrToCont
+    archive.sourceToNarr()
+    archive.narrToCont()
     archive.toMar()
     controller.cleanup
     }

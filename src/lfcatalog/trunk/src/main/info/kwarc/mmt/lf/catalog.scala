@@ -377,7 +377,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   
   /** Add an inclusion pattern to the storage */
   def addInclusion(pattern : String) {
-    if (pattern.isEmpty)
+    if (pattern == "")
       println(Time + "error: empty inclusion patern")
     else {
       println(Time + "New inclusion pattern: " + pattern)
@@ -389,7 +389,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   
   /** Add an exclusion pattern to the storage */
   def addExclusion(pattern : String) {
-    if (pattern.isEmpty)
+    if (pattern == "")
       println(Time + "error: empty exclusion patern")
     else {
       println(Time + "New exclusion pattern: " + pattern)

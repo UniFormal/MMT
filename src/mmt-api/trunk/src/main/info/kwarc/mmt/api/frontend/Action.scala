@@ -25,7 +25,14 @@ object Action extends RegexParsers {
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
-   private def archive = "archive" ~> file ^^ {f => AddArchive(f)}
+   private def archive = archopen | archdim | archmar
+   private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
+   private def archdim = "archive" ~> str ~ ("narration" | "content") ~ (str ?) ^^ {
+      case id ~ dim ~ s =>
+         val segs = MyList.fromString(s.getOrElse(""), "/")
+         ArchiveBuild(id, dim, segs)
+   }
+   private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def twelf = "twelf" ~> file ^^ {f => AddTwelf(f)}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
@@ -76,20 +83,24 @@ case class LoggingOff(s : String) extends Action {override def toString = "log- 
 /** set the current base path */
 case class SetBase(base : Path) extends Action {override def toString = "base " + base}
 /** read a knowledge item */
+case class ExecFile(file : java.io.File) extends Action {override def toString = "file " + file}
+/** print all loaded knowledge items to STDOUT in text syntax */
 case class Read(f : java.io.File) extends Action {override def toString = "read " + f}
 /** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddCatalog(file : java.io.File) extends Action {override def toString = "catalog " + file}
-/** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
-/** register a compiler */
-case class AddTwelf(location: java.io.File) extends Action {override def toString = "twelf " + location}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
+/** register a compiler */
+case class AddTwelf(location: java.io.File) extends Action {override def toString = "twelf " + location}
+/** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
+case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
+/** builds a dimension in a previously opened archive */
+case class ArchiveBuild(id: String, dim: String, in : List[String]) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
+/** builds a dimension in a previously opened archive */
+case class ArchiveMar(id: String, file: java.io.File) extends Action {override def toString = "archive " + id + " mar " + file}
 /** load a file containing commands and execute them, fails on first error if any */
-case class ExecFile(file : java.io.File) extends Action {override def toString = "file " + file}
-/** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends Action
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action

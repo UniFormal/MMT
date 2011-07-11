@@ -24,4 +24,8 @@ class MyList[A](l : List[A]) {
 
 object MyList {
    implicit def fromList[A](l : List[A]) : MyList[A] = new MyList[A](l)
+   def fromString(s: String, sep: String) = s.split(sep).toList match {
+      case List("") => Nil
+      case l => l
+   }
 }

@@ -224,7 +224,10 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                log("include of " + of + " found")
                val f = xml.attr(A, "from")
                val from = if (f == "")
-                  Morph.domain(of)(controller.library) // throws Invalid if domain cannot be inferred
+                  // this throws Invalid if the domain cannot be inferred
+                  // the domain should only be omitted if its domain can be inferred locally, i.e., from the current document
+                  // even then, it might be a bug to allow omitting it 
+                  Morph.domain(of)(controller.library)
                else
                   OMMOD(Path.parseM(f, base))
                add(new DefLinkAssignment(link, LocalName(IncludeStep(from)), of))

@@ -238,8 +238,6 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
    def openArchive(root: java.io.File) : Archive = {
       //TODO: check if "root" is meta-inf file, branch accordingly
-      if (!root.canRead)
-          throw NotFound(DPath(root.toURI))
       if (root.isDirectory) {
           val properties = new scala.collection.mutable.ListMap[String,String]
           var compiler : Option[Compiler] = None 
@@ -295,8 +293,8 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
       getInList(stores, p)
    }
    /** retrieve an Archive by its id */
-   def getArchive(id: String) = stores find {
-      case a: Archive => a.properties.get("id") == Some(id)
-      case _ => false
+   def getArchive(id: String) : Option[Archive] = stores mapFind {
+      case a: Archive => if (a.properties.get("id") == Some(id)) Some(a) else None
+      case _ => None
    }
 }
