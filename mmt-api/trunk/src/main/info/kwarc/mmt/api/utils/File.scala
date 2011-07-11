@@ -16,6 +16,15 @@ case class File(toJava: java.io.File) {
    /** appends a list of path segments */
    def /(ss:List[String]) : File = ss.foldLeft(this) {case (sofar,next) => sofar / next}
    override def toString = toJava.toString
+   def getExtension : Option[String] = {
+       val name = toJava.getName
+       val posOfDot = name.lastIndexOf(".")
+       if (posOfDot == -1) None else Some(name.substring(posOfDot + 1))
+   }
+   def setExtension(ext: String) : File = getExtension match {
+       case None => File(toString + "." + ext)
+       case Some(s) => File(toString.substring(0, toString.length - s.length) + ext)
+   }
 }
 
 object File {
