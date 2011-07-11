@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
+import java.util.zip._
 
 import utils.File
 import utils.FileConversion._
@@ -268,7 +269,7 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
       else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
           // unpack it
           val newRoot = new java.io.File(root.getParent + java.io.File.separator + (root.getName + "-unpacked"))
-          // TODO: the unpacking...
+          extractMar(root, newRoot)
           // open the archive in newRoot
           openArchive(newRoot)
       }
@@ -278,6 +279,26 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
       compilers.foreach(_.destroy)
       compilers = Nil
    } 
+   
+   private def extractMar(file: java.io.File, newRoot: java.io.File) {
+       val mar = new ZipFile(file)
+       var bytes =  new Array[Byte](100000)
+       var len = -1
+       val enum = mar.entries
+       while (enum.hasMoreElements) {
+           val entry = enum.nextElement
+           if (entry.isDirectory)
+                new java.io.File(newRoot, entry.getName).mkdirs
+           else {
+               val istream = mar.getInputStream(entry)
+               val ostream = new java.io.FileOutputStream(new java.io.File(newRoot, entry.getName))
+               while({ len = istream.read(bytes, 0, bytes.size); len != -1 })
+               ostream.write(bytes, 0, len)
+               ostream.close
+               istream.close
+           }
+       }
+   }
    /** look up a path in the first Storage that is applicable and send the content to the reader */
    def get(p : Path) = {
       def getInList(l : List[Storage], p : Path) {l match {
