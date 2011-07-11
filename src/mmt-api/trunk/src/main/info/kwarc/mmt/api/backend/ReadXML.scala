@@ -112,6 +112,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	               readAssignments(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
 	               report.unindent
 	            }
+	         case (_, <rel>{_*}</rel>) => () //ignoring logical relations, produced by Twelf, but not implemented yet
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			     val npath = base ? name
@@ -206,23 +207,24 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
       }
    }
    def readAssignments(link : Morph, base : Path, assignments : NodeSeq) {
-      for (A <- assignments) {
-         val name = Path.parseLocal(xml.attr(A, "name")).toLocalName
-         A match {
+      for (amd <- assignments) {
+         val (a, md) = MetaData.parseMetaDataChild(amd, base) 
+         val name = Path.parseLocal(xml.attr(a, "name")).toLocalName
+         a match {
             case <conass>{t}</conass> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseTerm(t, base)
                val m = new ConstantAssignment(link, name, tg)
-               add(m)
+               add(m, md)
             case <strass>{t}</strass> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseMorphism(t, base)
                val m = new DefLinkAssignment(link, name, tg)
-               add(m)
+               add(m, md)
             case <include>{mor}</include> =>
                val of = Obj.parseMorphism(mor, base)
                log("include of " + of + " found")
-               val f = xml.attr(A, "from")
+               val f = xml.attr(a, "from")
                val from = if (f == "")
                   // this throws Invalid if the domain cannot be inferred
                   // the domain should only be omitted if its domain can be inferred locally, i.e., from the current document
@@ -230,14 +232,14 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                   Morph.domain(of)(controller.library)
                else
                   OMMOD(Path.parseM(f, base))
-               add(new DefLinkAssignment(link, LocalName(IncludeStep(from)), of))
+               add(new DefLinkAssignment(link, LocalName(IncludeStep(from)), of), md)
             case <open/> =>
                log("open for " + name + " found")
-               val as = xml.attr(A, "as") match {case "" => None case a => Some(a)}
+               val as = xml.attr(a, "as") match {case "" => None case a => Some(a)}
                val m = new Open(link, name, as)
-               add(m)
+               add(m, md)
             case scala.xml.Comment(_) =>
-            case _ => throw ParseError("assignment expected: " + A)
+            case _ => throw ParseError("assignment expected: " + a)
          }
       }
    }

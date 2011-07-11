@@ -26,9 +26,9 @@ class ConstantAssignment(val home : Morph, val name : LocalName, val target : Te
    */
 class DefLinkAssignment(val home : Morph, val name : LocalName, val target : Morph) extends Assignment {
    def toNode = name match {
-      case !(IncludeStep(OMMOD(p))) => <dlass from={p.toPath}>{target.toOBJNode}</dlass>
-      case !(IncludeStep(t)) =>        <dlass><from>{t.toOBJNode}</from>{target.toOBJNode}</dlass>
-      case _ =>                     <dlass name={name.flat}>{target.toOBJNode}</dlass>
+      case !(IncludeStep(OMMOD(p))) => <include from={p.toPath}>{target.toOBJNode}</include>
+      case !(IncludeStep(t)) =>        <include><from>{t.toOBJNode}</from>{target.toOBJNode}</include>
+      case _ =>                     <strass name={name.flat}>{target.toOBJNode}</strass>
    }
    override def toString = name + " |-> " + target.toString 
    def components = List(StringLiteral(name.flat), target)

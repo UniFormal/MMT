@@ -43,10 +43,20 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @param m the MPath of the module 
       * @return the File descriptor of the destination  file in the content folder
       */
-    def MMTPathToContentPath(m: MPath) : File =              // TODO: Use narrationBase instead of "NONE"?
-       contentDir / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc")
-    def ContentPathToMMTPath(f: File) : MPath = null 
-        
+    def MMTPathToContentPath(m: MPath) : File = {            // TODO: Use narrationBase instead of "NONE"?
+       val uri = m.parent.uri
+       val schemeString = uri.scheme.map(_ + "..").getOrElse("")
+       contentDir / (schemeString + uri.authority.getOrElse("NONE")) / uri.path / (m.name + ".omdoc")
+    }
+    // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
+    def ContentPathToMMTPath(segs: List[String]) : MPath = segs match {
+       case Nil => throw ImplementationError("")
+       case hd :: tl =>
+          val p = hd.indexOf("..")
+          val tllast = tl.last
+          val name = tllast.substring(0, tllast.length - 6)
+          DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? name  
+    } 
     /** compile source into "compiled" */
     def compile(in : List[String] = Nil) {
         compiler match {
@@ -60,80 +70,19 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               } else if (c.includeFile(inFile.getName)) {
                  try {
                     val outFile = (root / "compiled" / in).setExtension("omdoc")
-                    log("[SRC->NARR] " + inFile + " -> " + outFile)
+                    log("[SRC->COMP] " + inFile + " -> " + outFile)
                     val errors = c.compile(inFile, outFile)
                     files(inFile) = errors
                     if (!errors.isEmpty)
-                        log(errors.mkString("[SRC->NARR] ", "\n[SRC->NARR] ", ""))
+                        log(errors.mkString("[SRC->COMP] ", "\n[SRC->COMP] ", ""))
                  } catch {
                     case e: Error => report(e)
+                    case e => report("error", e.getMessage)
                  }
               }
         }
     }
-/*                // make sure the source folder exists
-                if (!sourceDir.exists) {                                  
-                    log("source to narration: error: no source folder found")
-                    return                                                                                      
-                }
-                // make sure the narration folder exists
-                if (!narrationDir.exists) {
-                    val success : Boolean = narrationDir.mkdir   // create /narration
-                    if (success == false) {
-                        log("source to narration: error: cannot create narration folder")
-                        return
-                    }
-                }
-                // compile the files in the source folder
-                processFolder(sourceDir, srcExtension, srcExclusions, srcFile => {
-                    // relative path of the destination file in the narration folder (with old suffix)
-                    val rel : String = srcFile.toString.substring(sourceDir.toString.length)
-                    // replace suffix srcExtension with narrExtension
-                    val relativePath : String = rel.substring(0, rel.length - srcExtension.length) + narrExtension
-                    // replace the first part of the path of srcfile with narrationDir to get the destination file path
-                    val destfile = narrationDir / relativePath
-                    val destfolder = destfile.getParentFile
-                    // make sure the destination folder exists
-                    if (!destfolder.exists) {
-                        val success : Boolean = destfolder.mkdirs  // create the destination folder (and its parents, if necessary)
-                        if (success == false) {
-                            log("source to narration: error: cannot create a narration subfolder")
-                            return
-                        }
-                    }
-                    // compile the file
-                    val errors : List[CompilerError] = c.compile(srcFile, destfile)
-                    // update 
-                    files.update(destfile, errors)
-                    if (!errors.isEmpty)
-                        log(errors.mkString("[SRC->NARR] ", "\n[SRC->NARR] ", ""))
-                })
-        }*/
-    
-    /** Apply a function on each file in the given folder or its subfolders. 
-      * This only works for physical folders and files on a disk */
-    private def processFolder(f: File, extension: String, exclusions: LinkedHashSet[String], actOn: File => Unit) {
-        if (!f.canRead) return
-        else if (f.isFile) {
-            if (f.getName.endsWith(extension))
-                actOn(f)         // process the file
-        }
-        else if (f.isDirectory && exclusions.forall(_ != f.getName)) {
-            // Get list of children
-            var fileList : Array[File] = null
-            try {
-                fileList = f.listFiles.map(x => File(x))
-            } catch {
-                case e : SecurityException => return
-            }
-            if (fileList == null) 
-                return
-            else
-                // process each child
-                fileList.foreach(child => processFolder(child, extension, exclusions, actOn))
-        }
-    }
-    
+
     /** Generate content and narration from compiled. It uses the files map generated in compile */
     def produceNarrCont(in : List[String] = Nil) {
         val controller = new Controller(NullChecker, report)
@@ -142,12 +91,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            inFile.list foreach {n =>
               if (includeDir(n)) produceNarrCont(in ::: List(n))
            }
-        } else if (inFile.getExtension == "omdoc") {
+        } else if (inFile.getExtension == Some("omdoc")) {
            try {
               val dpath = controller.read(inFile)
               val doc = controller.getDocument(dpath)
               val narrFile = narrationDir / in
-              log("[COMPILED->NARR] " + inFile)
+              log("[COMPILED->CONT+NARR] " + inFile)
               log("[COMPILED->NARR]        -> " + narrFile)
               // write narration file
               narrFile.getParentFile.mkdirs
@@ -156,54 +105,13 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               doc.getModulesResolved(controller.library) foreach writeToContent
            } catch {
               case e: Error => report(e)
+              case e => report("error", e.getMessage)
            }
-           controller.clear
         }
-/*        // make sure the narration folder exists
-        if (!narrationDir.exists) {                                  
-            log("narration to content: error: no narration folder found")
-            return                                                                                      
-        }
-        // make sure the content folder exists
-        if (!contentDir.exists) {
-            val success : Boolean = contentDir.mkdir   // create /content
-            if (success == false) {
-                log("narration to content: error: cannot create content folder")
-                return
-            }
-        }
-        // use a controller that accepts every file, i.e. doesn't check anything
-        // iterate over all narration files, put one theory per file into content folder (subfolder structure according to namespaces)
-        if (files.isEmpty)  // if the files index is empty, run over the narration folder
-            processFolder(narrationDir, narrExtension, narrExclusions, narrFile => {
-                log("[NARR->CONT] " + narrFile.getPath)
-                var doc : DPath = null
-                try {
-                    doc = controller.read(narrFile)
-                    controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
-                } catch {
-                    case e: Error => report(e)
-                }
-                controller.clear
-            })
-        else       // if the filex index exists, use it instead
-            for (narrFile <- files.keySet) {
-                log("[NARR->CONT] " + narrFile.getPath)
-                var doc : DPath = null
-                try {
-                    doc = controller.read(narrFile)
-                    controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
-                } catch {
-                    case e: Error => report(e)
-                }
-                controller.clear
-            }
-  */      
     }
     
     /** Generate relation from content */
     def produceRelational(in : List[String] = Nil, controller: Controller) {
-        val lib = controller.library
         val inFile = root / "content" / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
@@ -211,15 +119,19 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         } else {
            try {
-              val mpath = ContentPathToMMTPath(inFile)
-              lib.getModule(mpath)
-              // open root / "relational" / in
+              val mpath = ContentPathToMMTPath(in)
+              controller.get(mpath)
+              val outFile = (root / "relational" / in).setExtension("rel")
+              log("[CONT->REL] " + inFile + " -> " + outFile)
+              outFile.getParentFile.mkdirs
+              val outFileHandle = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(outFile),"UTF-8"))
               (controller.depstore.getInds ++ controller.depstore.getDeps) foreach {
-                 case d : RelationalElement => if (d.path <= mpath) {} // write (d.toNode) to file 
+                 case d : RelationalElement => if (d.path <= mpath) outFileHandle.write(d.toNode.toString + "\n")
               }
-              // close
+              outFileHandle.close
            } catch {
-              case e: Error => report(e)
+              case e: Error => throw e
+              //case e => report("error", e.getMessage)
            }
         }       
     }
@@ -227,15 +139,10 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     /** Generate presentation from content */
     def producePresentation(controller: Controller, label: String, style: MPath) {}
     
-    /** Get a module from content folder */ 
-    def get(m: MPath) : scala.xml.Node = {
-       utils.xml.readFile(MMTPathToContentPath(m))
-    }
-    
     /** Write a module to content folder */
     def writeToContent(mod: Module) {
        val destfile = MMTPathToContentPath(mod.path)
-       log("[COMPILED->NARR]        -> " + destfile.getPath)
+       log("[COMP->CONT]        -> " + destfile.getPath)
        destfile.getParentFile.mkdirs // make sure the destination folder exists
        val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"> { mod.toNode } </omdoc>
        xml.writeFile(omdocNode, destfile)
@@ -244,7 +151,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     /** Add a file to a MAR file (only used internally by toMar)
       * @throws java.io.IOException */
-    private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte] = new Array(100000)) {
+    private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
         var bytesRead = 0
         val in = new FileInputStream(f)
         out.putNextEntry(new ZipEntry(f.getPath.substring(base.getPath.length + 1)))
@@ -253,22 +160,21 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
             bytesRead = in.read(buffer)
             if (bytesRead != -1)
                 out.write(buffer, 0, bytesRead)
-        }   
+        }
         in.close
     }
       
     
     /** Add a folder to a MAR file (only used internally by toMar). Caution: empty folders are not put in the archive.
       * @throws java.io.IOException */
-    private def addFolderToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte] = new Array(100000)) {
-        val childList = f.listFiles
+    private def addFolderToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
         // if the folder is empty, add a special entry for it
         //if (childList.isEmpty)
         //    out.putNextEntry(new ZipEntry(f.getPath.substring(base.getPath.length + 1)))
-        for (child <- childList) {
-            if (child.isDirectory)
-                addFolderToMar(child, base, out, buffer)
-            else
+        f.listFiles foreach {child =>
+            if (child.isDirectory) {
+                if (includeDir(child.getName)) addFolderToMar(child, base, out, buffer)
+            } else
                 addFileToMar(child, base, out, buffer)
         }
     }
@@ -276,20 +182,26 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     /** Pack everything in a MAR archive. Caution: empty folders are not put in the archive.
       * @param target the target MAR file. Default is <name>.mar in the root folder, where <name> is the name of the root */
     def toMar(target: java.io.File = root / (root.getName + ".mar")) {
+        log("building archive at " + target.getPath)
         val out = new ZipOutputStream(new FileOutputStream(target))
         val buffer = new Array[Byte] (100000)   // 100KB buffer size
         try {
-            for (component <- List("META-INF", "source", "narration", "content", "presentation", "relation"))
-                if ((root/component).canRead)
-                    addFolderToMar(root/component, root, out, buffer)
+            List("META-INF", "source", "narration", "content", "presentation", "relational") foreach {dim =>
+                if ((root/dim).canRead)
+                    addFolderToMar(root/dim, root, out, buffer)
+            }
         } catch {
             case e: java.io.IOException => log("error when packing into a MAR file: " + (if (e.getCause == null) "" else e.getCause))
         }
-        log("Created " + target.getPath)
+        log("done")
         out.close
     }
     
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, narrationDir)
+    /** Get a module from content folder */ 
+    def get(m: MPath) : scala.xml.Node = {
+       utils.xml.readFile(MMTPathToContentPath(m)).child(0)
+    }
     def get(p: Path, reader: Reader) {p match {
        case doc : DPath => narrationBackend.get(doc, reader)  
        case mod : MPath => reader.readModules(utils.mmt.mmtbase, None, get(mod))
