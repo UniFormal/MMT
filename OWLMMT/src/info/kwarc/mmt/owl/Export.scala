@@ -24,6 +24,7 @@ import info.kwarc.mmt.api.utils._
 import scala.collection.immutable.List 
 import uk.ac.manchester.cs.owl.owlapi._
 import scala.collection.JavaConversions._
+import org.semanticweb.owlapi.vocab.OWLFacet
  
 class Export (manager : OWLOntologyManager , controller : Controller) {
     private var ontology : OWLOntology = null
@@ -96,7 +97,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      val filler = classToOWL(args(1))
 	  	      dataFactory.getOWLObjectAllValuesFrom(property, filler)
 	  	 
-         case OMA(OWL2OMS("OWL2QL","objectSomeValuesFrom"),args) =>   
+         case OMA(OWL2OMS("OWL2EL","objectSomeValuesFrom"),args) =>   
 	  	      val property = propertyToOWL(args(0))
 	  	      val filler = classToOWL(args(1))
 	  	      dataFactory.getOWLObjectSomeValuesFrom(property, filler)
@@ -106,7 +107,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      val filler = dataRangeToOWL(args(1))
 	  	      dataFactory.getOWLDataAllValuesFrom(property, filler)
 	  	        
-	  	 case OMA(OWL2OMS("OWL2QL","dataSomeValuesFrom"), args) =>
+	  	 case OMA(OWL2OMS("OWL2EL","dataSomeValuesFrom"), args) =>
 	  	      val property = dataPropertyToOWL(args(0))
 	  	      val filler = dataRangeToOWL(args(1))
 	  	      dataFactory.getOWLDataSomeValuesFrom(property, filler)
@@ -190,7 +191,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	 	  val property = propertyToOWL(args(0))
 	  	 	  dataFactory.getOWLObjectHasSelf(property)
 	  	 	
-         case _ => throw Exception("none of the terms")       
+         case c => throw Exception("unsupported class: " + c)       
 	   }
    }
 
@@ -223,12 +224,14 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
    	   t match {
 		 case OMID(p) =>
    		     val iri : IRI = t match {
-   		    	 case OWLOMS("D1","boolean") => IRI.create("xsd:boolean")
-   		    	 case OWLOMS("D1","double") => IRI.create("xsd:double")
+   		    	 case OWLOMS("D1","boolean") => IRI.create("http://www.w3.org/2001/XMLSchema#boolean")
+   		    	 case OWLOMS("D1","double") => IRI.create("http://www.w3.org/2001/XMLSchema#double")
    		    	 case OWLOMS("D1","float") => IRI.create("http://www.w3.org/2001/XMLSchema#float")
    		    	 case OWLOMS("D1","integer") => IRI.create("http://www.w3.org/2001/XMLSchema#integer")
    		    	 case OWL2OMS("D2","PlainLiteral") => IRI.create("rdf:PlainLiteral")
-   		    	 case OWLOMS("D1","string") => IRI.create("xsd:string")
+   		    	 case OWLOMS("D1","string") => IRI.create("http://www.w3.org/2001/XMLSchema#string")
+   		    	 case OWL2OMS("D2","real") => IRI.create("http://www.w3.org/2002/07/owl#real")
+   		    	 case OWL2OMS("D2","rational") => IRI.create("http://www.w3.org/2002/07/owl#rational")
    		    	 case _ => println("other")
    		    	 globalNameToIRI(p)
    		    	 	
@@ -250,12 +253,16 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	  case OMA(OWL2OMS("OWL2SUB","dataOneOf"), args) =>
 	  	        val argsList = args.map(literalToOWL)
 	  	        dataFactory.getOWLDataOneOf(argsList.toSet)
-	 /*  	        
+	 	        
 	  	  case OMA(OWL2OMS("OWL2SUB","dataTypeRestriction"), args) =>
-	  	        val dataType = dataRangeToOWL(args(0))
-	  	        val argsList =  args.tail.map(facetToOWL)
-	  	        dataFactory.getOWLDatatypeRestriction(dataType :: asJavaSet(argsList.toSet))
-  	 */ 
+	  	        val dataType = dataRangeToOWL(args(0)) match {
+	  	        									   case d : OWLDatatype => d	
+	  	        									   case _ => throw Exception("not a data type")
+	  	        			   }
+	  	        val argsList = args.tail.map(facetToOWL)
+	  	        // argsList.toSet returns one-element set even when argsList has two different elements. Bug? 
+	  	        dataFactory.getOWLDatatypeRestriction(dataType, asJavaSet(argsList.toSet))
+	  	    	  	    
           case _ => throw Exception("none of the data ranges")
    	   }
    }
@@ -264,16 +271,30 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	    t match {
 		case OMF(lt) => dataFactory.getOWLLiteral(lt)
 		case OMI(lt) => dataFactory.getOWLLiteral(lt.toInt)
+		case OMSTR(lt) => dataFactory.getOWLLiteral(lt)
 		//string and others
  	    case _ => throw Exception("none of the literals")
 	    }
 	}
 
    def facetToOWL(t : Term) : OWLFacetRestriction = {
-	   //facets
-	   null
+	   t match {
+	  	 case OMA(OWL2OMS("OWL2SUB", "facetRestriction"), args) =>
+	  	 val facet = args(0) match {
+	  		 case OWL2OMS("OWL2SUB", "minInclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#minInclusive"))
+	  		 case OWL2OMS("OWL2SUB", "maxInclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#maxInclusive"))
+	  		 case OWL2OMS("OWL2SUB", "minExclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#minExclusive"))
+	  		 case OWL2OMS("OWL2SUB", "maxExclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#maxExclusive"))
+	  		 case OWL2OMS("OWL2SUB", "maxLength") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#maxLength"))
+	  		 case OWL2OMS("OWL2SUB", "minLength") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#minLength"))
+	  	 }
+	     val facetValue = literalToOWL(args(1))
+	   	 dataFactory.getOWLFacetRestriction(facet, facetValue) 
+	   	 // case other facets
+	  	 case _ => throw Exception("not a facet restriction")
+	   }
    }
-   
+ 
    def termToInt (t: Term) : Int = {
 	   t match { 
 	  	 case OMI(i) => i.toInt 
@@ -501,7 +522,13 @@ object Export {
 			file.close
 		}
 		
-		val iris : List[IRI] = exporter.documentToOWL(doc)
+		val iris : List[IRI] = try {
+			exporter.documentToOWL(doc)
+		} catch {
+			case e @ Exception(msg) =>
+			  println(msg)
+			  throw e
+		}
 		if (iris.length == 1) {
 			writeToFile(iris.head, target)
 		} else {

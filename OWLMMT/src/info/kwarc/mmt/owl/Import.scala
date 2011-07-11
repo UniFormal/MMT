@@ -15,10 +15,6 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.lf._
-//import java.io.FileNotFoundException
-//import java.io.IOException
-//import java.net.UnknownHostException
-//import java.util.Map 
 import info.kwarc.mmt.api.objects._  //import jomdoc.objects.{Term,OMS,OMI}
 import info.kwarc.mmt.api.utils._
 import scala.collection.immutable.List //
@@ -240,26 +236,31 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 	    else if (lt.isRDFPlainLiteral)	
 	    	    OMSTR(lt.getLiteral())
 	    else  throw Exception("none of the literals")
-	    //literal OMSTR
-	    //datatype attribution to remember which type		 		  
+	     //datatype attribution to remember which type		 		  
 	}
 
 	def facetToLF (f: OWLFacetRestriction) : Term = { null
-		//val arg1 : OWLFacet = f.getFacet()
-		//val arg2 : OWLLiteral = f.getFacetValue()
-		//literalToLF(arg2)
+		val arg1 = f.getFacet()
+		val dec = IRItoLocalName(arg1.getIRI)
+		val arg2 = f.getFacetValue()
+		ApplySpine(OWL2OMS("OWL2SUB", "facetRestriction"), OWL2OMS("OWL2SUB", dec.toString), literalToLF(arg2))
 	}
 	
-/* Buna gerek kalmadi - dataRangeToLF icinde zaten var
-	def dataTypeToLF(d: OWLDatatype) : Term = {
-			CurrOMS(d.getIRI)
-	}
-*/
 	def dataRangeToLF(dr : OWLDataRange ) : Term = {
 		dr match {
 		   case dr : OWLDatatype =>
-			  //dr.getBuiltInDatatype() 
-			    if(dr.isBoolean())             
+		     	if(dr.isBuiltIn()) 
+		     	{ val dt = dr.getBuiltInDatatype()
+		     	  dt.getShortName match {
+		     					  case "real" =>  OWL2OMS("D2",dt.getShortName)
+		     					  case "rational" => OWL2OMS("D2",dt.getShortName)
+		     					  case "xmlLiteral" => OWL2OMS("D2",dt.getShortName)
+		     					  case "plainLiteral" => OWL2OMS("D2",dt.getShortName)
+		     					  case "dateTimeStamp" => OWL2OMS("D2",dt.getShortName)
+		     					  case _ => OWLOMS("D1",dt.getShortName)
+		     	  }
+		     	}	     	
+		        else if(dr.isBoolean())             
 			    		OWLOMS("D1","boolean")
 				else if(dr.isDouble())
 					    OWLOMS("D1","double")
@@ -268,16 +269,13 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 				else if(dr.isInteger())  //dataRange is "integer"
 					    OWLOMS("D1","integer")
 				else if(dr.isRDFPlainLiteral())
-					    OWL2OMS("D2","PlainLiteral")
+					    OWL2OMS("D2","PlainLiteral") //RDFPlainLiteral
 				else if(dr.isString())
 					    OWLOMS("D1","string") 
 				else 
-					CurrOMS(dr.getIRI)	
-					 //throw Exception("none of the data types")
-			
-			    
-				 //CurrOMS(dr.getIRI) buna gerek kalmadi?
-			
+					CurrOMS(dr.getIRI)	// userdefined datatypes
+			   //throw Exception("none of the data types")
+						
 		   case dr : OWLNaryDataRange => 
 			 	val (sig,dec) = dr match {
 			 				 case dr : OWLDataIntersectionOf => ("OWL2SUB","dataIntersectionOf")
@@ -297,7 +295,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 		   case dr : OWLDatatypeRestriction =>  //xsd:integer xsd:minInclusive "5"^^xsd:integer xsd:maxExclusive "10"^^xsd:integer 
 		    	val arg1 = dr.getDatatype
 		    	val args = dr.getFacetRestrictions.map(facetToLF)
-		    	ApplySpine (OWL2OMS("OWL2SUB","dataTypeRestriction"),  dataRangeToLF(arg1) :: args.toList : _*)
+		    	ApplySpine (OWL2OMS("OWL2SUB","dataTypeRestriction"),  dataRangeToLF(arg1):: args.toList : _*)
 		   }
 	}
 		
