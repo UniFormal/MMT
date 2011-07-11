@@ -68,6 +68,7 @@ catalog = new info.kwarc.mmt.lf.Catalog(locations: HashSet[String] = new HashSet
                                         exclusions: HashSet[String] = new HashSet(".svn"), 
                                         port: Int = 8080, 
                                         searchPort: Boolean = false,
+                                        log: String => Unit = println,
                                         crawlingInterval: Int = 5, 
                                         deletingInterval: Int = 17)
 catalog.init      // throws PortUnavailable if the port is in use

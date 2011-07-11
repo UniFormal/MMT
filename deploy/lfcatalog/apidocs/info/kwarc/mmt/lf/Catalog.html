@@ -72,13 +72,13 @@
       <span class="symbol">
         <span class="name">Catalog</span>
         
-        <span class="params">(<span name="locationsParam">locationsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="inclusionsParam">inclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="exclusionsParam">exclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="port">port: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="searchPort">searchPort: <span class="extype" name="scala.Boolean">Boolean</span> =<span class="symbol"></span></span>, <span name="crawlingInterval">crawlingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="deletingInterval">deletingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>)</span>
+        <span class="params">(<span name="locationsParam">locationsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="inclusionsParam">inclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="exclusionsParam">exclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="port">port: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="searchPort">searchPort: <span class="extype" name="scala.Boolean">Boolean</span> =<span class="symbol"></span></span>, <span name="log">log: (String) ⇒ <span class="extype" name="scala.Unit">Unit</span> =<span class="symbol">}</span></span>, <span name="crawlingInterval">crawlingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="deletingInterval">deletingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>)</span>
         
       </span>
       </h4>
       
             <p class="shortcomment cmt"></p>
-            <div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">locationsParam</dt><dd class="cmt"><p>set of disk locations to scan, given as strings</p></dd><dt class="param">inclusionsParam</dt><dd class="cmt"><p>set of inclusion patterns, given as strings. Default value is *.elf</p></dd><dt class="param">exclusionsParam</dt><dd class="cmt"><p>set of exclusion patterns, given as strings. Default value is .svn</p></dd><dt class="param">port</dt><dd class="cmt"><p>port on which the server runs. Default value is 8080</p></dd><dt class="param">searchPort</dt><dd class="cmt"><p>specifies whether the catalog should search for available ports incrementally if the specified port is not available</p></dd><dt class="param">crawlingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic crawls. Default value is 5 sec</p></dd><dt class="param">deletingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
+            <div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">locationsParam</dt><dd class="cmt"><p>set of disk locations to scan, given as strings</p></dd><dt class="param">inclusionsParam</dt><dd class="cmt"><p>set of inclusion patterns, given as strings. Default value is *.elf</p></dd><dt class="param">exclusionsParam</dt><dd class="cmt"><p>set of exclusion patterns, given as strings. Default value is .svn</p></dd><dt class="param">port</dt><dd class="cmt"><p>port on which the server runs. Default value is 8080</p></dd><dt class="param">searchPort</dt><dd class="cmt"><p>specifies whether the catalog should search for available ports incrementally if the specified port is not available</p></dd><dt class="param">log</dt><dd class="cmt"><p>: String =&gt; Unit the function used for logging. Default is a function that logs to stdout</p></dd><dt class="param">crawlingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic crawls. Default value is 5 sec</p></dd><dt class="param">deletingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
 </p></dd></dl>
             
             
@@ -902,6 +902,25 @@ possible to check whether the contents of the list are of the requested typed.
       
             <p class="shortcomment cmt">set of disk locations to scan, given as strings</p>
             <div class="fullcomment"><div class="comment cmt"><p>set of disk locations to scan, given as strings</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#log">
+      <a id="log:(String) ⇒ Unit"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol">
+        <span class="name">log</span>
+        
+        
+        <span class="result">: (String) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">: String =&gt; Unit the function used for logging.</p>
+            <div class="fullcomment"><div class="comment cmt"><p>: String =&gt; Unit the function used for logging. Default is a function that logs to stdout</p></div>
             
             
             

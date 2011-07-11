@@ -28,6 +28,7 @@ object Catalog {
   * @param exclusionsParam set of exclusion patterns, given as strings. Default value is .svn
   * @param port port on which the server runs. Default value is 8080
   * @param searchPort specifies whether the catalog should search for available ports incrementally if the specified port is not available
+  * @param log : String => Unit the function used for logging. Default is a function that logs to stdout
   * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 5 sec
   * @param deletingInterval interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
   */
@@ -36,6 +37,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
                val exclusionsParam: HashSet[String] = HashSet(".svn"), 
                var port: Int = 8080, 
                val searchPort: Boolean = false,
+               val log: String => Unit = println,
                val crawlingInterval: Int = 5, 
                val deletingInterval: Int = 17) {
   import Catalog._
@@ -114,12 +116,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
           try {
               addStringLocation(l)
           } catch {
-              case InexistentLocation(msg) => println(msg)
+              case InexistentLocation(msg) => log(msg)
           }
       
       // start the web server (different threads)
       server.start
-      println("go to: http://127.0.0.1:" + port)
+      log("go to: http://127.0.0.1:" + port)
       return port
   }
   
@@ -229,14 +231,14 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
           val url = namedBlock.url
           val fileUrl = url.getPath
           val pos = namedBlock.pos
-          //println(Time + "position: " + pos)
+          //log(Time + "position: " + pos)
           val doc = new File(fileUrl)
           if (!doc.canRead)
             throw FileOpenError("error: file cannot be opened")
           try {
             val source = scala.io.Source.fromFile(doc, "utf-8")
             val lines = source.getLines.toArray.slice(pos._1._1, pos._2._1 + 1)      // get the desired lines from the file
-            //println(Time + lines.mkString("\n"))
+            //log(Time + lines.mkString("\n"))
             source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
             return lines.mkString("\n").drop(pos._1._2).dropRight(lines.last.length - pos._2._2 - 1)
           } catch {
@@ -378,7 +380,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     try {
       out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile),"UTF8"));
     } catch {
-      case e => { println(Time + outFile + ": error: cannot write to file"); System.exit(3) }
+      case e => { log(Time + outFile + ": error: cannot write to file"); System.exit(3) }
     }
     out.write(toWrite)
     out.close
@@ -391,9 +393,9 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   /** Add an inclusion pattern to the storage */
   def addInclusion(pattern : String) {
     if (pattern == "")
-      println(Time + "error: empty inclusion patern")
+      log(Time + "error: empty inclusion patern")
     else {
-      println(Time + "New inclusion pattern: " + pattern)
+      log(Time + "New inclusion pattern: " + pattern)
       inclusions += pattern
       processedInclusions += quotePattern(pattern)
     }
@@ -403,9 +405,9 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   /** Add an exclusion pattern to the storage */
   def addExclusion(pattern : String) {
     if (pattern == "")
-      println(Time + "error: empty exclusion patern")
+      log(Time + "error: empty exclusion patern")
     else {
-      println(Time + "New exclusion pattern: " + pattern)
+      log(Time + "New exclusion pattern: " + pattern)
       exclusions += pattern
       processedExclusions += quotePattern(pattern)
     }
@@ -425,19 +427,19 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     val path : String = getPath(location)
     
     if (!isLegalLocation(location.getName, location.isDirectory))
-      println(Time + getOriginalPath(location) + ": warning: location is ignored because it does not match the given patterns")
+      log(Time + getOriginalPath(location) + ": warning: location is ignored because it does not match the given patterns")
     else {
       // Check whether the location is already watched via an ancestor
       if (locations.exists(f => path.startsWith(getPath(f))))
-        println(Time + "Location already watched: " + getOriginalPath(location))
+        log(Time + "Location already watched: " + getOriginalPath(location))
       else {
-        println(Time + "New location: " + getOriginalPath(location))
+        log(Time + "New location: " + getOriginalPath(location))
         // Delete descendants from the watch list
         for (f <- locations)
           if (getPath(f).startsWith(path)) {
-            println(Time + "Location deleted: " + getOriginalPath(f))
+            log(Time + "Location deleted: " + getOriginalPath(f))
             locations -= f
-            println(Time + getOriginalPath(f) + ": uncrawling...")
+            log(Time + getOriginalPath(f) + ": uncrawling...")
             uncrawl(getPath(f))
           }
         locations += location
@@ -458,7 +460,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     if (locations contains location) {
         locations -= location
         uncrawl(getPath(location))
-        println(Time + "Location deleted: " + getOriginalPath(location))
+        log(Time + "Location deleted: " + getOriginalPath(location))
     }
     else throw InexistentLocation(getOriginalPath(location) + ": error: location is not in the watch list, hence it cannot be deleted")
   }
@@ -509,7 +511,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     * @param location the file or folder descriptor */
   def crawl(location: File) { ConflictGuard.synchronized { 
     if (!location.canRead) {
-      println(Time + getOriginalPath(location) + ": error: file/folder does not exist or cannot be read")
+      log(Time + getOriginalPath(location) + ": error: file/folder does not exist or cannot be read")
       return
     }
     val locationName = location.getName    // name without the path
@@ -524,12 +526,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
             fileList = location.listFiles()
           } catch {
             case e : SecurityException => { 
-              println(Time + getOriginalPath(location) + ": error: folder cannot be read")
+              log(Time + getOriginalPath(location) + ": error: folder cannot be read")
               return
             }
           }
           if (fileList == null) {
-            println(Time + getOriginalPath(location) + ": error: folder cannot be read")
+            log(Time + getOriginalPath(location) + ": error: folder cannot be read")
             return
           }
           
@@ -545,7 +547,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
         if (location.lastModified == urlToDocument(path).lastModified)
           return    // the file was NOT modified after the last crawl
         else {           // remove the file from the hashes first
-          println(Time + getOriginalPath(location) + ": uncrawling...")
+          log(Time + getOriginalPath(location) + ": uncrawling...")
           uncrawl(path.toString)
         }
       }
@@ -604,13 +606,13 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
          
           // Print the parsing errors; if there are none, print "OK"
           if (document.errors.isEmpty)
-                println(Time + getOriginalPath(location) + ": OK")
+                log(Time + getOriginalPath(location) + ": OK")
           else
-                document.errors.foreach(println)
+                document.errors.foreach(e => log(e.toString))
         } catch {
-          case FileOpenError(s) => println(Time + getOriginalPath(location) + ":" + s)
-          case CatalogError(s) => println(Time + getOriginalPath(location) + ":" + s)
-          //case e : Exception => println(Time + getOriginalPath(location) + ": error: " + e)
+          case FileOpenError(s) => log(Time + getOriginalPath(location) + ":" + s)
+          case CatalogError(s) => log(Time + getOriginalPath(location) + ":" + s)
+          //case e : Exception => log(Time + getOriginalPath(location) + ": error: " + e)
         }
       }
     }
@@ -662,7 +664,7 @@ class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) exte
       for (url <- catalog.urlToDocument.keySet) {
         val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
         if (!file.exists) {
-          println(Time + Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
+          catalog.log(Time + Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
           catalog.uncrawl(url.toString)
         }
       }
