@@ -57,6 +57,7 @@ class Twelf(path : File) extends Compiler {
      * @param out the output (generated OMDoc file)
      */
    def compile(in: File, out: File) : List[CompilerError] = {
+      File(out.getParent()).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
       val proc = procBuilder.start()
@@ -80,7 +81,10 @@ class Twelf(path : File) extends Compiler {
             else (false, 0, false)
          if (treat) {
             val r = Twelf.parseRegion(line.substring(0, line.length - dropChars))
-            val msg = List(output.readLine) //TODO should read multi-line message
+            var msg : List[String] = Nil
+            do {
+               msg ::= output.readLine
+            } while (! msg.head.startsWith("%%"))
             errors ::= CompilerError(r, msg, warning)
          }
       }

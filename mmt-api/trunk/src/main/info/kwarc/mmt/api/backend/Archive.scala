@@ -45,7 +45,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     val narrExtension = ".omdoc"
     /** which folder names in the narration folder to exclude */
     val narrExclusions = LinkedHashSet(".svn")
-    
+    def includeDir(n: String) = n != ".svn"
+
     /** Report a message using the given report handler */
     def log(msg: => String) = report("archive", msg)
 
@@ -55,13 +56,33 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       */
     def MMTPathToContentPath(m: MPath) : java.io.File =              // TODO: Use narrationBase instead of "NONE"?
        contentDir / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + narrExtension)
+    def ContentPathToMMTPath(f: File) : MPath = null //TODO
     
-    /** Generate narration from source */
-    def sourceToNarr(in : List[String] = Nil) {
+    /** compile source into "compiled" */
+    def compile(in : List[String] = Nil) {
         compiler match {
             case None => throw CompilationError("no compiler defined")
             case Some(c) => 
-                // make sure the source folder exists
+              val inFile = root / "source" / in
+              if (inFile.isDirectory) {
+                 inFile.list foreach {n =>
+                    if (includeDir(n)) compile(in ::: List(n))
+                 }
+              } else {
+                 try {
+                    val outFile = root / "compiled" / in
+                    log("[SRC->NARR] " + inFile + " -> " + outFile)
+                    val errors = c.compile(inFile, outFile)
+                    files(inFile) = errors
+                    if (!errors.isEmpty)
+                        log(errors.mkString("[SRC->NARR] ", "\n[SRC->NARR] ", ""))
+                 } catch {
+                    case e: Error => report(e)
+                 }
+              }
+        }
+    }
+/*                // make sure the source folder exists
                 if (!sourceDir.exists) {                                  
                     log("source to narration: error: no source folder found")
                     return                                                                                      
@@ -93,14 +114,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                     }
                     // compile the file
                     val errors : List[CompilerError] = c.compile(srcFile, destfile)
-                    log("[SRC->NARR] " + srcFile + " -> " + destfile)
                     // update 
                     files.update(destfile, errors)
                     if (!errors.isEmpty)
                         log(errors.mkString("[SRC->NARR] ", "\n[SRC->NARR] ", ""))
                 })
-        }
-    }
+        }*/
     
     /** Apply a function on each file in the given folder or its subfolders. 
       * This only works for physical folders and files on a disk */
@@ -127,17 +146,19 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
     
     /** Generate content from narration. It uses the files map generated in srcToNarr */
-    def narrToCont(in : List[String] = Nil) {
+    def produceNarrCont(in : List[String] = Nil) {
         val controller = new Controller(NullChecker, report)
-        val inFile = narrationDir / in
+        val inFile = root / "compiled" / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
-              if (n != ".svn") narrToCont(in ::: List(n))
+              if (includeDir(n)) produceNarrCont(in ::: List(n))
            }
         } else {
            try {
-              val doc = controller.read(inFile)
-              controller.getDocument(doc).getModulesResolved(controller.library) foreach writeToContent
+              val dpath = controller.read(inFile)
+              val doc = controller.getDocument(dpath)
+              doc.getModulesResolved(controller.library) foreach writeToContent
+              //narration = write doc.toNode to file root / "narration" / in TODO
            } catch {
               case e: Error => report(e)
            }
@@ -186,10 +207,30 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
     
     /** Generate relation from content */
-    def contToRel(controller: Controller) {}
+    def produceRelational(in : List[String] = Nil, controller: Controller) {
+        val lib = controller.library
+        val inFile = root / "content" / in
+        if (inFile.isDirectory) {
+           inFile.list foreach {n =>
+              if (includeDir(n)) produceRelational(in ::: List(n), controller)
+           }
+        } else {
+           try {
+              val mpath = ContentPathToMMTPath(inFile)
+              lib.getModule(mpath)
+              // open root / "relational" / in
+              (controller.depstore.getInds ++ controller.depstore.getDeps) foreach {
+                 case d : RelationalElement => if (d.path <= mpath) {} // write (d.toNode) to file 
+              }
+              // close
+           } catch {
+              case e: Error => report(e)
+           }
+        }       
+    }
     
     /** Generate presentation from content */
-    def contToPres(controller: Controller, label: String, style: MPath) {}
+    def producePresentation(controller: Controller, label: String, style: MPath) {}
     
     /** Get a module from content folder */ 
     def get(m: MPath) : scala.xml.Node = {
@@ -268,7 +309,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }}
 }
 
-
+/*
 object ArchiveTest {
     def main(args: Array[String]) {
     val controller = new Controller(NullChecker, new ConsoleReport)
@@ -282,4 +323,4 @@ object ArchiveTest {
     archive.toMar()
     controller.cleanup
     }
-}
+}*/
