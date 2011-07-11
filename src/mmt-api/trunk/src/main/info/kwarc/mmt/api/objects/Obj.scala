@@ -262,6 +262,7 @@ case class OMI(value : BigInt) extends OMLiteral {
 }
 case class OMF(value : Double) extends OMLiteral {
    def tag = "OMF"
+   override def toNodeID(pos : Position) = <om:OMF dec={value.toString}/> % pos.toIDAttr
 }
 case class OMSTR(value : String) extends OMLiteral {
    def tag = "OMSTR"
