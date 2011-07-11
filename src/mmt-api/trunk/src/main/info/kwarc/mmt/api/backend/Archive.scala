@@ -14,8 +14,6 @@ import scala.collection.mutable._
 
 case class CompilationError(s: String) extends Exception(s)
 
-// source can miss, narration is always there
-
 /** MAR archive management
   * @param root the root folder that contains the source folder
   * @param properties 
@@ -26,26 +24,16 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     private val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
     private val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
     
-    /** set of files in the narration folder, built in sourceToNarr */
+    /** set of files in the compiled folder, built in sourceToNarr */
     private val files = new LinkedHashMap[File, List[CompilerError]]
     
     /** map from module MPaths found in narrToCont to its file in the narration folder */
-    private val modules = new LinkedHashMap[MPath, File]
+    private val modules = new LinkedHashMap[MPath, File]                              
     
-    val sourceDir = root / "source"
+    val narrationDir = root / "narration"
     val contentDir = root / "content"
-    val narrationDir = root / "narration"                                
     
-    // TODO: get these from the Twelf class
-    /** the extension of the source files */
-    val srcExtension = ".elf"
-    /** which folder names in the source folder to exclude */
-    val srcExclusions = LinkedHashSet(".svn")
-    /** the extension of the narration files */
-    val narrExtension = ".omdoc"
-    /** which folder names in the narration folder to exclude */
-    val narrExclusions = LinkedHashSet(".svn")
-    def includeDir(n: String) = n != ".svn"
+    def includeDir(n: String) : Boolean = n != ".svn"
 
     /** Report a message using the given report handler */
     def log(msg: => String) = report("archive", msg)
@@ -54,9 +42,10 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @param m the MPath of the module 
       * @return the File descriptor of the destination  file in the content folder
       */
-    def MMTPathToContentPath(m: MPath) : java.io.File =              // TODO: Use narrationBase instead of "NONE"?
-       contentDir / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + narrExtension)
-    def ContentPathToMMTPath(f: File) : MPath = null //TODO
+    def MMTPathToContentPath(m: MPath) : File =              // TODO: Use narrationBase instead of "NONE"?
+       contentDir / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc")
+    def ContentPathToMMTPath(f: File) : MPath = 
+        
     
     /** compile source into "compiled" */
     def compile(in : List[String] = Nil) {
@@ -68,9 +57,9 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                  inFile.list foreach {n =>
                     if (includeDir(n)) compile(in ::: List(n))
                  }
-              } else {
+              } else if (c.includeFile(inFile)) {
                  try {
-                    val outFile = root / "compiled" / in
+                    val outFile = (root / "compiled" / in).getParent
                     log("[SRC->NARR] " + inFile + " -> " + outFile)
                     val errors = c.compile(inFile, outFile)
                     files(inFile) = errors
@@ -145,7 +134,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
-    /** Generate content from narration. It uses the files map generated in srcToNarr */
+    /** Generate content and narration from . It uses the files map generated in srcToNarr */
     def produceNarrCont(in : List[String] = Nil) {
         val controller = new Controller(NullChecker, report)
         val inFile = root / "compiled" / in
