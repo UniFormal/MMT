@@ -72,13 +72,13 @@
       <span class="symbol">
         <span class="name">Catalog</span>
         
-        <span class="params">(<span name="locationsParam">locationsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="inclusionsParam">inclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="exclusionsParam">exclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="port">port: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="crawlingInterval">crawlingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="deletingInterval">deletingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>)</span>
+        <span class="params">(<span name="locationsParam">locationsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="inclusionsParam">inclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="exclusionsParam">exclusionsParam: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[String] =<span class="symbol"></span></span>, <span name="port">port: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="searchPort">searchPort: <span class="extype" name="scala.Boolean">Boolean</span> =<span class="symbol"></span></span>, <span name="crawlingInterval">crawlingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>, <span name="deletingInterval">deletingInterval: <span class="extype" name="scala.Int">Int</span> =<span class="symbol"></span></span>)</span>
         
       </span>
       </h4>
       
             <p class="shortcomment cmt"></p>
-            <div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">locationsParam</dt><dd class="cmt"><p>set of disk locations to scan, given as strings</p></dd><dt class="param">inclusionsParam</dt><dd class="cmt"><p>set of inclusion patterns, given as strings. Default value is *.elf</p></dd><dt class="param">exclusionsParam</dt><dd class="cmt"><p>set of exclusion patterns, given as strings. Default value is .svn</p></dd><dt class="param">port</dt><dd class="cmt"><p>port on which the server runs. Default value is 8080</p></dd><dt class="param">crawlingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic crawls. Default value is 5 sec</p></dd><dt class="param">deletingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
+            <div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">locationsParam</dt><dd class="cmt"><p>set of disk locations to scan, given as strings</p></dd><dt class="param">inclusionsParam</dt><dd class="cmt"><p>set of inclusion patterns, given as strings. Default value is *.elf</p></dd><dt class="param">exclusionsParam</dt><dd class="cmt"><p>set of exclusion patterns, given as strings. Default value is .svn</p></dd><dt class="param">port</dt><dd class="cmt"><p>port on which the server runs. Default value is 8080</p></dd><dt class="param">searchPort</dt><dd class="cmt"><p>specifies whether the catalog should search for available ports incrementally if the specified port is not available</p></dd><dt class="param">crawlingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic crawls. Default value is 5 sec</p></dd><dt class="param">deletingInterval</dt><dd class="cmt"><p>interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
 </p></dd></dl>
             
             
@@ -825,19 +825,19 @@ to verify that the behavior is consistent with the <code>equals</code> method.
           </div>
           
     </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#init">
-      <a id="init:Unit"></a>
+      <a id="init:Int"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol">
         <span class="name">init</span>
         
         
-        <span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
       
             <p class="shortcomment cmt">Start the web server, background threads, add given patterns &amp; locations</p>
-            <div class="fullcomment"><div class="comment cmt"><p>Start the web server, background threads, add given patterns &amp; locations</p></div>
+            <div class="fullcomment"><div class="comment cmt"><p>Start the web server, background threads, add given patterns &amp; locations</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the port number, which can be different from the port specified in the constructor</p></dd></dl>
             
             
             
@@ -980,7 +980,7 @@ possible to check whether the contents of the list are of the requested typed.
     </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#port">
       <a id="port:Int"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
+      <span class="kind">var</span>
       <span class="symbol">
         <span class="name">port</span>
         
@@ -1010,6 +1010,25 @@ possible to check whether the contents of the list are of the requested typed.
       
             <p class="shortcomment cmt">The URI for querying the catalog with getText</p>
             <div class="fullcomment"><div class="comment cmt"><p>The URI for querying the catalog with getText</p></div>
+            
+            
+            
+          </div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.lf.Catalog#searchPort">
+      <a id="searchPort:Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol">
+        <span class="name">searchPort</span>
+        
+        
+        <span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+            <p class="shortcomment cmt">specifies whether the catalog should search for available ports incrementally if the specified port is not available</p>
+            <div class="fullcomment"><div class="comment cmt"><p>specifies whether the catalog should search for available ports incrementally if the specified port is not available</p></div>
             
             
             
