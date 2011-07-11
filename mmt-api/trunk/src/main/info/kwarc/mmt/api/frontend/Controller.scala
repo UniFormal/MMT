@@ -147,7 +147,6 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
-	      case AddArchive(f) => backend.openArchive(f)
 	      case AddTwelf(f) =>
             val c = new lf.Twelf(File(f))
             backend.addCompiler(c)
@@ -157,6 +156,16 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
 	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
+         case AddArchive(f) => backend.openArchive(f)
+         case ArchiveBuild(id, dim, in) =>
+            val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+            dim match {
+               case "narration" => arch.sourceToNarr(in)
+               case "content" => arch.narrToCont(in)
+            }
+         case ArchiveMar(id, file) =>
+            val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
+            arch.toMar(file)
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)

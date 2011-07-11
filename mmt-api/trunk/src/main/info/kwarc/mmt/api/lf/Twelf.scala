@@ -6,7 +6,6 @@ import utils.FileConversion._
 import info.kwarc.mmt.lf._
 
 import java.io._
-
 import scala.collection.mutable.HashSet
 
 /** helper methods for Twelf */
