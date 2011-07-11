@@ -8,7 +8,12 @@ import utils.File
 abstract class Compiler {
    /** true if this compiler can compile a certain kind of source files */
    def isApplicable(src : String): Boolean
-   /** the compilation method */
+   /** source files that the compiler is able to process */
+   def includeFile(n: String) : Boolean = true
+   /** the compilation method
+     * @param in the input file 
+     * @param the folder in which to put the output file(s)
+     */
    def compile(in: File, out: File) : List[CompilerError]
    /** initialization (empty by default) */
    def init {}
