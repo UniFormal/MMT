@@ -31,7 +31,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   // Read jar://resources/admin.html
   Option(getClass.getResourceAsStream("/resources/admin.html")) match {
     case None => 
-      println("warning: /resources/admin.html inside JAR does not exist")   // ignore if not found
+      catalog.log("warning: /resources/admin.html inside JAR does not exist")   // ignore if not found
     case Some(adminFile) =>
       var source : scala.io.BufferedSource = null
       try {
@@ -39,7 +39,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
         adminHtml = Option(scala.xml.parsing.XhtmlParser(source).head.asInstanceOf[scala.xml.Elem])
       } catch {
         case _ =>
-          println("critical error: /resources/admin.html inside JAR contains malformed XML")   // this should never happen
+          catalog.log("critical error: /resources/admin.html inside JAR contains malformed XML")   // this should never happen
           exit(1)
       } finally {
           source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
@@ -49,7 +49,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   // Read jar://resources/readme.txt
   Option(getClass.getResourceAsStream("/resources/readme.txt")) match {
     case None => 
-      println("warning: /resources/readme.txt inside JAR does not exist or cannot be read")   // ignore if not found
+      catalog.log("warning: /resources/readme.txt inside JAR does not exist or cannot be read")   // ignore if not found
     case Some(readmeFile) =>
       var source : scala.io.BufferedSource = null
       try {
@@ -57,7 +57,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
         readmeText = Option(source.getLines.toArray.mkString("\n"))                           
       } catch {
           case e =>
-            println("critical error: /resources/readme.txt inside JAR cannot be opened in the UTF-8 encoding")    // this should never happen
+            catalog.log("critical error: /resources/readme.txt inside JAR cannot be opened in the UTF-8 encoding")    // this should never happen
             exit(1)
       } finally {
           source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
@@ -115,7 +115,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.addStringLocation(java.net.URLDecoder.decode(req.query.substring("addLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => println(Time + msg)
+            case InexistentLocation(msg) => catalog.log(Time + msg)
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
@@ -123,7 +123,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.deleteStringLocation(java.net.URLDecoder.decode(req.query.substring("deleteLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => println(Time + msg)
+            case InexistentLocation(msg) => catalog.log(Time + msg)
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
@@ -287,7 +287,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
       }
       case _        => Some(TextResponse("Invalid path: " + req.uriPath, None))
     }
-    println("")
+    catalog.log("")
     response
     }
   }
@@ -309,10 +309,10 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
       if (header.isDefined) {
           val headerTag = header.get._1
           val headerContent = header.get._2
-          //println(Time + headerTag + ": " + headerContent)
+          //catalog.log(Time + headerTag + ": " + headerContent)
           tk.setHeader(headerTag, headerContent)
       }
-      //println(Time + text)
+      //catalog.log(Time + text)
       tk.write(out)
         .close
     }
