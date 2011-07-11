@@ -134,7 +134,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
-    /** Generate content and narration from . It uses the files map generated in srcToNarr */
+    /** Generate content and narration from compiled. It uses the files map generated in compile */
     def produceNarrCont(in : List[String] = Nil) {
         val controller = new Controller(NullChecker, report)
         val inFile = root / "compiled" / in
@@ -142,16 +142,22 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            inFile.list foreach {n =>
               if (includeDir(n)) produceNarrCont(in ::: List(n))
            }
-        } else {
+        } else if (inFile.getExtension == "omdoc") {
            try {
               val dpath = controller.read(inFile)
               val doc = controller.getDocument(dpath)
+              val narrFile = narrationDir / in
+              log("[COMPILED->NARR] " + inFile)
+              log("[COMPILED->NARR]        -> " + narrFile)
+              // write narration file
+              narrFile.getParentFile.mkdirs
+              xml.writeFile(doc.toNode, narrFile)
+              // write content files
               doc.getModulesResolved(controller.library) foreach writeToContent
-              //narration = write doc.toNode to file root / "narration" / in TODO
            } catch {
               case e: Error => report(e)
            }
-           // controller.clear
+           controller.clear
         }
 /*        // make sure the narration folder exists
         if (!narrationDir.exists) {                                  
@@ -229,17 +235,10 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     /** Write a module to content folder */
     def writeToContent(mod: Module) {
        val destfile = MMTPathToContentPath(mod.path)
-       log("[NARR->CONT]        -> " + destfile.getPath)
-       val destfolder = destfile.getParentFile
-       // make sure the destination folder exists
-       if (!destfolder.exists) {
-           val success : Boolean = destfolder.mkdirs  // create the destination folder (and its parents, if necessary)
-           if (success == false) {
-               log("narration to content: error: cannot create a content subfolder")
-               return
-           }
-       }
-       xml.writeFile(mod.toNode, destfile)
+       log("[COMPILED->NARR]        -> " + destfile.getPath)
+       destfile.getParentFile.mkdirs // make sure the destination folder exists
+       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"> { mod.toNode } </omdoc>
+       xml.writeFile(omdocNode, destfile)
     }
     
     
