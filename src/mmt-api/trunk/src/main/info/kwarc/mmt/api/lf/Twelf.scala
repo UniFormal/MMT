@@ -25,14 +25,14 @@ object Twelf {
 class Twelf(path : File) extends Compiler {
    def isApplicable(src: String) = src == "twelf"
    
-   def includeFile(n: String) : Boolean = n.endsWith(".elf")
+   override def includeFile(n: String) : Boolean = n.endsWith(".elf")
    
    /** Twelf setting "set unsafe ..." */
    var unsafe : Boolean = true
    /** Twelf setting "set chatter ..." */
    var chatter : Int = 5
    var catalogOpt : Option[Catalog] = None
-   var port = 8081
+   var port = 8083
    
    /** creates and intializes a Catalog
      */
@@ -56,10 +56,10 @@ class Twelf(path : File) extends Compiler {
    /** 
      * Compile a Twelf file to OMDoc
      * @param in the input Twelf file 
-     * @param out the folder in which to put the generated OMDOC file
+     * @param out the file in which to put the generated OMDOC file
      */
    def compile(in: File, out: File) : List[CompilerError] = {
-      out.mkdirs
+      File(out.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
       val proc = procBuilder.start()
@@ -71,7 +71,7 @@ class Twelf(path : File) extends Compiler {
          input.println("set catalog " + cat.queryURI)
       }
       input.println("loadFile " + in)
-      input.println("Print.OMDoc.printDoc " + in + " " + out / in.setExtension(".omdoc").getName)
+      input.println("Print.OMDoc.printDoc " + in + " " + out)
       input.println("OS.exit")
       var line : String = null
       var errors : List[CompilerError] = Nil
@@ -87,7 +87,7 @@ class Twelf(path : File) extends Compiler {
             do {
                msg ::= output.readLine
             } while (! msg.head.startsWith("%%"))
-            errors ::= CompilerError(r, msg, warning)
+            errors ::= CompilerError(r, msg.reverse, warning)
          }
       }
       errors.reverse

@@ -32,6 +32,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     val narrationDir = root / "narration"
     val contentDir = root / "content"
+    val sourceDir = root / "source"
     
     def includeDir(n: String) : Boolean = n != ".svn"
 
@@ -44,9 +45,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       */
     def MMTPathToContentPath(m: MPath) : File =              // TODO: Use narrationBase instead of "NONE"?
        contentDir / m.parent.uri.authority.getOrElse("NONE") / m.parent.uri.path / (m.name + ".omdoc")
-    def ContentPathToMMTPath(f: File) : MPath = 
+    def ContentPathToMMTPath(f: File) : MPath = null 
         
-    
     /** compile source into "compiled" */
     def compile(in : List[String] = Nil) {
         compiler match {
@@ -57,9 +57,9 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                  inFile.list foreach {n =>
                     if (includeDir(n)) compile(in ::: List(n))
                  }
-              } else if (c.includeFile(inFile)) {
+              } else if (c.includeFile(inFile.getName)) {
                  try {
-                    val outFile = (root / "compiled" / in).getParent
+                    val outFile = (root / "compiled" / in).setExtension("omdoc")
                     log("[SRC->NARR] " + inFile + " -> " + outFile)
                     val errors = c.compile(inFile, outFile)
                     files(inFile) = errors
