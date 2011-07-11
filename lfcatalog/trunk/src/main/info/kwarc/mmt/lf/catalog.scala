@@ -27,13 +27,15 @@ object Catalog {
   * @param inclusionsParam set of inclusion patterns, given as strings. Default value is *.elf
   * @param exclusionsParam set of exclusion patterns, given as strings. Default value is .svn
   * @param port port on which the server runs. Default value is 8080
+  * @param searchPort specifies whether the catalog should search for available ports incrementally if the specified port is not available
   * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 5 sec
   * @param deletingInterval interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
   */
 class Catalog(val locationsParam: HashSet[String] = HashSet(), 
                val inclusionsParam: HashSet[String] = HashSet("*.elf"), 
                val exclusionsParam: HashSet[String] = HashSet(".svn"), 
-               val port: Int = 8080, 
+               var port: Int = 8080, 
+               val searchPort: Boolean = false,
                val crawlingInterval: Int = 5, 
                val deletingInterval: Int = 17) {
   import Catalog._
@@ -80,11 +82,21 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   
   
   /** Start the web server, background threads, add given patterns & locations
+    * @return the port number, which can be different from the port specified in the constructor
     * @throws PortUnavailable if the web server cannot be started because the specified port is already in use */
-  def init {
+  def init : Int = {
       // check if port is available
       if (isTaken(port))
-        throw PortUnavailable("")
+        if (!searchPort)
+            throw PortUnavailable(port.toString)
+        else {  // look for another open port, incrementally
+            var newPort = port + 1
+            while (isTaken(newPort) && newPort <= port + 100)
+                newPort = newPort + 1
+            if (newPort == port + 101)
+                throw PortUnavailable(port.toString)
+            else port = newPort
+        }
         
       // construct server (it reads the resource pages when constructed)
       server = new WebServer(this, port)
@@ -108,6 +120,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
       // start the web server (different threads)
       server.start
       println("go to: http://127.0.0.1:" + port)
+      return port
   }
   
   

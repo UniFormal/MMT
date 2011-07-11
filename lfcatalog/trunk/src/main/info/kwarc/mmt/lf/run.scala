@@ -53,15 +53,8 @@ object Run {
     if (exclusions.isEmpty) exclusions += ".svn"
     
     // the main storage and controller (this also starts background threads)
-    var catalog = new Catalog(locations, inclusions, exclusions, port)
-    try {
-        catalog.init
-    } catch {
-        case PortUnavailable(s) => {
-            println("error: port " + port + " is already used. Choose a different port number using the --port argument")
-            exit(1)
-        }
-    }
+    var catalog = new Catalog(locations, inclusions, exclusions, port, true)
+    port = catalog.init
     
     // accept console input
     while (true) {
