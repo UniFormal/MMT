@@ -224,17 +224,16 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
    	   t match {
 		 case OMID(p) =>
    		     val iri : IRI = t match {
-   		    	 case OWLOMS("D1","boolean") => IRI.create("http://www.w3.org/2001/XMLSchema#boolean")
-   		    	 case OWLOMS("D1","double") => IRI.create("http://www.w3.org/2001/XMLSchema#double")
-   		    	 case OWLOMS("D1","float") => IRI.create("http://www.w3.org/2001/XMLSchema#float")
-   		    	 case OWLOMS("D1","integer") => IRI.create("http://www.w3.org/2001/XMLSchema#integer")
-   		    	 case OWL2OMS("D2","PlainLiteral") => IRI.create("rdf:PlainLiteral")
-   		    	 case OWLOMS("D1","string") => IRI.create("http://www.w3.org/2001/XMLSchema#string")
+   		    	 case OWLOMS("D1",d1) => IRI.create("http://www.w3.org/2001/XMLSchema#" + d1)
+   		    	  		    	
    		    	 case OWL2OMS("D2","real") => IRI.create("http://www.w3.org/2002/07/owl#real")
    		    	 case OWL2OMS("D2","rational") => IRI.create("http://www.w3.org/2002/07/owl#rational")
-   		    	 case _ => println("other")
-   		    	 globalNameToIRI(p)
-   		    	 	
+   		    	 case OWL2OMS("D2","dateTimeStamp") => IRI.create("http://www.w3.org/2001/XMLSchema#dateTimeStamp" )
+   		    	 case OWL2OMS("D2","xmlLiteral") => IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral" )
+   		    	 case OWL2OMS("D2","plainLiteral") => IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral" )
+   		    	 //PlainLiteral ?
+   		    	 case _ => println("other data types")
+   		    	 		   globalNameToIRI(p)
    		      }
    		     dataFactory.getOWLDatatype(iri)
    		      		   
@@ -273,6 +272,16 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 		case OMI(lt) => dataFactory.getOWLLiteral(lt.toInt)
 		case OMSTR(lt) => dataFactory.getOWLLiteral(lt)
 		//string and others
+		case OMA(OWL2OMS("OWL2SUB","literal"),args) =>
+		val lexicalValue = args(0) match {
+			case OMSTR(s) => s
+			case _ => throw Exception("not a string")
+		}
+		val dataType = dataRangeToOWL(args(1)) match {
+	  	        							   case d : OWLDatatype => d	
+	  	        							   case _ => throw Exception("not a data type")
+		}  
+		dataFactory.getOWLLiteral(lexicalValue, dataType)
  	    case _ => throw Exception("none of the literals")
 	    }
 	}
@@ -281,12 +290,15 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   t match {
 	  	 case OMA(OWL2OMS("OWL2SUB", "facetRestriction"), args) =>
 	  	 val facet = args(0) match {
-	  		 case OWL2OMS("OWL2SUB", "minInclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#minInclusive"))
+	  		 case OWL2OMS("OWL2SUB", f) =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#" + f))
+	  	/*	 case OWL2OMS("OWL2SUB", "minInclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#minInclusive"))
 	  		 case OWL2OMS("OWL2SUB", "maxInclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#maxInclusive"))
 	  		 case OWL2OMS("OWL2SUB", "minExclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#minExclusive"))
 	  		 case OWL2OMS("OWL2SUB", "maxExclusive") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#maxExclusive"))
 	  		 case OWL2OMS("OWL2SUB", "maxLength") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#maxLength"))
 	  		 case OWL2OMS("OWL2SUB", "minLength") =>  OWLFacet.getFacet(IRI.create("http://www.w3.org/2001/XMLSchema#minLength"))
+	  		 
+        */	  		 
 	  	 }
 	     val facetValue = literalToOWL(args(1))
 	   	 dataFactory.getOWLFacetRestriction(facet, facetValue) 
@@ -508,8 +520,8 @@ object Export {
 			val target : File = new File(arg(1))			
 		*/
 		//val file : File = new File("examples\\ex2.owl");
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRange.omdoc")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRangeToOWL.owl") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literalToOWL.owl") 
 		
 		val doc : DPath  = controller.read(source)
 		
