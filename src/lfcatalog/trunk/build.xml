@@ -54,10 +54,14 @@
     </target>
 
     <target name="jar" depends="compile">
+        <manifestclasspath property="build.jar.classpath" jarfile="${build}/${jar}">
+            <classpath path="${scala.dir}/scala-library.jar"/>
+        </manifestclasspath>
+        
         <jar destfile="${build}/${jar}">
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
-                <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar"/>
+                <attribute name="Class-Path" value="${build.jar.classpath}"/>
             </manifest>
             <fileset dir="${build.main}"/>
             <zipfileset dir="${src.main}" prefix="src"/>
@@ -83,29 +87,63 @@
     </target>
 
     <target name="deploy" depends="jar,docs">
+        <!-- Copy apidocs and readme file to ${deploy}/${prj} -->
         <copy todir="${deploy}/${prj}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>
         <copy todir="${deploy}/${prj}">
 			   <fileset file="readme.txt"/>
 		  </copy>
-		  <copy todir="${mmtapi}/lib">
+        
+        <!-- Copy jar to ${deploy}/${prj} and update manifest -->
+        <copy todir="${deploy}/${prj}">
+            <fileset file="${build}/${jar}"/>
+        </copy>
+        <manifestclasspath property="deploy.jar.classpath" jarfile="${deploy}/${prj}/${jar}">
+            <classpath path="${scala.dir}/scala-library.jar"/>
+        </manifestclasspath>
+		  <manifest file="${manifest.tmp}">
+            <attribute name="Main-Class" value="${main.class}"/>
+            <attribute name="Class-Path" value="${deploy.jar.classpath}"/>
+        </manifest>
+        <jar jarfile="${deploy}/${prj}/${jar}" update="true">
+            <fileset file="${manifest.tmp}"/>
+        </jar>
+        
+        <!-- Copy jar to ${mmt.deployfolder} and update manifest -->
+        <copy todir="{mmt.deployfolder}">
+            <fileset file="${build}/${jar}"/>
+        </copy>
+        <manifestclasspath property="mmtdeploy.jar.classpath" jarfile="${mmt.deployfolder}/${jar}">
+            <classpath path="${scala.dir}/scala-library.jar"/>
+            <classpath path="${mmt.deployjar}"/>
+        </manifestclasspath>
+		  <manifest file="${manifest.tmp}">
+            <attribute name="Main-Class" value="${main.class}"/>
+            <attribute name="Class-Path" value="${mmtdeploy.jar.classpath}"/>
+        </manifest>
+        <jar jarfile="${mmt.deployfolder}/${jar}" update="true">
+            <fileset file="${manifest.tmp}"/>
+        </jar>
+        
+        <!-- Copy jar to ${mmt}/lib and update manifest -->
+		  <copy todir="${mmt}/lib">
 			   <fileset file="${build}/${jar}"/>
 		  </copy>
-		  <jar destfile="${deploy}/${prj}/${jar}">
-            <manifest>
-                <attribute name="Main-Class" value="${main.class}"/>
-                <attribute name="Class-Path" value="../lib/scala/scala-library.jar"/>
-            </manifest>
-            <fileset dir="${build.main}"/>
-            <zipfileset dir="${src.main}" prefix="src"/>
-            <zipfileset dir="${src.resources}" prefix="resources"/>
-            <zipfileset src="${tiscaf}" includes="zgs/**/*"/>
-            <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
+		  <manifestclasspath property="mmtbuild.jar.classpath" jarfile="${mmt}/lib/${jar}">
+            <classpath path="${scala.dir}/scala-library.jar"/>
+            <classpath path="${mmt.buildfiles}"/>
+        </manifestclasspath>
+		  <manifest file="${manifest.tmp}">
+            <attribute name="Main-Class" value="${main.class}"/>
+            <attribute name="Class-Path" value="${mmtbuild.jar.classpath}"/>
+        </manifest>
+        <jar jarfile="${mmt}/lib/${jar}" update="true">
+            <fileset file="${manifest.tmp}"/>
         </jar>
-        <copy todir="${deploy}/mmt">
-            <fileset file="${deploy}/${prj}/${jar}"/>
-        </copy>
+        
+        <!-- Cleanup -->
+        <delete dir="${manifest.tmp}">
     </target>
 
     <target name="clean">
