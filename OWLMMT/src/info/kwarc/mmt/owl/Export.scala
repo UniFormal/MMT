@@ -271,19 +271,32 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 		case OMF(lt) => dataFactory.getOWLLiteral(lt)
 		case OMI(lt) => dataFactory.getOWLLiteral(lt.toInt)
 		case OMSTR(lt) => dataFactory.getOWLLiteral(lt)
-		//string and others
+		
 		case OMA(OWL2OMS("OWL2SUB","literal"),args) =>
 		val lexicalValue = args(0) match {
 			case OMSTR(s) => s
 			case _ => throw Exception("not a string")
 		}
+		if(args(1) != null)
+		{ val lang = args(1) match {
+			case OMSTR(s) => s
+			case _ => throw Exception("not a string") 
+			}
+		
+		dataFactory.getOWLLiteral(lexicalValue, lang)
+		}
+	    else
+		{	   
 		val dataType = dataRangeToOWL(args(1)) match {
-	  	        							   case d : OWLDatatype => d	
-	  	        							   case _ => throw Exception("not a data type")
+	  	        							   case dt : OWLDatatype => dt	
+	  	        							   case _  => throw Exception("not a data type")
+	  	        							      		
 		}  
 		dataFactory.getOWLLiteral(lexicalValue, dataType)
+		}
+		
  	    case _ => throw Exception("none of the literals")
-	    }
+		}
 	}
 
    def facetToOWL(t : Term) : OWLFacetRestriction = {
@@ -520,8 +533,8 @@ object Export {
 			val target : File = new File(arg(1))			
 		*/
 		//val file : File = new File("examples\\ex2.owl");
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literalToOWL.owl") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.omdoc")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXMLToOWL.owl") 
 		
 		val doc : DPath  = controller.read(source)
 		

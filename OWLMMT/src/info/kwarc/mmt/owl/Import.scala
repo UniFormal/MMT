@@ -224,17 +224,12 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 	    else if (lt.isInteger()) 
 	    	     OMI(lt.parseInteger())
 	    //else if (lt.isBoolean()) lt.parseBoolean()
-	    /*
 	    else if (lt.isRDFPlainLiteral)
-	    {	if(lt.hasLang)
-	    	{	lt.getLiteral()
-	    		lt.getLang()
-	    	}
-	    	else	OMSTR(lt.getLiteral())
+	    {	 if(lt.hasLang)
+	    		ApplySpine(OWL2OMS("OWL2SUB","literal"), OMSTR(lt.getLiteral), OMSTR(lt.getLang))
+	       	 else	
+	    		ApplySpine(OWL2OMS("OWL2SUB","literal"), OMSTR(lt.getLiteral))
 	    }
-	    */
-	    else if (lt.isRDFPlainLiteral)	
-	    	     OMSTR(lt.getLiteral())
 	    else  
     	 ApplySpine(OWL2OMS("OWL2SUB","literal"), OMSTR(lt.getLiteral), dataRangeToLF(lt.getDatatype))
 	     //throw Exception("none of the literals")
@@ -539,8 +534,11 @@ object Import {
 		*/
 		//val file : File = new File("examples\\ex2.owl");
 		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc") 
+		//val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
+		//val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc") 
+		
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.omdoc")
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
 		println("Loaded ontology: " + ontology)
