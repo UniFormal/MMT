@@ -234,8 +234,10 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 	    }
 	    */
 	    else if (lt.isRDFPlainLiteral)	
-	    	    OMSTR(lt.getLiteral())
-	    else  throw Exception("none of the literals")
+	    	     OMSTR(lt.getLiteral())
+	    else  
+    	 ApplySpine(OWL2OMS("OWL2SUB","literal"), OMSTR(lt.getLiteral), dataRangeToLF(lt.getDatatype))
+	     //throw Exception("none of the literals")
 	     //datatype attribution to remember which type		 		  
 	}
 
@@ -260,7 +262,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 		     					  case _ => OWLOMS("D1",dt.getShortName)
 		     	  }
 		     	}	     	
-		        else if(dr.isBoolean())             
+		 /*     else if(dr.isBoolean())             
 			    		OWLOMS("D1","boolean")
 				else if(dr.isDouble())
 					    OWLOMS("D1","double")
@@ -272,6 +274,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 					    OWL2OMS("D2","PlainLiteral") //RDFPlainLiteral
 				else if(dr.isString())
 					    OWLOMS("D1","string") 
+		 */	    
 				else 
 					CurrOMS(dr.getIRI)	// userdefined datatypes
 			   //throw Exception("none of the data types")
@@ -307,7 +310,8 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 				//println(ax.getAxiomType)
 				val entity : OWLEntity = ax.getEntity
 				val tp : Term = 
-				    if(entity.isBuiltIn())
+				    if(entity.isBuiltIn()) 
+				    //a datatype and the IRI is rdfs:Literal or is in the OWL 2 datatype map or is rdf:PlainLiteral
 				    		OWL2OMS("signame","BuiltIn") // have to extend this
 				    else if(entity.isOWLAnnotationProperty()) // comment
 				    		OWL2OMS("OWL2SUB","annotationProperty") // type , module and name
@@ -535,8 +539,8 @@ object Import {
 		*/
 		//val file : File = new File("examples\\ex2.owl");
 		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRange.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\DataRange\\dataRange.omdoc") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc") 
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
 		println("Loaded ontology: " + ontology)
