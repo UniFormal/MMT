@@ -1,0 +1,187 @@
+<?xml version="1.0"?>
+<Environ aid="ABCMIZ_0">
+<Directive name="Vocabularies" argnr="40">
+<Ident name="HIDDEN" line="1" col="1"/>
+<Ident name="NUMBERS" line="9" col="21"/>
+<Ident name="ZFMISC_1" line="9" col="31"/>
+<Ident name="RELAT_2" line="9" col="40"/>
+<Ident name="REWRITE1" line="9" col="50"/>
+<Ident name="XBOOLE_0" line="9" col="60"/>
+<Ident name="ORDERS_2" line="9" col="70"/>
+<Ident name="PRELAMB" line="10" col="13"/>
+<Ident name="SUBSET_1" line="10" col="23"/>
+<Ident name="IDEAL_1" line="10" col="32"/>
+<Ident name="TARSKI" line="10" col="40"/>
+<Ident name="RELAT_1" line="10" col="49"/>
+<Ident name="STRUCT_0" line="10" col="59"/>
+<Ident name="ARYTM_3" line="10" col="68"/>
+<Ident name="XXREAL_0" line="10" col="78"/>
+<Ident name="WAYBEL_0" line="11" col="14"/>
+<Ident name="LATTICE3" line="11" col="24"/>
+<Ident name="LATTICES" line="11" col="34"/>
+<Ident name="EQREL_1" line="11" col="43"/>
+<Ident name="CARD_FIL" line="11" col="53"/>
+<Ident name="YELLOW_0" line="11" col="63"/>
+<Ident name="ORDINAL2" line="11" col="73"/>
+<Ident name="BINOP_1" line="12" col="13"/>
+<Ident name="FUNCT_1" line="12" col="22"/>
+<Ident name="OPOSET_1" line="12" col="32"/>
+<Ident name="CARD_1" line="12" col="40"/>
+<Ident name="FUNCOP_1" line="12" col="50"/>
+<Ident name="FINSUB_1" line="12" col="60"/>
+<Ident name="YELLOW_1" line="12" col="70"/>
+<Ident name="ARYTM_0" line="13" col="13"/>
+<Ident name="WELLORD2" line="13" col="23"/>
+<Ident name="FINSEQ_1" line="13" col="33"/>
+<Ident name="FUNCT_7" line="13" col="42"/>
+<Ident name="NAT_1" line="13" col="49"/>
+<Ident name="ORDINAL1" line="13" col="59"/>
+<Ident name="ORDINAL4" line="13" col="69"/>
+<Ident name="FINSET_1" line="14" col="14"/>
+<Ident name="FINSEQ_5" line="14" col="24"/>
+<Ident name="ARYTM_1" line="14" col="33"/>
+<Ident name="ABCMIZ_0" line="14" col="43"/>
+</Directive>
+<Directive name="Notations" argnr="34">
+<Ident name="HIDDEN" line="1" col="1"/>
+<Ident name="TARSKI" line="15" col="17"/>
+<Ident name="XBOOLE_0" line="15" col="27"/>
+<Ident name="ZFMISC_1" line="15" col="37"/>
+<Ident name="RELAT_1" line="15" col="46"/>
+<Ident name="RELAT_2" line="15" col="55"/>
+<Ident name="SUBSET_1" line="15" col="65"/>
+<Ident name="ORDINAL1" line="15" col="75"/>
+<Ident name="FINSUB_1" line="16" col="14"/>
+<Ident name="CARD_1" line="16" col="22"/>
+<Ident name="FUNCT_1" line="16" col="31"/>
+<Ident name="RELSET_1" line="16" col="41"/>
+<Ident name="PARTFUN1" line="16" col="51"/>
+<Ident name="FUNCT_2" line="16" col="60"/>
+<Ident name="BINOP_1" line="16" col="69"/>
+<Ident name="FUNCOP_1" line="17" col="14"/>
+<Ident name="FINSET_1" line="17" col="24"/>
+<Ident name="FINSEQ_1" line="17" col="34"/>
+<Ident name="FUNCT_4" line="17" col="43"/>
+<Ident name="ALG_1" line="17" col="50"/>
+<Ident name="FINSEQ_5" line="17" col="60"/>
+<Ident name="NUMBERS" line="17" col="69"/>
+<Ident name="XCMPLX_0" line="18" col="14"/>
+<Ident name="NAT_1" line="18" col="21"/>
+<Ident name="DOMAIN_1" line="18" col="31"/>
+<Ident name="STRUCT_0" line="18" col="41"/>
+<Ident name="ORDERS_2" line="18" col="51"/>
+<Ident name="LATTICE3" line="18" col="61"/>
+<Ident name="REWRITE1" line="18" col="71"/>
+<Ident name="YELLOW_0" line="19" col="14"/>
+<Ident name="WAYBEL_0" line="19" col="24"/>
+<Ident name="YELLOW_1" line="19" col="34"/>
+<Ident name="YELLOW_7" line="19" col="44"/>
+<Ident name="XXREAL_0" line="19" col="54"/>
+</Directive>
+<Directive name="Definitions" argnr="11">
+<Ident name="TARSKI" line="27" col="19"/>
+<Ident name="XBOOLE_0" line="27" col="29"/>
+<Ident name="RELAT_2" line="27" col="38"/>
+<Ident name="FUNCT_1" line="27" col="47"/>
+<Ident name="FINSEQ_1" line="27" col="57"/>
+<Ident name="LATTICE3" line="27" col="67"/>
+<Ident name="REWRITE1" line="27" col="77"/>
+<Ident name="YELLOW_0" line="28" col="14"/>
+<Ident name="WAYBEL_0" line="28" col="24"/>
+<Ident name="STRUCT_0" line="28" col="34"/>
+<Ident name="RELSET_1" line="28" col="44"/>
+</Directive>
+<Directive name="Theorems" argnr="36">
+<Ident name="TARSKI" line="29" col="16"/>
+<Ident name="XBOOLE_0" line="29" col="26"/>
+<Ident name="XBOOLE_1" line="29" col="36"/>
+<Ident name="SUBSET_1" line="29" col="46"/>
+<Ident name="FINSUB_1" line="29" col="56"/>
+<Ident name="NAT_1" line="29" col="63"/>
+<Ident name="FINSEQ_1" line="29" col="73"/>
+<Ident name="CARD_1" line="30" col="12"/>
+<Ident name="TREES_1" line="30" col="21"/>
+<Ident name="FINSEQ_5" line="30" col="31"/>
+<Ident name="FINSEQ_6" line="30" col="41"/>
+<Ident name="RELAT_1" line="30" col="50"/>
+<Ident name="RELSET_1" line="30" col="60"/>
+<Ident name="FUNCT_1" line="30" col="69"/>
+<Ident name="FUNCT_2" line="30" col="78"/>
+<Ident name="FUNCT_4" line="31" col="13"/>
+<Ident name="FUNCOP_1" line="31" col="23"/>
+<Ident name="STRUCT_0" line="31" col="33"/>
+<Ident name="ORDERS_2" line="31" col="43"/>
+<Ident name="LATTICE3" line="31" col="53"/>
+<Ident name="YELLOW_0" line="31" col="63"/>
+<Ident name="WAYBEL_0" line="31" col="73"/>
+<Ident name="YELLOW_1" line="32" col="14"/>
+<Ident name="YELLOW_4" line="32" col="24"/>
+<Ident name="YELLOW_7" line="32" col="34"/>
+<Ident name="WAYBEL_6" line="32" col="44"/>
+<Ident name="WAYBEL_8" line="32" col="54"/>
+<Ident name="ZFMISC_1" line="32" col="64"/>
+<Ident name="FINSEQ_2" line="32" col="74"/>
+<Ident name="FINSEQ_3" line="33" col="14"/>
+<Ident name="HILBERT2" line="33" col="24"/>
+<Ident name="REWRITE1" line="33" col="34"/>
+<Ident name="ORDINAL1" line="33" col="44"/>
+<Ident name="XREAL_1" line="33" col="53"/>
+<Ident name="XXREAL_0" line="33" col="63"/>
+<Ident name="PRE_POLY" line="33" col="73"/>
+</Directive>
+<Directive name="Schemes" argnr="8">
+<Ident name="XBOOLE_0" line="34" col="17"/>
+<Ident name="NAT_1" line="34" col="24"/>
+<Ident name="FUNCT_1" line="34" col="33"/>
+<Ident name="FUNCT_2" line="34" col="42"/>
+<Ident name="RECDEF_1" line="34" col="52"/>
+<Ident name="RELSET_1" line="34" col="62"/>
+<Ident name="ORDERS_1" line="34" col="72"/>
+<Ident name="WELLORD2" line="35" col="14"/>
+</Directive>
+<Directive name="Registrations" argnr="21">
+<Ident name="XBOOLE_0" line="22" col="23"/>
+<Ident name="SUBSET_1" line="22" col="33"/>
+<Ident name="RELAT_1" line="22" col="42"/>
+<Ident name="FUNCT_2" line="22" col="51"/>
+<Ident name="FINSET_1" line="22" col="61"/>
+<Ident name="FINSUB_1" line="22" col="71"/>
+<Ident name="XXREAL_0" line="23" col="14"/>
+<Ident name="XREAL_0" line="23" col="23"/>
+<Ident name="NAT_1" line="23" col="30"/>
+<Ident name="FINSEQ_1" line="23" col="40"/>
+<Ident name="FINSEQ_5" line="23" col="50"/>
+<Ident name="REWRITE1" line="23" col="60"/>
+<Ident name="STRUCT_0" line="23" col="70"/>
+<Ident name="LATTICE3" line="24" col="14"/>
+<Ident name="YELLOW_0" line="24" col="24"/>
+<Ident name="WAYBEL_0" line="24" col="34"/>
+<Ident name="YELLOW_1" line="24" col="44"/>
+<Ident name="YELLOW_7" line="24" col="54"/>
+<Ident name="YELLOW_9" line="24" col="64"/>
+<Ident name="ORDINAL1" line="24" col="74"/>
+<Ident name="CARD_1" line="25" col="12"/>
+</Directive>
+<Directive name="Constructors" argnr="12">
+<Ident name="HIDDEN" line="1" col="1"/>
+<Ident name="FINSUB_1" line="20" col="22"/>
+<Ident name="XXREAL_0" line="20" col="32"/>
+<Ident name="NAT_1" line="20" col="39"/>
+<Ident name="FINSEQ_5" line="20" col="49"/>
+<Ident name="REWRITE1" line="20" col="59"/>
+<Ident name="BORSUK_1" line="20" col="69"/>
+<Ident name="LATTICE3" line="21" col="14"/>
+<Ident name="WAYBEL_0" line="21" col="24"/>
+<Ident name="YELLOW_1" line="21" col="34"/>
+<Ident name="FUNCOP_1" line="21" col="44"/>
+<Ident name="XREAL_0" line="21" col="53"/>
+</Directive>
+<Directive name="Requirements" argnr="6">
+<Ident name="HIDDEN" line="1" col="1"/>
+<Ident name="BOOLE" line="26" col="19"/>
+<Ident name="SUBSET" line="26" col="27"/>
+<Ident name="NUMERALS" line="26" col="37"/>
+<Ident name="REAL" line="26" col="43"/>
+<Ident name="ARITHM" line="26" col="51"/>
+</Directive>
+</Environ>

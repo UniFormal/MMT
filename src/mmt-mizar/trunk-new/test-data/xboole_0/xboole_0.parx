@@ -1,0 +1,5334 @@
+<?xml version="1.0"?>
+<Parser>
+<syBegin line="15" col="5"/>
+<syReserve/>
+<Identifier nr="2"/>
+<Identifier nr="3"/>
+<Identifier nr="4"/>
+<Identifier nr="5"/>
+<Identifier nr="6"/>
+<Identifier nr="7"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="17" col="32"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syScheme line="20" col="12"/>
+<ikFrmPrivPred nr="1"/>
+<Int x="8"/>
+<Pos line="20" col="12"/>
+<ikTrmSchFunc nr="9"/>
+<sySemiColon/>
+<sySemiColon/>
+<syArrow/>
+<Pos line="20" col="24"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikFrmSchPred nr="10"/>
+<sySemiColon/>
+<syThreeDots/>
+<Pos line="20" col="31"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<syRedefine/>
+<Pos line="21" col="32"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="20" col="51"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="21" col="32"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="20" col="70"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="21" col="32"/>
+<syIff/>
+<Pos line="21" col="4"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="21" col="32"/>
+<syAmpersand/>
+<Pos line="21" col="15"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="21" col="17"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="21" col="23"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syProof line="22" col="9"/>
+<syDefpred/>
+<ikFrmPrivPred nr="11"/>
+<syThreeDots/>
+<Pos line="22" col="15"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots/>
+<Pos line="22" col="19"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="22" col="43"/>
+<syAmpersand/>
+<Pos line="22" col="31"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<MMLIdentifier/>
+<Int x="1"/>
+<syThreeDots/>
+<MMLIdentifier/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="22" col="38"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<MMLIdentifier/>
+<Int x="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="1"/>
+<Int x="12"/>
+<Pos line="23" col="2"/>
+<syRedefine/>
+<Pos line="23" col="45"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="23" col="45"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="23" col="45"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="6"/>
+<Pos line="23" col="45"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="6"/>
+<sySemiColon/>
+<Pos line="23" col="45"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="7"/>
+<Pos line="23" col="45"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="7"/>
+<sySemiColon/>
+<Pos line="23" col="45"/>
+<syImplies/>
+<Pos line="23" col="38"/>
+<syAmpersand/>
+<Pos line="23" col="18"/>
+<ikFrmPrivPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="23" col="27"/>
+<ikFrmPrivPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="23" col="42"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="23" col="44"/>
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="24" col="17"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="2"/>
+<Int x="13"/>
+<Pos line="25" col="2"/>
+<syRedefine/>
+<Pos line="25" col="57"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="25" col="57"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="25" col="57"/>
+<syIff/>
+<Pos line="25" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="25" col="57"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="6"/>
+<Pos line="25" col="57"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="6"/>
+<sySemiColon/>
+<Pos line="25" col="57"/>
+<syAmpersand/>
+<Pos line="25" col="39"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="25" col="41"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="25" col="47"/>
+<ikFrmPrivPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syFrom/>
+<Int x="1"/>
+<Int x="1"/>
+<l/>
+<Int x="1"/>
+<Int x="12"/>
+<Pos line="25" col="73"/>
+<sySemiColon/>
+<Pos line="25" col="57"/>
+<syTake line="26" col="8"/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syLet line="27" col="7"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="27" col="8"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="28" col="3"/>
+<syRedefine/>
+<Pos line="28" col="47"/>
+<syIff/>
+<Pos line="28" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="28" col="47"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="6"/>
+<Pos line="28" col="47"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="6"/>
+<sySemiColon/>
+<Pos line="28" col="47"/>
+<syAmpersand/>
+<Pos line="28" col="39"/>
+<syAmpersand/>
+<Pos line="28" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="28" col="27"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="28" col="35"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="28" col="41"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="13"/>
+<Pos line="28" col="50"/>
+<sySemiColon/>
+<Pos line="28" col="47"/>
+<syThus line="29" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="29" col="14"/>
+<syRedefine/>
+<Pos line="29" col="15"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="29" col="14"/>
+<syEnd line="30" col="4"/>
+<DefinitionBlock line="32" col="10">
+<syLet line="33" col="15"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="33" col="14"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikItmDefPrAttr line="34" col="6"/>
+<AttributeSymbol nr="12" line="34" col="17"/>
+<MMLIdentifier nr="1"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="1"/>
+<Int x="14"/>
+<Pos line="35" col="7"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="36" col="31"/>
+<syNot/>
+<Pos line="36" col="31"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="36" col="20"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="36" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<EndPosition line="37" col="3"/>
+</DefinitionBlock>
+<RegistrationBlock line="39" col="12">
+<syCluster line="40" col="20"/>
+<syThreeDots line="40" col="15"/>
+<syDefinition/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="40" col="19"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syCorrectnessCondition nr="4" line="41" col="11"/>
+<Proof line="42" col="7">
+<syDefpred/>
+<ikFrmPrivPred nr="10"/>
+<syThreeDots/>
+<Pos line="43" col="17"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="43" col="39"/>
+<syNot/>
+<Pos line="43" col="39"/>
+<syContradiction/>
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="44" col="15"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="44" col="14"/>
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="3"/>
+<Pos line="45" col="19"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<ikTrmEqConst nr="2"/>
+<Int x="12"/>
+<Pos line="46" col="2"/>
+<syRedefine/>
+<Pos line="46" col="33"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="46" col="33"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="46" col="33"/>
+<syIff/>
+<Pos line="46" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="46" col="33"/>
+<syAmpersand/>
+<Pos line="46" col="19"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="46" col="25"/>
+<ikFrmPrivPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syFrom/>
+<Int x="0"/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="46" col="33"/>
+<syTake line="47" col="10"/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThus line="48" col="12"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="48" col="12"/>
+<syRedefine/>
+<Pos line="48" col="40"/>
+<syNot/>
+<Pos line="48" col="40"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="48" col="27"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="48" col="35"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="12"/>
+<Pos line="48" col="43"/>
+<sySemiColon/>
+<Pos line="48" col="40"/>
+<EndPosition line="49" col="5"/>
+</Proof>
+<EndPosition line="50" col="3"/>
+</RegistrationBlock>
+<DefinitionBlock line="52" col="10">
+<syFunc line="53" col="6"/>
+<LeftFunctorBracketSymbol nr="13" line="53" col="9"/>
+<sySemiColon/>
+<syArrow/>
+<Pos line="53" col="16"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syEquals/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="54" col="5"/>
+<syEquals/>
+<sySemiColon/>
+<o/>
+<ikTrmChoice/>
+<Pos line="54" col="11"/>
+<Pos line="54" col="15"/>
+<syAccording/>
+<syThreeDots line="54" col="11"/>
+<syDefinition/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="54" col="15"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syCorrectnessCondition nr="1" line="55" col="11"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="55" col="11"/>
+<syLet line="56" col="17"/>
+<Q nr="2"/>
+<Identifier nr="2"/>
+<Identifier nr="3"/>
+<Pos line="56" col="16"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syFunc line="57" col="6"/>
+<LeftFunctorBracketSymbol nr="14" line="57" col="11"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<syArrow/>
+<Pos line="57" col="20"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="2"/>
+<Int x="15"/>
+<Pos line="58" col="7"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="59" col="31"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="59" col="31"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="59" col="31"/>
+<syIff/>
+<Pos line="59" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<syIt/>
+<sySemiColon/>
+<Pos line="59" col="31"/>
+<syOr/>
+<Pos line="59" col="18"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="59" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syCorrectnessCondition nr="4" line="60" col="11"/>
+<Proof line="61" col="7">
+<syTake line="62" col="14"/>
+<LeftFunctorBracketSymbol/>
+<Int x="10"/>
+<Pos line="62" col="14"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="62" col="20"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syLet line="63" col="9"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="63" col="10"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<syThus line="64" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="64" col="10"/>
+<syRedefine/>
+<Pos line="65" col="9"/>
+<syImplies/>
+<Pos line="64" col="13"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="10"/>
+<Pos line="64" col="19"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="64" col="25"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="65" col="9"/>
+<syOr/>
+<Pos line="64" col="38"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="64" col="48"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Proof line="65" col="9">
+<syAssume line="66" col="12"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="66" col="14"/>
+<syRedefine/>
+<Pos line="66" col="17"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="10"/>
+<Pos line="66" col="23"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="66" col="29"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="67" col="13"/>
+<syRedefine/>
+<Pos line="67" col="54"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="16"/>
+<Pos line="67" col="26"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="67" col="54"/>
+<syAmpersand/>
+<Pos line="67" col="34"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="67" col="45"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="67" col="51"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<d/>
+<Int x="1"/>
+<Int x="4"/>
+<Pos line="67" col="67"/>
+<sySemiColon/>
+<Pos line="67" col="54"/>
+<syThus line="68" col="18"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="68" col="18"/>
+<syRedefine/>
+<Pos line="68" col="21"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<d/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="68" col="34"/>
+<sySemiColon/>
+<Pos line="68" col="21"/>
+<EndPosition line="69" col="7"/>
+</Proof>
+<syAssume line="70" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="70" col="12"/>
+<syRedefine/>
+<Pos line="70" col="28"/>
+<syOr/>
+<Pos line="70" col="15"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="70" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="16"/>
+<Pos line="71" col="30"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="2"/>
+<Int x="12"/>
+<Pos line="72" col="2"/>
+<syRedefine/>
+<Pos line="72" col="24"/>
+<syOr/>
+<Pos line="72" col="8"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="72" col="18"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="3"/>
+<Int x="13"/>
+<Pos line="73" col="2"/>
+<syRedefine/>
+<Pos line="73" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="73" col="11"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="74" col="6"/>
+<syRedefine/>
+<Pos line="74" col="9"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="74" col="15"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="12"/>
+<Pos line="74" col="21"/>
+<d/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="74" col="34"/>
+<sySemiColon/>
+<Pos line="74" col="18"/>
+<syThus line="75" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="75" col="16"/>
+<syRedefine/>
+<Pos line="75" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="3"/>
+<Int x="13"/>
+<Pos line="75" col="22"/>
+<d/>
+<Int x="1"/>
+<Int x="4"/>
+<Pos line="75" col="35"/>
+<sySemiColon/>
+<Pos line="75" col="19"/>
+<EndPosition line="76" col="5"/>
+</Proof>
+<syCorrectnessCondition nr="5" line="77" col="12"/>
+<Proof line="78" col="7">
+<syLet line="79" col="26"/>
+<Q nr="2"/>
+<Identifier nr="12"/>
+<Identifier nr="13"/>
+<Pos line="79" col="21"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syAssume line="79" col="31"/>
+<ikTrmEqConst nr="2"/>
+<Int x="17"/>
+<Pos line="80" col="2"/>
+<syRedefine/>
+<Pos line="80" col="36"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="80" col="36"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="80" col="36"/>
+<syIff/>
+<Pos line="80" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="80" col="36"/>
+<syOr/>
+<Pos line="80" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="80" col="30"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="3"/>
+<Int x="18"/>
+<Pos line="81" col="2"/>
+<syRedefine/>
+<Pos line="81" col="33"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="81" col="33"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="81" col="33"/>
+<syIff/>
+<Pos line="81" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<Pos line="81" col="33"/>
+<syOr/>
+<Pos line="81" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="81" col="30"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="82" col="7"/>
+<Now line="82" col="7">
+<syLet line="83" col="11"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="83" col="12"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="84" col="7"/>
+<syRedefine/>
+<Pos line="84" col="37"/>
+<syIff/>
+<Pos line="84" col="10"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="84" col="37"/>
+<syOr/>
+<Pos line="84" col="22"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="84" col="32"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="17"/>
+<Pos line="84" col="40"/>
+<sySemiColon/>
+<Pos line="84" col="37"/>
+<syThus line="85" col="13"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="85" col="13"/>
+<syRedefine/>
+<Pos line="85" col="34"/>
+<syIff/>
+<Pos line="85" col="16"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="85" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="3"/>
+<Int x="18"/>
+<Pos line="85" col="37"/>
+<sySemiColon/>
+<Pos line="85" col="34"/>
+<EndPosition line="86" col="7"/>
+</Now>
+<syThus line="87" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="87" col="16"/>
+<syRedefine/>
+<Pos line="87" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="87" col="28"/>
+<sySemiColon/>
+<Pos line="87" col="19"/>
+<EndPosition line="88" col="5"/>
+</Proof>
+<syProperty nr="6" line="89" col="15"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="89" col="15"/>
+<syProperty nr="9" line="90" col="13"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="90" col="13"/>
+<syFunc line="91" col="6"/>
+<LeftFunctorBracketSymbol nr="15" line="91" col="11"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<syArrow/>
+<Pos line="91" col="20"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="3"/>
+<Int x="19"/>
+<Pos line="92" col="7"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="93" col="30"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="93" col="30"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="93" col="30"/>
+<syIff/>
+<Pos line="93" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<syIt/>
+<sySemiColon/>
+<Pos line="93" col="30"/>
+<syAmpersand/>
+<Pos line="93" col="18"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="93" col="27"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syCorrectnessCondition nr="4" line="94" col="11"/>
+<Proof line="95" col="7">
+<syDefpred/>
+<ikFrmPrivPred nr="10"/>
+<syThreeDots/>
+<Pos line="96" col="17"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="96" col="30"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<MMLIdentifier/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThus line="97" col="11"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="97" col="11"/>
+<syRedefine/>
+<Pos line="97" col="68"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="4"/>
+<Pos line="97" col="23"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="97" col="68"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="97" col="68"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="97" col="68"/>
+<syIff/>
+<Pos line="97" col="43"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="97" col="68"/>
+<syAmpersand/>
+<Pos line="97" col="54"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="97" col="60"/>
+<ikFrmPrivPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syFrom/>
+<Int x="0"/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="97" col="68"/>
+<EndPosition line="99" col="5"/>
+</Proof>
+<syCorrectnessCondition nr="5" line="100" col="12"/>
+<Proof line="101" col="7">
+<syLet line="102" col="26"/>
+<Q nr="2"/>
+<Identifier nr="12"/>
+<Identifier nr="13"/>
+<Pos line="102" col="21"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syAssume line="102" col="31"/>
+<ikTrmEqConst nr="2"/>
+<Int x="20"/>
+<Pos line="103" col="2"/>
+<syRedefine/>
+<Pos line="103" col="35"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="103" col="35"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="103" col="35"/>
+<syIff/>
+<Pos line="103" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="103" col="35"/>
+<syAmpersand/>
+<Pos line="103" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="103" col="29"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="3"/>
+<Int x="21"/>
+<Pos line="104" col="2"/>
+<syRedefine/>
+<Pos line="104" col="32"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="104" col="32"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="104" col="32"/>
+<syIff/>
+<Pos line="104" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<Pos line="104" col="32"/>
+<syAmpersand/>
+<Pos line="104" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="104" col="29"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="105" col="7"/>
+<Now line="105" col="7">
+<syLet line="106" col="11"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="106" col="12"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="107" col="7"/>
+<syRedefine/>
+<Pos line="107" col="36"/>
+<syIff/>
+<Pos line="107" col="10"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="107" col="36"/>
+<syAmpersand/>
+<Pos line="107" col="22"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="107" col="31"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="20"/>
+<Pos line="107" col="39"/>
+<sySemiColon/>
+<Pos line="107" col="36"/>
+<syThus line="108" col="13"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="108" col="13"/>
+<syRedefine/>
+<Pos line="108" col="34"/>
+<syIff/>
+<Pos line="108" col="16"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="108" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="3"/>
+<Int x="21"/>
+<Pos line="108" col="37"/>
+<sySemiColon/>
+<Pos line="108" col="34"/>
+<EndPosition line="109" col="7"/>
+</Now>
+<syThus line="110" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="110" col="16"/>
+<syRedefine/>
+<Pos line="110" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="110" col="28"/>
+<sySemiColon/>
+<Pos line="110" col="19"/>
+<EndPosition line="111" col="5"/>
+</Proof>
+<syProperty nr="6" line="112" col="15"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="112" col="15"/>
+<syProperty nr="9" line="113" col="13"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="113" col="13"/>
+<syFunc line="114" col="6"/>
+<LeftFunctorBracketSymbol nr="16" line="114" col="10"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<syArrow/>
+<Pos line="114" col="19"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="4"/>
+<Int x="22"/>
+<Pos line="115" col="7"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="116" col="34"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="116" col="34"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="116" col="34"/>
+<syIff/>
+<Pos line="116" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<syIt/>
+<sySemiColon/>
+<Pos line="116" col="34"/>
+<syAmpersand/>
+<Pos line="116" col="18"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="116" col="34"/>
+<syNot/>
+<Pos line="116" col="31"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syCorrectnessCondition nr="4" line="117" col="11"/>
+<Proof line="118" col="7">
+<syDefpred/>
+<ikFrmPrivPred nr="10"/>
+<syThreeDots/>
+<Pos line="119" col="17"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="119" col="37"/>
+<syNot/>
+<Pos line="119" col="34"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<MMLIdentifier/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThus line="120" col="11"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="120" col="11"/>
+<syRedefine/>
+<Pos line="120" col="68"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="4"/>
+<Pos line="120" col="23"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="120" col="68"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="120" col="68"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="120" col="68"/>
+<syIff/>
+<Pos line="120" col="43"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="120" col="68"/>
+<syAmpersand/>
+<Pos line="120" col="54"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="120" col="60"/>
+<ikFrmPrivPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syFrom/>
+<Int x="0"/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="120" col="68"/>
+<EndPosition line="122" col="5"/>
+</Proof>
+<syCorrectnessCondition nr="5" line="123" col="12"/>
+<Proof line="124" col="7">
+<syLet line="125" col="26"/>
+<Q nr="2"/>
+<Identifier nr="12"/>
+<Identifier nr="13"/>
+<Pos line="125" col="21"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syAssume line="125" col="31"/>
+<ikTrmEqConst nr="2"/>
+<Int x="23"/>
+<Pos line="126" col="2"/>
+<syRedefine/>
+<Pos line="126" col="39"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="126" col="39"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="126" col="39"/>
+<syIff/>
+<Pos line="126" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="126" col="39"/>
+<syAmpersand/>
+<Pos line="126" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="126" col="39"/>
+<syNot/>
+<Pos line="126" col="33"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="3"/>
+<Int x="24"/>
+<Pos line="127" col="2"/>
+<syRedefine/>
+<Pos line="127" col="36"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="127" col="36"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="127" col="36"/>
+<syIff/>
+<Pos line="127" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<Pos line="127" col="36"/>
+<syAmpersand/>
+<Pos line="127" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="127" col="36"/>
+<syNot/>
+<Pos line="127" col="33"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="128" col="7"/>
+<Now line="128" col="7">
+<syLet line="129" col="11"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="129" col="12"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="130" col="7"/>
+<syRedefine/>
+<Pos line="130" col="40"/>
+<syIff/>
+<Pos line="130" col="10"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="130" col="40"/>
+<syAmpersand/>
+<Pos line="130" col="22"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="130" col="40"/>
+<syNot/>
+<Pos line="130" col="35"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="23"/>
+<Pos line="130" col="43"/>
+<sySemiColon/>
+<Pos line="130" col="40"/>
+<syThus line="131" col="13"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="131" col="13"/>
+<syRedefine/>
+<Pos line="131" col="34"/>
+<syIff/>
+<Pos line="131" col="16"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="131" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="3"/>
+<Int x="24"/>
+<Pos line="131" col="37"/>
+<sySemiColon/>
+<Pos line="131" col="34"/>
+<EndPosition line="132" col="7"/>
+</Now>
+<syThus line="133" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="133" col="16"/>
+<syRedefine/>
+<Pos line="133" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="133" col="28"/>
+<sySemiColon/>
+<Pos line="133" col="19"/>
+<EndPosition line="134" col="5"/>
+</Proof>
+<EndPosition line="135" col="3"/>
+</DefinitionBlock>
+<DefinitionBlock line="137" col="10">
+<syLet line="138" col="18"/>
+<Q nr="2"/>
+<Identifier nr="2"/>
+<Identifier nr="3"/>
+<Pos line="138" col="17"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syFunc line="139" col="6"/>
+<LeftFunctorBracketSymbol nr="17" line="139" col="12"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<syArrow/>
+<Pos line="139" col="21"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syEquals/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="140" col="3"/>
+<syEquals/>
+<sySemiColon/>
+<o/>
+<LeftFunctorBracketSymbol/>
+<Int x="14"/>
+<Pos line="140" col="12"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="16"/>
+<Pos line="140" col="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="16"/>
+<Pos line="140" col="17"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syCorrectness line="141" col="13"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="141" col="13"/>
+<syProperty nr="6" line="142" col="15"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="142" col="15"/>
+<syPred line="143" col="8"/>
+<PredicateSymbol nr="18" line="143" col="15"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="5"/>
+<Int x="25"/>
+<Pos line="144" col="7"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="145" col="10"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="145" col="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="145" col="13"/>
+<sySemiColon/>
+<sySemiColon/>
+<syProperty nr="1" line="146" col="10"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="146" col="10"/>
+<syPred line="147" col="8"/>
+<PredicateSymbol nr="19" line="147" col="11"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="6"/>
+<Int x="26"/>
+<Pos line="148" col="7"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="149" col="18"/>
+<syAmpersand/>
+<Pos line="149" col="6"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="149" col="15"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syProperty nr="3" line="150" col="15"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="150" col="15"/>
+<syProperty nr="8" line="151" col="11"/>
+<Proof line="152" col="7">
+<syLet line="153" col="9"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="153" col="12"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syLet line="153" col="11"/>
+<Q nr="1"/>
+<Identifier nr="3"/>
+<Pos line="153" col="12"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<syAssume line="154" col="10"/>
+<ikTrmEqConst nr="5"/>
+<Int x="12"/>
+<Pos line="155" col="2"/>
+<syRedefine/>
+<Pos line="155" col="8"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<sySemiColon/>
+<syAssume line="156" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="156" col="12"/>
+<syRedefine/>
+<Pos line="156" col="15"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<sySemiColon/>
+<syAssume line="157" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="157" col="12"/>
+<syRedefine/>
+<Pos line="157" col="15"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="158" col="12"/>
+<syRedefine/>
+<Pos line="158" col="41"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="158" col="41"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="158" col="41"/>
+<syIff/>
+<Pos line="158" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="158" col="36"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="5"/>
+<Int x="12"/>
+<Pos line="158" col="44"/>
+<d/>
+<Int x="1"/>
+<Int x="3"/>
+<Pos line="158" col="57"/>
+<sySemiColon/>
+<Pos line="158" col="41"/>
+<syThus line="159" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="159" col="16"/>
+<syRedefine/>
+<Pos line="159" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="159" col="28"/>
+<sySemiColon/>
+<Pos line="159" col="19"/>
+<EndPosition line="160" col="5"/>
+</Proof>
+<syPred line="161" col="8"/>
+<PredicateSymbol nr="20" line="161" col="28"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="162" col="3"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="162" col="19"/>
+<syOr/>
+<Pos line="162" col="6"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="162" col="16"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syProperty nr="2" line="163" col="13"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="163" col="13"/>
+<syProperty nr="1" line="164" col="10"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="164" col="10"/>
+<syImplies line="165" col="17"/>
+<PredicateSymbol nr="3" line="165" col="19"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<ikDfsMeans/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="166" col="3"/>
+<ikDfsMeans/>
+<sySemiColon/>
+<o/>
+<Pos line="166" col="18"/>
+<syAmpersand/>
+<Pos line="166" col="6"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="166" col="15"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syCorrectnessCondition nr="2" line="167" col="15"/>
+<Proof line="168" col="7">
+<syThus line="169" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="169" col="10"/>
+<syRedefine/>
+<Pos line="169" col="39"/>
+<syImplies/>
+<Pos line="169" col="12"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="169" col="39"/>
+<syAmpersand/>
+<Pos line="169" col="27"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="169" col="36"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="169" col="38"/>
+<syAssume line="170" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="170" col="12"/>
+<syRedefine/>
+<Pos line="170" col="27"/>
+<syAmpersand/>
+<Pos line="170" col="15"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="170" col="24"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="171" col="12"/>
+<syRedefine/>
+<Pos line="171" col="41"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="171" col="41"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="171" col="41"/>
+<syIff/>
+<Pos line="171" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="171" col="36"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<d/>
+<Int x="1"/>
+<Int x="3"/>
+<Pos line="171" col="54"/>
+<sySemiColon/>
+<Pos line="171" col="41"/>
+<syThus line="172" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="172" col="16"/>
+<syRedefine/>
+<Pos line="172" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="172" col="28"/>
+<sySemiColon/>
+<Pos line="172" col="19"/>
+<EndPosition line="173" col="5"/>
+</Proof>
+<EndPosition line="174" col="3"/>
+</DefinitionBlock>
+<NotationBlock line="176" col="8">
+<syLet line="177" col="18"/>
+<Q nr="2"/>
+<Identifier nr="2"/>
+<Identifier nr="3"/>
+<Pos line="177" col="17"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syPred line="178" col="11"/>
+<PredicateSymbol nr="21" line="178" col="17"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<syAntonym line="178" col="23"/>
+<PredicateSymbol nr="18" line="178" col="32"/>
+<MMLIdentifier nr="1"/>
+<MMLIdentifier nr="2"/>
+<sySemiColon/>
+<EndPosition line="179" col="3"/>
+</NotationBlock>
+<syTheorem/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="182" col="3"/>
+<syRedefine/>
+<Pos line="183" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="183" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="183" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="183" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="183" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="3"/>
+<Pos line="183" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<Pos line="183" col="5"/>
+<syIff/>
+<Pos line="182" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="17"/>
+<Pos line="182" col="12"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="183" col="5"/>
+<syNot/>
+<Pos line="182" col="42"/>
+<syIff/>
+<Pos line="182" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="182" col="39"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<Proof line="183" col="5">
+<syLet line="183" col="5"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="183" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<syLet line="183" col="5"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="183" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syLet line="183" col="5"/>
+<Q nr="1"/>
+<Identifier nr="3"/>
+<Pos line="183" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="184" col="3"/>
+<syRedefine/>
+<Pos line="184" col="46"/>
+<syIff/>
+<Pos line="184" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="17"/>
+<Pos line="184" col="12"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="184" col="46"/>
+<syOr/>
+<Pos line="184" col="23"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="16"/>
+<Pos line="184" col="27"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="184" col="37"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="16"/>
+<Pos line="184" col="41"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="15"/>
+<Pos line="184" col="51"/>
+<sySemiColon/>
+<Pos line="184" col="46"/>
+<syThus line="185" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="185" col="14"/>
+<syRedefine/>
+<Pos line="185" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="4"/>
+<Int x="22"/>
+<Pos line="185" col="22"/>
+<sySemiColon/>
+<Pos line="185" col="17"/>
+<EndPosition line="186" col="3"/>
+</Proof>
+<syTheorem/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="189" col="3"/>
+<syRedefine/>
+<Pos line="190" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="190" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="190" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="3"/>
+<Pos line="190" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<Pos line="190" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="4"/>
+<Pos line="190" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="4"/>
+<sySemiColon/>
+<Pos line="190" col="5"/>
+<syImplies/>
+<Pos line="189" col="50"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="189" col="50"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="189" col="50"/>
+<syIff/>
+<Pos line="189" col="29"/>
+<syNot/>
+<Pos line="189" col="23"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="189" col="49"/>
+<syIff/>
+<Pos line="189" col="35"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="189" col="46"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="189" col="62"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="17"/>
+<Pos line="189" col="68"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<Proof line="190" col="5">
+<syLet line="190" col="5"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="190" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syLet line="190" col="5"/>
+<Q nr="1"/>
+<Identifier nr="3"/>
+<Pos line="190" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<syLet line="190" col="5"/>
+<Q nr="1"/>
+<Identifier nr="4"/>
+<Pos line="190" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="4"/>
+<sySemiColon/>
+<syAssume line="191" col="8"/>
+<ikTrmEqConst nr="7"/>
+<Int x="12"/>
+<Pos line="192" col="2"/>
+<syRedefine/>
+<Pos line="192" col="39"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="192" col="39"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="192" col="39"/>
+<syIff/>
+<Pos line="192" col="18"/>
+<syNot/>
+<Pos line="192" col="12"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="192" col="38"/>
+<syIff/>
+<Pos line="192" col="24"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="192" col="35"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="193" col="5"/>
+<Now line="193" col="5">
+<syLet line="194" col="9"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="194" col="10"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="195" col="5"/>
+<syRedefine/>
+<Pos line="195" col="60"/>
+<syIff/>
+<Pos line="195" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="195" col="60"/>
+<syOr/>
+<Pos line="195" col="37"/>
+<syAmpersand/>
+<Pos line="195" col="19"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="195" col="37"/>
+<syNot/>
+<Pos line="195" col="32"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="195" col="60"/>
+<syAmpersand/>
+<Pos line="195" col="42"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="195" col="60"/>
+<syNot/>
+<Pos line="195" col="55"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="7"/>
+<Int x="12"/>
+<Pos line="195" col="63"/>
+<sySemiColon/>
+<Pos line="195" col="60"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="196" col="10"/>
+<syRedefine/>
+<Pos line="196" col="47"/>
+<syIff/>
+<Pos line="196" col="13"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="196" col="47"/>
+<syOr/>
+<Pos line="196" col="24"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="16"/>
+<Pos line="196" col="28"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="196" col="38"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="16"/>
+<Pos line="196" col="42"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="4"/>
+<Int x="22"/>
+<Pos line="196" col="52"/>
+<sySemiColon/>
+<Pos line="196" col="47"/>
+<syThus line="197" col="11"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="197" col="11"/>
+<syRedefine/>
+<Pos line="197" col="36"/>
+<syIff/>
+<Pos line="197" col="14"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="197" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="17"/>
+<Pos line="197" col="31"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="15"/>
+<Pos line="197" col="41"/>
+<sySemiColon/>
+<Pos line="197" col="36"/>
+<EndPosition line="198" col="5"/>
+</Now>
+<syThus line="199" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="199" col="14"/>
+<syRedefine/>
+<Pos line="199" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="199" col="26"/>
+<sySemiColon/>
+<Pos line="199" col="17"/>
+<EndPosition line="200" col="3"/>
+</Proof>
+<RegistrationBlock line="202" col="12">
+<f line="203" col="22"/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="203" col="12"/>
+<sySemiColon/>
+<syThreeDots line="203" col="21"/>
+<syDefinition/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syCorrectnessCondition nr="1" line="204" col="11"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="204" col="11"/>
+<EndPosition line="205" col="3"/>
+</RegistrationBlock>
+<RegistrationBlock line="207" col="12">
+<syLet line="208" col="16"/>
+<Q nr="1"/>
+<Identifier nr="27"/>
+<Pos line="208" col="15"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<f line="209" col="30"/>
+<LeftFunctorBracketSymbol/>
+<Int x="8"/>
+<Pos line="209" col="16"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syThreeDots line="209" col="29"/>
+<syNotation/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syCorrectnessCondition nr="1" line="210" col="11"/>
+<Proof line="211" col="7">
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="212" col="6"/>
+<syRedefine/>
+<Pos line="212" col="9"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="8"/>
+<Pos line="212" col="14"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<d/>
+<Int x="1"/>
+<Int x="1"/>
+<Pos line="212" col="30"/>
+<sySemiColon/>
+<Pos line="212" col="17"/>
+<syThus line="213" col="12"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="213" col="12"/>
+<syRedefine/>
+<Pos line="213" col="38"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="213" col="24"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="213" col="32"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="8"/>
+<Pos line="213" col="37"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="213" col="37"/>
+<EndPosition line="214" col="5"/>
+</Proof>
+<syLet line="215" col="16"/>
+<Q nr="1"/>
+<Identifier nr="28"/>
+<Pos line="215" col="15"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<f line="216" col="34"/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="216" col="20"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots line="216" col="33"/>
+<syNotation/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syCorrectnessCondition nr="1" line="217" col="11"/>
+<Proof line="218" col="7">
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="219" col="6"/>
+<syRedefine/>
+<Pos line="219" col="9"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="219" col="17"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<d/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="219" col="33"/>
+<sySemiColon/>
+<Pos line="219" col="20"/>
+<syThus line="220" col="12"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="220" col="12"/>
+<syRedefine/>
+<Pos line="220" col="41"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="220" col="24"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="220" col="32"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="9"/>
+<Pos line="220" col="40"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="220" col="40"/>
+<EndPosition line="221" col="5"/>
+</Proof>
+<EndPosition line="222" col="3"/>
+</RegistrationBlock>
+<RegistrationBlock line="224" col="12">
+<syCluster line="225" col="24"/>
+<syThreeDots line="225" col="19"/>
+<syNotation/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="225" col="23"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syCorrectnessCondition nr="4" line="226" col="11"/>
+<Proof line="227" col="7">
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="228" col="15"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="228" col="14"/>
+<syTake line="229" col="10"/>
+<LeftFunctorBracketSymbol/>
+<Int x="8"/>
+<Pos line="229" col="12"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syThus line="230" col="15"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="230" col="15"/>
+<syRedefine/>
+<Pos line="230" col="16"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="230" col="15"/>
+<EndPosition line="231" col="5"/>
+</Proof>
+<EndPosition line="232" col="3"/>
+</RegistrationBlock>
+<RegistrationBlock line="234" col="12">
+<syLet line="235" col="25"/>
+<Q nr="1"/>
+<Identifier nr="29"/>
+<Pos line="235" col="24"/>
+<syAccording/>
+<syThreeDots line="235" col="20"/>
+<syNotation/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="235" col="24"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syLet line="235" col="35"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="235" col="34"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<f line="236" col="30"/>
+<LeftFunctorBracketSymbol/>
+<Int x="14"/>
+<Pos line="236" col="14"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots line="236" col="29"/>
+<syNotation/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syCorrectnessCondition nr="1" line="237" col="11"/>
+<Proof line="238" col="7">
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="239" col="24"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikTrmEqConst nr="7"/>
+<Int x="12"/>
+<Pos line="240" col="2"/>
+<syRedefine/>
+<Pos line="240" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="1"/>
+<Int x="14"/>
+<Pos line="240" col="18"/>
+<sySemiColon/>
+<Pos line="240" col="13"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="241" col="5"/>
+<syRedefine/>
+<Pos line="241" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="14"/>
+<Pos line="241" col="13"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="7"/>
+<Int x="12"/>
+<Pos line="241" col="21"/>
+<l/>
+<Int x="2"/>
+<Int x="15"/>
+<Pos line="241" col="26"/>
+<sySemiColon/>
+<Pos line="241" col="18"/>
+<syThus line="242" col="12"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="242" col="12"/>
+<syRedefine/>
+<Pos line="242" col="40"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="242" col="24"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="242" col="32"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="14"/>
+<Pos line="242" col="37"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="242" col="39"/>
+<EndPosition line="243" col="5"/>
+</Proof>
+<f line="244" col="30"/>
+<LeftFunctorBracketSymbol/>
+<Int x="14"/>
+<Pos line="244" col="14"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syThreeDots line="244" col="29"/>
+<syNotation/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syCorrectnessCondition nr="1" line="245" col="11"/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<sySemiColon/>
+<Pos line="245" col="11"/>
+<EndPosition line="246" col="3"/>
+</RegistrationBlock>
+<ikTrmEqConst nr="7"/>
+<Int x="30"/>
+<Pos line="248" col="3"/>
+<syRedefine/>
+<Pos line="249" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="249" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="249" col="5"/>
+<syImplies/>
+<Pos line="248" col="23"/>
+<AttributeSymbol/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots line="248" col="15"/>
+<syDefinition/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="248" col="27"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="248" col="30"/>
+<sySemiColon/>
+<sySemiColon/>
+<Proof line="249" col="5">
+<syLet line="249" col="5"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="249" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syAssume line="250" col="8"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="250" col="12"/>
+<syRedefine/>
+<Pos line="250" col="28"/>
+<syNot/>
+<Pos line="250" col="28"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="250" col="28"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="250" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="251" col="8"/>
+<syRedefine/>
+<Pos line="251" col="28"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="251" col="28"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="251" col="28"/>
+<syIff/>
+<Pos line="251" col="11"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="251" col="14"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="251" col="23"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="1"/>
+<Int x="14"/>
+<Pos line="251" col="33"/>
+<sySemiColon/>
+<Pos line="251" col="28"/>
+<syThus line="252" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="252" col="14"/>
+<syRedefine/>
+<Pos line="252" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="252" col="26"/>
+<sySemiColon/>
+<Pos line="252" col="17"/>
+<EndPosition line="253" col="3"/>
+</Proof>
+<syTheorem/>
+<ikTrmEqConst nr="8"/>
+<Int x="31"/>
+<Pos line="255" col="11"/>
+<syRedefine/>
+<Pos line="257" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="257" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="257" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="3"/>
+<Pos line="257" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<Pos line="257" col="5"/>
+<syIff/>
+<Pos line="256" col="9"/>
+<PredicateSymbol/>
+<Int x="21"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="257" col="5"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="257" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="257" col="5"/>
+<syAmpersand/>
+<Pos line="256" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="256" col="37"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Proof line="257" col="5">
+<syLet line="257" col="5"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="257" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syLet line="257" col="5"/>
+<Q nr="1"/>
+<Identifier nr="3"/>
+<Pos line="257" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<syThus line="258" col="8"/>
+<Hereby line="258" col="8">
+<syAssume line="259" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="259" col="12"/>
+<syRedefine/>
+<Pos line="259" col="18"/>
+<PredicateSymbol/>
+<Int x="21"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="260" col="10"/>
+<syRedefine/>
+<Pos line="260" col="18"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="260" col="13"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="260" col="21"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="5"/>
+<Int x="25"/>
+<Pos line="260" col="29"/>
+<sySemiColon/>
+<Pos line="260" col="24"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="261" col="10"/>
+<syRedefine/>
+<Pos line="261" col="31"/>
+<syNot/>
+<Pos line="261" col="31"/>
+<AttributeSymbol/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="261" col="13"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots line="261" col="28"/>
+<syDefinition/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="7"/>
+<Int x="30"/>
+<Pos line="261" col="35"/>
+<sySemiColon/>
+<Pos line="261" col="31"/>
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="262" col="24"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="9"/>
+<Int x="12"/>
+<Pos line="263" col="2"/>
+<syRedefine/>
+<Pos line="263" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="263" col="13"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="1"/>
+<Int x="14"/>
+<Pos line="263" col="23"/>
+<sySemiColon/>
+<Pos line="263" col="18"/>
+<ikItmExemplifWithEq line="264" col="10"/>
+<Identifier nr="5"/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThus line="265" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="265" col="10"/>
+<syRedefine/>
+<Pos line="265" col="27"/>
+<syAmpersand/>
+<Pos line="265" col="13"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="265" col="22"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="9"/>
+<Int x="12"/>
+<Pos line="265" col="30"/>
+<l/>
+<Int x="3"/>
+<Int x="19"/>
+<Pos line="265" col="35"/>
+<sySemiColon/>
+<Pos line="265" col="27"/>
+<EndPosition line="266" col="5"/>
+</Hereby>
+<syGiven line="267" col="7"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="267" col="14"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="9"/>
+<Int x="13"/>
+<Pos line="268" col="2"/>
+<syRedefine/>
+<Pos line="268" col="20"/>
+<syAmpersand/>
+<Pos line="268" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="268" col="17"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="269" col="3"/>
+<syRedefine/>
+<Pos line="269" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="269" col="11"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="9"/>
+<Int x="13"/>
+<Pos line="269" col="19"/>
+<l/>
+<Int x="3"/>
+<Int x="19"/>
+<Pos line="269" col="24"/>
+<sySemiColon/>
+<Pos line="269" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="270" col="8"/>
+<syRedefine/>
+<Pos line="270" col="16"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="270" col="11"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="270" col="19"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="1"/>
+<Int x="14"/>
+<Pos line="270" col="27"/>
+<sySemiColon/>
+<Pos line="270" col="22"/>
+<syThus line="271" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="271" col="14"/>
+<syRedefine/>
+<Pos line="271" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="5"/>
+<Int x="25"/>
+<Pos line="271" col="22"/>
+<sySemiColon/>
+<Pos line="271" col="17"/>
+<EndPosition line="272" col="3"/>
+</Proof>
+<syTheorem/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="275" col="3"/>
+<syRedefine/>
+<Pos line="276" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="276" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="276" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="3"/>
+<Pos line="276" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<Pos line="276" col="5"/>
+<syIff/>
+<Pos line="275" col="9"/>
+<PredicateSymbol/>
+<Int x="21"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="276" col="5"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="276" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="275" col="28"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="275" col="33"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<Proof line="276" col="5">
+<syLet line="276" col="5"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="276" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syLet line="276" col="5"/>
+<Q nr="1"/>
+<Identifier nr="3"/>
+<Pos line="276" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<syThus line="277" col="8"/>
+<Hereby line="277" col="8">
+<syAssume line="278" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="278" col="12"/>
+<syRedefine/>
+<Pos line="278" col="18"/>
+<PredicateSymbol/>
+<Int x="21"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="279" col="10"/>
+<syRedefine/>
+<Pos line="279" col="18"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="279" col="13"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="279" col="21"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="5"/>
+<Int x="25"/>
+<Pos line="279" col="29"/>
+<sySemiColon/>
+<Pos line="279" col="24"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="280" col="10"/>
+<syRedefine/>
+<Pos line="280" col="31"/>
+<syNot/>
+<Pos line="280" col="31"/>
+<AttributeSymbol/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="280" col="13"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots line="280" col="28"/>
+<syDefinition/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="7"/>
+<Int x="30"/>
+<Pos line="280" col="35"/>
+<sySemiColon/>
+<Pos line="280" col="31"/>
+<syConsider/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="281" col="24"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<ikTrmEqConst nr="9"/>
+<Int x="12"/>
+<Pos line="282" col="2"/>
+<syRedefine/>
+<Pos line="282" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="282" col="13"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="1"/>
+<Int x="14"/>
+<Pos line="282" col="23"/>
+<sySemiColon/>
+<Pos line="282" col="18"/>
+<ikItmExemplifWithEq line="283" col="10"/>
+<Identifier nr="5"/>
+<ikTrmConstant/>
+<Int x="3"/>
+<syThus line="284" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="284" col="10"/>
+<syRedefine/>
+<Pos line="284" col="13"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="284" col="18"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="9"/>
+<Int x="12"/>
+<Pos line="284" col="26"/>
+<sySemiColon/>
+<Pos line="284" col="23"/>
+<EndPosition line="285" col="5"/>
+</Hereby>
+<syAssume line="286" col="8"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="286" col="11"/>
+<syRedefine/>
+<Pos line="286" col="29"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="286" col="29"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="286" col="21"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="286" col="26"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="287" col="8"/>
+<syRedefine/>
+<Pos line="287" col="16"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="15"/>
+<Pos line="287" col="11"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="287" col="19"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="1"/>
+<Int x="14"/>
+<Pos line="287" col="27"/>
+<sySemiColon/>
+<Pos line="287" col="22"/>
+<syThus line="288" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="288" col="14"/>
+<syRedefine/>
+<Pos line="288" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="5"/>
+<Int x="25"/>
+<Pos line="288" col="22"/>
+<sySemiColon/>
+<Pos line="288" col="17"/>
+<EndPosition line="289" col="3"/>
+</Proof>
+<syTheorem/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="292" col="3"/>
+<syRedefine/>
+<Pos line="293" col="9"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="293" col="9"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="293" col="9"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="3"/>
+<Pos line="293" col="9"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<Pos line="293" col="9"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="293" col="9"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="293" col="9"/>
+<syImplies/>
+<Pos line="292" col="34"/>
+<syAmpersand/>
+<Pos line="292" col="10"/>
+<PredicateSymbol/>
+<Int x="18"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="292" col="19"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="14"/>
+<Pos line="292" col="24"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="293" col="9"/>
+<syOr/>
+<Pos line="292" col="57"/>
+<syAmpersand/>
+<Pos line="292" col="39"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="292" col="57"/>
+<syNot/>
+<Pos line="292" col="52"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="293" col="9"/>
+<syAmpersand/>
+<Pos line="292" col="62"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="293" col="9"/>
+<syNot/>
+<Pos line="293" col="4"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="2"/>
+<Int x="15"/>
+<Pos line="293" col="14"/>
+<l/>
+<Int x="8"/>
+<Int x="31"/>
+<Pos line="293" col="18"/>
+<sySemiColon/>
+<Pos line="293" col="9"/>
+<syScheme line="296" col="16"/>
+<ikFrmPrivPred nr="2"/>
+<Int x="32"/>
+<Pos line="296" col="16"/>
+<ikTrmSchFunc nr="2"/>
+<ikTrmSchFunc nr="3"/>
+<sySemiColon/>
+<sySemiColon/>
+<syArrow/>
+<Pos line="296" col="31"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<ikFrmSchPred nr="10"/>
+<sySemiColon/>
+<syThreeDots/>
+<Pos line="296" col="38"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<syRedefine/>
+<Pos line="296" col="49"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="296" col="45"/>
+<sySemiColon/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="2"/>
+<Pos line="296" col="51"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="9"/>
+<Int x="12"/>
+<Pos line="298" col="2"/>
+<syRedefine/>
+<Pos line="298" col="37"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="298" col="37"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="298" col="37"/>
+<syIff/>
+<Pos line="298" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="298" col="22"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="298" col="30"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<ikTrmEqConst nr="10"/>
+<Int x="13"/>
+<Pos line="299" col="2"/>
+<syRedefine/>
+<Pos line="300" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="300" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="300" col="5"/>
+<syIff/>
+<Pos line="299" col="20"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="2"/>
+<Pos line="299" col="22"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="299" col="30"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syProof line="301" col="2"/>
+<ikTrmEqConst nr="11"/>
+<Int x="17"/>
+<Pos line="301" col="2"/>
+<syRedefine/>
+<Pos line="302" col="7"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="302" col="7"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="302" col="7"/>
+<syImplies/>
+<Pos line="301" col="8"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="2"/>
+<Pos line="301" col="10"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="301" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="301" col="27"/>
+<sySemiColon/>
+<sySemiColon/>
+<Proof line="302" col="7">
+<syLet line="302" col="7"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="302" col="7"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<syAssume line="303" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="303" col="12"/>
+<syRedefine/>
+<Pos line="303" col="15"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="2"/>
+<Pos line="303" col="17"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="304" col="10"/>
+<syRedefine/>
+<Pos line="304" col="10"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="10"/>
+<Int x="13"/>
+<Pos line="304" col="19"/>
+<sySemiColon/>
+<Pos line="304" col="16"/>
+<syThus line="305" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="305" col="16"/>
+<syRedefine/>
+<Pos line="305" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="9"/>
+<Int x="12"/>
+<Pos line="305" col="22"/>
+<sySemiColon/>
+<Pos line="305" col="19"/>
+<EndPosition line="306" col="5"/>
+</Proof>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="307" col="3"/>
+<syRedefine/>
+<Pos line="308" col="7"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="308" col="7"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="308" col="7"/>
+<syImplies/>
+<Pos line="307" col="6"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="307" col="8"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="307" col="23"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="2"/>
+<Pos line="307" col="25"/>
+<sySemiColon/>
+<sySemiColon/>
+<Proof line="308" col="7">
+<syLet line="308" col="7"/>
+<Q nr="1"/>
+<Identifier nr="5"/>
+<Pos line="308" col="7"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<syAssume line="309" col="10"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="309" col="12"/>
+<syRedefine/>
+<Pos line="309" col="15"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmSchFunc/>
+<Int x="1"/>
+<Pos line="309" col="17"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="310" col="10"/>
+<syRedefine/>
+<Pos line="310" col="10"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="9"/>
+<Int x="12"/>
+<Pos line="310" col="19"/>
+<sySemiColon/>
+<Pos line="310" col="16"/>
+<syThus line="311" col="16"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="311" col="16"/>
+<syRedefine/>
+<Pos line="311" col="19"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="10"/>
+<Int x="13"/>
+<Pos line="311" col="22"/>
+<sySemiColon/>
+<Pos line="311" col="19"/>
+<EndPosition line="312" col="5"/>
+</Proof>
+<syThus line="313" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="313" col="14"/>
+<syRedefine/>
+<Pos line="313" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="11"/>
+<Int x="17"/>
+<Pos line="313" col="20"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="313" col="29"/>
+<sySemiColon/>
+<Pos line="313" col="17"/>
+<syEnd line="314" col="4"/>
+<syScheme line="317" col="7"/>
+<ikFrmPrivPred nr="3"/>
+<Int x="33"/>
+<Pos line="317" col="7"/>
+<ikFrmSchPred nr="10"/>
+<sySemiColon/>
+<syThreeDots/>
+<Pos line="317" col="15"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<syRedefine/>
+<Pos line="318" col="70"/>
+<syFor/>
+<Numeral nr="2"/>
+<Identifier nr="34"/>
+<Identifier nr="35"/>
+<Pos line="317" col="40"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="318" col="70"/>
+<syImplies/>
+<Pos line="318" col="56"/>
+<syAmpersand/>
+<Pos line="318" col="7"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="317" col="60"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="318" col="7"/>
+<syIff/>
+<Pos line="317" col="71"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="318" col="3"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="318" col="50"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="318" col="26"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="318" col="50"/>
+<syIff/>
+<Pos line="318" col="37"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="318" col="46"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<sySemiColon/>
+<Pos line="318" col="61"/>
+<PredicateSymbol/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<syProof line="319" col="5"/>
+<syLet line="319" col="23"/>
+<Q nr="2"/>
+<Identifier nr="34"/>
+<Identifier nr="35"/>
+<Pos line="319" col="18"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<syAssume line="319" col="28"/>
+<ikTrmEqConst nr="9"/>
+<Int x="12"/>
+<Pos line="320" col="2"/>
+<syRedefine/>
+<Pos line="320" col="46"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="320" col="19"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="320" col="46"/>
+<syIff/>
+<Pos line="320" col="30"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="320" col="39"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<ikTrmEqConst nr="10"/>
+<Int x="13"/>
+<Pos line="321" col="2"/>
+<syRedefine/>
+<Pos line="321" col="43"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="321" col="19"/>
+<ModeSymbol/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="321" col="43"/>
+<syIff/>
+<Pos line="321" col="30"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="321" col="39"/>
+<ikFrmSchPred/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<syThus line="322" col="13"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="322" col="13"/>
+<syRedefine/>
+<Pos line="322" col="18"/>
+<syThesis/>
+<syFrom/>
+<syFrom/>
+<Int x="0"/>
+<Int x="2"/>
+<l/>
+<Int x="9"/>
+<Int x="12"/>
+<Pos line="322" col="36"/>
+<l/>
+<Int x="10"/>
+<Int x="13"/>
+<Pos line="322" col="39"/>
+<sySemiColon/>
+<Pos line="322" col="18"/>
+<syEnd line="323" col="4"/>
+<syBegin line="325" col="5"/>
+<syTheorem/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="329" col="3"/>
+<syRedefine/>
+<Pos line="330" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="330" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="330" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="3"/>
+<Pos line="330" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<Pos line="330" col="5"/>
+<syImplies/>
+<Pos line="329" col="6"/>
+<PredicateSymbol/>
+<Int x="19"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="330" col="5"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="330" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="330" col="5"/>
+<syAmpersand/>
+<Pos line="329" col="29"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="330" col="5"/>
+<syNot/>
+<Pos line="329" col="42"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="3"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Proof line="330" col="5">
+<syLet line="330" col="5"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="330" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syLet line="330" col="5"/>
+<Q nr="1"/>
+<Identifier nr="3"/>
+<Pos line="330" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="3"/>
+<sySemiColon/>
+<syAssume line="331" col="8"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="331" col="10"/>
+<syRedefine/>
+<Pos line="331" col="13"/>
+<PredicateSymbol/>
+<Int x="19"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="332" col="8"/>
+<syRedefine/>
+<Pos line="332" col="54"/>
+<syAmpersand/>
+<Pos line="332" col="43"/>
+<syNot/>
+<Pos line="332" col="43"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="332" col="43"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="332" col="43"/>
+<syIff/>
+<Pos line="332" col="29"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<Pos line="332" col="40"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<Pos line="332" col="49"/>
+<PredicateSymbol/>
+<Int x="6"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="2"/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="6"/>
+<Int x="26"/>
+<Pos line="332" col="59"/>
+<syTo/>
+<Int x="1"/>
+<Int x="2"/>
+<Pos line="332" col="68"/>
+<sySemiColon/>
+<Pos line="332" col="54"/>
+<syThus line="333" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="333" col="14"/>
+<syRedefine/>
+<Pos line="333" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<d/>
+<Int x="1"/>
+<Int x="3"/>
+<Pos line="333" col="30"/>
+<sySemiColon/>
+<Pos line="333" col="17"/>
+<EndPosition line="334" col="3"/>
+</Proof>
+<syTheorem/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="339" col="3"/>
+<syRedefine/>
+<Pos line="340" col="5"/>
+<syFor/>
+<Numeral nr="1"/>
+<Identifier nr="2"/>
+<Pos line="340" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<Pos line="340" col="5"/>
+<syImplies/>
+<Pos line="339" col="6"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="339" col="9"/>
+<sySemiColon/>
+<sySemiColon/>
+<Pos line="340" col="5"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="340" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="339" col="30"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="2"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<sySemiColon/>
+<Proof line="340" col="5">
+<syLet line="340" col="5"/>
+<Q nr="1"/>
+<Identifier nr="2"/>
+<Pos line="340" col="5"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="2"/>
+<sySemiColon/>
+<syAssume line="341" col="8"/>
+<ikTrmEqConst nr="9"/>
+<Int x="12"/>
+<Pos line="342" col="2"/>
+<syRedefine/>
+<Pos line="342" col="8"/>
+<PredicateSymbol/>
+<Int x="4"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots/>
+<LeftFunctorBracketSymbol/>
+<Int x="13"/>
+<Pos line="342" col="11"/>
+<sySemiColon/>
+<sySemiColon/>
+<sySemiColon/>
+<syAssume line="343" col="8"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="343" col="12"/>
+<syRedefine/>
+<Pos line="343" col="28"/>
+<syNot/>
+<Pos line="343" col="28"/>
+<syEx/>
+<Numeral nr="1"/>
+<Identifier nr="5"/>
+<Pos line="343" col="28"/>
+<syDirective/>
+<Int x="1"/>
+<Identifier nr="5"/>
+<sySemiColon/>
+<Pos line="343" col="25"/>
+<PredicateSymbol/>
+<Int x="5"/>
+<syThreeDots/>
+<ikTrmBound/>
+<Int x="1"/>
+<syThreeDots/>
+<ikTrmConstant/>
+<Int x="1"/>
+<sySemiColon/>
+<sySemiColon/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="344" col="8"/>
+<syRedefine/>
+<Pos line="344" col="20"/>
+<AttributeSymbol/>
+<ikTrmConstant/>
+<Int x="1"/>
+<syThreeDots line="344" col="17"/>
+<syDefinition/>
+<AttributeSymbol nr="12"/>
+<sySemiColon/>
+<sySemiColon/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="1"/>
+<Int x="14"/>
+<Pos line="344" col="25"/>
+<sySemiColon/>
+<Pos line="344" col="20"/>
+<syThus line="345" col="14"/>
+<ikTrmEqConst nr="0"/>
+<Int x="0"/>
+<Pos line="345" col="14"/>
+<syRedefine/>
+<Pos line="345" col="17"/>
+<syThesis/>
+<syFrom/>
+<syBy/>
+<Int x="0"/>
+<Int x="0"/>
+<l/>
+<Int x="9"/>
+<Int x="12"/>
+<Pos line="345" col="20"/>
+<l/>
+<Int x="7"/>
+<Int x="30"/>
+<Pos line="345" col="24"/>
+<sySemiColon/>
+<Pos line="345" col="17"/>
+<EndPosition line="346" col="3"/>
+</Proof>
+<EOT/>
+</Parser>

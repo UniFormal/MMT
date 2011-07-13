@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<Environ aid="XBOOLE_0">
+<Directive name="Vocabularies" argnr="3">
+<Ident name="HIDDEN" line="1" col="1"/>
+<Ident name="TARSKI" line="9" col="20"/>
+<Ident name="XBOOLE_0" line="9" col="30"/>
+</Directive>
+<Directive name="Notations" argnr="2">
+<Ident name="HIDDEN" line="1" col="1"/>
+<Ident name="TARSKI" line="10" col="17"/>
+</Directive>
+<Directive name="Definitions" argnr="0">
+</Directive>
+<Directive name="Theorems" argnr="1">
+<Ident name="TARSKI" line="12" col="16"/>
+</Directive>
+<Directive name="Schemes" argnr="1">
+<Ident name="TARSKI" line="13" col="15"/>
+</Directive>
+<Directive name="Registrations" argnr="0">
+</Directive>
+<Directive name="Constructors" argnr="2">
+<Ident name="HIDDEN" line="1" col="1"/>
+<Ident name="TARSKI" line="11" col="20"/>
+</Directive>
+<Directive name="Requirements" argnr="1">
+<Ident name="HIDDEN" line="1" col="1"/>
+</Directive>
+</Environ>

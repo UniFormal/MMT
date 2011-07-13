@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xml" href="file:///usr/share/mizar/miz.xml"?>
+<Constructors aid="XBOOLE_0" mizfiles="&#47;usr&#47;share&#47;mizar&#47;">
+<Constructor kind="K" nr="1" aid="TARSKI" relnr="1">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</Constructor>
+<Constructor kind="K" nr="2" aid="TARSKI" relnr="2">
+<Properties propertyarg1="1" propertyarg2="2">
+<Commutativity/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</Constructor>
+<Constructor kind="K" nr="3" aid="TARSKI" relnr="3">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</Constructor>
+<Constructor kind="K" nr="4" aid="TARSKI" relnr="4">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</Constructor>
+<Constructor kind="M" nr="1" aid="HIDDEN" relnr="1">
+<ArgTypes/>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</Constructor>
+<Constructor kind="R" nr="1" aid="HIDDEN" relnr="1">
+<Properties propertyarg1="1" propertyarg2="2">
+<Symmetry/>
+<Reflexivity/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+</Constructor>
+<Constructor kind="R" nr="2" aid="HIDDEN" relnr="2">
+<Properties propertyarg1="1" propertyarg2="2">
+<Antisymmetry/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+</Constructor>
+<Constructor kind="R" nr="1" aid="TARSKI" relnr="3">
+<Properties propertyarg1="1" propertyarg2="2">
+<Reflexivity/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+</Constructor>
+<Constructor kind="R" nr="2" aid="TARSKI" relnr="4">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+</Constructor>
+</Constructors>
