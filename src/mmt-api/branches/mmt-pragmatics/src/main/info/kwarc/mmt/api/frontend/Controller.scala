@@ -23,6 +23,10 @@ abstract class ROController {
       case e : Notation => e
       case _ => throw GetError(msg)
    }
+   def getDocument(path: DPath, msg : Path => String = p => "no document found at " + p) : Document = get(path) match {
+      case d: Document => d
+      case _ => throw GetError(msg(path))
+   }
 }
 
 /** A Controller is the central class maintaining all MMT knowledge items.
@@ -47,7 +51,6 @@ class Controller(checker : Checker, report : Report) extends ROController {
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       report.indent
-      println(path)
       backend.get(path, false)
       report.unindent
       log("retrieved " + path)
@@ -87,6 +90,19 @@ class Controller(checker : Checker, report : Report) extends ROController {
          case d : NarrativeElement => docstore.add(d) 
       })
    }
+   /**
+    * deletes a document or module
+    * no change management except that the deletion of a document also deletes its subdocuments and modules 
+    */
+   def delete(p: Path) {p match {
+      case d: DPath =>
+         val orphaned = docstore.delete(d)
+         orphaned foreach delete
+      case m: MPath =>
+         library.delete(m)
+         notstore.delete(m)
+      case s: GlobalName => throw DeleteError("deleting symbols not possible")
+   }}
    /** clears the state */
    def clear {
       docstore.clear
@@ -94,33 +110,38 @@ class Controller(checker : Checker, report : Report) extends ROController {
       notstore.clear
       depstore.clear
    }
+   def read(f: java.io.File) : DPath = {
+      val N = utils.xml.readFile(f)
+      reader.readDocument(DPath(URI.fromJava(f.toURI)), N)
+   }
    protected var base : Path = DPath(mmt.baseURI)
+   def getBase = base
    protected def handleExc[A](a: => A) {
        try {a}
        catch {
     	   case e : info.kwarc.mmt.api.Error => report(e)
-           case e : java.io.FileNotFoundException => report("error", e.getMessage)
+         case e : java.io.FileNotFoundException => report("error", e.getMessage)
        }
    }
    protected def handleLine(l : String) {
         val act = Action.parseAct(l, base)
         handle(act)
    }
-   /** exectutes an Action */
-   def handle(act : Action) {
+   /** executes an Action */
+   def handle(act : Action) : Unit = {
 	  if (act != NoAction) report("user", act.toString)
-	  handleExc (act match {
+	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
-	          val b = new xml.URI(currentDir.toURI)
+	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
 	      case SetBase(b) =>
 	         base = b
-	         report("controller", "base: " + base)
+	         report("response", "base: " + base)
 	      case Clear => clear
 	      case ExecFile(f) =>
 	         val file = new java.io.BufferedReader(new java.io.FileReader(f))
@@ -135,11 +156,11 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	      case LoggingOn(g) => report.groups += g
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
-	      case Read(p) => backend.get(p, true)
+	      case Read(f) => read(f)
 	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
-	      case PrintAllXML => report("library", library.toNode.toString)
-	      case PrintAll => report("library", library.toString)
+	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
+	      case PrintAll => report("response", "\n" + library.toString)
 	      case Exit => exit
       })
    }

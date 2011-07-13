@@ -11,15 +11,17 @@ import scala.collection.mutable.{HashSet,HashMap}
  * the set of third components can be retrieved efficiently.
  */
 class RelStore(report : frontend.Report) {
-   private val types = new HashMap[Path, Unary]
+   private val individuals = new HashMapToSet[Unary, Path]
    private val subjects = new HashMapToSet[(Binary,Path), Path]
    private val objects = new HashMapToSet[(Path,Binary), Path]
    private val dependencies = new HashMapToSet[(Path,Path), Binary]
    private def log(msg : => String) = report("abox", msg)
    /** retrieves all Individual declarations */
-   def getInds : Iterator[Individual] = types.map({case (p,t) => Individual(p,t)}).iterator
+   def getInds : Iterator[Individual] = individuals.pairs map {case (t,p) => Individual(p,t)}
+   /** retrieves all individual of a certain type */
+   def getInds(tp: Unary) : Iterator[Path] = individuals(tp).iterator
    /** retrieves all Relation declarations */
-   def getDeps : Iterator[Relation] = dependencies.pairs.map({case ((p,q), d) => Relation(d,p,q)})
+   def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
    /** adds a declaration */
    def +=(d : RelationalElement) {
       log(d.toString)
@@ -28,11 +30,34 @@ class RelStore(report : frontend.Report) {
            subjects += ((dep, obj), subj)
            objects += ((subj, dep), obj)
            dependencies += ((subj, obj), dep)
-        case Individual(p, tp) => types(p) = tp
+        case Individual(p, tp) => individuals += (tp, p)
       }
    }
-   /**
+      /**
     * Executes a query.
+    * There is no result set; instead, a continuation is passed that can be used to build the result set;
+    * this permits, e.g., to keep track of the order in which results were found.
+    * @param start the MMTURI to which the results are related
+    * @param q the query to be executed; the way in which results are related to the start
+    * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
+    */
+
+   def query(conc : Concept, add : Path => Unit) {conc match {
+      case OneOf(ps @ _*) => ps foreach add
+      case Relatives(c,r) => query(c) foreach {p => query(p,r,add)}
+      case OfType(tp) => individuals(tp) foreach add
+   }}
+   /**
+    * Special case of query(_,_) that stores the result set as a list.
+    * Elements are ordered as they are found, duplicates are removed.   
+    */
+  def query(conc: Concept) : List[Path] = {
+      var result : List[Path] = Nil
+      query(conc, (p : Path) => result ::= p)
+      result.distinct      
+   }
+   /**
+    * Executes a relational query from a fixed start path.
     * There is no result set; instead, a continuation is passed that can be used to build the result set;
     * this permits, e.g., to keep track of the order in which results were found.
     * @param start the MMTURI to which the results are related
@@ -65,7 +90,7 @@ class RelStore(report : frontend.Report) {
          case hd :: tl => query(start, hd).foreach(p => query(p, Sequence(tl : _*), add))
       }
       //only start itself iff it has the right type
-      case HasType(tp) => if (types.getOrElse(start, null) == tp) add(start)
+      case HasType(tp) => if (individuals(tp) contains start) add(start)
    }}
    
    /**
@@ -82,7 +107,7 @@ class RelStore(report : frontend.Report) {
     * Returns the set of theories a theory depends on
     */
    def theoryClosure(p : MPath) : List[MPath] = {
-      val q = Transitive(+HasMeta | +HasOccurrenceOfInImport | Query.HasStructureFrom | Reflexive)
+      val q = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
       val l = query(p, q)
       //for well-formed MMT, l can only contain MPaths
       l.mapPartial {case p : MPath => Some(p) case _ => None}
@@ -111,6 +136,6 @@ class RelStore(report : frontend.Report) {
       dependencies.clear
       subjects.clear
       objects.clear
-      types.clear
+      individuals.clear
    }
 }

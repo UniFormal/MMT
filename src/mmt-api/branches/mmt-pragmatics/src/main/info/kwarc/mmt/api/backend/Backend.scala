@@ -4,6 +4,8 @@ import info.kwarc.mmt.api.utils._
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
 
+// local XML databases or query engines to access local XML files: baseX or Saxon
+
 case object NotApplicable extends java.lang.Throwable
 case class NotFound(p : Path) extends info.kwarc.mmt.api.Error("Cannot find ressource " + p.toString)
 
@@ -23,9 +25,9 @@ abstract class Storage(scheme : String, authority : String, prefix : String) {
     */
    def get(path : Path, reader : Reader)
    private val length = prefix.length
-   protected def getSuffix(uri : xml.URI) : String = {
-      val p = uri.getPath
-      if (uri.getScheme == scheme && uri.getAuthority == authority && p.startsWith(prefix))
+   protected def getSuffix(uri : URI) : String = {
+      val p = uri.pathAsString
+      if (uri.scheme == Some(scheme) && uri.authority == Some(authority) && p.startsWith(prefix))
          p.substring(length)
       else
          throw NotApplicable
@@ -37,15 +39,25 @@ object Storage {
    /** reads a locutor registry file and returns a list of Storages */
    def fromLocutorRegistry(file : java.io.File) : List[LocalCopy] = {
       val N = utils.xml.readFile(file)
+    
+      /*
       val l = for (R <- (N\\"registry"\\"repository").toList) yield {
-   	     val repos = new xml.URI(xml.attr(R, "location"))
+   	     val repos = URI(xml.attr(R, "location"))
          for {wc <- R.child.toList if wc.label == "wc"} yield {
             val path = xml.attr(wc,"location")
             val localDir = new java.io.File(xml.attr(wc, "root"))
-            LocalCopy(repos.getScheme, repos.getAuthority, repos.getPath + path, localDir)
+            LocalCopy(repos.scheme.getOrElse(null), repos.authority.getOrElse(null), repos.pathAsString + path, localDir)
          }
-      }
-	  l.flatten    
+      }.toList
+      l.flatten 
+      */ 
+      
+     val l =   (N\\"registry"\\"repository").toList.flatMap(R => {
+      val repos = URI(xml.attr(R, "location"))
+      R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.getScheme, repos.getAuthority, repos.getPath + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
+     })
+      l
+
    }
    def fromOMBaseCatalog(file : java.io.File) : List[OMBase] = {
       val N = utils.xml.readFile(file)
@@ -54,7 +66,7 @@ object Storage {
             val scheme = xml.attr(n, "scheme")
             val authority = xml.attr(n, "authority")
             val prefix = xml.attr(n, "prefix")
-            val ombase = new xml.URI(xml.attr(n, "ombase"))
+            val ombase = URI(xml.attr(n, "ombase"))
             var dpats : List[OMQuery] = Nil
             var mpats : List[OMQuery] = null
             var spats : List[OMQuery] = null
@@ -92,7 +104,7 @@ object OMQuery {
       }
    }
    def replace(s : String, p : Path) : String = {
-       val s1 = s.replace("%doc%", p.doc.toPath).replace("%path%", p.doc.uri.getPath).replace("%full%", p.toPath)
+       val s1 = s.replace("%doc%", p.doc.toPath).replace("%path%", p.doc.uri.pathAsString).replace("%full%", p.toPath)
        p match {
           case p: DPath => s1 
           case p: MPath => s1.replace("%mod%", p.name.flat)
@@ -106,11 +118,11 @@ case class Mod(p : String, q : String) extends OMQuery(p, q)
 case class Ass(p : String, q : String) extends OMQuery(p, q)
 
 /** a trait for URL-addressed storages that can serve MMT document fragments */
-abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : xml.URI,
+abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : URI,
                       val dpats : List[OMQuery], mpats : List[OMQuery], spats : List[OMQuery], ipats : List[OMQuery])
          extends Storage(scheme, authority, prefix) {
      def sendRequest(p : String, b : String) : NodeSeq = {
-        val url = new java.net.URI(ombase.getScheme, ombase.getAuthority, ombase.getPath + p, null, null).toURL
+        val url = new java.net.URI(ombase.scheme.getOrElse(null), ombase.authority.getOrElse(null), ombase.pathAsString + p, null, null).toURL
         if (b == "") {
             //GET
 	        val src = scala.io.Source.fromURL(url, "utf-8")
@@ -137,7 +149,7 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
            val N = handleResponse("path " + q.path + " and body " + q.query, sendRequest(q.path,q.query))
            q match {
               case Doc(b, _, _) =>
-                 val base = DPath(new xml.URI(b))
+                 val base = DPath(URI(b))
                  reader.readDocuments(base, N)
               case Mod(_, _) => reader.readModules(mmt.mmtbase, None, N)
               case Ass(_, _) => reader.readAssertions(N)
@@ -156,7 +168,7 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
            val N = handleResponse("path " + qpath + " and body " + qbody, sendRequest(qpath,qbody))
            q match {
               case Doc(b, _, _) =>
-                 val base = DPath(new xml.URI(OMQuery.replace(b, path)))
+                 val base = DPath(URI(OMQuery.replace(b, path)))
                  reader.readDocuments(base, N)
               case Mod(_, _) => reader.readModules(path.doc, None, N)
               case Ass(_, _) => reader.readAssertions(N)
@@ -166,11 +178,11 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
 }
 
 /** a Storage that retrieves file URIs from the local system */
-case class LocalSystem(base : xml.URI) extends Storage("file", null, "/") {
+case class LocalSystem(base : URI) extends Storage("file", null, "/") {
    def get(path : Path, reader : Reader) {
       val uri = base.resolve(path.doc.uri)
       val test = getSuffix(uri)
-      val file = new java.io.File(uri)
+      val file = new java.io.File(uri.toJava)
       val N = utils.xml.readFile(file)
       reader.readDocuments(DPath(uri), N)
    }
@@ -197,7 +209,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
    }
 }
 
-case class TNTBase(scheme : String, authority : String, prefix : String, ombase : xml.URI,
+case class TNTBase(scheme : String, authority : String, prefix : String, ombase : URI,
                    dp : List[OMQuery], mp : List[OMQuery], sp : List[OMQuery], ip : List[OMQuery])
            extends OMBase(scheme, authority, prefix, ombase, dp, mp, sp, ip) with VirtualDocServer {
    def handleResponse(msg : => String, N : NodeSeq) : NodeSeq = {

@@ -46,6 +46,7 @@ case object Reflexive extends Query {
    def unary_- = this
    override def toString = "Id"
 }
+
 /** the reflexive relation restricted to a unary predicate
  *  This permits the restriction of a result set to elements of a certain type.
  */
@@ -54,11 +55,21 @@ case class HasType(tp : Unary) extends Query {
    override def toString = ":" + tp
 }
 
+/** The semantics of a Concept is a set of individuals */
+abstract class Concept
+/** The set of individuals listed */ 
+case class OneOf(paths : Path*) extends Concept
+/** The set of individuals of a certain type */
+case class OfType(tp: Unary) extends Concept
+/** The image of a concept under a relation, i.e., the set of individuals that are in the given relation with any of the given individuals. */ 
+case class Relatives(of: Concept, by: Query) extends Concept
+
+
 /** helper object for queries */
 object Query {
     /** S has a structure declaration with domain O, defined as an abbreviation */
    def HasStructureFrom = Sequence(- HasCodomain, HasType(IsStructure), + HasDomain)
+   def Imports = Choice(+ Includes, Query.HasStructureFrom)
     /** Disjunction of all binary relations, helpful for dependency closures */
-   def AnyDep = Choice(+HasOccurrenceOfInType, +HasOccurrenceOfInDefinition, +HasOccurrenceOfInTarget,
-   +IsAliasFor, +HasMeta, +HasOccurrenceOfInImport, +HasDomain, +HasCodomain)
+   def AnyDep = Choice(Binary.all.map(+ _) : _*)
 }

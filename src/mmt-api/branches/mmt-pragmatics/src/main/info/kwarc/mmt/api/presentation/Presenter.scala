@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects.{Position,Obj}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Node,NodeSeq}
 import scala.collection.mutable._
@@ -116,16 +116,37 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 			      recurse(value)
 			      gpar.rh.attributeEnd
 		      }
+		      //testing
+		      if (comps.length > 0) {
+		        comps(0) match {
+		          case s : StructuralElement =>
+		            gpar.rh.attributeStart("","id")
+		        	gpar.rh.apply(s.path.toPath)
+		        	gpar.rh.attributeEnd
+		          case OMID(path) => 
+		            gpar.rh.attributeStart("","id")
+		        	gpar.rh.apply(path.toPath)
+		        	gpar.rh.attributeEnd
+		          case _ => 
+		        }
+		      }
+		      
 		      children.foreach(recurse)
 		      gpar.rh.elementEnd
 		  case PList(items) =>
 		      items.foreach(recurse)	
-		  case IfPresent(pos, yes, no) =>
+		  case If(pos, test, yes, no) =>
 		      val p = if (pos < 0) pos + comps.length else pos
-		      if (p >= 0 && p < comps.length && comps(p) != Omitted)
-		         recurse(yes)
-		      else
-		         recurse(no)
+		      val exists = p >= 0 && p < comps.length
+		      val testresult = exists && (test match {
+		         case "present" => comps(p) != Omitted
+		         case "atomic" => comps(p) match {
+		            case OMID(_) => true
+		            case OMMOD(_) => true
+		            case _ => false
+		         }
+		      })
+		      if (testresult) recurse(yes) else recurse(no)
 		  case IfHead(pos, path, yes, no) =>
 		      val p = if (pos < 0) pos + comps.length else pos
               val yesno = if (p >= 0 && p < comps.length)
@@ -177,7 +198,7 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		  case Hole(i, default) => recurse(default)
 		  case Fragment(name, args @ _*) =>
              val notation = controller.get(gpar.nset, NotationKey(None, Role_Fragment(name)))
-		     val pres = notation.pres.fill(args : _*)
+		       val pres = notation.pres.fill(args : _*)
              log("found fragment notation: " + notation)
              recurse(pres)
 	  }

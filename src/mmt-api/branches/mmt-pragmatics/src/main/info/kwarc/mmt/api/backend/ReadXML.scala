@@ -1,14 +1,16 @@
 package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.presentation._
+import libraries._
+import documents._
+import metadata._
+import modules._
+import symbols._
+import objects._
+import patterns._
+import utils._
+import ontology._
+import presentation._
+
 import scala.xml.{Node,NodeSeq}
 
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
@@ -17,18 +19,9 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
    def add(e : StructuralElement) {
       controller.add(e)
    }
-   
-   private def splitOffMetaData(node : Node) : (Node, Option[Node]) = {
-      node match {
-        case scala.xml.Elem(p,l,a,s,cs) =>
-           var md : Option[Node] = None
-           val cs2 = cs flatMap {
-              case e @ <metadata>{_*}</metadata> => md = Some(e); Nil 
-              case e => e
-           }
-           (scala.xml.Elem(p,l,a,s,cs2 : _*), md)
-        case n => (n, None)
-      }
+   def add(e : StructuralElement, md: Option[MetaData]) {
+      e.setMetaData(md)
+      controller.add(e)
    }
    
    def read(p : DPath, node : Node, eager : Boolean) = node.label match {
@@ -38,22 +31,28 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
    }
    
    def readDocuments(location : DPath, documents : NodeSeq) {
-        for (D <- documents) D match {
+      documents foreach {readDocument(location, _)}
+   }
+   def readDocument(location : DPath, D : Node) : DPath = {
+        D match {
         case <omdoc>{modules @ _*}</omdoc> =>
-           val path = xml.attr(D, "base") match {case "" => location case s => DPath(new xml.URI(s))}
+           val path = xml.attr(D, "base") match {case "" => location case s => DPath(URI(s))}
            log("document with base " + path + " found")
            val d = new Document(path)
            add(d)
            readModules(path, Some(path), modules)
-        case <mmtabox>{decls @ _*}</mmtabox> => readAssertions(decls)
-        case scala.xml.Comment(_) =>
+           path
+        case <mmtabox>{decls @ _*}</mmtabox> =>
+           readAssertions(decls)
+           location
         case _ => throw new ParseError("document expected: " + D)
       }
    }
    
    /** calls docParent.get if on document elements */
    def readModules(modParent : DPath, docParent : Option[DPath], modules : NodeSeq) {
-      for (m <- modules) {
+      for (modmd <- modules) {
+         val (m, md) = MetaData.parseMetaDataChild(modmd, modParent)
          m match {
          case <dref/> =>
 	         val d = xml.attr(m, "target")
@@ -87,7 +86,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 				         }
 				         (new DeclaredTheory(base, name, meta), Some(symbols))
 		         }
-        	     add(t)
+        	     add(t, md)
         	     docParent map (dp => add(MRef(dp, tpath, true)))
               body.foreach {d => 
         	              report.indent
@@ -106,7 +105,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	              case assignments =>
 	 		        (new DeclaredView(base, name, from, to), Some(assignments))
                 }
-	            add(v)
+	            add(v, md)
 	            docParent map (dp => add(MRef(dp, vpath, true)))
 			      body.foreach {d =>
 	               report.indent
@@ -120,13 +119,13 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 		         val defaults = Defaults.parse(xml.attr(m, "defaults", "use"))
                  val to = Path.parse(xml.attr(m, "to"), utils.mmt.mimeBase)
 		         val nset = new Style(base, name, defaults, from, to, report)
-		         add(nset)
+		         add(nset, md)
 		         docParent map (dp => add(MRef(dp, npath, true)))
 		         readNotations(npath, from, notations)
              case (base : DPath, <omdoc>{mods}</omdoc>) =>
                  val dpath = docParent.get / name
                  val doc = new Document(dpath)
-                 add(DRef(docParent.get, dpath, true))
+                 add(DRef(docParent.get, dpath, true), md)
                  readModules(base, Some(dpath), mods)
              case (base : MPath, <notation>{_*}</notation>) =>
                  readNotations(base, base, m)
@@ -136,27 +135,37 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
    }
    def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq) {
       val thy = OMMOD(tpath)
-      def doCon(name : LocalName, t : Option[Node], d : Option[Node], r : String) {
-         log("constant " + name + " found")
+      def doCon(name : LocalName, t : Option[Node], d : Option[Node], r : String, md: Option[MetaData]) {
+         log("constant " + name.flat + " found")
          val uv = Universe.parse(r)
          val tp = t.map(Obj.parseTerm(_, base))
          val df = d.map(Obj.parseTerm(_, base))
          val c = new Constant(thy, name, tp, df, uv)
-         add(c)
+         add(c,md)
+      }
+      def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
+    	  log("pattern" + name.flat + " found")
+    	  val pr = parOpt match {
+    	 	  case Some(par) => Context.parse(par, base)
+    	 	  case None      => Context()
+    	  }
+    	  val cn = Context.parse(con, base)
+    	  val p = new Pattern(thy, name, Some(pr), cn)
+    	  add(p, md)
       }
       for (s <- symbols; name = Path.parseName(xml.attr(s,"name")).toLocalName) {
-         val (s2, md) = splitOffMetaData(s) 
+         val (s2, md) = MetaData.parseMetaDataChild(s, base) 
          s2 match {
          case <constant><type>{t}</type><definition>{d}</definition></constant> =>
-            doCon(name,Some(t),Some(d),xml.attr(s,"role"))
+            doCon(name,Some(t),Some(d),xml.attr(s,"role"), md)
          case <constant><definition>{d}</definition><type>{t}</type></constant> =>
-            doCon(name,Some(t),Some(d),xml.attr(s,"role"))
+            doCon(name,Some(t),Some(d),xml.attr(s,"role"), md)
          case <constant><type>{t}</type></constant> =>
-            doCon(name,Some(t),None,xml.attr(s,"role"))
+            doCon(name,Some(t),None,xml.attr(s,"role"), md)
          case <constant><definition>{d}</definition></constant> =>
-            doCon(name,None,Some(d), xml.attr(s,"role"))
+            doCon(name,None,Some(d), xml.attr(s,"role"), md)
          case <constant/> =>
-            doCon(name,None,None,xml.attr(s,"role"))
+            doCon(name,None,None,xml.attr(s,"role"), md)
          case <structure>{seq @ _*}</structure> =>
             log("structure " + name + " found")
             val from = OMMOD(Path.parseM(xml.attr(s, "from"), base))
@@ -164,38 +173,33 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                case <definition>{d}</definition> =>
                   val df = Obj.parseMorphism(d, base)
                   val i = new DefinedStructure(thy, name, from, df)
-                  add(i)
+                  add(i,md)
                case assignments =>
                   val i = new DeclaredStructure(thy, name, from)
-                  add(i)
+                  add(i,md)
                   readAssignments(OMDL(thy, name), base, assignments)
             }
          case <alias/> =>
             val forpath = Path.parseS(xml.attr(s, "for"), base)
             log("found alias " + name + " for " + forpath)
-            add(new Alias(thy, name, forpath))
+            add(new Alias(thy, name, forpath), md)
          case <include/> =>
             val from = Path.parseM(xml.attr(s, "from"), base)
             log("include from " + from + " found")
-            add(PlainInclude(from, tpath))
-         case <notation>{_*}</notation> =>
+            add(PlainInclude(from, tpath), md)
+         case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols
             readNotations(tpath, base, s)
-         case <pattern><type>{tp}</type></pattern> =>
+         case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
-            val p = new Pattern(thy, name, Some(Obj.parseTerm(tp,base)), None)
-            add(p)
-         case <instance>{ms @ _*}</instance> =>
-             val lm = ms.toList map {
-                case m @ <match/> =>
-                   val a = xml.attr(m,"value")
-                   val n = try {a.toInt}
-                           catch {case _ => throw ParseError("value must be natural number: " + a)}
-                   if (n < 0) throw ParseError("value must be natural number: " + n)
-                   Length(n)
-                case <match>{ls @ _*}</match> => OMOBJ(ls.toList map {l => Obj.parseTerm(l,base)})
-                }
-            val inst = new Instance(thy,name,Path.parseS(xml.attr(s2,"pattern"),base),lm)
-            add(inst)
+            doPat(name, Some(params), decls, md)
+         case <pattern><declarations>{decls}</declarations></pattern> =>
+            log("pattern with name " + name + " found")
+            doPat(name, None, decls, md)         
+         case <instance>{sb}</instance> =>
+            val p = xml.attr(s2,"pattern")
+         	log("instance " + name.flat + " of pattern " + p + " found")
+            val inst = new Instance(thy,name,Path.parseS(p,base),Substitution.parse(sb,base))
+            add(inst, md)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s)
          }

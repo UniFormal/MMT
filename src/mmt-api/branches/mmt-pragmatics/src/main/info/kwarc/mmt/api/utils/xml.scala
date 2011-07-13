@@ -42,6 +42,7 @@ object xml {
       ns match {
          case "xml" => "http://www.w3.org/XML/1998/namespace"
          case "omdoc" => "http://www.mathweb.org/omdoc"
+         case "jobad" => "http://omdoc.org/presentation"
          case "visib" => namespace("omdoc")
          case "om" => "http://www.openmath.org/OpenMath"
          case "xhtml" => "http://www.w3.org/1999/xhtml"
@@ -49,38 +50,62 @@ object xml {
          case "mathml" => "http://www.w3.org/1998/Math/MathML"
       }
    }
-   
-   case class URI(val uri : java.net.URI) {
-      def this(s : String) = this(new java.net.URI(s))
-      def this(scheme : String, authority : String, path : String, query : String) = this(new java.net.URI(scheme, authority, path, query, null))
-      private def up(s : String) : String = {
-      	val p = s.lastIndexOf("/")
-         if (p == -1) ""
-         else if (p == 0) "/"
-         else s.substring(0,p)
-      }
-      def /(n : String) = new URI(this.getScheme, this.getAuthority, this.getPath + "/" + n, null)
-      def path = uri.getPath.split("/").toList match {
-    	  case List("") => Nil
-    	  case l => l
-      }
-      def ^ : URI = new URI(this.getScheme, this.getAuthority, up(this.getPath), null)      
-      def resolve(s : String) : URI = resolve(new java.net.URI(s))
-      def resolve(u : java.net.URI) : URI = {
-         //resolve implements old URI RFC, therefore special case for query-only URI needed
-         if (u.getScheme == null && u.getAuthority == null && u.getPath == "")
-            new URI(new java.net.URI(uri.getScheme, uri.getAuthority, uri.getPath, u.getQuery, u.getFragment))
-         else
-            new URI(uri.resolve(u))
-      }
-      override def toString = uri.toString
-   }
-   object URI {
-      implicit def toURI(u : URI) : java.net.URI = u.uri
-   }
-   
-   implicit def javaURItoMyURI(u : java.net.URI) = new URI(u)
 }
+
+case class URI(scheme: Option[String], authority: Option[String], path: List[String], absolute: Boolean, query: Option[String], fragment: Option[String]) {
+   def /(n : String) : URI = this / List(n) // drops query and fragment
+   def /(p : List[String]) : URI = {
+      val abs = absolute || (authority != None && path == Nil) // if this has authority and empty path, make the path absolute
+      URI(scheme, authority, path ::: p, abs, None, None) // drops query and fragment
+   }
+   def ?(q: String) = URI(scheme, authority, path, absolute, Some(q), None) // drops fragment
+   def addFragment(f: String) = URI(scheme, authority, path, absolute, query, Some(f))
+   def ^ : URI = URI(scheme, authority, if (path.isEmpty) Nil else path.init, absolute, None, None) // drops query and fragment
+   def resolve(s : String) : URI = resolve(URI(s))
+   def resolve(u : URI) : URI = {
+      //resolve implements old URI RFC, therefore special case for query-only URI needed
+      if (u.scheme == None && u.authority == None && u.path == Nil)
+         URI(scheme, authority, path, absolute, u.query, u.fragment)
+      else
+         URI(toJava.resolve(u.toJava))
+   }
+   def pathAsString : String = path.mkString(if (absolute) "/" else "", "/", "")
+   /*def resolve(u : java.net.URI) : URI = {
+      //resolve implements old URI RFC, therefore special case for query-only URI needed
+      if (u.getScheme == null && u.getAuthority == null && u.getPath == "")
+         URI(scheme, authority, path, absolute, URI.nullToNone(u.getQuery), URI.nullToNone(u.getFragment))
+      else
+         URI(toJava.resolve(u))
+   }*/
+   def toJava = new java.net.URI(scheme.getOrElse(null), authority.getOrElse(null), pathAsString, query.getOrElse(null), fragment.getOrElse(null))
+   override def toString = toJava.toString
+}
+   
+object URI {
+   def nullToNone(s: String) = if (s == null) None else Some(s)
+   def apply(uri : java.net.URI) : URI = {
+      val scheme = nullToNone(uri.getScheme)
+      val authority = nullToNone(uri.getAuthority)
+      var jpath = uri.getPath
+      val absolute = jpath.startsWith("/")
+      var path = jpath.split("/",-1).toList
+      if (path == List(""))  //note: split returns at least List(""), never Nil
+         path = Nil
+      if (absolute)
+         path = path.drop(1)
+      val query = nullToNone(uri.getQuery)
+      val fragment = nullToNone(uri.getFragment)
+      URI(scheme, authority, path, absolute, query, fragment)
+   }
+   def apply(s : String) : URI = apply(new java.net.URI(s))
+   def apply(s: String, a: String) : URI = URI(Some(s), Some(a), Nil, false, None, None)
+   def apply(scheme : String, authority : String, path : List[String], query : String) : URI =
+      (URI(scheme, authority) / path) ? query
+   def file(absolute : Boolean, path: String*) = URI(Some("file"), None, path.toList, absolute, None, None)
+   implicit def toJava(u : URI) : java.net.URI = u.toJava
+   implicit def fromJava(u : java.net.URI) = apply(u)
+}
+
 
 
 /*

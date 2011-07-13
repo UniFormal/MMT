@@ -53,10 +53,10 @@ abstract class Path {
  * A DPath represents an MMT document level path.
  * @param doc the URI of the document (may not contain query or fragment)
  */
-case class DPath(uri : xml.URI) extends Path {
+case class DPath(uri : URI) extends Path {
    //go down to a module
    def doc = this
-   def last = uri.path match {case Nil | List("") => uri.uri .getAuthority case l => l.last}
+   def last = uri.path match {case Nil | List("") => uri.authority.getOrElse("") case l => l.last}
    def /(n : String) = DPath(uri / n)
    def /(n : LocalPath) = DPath(n.fragments.foldLeft(uri)( _ / _))
    def ^! = DPath(uri ^)
@@ -92,6 +92,8 @@ case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
    def doc = utils.mmt.mmtbase
    def ^! = if (name.length == 1) parent.toMPath else parent % name.init
    def last = name.last.toPath
+   def apply(args: List[Term]) = OMA(OMID(this), args)
+   def apply(args: Term*) = OMA(OMID(this), args.toList)
 }
 
 /**
@@ -195,9 +197,9 @@ object Path {
          bl.get / l.toLocalName
    //TODO: parsing of includes in names
    /** turns an MMT-URI reference (d,m,n) into an MMT-URI relative to base (omitting a component is possible by making it empty) */
-   def parse(d : xml.URI, m : String, n : String, base : Path) : Path = {
+   def parse(d : URI, m : String, n : String, base : Path) : Path = {
       //to make the case distinctions simpler, all omitted (= empty) components become None
-      val doc = if (d.getScheme == null && d.getAuthority == null && d.getPath == "") None else Some(DPath(d))
+      val doc = if (d.scheme == None && d.authority == None && d.path == Nil) None else Some(DPath(d))
       def wrap(l : LocalRef) = if (l.segments.isEmpty) None else Some(l)
       val mod = wrap(parseLocal(m))
       val name = wrap(parseLocal(n))
@@ -216,11 +218,11 @@ object Path {
       }
    }
    /** splits uri?mod?name into (uri, mod, name) */
-   def toTriple(s : String) : (xml.URI, String, String) = {
+   def toTriple(s : String) : (URI, String, String) = {
       if (s.indexOf("#") != -1)
          throw new ParseError("MMT-URI may not have fragment")
       val comps = s.split("\\?",-1)
-      val doc = new xml.URI(comps(0))  //note: split returns at least List(""), never Nil
+      val doc = URI(comps(0))  //note: split returns at least List(""), never Nil
       comps.length match {
          case 1 => (doc, "", "")
          case 2 => (doc, comps(1), "")

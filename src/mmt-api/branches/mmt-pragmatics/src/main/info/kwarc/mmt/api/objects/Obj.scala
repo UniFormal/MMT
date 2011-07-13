@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
+import utils._
+import libraries._
+import modules._
+import presentation._
+import Conversions._
+
 import scala.xml.{Node}
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.presentation._
-import Context._
-import Substitution._
 
 //import info.kwarc.mmt.api.utils.{log}
 
@@ -56,7 +56,7 @@ sealed abstract class Term extends Obj {
  * OMHID represents the hidden term.
  */
 case object OMHID extends Term with MMTObject {
-   def ^ (sub : Substitution) = this
+   def ^(sub : Substitution) = this
    override def *(that: Morph) = this
    def path = mmt.mmtsymbol("hidden")
    def args = Nil
@@ -112,11 +112,8 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
       </om:OMBIND> % pos.toIDAttr
    override def toString = "(" + binder + " [" + context + "] " + body + ")"  
    def ^(sub : Substitution) = {
-      val id = context.id
-      val subid = sub ++ id
-      // sub ++ id.take(i) represents sub, x_1/x_1, ..., x_{i-1}/x_{i-1} 
-      val newcon = context.zipWithIndex map {case (vd, i) => vd ^ (sub ++ id.take(i))} 
-      OMBINDC(binder ^ sub, newcon, condition.map(_ ^ subid), body ^ subid)
+      val subid = sub ++ context.id
+      OMBINDC(binder ^ sub, context ^ sub, condition.map(_ ^ subid), body ^ subid)
    }
 }
 
@@ -140,6 +137,19 @@ case class OMM(arg : Term, via : Morph) extends Term with MMTObject {
    def path = mmt.morphismapplication
    def args = List(arg,via)
    def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
+}
+
+/** an explicit substitution behaves like a let-binder
+ * consequently, the substitution must be given as Context to introduce information about the bound variables
+ * G |- OMSub(arg,via) iff G, via |- arg  
+ */
+case class OMSub(arg: Term, via: Context) extends Term {
+   def head = Some(mmt.substitutionapplication)
+   def role = Role_binding
+   def ^ (sub : Substitution) = OMSub(arg ^ sub ++ via.id, via ^ sub)
+   private def asBinder = OMBIND(OMID(mmt.substitutionapplication), via, arg)
+   def toNodeID(pos: Position) = asBinder.toNodeID(pos)
+   def components = asBinder.components
 }
 
 /**
@@ -231,29 +241,45 @@ case class OMFOREIGN(node : Node) extends Term {
    def ^(sub : Substitution) = this
 }
 /*
- * OpenMath values are integers, floats, and strings (we omit byte arrays)
+ * OpenMath values are integers, floats, and strings (we omit byte arrays); we add URIs
  * 
  */
-case class OMI(value : BigInt) extends Term {
+abstract class OMLiteral extends Term {
    def head = None
    def role = Role_value
    def components = List(StringLiteral(value.toString))
-   def toNodeID(pos : Position) = <om:OMI>{value.toString}</om:OMI> % pos.toIDAttr
-   def ^(sub : Substitution) = this
+   val value : Any
+   def tag: String
+   override def toString = value.toString
+   def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, scala.xml.Text(value.toString)) 
+   def ^(sub : Substitution) = this   
 }
-case class OMF(value : Double) extends Term {
+case class OMI(value : BigInt) extends OMLiteral {
+   def tag = "OMI"
+}
+case class OMF(value : Double) extends OMLiteral {
+   def tag = "OMF"
+}
+case class OMSTR(value : String) extends OMLiteral {
+   def tag = "OMSTR"
+}
+case class OMURI(value: URI) extends OMLiteral {
+   def tag = "OMURI"
+}
+
+case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
    def head = None
    def role = Role_value
-   def components = List(ValueLiteral(value))
-   def toNodeID(pos : Position) = <om:OMF>{value.toString}</om:OMF> % pos.toIDAttr
-   def ^(sub : Substitution) = this
-}
-case class OMSTR(value : String) extends Term {
-   def head = None
-   def role = Role_value
-   def components = List(StringLiteral(value))
-   def toNodeID(pos : Position) = <om:OMSTR>{value.toString}</om:OMSTR> % pos.toIDAttr
-   def ^(sub : Substitution) = this
+   def components = tokens
+   override def toString = tokens.map(_.toString).mkString("", " ", "")
+   def toNodeID(pos : Position) = <semiformal>{tokens.map(_.toNode)}</semiformal> 
+   def ^(sub : Substitution) = {
+      val newtokens = tokens map {
+         case Formal(t) => Formal(t ^ sub)
+         case i => i
+      }
+      OMSemiFormal(newtokens)
+   }
 }
 
 /**
@@ -277,6 +303,7 @@ sealed trait ModuleObj extends Obj {
  */
 sealed trait TheoryObj extends ModuleObj {
    def ^ (sub : Substitution) : TheoryObj = this
+   def id = OMIDENT(this)
 }
 
 /**
@@ -426,9 +453,9 @@ object Obj {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       //this function unifies the two cases for binders in the case distinction below
-      def doBinder(binder : Node, context : Seq[Node], condition : Option[Node], body : Node) = {
+      def doBinder(binder : Node, context : Node, condition : Option[Node], body : Node) = {
          val bind = parseTerm(binder, nbase, callback)
-         val cont = Context.fromTerms(context.map(parseTerm(_, nbase, callback)).toList)
+         val cont = Context.parse(context, base, callback)
          if (cont.isEmpty)
             throw new ParseError("at least one variable required in " + cont.toString)
          val cond = condition.map(parseTerm(_, nbase, callback))
@@ -455,9 +482,9 @@ object Obj {
          case <OME>{child @ _*}</OME> =>
             val ch = child.toList.map(parseTerm(_, nbase, callback))
             OME(ch.head,ch.tail)
-         case <OMBIND>{binder}<om:OMBVAR>{context @ _*}</om:OMBVAR>{condition}{body}</OMBIND> =>
-            				doBinder(binder, context, Some(condition), body)
-         case <OMBIND>{binder}<om:OMBVAR>{context @ _*}</om:OMBVAR>{body}</OMBIND> =>
+         case <OMBIND>{binder}{context}{condition}{body}</OMBIND> =>
+           	doBinder(binder, context, Some(condition), body)
+         case <OMBIND>{binder}{context}{body}</OMBIND> =>
             doBinder(binder, context, None, body)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
             val k = parseTerm(key, nbase, callback)
@@ -526,7 +553,7 @@ object Obj {
   }
   
   private def parseOMS(N : Node, base : Path) : Path = {
-     val doc = new xml.URI(xml.attr(N,"base"))
+     val doc = URI(xml.attr(N,"base"))
      val mod = xml.attr(N,"module")
      val name = xml.attr(N,"name")
      Path.parse(doc, mod, name, base)

@@ -3,37 +3,30 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects.Context._
-import info.kwarc.mmt.api.objects.Substitution._
+import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.utils._
 import scala.io.Source
 
 
-// TODO: Adjust code for (optional) contexts for jokers and binders
-// TODO: Adjust ReadXML.scala accordingly
-class Pattern(val home: TheoryObj, val name : LocalName, val tp : Option[Term], val df: Option[Term]) extends Symbol {
+class Pattern(val home: TheoryObj, val name : LocalName, val params: Option[Context], val con : Context) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
-       {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
-       {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
+   		{params match {
+   			case Some(c) => <parameters>{c.toNode}</parameters>
+   			case None => Nil}}
+   	    <declarations>{con.toNode}</declarations>
      </pattern>
      
    def role = info.kwarc.mmt.api.Role_Pattern
    def components = Nil
    override def toString = 
-     "Pattern for " + name.flat + (if (tp.isDefined) " " + tp.get.toString else "")
+     "Pattern for " + name.flat + " " + params.toString + " " + con.toString
 }
 
-class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : List[Match]) extends Symbol {
+class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution) extends Symbol {
    def toNode = 
-     <instance name={name.flat}>
-     {matches map {
-       case Length(n) =>
-          <match value={n.toString}/> 
-       case OMOBJ(tl) =>
-          <match>{tl map (t => t.toOBJNode)}</match> 
-       }
-      }
+     <instance name={name.flat} pattern={pattern.toPath}>
+     {matches.toNode}
      </instance>
 
    def role = info.kwarc.mmt.api.Role_Instance
@@ -42,67 +35,86 @@ class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalN
      "Instance " + name.flat + " of pattern " + pattern.toString  
 }
 
-object PRep {
-	def apply(fn: Term, n: Int): Term = OMA(OMID(mmt.repetition),List(fn,OMI(n)))
-    def unapply(t: Term) : Option[(Term,Int)] = t match {
+object Rep {
+	def apply(fn : Term, n : Int): Term = OMA(OMID(mmt.repetition),List(fn,OMI(n)))
+	def apply(fn : Term, s : String) : Term = OMA(OMID(mmt.repetition), List(fn, OMV(s)))
+    def unapply(t : Term) : Option[(Term,Int)] = t match {
 		case OMA(mmt.repetition,List(fn,OMI(n))) => Some((fn,n.toInt))
 		case _ => None
 	}
 }
 
+object Ellipsis {
+	def apply(body : Term, name : String, from : Term, to : Term) : Term =
+		OMBIND(OMA(OMID(mmt.ellipsis),List(from,to)),Context(TermVarDecl(name,Some(OMID(mmt.nat)),None,null)), body)
+	def unapply(t : Term) : Option[(Term,String,Term,Term)] = 
+		t match {
+		case OMBIND(OMA(OMID(mmt.ellipsis),List(k,l)),Context(TermVarDecl(i,Some(OMID(mmt.nat)),None,null)),tm) => 
+		  Some((tm,i,k,l))
+		case _ => None
+	}
+}
+
+object Index {
+	def apply(seq : Term, ind : Term) : Term = OMA(OMID(mmt.index), List(seq, ind))
+	def unapply(t : Term) : Option[(Term,Term)] = 
+		t match {
+		case OMA(OMID(mmt.index), List(seq, ind)) => Some(seq,ind)
+		case _ => None
+	}
+}
+
+object Seq {
+	def apply(seq : Term*) = OMA(OMID(mmt.seq),seq.toList)
+	def unapplySeq(tm : Term) : Option[Seq[Term]] = 
+		tm match {
+		case OMA(OMID(mmt.seq),l) => Some(l)
+		case _ => None 
+	}
+}
+
 object Pattern {
-  def elaborate(inst: Instance, lib: Lookup): Constant = {
-    val pat : Pattern = lib.getPattern(inst.pattern) // TODO There are two getPattern methods now, one should be eliminated.
-    val t : Option[Term] = pat.tp.map(mergeTerm(_,inst.matches)) // x => merge(x,...)
-    /* pat.tp match 
-    	case Some(tm) => Some(merge(tm, inst.matches))
-    	case None     => None
-    	}
-       val t : Option[Term] = if (pat.tp.isDefined) Some(merge(pat.tp.get,inst.matches)) else None
-    */
-    val d : Option[Term] = pat.df.map(mergeTerm(_,inst.matches))
-    val c = new Constant(inst.home,inst.name,t,d,null)
-    c.setOrigin(InstanceElaboration(inst.path))
-    c
-  }
-
-  /**
-   * Takes a term with possibly several binders and separates the bound variables from the inner-most body
-   * @param tm a openmath term 
-   * @param ctx a possibly empty context
-   * @return a pair of a term and a context
-   */
-  def splitTerm(tm: Term, ctx: Context = Context()):(Context,Term) = { //TODO: If we have a fixed joker context, then we dont need splitting.
-	  tm match {
-	 	  case OMBIND(bin,con,bdy) if bin == mmt.jokerbinder => splitTerm(bdy,ctx ++ con)
-	 	  case _ => (ctx,tm)
-	  }
-  }
-
-  /**
-   * Takes a term and a list of matches, 
-   * generates a new term by substituting the bound values in the argument term by values in the matches. 
-   * @param tm a term with possibly several joker binders on the top of the syntax tree
-   * @param matches a list containing a match for every joker variable in tm
-   * @return an MMT term where each joker variable is replaced by the corresponding match
-   */
-  def mergeTerm(tm: Term, matches: List[Match]): Term = {
-	 	val (con,bdy) =  splitTerm(tm)	 	
-	 	val itm = (con zip matches).foldLeft[Term](bdy) {
-	 		case (st,(c,OMOBJ(List(t)))) => 
-	 		   val sub = Sub(c.name,t) 
-	 		   val subs = Substitution(sub) 
-	 		   (st ^ subs)
-	 		case (st,(c,OMOBJ(tl))) => 
-	 		     substituteList(st,c.name,tl)	 		
-	 		case (st,(c,Length(n))) => 
-	 		   val sub = Sub(c.name,OMI(n))
-	 		   val subs = Substitution(sub)
-	 		   expandRepetitionInd(st ^ subs)	     
-	 	}
-	 	removeIndex(itm) 	
+  def elaborate(inst: Instance, lib: Lookup): List[Constant] = {
+    val pt : Pattern = lib.getPattern(inst.pattern) 
+    // TODO There are two getPattern methods now, one should be eliminated.
+    pt.con.map {
+       case TermVarDecl(n,tp,df,at) => 
+        def auxSub(x : Term) = {
+        	val names = pt.con.map(d => d.name)
+        	(x ^ inst.matches) ^ Substitution(names.map(y => Sub(y,OMID(inst.home % (inst.name / y)))) : _*)
+        }
+    	new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
+    }
   }
   
+  def normalizeTerm(tm : Term) : List[Term] = {
+	  tm match {
+	 	  case Ellipsis(ex,n,from,to) =>
+	 	     val f = normalizeNat(from).getOrElse(return List(tm)) 
+	 	     val t = normalizeNat(to).getOrElse(return List(tm))
+	 	     List.range(f,t).flatMap(i => normalizeTerm(ex ^ Substitution(Sub(n,OMI(i)))))
+	 	  case Index(seq,ind) => 
+	 	     val i = normalizeNat(ind).getOrElse(return List(tm))
+	 	     List(normalizeTerm(seq)(i))
+	 	  case Seq(tms @ _*) => tms.toList.flatMap(normalizeTerm)
+	 	  /* TODO Which terms do we need to recursively normalize?
+	 	  case OMA(fn,args) => OMA(normalizeTerm(fn),args.map(normalizeTerm))
+	 	  case OMBIND(bin,con,bdy) => OMBIND(bin,normalizeTerm(con),normalizeTerm(bdy))
+	 	  case OMATTR(arg,key,value)=> OMATTR(normalizeTerm(arg),key,normalizeTerm(value))
+	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via)
+	 	  case OME(err, args) => OME(normalizeTerm(err),args.map(normalizeTerm))
+	 	  */
+	 	  case obj => List(obj)
+	  }
+  }
+  
+  def normalizeNat(t : Term) : Option[Int] = {
+	  t match {
+	 	  case OMI(n) => Some(n.toInt)
+	 	  case _ => None
+	  }
+  }
+	  
   def expandRepetitionInd(tm: Term): Term = {
 	  tm match {
 	 	  case OMA(fun,args) => 
@@ -170,10 +182,27 @@ object Pattern {
 	 		  }
 	 		   )
   }
-   
-  def removeIndex(tm:Term): Term = {
+  
+ 
+  def expandSeq(seq : Term) : List[Term] = {
+	seq match {
+		case Ellipsis(tm,i,OMI(a),OMI(z)) => 
+		List.range(a.intValue,z.intValue).map(x => tm ^ Substitution(Sub(i,OMI(x))))
+		case _ => throw IllTerm //TODO Do the remaining cases.
+	}
+  }
+ 
+  
+  def removeIndex(seq : Term, ind : Term) : Term = {
+	  ind match {
+	       case OMI(i) => expandSeq(seq)(i.intValue)
+	       case _ => throw IllTerm
+	       }
+  }
+  
+  def removeIndex(tm : Term) : Term = {
 	   tm match {
-	  	   case OMA(OMID(mmt.index),List(OMI(i),fun)) => fun
+	  	   case OMA(OMID(mmt.index),List(OMI(i),fn)) => fn
 	  	   case OMA(fn,args) => OMA(removeIndex(fn),args.map(removeIndex))
 	  	   case OMBIND(bin,con,bdy) => OMBIND(bin,removeIndex(con),removeIndex(bdy))
 	 	   case OMATTR(arg,key,value)=> OMATTR(removeIndex(arg),key,removeIndex(value))
@@ -182,8 +211,8 @@ object Pattern {
 	 	   case obj => obj
 	   }
   }
-   
-  def removeIndex(con: Context): Context = {
+  
+  def removeIndex(con : Context) : Context = {
 	  con.map(
 	 		  {case TermVarDecl(n,tp,df,attrs @ _*) => 
 	 		   TermVarDecl(n,tp.map(removeIndex),df.map(removeIndex),attrs.map(x => (x._1,removeIndex(x._2))) : _*)
@@ -191,93 +220,20 @@ object Pattern {
 	 		  }
 	 		   )
   }
-  
-  /*
-  
-  def patternCheck(c: Constant, lib: Lookup): Option[Instance] = {
-        val pts = getPatterns(c.parent,lib)
-        pts.map(pt => try {check(pt,c.tp,c.df)} catch {case NoMatch => None})
-	    //Instance(parent : MPath, name : LocalPath, val pattern : SPath, val matches : List[Match])
-        None
-  }
-   
-  def getPatterns(parent: MPath, lib: Lookup): List[Pattern] = { //TODO Finish the method
-	   val t = lib.getTheory(parent)
-	   if (t.meta == None) Nil else
-	   //TODO Finish 
-	   Nil
-  }
-   
-  def check(pt: Pattern, tm: Option[Term], df: Option[Term]): Option[Instance] = {
-	   (tm,pt.tp) match {
-	  	   //case (None,None) => 
-	  	   //case (None,Some) =>
-	  	   case (Some(t),None) => None 
-	       case (Some(t),Some(p)) => checkTerm(t,Context(),p,Context())(pt.con)
-	   }
-	   (pt.df,df) match {
-	  	   //case (None,None) => 
-	  	   case (None,Some(t)) => None
-	  	   //case (Some,None) => 
-	  	   case (Some(t),Some(p)) => checkTerm(t,Context(),p,Context())(pt.con) 
-	   }
-	    None 
-  }
-       
-  def checkTerm(tm: Term, tcon: Context, ptm: Term, pcon: Context)(implicit jcon: Context): List[Sub] = {
-	   (tm,ptm) match {
-	  	   case (OMS(p),OMS(s)) => if (p == s) Nil else throw NoMatch
-	  	   case (OMV(m),OMV(n)) if (pcon.isDeclared(n)) => 
-	  	     if (index(m) == index(n)) Nil
-	  	     else throw NoMatch
-	  	   case (om,OMV(n)) => jcon(n) match {
-	  	  	   case TermVarDecl(_,Some(tp),None,_*) => Sub(OMV(n),om) //TODO how does tp look like? 
-	  	  	   // joker vars must have types and do not have definiens  
-	  	   }
-	  	   case (OMA(fn,ar),OMA(fm,ap)) => checkTerm(fn,tcon,fm,pcon) ::: checkList(ar,tcon,ap,pcon) 
-	   	   case (OMBIND(bn,cn,bd),OMBIND(bm,cm,bc)) => checkTerm(bn,tcon,bm,pcon) ::: checkTerm(bd,tcon ++ cn,bc,pcon ++ cm)
-	  	   case _ => throw NoMatch  
-	   }
-  }
-   
-  def checkList(lt1: List[Term], con1: Context, lt2: List[Term], con2: Context)(implicit jcon: Context): List[Sub] = { //TODO Return substitutions in all cases
-	   (lt1,lt2) match {
-	  	   case (Nil,Nil) => Nil
-	  	   case (Nil, PRep(fn,n) :: m) => checkList(Nil,con1,m,con2) // Length(n,0) 
-	  	   case (Nil, _)  => throw NoMatch
-	  	   case (l, Nil)  => throw NoMatch
-	       case (a :: l, PRep(fn,n) :: m) =>
-	         try {
-	        	 val lm1 = checkTerm(a,con1,fn,con2)
-	        	 val lm2 = checkList(l,con1,lt2,con2)
-	        	 lm1 ::: lm2  // Length(n+1,0)?????
-	         } catch {
-	        	 case NoMatch => checkList(lt1,con1,m,con2) // Length(n,0)
-	         }
-	       case (a :: l, e :: m) => 
-	        val lt1 = checkTerm(a,con1,e,con2)
-	        val lt2 = checkList(l,con1,m,con2)
-	        lm1 ::: lm2 
-	   }
-  }
-	     
-  */
-   
 }
 
-abstract class Match
-case class Length(n : Int) extends Match
-case class OMOBJ(tl : List[Term]) extends Match
-
+case object IllTerm extends java.lang.Throwable
 case object NoMatch extends java.lang.Throwable 
 
+abstract class Nat()
+//val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution
 /*
 object Test {
-	val f1 = OMS()
+	val ex = DPath(new xml.URI("http", "cds.omdoc.org", "/logics/first-order/syntax/sfol.omdoc", null)) ? "SFOL"
+	val fn = Instance(OMMOD(sfol ? " LocalName("binary"))
 	val v1 = OMV("x")
 	def main(args : Array[String]) {
-		print(Pattern.checkTerm(OMA(f,List(v1))).toString)
+		print(Pattern.elaborate().toString)
 	}
-}
 }
 */

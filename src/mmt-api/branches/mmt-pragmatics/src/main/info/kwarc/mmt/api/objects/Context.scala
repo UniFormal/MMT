@@ -1,13 +1,11 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.presentation._
-
-import Context._
-import Substitution._
+import utils._
+import presentation._
+import Conversions._
 
 /** represents an MMT variable declaration */
-abstract class VarDecl(val name : String) extends Content {
+sealed abstract class VarDecl(val name : String) extends Content {
    def ^(sub : Substitution) : VarDecl
    def toOMATTR : Term
    def toNodeID(pos : Position) : scala.xml.Node
@@ -28,7 +26,7 @@ case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs :
    def presentation(lpar : LocalParams) =
      ByNotation(NotationKey(None, role), components, lpar)
    /** converts to an OpenMath-style attributed variable using two special keys */
-   def varToOMATTR = attrs.toList.foldLeft[Term](OMV(n)) {case (v, (key,value)) => OMATTR(v, key, value)}
+   def varToOMATTR = attrs.toList.foldLeft[Term](OMV(n)) {(v,a) => OMATTR(v, a._1, a._2)}
    def toOMATTR : Term = {
       (tp, df) match {
          case (None, None) => varToOMATTR
@@ -47,10 +45,10 @@ object TermVarDecl {
    /** converts OpenMath-style attributed variable to MMT term variable */
    def fromTerm(t : Term) : TermVarDecl = {
       t match {
-         case OMATTR(OMATTR(v, mmt.mmttype, t), mmt.mmtdef, d) => doVar(v, Some(t), Some(d))
-         case OMATTR(OMATTR(v, mmt.mmtdef, d), mmt.mmttype, t) => doVar(v, Some(t), Some(d))
-         case OMATTR(v, mmt.mmttype, t) => doVar(v, Some(t), None)
-         case OMATTR(v, mmt.mmtdef, d) => doVar(v, None, Some(d))
+         case OMATTR(OMATTR(v, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d) => doVar(v, Some(t), Some(d))
+         case OMATTR(OMATTR(v, OMID(mmt.mmtdef), d), OMID(mmt.mmttype), t) => doVar(v, Some(t), Some(d))
+         case OMATTR(v, OMID(mmt.mmttype), t) => doVar(v, Some(t), None)
+         case OMATTR(v, OMID(mmt.mmtdef), d) => doVar(v, None, Some(d))
          case v => doVar(v, None, None)
       }
    }
@@ -60,7 +58,6 @@ object TermVarDecl {
          case OMATTR(tm, key, value) => doVar(tm, tp, df, (key, value) :: attrs.toList : _*)
          case v => throw new ObjError(v + " is not an MMT variable")
       }
-      
    }
 }
 
@@ -80,7 +77,17 @@ case class Context(variables : VarDecl*) {
 	   case -1 => throw LookupError(name)
 	   case i => variables.length - i - 1 
    }
-   val id : Substitution = this.map(v => Sub(v.name,OMV(v.name)))  
+   def id : Substitution = this.map(v => Sub(v.name,OMV(v.name)))
+   /** substitutes in all variable declarations except for the previously declared variables
+    *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
+    */  
+   def ^(sub : Substitution) : Context = {
+      val id = this.id // precompute value
+      // sub ++ id.take(i) represents sub, x_1/x_1, ..., x_{i-1}/x_{i-1} 
+      val newvars = variables.zipWithIndex map {case (vd, i) => vd ^ (sub ++ id.take(i))}
+      Context(newvars :_*)
+   }
+
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode = toNodeID(Position.None)
    def toNodeID(pos : Position) =
@@ -88,7 +95,20 @@ case class Context(variables : VarDecl*) {
 }
 
 /** a case in a substitution */
-case class Sub(name: String, target: Term)
+case class Sub(name: String, target: Term) {
+	def toOMATTR = OMATTR(OMV(name), OMID(mmt.mmtdef), target)
+	def toNodeID(pos: Position ) = toOMATTR.toNodeID(pos)
+	override def toString = toOMATTR.toString
+}
+/** helper object */
+object Sub {
+   /** converts OpenMath-style attributed variable to a Sub */
+   def fromTerm(t : Term) : Sub = t match {
+      case OMATTR(OMV(n), OMID(mmt.mmtdef), t) => Sub(n, t)
+      case _ => throw ObjError(t + " is not a case in a substitution")
+   }
+}
+
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) {
    def ++(n:String, t:Term) : Substitution = this ++ Sub(n,t)
@@ -99,19 +119,34 @@ case class Substitution(subs : Sub*) {
 	   case None => throw SubstitutionUndefined(v)
 	   case Some(s) => s.target 
    }
+   /** turns a substitution into a context by treating every substitute as a definiens
+    *  this permits seeing substitution application as a let-binding
+    */
+   def asContext = {
+      val decls = subs map {case Sub(n, t) => TermVarDecl(n, None, Some(t))}
+      Context(decls : _*)
+   }
+   override def toString = this.map(_.toString).mkString("",", ","")
+   def toNode = toNodeID(Position.None)
+   def toNodeID(pos : Position) = asContext.toNodeID(pos)
 }
 
 /** helper object */
 object Context {
+	/** parsers an OMBVAR into a context */
+	def parse(N : scala.xml.Node, base : Path, callback : Path => Unit = x => ()) : Context = N match {
+		case <om:OMBVAR>{context @ _*}</om:OMBVAR> => fromTerms(context.map(Obj.parseTerm(_, base, callback)).toList)
+        case _ => throw ParseError("not a well-formed context: " + N.toString)
+	}
    /** converts a list of OpenMath-style attributed variable to a context */
    def fromTerms(l : List[Term]) = Context(l.map(TermVarDecl.fromTerm) : _*)
-   /** implicit conversion between a context and a list of variable declarations */
-   implicit def list2context(l : List[VarDecl]) : Context = Context(l : _*)
-   implicit def context2list(c: Context) : List[VarDecl] = c.variables.toList
 }
 object Substitution {
-   /** implicit conversion between a substitution and a list of maps */
-   implicit def string2OMV(s: String) : OMV = OMV(s)
-   implicit def list2substitution(l : List[Sub]) : Substitution = Substitution(l:_*)
-   implicit def substitution2list(s: Substitution) : List[Sub] = s.subs.toList
+	/** parsers an OMBVAR into a substitution */
+	def parse(N : scala.xml.Node, base : Path, callback : Path => Unit = x => ()) : Substitution = N match {
+		case <om:OMBVAR>{sb @ _*}</om:OMBVAR> => fromTerms(sb.map(Obj.parseTerm(_, base, callback)).toList)
+        case _ => throw ParseError("not a well-formed substitution: " + N.toString)
+	}
+   /** converts a list of OpenMath-style attributed variable to a substitution */
+   def fromTerms(l : List[Term]) = Substitution(l.map(Sub.fromTerm) : _*)
 }

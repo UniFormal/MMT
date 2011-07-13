@@ -122,12 +122,32 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
             }
          }
    }
+/*   def domain(m : ModuleObj) : Iterator[GlobalName] = m match {
+      case OMMOD(p) =>
+        val imported = importsTo(OMMOD(p)) flatMap domain
+        val local = get(p) match {
+           case p: DeclaredTheory => p.valueList flatMap {
+              case i: Include => Nil
+              case c: Constant => List(c.path)
+              case a: Alias => List(a.path)
+              case s: Structure => domain(s.from) map {
+                 case f % n if f == s.from => m % (s.name / n)
+                 case (f: TheoryObj) % n   => m % (s.name / IncludeStep(f) / n)
+              }
+              case _ => Nil //should be impossible
+           }
+        }
+        imported ++ local
+   }*/
+   /** iterator over all includes into a theory
+    * a new iterator is needed once e this has been traversed 
+    */
    def importsTo(to: TheoryObj) : Iterator[TheoryObj] = to match {
       case OMMOD(p) =>
          getTheory(p) match {
             case t: DefinedTheory => importsTo(t.df)
-            case t: DeclaredTheory =>
-               new Iterator[TheoryObj] {
+            case t: DeclaredTheory => t.iterator filter {case i: Include => true case _ => false} map {case i: Include => i.from}
+/*               new Iterator[TheoryObj] {
                   private val i = t.iterator
                   private def takeNext : Option[TheoryObj] = {
                      if (i.hasNext)
@@ -145,14 +165,13 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
                      f
                   }
                   def hasNext = n.isDefined
-               }
+               }*/
          }
    }
    def imports(from: TheoryObj, to: TheoryObj) : Boolean = {
       from == to || ((from,to) match {
          case (OMMOD(f), OMMOD(t)) => importsTo(to) contains from
       })
-            
    }
 	 /*  
 	   
@@ -220,6 +239,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
     * @param e the element to be added
     */
    def add(e : ContentElement) {
+      log("adding: " + e.toString)
       try {checker.check(e)(this) match {
          case Fail(msg) => throw AddError(msg)
          case Success(deps) =>
@@ -362,3 +382,8 @@ object Normalize extends Traverser[(Lookup,Morph)] {
 	}
 }
 */
+
+object Library {
+   def apply(rep: frontend.Report) = new Library(NullChecker, new RelStore(rep), rep)
+   def plain = apply(frontend.NullReport) 
+}
