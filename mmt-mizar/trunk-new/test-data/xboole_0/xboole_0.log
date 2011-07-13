@@ -1,0 +1,21 @@
+Constructors
+  </usr/share/mizar/prel/h/hidden.dco
+  </usr/share/mizar/prel/t/tarski.dco
+  The list of all imported constructors
+      M   L   V   R   K   U   G
+   +HIDDEN
+     +1          +2            
+      1   0   0   2   0   0   0
+   +TARSKI
+                 +2  +4        
+      1   0   0   4   4   0   0
+Requirements
+  </usr/share/mizar/prel/h/hidden.dre
+Registrations
+Notations
+  </usr/share/mizar/prel/h/hidden.dno
+  </usr/share/mizar/prel/t/tarski.dno
+Theorems
+  </usr/share/mizar/prel/t/tarski.the
+Schemes
+  </usr/share/mizar/prel/t/tarski.sch

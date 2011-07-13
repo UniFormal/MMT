@@ -1,0 +1,11293 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xml" href="file:///usr/share/mizar/miz.xml"?>
+<Article aid="XBOOLE_0" mizfiles="&#47;usr&#47;share&#47;mizar&#47;">
+<Section/>
+
+<Reservation>
+<Ident vid="2"/>
+<Ident vid="3"/>
+<Ident vid="4"/>
+<Ident vid="5"/>
+<Ident vid="6"/>
+<Ident vid="7"/>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Reservation>
+
+<SchemeBlock line="20" col="12" schemenr="1" vid="8">
+<SchemeFuncDecl nr="1" vid="9">
+<ArgTypes/>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</SchemeFuncDecl>
+<SchemePredDecl nr="1" vid="10">
+<ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+</SchemePredDecl>
+<SchemePremises>
+</SchemePremises>
+<Proposition line="21" col="23">
+<Not>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<Proof line="22" col="9">
+<BlockThesis>
+<Not>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</BlockThesis>
+<DefPred nr="1" vid="11">
+<ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<And>
+<Pred kind="R" nr="1" pid="1">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+<Pred kind="P" nr="1">
+<LocusVar nr="2"/>
+</Pred>
+</And>
+</DefPred>
+<Proposition line="23" col="44" nr="1" vid="12">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="6">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="7">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<PrivPred nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+<And>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="2"/>
+</Pred>
+</And>
+</PrivPred>
+<PrivPred nr="1">
+<Var nr="1"/>
+<Var nr="3"/>
+<And>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+</And>
+</PrivPred>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="1">
+<Var nr="2"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</For>
+</Proposition>
+<By line="23" col="44"/>
+<Consider nr="1">
+<Proposition line="25" col="47">
+<Not>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<For pid="0" vid="6">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="3"/>
+<Var nr="2"/>
+<And>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="2"/>
+</Pred>
+</And>
+</PrivPred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="6">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="3"/>
+<Var nr="2"/>
+<And>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="2"/>
+</Pred>
+</And>
+</PrivPred>
+</And>
+</Not>
+</For>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<From articlenr="1" nr="1" line="25" col="57">
+<Ref nr="1" vid="12" line="25" col="73"/>
+</From>
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Proposition line="25" col="2" nr="2" vid="13">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<For pid="0" vid="6">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Var nr="1"/>
+<And>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</And>
+</PrivPred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="6">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Var nr="1"/>
+<And>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</And>
+</PrivPred>
+</And>
+</Not>
+</For>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</Consider>
+<Take>
+<Const nr="1" vid="2"/>
+</Take>
+<Thesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Const nr="2" vid="5"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Const nr="2" vid="5"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="28" col="47">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<For pid="0" vid="6">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="1"/>
+<Const nr="2" vid="5"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Const nr="2" vid="5"/>
+</Pred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="6">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="R" nr="1" pid="1">
+<Var nr="1"/>
+<Const nr="2" vid="5"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Const nr="2" vid="5"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By line="28" col="47">
+<Ref nr="2" vid="13" line="28" col="50"/>
+</By>
+<Conclusion>
+<Proposition line="29" col="14">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Const nr="2" vid="5"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Pred kind="P" nr="1">
+<Const nr="2" vid="5"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="2" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By linked="true" line="29" col="14"/>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="30" col="4"/>
+</Proof>
+<EndPosition line="30" col="4"/>
+</SchemeBlock>
+
+<DefinitionBlock line="32" col="10">
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Definition kind="V" nr="1" vid="14" line="35" col="7">
+<Constructor kind="V" nr="1" aid="XBOOLE_0" relnr="1">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Constructor>
+<Pattern kind="V" nr="1" aid="XBOOLE_0" formatnr="12" constrkind="V" constrnr="1" relnr="1">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+</Visible>
+</Pattern>
+</Definition>
+<EndPosition line="37" col="3"/>
+</DefinitionBlock>
+<Definiens constrkind="V" constrnr="1" aid="XBOOLE_0" defnr="1" vid="14" relnr="1">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+</Essentials>
+<DefMeaning kind="m">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="1"/>
+</Pred>
+</Not>
+</For>
+</DefMeaning>
+</Definiens>
+<DefTheorem constrkind="V" constrnr="1">
+<Proposition line="37" col="3" nr="1" vid="14">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</For>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</For>
+<Not pid="-6">
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</DefTheorem>
+
+<RegistrationBlock line="39" col="12">
+<Registration>
+<RCluster aid="XBOOLE_0" nr="1">
+<ArgTypes/>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+</RCluster>
+<Existence>
+<Proposition line="41" col="11">
+<Not>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+<Proof line="42" col="7">
+<BlockThesis>
+<Not>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</For>
+</Not>
+</BlockThesis>
+<DefPred nr="1" vid="10">
+<ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Not>
+<Verum/>
+</Not>
+</DefPred>
+<Consider nr="1">
+<Proposition line="44" col="15">
+<Not>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Verum/>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By line="44" col="14"/>
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Consider>
+<Consider nr="2">
+<Proposition line="46" col="25">
+<Not>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Not>
+<Verum/>
+</Not>
+</PrivPred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Not>
+<Verum/>
+</Not>
+</PrivPred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<From articlenr="0" nr="1" line="46" col="33"/>
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Proposition line="46" col="2" nr="2" vid="12">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="1"/>
+<Not>
+<Verum/>
+</Not>
+</PrivPred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="1"/>
+<Not>
+<Verum/>
+</Not>
+</PrivPred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</Consider>
+<Take>
+<Const nr="2" vid="3"/>
+</Take>
+<Thesis>
+<Pred kind="V" nr="1">
+<Const nr="2" vid="3"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Conclusion>
+<Proposition line="48" col="40">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</For>
+</Proposition>
+<By line="48" col="40">
+<Ref nr="2" vid="12" line="48" col="43"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions>
+<Pair x="1" y="1"/>
+</ThesisExpansions>
+</Thesis>
+<EndPosition line="49" col="5"/>
+</Proof>
+</Existence>
+</Registration>
+<EndPosition line="50" col="3"/>
+</RegistrationBlock>
+
+<DefinitionBlock line="52" col="10">
+<Definition kind="K" nr="0" vid="0" line="54" col="5">
+<Coherence>
+<Proposition line="55" col="11">
+<Is>
+<Choice>
+<Typ kind="M" nr="1" pid="1">
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+</Typ>
+</Choice>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Is>
+</Proposition>
+<By line="55" col="11"/>
+</Coherence>
+<Constructor kind="K" nr="1" aid="XBOOLE_0" relnr="5">
+<ArgTypes/>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Constructor>
+<Pattern kind="K" nr="1" aid="XBOOLE_0" formatnr="13" constrkind="K" constrnr="5" relnr="5">
+<ArgTypes/>
+<Visible/>
+</Pattern>
+</Definition>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Definition kind="K" nr="2" vid="15" line="58" col="7">
+<Existence>
+<Proposition line="60" col="11">
+<Not pid="-4">
+<For pid="-2" vid="0">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-3">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<Proof line="61" col="7">
+<BlockThesis>
+<Not pid="-4">
+<For pid="-2" vid="0">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-3">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</BlockThesis>
+<Take>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Take>
+<Thesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="3">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Conclusion>
+<Proposition line="64" col="48">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</Proposition>
+<Proof line="65" col="9">
+<BlockThesis>
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</BlockThesis>
+<Assume>
+<Proposition line="66" col="14">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="67" col="54">
+<Not>
+<For pid="0" vid="16">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="67" col="54">
+<Ref nr="4" articlenr="1" kind="D" line="67" col="67"/>
+</By>
+<Conclusion>
+<Proposition line="68" col="21">
+<Not>
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</Proposition>
+<By linked="true" line="68" col="21">
+<Ref nr="2" articlenr="1" kind="D" line="68" col="34"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="69" col="7"/>
+</Proof>
+</Conclusion>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="70" col="12">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Consider nr="4">
+<Proposition line="73" col="8">
+<Not>
+<For pid="0" vid="16">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="1" pid="1">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="1" pid="1">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="73" col="11"/>
+<Typ kind="M" nr="1" pid="1" vid="16">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Proposition line="72" col="2" nr="2" vid="12">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="1" pid="1">
+<Const nr="4" vid="16"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="1" pid="1">
+<Const nr="4" vid="16"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</Proposition>
+<Proposition line="73" col="2" nr="3" vid="13">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="4" vid="16"/>
+</Pred>
+</Proposition>
+</Consider>
+<Proposition line="74" col="18">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="16"/>
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Proposition>
+<By line="74" col="18">
+<Ref nr="2" vid="12" line="74" col="21"/>
+<Ref nr="2" articlenr="1" kind="D" line="74" col="34"/>
+</By>
+<Conclusion>
+<Proposition line="75" col="19">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="3" pid="3">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Func>
+</Pred>
+</Proposition>
+<By linked="true" line="75" col="19">
+<Ref nr="3" vid="13" line="75" col="22"/>
+<Ref nr="4" articlenr="1" kind="D" line="75" col="35"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="76" col="5"/>
+</Proof>
+</Existence>
+<Uniqueness>
+<Proposition line="77" col="12">
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<Proof line="78" col="7">
+<BlockThesis>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</BlockThesis>
+<Let nr="3">
+<Typ kind="M" nr="1" pid="1" vid="12">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1" vid="13">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="80" col="2" nr="2" vid="17">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<Proposition line="81" col="2" nr="3" vid="18">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Now line="82" col="7">
+<Let nr="5">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Proposition line="84" col="37">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By line="84" col="37">
+<Ref nr="2" vid="17" line="84" col="40"/>
+</By>
+<Conclusion>
+<Proposition line="85" col="34">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By linked="true" line="85" col="34">
+<Ref nr="3" vid="18" line="85" col="37"/>
+</By>
+</Conclusion>
+<EndPosition line="86" col="7"/>
+<BlockThesis>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</BlockThesis>
+</Now>
+<Conclusion>
+<Proposition line="87" col="19">
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Proposition>
+<By linked="true" line="87" col="19">
+<Ref nr="2" articlenr="1" kind="T" line="87" col="28"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="88" col="5"/>
+</Proof>
+</Uniqueness>
+<JustifiedProperty>
+<Commutativity/>
+<Proposition line="89" col="15">
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</For>
+</Proposition>
+<By line="89" col="15"/>
+</JustifiedProperty>
+<JustifiedProperty>
+<Idempotence/>
+<Proposition line="90" col="13">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+<By line="90" col="13"/>
+</JustifiedProperty>
+<Constructor kind="K" nr="2" aid="XBOOLE_0" relnr="6">
+<Properties propertyarg1="1" propertyarg2="2">
+<Commutativity/>
+<Idempotence/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Constructor>
+<Pattern kind="K" nr="2" aid="XBOOLE_0" formatnr="14" constrkind="K" constrnr="6" relnr="6">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<Definition kind="K" nr="3" vid="19" line="92" col="7">
+<Existence>
+<Proposition line="94" col="11">
+<Not pid="-4">
+<For pid="-2" vid="0">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-3">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<Proof line="95" col="7">
+<BlockThesis>
+<Not pid="-4">
+<For pid="-2" vid="0">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-3">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</BlockThesis>
+<DefPred nr="1" vid="10">
+<ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Pred kind="R" nr="2" pid="3">
+<LocusVar nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</DefPred>
+<Conclusion>
+<Proposition line="97" col="68">
+<Not>
+<For pid="0" vid="4">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</PrivPred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</PrivPred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<From articlenr="0" nr="1" line="97" col="68"/>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="99" col="5"/>
+</Proof>
+</Existence>
+<Uniqueness>
+<Proposition line="100" col="12">
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<Proof line="101" col="7">
+<BlockThesis>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</BlockThesis>
+<Let nr="3">
+<Typ kind="M" nr="1" pid="1" vid="12">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1" vid="13">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="103" col="2" nr="2" vid="20">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<Proposition line="104" col="2" nr="3" vid="21">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Now line="105" col="7">
+<Let nr="5">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Proposition line="107" col="36">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By line="107" col="36">
+<Ref nr="2" vid="20" line="107" col="39"/>
+</By>
+<Conclusion>
+<Proposition line="108" col="34">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By linked="true" line="108" col="34">
+<Ref nr="3" vid="21" line="108" col="37"/>
+</By>
+</Conclusion>
+<EndPosition line="109" col="7"/>
+<BlockThesis>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</BlockThesis>
+</Now>
+<Conclusion>
+<Proposition line="110" col="19">
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Proposition>
+<By linked="true" line="110" col="19">
+<Ref nr="2" articlenr="1" kind="T" line="110" col="28"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="111" col="5"/>
+</Proof>
+</Uniqueness>
+<JustifiedProperty>
+<Commutativity/>
+<Proposition line="112" col="15">
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</For>
+</Proposition>
+<By line="112" col="15"/>
+</JustifiedProperty>
+<JustifiedProperty>
+<Idempotence/>
+<Proposition line="113" col="13">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+<By line="113" col="13"/>
+</JustifiedProperty>
+<Constructor kind="K" nr="3" aid="XBOOLE_0" relnr="7">
+<Properties propertyarg1="1" propertyarg2="2">
+<Commutativity/>
+<Idempotence/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Constructor>
+<Pattern kind="K" nr="3" aid="XBOOLE_0" formatnr="15" constrkind="K" constrnr="7" relnr="7">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<Definition kind="K" nr="4" vid="22" line="115" col="7">
+<Existence>
+<Proposition line="117" col="11">
+<Not pid="-4">
+<For pid="-2" vid="0">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-3">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<Proof line="118" col="7">
+<BlockThesis>
+<Not pid="-4">
+<For pid="-2" vid="0">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-3">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</BlockThesis>
+<DefPred nr="1" vid="10">
+<ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<LocusVar nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</DefPred>
+<Conclusion>
+<Proposition line="120" col="68">
+<Not>
+<For pid="0" vid="4">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</PrivPred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<PrivPred nr="1">
+<Var nr="2"/>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</PrivPred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</For>
+</Not>
+</Proposition>
+<From articlenr="0" nr="1" line="120" col="68"/>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="122" col="5"/>
+</Proof>
+</Existence>
+<Uniqueness>
+<Proposition line="123" col="12">
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<Proof line="124" col="7">
+<BlockThesis>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</BlockThesis>
+<Let nr="3">
+<Typ kind="M" nr="1" pid="1" vid="12">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1" vid="13">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="126" col="2" nr="2" vid="23">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<Proposition line="127" col="2" nr="3" vid="24">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Now line="128" col="7">
+<Let nr="5">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Proposition line="130" col="40">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By line="130" col="40">
+<Ref nr="2" vid="23" line="130" col="43"/>
+</By>
+<Conclusion>
+<Proposition line="131" col="34">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By linked="true" line="131" col="34">
+<Ref nr="3" vid="24" line="131" col="37"/>
+</By>
+</Conclusion>
+<EndPosition line="132" col="7"/>
+<BlockThesis>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="5" vid="5"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="13"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="12"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</BlockThesis>
+</Now>
+<Conclusion>
+<Proposition line="133" col="19">
+<Pred kind="R" nr="1">
+<Const nr="3" vid="12"/>
+<Const nr="4" vid="13"/>
+</Pred>
+</Proposition>
+<By linked="true" line="133" col="19">
+<Ref nr="2" articlenr="1" kind="T" line="133" col="28"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="134" col="5"/>
+</Proof>
+</Uniqueness>
+<Constructor kind="K" nr="4" aid="XBOOLE_0" relnr="8">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Constructor>
+<Pattern kind="K" nr="4" aid="XBOOLE_0" formatnr="16" constrkind="K" constrnr="8" relnr="8">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<EndPosition line="135" col="3"/>
+</DefinitionBlock>
+<Definiens constrkind="K" constrnr="5" aid="XBOOLE_0" defnr="2" relnr="2">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+</Essentials>
+<DefMeaning kind="e">
+<Choice>
+<Typ kind="M" nr="1" pid="1">
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+</Typ>
+</Choice>
+</DefMeaning>
+</Definiens>
+<Definiens constrkind="K" constrnr="6" aid="XBOOLE_0" defnr="3" vid="15" relnr="3">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+<Int x="3"/>
+</Essentials>
+<DefMeaning kind="m">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="3"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</DefMeaning>
+</Definiens>
+<Definiens constrkind="K" constrnr="7" aid="XBOOLE_0" defnr="4" vid="19" relnr="4">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+<Int x="3"/>
+</Essentials>
+<DefMeaning kind="m">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</DefMeaning>
+</Definiens>
+<Definiens constrkind="K" constrnr="8" aid="XBOOLE_0" defnr="5" vid="22" relnr="5">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+<Int x="3"/>
+</Essentials>
+<DefMeaning kind="m">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<LocusVar nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</DefMeaning>
+</Definiens>
+<DefTheorem constrkind="K" constrnr="5">
+<Proposition line="135" col="3">
+<Pred kind="R" nr="1">
+<Func kind="K" nr="5"/>
+<Choice>
+<Typ kind="M" nr="1" pid="1">
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+</Typ>
+</Choice>
+</Pred>
+</Proposition>
+</DefTheorem>
+<DefTheorem constrkind="K" constrnr="6">
+<Proposition line="135" col="3" nr="2" vid="15">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1">
+<Var nr="3"/>
+<Func kind="K" nr="6">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+<Not pid="-6">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="3"/>
+<Func kind="K" nr="6">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+<DefTheorem constrkind="K" constrnr="7">
+<Proposition line="135" col="3" nr="3" vid="19">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1">
+<Var nr="3"/>
+<Func kind="K" nr="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+<Not pid="-6">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="3"/>
+<Func kind="K" nr="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+<DefTheorem constrkind="K" constrnr="8">
+<Proposition line="135" col="3" nr="4" vid="22">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1">
+<Var nr="3"/>
+<Func kind="K" nr="8">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+<Not pid="-6">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="3"/>
+<Func kind="K" nr="8">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+
+<DefinitionBlock line="137" col="10">
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Definition kind="K" nr="0" vid="0" line="140" col="3">
+<Correctness>
+<Coherence>
+<Is>
+<Func kind="K" nr="6" pid="6">
+<Func kind="K" nr="8" pid="8">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+<Func kind="K" nr="8" pid="8">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Func>
+</Func>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Is>
+</Coherence>
+<Proposition line="141" col="13">
+<Is>
+<Func kind="K" nr="6" pid="6">
+<Func kind="K" nr="8" pid="8">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+<Func kind="K" nr="8" pid="8">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Func>
+</Func>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Is>
+</Proposition>
+<By line="141" col="13"/>
+</Correctness>
+<JustifiedProperty>
+<Commutativity/>
+<Proposition line="142" col="15">
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Func kind="K" nr="6" pid="6">
+<Func kind="K" nr="8" pid="8">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+<Func kind="K" nr="8" pid="8">
+<Var nr="3"/>
+<Var nr="2"/>
+</Func>
+</Func>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Func kind="K" nr="6" pid="6">
+<Func kind="K" nr="8" pid="8">
+<Var nr="3"/>
+<Var nr="2"/>
+</Func>
+<Func kind="K" nr="8" pid="8">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</For>
+</Proposition>
+<By line="142" col="15"/>
+</JustifiedProperty>
+<Constructor kind="K" nr="5" aid="XBOOLE_0" relnr="9">
+<Properties propertyarg1="1" propertyarg2="2">
+<Commutativity/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Constructor>
+<Pattern kind="K" nr="5" aid="XBOOLE_0" formatnr="17" constrkind="K" constrnr="9" relnr="9">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<Definition kind="R" nr="5" vid="25" line="144" col="7">
+<JustifiedProperty>
+<Symmetry/>
+<Proposition line="146" col="10">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1" pid="1">
+<Func kind="K" nr="7" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="1">
+<Func kind="K" nr="7" pid="7">
+<Var nr="2"/>
+<Var nr="1"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<By line="146" col="10"/>
+</JustifiedProperty>
+<Constructor kind="R" nr="1" aid="XBOOLE_0" relnr="5">
+<Properties propertyarg1="1" propertyarg2="2">
+<Symmetry/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+</Constructor>
+<Pattern kind="R" nr="1" aid="XBOOLE_0" formatnr="18" constrkind="R" constrnr="5" relnr="6">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<Definition kind="R" nr="6" vid="26" line="148" col="7">
+<JustifiedProperty>
+<Irreflexivity/>
+<Proposition line="150" col="15">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</Proposition>
+<By line="150" col="15"/>
+</JustifiedProperty>
+<JustifiedProperty>
+<Antisymmetry/>
+<Proposition line="151" col="11">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<Proof line="152" col="7">
+<BlockThesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</BlockThesis>
+<Let nr="3">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="3" vid="2"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="3" vid="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Const nr="3" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Const nr="3" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="4">
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="3" vid="2"/>
+<Const nr="4" vid="3"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="3" vid="2"/>
+<Const nr="4" vid="3"/>
+</Pred>
+</Not>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="155" col="2" nr="5" vid="12">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="3" vid="2"/>
+<Const nr="4" vid="3"/>
+</Pred>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="3" vid="2"/>
+<Const nr="4" vid="3"/>
+</Pred>
+</Not>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="156" col="12">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="3" vid="2"/>
+<Const nr="4" vid="3"/>
+</Pred>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="157" col="12">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="158" col="41">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="4" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<By linked="true" line="158" col="41">
+<Ref nr="5" vid="12" line="158" col="44"/>
+<Ref nr="3" articlenr="1" kind="D" line="158" col="57"/>
+</By>
+<Conclusion>
+<Proposition line="159" col="19">
+<Pred kind="R" nr="1" pid="2">
+<Const nr="4" vid="3"/>
+<Const nr="3" vid="2"/>
+</Pred>
+</Proposition>
+<By linked="true" line="159" col="19">
+<Ref nr="2" articlenr="1" kind="T" line="159" col="28"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="160" col="5"/>
+</Proof>
+</JustifiedProperty>
+<Constructor kind="R" nr="2" aid="XBOOLE_0" relnr="6">
+<Properties propertyarg1="1" propertyarg2="2">
+<Irreflexivity/>
+<Antisymmetry/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+</Constructor>
+<Pattern kind="R" nr="2" aid="XBOOLE_0" formatnr="19" constrkind="R" constrnr="6" relnr="7">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<Definition kind="R" nr="0" vid="0" line="162" col="3">
+<JustifiedProperty>
+<Reflexivity/>
+<Proposition line="163" col="13">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</Proposition>
+<By line="163" col="13"/>
+</JustifiedProperty>
+<JustifiedProperty>
+<Symmetry/>
+<Proposition line="164" col="10">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-9">
+<Not pid="-4">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-10">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<By line="164" col="10"/>
+</JustifiedProperty>
+<Constructor kind="R" nr="3" aid="XBOOLE_0" relnr="7">
+<Properties propertyarg1="1" propertyarg2="2">
+<Symmetry/>
+<Reflexivity/>
+</Properties>
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+</Constructor>
+<Pattern kind="R" nr="3" aid="XBOOLE_0" formatnr="20" constrkind="R" constrnr="7" relnr="8">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<Definition kind="R" redefinition="true" nr="0" vid="0" line="166" col="3">
+<Compatibility>
+<Proposition line="167" col="15">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<Proof line="168" col="7">
+<BlockThesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</BlockThesis>
+<Conclusion>
+<Proposition line="169" col="38">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1" pid="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+</Proposition>
+<By line="169" col="38"/>
+</Conclusion>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="170" col="12">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="2" vid="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="171" col="41">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<By linked="true" line="171" col="41">
+<Ref nr="3" articlenr="1" kind="D" line="171" col="54"/>
+</By>
+<Conclusion>
+<Proposition line="172" col="19">
+<Pred kind="R" nr="1">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Proposition>
+<By linked="true" line="172" col="19">
+<Ref nr="2" articlenr="1" kind="T" line="172" col="28"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="173" col="5"/>
+</Proof>
+</Compatibility>
+<Pattern kind="R" nr="4" aid="XBOOLE_0" formatnr="3" constrkind="R" constrnr="1" relnr="9">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Definition>
+<EndPosition line="174" col="3"/>
+</DefinitionBlock>
+<Definiens constrkind="K" constrnr="9" aid="XBOOLE_0" defnr="6" relnr="6">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+<Int x="3"/>
+</Essentials>
+<DefMeaning kind="e">
+<Func kind="K" nr="6" pid="6">
+<Func kind="K" nr="8" pid="8">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Func>
+<Func kind="K" nr="8" pid="8">
+<LocusVar nr="2"/>
+<LocusVar nr="1"/>
+</Func>
+</Func>
+</DefMeaning>
+</Definiens>
+<Definiens constrkind="R" constrnr="5" aid="XBOOLE_0" defnr="7" vid="25" relnr="7">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+</Essentials>
+<DefMeaning kind="m">
+<Pred kind="R" nr="1" pid="1">
+<Func kind="K" nr="7" pid="7">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</DefMeaning>
+</Definiens>
+<Definiens constrkind="R" constrnr="6" aid="XBOOLE_0" defnr="8" vid="26" relnr="8">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+</Essentials>
+<DefMeaning kind="m">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+</Not>
+</And>
+</DefMeaning>
+</Definiens>
+<Definiens constrkind="R" constrnr="7" aid="XBOOLE_0" defnr="9" relnr="9">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+</Essentials>
+<DefMeaning kind="m">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="3" pid="4">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="3" pid="4">
+<LocusVar nr="2"/>
+<LocusVar nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</DefMeaning>
+</Definiens>
+<Definiens constrkind="R" constrnr="1" aid="XBOOLE_0" defnr="10" relnr="10">
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Essentials>
+<Int x="1"/>
+<Int x="2"/>
+</Essentials>
+<DefMeaning kind="m">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<LocusVar nr="2"/>
+<LocusVar nr="1"/>
+</Pred>
+</And>
+</DefMeaning>
+</Definiens>
+<DefTheorem constrkind="K" constrnr="9">
+<Proposition line="174" col="3">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Pred kind="R" nr="1">
+<Func kind="K" nr="9">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+<Func kind="K" nr="6" pid="6">
+<Func kind="K" nr="8" pid="8">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+<Func kind="K" nr="8" pid="8">
+<Var nr="2"/>
+<Var nr="1"/>
+</Func>
+</Func>
+</Pred>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+<DefTheorem constrkind="R" constrnr="5">
+<Proposition line="174" col="3" nr="5" vid="25">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="5">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="1">
+<Func kind="K" nr="7" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1" pid="1">
+<Func kind="K" nr="7" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="5">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+<DefTheorem constrkind="R" constrnr="6">
+<Proposition line="174" col="3" nr="6" vid="26">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="6">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="6">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+<DefTheorem constrkind="R" constrnr="7">
+<Proposition line="174" col="3">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+<DefTheorem constrkind="R" constrnr="1">
+<Proposition line="174" col="3">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<And>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="3" pid="4">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="R" nr="3" pid="4">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+</DefTheorem>
+
+<NotationBlock line="176" col="8">
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Pattern kind="R" nr="5" aid="XBOOLE_0" formatnr="21" constrkind="R" constrnr="5" antonymic="true" relnr="10" redefnr="6">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+<EndPosition line="179" col="3"/>
+</NotationBlock>
+
+<JustifiedTheorem>
+<Proposition line="182" col="39">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-7">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+</Pred>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</For>
+</Proposition>
+<Proof line="183" col="5">
+<BlockThesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-7">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+</Pred>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-7">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-7">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Var nr="1"/>
+</Func>
+</Pred>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Var nr="1"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="3">
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-7">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="184" col="46">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="3" vid="3"/>
+<Const nr="2" vid="2"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="3" vid="3"/>
+<Const nr="2" vid="2"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By line="184" col="46">
+<Ref nr="2" vid="15" line="184" col="51"/>
+</By>
+<Conclusion>
+<Proposition line="185" col="17">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-7">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="3" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Const nr="2" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="2"/>
+<Const nr="3" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By linked="true" line="185" col="17">
+<Ref nr="4" vid="22" line="185" col="22"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="186" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+<JustifiedTheorem>
+<Proposition line="189" col="68">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="4">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</For>
+</Proposition>
+<Proof line="190" col="5">
+<BlockThesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="4">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="4"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="2"/>
+<Var nr="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="4">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="9" pid="9">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="4">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Var nr="1"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="3">
+<Typ kind="M" nr="1" pid="1" vid="4">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="192" col="2" nr="7" vid="12">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+<Not pid="-6">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="3" vid="4"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Now line="193" col="5">
+<Let nr="4">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Proposition line="195" col="60">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-10">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="3" vid="4"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-11">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="3" vid="4"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="3" vid="4"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-11">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="3" vid="4"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By line="195" col="60">
+<Ref nr="7" vid="12" line="195" col="63"/>
+</By>
+<Proposition line="196" col="47">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-9">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="3" vid="4"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not pid="-8">
+<And pid="-9">
+<Not pid="-10">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+</Not>
+<Not pid="-11">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="8" pid="8">
+<Const nr="3" vid="4"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By linked="true" line="196" col="47">
+<Ref nr="4" vid="22" line="196" col="52"/>
+</By>
+<Conclusion>
+<Proposition line="197" col="36">
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Proposition>
+<By linked="true" line="197" col="36">
+<Ref nr="2" vid="15" line="197" col="41"/>
+</By>
+</Conclusion>
+<EndPosition line="198" col="5"/>
+<BlockThesis>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</BlockThesis>
+</Now>
+<Conclusion>
+<Proposition line="199" col="17">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="9" pid="9">
+<Const nr="2" vid="3"/>
+<Const nr="3" vid="4"/>
+</Func>
+</Pred>
+</Proposition>
+<By linked="true" line="199" col="17">
+<Ref nr="2" articlenr="1" kind="T" line="199" col="26"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="200" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+<RegistrationBlock line="202" col="12">
+<Registration>
+<FCluster aid="XBOOLE_0" nr="1">
+<ArgTypes/>
+<Func kind="K" nr="5"/>
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" pid="1"/>
+</Cluster>
+</FCluster>
+<Coherence>
+<Proposition line="204" col="11">
+<Pred kind="V" nr="1">
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Proposition>
+<By line="204" col="11"/>
+</Coherence>
+</Registration>
+<EndPosition line="205" col="3"/>
+</RegistrationBlock>
+
+<RegistrationBlock line="207" col="12">
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="27">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Registration>
+<FCluster aid="XBOOLE_0" nr="2">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Func kind="K" nr="1">
+<LocusVar nr="1"/>
+</Func>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</FCluster>
+<Coherence>
+<Proposition line="210" col="11">
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="1" pid="1">
+<Const nr="1" vid="27"/>
+</Func>
+</Pred>
+</Not>
+</Proposition>
+<Proof line="211" col="7">
+<BlockThesis>
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="1" pid="1">
+<Const nr="1" vid="27"/>
+</Func>
+</Pred>
+</Not>
+</BlockThesis>
+<Proposition line="212" col="17">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="27"/>
+<Func kind="K" nr="1" pid="1">
+<Const nr="1" vid="27"/>
+</Func>
+</Pred>
+</Proposition>
+<By line="212" col="17">
+<Ref nr="1" articlenr="1" kind="D" line="212" col="30"/>
+</By>
+<Conclusion>
+<Proposition line="213" col="37">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="1" pid="1">
+<Const nr="1" vid="27"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="213" col="37"/>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions>
+<Pair x="1" y="1"/>
+</ThesisExpansions>
+</Thesis>
+<EndPosition line="214" col="5"/>
+</Proof>
+</Coherence>
+</Registration>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="28">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Registration>
+<FCluster aid="XBOOLE_0" nr="3">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Func kind="K" nr="2">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Func>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</FCluster>
+<Coherence>
+<Proposition line="217" col="11">
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="27"/>
+<Const nr="2" vid="28"/>
+</Func>
+</Pred>
+</Not>
+</Proposition>
+<Proof line="218" col="7">
+<BlockThesis>
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="27"/>
+<Const nr="2" vid="28"/>
+</Func>
+</Pred>
+</Not>
+</BlockThesis>
+<Proposition line="219" col="20">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="27"/>
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="27"/>
+<Const nr="2" vid="28"/>
+</Func>
+</Pred>
+</Proposition>
+<By line="219" col="20">
+<Ref nr="2" articlenr="1" kind="D" line="219" col="33"/>
+</By>
+<Conclusion>
+<Proposition line="220" col="40">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="2" pid="2">
+<Const nr="1" vid="27"/>
+<Const nr="2" vid="28"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="220" col="40"/>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions>
+<Pair x="1" y="1"/>
+</ThesisExpansions>
+</Thesis>
+<EndPosition line="221" col="5"/>
+</Proof>
+</Coherence>
+</Registration>
+<EndPosition line="222" col="3"/>
+</RegistrationBlock>
+
+<RegistrationBlock line="224" col="12">
+<Registration>
+<RCluster aid="XBOOLE_0" nr="2">
+<ArgTypes/>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</RCluster>
+<Existence>
+<Proposition line="226" col="11">
+<Not>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+</For>
+</Not>
+</Proposition>
+<Proof line="227" col="7">
+<BlockThesis>
+<Not>
+<For>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+</For>
+</Not>
+</BlockThesis>
+<Consider nr="1">
+<Proposition line="228" col="15">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Verum/>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By line="228" col="14"/>
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Consider>
+<Take>
+<Func kind="K" nr="1" pid="1">
+<Const nr="1" vid="5"/>
+</Func>
+</Take>
+<Thesis>
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="1" pid="1">
+<Const nr="1" vid="5"/>
+</Func>
+</Pred>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Conclusion>
+<Proposition line="230" col="15">
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="1" pid="1">
+<Const nr="1" vid="5"/>
+</Func>
+</Pred>
+</Not>
+</Proposition>
+<By line="230" col="15"/>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="231" col="5"/>
+</Proof>
+</Existence>
+</Registration>
+<EndPosition line="232" col="3"/>
+</RegistrationBlock>
+
+<RegistrationBlock line="234" col="12">
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="29">
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</Typ>
+</Let>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Registration>
+<FCluster aid="XBOOLE_0" nr="4">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Func kind="K" nr="6">
+<LocusVar nr="1"/>
+<LocusVar nr="2"/>
+</Func>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</FCluster>
+<Coherence>
+<Proposition line="237" col="11">
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="6" pid="6">
+<Const nr="1" vid="29"/>
+<Const nr="2" vid="2"/>
+</Func>
+</Pred>
+</Not>
+</Proposition>
+<Proof line="238" col="7">
+<BlockThesis>
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="6" pid="6">
+<Const nr="1" vid="29"/>
+<Const nr="2" vid="2"/>
+</Func>
+</Pred>
+</Not>
+</BlockThesis>
+<Consider nr="3">
+<Proposition line="240" col="8">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="29"/>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By line="240" col="13">
+<Ref nr="1" vid="14" line="240" col="18"/>
+</By>
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Proposition line="240" col="2" nr="7" vid="12">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="29"/>
+</Pred>
+</Proposition>
+</Consider>
+<Proposition line="241" col="18">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="6" pid="6">
+<Const nr="1" vid="29"/>
+<Const nr="2" vid="2"/>
+</Func>
+</Pred>
+</Proposition>
+<By line="241" col="18">
+<Ref nr="7" vid="12" line="241" col="21"/>
+<Ref nr="2" vid="15" line="241" col="26"/>
+</By>
+<Conclusion>
+<Proposition line="242" col="39">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="6" pid="6">
+<Const nr="1" vid="29"/>
+<Const nr="2" vid="2"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="242" col="39"/>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions>
+<Pair x="1" y="1"/>
+</ThesisExpansions>
+</Thesis>
+<EndPosition line="243" col="5"/>
+</Proof>
+</Coherence>
+</Registration>
+<Registration>
+<FCluster aid="XBOOLE_0" nr="5">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Func kind="K" nr="6">
+<LocusVar nr="2"/>
+<LocusVar nr="1"/>
+</Func>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+<Cluster>
+<Adjective nr="1" value="false" pid="1"/>
+</Cluster>
+</FCluster>
+<Coherence>
+<Proposition line="245" col="11">
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="6" pid="6">
+<Const nr="2" vid="2"/>
+<Const nr="1" vid="29"/>
+</Func>
+</Pred>
+</Not>
+</Proposition>
+<By line="245" col="11"/>
+</Coherence>
+</Registration>
+<EndPosition line="246" col="3"/>
+</RegistrationBlock>
+
+<Proposition line="248" col="30" nr="7" vid="30">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Var nr="1"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</Proposition>
+<Proof nr="7" vid="30" line="249" col="5">
+<BlockThesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="V" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Var nr="1"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="V" nr="1">
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="250" col="12">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</For>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+<ThesisExpansions>
+<Pair x="1" y="1"/>
+</ThesisExpansions>
+</Thesis>
+<Proposition line="251" col="28">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<By linked="true" line="251" col="28">
+<Ref nr="1" vid="14" line="251" col="33"/>
+</By>
+<Conclusion>
+<Proposition line="252" col="17">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Proposition>
+<By linked="true" line="252" col="17">
+<Ref nr="2" articlenr="1" kind="T" line="252" col="26"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="253" col="3"/>
+</Proof>
+
+<JustifiedTheorem>
+<Proposition line="256" col="37" nr="8" vid="31">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+<Proof nr="8" vid="31" line="257" col="5">
+<BlockThesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Conclusion>
+<Now line="258" col="8">
+<Assume>
+<Proposition line="259" col="12">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</Proposition>
+</Assume>
+<Proposition line="260" col="24">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="260" col="24">
+<Ref nr="5" vid="25" line="260" col="29"/>
+</By>
+<Proposition line="261" col="31">
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="261" col="31">
+<Ref nr="7" vid="30" line="261" col="35"/>
+</By>
+<Consider nr="3">
+<Proposition line="263" col="13">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="263" col="18">
+<Ref nr="1" vid="14" line="263" col="23"/>
+</By>
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Proposition line="263" col="2" nr="9" vid="12">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Proposition>
+</Consider>
+<TakeAsVar nr="4">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Const nr="3" vid="5"/>
+</TakeAsVar>
+<Conclusion>
+<Proposition line="265" col="27">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Proposition>
+<By line="265" col="27">
+<Ref nr="9" vid="12" line="265" col="30"/>
+<Ref nr="3" vid="19" line="265" col="35"/>
+</By>
+</Conclusion>
+<EndPosition line="266" col="5"/>
+<BlockThesis>
+<Thesis>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+</BlockThesis>
+</Now>
+</Conclusion>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Given nr="3">
+<Proposition line="268" col="17">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</For>
+</Not>
+</Proposition>
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Proposition line="268" col="2" nr="9" vid="13">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Proposition>
+</Given>
+<Thesis>
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="269" col="16">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Proposition>
+<By line="269" col="16">
+<Ref nr="9" vid="13" line="269" col="19"/>
+<Ref nr="3" vid="19" line="269" col="24"/>
+</By>
+<Proposition line="270" col="22">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="270" col="22">
+<Ref nr="1" vid="14" line="270" col="27"/>
+</By>
+<Conclusion>
+<Proposition line="271" col="17">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="271" col="17">
+<Ref nr="5" vid="25" line="271" col="22"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="272" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+<JustifiedTheorem>
+<Proposition line="275" col="33">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Func kind="K" nr="7" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Func kind="K" nr="7" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</Proposition>
+<Proof line="276" col="5">
+<BlockThesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Func kind="K" nr="7" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Func kind="K" nr="7" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Var nr="1"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Var nr="1"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Var nr="1"/>
+</Pred>
+</And>
+</Not>
+</And>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+</And>
+<ThesisExpansions/>
+</Thesis>
+<Conclusion>
+<Now line="277" col="8">
+<Assume>
+<Proposition line="278" col="12">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</Proposition>
+</Assume>
+<Proposition line="279" col="24">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="279" col="24">
+<Ref nr="5" vid="25" line="279" col="29"/>
+</By>
+<Proposition line="280" col="31">
+<Not>
+<Pred kind="V" nr="1">
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="280" col="31">
+<Ref nr="7" vid="30" line="280" col="35"/>
+</By>
+<Consider nr="3">
+<Proposition line="282" col="13">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="282" col="18">
+<Ref nr="1" vid="14" line="282" col="23"/>
+</By>
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Proposition line="282" col="2" nr="9" vid="12">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="3" vid="5"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Proposition>
+</Consider>
+<TakeAsVar nr="4">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Const nr="3" vid="5"/>
+</TakeAsVar>
+<Conclusion>
+<Proposition line="284" col="23">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Proposition>
+<By line="284" col="23">
+<Ref nr="9" vid="12" line="284" col="26"/>
+</By>
+</Conclusion>
+<EndPosition line="285" col="5"/>
+<BlockThesis>
+<Thesis>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="4" vid="5"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+</BlockThesis>
+</Now>
+</Conclusion>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="286" col="11">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+</Pred>
+</Not>
+</For>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="287" col="22">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Func kind="K" nr="7" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Func>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="287" col="22">
+<Ref nr="1" vid="14" line="287" col="27"/>
+</By>
+<Conclusion>
+<Proposition line="288" col="17">
+<Not>
+<Pred kind="R" nr="5" pid="10">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</Proposition>
+<By linked="true" line="288" col="17">
+<Ref nr="5" vid="25" line="288" col="22"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="289" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+<JustifiedTheorem>
+<Proposition line="293" col="4">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="5" pid="6">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Func kind="K" nr="6" pid="6">
+<Var nr="1"/>
+<Var nr="2"/>
+</Func>
+</Pred>
+<Not pid="-10">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-11">
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</For>
+</Proposition>
+<By line="293" col="9">
+<Ref nr="2" vid="15" line="293" col="14"/>
+<Ref nr="8" vid="31" line="293" col="18"/>
+</By>
+</JustifiedTheorem>
+
+<SchemeBlock line="296" col="16" schemenr="2" vid="32">
+<SchemeFuncDecl nr="1" vid="2">
+<ArgTypes/>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</SchemeFuncDecl>
+<SchemeFuncDecl nr="2" vid="3">
+<ArgTypes/>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</SchemeFuncDecl>
+<SchemePredDecl nr="1" vid="10">
+<ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+</SchemePredDecl>
+<SchemePremises>
+<Proposition line="298" col="2" nr="9" vid="12">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<Proposition line="299" col="2" nr="10" vid="13">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</SchemePremises>
+<Proposition line="299" col="30">
+<Pred kind="R" nr="1" pid="9">
+<Func kind="F" nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Proposition>
+<Proof line="301" col="2">
+<BlockThesis>
+<Pred kind="R" nr="1" pid="9">
+<Func kind="F" nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</BlockThesis>
+<Proposition line="301" col="27" nr="11" vid="17">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</Proposition>
+<Proof nr="11" vid="17" line="302" col="7">
+<BlockThesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="303" col="12">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="304" col="16">
+<Pred kind="P" nr="1">
+<Const nr="1" vid="5"/>
+</Pred>
+</Proposition>
+<By linked="true" line="304" col="16">
+<Ref nr="10" vid="13" line="304" col="19"/>
+</By>
+<Conclusion>
+<Proposition line="305" col="19">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+</Proposition>
+<By linked="true" line="305" col="19">
+<Ref nr="9" vid="12" line="305" col="22"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="306" col="5"/>
+</Proof>
+<Proposition line="307" col="25">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</Proposition>
+<Proof line="308" col="7">
+<BlockThesis>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="5">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="309" col="12">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="1"/>
+</Pred>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="2"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="310" col="16">
+<Pred kind="P" nr="1">
+<Const nr="1" vid="5"/>
+</Pred>
+</Proposition>
+<By linked="true" line="310" col="16">
+<Ref nr="9" vid="12" line="310" col="19"/>
+</By>
+<Conclusion>
+<Proposition line="311" col="19">
+<Pred kind="R" nr="2" pid="3">
+<Const nr="1" vid="5"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Proposition>
+<By linked="true" line="311" col="19">
+<Ref nr="10" vid="13" line="311" col="22"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="312" col="5"/>
+</Proof>
+<Conclusion>
+<Proposition line="313" col="17">
+<Pred kind="R" nr="1" pid="9">
+<Func kind="F" nr="1"/>
+<Func kind="F" nr="2"/>
+</Pred>
+</Proposition>
+<By linked="true" line="313" col="17">
+<Ref nr="11" vid="17" line="313" col="20"/>
+<Ref nr="2" articlenr="1" kind="T" line="313" col="29"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="314" col="4"/>
+</Proof>
+<EndPosition line="314" col="4"/>
+</SchemeBlock>
+
+<SchemeBlock line="317" col="7" schemenr="3" vid="33">
+<SchemePredDecl nr="1" vid="10">
+<ArgTypes>
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</ArgTypes>
+</SchemePredDecl>
+<SchemePremises>
+</SchemePremises>
+<Proposition line="318" col="61">
+<For pid="0" vid="34">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="35">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<Proof line="319" col="5">
+<BlockThesis>
+<For pid="0" vid="34">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="35">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="34">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1" pid="1" vid="35">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="34"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="34"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="35"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="35"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+<Not pid="-6">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="34"/>
+<Const nr="2" vid="35"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="320" col="2" nr="9" vid="12">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="34"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="34"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+<Proposition line="321" col="2" nr="10" vid="13">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="35"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="P" nr="1">
+<Var nr="1"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="35"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Proposition>
+</Assume>
+<Thesis>
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="34"/>
+<Const nr="2" vid="35"/>
+</Pred>
+<ThesisExpansions/>
+</Thesis>
+<Conclusion>
+<Proposition line="322" col="18">
+<Pred kind="R" nr="1" pid="9">
+<Const nr="1" vid="34"/>
+<Const nr="2" vid="35"/>
+</Pred>
+</Proposition>
+<From articlenr="0" nr="2" line="322" col="18">
+<Ref nr="9" vid="12" line="322" col="36"/>
+<Ref nr="10" vid="13" line="322" col="39"/>
+</From>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="323" col="4"/>
+</Proof>
+<EndPosition line="323" col="4"/>
+</SchemeBlock>
+
+<Section/>
+
+<JustifiedTheorem>
+<Proposition line="329" col="42">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="6" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+</For>
+</For>
+</Proposition>
+<Proof line="330" col="5">
+<BlockThesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="6" pid="7">
+<Var nr="1"/>
+<Var nr="2"/>
+</Pred>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="2"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="3"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+</For>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<For pid="0" vid="3">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="6" pid="7">
+<Const nr="1" vid="2"/>
+<Var nr="1"/>
+</Pred>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+</For>
+<ThesisExpansions/>
+</Thesis>
+<Let nr="2">
+<Typ kind="M" nr="1" pid="1" vid="3">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="6" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="331" col="10">
+<Pred kind="R" nr="6" pid="7">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="332" col="54">
+<And>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<And pid="-7">
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</Not>
+</And>
+</Not>
+<Not pid="-4">
+<And pid="-5">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not pid="-6">
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</And>
+</For>
+</Not>
+<Pred kind="R" nr="3" pid="4">
+<Const nr="1" vid="2"/>
+<Const nr="2" vid="3"/>
+</Pred>
+</And>
+</Proposition>
+<By linked="true" line="332" col="54">
+<Ref nr="6" vid="26" line="332" col="59"/>
+<Ref nr="2" articlenr="1" kind="T" line="332" col="68"/>
+</By>
+<Conclusion>
+<Proposition line="333" col="17">
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<And>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="2" vid="3"/>
+</Pred>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</And>
+</Not>
+</For>
+</Not>
+</Proposition>
+<By linked="true" line="333" col="17">
+<Ref nr="3" articlenr="1" kind="D" line="333" col="30"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="334" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+<JustifiedTheorem>
+<Proposition line="339" col="30">
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+</For>
+</Proposition>
+<Proof line="340" col="5">
+<BlockThesis>
+<For pid="0" vid="2">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Var nr="1"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="2"/>
+<Var nr="1"/>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+</For>
+</BlockThesis>
+<Let nr="1">
+<Typ kind="M" nr="1" pid="1" vid="2">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Let>
+<Thesis>
+<Not pid="-4">
+<And pid="-5">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</For>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="342" col="2" nr="9" vid="12">
+<Not>
+<Pred kind="R" nr="1" pid="2">
+<Const nr="1" vid="2"/>
+<Func kind="K" nr="5" pid="5"/>
+</Pred>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</For>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="343" col="12">
+<For pid="0" vid="5">
+<Typ kind="M" nr="1" pid="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Pred kind="R" nr="2" pid="3">
+<Var nr="1"/>
+<Const nr="1" vid="2"/>
+</Pred>
+</Not>
+</For>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<Verum/>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="344" col="20">
+<Pred kind="V" nr="1">
+<Const nr="1" vid="2"/>
+</Pred>
+</Proposition>
+<By linked="true" line="344" col="20">
+<Ref nr="1" vid="14" line="344" col="25"/>
+</By>
+<Conclusion>
+<Proposition line="345" col="17">
+<Not>
+<Verum/>
+</Not>
+</Proposition>
+<By linked="true" line="345" col="17">
+<Ref nr="9" vid="12" line="345" col="20"/>
+<Ref nr="7" vid="30" line="345" col="24"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="346" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+</Article>

@@ -1,0 +1,904 @@
+Constructors
+  </usr/share/mizar/prel/h/hidden.dco
+  </usr/share/mizar/prel/x/xboole_0.dco
+  </usr/share/mizar/prel/z/zfmisc_1.dco
+  </usr/share/mizar/prel/s/subset_1.dco
+  </usr/share/mizar/prel/f/finsub_1.dco
+  </usr/share/mizar/prel/x/xxreal_0.dco
+  </usr/share/mizar/prel/t/tarski.dco
+  </usr/share/mizar/prel/o/ordinal1.dco
+  </usr/share/mizar/prel/n/numbers.dco
+  </usr/share/mizar/prel/x/xcmplx_0.dco
+  </usr/share/mizar/prel/r/relat_1.dco
+  </usr/share/mizar/prel/f/funct_1.dco
+  </usr/share/mizar/prel/p/partfun1.dco
+  </usr/share/mizar/prel/m/mcart_1.dco
+  </usr/share/mizar/prel/f/funct_2.dco
+  </usr/share/mizar/prel/n/nat_1.dco
+  </usr/share/mizar/prel/f/finset_1.dco
+  </usr/share/mizar/prel/c/card_1.dco
+  </usr/share/mizar/prel/f/finseq_1.dco
+  </usr/share/mizar/prel/f/finseq_5.dco
+  </usr/share/mizar/prel/r/rewrite1.dco
+  </usr/share/mizar/prel/s/setfam_1.dco
+  </usr/share/mizar/prel/e/enumset1.dco
+  </usr/share/mizar/prel/d/domain_1.dco
+  </usr/share/mizar/prel/r/relat_2.dco
+  </usr/share/mizar/prel/e/eqrel_1.dco
+  </usr/share/mizar/prel/s/struct_0.dco
+  </usr/share/mizar/prel/p/pre_topc.dco
+  </usr/share/mizar/prel/c/connsp_2.dco
+  </usr/share/mizar/prel/r/relset_1.dco
+  </usr/share/mizar/prel/b/borsuk_1.dco
+  </usr/share/mizar/prel/o/orders_1.dco
+  </usr/share/mizar/prel/o/orders_2.dco
+  </usr/share/mizar/prel/l/lattices.dco
+  </usr/share/mizar/prel/f/funct_4.dco
+  </usr/share/mizar/prel/f/filter_1.dco
+  </usr/share/mizar/prel/l/lattice3.dco
+  </usr/share/mizar/prel/y/yellow_0.dco
+  </usr/share/mizar/prel/w/waybel_0.dco
+  </usr/share/mizar/prel/w/wellord2.dco
+  </usr/share/mizar/prel/y/yellow_1.dco
+  </usr/share/mizar/prel/f/funcop_1.dco
+  </usr/share/mizar/prel/x/xreal_0.dco
+  The list of all imported constructors
+      M   L   V   R   K   U   G
+   +HIDDEN
+     +1          +2            
+      1   0   0   2   0   0   0
+   -XBOOLE_0
+             +1  +3  +5        
+      1   0   1   5   5   0   0
+   -ZFMISC_1
+             +1  +5  +4        
+      1   0   2  10   9   0   0
+   -SUBSET_1
+     +2      +1  +2 +10        
+      3   0   3  12  19   0   0
+   +FINSUB_1
+             +4      +5        
+      3   0   7  12  24   0   0
+   +XXREAL_0
+             +3  +1  +5        
+      3   0  10  13  29   0   0
+   -TARSKI
+                 +2  +4        
+      3   0  10  15  33   0   0
+   -ORDINAL1
+             +7  +1  +4        
+      3   0  17  16  37   0   0
+   -NUMBERS
+                     +7        
+      3   0  17  16  44   0   0
+   -XCMPLX_0
+             +1      +7        
+      3   0  18  16  51   0   0
+   -RELAT_1
+             +5     +12        
+      3   0  23  16  63   0   0
+   -FUNCT_1
+             +5      +3        
+      3   0  28  16  66   0   0
+   -PARTFUN1
+             +1  +1  +7        
+      3   0  29  17  73   0   0
+   -MCART_1
+                    +20        
+      3   0  29  17  93   0   0
+   -FUNCT_2
+     +2      +3  +2 +10        
+      5   0  32  19 103   0   0
+   +NAT_1
+                     +7        
+      5   0  32  19 110   0   0
+   -FINSET_1
+             +4                
+      5   0  36  19 110   0   0
+   -CARD_1
+             +2      +7        
+      5   0  38  19 117   0   0
+   -FINSEQ_1
+     +2      +4     +18        
+      7   0  42  19 135   0   0
+   +FINSEQ_5
+                     +5        
+      7   0  42  19 140   0   0
+   +REWRITE1
+     +2     +10 +13  +2        
+      9   0  52  32 142   0   0
+   -SETFAM_1
+     +1      +3  +2  +9        
+     10   0  55  34 151   0   0
+   -ENUMSET1
+                     +8        
+     10   0  55  34 159   0   0
+   -DOMAIN_1
+                    +17        
+     10   0  55  34 176   0   0
+   -RELAT_2
+             +8  +8            
+     10   0  63  42 176   0   0
+   -EQREL_1
+     +1      +1     +13        
+     11   0  64  42 189   0   0
+   -STRUCT_0
+         +5 +12  +1  +8  +4  +5
+     11   5  76  43 197   4   5
+   -PRE_TOPC
+     +1  +1 +12      +2  +1  +1
+     12   6  88  43 199   5   6
+   -CONNSP_2
+     +2      +2  +2  +1        
+     14   6  90  45 200   5   6
+   -RELSET_1
+                 +2  +8        
+     14   6  90  47 208   5   6
+   +BORSUK_1
+     +1      +3  +2 +19        
+     15   6  93  49 227   5   6
+   -ORDERS_1
+     +1      +3  +9  +1        
+     16   6  96  58 228   5   6
+   -ORDERS_2
+     +2  +1  +6  +3  +4  +1  +1
+     18   7 102  61 232   6   7
+   -LATTICES
+         +3 +21  +3  +7  +2  +3
+     18  10 123  64 239   8  10
+   -FUNCT_4
+                     +7        
+     18  10 123  64 246   8  10
+   -FILTER_1
+     +2          +1  +9        
+     20  10 123  65 255   8  10
+   +LATTICE3
+             +6  +4 +16        
+     20  10 129  69 271   8  10
+   -YELLOW_0
+     +1      +8  +2  +5        
+     21  10 137  71 276   8  10
+   +WAYBEL_0
+         +1 +25  +4 +12  +1  +1
+     21  11 162  75 288   9  11
+   -WELLORD2
+                 +2  +2        
+     21  11 162  77 290   9  11
+   +YELLOW_1
+             +1      +7        
+     21  11 163  77 297   9  11
+   +FUNCOP_1
+             +1     +18        
+     21  11 164  77 315   9  11
+   +XREAL_0
+             +1      +1        
+     21  11 165  77 316   9  11
+Requirements
+  </usr/share/mizar/prel/h/hidden.dre
+  </usr/share/mizar/prel/b/boole.dre
+  </usr/share/mizar/prel/s/subset.dre
+  </usr/share/mizar/prel/n/numerals.dre
+  </usr/share/mizar/prel/r/real.dre
+  </usr/share/mizar/prel/a/arithm.dre
+Registrations
+  </usr/share/mizar/prel/x/xboole_0.dcl
+  </usr/share/mizar/prel/s/subset_1.dcl
+  </usr/share/mizar/prel/r/relat_1.dcl
+  </usr/share/mizar/prel/f/funct_2.dcl
+  </usr/share/mizar/prel/f/finset_1.dcl
+  </usr/share/mizar/prel/f/finsub_1.dcl
+  </usr/share/mizar/prel/x/xxreal_0.dcl
+  </usr/share/mizar/prel/x/xreal_0.dcl
+  </usr/share/mizar/prel/n/nat_1.dcl
+  </usr/share/mizar/prel/f/finseq_1.dcl
+  </usr/share/mizar/prel/v/valued_0.dco
+   The cutting off constructors:
+    - VALUED_0
+  Inaccessible Clusters
+
+   Conditional Cluster: 48
+      -*VALUED_0:V3
+      -*VALUED_0:V7
+
+  </usr/share/mizar/prel/f/finseq_5.dcl
+  </usr/share/mizar/prel/r/rfinseq.dco
+   The cutting off constructors:
+    - RFINSEQ
+  Inaccessible Clusters
+
+   Functor Cluster: 168
+      -*RFINSEQ:K1
+
+  </usr/share/mizar/prel/r/rewrite1.dcl
+  </usr/share/mizar/prel/s/struct_0.dcl
+  </usr/share/mizar/prel/l/lattice3.dcl
+  </usr/share/mizar/prel/y/yellow_0.dcl
+  </usr/share/mizar/prel/w/waybel_0.dcl
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/g/graph_1.dco
+  </usr/share/mizar/prel/c/cat_1.dco
+  </usr/share/mizar/prel/c/cat_2.dco
+  </usr/share/mizar/prel/c/cat_5.dco
+  </usr/share/mizar/prel/m/multop_1.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/a/altcat_1.dco
+  </usr/share/mizar/prel/o/orders_3.dco
+   The cutting off constructors:
+    - BINOP_1
+    - FUNCT_3
+    - FUNCT_5
+    - GRAPH_1
+    - CAT_1
+    - CAT_2
+    - CAT_5
+    - MULTOP_1
+    - FINSEQ_2
+    - CARD_3
+    - PBOOLE
+    - ALTCAT_1
+    - ORDERS_3
+  Inaccessible Clusters
+
+   Conditional Cluster: 92
+      -*ORDERS_3:V5
+
+  </usr/share/mizar/prel/y/yellow_1.dcl
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/u/unialg_1.dco
+  </usr/share/mizar/prel/x/xboolean.dco
+  </usr/share/mizar/prel/m/margrel1.dco
+  </usr/share/mizar/prel/p/pralg_1.dco
+   The cutting off constructors:
+    - CARD_3
+    - FINSEQ_2
+    - UNIALG_1
+    - XBOOLEAN
+    - MARGREL1
+    - PRALG_1
+  Inaccessible Clusters
+
+   Conditional Cluster: 98
+      -*PRALG_1:V2
+
+  </usr/share/mizar/prel/y/yellow_7.dcl
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/f/funct_6.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/y/yellow_2.dco
+  </usr/share/mizar/prel/w/waybel_1.dco
+  </usr/share/mizar/prel/w/waybel_5.dco
+  </usr/share/mizar/prel/y/yellow_7.dco
+   The cutting off constructors:
+    - CARD_3
+    - FINSEQ_2
+    - FUNCT_6
+    - PBOOLE
+    - FUNCT_5
+    - YELLOW_2
+    - WAYBEL_1
+    - WAYBEL_5
+    - YELLOW_7
+  Inaccessible Clusters
+
+   Existential Cluster: 82
+      -*WAYBEL_5:V1
+
+   Functor Cluster: 246
+      -*WAYBEL_1:V2
+
+   Functor Cluster: 248
+      -*WAYBEL_1:V10
+
+   Functor Cluster: 248
+      -*WAYBEL_1:V11
+      -*YELLOW_7:K1
+
+   Functor Cluster: 248
+      -*WAYBEL_1:V11
+      -*YELLOW_7:K1
+
+   Conditional Cluster: 98
+      -*WAYBEL_5:V1
+
+  </usr/share/mizar/prel/y/yellow_9.dcl
+  </usr/share/mizar/prel/t/tdlat_3.dco
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/g/graph_1.dco
+  </usr/share/mizar/prel/c/cat_1.dco
+  </usr/share/mizar/prel/c/cat_2.dco
+  </usr/share/mizar/prel/c/cat_5.dco
+  </usr/share/mizar/prel/m/multop_1.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/a/altcat_1.dco
+  </usr/share/mizar/prel/o/orders_3.dco
+  </usr/share/mizar/prel/y/yellow_6.dco
+  </usr/share/mizar/prel/w/waybel_9.dco
+  </usr/share/mizar/prel/w/waybel11.dco
+  </usr/share/mizar/prel/y/yellow_9.dco
+   The cutting off constructors:
+    - TDLAT_3
+    - BINOP_1
+    - FUNCT_3
+    - FUNCT_5
+    - GRAPH_1
+    - CAT_1
+    - CAT_2
+    - CAT_5
+    - MULTOP_1
+    - FINSEQ_2
+    - CARD_3
+    - PBOOLE
+    - ALTCAT_1
+    - ORDERS_3
+    - YELLOW_6
+    - WAYBEL_9
+    - WAYBEL11
+    - YELLOW_9
+  Inaccessible Clusters
+
+   Existential Cluster: 82
+      -*WAYBEL_9:L1
+      -*WAYBEL_9:V1
+
+   Existential Cluster: 84
+      -*YELLOW_9:M1
+      -*TDLAT_3:V1
+      -*WAYBEL_9:V1
+
+   Existential Cluster: 84
+      -*YELLOW_9:M1
+      -*WAYBEL_9:V1
+      -*WAYBEL11:V4
+
+   Existential Cluster: 84
+      -*YELLOW_9:M2
+      -*TDLAT_3:V1
+
+   Functor Cluster: 248
+      -*ORDERS_3:V5
+      -*YELLOW_9:K1
+
+   Functor Cluster: 248
+      -*YELLOW_9:K2
+
+   Functor Cluster: 248
+      -*YELLOW_9:K3
+
+   Functor Cluster: 248
+      -*YELLOW_9:K2
+
+   Functor Cluster: 248
+      -*YELLOW_9:K3
+
+   Functor Cluster: 249
+      -*YELLOW_9:K2
+
+   Functor Cluster: 249
+      -*WAYBEL_9:K3
+
+   Functor Cluster: 249
+      -*YELLOW_9:K3
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M1
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M1
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M1
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M1
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M1
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M1
+      -*WAYBEL11:V4
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M3
+
+   Conditional Cluster: 98
+      -*YELLOW_9:M3
+
+  </usr/share/mizar/prel/o/ordinal1.dcl
+  </usr/share/mizar/prel/c/card_1.dcl
+Notations
+  </usr/share/mizar/prel/h/hidden.dno
+  </usr/share/mizar/prel/t/tarski.dno
+  </usr/share/mizar/prel/x/xboole_0.dno
+  </usr/share/mizar/prel/z/zfmisc_1.dno
+  </usr/share/mizar/prel/r/relat_1.dno
+  </usr/share/mizar/prel/r/relat_2.dno
+  </usr/share/mizar/prel/s/subset_1.dno
+  </usr/share/mizar/prel/o/ordinal1.dno
+  </usr/share/mizar/prel/f/finsub_1.dno
+  </usr/share/mizar/prel/c/card_1.dno
+  </usr/share/mizar/prel/f/funct_1.dno
+  </usr/share/mizar/prel/r/relset_1.dno
+  </usr/share/mizar/prel/p/partfun1.dno
+  </usr/share/mizar/prel/f/funct_2.dno
+  </usr/share/mizar/prel/b/binop_1.dno
+  </usr/share/mizar/prel/b/binop_1.dco
+   The cutting off constructors:
+    - BINOP_1
+  </usr/share/mizar/prel/f/funcop_1.dno
+  </usr/share/mizar/prel/f/finset_1.dno
+  </usr/share/mizar/prel/f/finseq_1.dno
+  </usr/share/mizar/prel/f/funct_4.dno
+  </usr/share/mizar/prel/a/alg_1.dno
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/u/unialg_1.dco
+  </usr/share/mizar/prel/x/xboolean.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/m/margrel1.dco
+  </usr/share/mizar/prel/u/unialg_2.dco
+  </usr/share/mizar/prel/a/alg_1.dco
+   The cutting off constructors:
+    - FINSEQ_2
+    - UNIALG_1
+    - XBOOLEAN
+    - CARD_3
+    - MARGREL1
+    - UNIALG_2
+    - ALG_1
+  </usr/share/mizar/prel/f/finseq_5.dno
+  </usr/share/mizar/prel/n/numbers.dno
+  </usr/share/mizar/prel/x/xcmplx_0.dno
+  </usr/share/mizar/prel/n/nat_1.dno
+  </usr/share/mizar/prel/d/domain_1.dno
+  </usr/share/mizar/prel/s/struct_0.dno
+  </usr/share/mizar/prel/o/orders_2.dno
+  </usr/share/mizar/prel/l/lattice3.dno
+  </usr/share/mizar/prel/r/rewrite1.dno
+  </usr/share/mizar/prel/y/yellow_0.dno
+  </usr/share/mizar/prel/w/waybel_0.dno
+  </usr/share/mizar/prel/y/yellow_1.dno
+  </usr/share/mizar/prel/y/yellow_7.dno
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/f/funct_6.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/y/yellow_7.dco
+   The cutting off constructors:
+    - CARD_3
+    - FINSEQ_2
+    - FUNCT_6
+    - PBOOLE
+    - YELLOW_7
+  </usr/share/mizar/prel/x/xxreal_0.dno
+Registrations(Identify)
+  </usr/share/mizar/prel/f/funct_2.did
+  </usr/share/mizar/prel/l/lattice3.did
+Definitions
+  </usr/share/mizar/prel/t/tarski.def
+  </usr/share/mizar/prel/x/xboole_0.def
+  </usr/share/mizar/prel/r/relat_2.def
+  </usr/share/mizar/prel/f/funct_1.def
+  </usr/share/mizar/prel/f/finseq_1.def
+  </usr/share/mizar/prel/l/lattice3.def
+  </usr/share/mizar/prel/b/binop_1.dco
+   The cutting off constructors:
+    - BINOP_1
+  </usr/share/mizar/prel/r/rewrite1.def
+  </usr/share/mizar/prel/w/wellord1.dco
+   The cutting off constructors:
+    - WELLORD1
+  </usr/share/mizar/prel/y/yellow_0.def
+  </usr/share/mizar/prel/w/wellord1.dco
+  </usr/share/mizar/prel/t/toler_1.dco
+   The cutting off constructors:
+    - WELLORD1
+    - TOLER_1
+  </usr/share/mizar/prel/w/waybel_0.def
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/g/graph_1.dco
+  </usr/share/mizar/prel/c/cat_1.dco
+  </usr/share/mizar/prel/c/cat_2.dco
+  </usr/share/mizar/prel/c/cat_5.dco
+  </usr/share/mizar/prel/m/multop_1.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/a/altcat_1.dco
+  </usr/share/mizar/prel/o/orders_3.dco
+   The cutting off constructors:
+    - BINOP_1
+    - FUNCT_3
+    - FUNCT_5
+    - GRAPH_1
+    - CAT_1
+    - CAT_2
+    - CAT_5
+    - MULTOP_1
+    - FINSEQ_2
+    - CARD_3
+    - PBOOLE
+    - ALTCAT_1
+    - ORDERS_3
+  </usr/share/mizar/prel/s/struct_0.def
+  </usr/share/mizar/prel/r/relset_1.def
+Theorems
+  </usr/share/mizar/prel/t/tarski.the
+  </usr/share/mizar/prel/x/xboole_0.the
+  </usr/share/mizar/prel/x/xboole_1.the
+  </usr/share/mizar/prel/s/subset_1.the
+  </usr/share/mizar/prel/f/finsub_1.the
+  </usr/share/mizar/prel/n/nat_1.the
+  </usr/share/mizar/prel/f/finseq_1.the
+  </usr/share/mizar/prel/c/card_1.the
+  </usr/share/mizar/prel/w/wellord1.dco
+  </usr/share/mizar/prel/o/ordinal2.dco
+   The cutting off constructors:
+    - WELLORD1
+    - ORDINAL2
+  </usr/share/mizar/prel/t/trees_1.the
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/t/trees_1.dco
+   The cutting off constructors:
+    - FINSEQ_2
+    - TREES_1
+  </usr/share/mizar/prel/f/finseq_5.the
+  </usr/share/mizar/prel/i/int_1.dco
+  </usr/share/mizar/prel/f/finseq_4.dco
+  </usr/share/mizar/prel/r/rfinseq.dco
+  </usr/share/mizar/prel/c/complex1.dco
+  </usr/share/mizar/prel/i/int_2.dco
+  </usr/share/mizar/prel/n/nat_d.dco
+   The cutting off constructors:
+    - INT_1
+    - FINSEQ_4
+    - RFINSEQ
+    - COMPLEX1
+    - INT_2
+    - NAT_D
+  </usr/share/mizar/prel/f/finseq_6.the
+  </usr/share/mizar/prel/i/int_1.dco
+  </usr/share/mizar/prel/f/finseq_4.dco
+  </usr/share/mizar/prel/r/rfinseq.dco
+  </usr/share/mizar/prel/r/real_1.dco
+  </usr/share/mizar/prel/c/complex1.dco
+  </usr/share/mizar/prel/i/int_2.dco
+  </usr/share/mizar/prel/n/nat_d.dco
+  </usr/share/mizar/prel/f/finseq_6.dco
+   The cutting off constructors:
+    - INT_1
+    - FINSEQ_4
+    - RFINSEQ
+    - REAL_1
+    - COMPLEX1
+    - INT_2
+    - NAT_D
+    - FINSEQ_6
+  </usr/share/mizar/prel/r/relat_1.the
+  </usr/share/mizar/prel/r/relset_1.the
+  </usr/share/mizar/prel/f/funct_1.the
+  </usr/share/mizar/prel/f/funct_2.the
+  </usr/share/mizar/prel/f/funct_4.the
+  </usr/share/mizar/prel/b/binop_1.dco
+   The cutting off constructors:
+    - BINOP_1
+  </usr/share/mizar/prel/f/funcop_1.the
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/w/wellord1.dco
+   The cutting off constructors:
+    - BINOP_1
+    - FUNCT_3
+    - WELLORD1
+  </usr/share/mizar/prel/s/struct_0.the
+  </usr/share/mizar/prel/o/orders_2.the
+  </usr/share/mizar/prel/w/wellord1.dco
+   The cutting off constructors:
+    - WELLORD1
+  </usr/share/mizar/prel/l/lattice3.the
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/l/lattice2.dco
+  </usr/share/mizar/prel/f/filter_0.dco
+   The cutting off constructors:
+    - BINOP_1
+    - LATTICE2
+    - FILTER_0
+  </usr/share/mizar/prel/y/yellow_0.the
+  </usr/share/mizar/prel/w/wellord1.dco
+  </usr/share/mizar/prel/t/toler_1.dco
+  </usr/share/mizar/prel/a/algstr_0.dco
+   The cutting off constructors:
+    - WELLORD1
+    - TOLER_1
+    - ALGSTR_0
+  </usr/share/mizar/prel/w/waybel_0.the
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/g/graph_1.dco
+  </usr/share/mizar/prel/c/cat_1.dco
+  </usr/share/mizar/prel/c/cat_2.dco
+  </usr/share/mizar/prel/c/cat_5.dco
+  </usr/share/mizar/prel/m/multop_1.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/a/altcat_1.dco
+  </usr/share/mizar/prel/o/orders_3.dco
+   The cutting off constructors:
+    - BINOP_1
+    - FUNCT_3
+    - FUNCT_5
+    - GRAPH_1
+    - CAT_1
+    - CAT_2
+    - CAT_5
+    - MULTOP_1
+    - FINSEQ_2
+    - CARD_3
+    - PBOOLE
+    - ALTCAT_1
+    - ORDERS_3
+  </usr/share/mizar/prel/y/yellow_1.the
+  </usr/share/mizar/prel/t/tops_2.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/u/unialg_1.dco
+  </usr/share/mizar/prel/x/xboolean.dco
+  </usr/share/mizar/prel/m/margrel1.dco
+  </usr/share/mizar/prel/p/pralg_1.dco
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/g/graph_1.dco
+  </usr/share/mizar/prel/c/cat_1.dco
+  </usr/share/mizar/prel/c/cat_2.dco
+  </usr/share/mizar/prel/c/cat_5.dco
+  </usr/share/mizar/prel/m/multop_1.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/a/altcat_1.dco
+  </usr/share/mizar/prel/o/orders_3.dco
+   The cutting off constructors:
+    - TOPS_2
+    - CARD_3
+    - FINSEQ_2
+    - UNIALG_1
+    - XBOOLEAN
+    - MARGREL1
+    - PRALG_1
+    - BINOP_1
+    - FUNCT_3
+    - FUNCT_5
+    - GRAPH_1
+    - CAT_1
+    - CAT_2
+    - CAT_5
+    - MULTOP_1
+    - PBOOLE
+    - ALTCAT_1
+    - ORDERS_3
+  </usr/share/mizar/prel/y/yellow_4.the
+  </usr/share/mizar/prel/y/yellow_3.dco
+  </usr/share/mizar/prel/y/yellow_4.dco
+   The cutting off constructors:
+    - YELLOW_3
+    - YELLOW_4
+  </usr/share/mizar/prel/y/yellow_7.the
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/f/funct_6.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/g/graph_1.dco
+  </usr/share/mizar/prel/c/cat_1.dco
+  </usr/share/mizar/prel/c/cat_2.dco
+  </usr/share/mizar/prel/c/cat_5.dco
+  </usr/share/mizar/prel/m/multop_1.dco
+  </usr/share/mizar/prel/a/altcat_1.dco
+  </usr/share/mizar/prel/o/orders_3.dco
+  </usr/share/mizar/prel/y/yellow_2.dco
+  </usr/share/mizar/prel/w/waybel_1.dco
+  </usr/share/mizar/prel/w/waybel_5.dco
+  </usr/share/mizar/prel/y/yellow_7.dco
+   The cutting off constructors:
+    - CARD_3
+    - FINSEQ_2
+    - FUNCT_6
+    - PBOOLE
+    - BINOP_1
+    - FUNCT_3
+    - FUNCT_5
+    - GRAPH_1
+    - CAT_1
+    - CAT_2
+    - CAT_5
+    - MULTOP_1
+    - ALTCAT_1
+    - ORDERS_3
+    - YELLOW_2
+    - WAYBEL_1
+    - WAYBEL_5
+    - YELLOW_7
+  </usr/share/mizar/prel/w/waybel_6.the
+  </usr/share/mizar/prel/f/funct_7.dco
+  </usr/share/mizar/prel/f/funct_6.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/f/funct_5.dco
+  </usr/share/mizar/prel/y/yellow_2.dco
+  </usr/share/mizar/prel/w/waybel_1.dco
+  </usr/share/mizar/prel/y/yellow_3.dco
+  </usr/share/mizar/prel/w/waybel_2.dco
+  </usr/share/mizar/prel/w/waybel_3.dco
+  </usr/share/mizar/prel/w/waybel_4.dco
+  </usr/share/mizar/prel/w/waybel_5.dco
+  </usr/share/mizar/prel/w/waybel_6.dco
+   The cutting off constructors:
+    - FUNCT_7
+    - FUNCT_6
+    - CARD_3
+    - FINSEQ_2
+    - PBOOLE
+    - FUNCT_3
+    - FUNCT_5
+    - YELLOW_2
+    - WAYBEL_1
+    - YELLOW_3
+    - WAYBEL_2
+    - WAYBEL_3
+    - WAYBEL_4
+    - WAYBEL_5
+    - WAYBEL_6
+  </usr/share/mizar/prel/w/waybel_8.the
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/y/yellow_2.dco
+  </usr/share/mizar/prel/w/waybel_1.dco
+  </usr/share/mizar/prel/w/waybel_3.dco
+  </usr/share/mizar/prel/w/waybel_4.dco
+  </usr/share/mizar/prel/f/funct_7.dco
+  </usr/share/mizar/prel/w/waybel_6.dco
+  </usr/share/mizar/prel/w/waybel_7.dco
+  </usr/share/mizar/prel/w/waybel_8.dco
+   The cutting off constructors:
+    - CARD_3
+    - YELLOW_2
+    - WAYBEL_1
+    - WAYBEL_3
+    - WAYBEL_4
+    - FUNCT_7
+    - WAYBEL_6
+    - WAYBEL_7
+    - WAYBEL_8
+  </usr/share/mizar/prel/z/zfmisc_1.the
+  </usr/share/mizar/prel/f/finseq_2.the
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+   The cutting off constructors:
+    - BINOP_1
+    - FINSEQ_2
+  </usr/share/mizar/prel/f/finseq_3.the
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/f/finseqop.dco
+  </usr/share/mizar/prel/f/finseq_3.dco
+   The cutting off constructors:
+    - FINSEQ_2
+    - FINSEQOP
+    - FINSEQ_3
+  </usr/share/mizar/prel/h/hilbert2.the
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/funct_6.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/t/trees_1.dco
+  </usr/share/mizar/prel/t/trees_2.dco
+  </usr/share/mizar/prel/t/trees_3.dco
+  </usr/share/mizar/prel/t/trees_4.dco
+  </usr/share/mizar/prel/h/hilbert1.dco
+  </usr/share/mizar/prel/h/hilbert2.dco
+   The cutting off constructors:
+    - CARD_3
+    - FUNCT_6
+    - FUNCT_3
+    - TREES_1
+    - TREES_2
+    - TREES_3
+    - TREES_4
+    - HILBERT1
+    - HILBERT2
+  </usr/share/mizar/prel/r/rewrite1.the
+  </usr/share/mizar/prel/w/wellord1.dco
+   The cutting off constructors:
+    - WELLORD1
+  </usr/share/mizar/prel/o/ordinal1.the
+  </usr/share/mizar/prel/x/xreal_1.the
+  </usr/share/mizar/prel/x/xxreal_0.the
+  </usr/share/mizar/prel/a/arytm_3.dco
+  </usr/share/mizar/prel/a/arytm_2.dco
+   The cutting off constructors:
+    - ARYTM_3
+    - ARYTM_2
+  </usr/share/mizar/prel/p/pre_poly.the
+  </usr/share/mizar/prel/b/binop_1.dco
+  </usr/share/mizar/prel/s/setwiseo.dco
+  </usr/share/mizar/prel/c/card_3.dco
+  </usr/share/mizar/prel/f/finseq_2.dco
+  </usr/share/mizar/prel/f/finseqop.dco
+  </usr/share/mizar/prel/f/finsop_1.dco
+  </usr/share/mizar/prel/f/finseq_4.dco
+  </usr/share/mizar/prel/i/int_1.dco
+  </usr/share/mizar/prel/r/rat_1.dco
+  </usr/share/mizar/prel/v/valued_0.dco
+  </usr/share/mizar/prel/m/membered.dco
+  </usr/share/mizar/prel/v/valued_1.dco
+  </usr/share/mizar/prel/f/funct_3.dco
+  </usr/share/mizar/prel/c/complex1.dco
+  </usr/share/mizar/prel/i/int_2.dco
+  </usr/share/mizar/prel/n/nat_d.dco
+  </usr/share/mizar/prel/f/finseq_3.dco
+  </usr/share/mizar/prel/r/rvsum_1.dco
+  </usr/share/mizar/prel/f/funct_6.dco
+  </usr/share/mizar/prel/t/trees_1.dco
+  </usr/share/mizar/prel/t/trees_2.dco
+  </usr/share/mizar/prel/t/trees_3.dco
+  </usr/share/mizar/prel/t/trees_4.dco
+  </usr/share/mizar/prel/w/wsierp_1.dco
+  </usr/share/mizar/prel/b/binop_2.dco
+  </usr/share/mizar/prel/w/wellord1.dco
+  </usr/share/mizar/prel/p/pboole.dco
+  </usr/share/mizar/prel/p/pre_poly.dco
+   The cutting off constructors:
+    - BINOP_1
+    - SETWISEO
+    - CARD_3
+    - FINSEQ_2
+    - FINSEQOP
+    - FINSOP_1
+    - FINSEQ_4
+    - INT_1
+    - RAT_1
+    - VALUED_0
+    - MEMBERED
+    - VALUED_1
+    - FUNCT_3
+    - COMPLEX1
+    - INT_2
+    - NAT_D
+    - FINSEQ_3
+    - RVSUM_1
+    - FUNCT_6
+    - TREES_1
+    - TREES_2
+    - TREES_3
+    - TREES_4
+    - WSIERP_1
+    - BINOP_2
+    - WELLORD1
+    - PBOOLE
+    - PRE_POLY
+Schemes
+  </usr/share/mizar/prel/x/xboole_0.sch
+  </usr/share/mizar/prel/n/nat_1.sch
+  </usr/share/mizar/prel/f/funct_1.sch
+  </usr/share/mizar/prel/f/funct_2.sch
+  </usr/share/mizar/prel/r/recdef_1.sch
+  </usr/share/mizar/prel/r/real_1.dco
+   The cutting off constructors:
+    - REAL_1
+  </usr/share/mizar/prel/r/relset_1.sch
+  </usr/share/mizar/prel/o/orders_1.sch
+  </usr/share/mizar/prel/w/wellord2.sch
