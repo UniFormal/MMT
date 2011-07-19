@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<title>tiscaf http server, overview</title>
+<link rel="stylesheet" type="text/css" href="tiscaf.css" media="all" />
+</head>
+<body>
+
+<h1>tiscaf http server, overview</h1>
+
+<p>
+<strong>tiscaf</strong> - TIny SCAla Framework - is a framework I'm working on.
+The framework is written in and intended to be used with the <a href="http://www.scala-lang.org/">Scala</a>
+programming language. Here a part of the framework is presented - it is an http server.
+</p>
+
+<h2>motivations</h2>
+<p>
+Very often a current software exosphere makes almost impossible to do things a simple way.
+OTOH, if you like to spend your life dealing with extraneous-designed XML-files (rather
+coding), be warned - <em>tiscaf</em> lives in another world. At any case - welcome!
+</p>
+
+<h2>features</h2>
+
+<ul>
+
+<li><strong>nio</strong> - nio using permits resources managing.</li>
+
+<li><strong>full streaming</strong> - the server allows a streaming in both directions;
+say, you can download and upload ISO images.
+</li>
+
+<li><strong>dispatching</strong> - requests dispatching is limited with your imagination only.</li>
+
+<li><strong>multiport</strong> - listening to multiple ports is possible.</li>
+
+<li><strong>static content</strong> - file system resources retrieving is supported out of the box
+(with files/directories browsing).</li>
+ 
+<li><strong>connections</strong> - persistent connections are also supported.</li>
+
+<li><strong>output</strong> - raw (content-length is known), buffered, gzipped (as a case of buffered),
+chunked - all cases are supported.</li>
+
+<li><strong>methods</strong> - POST/urlencoded, POST/multipart (with falling POST back to octets) and
+GET methods are supported.</li>
+
+<li><strong>sessions</strong> - via URI path extensions and/or cookies are supported.</li>
+
+<li><strong>config files</strong> - are absent.</li>
+
+<li><strong>codebase</strong> - ~80KB in Scala.</li>
+
+<li><strong>depends on</strong> - nothing (again: <em>nothing</em>).</li>
+
+<li><strong>licensing</strong> - <a href="http://www.gnu.org/licenses/lgpl.html">LGPL.</a></li>
+
+</ul>
+
+<h2>documentation</h2>
+<p>
+The manual is <a href="./manual.html">here</a>. 
+OTOH, the server using is very simple, and you can look at (the beginning of) these source
+files:
+</p>
+
+<ul>
+
+<li><span class="mono">HServer</span> - holds a list of <span class="mono">HApp</span><em>s</em></li>
+
+<li><span class="mono">HReqHeader.scala, (trait HReqHeaderData, object HReqType)</span></li>
+
+<li><span class="mono">HApp.scala</span> - holds a list of request handlers - <span class="mono">HLet</span><em>s</em></li>
+
+<li><span class="mono">HResolver.scala</span> - to take an idea how the dispatching does work</li>
+
+<li><span class="mono">HLet.scala</span> - request handler, main your work is in 'act' method</li>
+
+<li><span class="mono">HTalk.scala</span> - main user API inside <span class="mono">HLet.act</span></li>
+
+<li><span class="mono">HData.scala</span> - nothing interesting, just protocol constants</li>
+
+<li><span class="mono">HomeServer.scala</span> - demo; browse your home directory (plenty of comments)</li>
+
+</ul>
+
+<p>
+Also, README file (inside archive) has tips to try <span class="mono">HomeServer</span>.
+</p>
+
+<h2>source code</h2>
+
+<p>
+Is here: <a href="../files/tiscaf-0.3.zip">tiscaf-0.3.zip</a> (hit "refresh" if not found).
+</p>
+
+<h2>useful critics</h2>
+<p>
+Send to me, Andrew Gaydenko, a@gaydenko.com (please, add <em>tiscaf</em> to your subject).
+I'm mostly interested in a feedback concerning tricky requests dropping a (reasonably
+configured) server down.
+</p>
+
+<h2>events (in reverse order)</h2><!-- *********************************************** -->
+
+<p><strong>2010.06.10</strong> v.0.3 is released: towards Scala 2.8. Changes:</p>
+<ul>
+<li><span class="mono">HTracking.uriAndCookie</span> session tracking was removed.</li>
+
+<li><span class="mono">HApp.sessionTimeoutMinutes</span> default value is 15 now (was 30).</li>
+
+<li><span class="mono">HApp.maxSessionsCount</span> is introduced with 500 as default value.</li>
+
+<li><span class="mono">HApp.paramsEncoding</span> is introduced with "UTF-8" as default value.</li>
+
+<li><span class="mono">HServer.selectorQueueSize</span> is introduced with
+  <span class="mono">Int.MaxValue</span> as default value to limit  nio
+   selector events queue size.
+</li>
+
+<li><span class="mono">HTalk.req</span> object has helpers now to access primitives in request
+  parameteres:
+  <pre>    def asByte(key : String) : Option[Byte]
+    def asShort(key : String) : Option[Short]
+    def asInt(key : String) : Option[Int]
+    def asLong(key : String) : Option[Long]
+    def asFloat(key : String) : Option[Float]
+    def asDouble(key : String) : Option[Double]</pre>
+</li>
+
+<li><span class="mono">HTalk.ses</span> object extends
+  <span class="mono">scala.collection.mutable.Map[Any,Any]</span> now and has few helpers to
+  access primirives.
+</li>
+
+<li><span class="mono">ResourceLet</span> helper trait is added. It is similar to
+  <span class="mono">FsLet</span>, but is intended to access java resources (say, files
+  in jars for jars in classpath).
+</li>
+
+<li><span class="mono">HTree</span> helper trait is added. If your application has (at least
+  partly) tree-like structure (uri nodes correspond to request handlers), you can assign handlers
+  to tree nodes in eyes-friendly manner.
+</li>
+
+<li>cleanup here and there.</li>
+
+</ul>
+
+<p><strong>2008.11.22</strong> v.0.2.4 is released. Changes:
+
+<span class="mono">HReqHeaderData</span>'s and <span class="mono">HTalk.req</span>'s
+methods <span class="mono">host</span> and <span class="mono">port</span> return now
+<span class="mono">Option[String]</span> instead of <span class="mono">String</span>.
+Thanks to Will Scullin - he has pointed me there are plenty of simplified http clients
+which don't bother about <span class="mono">Host</span>-string in request headers.
+</p>
+
+<p><strong>2008.10.27</strong> v.0.2.3 is released. Changes:
+</p>
+ 
+<ul>
+<li><span class="mono">HServer.stopPort</span> defaults to 8911 - it reduces implementation
+code noise at embedded use cases when <span class="mono">HServer.startStopListener</span>
+may be, say, just empty.</li>
+
+<li>fixed bug preventing clean overriding of <span class="mono">HServer.startStopListener</span> - 
+thanks to Damián Arregui.</li>
+
+<li><span class="mono">HReqType</span> has new value <span class="mono">PostOctets</span>.
+The value is used as fall back POST case when content type differs from 
+<span class="mono">application/x-www-form-urlencoded</span> and <span class="mono">multipart/form-data</span>.
+At this case concrete post data parsing is delegated to request handler via new 
+<span class="mono">HTalk.req.octets</span> method. Again thanks to Damián Arregui - he
+has pointed me at situations with "not too standard" http clients. 
+</li>
+</ul>
+
+<p><strong>2008.10.15</strong> v.0.2.2 is released - again for windows users.
+Thanks to Christos KK Loverdos - he has kindly provided .bat scripts to quickly 
+build-and-try <span class="mono">HomeServer.scala</span> demo. 
+</p>
+ 
+<p><strong>2008.10.15</strong> v.0.2.1 is dedicated to ms windows users. Thanks to
+Tim Clendenen - he has pointed to an issue concerning windows file system and tested
+a fix.
+</p>
+
+<p><strong>2008.10.13</strong> v.0.2 is released. Changes:
+</p>
+ 
+<ul>
+<li>a manual was added, and this is a reason to jump to v.0.2.</li>
+<li>shell scripts are slightly modified to be more democratic wrt different Unix-like systems
+(my thanks to Manfred Lotz)</li>
+<li>API small changes: time constants now go with unit suffix to be more self-explained
+(my thanks to Henry Ware). Also <span class="mono">uri</span> method(s) are renamed
+to <span class="mono">uriPath</span> to reflect reality.</li>
+</ul>
+<p>I'm still waiting for further suggestions wrt API stabilization.</p>
+
+<p><strong>2008.10.09</strong> As long as one of the goals of <em>tiscaf</em> publishing is a participating
+in adoption and spreading of the Scala programming language, I have decided to lower licensing
+restrictions and have republished the application (v.0.1.1) in terms of LGPL.
+</p>
+
+<p><strong>2008.10.08</strong> tiscaf http server v.0.1 is published in terms of GPL2.
+</p>
+
+</body>
+</html>

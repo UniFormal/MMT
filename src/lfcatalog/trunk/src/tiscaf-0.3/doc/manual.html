@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<title>tiscaf http server, manual</title>
+<link rel="stylesheet" type="text/css" href="tiscaf.css" media="all" />
+</head>
+<body>
+
+<h1>tiscaf http server, manual</h1>
+
+<p>This is a <a href="index.html">tiscaf http server</a> manual. I hope the manual you are reading is both short and complete.</p> 
+<p>See <span class="mono">HomeServer.scala</span> also - it's a short demo.</p>
+
+<h2>HServer</h2>
+<p>
+Trait HServer provides:
+</p>
+
+<ul>
+<li>few common settings</li>
+<li>holding HApp<em>s</em> list</li>
+<li>starting/stopping</li>
+</ul>
+
+<h3>to implement</h3>
+
+<p>
+<code>protected def apps : Seq[HApp]</code> - you must supply a list of web applications
+(see HApp below). Take in mind, an order of applications in the list is important for
+dispatching (is explained below also).
+</p>
+
+<p>
+<code>protected def ports : Seq[Int]</code> - ports to listen to. Dedicated TCP connection
+acceptor will be started in own thread for each port. 
+</p>
+
+<p>
+<code>  protected def talkPoolSize : Int, protected def talkQueueSize : Int</code> - parameters
+of executor in which all requests handlers activity takes place. I don't see any reason
+to make <span class="mono">talkPoolSize</span> (threads count) noticeably greater rather CPU
+(cores) count. For Core 2 Duo, which I use, 4 is a "good" number - it keep all other parts 
+of operating system absolutely responsive. As for <span class="mono">talkQueueSize</span>, 
+well, it must be sufficient to serve your clients. You may start from <span class="mono">Int.MaxValue</span>
+and reduce it at case of DoS attacks and/or RAM deficit.
+</p>
+
+<p>
+<code>protected def selectorPoolSize : Int</code> - reading and writing from/to socket channels
+take place in another execution pool. Again, there are no performance reasons to rise this thread
+count above CPU/core count, but at case you have clients with poor reading of the server response
+you may want to increase this parameter. You will not get better performance, but will be able to
+deal with such lazy-reading clients.
+</p>
+
+<h3>to override</h3>
+
+<p>
+<code>protected def stopPort : Int = 8911</code> - at server start listener to this port is
+also started, waiting for "stop" command to shutdown. Hasn't any sense if you override
+<span class="mono">startStopListener</span> method (see below).
+</p>
+
+<p>
+<code>protected def selectorQueueSize : Int = Int.MaxValue</code> - is used to limit nio
+selector events queue size.
+</p>
+
+<p>
+<code>protected def readBufSize : Int = 512</code> - nio buffers size for requests reading. Increase
+it at case of frequent multi-MB uploads (will eat more RAM).
+</p>
+
+<p>
+<code>protected def writeBufSize : Int = 4096</code> - nio buffers size for responses writing. Increase
+it at case of frequent multi-MB downloads (will eat more RAM). Say, with 64K write buffers I have got
+above 400 MB/sec transfer rate (ApacheBench and the server were running on the same PC with C2D 2.4GHz).
+</p>
+
+<p>
+<code>protected def tcpNoDelay : Boolean = false</code> - TCP socket's parameter. It is 
+<span class="mono">false</span> by default. The only reason to set to <span class="mono">true</span>
+is the case of benchmarking of a single (or few) clients (say, you can get ~25 requests per second
+only for single-thread client with not-persistent connection when <span class="mono">false</span>
+is set). Set the parameter to <span class="mono">false</span> in production to make TCP/IP stack
+more happy.
+</p>
+
+<p>
+<code>protected def connectionTimeoutSeconds : Int = 30</code> - it has two purposes:
+</p>
+<ul>
+<li>a connection without any socket activity during this period will be closed</li>
+<li>if you use (and client wants) 'keep-alive' connection, this period is declared in
+response header</li>
+</ul>
+
+<p>
+<code>protected def interruptTimeoutMillis : Int = 1000</code> - after the server has
+got 'stop' command, this period will be given to handlers to terminate their work before
+interrupting them. 
+</p>
+
+<p>
+<code>protected def onError(e : Throwable) : Unit</code> - you can delegate error handling
+to your favourite logging system. Probably, some kind of filtering may be useful - say,
+when  client interrupts a connection, you may get 'broken pipe' or something such. 
+</p>
+
+
+<p>
+<code>protected def startStopListener : Unit</code> - the method is calling during server
+starting. By default it starts (in dedicated thread) a primitive port listener which waits
+for 'stop' sequence from <span class="mono">HStop.stop</span>. If you need more elaborated
+shutting down procedure, you can override the method and write your own 'stopper' and
+stop-listener. 
+</p>
+
+
+<h3>API</h3>
+
+<p>
+<code>final def start : Unit, final def stop : Unit</code> - self explained. 
+</p>
+
+
+<h2>HApp</h2>
+<p>
+Presents something called 'application' - a group of request handlers (HLet<em>s</em>) sharing common
+behaviour.
+</p>
+
+<h3>to implement</h3>
+
+<p>
+<code>def resolve(req : HReqHeaderData) : Option[HLet]</code> - core dispatching method, returning
+a handler to process the request. To decide which handler to use, you have full request header
+information presented by <span class="mono">HReqHeaderData</span>:
+</p>
+
+<pre>
+trait HReqHeaderData {
+  def reqType : HReqType.Value
+  def host    : Option[String]
+  def port    : Option[String]
+  def uriPath : String
+  def uriExt  : Option[String]
+  def query   : String
+  
+  def header(key : String): Option[String]
+  def headerKeys : scala.collection.Set[String]
+  
+  def contentLength : Option[Long]
+  def isPersistent : Boolean
+  def boundary : Option[String]
+}
+</pre>
+<p>
+<span class="mono">uriExt</span> is an URI path extension - when you use sessions with
+URL-rewriting, you have URIs like <span class="mono">'.../index.html;sid=bla-bla-bla'</span>,
+where <span class="mono">'sid=bla-bla-bla'</span> is an <span class="mono">uriExt</span>.
+</p>
+<p>All (request and response) headers keys are case-insensitive.</p>
+<p>   
+<span class="mono">HReqType</span> is defined as
+</p>
+<pre>
+object HReqType extends Enumeration {
+  val Invalid    = Value("Invalid")
+  val Get        = Value("GET")
+  val PostData   = Value("POST/application/x-www-form-urlencoded")
+  val PostOctets = Value("POST/application/octet-stream")
+  val PostMulti  = Value("POST/multipart/form-data")
+}
+</pre>
+
+<p>Request parser falls back to <span class="mono">HReqType.PostOctets</span> type
+when content type  is another rather <span class="mono">application/x-www-form-urlencoded</span>
+or <span class="mono">multipart/form-data</span>, delegating data processing to handler.
+</p>
+
+<p>
+As I have already said, <span class="mono">HServer.apps</span> list order is important.
+Instead of plenty of words, let's see how dispatching works:
+</p>
+<pre>
+protected object HResolver {
+
+  private object errApp extends HApp {
+    // some code to define the HApp
+    val hLet = new let.ErrLet(HStatus.NotFound)
+  }
+  
+  def resolve(apps : Seq[HApp], req : HReqHeaderData) : (HApp, HLet) = {
+    @scala.annotation.tailrec
+    def doFind(rest : Seq[HApp]) : (HApp,HLet) = rest match {
+      case Nil     => (errApp, errApp.hLet)
+      case a :: as => a.resolve(req) match {
+        case Some(let) => (a, let)
+        case None      => doFind(as)
+      }
+    }
+    doFind(apps)
+  }
+}
+</pre>
+<p>
+You see, if resolver has not found suitable <span class="mono">(HApp, HLet)</span> pair,
+default 'not found' response will be responded. 
+</p>
+<p>
+You can have last <span class="mono">HApp</span> in <span class="mono">HServer.apps</span> list
+with your own 'not found' handler (or, say, return 'Charlie Parker - Summertime.ogg'). Inside
+each <span class="mono">HApp.resolve</span> you will probably have some kind of matching against
+request parameters, and can end up with <span class="mono">FsLet</span> (supplied handler to deal
+with static content) to access images, css, js and other such resources. Also, you can... Ugh, you
+see, you can everything wrt dispatching.
+</p>
+
+
+<h3>to override</h3>
+
+<p>Also <span class="mono">HApp</span> has few params you can override:</p>
+<pre>
+  def tracking : HTracking.Value  = HTracking.NotAllowed
+  def sessionTimeoutMinutes : Int = 15
+  def maxSessionsCount : Int      = 500
+  def keepAlive : Boolean         = false
+  def chunked : Boolean           = false
+  def buffered : Boolean          = false
+  def gzip : Boolean              = false
+  def paramsEncoding : String     = "UTF-8"
+</pre>
+
+<p>They are self-explained. If you are not using buffered (or gzipped as a case of buffered)
+or chunked output, you need to set content length manually in request handler.
+</p>
+
+<p><span class="mono">HTracking</span> id defined as:</p>
+<pre>
+object HTracking extends Enumeration { 
+  val NotAllowed, UriOnly, CookieOnly = Value 
+}
+</pre>
+
+
+
+<h2>HTalk</h2>
+
+<p>
+This is your request handler's gate to the world. Note, many methods return 
+<span class="mono">this</span> for chaining. <span class="mono">HTalk</span> public
+interface consists of:
+</p>
+
+<h3>request data</h3>
+<pre>
+  object req {
+    // common
+    def method : HReqType.Value
+    def host : Option[String]
+    def port : Option[String]
+    def uriPath : String
+    def uriExt : Option[String]
+    def query : String
+    def remoteIp : String 
+  
+    // header
+    def header(key : String): Option[String]
+    def headerKeys : scala.collection.Set[String]
+  
+    // parameters
+    def paramKeys : Seq[String]
+    def params(key : String) : Seq[String]
+    def param(key : String) : Option[String]
+    
+    // param(key) helpers
+    def asByte(key : String) : Option[Byte]
+    def asShort(key : String) : Option[Short]
+    def asInt(key : String) : Option[Int]
+    def asLong(key : String) : Option[Long]
+    def asFloat(key : String) : Option[Float]
+    def asDouble(key : String) : Option[Double]
+
+    // POST/application/octet-stream case
+    def octets : Option[Array[Byte]]
+  }
+</pre>
+
+<p>Self-explained.</p> 
+
+<h3>setting response header</h3>
+
+<pre>
+  def setStatus(code : HStatus.Value) : HTalk
+  def setStatus(code : HStatus.Value, msg : String) : HTalk
+  
+  def setHeader(name : String, value : String) : HTalk
+  def removeHeader(name : String) : Option[String]
+  def getHeader(name : String) : Option[String]
+  
+  def setContentLength(length : Long) : HTalk
+  def setCharacterEncoding(charset : String) : HTalk
+  def setContentType(cType : String) : HTalk
+</pre> 
+
+<p>Self-explained again. Recall, all headers-related keys are case-insensitive.</p> 
+
+
+<h3>output, close</h3>
+
+<pre>
+  def write(ar : Array[Byte], offset : Int, length : Int) : HTalk
+  def write(ar : Array[Byte]) : HTalk
+  def close : Unit
+  def isClosed : Boolean
+</pre>
+
+<p>It is safe to close a talk multiple times.</p>
+<p>At first I have used <span class="mono">OutputStream</span> interface, but
+have rejected it because of semantic difference.</p> 
+
+<h3>session</h3>
+
+<p>Implements mutable map.</p>
+<pre>
+  object ses extends scala.collection.mutable.Map[Any,Any] {
+
+    // implementing mutable.Map...
+
+    // Map-related helpers
+
+    def asString(key : Any) : Option[String]
+    def asBoolean(key : Any) : Option[Boolean]
+    def asByte(key : Any) : Option[Byte]
+    def asShort(key : Any) : Option[Short]
+    def asInt(key : Any) : Option[Int]
+    def asLong(key : Any) : Option[Long]
+    def asFloat(key : Any) : Option[Float]
+    def asDouble(key : Any) : Option[Double]
+    def asDate(key : Any) : Option[Date]
+
+    def clearKeeping(keysToKeep : Any*) : Unit
+
+    // session-specific
+
+    def tracking : HTracking.Value
+    def isAllowed : Boolean
+    def isValid : Boolean
+    def invalidate : Unit
+
+    def idKey : String
+    def id : String
+    def idPhrase : String = if (isAllowed) (";" + idKey + "=" + id) else ""
+  }
+</pre>
+
+
+<h2>HLet</h2>
+
+<p>
+It is a request handler.
+</p>
+
+<h3>to implement</h3>
+
+<p>
+<code>def act(talk : HTalk) : Unit</code> - request handling. Main your code is here.
+Just use <span class="mono">HTalk</span>.
+</p>
+
+<h3>to override</h3>
+
+<p>
+<code>def before : Seq[HLet] = Nil</code> - you can list other  <span class="mono">HLet</span><em>s</em>
+here, whos <span class="mono">act</span> methods will be executed as long as <span class="mono">HTalk</span>
+isn't closed. Say, you can use it for access logging, authorisation checking and such. Just look
+at the server internal implementation fragment: 
+</p>
+
+<pre>
+  private def talk : Unit = {
+    // some code
+    if(let.before.find( be =&gt; { be.act(tk); tk.isClosed }).isEmpty) let.act(tk)
+    tk.close // if user didn't
+  }
+</pre>
+
+<p>As you can see, there isn't a recursion wrt calling <span class="mono">act</span>
+of <span class="mono">before</span> list items. I have decided such recursion will
+provoke over-complicated design and result in confusion.</p>
+
+<p>Also, you can see, your <span class="mono">act</span> method will be called if
+nobody closed a talk.</p> 
+
+<p>
+<code>def paramsEncoding : String = "UTF-8"</code> - self-explained. 
+</p>
+
+<p>
+<code>def partsAcceptor(reqInfo : HReqHeaderData) : Option[HPartsAcceptor] = None</code> - is used
+for handling multipart request, which is executed before  <span class="mono">act</span>. 
+<span class="mono">HPartsAcceptor</span> looks like
+</p>
+
+<pre>
+abstract class HPartsAcceptor(reqInfo : HReqHeaderData) {
+  
+  // to implement
+  
+  def open(desc : HPartDescriptor) : Boolean // new part starts with it...
+  def accept(bytes : Array[Byte]) : Boolean  // ... takes bytes (multiple calls!)...
+  def close :Unit                            // ... and ends with this ...
+  def declineAll : Unit                      // ... or this one apeals to abort all parts
+  
+  // to override
+  
+  def headerEncoding : String = "UTF8" 
+}
+
+trait HPartDescriptor {
+  def header(key : String) : Option[String]
+  def headerKeys : scala.collection.Set[String]
+  override def toString = (for(k &lt;- headerKeys) yield { k + " -&gt; " + header(k).get }).mkString(", ")
+}
+</pre>
+
+<p>
+As you can imagine, for each part <span class="mono">open</span>, <span class="mono">accept</span>
+(few times) and <span class="mono">close</span> methods will be called during request parsing.
+If you want to decline this data stream (say, client doesn't respect max upload size), just return
+<span class="mono">false</span> - the connection will be closed.
+</p>
+
+<p>
+Also a request parser may deside input stream is illegal and call <span class="mono">declineAll</span>,
+which you can use to clean up any resources (say, close files).
+</p>
+
+
+<h3>API</h3>
+
+<p>There are few helper methods you can use during talking. Some of them are self-explained:</p>
+
+<pre>
+  protected def error(status : HStatus.Value, msg : String, tk : HTalk) = new let.ErrLet(status, msg) act(tk)
+  protected def error(status : HStatus.Value, tk : HTalk)               = new let.ErrLet(status) act(tk)
+  protected def e404(tk : HTalk)                                        = error(HStatus.NotFound, tk)
+</pre>
+
+<p>Take in mind, talk will be closed after these methods calling.</p>
+<p>Some of helpers need few words:</p>
+
+<p>
+<code>protected def redirect(to : String, tk : HTalk) = new let.RedirectLet(to) act(tk)</code> - uses
+helper handler - <span class="mono">RedirectLet</span> - which <span class="mono">act</span> method
+looks as
+</p>
+
+<pre>
+  def act(tk : HTalk) {
+    tk.setContentLength(0)
+      .setContentType("text/html")
+      .setHeader("Location", toUrl)
+      .setStatus(HStatus.MovedPermanently)
+      .close
+  }
+</pre>
+<p>You see, just <span class="mono">Location</span> header is used.</p>
+
+<p>
+<code>protected def delegate(to : HLet, tk : HTalk) : Unit</code> - delegates acting to another
+<span class="mono">HLet</span>:
+</p>
+
+<pre>
+  protected def delegate(to : HLet, tk : HTalk) : Unit =
+    if(to.before.find(be =&gt; { be.act(tk); tk.isClosed }).isEmpty) to.act(tk)
+</pre>
+
+<p>Take in mind, the delegation respects <span class="mono">before</span> list of the 
+target <span class="mono">HLet</span>.</p>
+
+<p>
+<code>protected def sessRedirect(to : String, tk : HTalk) : Unit</code> - the same as 
+<span class="mono">redirect</span>, but inserts URI path extension into the target URI: 
+</p>
+<pre>
+  protected def sessRedirect(to : String, tk : HTalk) : Unit =  {
+    val parts = to.split("\\?", 2)
+    val url = parts(0) + ";" + tk.ses.idKey + "=" + tk.ses.id + {
+      if(parts.size == 2) "?" + parts(1)
+      else ""
+    }
+    new let.RedirectLet(url) act(tk)
+  }
+</pre>
+
+<h3>FsLet</h3>
+
+<p>
+There are few <span class="mono">HLet</span><em>s</em> located in the <span class="mono">let</span>
+package. You have already seen <span class="mono">ErrLet</span> and 
+<span class="mono">RedirectLet</span>. There is another useful handler which handles requests
+to static (file system based) content. It is (surprise?) <span class="mono">FsLet</span>
+handler:
+</p>
+
+<pre>
+private object FsLet {
+  val stdIndexes = List("index.html", "index.htm")
+}
+
+trait FsLet extends HLet {
+  
+  //----------------- to implement -------------------------
+  
+  protected def dirRoot : String // will be mounted to uriRoot
+
+  //----------------- to override -------------------------
+  
+  protected def uriRoot : String         = "" // say, "myKit/theDir"
+  protected def indexes : Seq[String]    = stdIndexes 
+  protected def allowLs : Boolean        = false
+  protected def bufSize : Int            = 4096
+  protected def plainAsDefault : Boolean = false
+  
+  // internals follow...
+}
+</pre>
+
+<p>To implement:</p>
+
+<p>
+<code>protected def dirRoot : String</code> - it is your file system path to
+static content root directory, say, '/home/thelonious/my-site/img'.
+</p>
+
+<p>To override:</p>
+
+<p>
+<code>protected def uriRoot : String = ""</code> - this is an URI path prefix
+the <span class="mono">dirRoot</span> will be mounted to. Say, "img", or "", or "a/b/c"
+(warning for ms windows users: please, follow standards and do not use back slash here).
+</p>
+
+<p>
+<code>protected def indexes : Seq[String] = stdIndexes</code> - self explained 
+(see  <span class="mono">FsLet.stdIndexes</span> above). Probably, you will want
+<span class="mono">Nil</span> here.
+</p>
+
+<p>
+<code>protected def allowLs : Boolean = false</code> - at  <span class="mono">true</span> case
+standard directory listing html will be returned for directory, as you probably have noticed
+playing with <span class="mono">HomeServer</span> demo.
+</p>
+
+<p>
+<code>protected def bufSize : Int = 4096</code> - files are read to <span class="mono">Array[Byte]</span>
+with this size, then the buffer is used in <span class="mono">HTalk.write</span> call.  
+</p>
+
+<p>
+<code>protected def plainAsDefault : Boolean = false</code> - few MIME types are listed
+inside <span class="mono">HData.scala</span>. At case a type is unknown, this code
+takes place: 
+</p>
+
+<pre>
+  if(plainAsDeault) tk.setContentType("text/plain")
+  else tk.setContentType("application/octet-stream") 
+</pre>
+
+<h3>ResourceLet</h3>
+
+<p>
+This trait is similar to FsLet, but has the aim to access java resources - say, files
+inside jars for jars in classpath.
+</p>
+
+<pre>
+trait ResourceLet  extends HLet {
+
+  //----------------- to implement -------------------------
+
+  protected def dirRoot : String // will be mounted to uriRoot
+
+  //----------------- to override -------------------------
+
+  protected def getResource(path : String) : java.io.InputStream =
+    this.getClass.getResourceAsStream(path)
+  protected def uriRoot : String         = "" // say, "myKit/theDir"
+  protected def indexes : Seq[String]    = Nil
+  protected def bufSize : Int            = 4096
+  protected def plainAsDefault : Boolean = false
+
+  // internals follow...
+}
+</pre>
+
+<p>You see, it is possible to override <span class="mono">getResource(path : String)</span>
+  method to access other kind of fs-like resources if you have invented them.
+</p>
+
+<h2>HTree</h2>
+
+<p>
+  If your application has (at least partly) tree-like structure (uri nodes correspond to
+  request handlers), you can assign handlers to tree nodes in eyes-friendly manner:
+</p>
+
+<pre>
+object HTree {
+  def stub(text : String) : HLet = new HLet { ... }
+}
+
+trait HTree {
+
+  def dir : String       = ""
+  def let : Option[HLet] = None
+  def lays : Seq[HTree]   = Nil
+
+  final def !(addLet : => HLet) = new HTree { ... }
+  final def +=(addLays : HTree*) = new HTree { ... }
+  final def resolve(dirs : Seq[String]) : Option[HLet] = ...
+  final def resolve(uriPath : String) : Option[HLet] = resolve(uriPath.split("/"))
+}
+</pre>
+
+<p>Instead of long and vague explanation let's look at this example:</p>
+<pre>
+object MngApp extends HApp {
+
+  def resolve(req : HReqHeaderData) : Option[HLet] = admRoot.resolve(req.uriPath)
+
+  private lazy val bookkeepers =
+    "bookkeeper" += (
+      "new"  ! stub("new bookkeeper - not implemented yet"),
+      "list" ! adm.bk.ListBkLet
+    )
+
+  private lazy val admRoot =
+    "adm" += ( // adm root hasn't a handler. If has: "adm" ! new AdmRootLet += (
+      "in" ! adm.InLet, // "domain.com/adm/in"
+      "menu" ! adm.MenuLet,
+      "manager" += (
+        "new"  ! adm.man.NewManLet,
+        "list" ! adm.man.ListManLet
+      ),
+      bookkeepers
+    )
+
+  // ...
+}
+</pre>
+
+<p>This example mostly uses objects (rather classes instances) as handlers. At development point when
+  some of handlers are not implemented you can use <span class="mono">HTree.stub(text : String)</span>
+  method. In fact you can start with stubs only, and replace them with real handlers step by step. And,
+  as you can see with <span class="mono">bookkeepers</span> inside <span class="mono">admRoot</span>,
+  you can nest subtrees in a way you want.
+</p>
+
+
+</body>
+</html>
