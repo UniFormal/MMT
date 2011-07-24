@@ -3,23 +3,23 @@
      xmlns="http://www.w3.org/2002/07/owl#"
      xml:base="http://example.com/owl/families/"
      ontologyIRI="http://example.com/owl/families">
-    
- <Declaration>
-  <NamedIndividual IRI="John"/>
- </Declaration>
-    
- <Declaration>
-  <NamedIndividual IRI="James"/>
- </Declaration>
-    
+ 
  <Declaration>
   <NamedIndividual IRI="Mary"/>
  </Declaration>
-    
+ 
  <Declaration>
+  <NamedIndividual IRI="John"/>
+ </Declaration>
+ 
+  <Declaration>
   <NamedIndividual IRI="Bill"/>
  </Declaration>
  
+ <Declaration>
+  <NamedIndividual IRI="James"/>
+ </Declaration>
+
  <Declaration>
   <NamedIndividual IRI="Jack"/>
  </Declaration>
@@ -29,15 +29,15 @@
  </Declaration>
  
  <Declaration>
-  <Class IRI="Woman"/>
- </Declaration>
- 
- <Declaration>
   <DataProperty IRI="hasAge"/>
  </Declaration>
  
  <Declaration>
   <DataProperty IRI="hasWife"/>
+ </Declaration>
+ 
+  <Declaration>
+  <Class IRI="Woman"/>
  </Declaration>
  
  <ClassAssertion>
@@ -54,7 +54,7 @@
   <NamedIndividual IRI="John"/>
   <NamedIndividual IRI="Bill"/>
  </DifferentIndividuals>
-    
+  
  <ObjectPropertyAssertion>
   <ObjectProperty IRI="hasWife"/>
    <NamedIndividual IRI="John"/>
@@ -72,12 +72,11 @@
      <NamedIndividual IRI="John"/>
      <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">51</Literal>
  </DataPropertyAssertion>
-    
+  
  <NegativeDataPropertyAssertion>
      <DataProperty IRI="hasAge"/>
      <NamedIndividual IRI="Jack"/>
      <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">53</Literal>
  </NegativeDataPropertyAssertion>
-
  
 </Ontology>
