@@ -29,7 +29,7 @@
         <Datatype IRI="/UnionDI"/>
         <DataUnionOf>
             <Datatype abbreviatedIRI="xsd:integer"/>
-            <Datatype IRI="xsd:double"/>
+            <Datatype abbreviatedIRI="owl:real"/>
         </DataUnionOf>
     </DatatypeDefinition>
     <DatatypeDefinition>
@@ -40,6 +40,16 @@
                 <Datatype IRI="/minorAge"/>
             </DataComplementOf>
         </DataIntersectionOf>
+    </DatatypeDefinition>
+    <DatatypeDefinition>
+        <Datatype IRI="/personAge"/>
+        <DatatypeRestriction>
+            <Datatype abbreviatedIRI="xsd:integer"/>
+            <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
+                <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
+            </FacetRestriction>
+            
+        </DatatypeRestriction>
     </DatatypeDefinition>
     <DatatypeDefinition>
         <Datatype IRI="/toddlerAge"/>
