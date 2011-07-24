@@ -1,0 +1,1811 @@
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/OMDocOntologyOWLXML.owl">
+        <theory base="http://omdoc.org/ontology#" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
+         <constant name="Definition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="importedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="NestedProof">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="occursIn">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasImport">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="isPartOf">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="contributor">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL2SUB" name="annotationProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="stepExternallyJustifiedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="usesSymbol">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Document">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="provedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="RecursiveDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="title">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL2SUB" name="annotationProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="logic">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL2SUB" name="dataProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Computerized">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Corollary">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="justifiedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ProofLocalStatement">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="dependsOn">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="DerivedConclusion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="DerivationStep">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Assertion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Symbol">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="FormalityDegree">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Property">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasDirectPart">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Informal">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="assumes">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasStep">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Conjecture">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="corroboratedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ProofLocalDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="InformalKnowledgeItem">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="declaredType">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="TextFragment">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasPart">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasOccurrenceOfInDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Obligation">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="stepJustifiedBySubProof">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ProofText">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="FalseConjecture">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="GeneralSymbol">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="exemplifies">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasNotationDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Statement">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Postulate">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="presentationDependsOn">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ImplicitDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Axiom">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="homeTheory">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="refutedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="refutes">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Rule">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Citation">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="refersTo">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="RigorousKnowledgeItem">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="importsFrom">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="AssertedType">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="AlternativeDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ProvenAssertion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="formalizes">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="metaTheory">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Lemma">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Formula">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="stepLocallyJustifiedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="wellFormedNessDependsOn">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="GeneralProof">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="DeclaredType">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Theory">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="imports">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="exemplifiedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Assumption">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="possiblyUsesNotation">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="stepJustifiedByPrecedingStep">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Reference">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="SequentPart">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ProofStep">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasConclusion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Theorem">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="subject">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL2SUB" name="annotationProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="RefutedAssertion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasOccurrenceOfInType">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="type">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Conclusion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Import">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ProofLocalSymbol">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="assertedType">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasProperty">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Hypothesis">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="NotationDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="PatternBasedDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="homeTheoryOf">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="proves">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasText">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL2SUB" name="dataProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="StatementInTheory">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="isDirectPartOf">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="DocumentUnit">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="SimpleDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="UnProvenAssertion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="creator">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL2SUB" name="annotationProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="concludesWith">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="defines">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="validityDependsOn">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="stepJustifiedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Type">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="InductiveDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="rendersSymbol">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="verbalizes">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="corroborates">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="occursInDefinitionOf">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="typeJustifiedBy">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ConstitutiveStatement">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Rigorous">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="hasDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Gap">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="NonConstitutiveStatement">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Proof">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="AssumptionAssertion">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="GeneralAxiom">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="GeneralDefinition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="MathKnowledgeItem">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Example">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="AnyLevelStatement">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="Proposition">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="occursInTypeOf">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="formalityDegree">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
+       
+     </constant><constant name="ax1">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DeclaredType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax2">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="occursInTypeOf" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasOccurrenceOfInType" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax3">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="corroborates" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="exemplifies" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax4">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax5">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="proves" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax6">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="typeJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="AssertedType" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax7">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax8">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="rendersSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax9">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax10">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="RecursiveDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax11">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasConclusion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax12">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepLocallyJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="stepJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax13">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Example" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax14">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Assumption" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Conclusion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax15">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Axiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralAxiom" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax16">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax17">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasConclusion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DerivedConclusion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax18">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="usesSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax19">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax20">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Formula" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Obligation" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax21">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax22">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Document" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax23">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Axiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Import" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax24">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax25">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="type" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Type" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax26">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Conjecture" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Postulate" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax27">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="assumes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assumption" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax28">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="imports" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax29">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Proposition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theorem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax30">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseFunctionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax31">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="NestedProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="StatementInTheory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax32">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DocumentUnit" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax33">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Document" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Reference" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax34">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax35">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Type" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RigorousKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax36">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="refersTo" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Reference" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax37">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="refutes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="exemplifies" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax38">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralAxiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax39">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax40">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="justifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="AnyLevelStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax41">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="rendersSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NotationDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax42">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasConclusion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax43">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="PatternBasedDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RecursiveDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax44">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="metaTheory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax45">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AlternativeDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax46">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RigorousKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax47">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax48">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Theorem" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax49">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Conjecture" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rule" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax50">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Obligation" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Postulate" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax51">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepJustifiedByPrecedingStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax52">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax53">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepJustifiedByPrecedingStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="stepJustifiedBySubProof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax54">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="verbalizes" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax55">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax56">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="rendersSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax57">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="StatementInTheory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax58">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="StatementInTheory" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax59">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax60">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssertedType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DeclaredType" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax61">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Document" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax62">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasImport" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="homeTheoryOf" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax63">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Citation" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Reference" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax64">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Rule" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="UnProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax65">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Hypothesis" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax66">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Import" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax67">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="StatementInTheory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax68">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AnyLevelStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax69">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax70">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofText" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="InformalKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax71">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="AnyLevelStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax72">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax73">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="differentIndividuals" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Informal" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rigorous" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax74">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseFunctionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax75">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax76">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax77">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="dependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax78">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ImplicitDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax79">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="NotationDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax80">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssumptionAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Obligation" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax81">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Reference" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax82">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Formula" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rule" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax83">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Import" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax84">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="concludesWith" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax85">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Hypothesis" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax86">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="formalityDegree" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax87">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="logic" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax88">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasProperty" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax89">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="classAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Computerized" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax90">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="typeJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="justifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax91">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="typeJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax92">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="formalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax93">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Proposition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax94">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="UnProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax95">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="dependsOn" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax96">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="importsFrom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax97">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Conjecture" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="UnProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax98">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="corroborates" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax99">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssumptionAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Conjecture" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax100">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Conjecture" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Formula" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax101">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Lemma" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proposition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax102">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Reference" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax103">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax104">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasOccurrenceOfInDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax105">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="corroborates" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="refutes" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax106">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Type" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax107">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="type" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax108">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Axiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax109">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="assumes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax110">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepExternallyJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="stepJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax111">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="importsFrom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Import" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax112">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralAxiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralProof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax113">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax114">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="proves" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax115">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="differentIndividuals" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Computerized" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Informal" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax116">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="occursIn" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="usesSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax117">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasOccurrenceOfInType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax118">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="InformalKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="objectHasValue" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="formalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Informal" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax119">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Lemma" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax120">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax121">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="isDirectPartOf" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax122">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="RefutedAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2EL" name="objectSomeValuesFrom" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="refutedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Example" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax123">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Hypothesis" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralAxiom" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax124">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Corollary" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proposition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax125">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="imports" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax126">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofText" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax127">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax128">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="possiblyUsesNotation" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="presentationDependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax129">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="defines" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax130">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="imports" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax131">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssertedType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax132">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax133">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Example" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax134">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="importsFrom" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax135">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax136">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="exemplifies" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="exemplifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax137">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Axiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax138">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax139">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="justifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax140">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RigorousKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax141">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="isPartOf" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="isPartOf" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax142">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="AnyLevelStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax143">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax144">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="homeTheoryOf" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="objectUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Document" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DocumentUnit" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="StatementInTheory" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax145">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Document" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DocumentUnit" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax146">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="metaTheory" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="imports" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax147">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AlternativeDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax148">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="classAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Informal" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax149">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralProof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax150">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Conclusion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SequentPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax151">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Axiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax152">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="importedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="imports" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax153">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="justifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax154">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepJustifiedBySubProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NestedProof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax155">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DeclaredType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Type" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax156">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepJustifiedByPrecedingStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="stepLocallyJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax157">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax158">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Lemma" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theorem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax159">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="usesSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="objectUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DeclaredType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SequentPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SimpleDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax160">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="NestedProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralProof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax161">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepJustifiedBySubProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="stepLocallyJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax162">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="RefutedAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax163">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="typeJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax164">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralProof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax165">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax166">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="TextFragment" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Reference" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax167">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="classAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rigorous" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax168">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Postulate" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="UnProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax169">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Hypothesis" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax170">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="assertedType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="AssertedType" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax171">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="NestedProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SequentPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax172">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Corollary" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Lemma" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax173">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AlternativeDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Example" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax174">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="declaredType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DeclaredType" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax175">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="stepExternallyJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="stepLocallyJustifiedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax176">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="RecursiveDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SimpleDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax177">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Citation" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="TextFragment" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax178">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="SequentPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax179">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SequentPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax180">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssumptionAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Formula" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax181">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax182">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AlternativeDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NonConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax183">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="objectUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="InformalKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax184">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DerivedConclusion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax185">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="AnyLevelStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax186">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax187">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="StatementInTheory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax188">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="exemplifies" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="objectUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AlternativeDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Axiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax189">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="SimpleDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax190">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="concludesWith" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Conclusion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax191">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="formalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax192">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="assumes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="concludesWith" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax193">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Conjecture" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Obligation" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax194">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="proves" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="provedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax195">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasProperty" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax196">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralAxiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax197">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax198">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="presentationDependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax199">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax200">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="NestedProof" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax201">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="imports" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="wellFormedNessDependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax202">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Formula" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="UnProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax203">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasOccurrenceOfInType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="wellFormedNessDependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax204">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasOccurrenceOfInType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax205">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Formula" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Postulate" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax206">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax207">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax208">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasProperty" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax209">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="wellFormedNessDependsOn" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="dependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax210">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="declaredType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="type" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax211">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="FalseConjecture" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RefutedAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax212">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssertedType" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Type" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax213">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="homeTheory" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="homeTheoryOf" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax214">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="GeneralAxiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="AnyLevelStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax215">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ImplicitDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SimpleDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax216">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="possiblyUsesNotation" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="NotationDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax217">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="verbalizes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax218">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="assumes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax219">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="exemplifies" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Example" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax220">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Gap" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax221">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="homeTheoryOf" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax222">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Postulate" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rule" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax223">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasOccurrenceOfInDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Symbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax224">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="concludesWith" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax225">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="presentationDependsOn" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="dependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax226">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Corollary" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax227">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Definition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax228">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="proves" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax229">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Hypothesis" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax230">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Axiom" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax231">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasOccurrenceOfInDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="occursInDefinitionOf" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax232">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssumptionAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Postulate" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax233">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Obligation" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rule" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax234">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssumptionAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="UnProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax235">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Import" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ConstitutiveStatement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax236">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="homeTheory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax237">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DerivationStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofLocalSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax238">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofStep" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax239">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="SequentPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="StatementInTheory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax240">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasText" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="InformalKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax241">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseFunctionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="homeTheoryOf" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax242">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasOccurrenceOfInDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="wellFormedNessDependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax243">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseFunctionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="defines" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax244">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasText" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax245">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="InductiveDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="PatternBasedDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax246">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="refutes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="refutedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax247">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Statement" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax248">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="verbalizes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="formalizes" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax249">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasNotationDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="rendersSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax250">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasImport" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Import" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax251">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="corroborates" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="corroboratedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax252">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Assumption" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="SequentPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax253">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Hypothesis" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RigorousKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax254">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="refutes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax255">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DocumentUnit" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Reference" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax256">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="importedBy" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax257">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="differentIndividuals" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Computerized" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rigorous" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax258">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="verbalizes" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax259">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="dependsOn" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="MathKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax260">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="validityDependsOn" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="dependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax261">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseFunctionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasNotationDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax262">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasStep" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax263">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax264">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasImport" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax265">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Assertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Example" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax266">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Corollary" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theorem" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax267">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="transitiveObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="wellFormedNessDependsOn" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax268">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Obligation" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="UnProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax269">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="homeTheoryOf" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="hasDirectPart" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax270">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProvenAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2EL" name="objectSomeValuesFrom" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="provedBy" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Proof" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax271">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="InductiveDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RecursiveDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax272">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DocumentUnit" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="FormalityDegree" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax273">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalSymbol" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="GeneralSymbol" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax274">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ProofLocalStatement" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="ProofText" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax275">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="AssumptionAssertion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rule" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax276">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="RigorousKnowledgeItem" base="http://omdoc.org/ontology#"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="objectHasValue" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="formalityDegree" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Rigorous" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax277">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="DerivedConclusion" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Gap" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax278">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasPart" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="isPartOf" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax279">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="ImplicitDefinition" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="RecursiveDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax280">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Type" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax281">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="disjointClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="Property" base="http://omdoc.org/ontology#"></om:OMS><om:OMS module="_" name="Theory" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax282">
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="functionalObjectProperty" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+              <om:OMS module="_" name="hasDefinition" base="http://omdoc.org/ontology#"></om:OMS>
+      </om:OMA></OMOBJ></type>
+       
+     </constant>
+      </theory>
+     </omdoc>
