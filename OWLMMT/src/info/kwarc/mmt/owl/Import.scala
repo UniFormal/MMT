@@ -18,6 +18,8 @@ import info.kwarc.mmt.api.lf._
 import info.kwarc.mmt.api.objects._  //import jomdoc.objects.{Term,OMS,OMI}
 import info.kwarc.mmt.api.utils._
 import scala.collection.immutable.List //
+import info.kwarc.mmt.api.metadata._
+
 
 case class Exception(msg : String) extends java.lang.Throwable
 
@@ -68,14 +70,15 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 		//ontology.method
 		//java.util.Set<OWLOntology> 	getDirectImports() 
 		//java.util.Set<IRI> 	getDirectImportsDocuments() 
-		
-/* 2		val imports : java.util.List[OWLOntology] = manager.getSortedImportsClosure(ontology) // var type ?
-		imports.foreach {imp =>  // first element is the ontology itself ?
-				val from = IRItoMMTURI(imp.getOntologyID.getOntologyIRI())
-				controller.add(PlainImport(from, currThy))
+	/*	
+		val imports = manager.getSortedImportsClosure(ontology) // var type is java.util.List[OWLOntology] 
+		imports.foreach {i =>  // first element is the ontology itself ?
+				val from = IRItoMMTURI(i.getOntologyID.getOntologyIRI())
+				//controller.add(PlainImport(from, currThy))
+				controller.add(NotationImport(from, currThy)) // ?
 		}
 		
-*/
+   */
 		/* val imports : Set[IRI] = ontology.getDirectImportsDocuments()
 		 imports.foreach { i => 
 	     cok onemli //if (not in controller zet) ontologyToLF(i)
@@ -93,16 +96,18 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 
 	def CurrOMS(i: IRI) : Term = { OMID(currThy ? IRItoLocalName(i))}
 		
-	def addConstant(name: LocalName, tp: Term) {
+	def addConstant(name: LocalName, tp: Term, md: MetaData) {
 		val constant = new Constant( OMMOD(currThy), name, Some(tp), None, null)
 		//theory name: ex, class name:woman, type, none for definition
+		constant.setMetaData(md)
 		controller.add(constant)
-		println("contant: " + constant.toString)
+		
+		println("constant: " + constant.toString)
 	}
 		
 	def classToLF(c : OWLClassExpression) : Term = {   
 	    c match {
-		  case c : OWLClass =>
+		  case c : OWLClass => println("Class IRI: " + c.getIRI)
 		       CurrOMS(c.getIRI)
 		        
 		  case c : OWLBooleanClassExpression => 
@@ -215,7 +220,8 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 			   }
 		}
 	}
-	
+		
+		
 	def literalToLF (lt: OWLLiteral) : Term = {
 	    if (lt.isDouble())	
 	    		 OMF(lt.parseDouble())
@@ -252,11 +258,14 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 		     					  case "real" =>  OWL2OMS("D2",dt.getShortName)
 		     					  case "rational" => OWL2OMS("D2",dt.getShortName)
 		     					  case "xmlLiteral" => OWL2OMS("D2",dt.getShortName)
-		     					  case "plainLiteral" => OWL2OMS("D2",dt.getShortName)
+		     					 //case "plainLiteral" => OWL2OMS("D2",dt.getShortName)
 		     					  case "dateTimeStamp" => OWL2OMS("D2",dt.getShortName)
 		     					  case _ => OWLOMS("D1",dt.getShortName)
 		     	  }
 		     	}	     	
+		     	else if(dr.isRDFPlainLiteral())
+					    OWL2OMS("D2","PlainLiteral") 
+					    
 		 /*     else if(dr.isBoolean())             
 			    		OWLOMS("D1","boolean")
 				else if(dr.isDouble())
@@ -298,6 +307,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 	}
 		
 	def axiomToLF(ax : OWLAxiom) = { // def axiomToLF(ax : OWLAxiom) : Constant = {} constant donduruyor mu kontrol et
+		val (name,tp) =
 		ax match {
 /*	if(isAnnotated()) AnnotationToLF(ax) */
 // DeclarationAxiom
@@ -323,7 +333,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 				    else throw Exception("none of the entities") 
 				   	  
 				    val name = IRItoLocalName(entity.getIRI)
-				    addConstant(name, tp)
+				    (name, tp)
 				    
 // ClassAxiom	
 		   case ax : OWLClassAxiom =>
@@ -333,14 +343,14 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 						val arg1 = ax.getSubClass()
 						val arg2 = ax.getSuperClass()
 						val tp = ApplySpine(OWL2OMS("OWL2SUB", "subClassOf"), classToLF(arg1), classToLF(arg2)) 
-						addConstant(name, tp)
+						(name, tp)
 				
 				   case ax : OWLDisjointUnionAxiom =>  
 					 	val name = LocalName("ax" + number())
 						val arg1 = ax.getOWLClass
 						val args = ax.getClassExpressions.map(classToLF)
 						val tp = ApplySpine(OWL2OMS("OWL2SUB","disjointUnionOf"), classToLF(arg1) :: args.toList : _*)
-						addConstant(name, tp)
+						(name, tp)
 					 				
 				   case ax : OWLNaryClassAxiom =>	
 						val (sig,dec) = ax match {
@@ -350,7 +360,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 						val name = LocalName("ax" + number()) 
 						val args = ax.getClassExpressionsAsList.map(classToLF)		
 						val tp = ApplySpine(OWL2OMS(sig,dec), args : _*) 
-						addConstant(name, tp) 
+						(name, tp) 
 			      }	
 // ObjectPropertyAxiom
 		   case ax : OWLSubObjectPropertyOfAxiom =>
@@ -358,37 +368,37 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 				val arg1 = ax.getSubProperty()
 				val arg2 = ax.getSuperProperty()
 				val tp = ApplySpine(OWL2OMS("OWL2SUB", "subObjectPropertyOf"), propertyToLF(arg1), propertyToLF(arg2))
-				addConstant(name, tp)
+				(name, tp)
 				  
 		 //case ax : OWLNaryPropertyAxiom => {
 		        case ax : OWLEquivalentObjectPropertiesAxiom =>	
 			         val name = LocalName("ax" + number()) 
 				     val args = ax.getProperties.map(propertyToLF) 
 				     val tp = ApplySpine(OWL2OMS("OWL2SUB", "equivalentObjectProperty"), args.toList : _*)
-				     addConstant(name, tp)
+				     (name, tp)
 			 
 			    case ax : OWLDisjointObjectPropertiesAxiom =>
 					 val name = LocalName("ax" + number()) 
 				   	 val args = ax.getProperties.map(propertyToLF) 
 				   	 val tp = ApplySpine(OWL2OMS("OWL2SUB", "disjointObjectProperty"), args.toList : _*)
-				   	 addConstant(name, tp)
+				   	 (name, tp)
 				   
 			    case ax : OWLInverseObjectPropertiesAxiom => 
 			      	 val name = LocalName("ax" + number())
 				     val arg1 = ax.getFirstProperty()
 				     val arg2 = ax.getSecondProperty()
 				     val tp = ApplySpine(OWL2OMS("OWL2QL", "inverseObjectProperties"), propertyToLF(arg1), propertyToLF(arg2)) //?
-				     addConstant(name, tp)
+				     (name, tp)
 		   //}  
 		   case ax : OWLObjectPropertyDomainAxiom =>
 			    val name = LocalName("ax" + number()) 
 			    val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyDomain"), propertyToLF(ax.getProperty), classToLF(ax.getDomain)) 
-		        addConstant(name, tp)
+		        (name, tp)
 			    			    
 		   case ax : OWLObjectPropertyRangeAxiom => //hasWife woman
 		        val name =  LocalName("ax" + number())
 			    val tp = ApplySpine(OWL2OMS("OWL2SUB", "objectPropertyRange"), propertyToLF(ax.getProperty), classToLF(ax.getRange)) // R? <- getRange
-			    addConstant(name, tp)
+			    (name, tp)
 			
 		  case ax : OWLObjectPropertyCharacteristicAxiom =>  
 			   val (sig,dec) = ax match {
@@ -402,48 +412,48 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 								}  
 			   val name = LocalName("ax" + number())
 			   val tp = ApplySpine(OWL2OMS(sig,dec), propertyToLF(ax.getProperty)) 
-			   addConstant(name, tp)
+			   (name, tp)
 // DataPropertyAxiom
 		  case ax : OWLSubDataPropertyOfAxiom =>
 			   val name = LocalName("ax" + number()) 
 			   val arg1 = ax.getSubProperty()
 			   val arg2 = ax.getSuperProperty()
 			   val tp = ApplySpine(OWL2OMS("OWL2SUB", "subDataPropertyOf"), propertyToLF(arg1), propertyToLF(arg2))
-			   addConstant(name, tp)
+			   (name, tp)
 				     
 		  case ax : OWLEquivalentDataPropertiesAxiom => 
 		   	   val name = LocalName("ax" + number()) 
 		   	   val args = ax.getProperties.map(propertyToLF) 
 		       val tp = ApplySpine(OWL2OMS("OWL2SUB", "equivalentDataProperties"), args.toList : _*)
-		       addConstant(name, tp)
+		       (name, tp)
 				
 		  case ax : OWLDisjointDataPropertiesAxiom => //hasName  hasAddress
 		       val name = LocalName("ax" + number()) 
 			   val args = ax.getProperties.map(propertyToLF) 
 			   val tp = ApplySpine(OWL2OMS("OWL2SUB", "disjointDataProperties"), args.toList : _*)
-			   addConstant(name, tp)
+			   (name, tp)
 							
 		  case ax : OWLDataPropertyDomainAxiom =>
 		       val name = LocalName("ax" + number()) 
 		       val arg1 = ax.getProperty()
 		       val arg2 = ax.getDomain
 		       val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataPropertyDomain"), propertyToLF(arg1), classToLF(arg2)) 
-		       addConstant(name, tp)
+		       (name, tp)
 				   
 		  case ax : OWLDataPropertyRangeAxiom =>
 			   val name = LocalName("ax" + number())
 			   val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataPropertyRange"), propertyToLF(ax.getProperty), dataRangeToLF(ax.getRange))
-			   addConstant(name, tp)
+			   (name, tp)
 			
 		  case ax : OWLFunctionalDataPropertyAxiom => //hasAge
 			   val name = LocalName("ax" + number())
 			   val tp = ApplySpine(OWL2OMS("OWL2SUB","functionalDataProperty"), propertyToLF(ax.getProperty)) 
-			   addConstant(name, tp)
+			   (name, tp)
 // DatatypeDefinitionAxiom
 		  case ax : OWLDatatypeDefinitionAxiom => 
 			   val name = LocalName("ax" + number())
 			   val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataTypeDefinition"), dataRangeToLF(ax.getDatatype), dataRangeToLF(ax.getDataRange))
-			   addConstant(name, tp)
+			   (name, tp)
 			    
 // HasKeyAxiom  	/*  case ax : OWLHasKeyAxiom =>  */
  
@@ -451,7 +461,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 		  case ax : OWLClassAssertionAxiom =>	
 			   val name = LocalName("ax" + number())
 			   val tp = ApplySpine(OWL2OMS("OWL2SUB", "classAssertion"), classToLF(ax.getClassExpression), individualToLF(ax.getIndividual))
-			   addConstant(name, tp)
+			   (name, tp)
 						    	
 		  case ax : OWLNaryIndividualAxiom =>
 			   val (sig,dec) = ax match {
@@ -461,7 +471,7 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 			   val name = LocalName("ax" + number())
 			   val args = ax.getIndividualsAsList.map(individualToLF)
 			   val tp = ApplySpine(OWL2OMS(sig,dec), args : _*)
-			   addConstant(name, tp)
+			   (name, tp)
 			   
 		  case ax : OWLPropertyAssertionAxiom [p,o] =>   
 			   val tp = ax match {
@@ -475,49 +485,100 @@ class Import (manager : OWLOntologyManager , controller : Controller) {
 			   				   ApplySpine(OWL2OMS("OWL2SUB", "negativeDataPropertyAssertion"), propertyToLF(ax.getProperty), individualToLF(ax.getSubject), literalToLF(ax.getObject))
 			   			}
 			   val name = LocalName("ax" + number())
-			   addConstant(name, tp)
-			 			   
+			   (name, tp)
+    
 // AnnotationAxiom
-			 /* case ax : OWLAnnotationAssertionAxiom => 
-			    getAnnotation, getProperty, getSubject, getValue
-			    AnnotationAssertion( AP as av ) as: IRI or anonyind 
-			    AnnotationAssertion( rdfs:label a:Person "Represents the set of all people." ) */
+	   /* case ax : OWLAnnotationAssertionAxiom => 
+	    	   getAnnotation, 
+	    	   val arg1 = ax.getProperty
+	    	   val arg2 = ax.getSubject // can either be IRIs or anonymous individuals
+	    	   val arg3 = ax.getValue //can either be an IRI (URI), Literal or Anonymous Individual
+	    
+		       val tp = ApplySpine(OWL2OMS("OWL2SUB", "annotationAssertionAxiom"), annotationPropertyToLF(arg1),?,annotationValueToLF(arg3))
+		       val name = LocalName("ax" + number())
+		       (name, tp)
+		   
+		       AnnotationAssertion( AP as av ) as: IRI or anonyind 
+		       AnnotationAssertion( rdfs:label a:Person "Represents the set of all people." )
+		       
+	      case ax : OWLSubAnnotationPropertyOfAxiom => 
+	           val arg1 = ax.getSubProperty
+	    	   val arg2 = ax.getSuperProperty
+	    	   val tp = ApplySpine(OWL2OMS("OWL2SUB", "subAnnotationPropertyOf"), annotationPropertyToLF(arg1), annotationPropertyToLF(arg2))
+	           val name = LocalName("ax" + number())
+	           (name, tp) 
+		   
+	 	  case ax : OWLAnnotationPropertyDomainAxiom =>
+	           val arg1 = ax.getProperty
+	           val arg2 = ax.getDomain (IRI veriyor)
+	           val tp = ApplySpine(OWL2OMS("OWL2SUB", "annotationPropertyDomain"), annotationPropertyToLF(arg1),?)
+	           val name = LocalName("ax" + number())
+	           (name, tp)  	    
+		
+	      case ax : OWLAnnotationPropertyRangeAxiom  => 
+	           val arg1 = ax.getProperty
+	           val arg2 = ax.getRange (IRI veriyor)
+	           val tp = ApplySpine(OWL2OMS("OWL2SUB", "annotationPropertyRange"), annotationPropertyToLF(arg1),?)
+	           val name = LocalName("ax" + number())
+	          (name, tp)  	    
+	*/ 
+	      case _ => throw Exception("None of the axioms")	
+  		  //Apply(Apply(f,a),b),  ApplySpine(f,a,b)
+		}
+		
+		val mDatum = ax.getAnnotations.map(annotationToLF)
+		val mData = new MetaData(currThy)
+		mData.add(mDatum.toList:_*) // list into a sequence
+		addConstant(name, tp, mData)
+	}
 	
-			 /*	case ax : OWLSubAnnotationPropertyOfAxiom => 
-			    getSubProperty, getSuperProperty
-			    SubAnnotationPropertyOf( AP1 AP2 ) */
-				   
-			 /*	case ax : OWLAnnotationPropertyDomainAxiom =>
-			    getDomain, getProperty
-			    AnnotationPropertyDomain( AP U ) */ 
-				
-			 /* case ax : OWLAnnotationPropertyRangeAxiom  => 
-			    getProperty, getRange
-			    AnnotationPropertyRange( AP U ), U means IRI*/ 
-				   
-		    //Apply(Apply(f,a),b),  ApplySpine(f,a,b)
-				   
-		  case _ => throw Exception("None of the axioms")	
+	def annotationPropertyToLF(ap: OWLAnnotationProperty) : GlobalName = { 
+		val name = ap.getIRI.toString
+		val base = 
+		if(ap.isBuiltIn)
+		{ name match { 
+		  case r if(r == "http://www.w3.org/2000/01/rdf-schema#label" || r == "http://www.w3.org/2000/01/rdf-schema#comment" ||
+		 		    r == "http://www.w3.org/2000/01/rdf-schema#seeAlso" || r == "http://www.w3.org/2000/01/rdf-schema#isDefinedBy") 
+			     => "http://www.w3.org/2000/01/rdf-schema#"
+			         		      
+  		  case o if(o == "http://www.w3.org/2002/07/owl#deprecated" || o == "http://www.w3.org/2002/07/owl#priorVersion" ||
+  				    o == "http://www.w3.org/2002/07/owl#backwardCompatibleWith" || o == "http://www.w3.org/2002/07/owl#incompatibleWith") 
+  			   	 => "http://www.w3.org/2002/07/owl#"
+  		  case _ =>  throw Exception("none of the built in annotation properties")
+		  }
+		}
+		else 
+			name
+		val dpath = DPath(utils.URI.fromJava (IRI.create(base).toURI))
+		dpath ? "_" ? name //  global name = Dpath?String?String ,  base module name ,  rdfs_label
+		
+		/*
+		  boolean 	containsAnnotationPropertyInSignature(IRI owlAnnotationPropertyIRI)
+          Determines if the signature of this ontology contains an OWLAnnotationProperty with the specified IRI.
+          boolean 	containsAnnotationPropertyInSignature(IRI owlAnnotationPropertyIRI, boolean includeImportsClosure)
+          Determines if the signature of this ontology, or possibly the signature of one of the ontologies in the imports closure of this ontology, 
+          contains an OWLAnnotationProperty that has the specified IRI
+          
+          boolean 	isDeclared(OWLEntity owlEntity)
+          Determines if this ontology declares an entity i.e.
+          boolean 	isDeclared(OWLEntity owlEntity, boolean includeImportsClosure)
+          Determines if this ontology or its imports closure declares an entity i.e.
+		*/		
+	}
+	
+	def annotationValueToLF(av : OWLAnnotationValue) : Term = { 
+		av match {
+		   case	av : IRI => OMURI(av.toURI)
+		   case av : OWLLiteral => literalToLF(av)
+		   case av : OWLAnonymousIndividual => individualToLF(av)
 		}
 	}
-/*	
-    bu fonksiyonu cagirmadan once isAnnotated diye sor, oyle ise cagir
-	def AnnotationToLF(ax : OWLAxiom) : Term = {
-		val annots = ax.getAnnotations()
-		annots.foreach { ann => 
-			val annp: OWLAnnotationProperty = ann.getProperty() 
-			if(annp.isBuiltIn())
-			else if(annp.isComment())
-			else if(annp.isDeprecated())
-			else if(annp.isValue())
-			
-			val annv : OWLAnnotationValue = ann.getValue()
-			val anna : OWLAnnotation = ann.getAnnotations()
-			//isdeprecatedIRIAnnotation()
-		}
-	}	
-*/
 	
+	def annotationToLF(an : OWLAnnotation) : MetaDatum = {
+		val key = annotationPropertyToLF(an.getProperty) //GlobalName
+	    val value = annotationValueToLF(an.getValue) //Obj or a term
+	    new MetaDatum(key, value)
+	}
 }
 
 object Import {
@@ -534,8 +595,11 @@ object Import {
 		*/
 		//val file : File = new File("examples\\ex2.owl");
 		
-		//val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
-		//val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc") 
+//		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
+//		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc") 
+		
+//		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.owl")		
+//		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.omdoc")
 		
 		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.owl")		
 		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.omdoc")
