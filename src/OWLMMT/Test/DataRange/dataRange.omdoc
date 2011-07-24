@@ -1,43 +1,116 @@
+
 <omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/DataRange/dataRange.owl">
-        <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
-         <constant name="personAge">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="UnionDI">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="toddlerAge">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="majorAge">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="minorAge">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="ax1">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="majorAge" base="http://example.com/owl/families"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="dataIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="personAge" base="http://example.com/owl/families"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="dataComplementOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="minorAge" base="http://example.com/owl/families"></om:OMS>
-      </om:OMA>
-      </om:OMA>
-      </om:OMA></OMOBJ></type>
-       
-     </constant><constant name="ax2">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="UnionDI" base="http://example.com/owl/families"></om:OMS><om:OMA><om:OMS module="OWL2QL" name="dataUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="D1" name="double" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS><om:OMS module="D1" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-      </om:OMA>
-      </om:OMA></OMOBJ></type>
-       
-     </constant><constant name="ax3">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families"></om:OMS><om:OMA><om:OMS module="OWL2SUB" name="dataOneOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMI>1</om:OMI><om:OMI>2</om:OMI>
-      </om:OMA>
-      </om:OMA></OMOBJ></type>
-       
-     </constant>
-      </theory>
-     </omdoc>
+	<theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
+		<constant name="personAge">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="UnionDI">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="toddlerAge">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="majorAge">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="minorAge">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="ax1">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+						<om:OMS module="_" name="personAge" base="http://example.com/owl/families"></om:OMS>
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="dataTypeRestriction" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+							<om:OMS module="D1" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+							<om:OMA>
+								<om:OMS module="OWL2SUB" name="facetRestriction" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+								<om:OMS module="OWL2SUB" name="minInclusive" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+								<om:OMI>0</om:OMI>
+							</om:OMA>
+						</om:OMA>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="ax2">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+						<om:OMS module="_" name="majorAge" base="http://example.com/owl/families"></om:OMS>
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="dataIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+							<om:OMA>
+								<om:OMS module="OWL2QL" name="dataComplementOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+								<om:OMS module="_" name="minorAge" base="http://example.com/owl/families"></om:OMS>
+							</om:OMA>
+							<om:OMS module="_" name="personAge" base="http://example.com/owl/families"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="ax3">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+						<om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families"></om:OMS>
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="dataOneOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+							<om:OMI>1</om:OMI>
+							<om:OMI>2</om:OMI>
+						</om:OMA>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="ax4">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+						<om:OMS module="_" name="UnionDI" base="http://example.com/owl/families"></om:OMS>
+						<om:OMA>
+							<om:OMS module="OWL2QL" name="dataUnionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+							<om:OMS module="D1" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+							<om:OMS module="D2" name="real" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+
+		</constant>
+	</theory>
+</omdoc>

@@ -33,7 +33,7 @@
     </DataComplementOf>
    </DataIntersectionOf>
  </DatatypeDefinition>
- 
+
  <DatatypeDefinition>
   <Datatype IRI="toddlerAge"/>
   <DataOneOf>
@@ -46,11 +46,22 @@
    <Datatype IRI="UnionDI"/>
    <DataUnionOf>
     <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
-    <Datatype IRI="http://www.w3.org/2001/XMLSchema#double"/>
+    <Datatype IRI="http://www.w3.org/2002/07/owl#real"/>
   </DataUnionOf> 
   </DatatypeDefinition>
+  
+ <DatatypeDefinition>
+  <Datatype IRI="personAge"/>
+  <DatatypeRestriction>
+   <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
+    <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
+     <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
+    </FacetRestriction>
+   </DatatypeRestriction>
+ </DatatypeDefinition>
+
  <!--
- 
+ more than one facet restriction
  <DatatypeDefinition>
   <Datatype IRI="personAge"/>
   <DatatypeRestriction>
