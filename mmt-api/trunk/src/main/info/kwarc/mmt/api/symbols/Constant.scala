@@ -23,6 +23,7 @@ class Constant(val home : TheoryObj, val name : LocalName,
   
   def toNode =
      <constant name={name.flat}>
+       {getMetaDataNode}
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
      </constant>

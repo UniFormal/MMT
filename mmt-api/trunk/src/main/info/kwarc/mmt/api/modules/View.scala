@@ -23,10 +23,12 @@ abstract class View(doc : DPath, name : LocalPath, val from : TheoryObj, val to 
    def toNode = (from.asPath, to.asPath) match {
 	   case (Some(p), Some(q)) =>
          <view name={name.flat} base={doc.toPath} from={p.toPath} to={q.toPath}>
+           {getMetaDataNode}
            {innerNodes}
          </view>
 	   case _ => 
          <view name={name.flat} base={doc.toPath}>
+           {getMetaDataNode}
            <from>{from.toOBJNode}</from><to>{to.toOBJNode}</to>
            {innerNodes}
          </view>

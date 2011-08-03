@@ -24,7 +24,8 @@ class DeclaredTheory(doc : DPath, name : LocalPath, val meta : Option[MPath])
    override def toString = path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
       <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
-         {innerNodes}
+        {getMetaDataNode}
+        {innerNodes}
       </theory>
 }
 
@@ -32,7 +33,11 @@ class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends T
    def role = Role_DefinedTheory
    def components = StringLiteral(name.flat) :: innerComponents
    override def toString = path + innerString
-   def toNode = <theory name={name.flat} base={doc.toPath}>{innerNodes}</theory>
+   def toNode = 
+    <theory name={name.flat} base={doc.toPath}>
+        {getMetaDataNode}
+        {innerNodes}
+    </theory>
 }
 
 object Theory {
