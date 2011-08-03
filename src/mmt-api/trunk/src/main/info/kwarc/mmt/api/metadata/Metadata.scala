@@ -24,6 +24,8 @@ trait HasMetaData {
       case None => throw new GetError("no metadata defined")
       case Some(m) => m
    }
+   /** optionally get the metadata object */
+   def getMetaDataNode : NodeSeq = metadataOpt.map(_.toNode).getOrElse(Nil)
 }
 
 /**

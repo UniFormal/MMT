@@ -38,10 +38,12 @@ abstract class Structure extends DefinitionalLink {
    def toNode = from.asPath match {
 	   case Some(p) =>
          <structure name={name.flat} from={p.toPath}>
+           {getMetaDataNode}
            {innerNodes}
          </structure>
 	   case _ =>
          <structure name={name.flat}>
+           {getMetaDataNode}
            <from>{from.toOBJNode}</from>
            {innerNodes}
          </structure>
@@ -89,8 +91,15 @@ case class Include(val home: TheoryObj, val from: TheoryObj) extends Definitiona
    }
    protected def outerString : String = "include " + from  
    def toNode = from match {
-      case OMMOD(p) => <include from={p.toPath}/> 
-      case _ => <include>{from.toOBJNode}</include>
+      case OMMOD(p) => 
+        <include from={p.toPath}>
+            {getMetaDataNode}
+        </include>
+      case _ => 
+        <include>
+            {getMetaDataNode}
+            {from.toOBJNode}
+        </include>
    }
 }
 
