@@ -150,6 +150,9 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case AddTwelf(f) =>
             val c = new lf.Twelf(File(f))
             backend.addCompiler(c)
+	      case AddMizar =>
+            //val c = new Mizar
+            //backend.addCompiler(c)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
