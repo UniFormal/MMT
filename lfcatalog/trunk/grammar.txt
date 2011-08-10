@@ -2,13 +2,13 @@ lineCharacter               ::=   [^\x0A\x0C\x0D]
 stringCharacter             ::=   [^"\x0A\x0C\x0D]
 lineWhiteSpaceCharacter     ::=   [ \t\x0B]
 lineDelimiter               ::=   \x0D\x0A | [\x0A\x0C\x0D]
-keyword                     ::=   "->" | "<-" | "_" | "=" | "type"
+keyword                     ::=   "->" | "<-" | "_" | "=" | "type"| ":="
 nonIdentifierPartCharacter  ::=   [\s\Q.:()[]{}%"\E]
 identifierPartCharacter     ::=   [^\s\Q.:()[]{}%"\E]
 identifierPart              ::=   identifierPartCharacter+
 identifier                  ::=   identifierPart ("." identifierPart)*
 
-singleLineComment           ::=   "%" ( ((lineWhiteSpaceCharacter | "%") lineCharacter*)? lineDelimiter)
+singleLineComment           ::=   "%" ((lineWhiteSpaceCharacter | "%") lineCharacter*)? lineDelimiter
 
 multiLineNonSemanticComment ::=   "%{" .* "}%"              TODO matching pairs of brackets inside?
 
@@ -27,18 +27,13 @@ comment                     ::=   singleLineComment | multiLineNonSemanticCommen
                                   | multiLineSemanticComment
 sc                          ::=   ([\s] | comment)+ 
 
-namespaceDeclaration        ::=   "%namespace" sc """ stringCharacter* """ sc "."
+readDeclaration             ::=   "%read" sc? """ stringCharacter* """ sc? "."
+namespaceDeclaration        ::=   "%namespace" sc? """ stringCharacter* """ sc? "."
 namespaceAliasDeclaration   ::=   "%namespace" sc 
-                                  identifier sc "=" sc 
-                                  """ stringCharacter* """ sc "."
+                                  identifier sc "=" sc? 
+                                  """ stringCharacter* """ sc? "."
 
-
-termDeclaration             ::=   identifier
-                                  (sc? ":" sc? term)?
-                                  (sc "=" sc term)?
-                                  sc? "."
-abbrevTermDeclaration       ::=   "%abbrev" sc 
-                                  identifier
+termDeclaration             ::=   ("%abbrev" sc)? identifier
                                   (sc? ":" sc? term)?
                                   (sc "=" sc term)?
                                   sc? "."
@@ -50,7 +45,7 @@ term                        ::=   "type"
                                   | "{" sc? identifierPart (sc? ":" sc? term)? sc? "}" sc? term
                                   | "[" sc? identifierPart (sc? ":" sc? term)? sc? "]" sc? term
                                   | term sc term
-                                  | term sc? ":" sc? term
+                                  | '(' sc? term sc? ":" sc? term sc? ')'
                                   | "_"
 
 infixDeclaration            ::=   "%infix"
@@ -69,10 +64,14 @@ postfixDeclaration          ::=   "%postfix"
                                   sc? "."
 fixityDeclaration           ::=   infixDeclaration | prefixDeclaration | postfixDeclaration
 
+nameDeclaration             ::=   "%name" sc identifier sc identifierPart sc?.
+
 theoryIncludeDeclaration    ::=   "%include" 
                                   sc identifier
                                   (sc? "%open" aliasList)?
                                   sc? "."
+sigMetaDeclaration          ::=   "%meta" sc identifier sc? "."
+ViewMetaDeclaration         ::=   "%meta" sc morphism sc? "."
 viewIncludeDeclaration      ::=   "%include" sc morphism sc? "."
 aliasList                   ::=   (sc aliasDeclaration)*
 aliasDeclaration            ::=   identifier sc? ("%as" sc identifierPart)?
@@ -80,27 +79,26 @@ aliasDeclaration            ::=   identifier sc? ("%as" sc identifierPart)?
 morphism                    ::=   identifier (sc identifier)*
 
 constantAssignment          ::=   identifier sc? ":=" sc term sc? "."
-structAssignment            ::=   "%struct" sc identifierPart sc? ":=" sc morphism
+structAssignment            ::=   "%struct" sc identifierPart sc? ":=" sc morphism sc? "."
 linkBody                    ::=   "{"
-                                  (sc? (viewIncludeDeclaration
-                                        | constantAssignment
-                                        | structAssignment))*
+                                  (sc? (linkMetaDeclaration | viewIncludeDeclaration
+                                        | constantAssignment| structAssignment))*
                                   sc? "}"
 
 
-simpleStructDeclaration     ::=   "%struct" sc identifierPart 
+simpleStructDeclaration     ::=   "%struct" (sc? "%implicit")? sc identifierPart 
                                   sc? ":" sc? identifier
                                   sc "=" sc? linkBody
                                   (sc? "%open" aliasList)?
                                   sc? "."
 
-complexStructDeclaration    ::=   "%struct" sc identifierPart 
+complexStructDeclaration    ::=   "%struct" (sc? "%implicit")? sc identifierPart 
                                   (sc? ":" sc? identifier)?
                                   sc "=" sc morphism
                                   (sc? "%open" aliasList)?
                                   sc? "."
                                   
-emptyStructDeclaration      ::=   "%struct" sc identifierPart 
+emptyStructDeclaration      ::=   "%struct" (sc? "%implicit")? sc identifierPart 
                                   sc? ":" sc? identifier
                                   (sc? "%open" aliasList)?
                                   sc? "."
@@ -109,13 +107,14 @@ structDeclaration           ::=   simpleStructDeclaration | complexStructDeclara
 
 
 signatureBody               ::=   "{"
-                                  (sc? (theoryIncludeDeclaration | structDeclaration
-                                        termDeclaration | abbrevTermDeclaration
-                                        fixityDeclaration))*
+                                  (sc? (sigMetaDeclaration | theoryIncludeDeclaration | structDeclaration | termDeclaration | fixityDeclaration |
+                                        theory | view))*
                                   sc? "}"
 theory                      ::=   "%sig" sc identifierPart sc "=" sc? signatureBody sc? "."
-view                        ::=   "%view" sc? ":" sc? identifier sc "->" sc identifier sc "="
-                                  ((sc? linkBody) | morphism) sc? "."
+view                        ::=   "%view" (sc? "%implicit")? sc identifierPart sc? ":" sc? identifier sc "->" sc morphism sc "="
+                                  ((sc? linkBody) | (sc morphism)) sc? "."
+//TODO add internal views, with optional codomain
 
-document                    ::=   (sc? (namespaceDeclaration | namespaceAliasDeclaration
-                                        | theory | view))*  "%."?
+document                    ::=   (sc? (namespaceDeclaration | namespaceAliasDeclaration | readDeclaration |
+                                        theory | view | 
+                                        termDeclaration | nameDeclaration | fixityDeclaration))*  "%."?
