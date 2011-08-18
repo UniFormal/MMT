@@ -33,6 +33,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     val narrationDir = root / "narration"
     val contentDir = root / "content"
     val sourceDir = root / "source"
+    val flatDir = root / "flat"
     
     def includeDir(n: String) : Boolean = n != ".svn"
 
@@ -110,9 +111,22 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
+    def produceFlat(in: List[String] = Nil, controller: Controller) {
+       val inFile = flatDir / in
+        if (inFile.isDirectory) {
+           inFile.list foreach {n =>
+              if (includeDir(n)) produceFlat(in ::: List(n), controller)
+           }
+        } else {
+           val mpath = ContentPathToMMTPath(in)
+           //val mod = controller.getModule(mpath)
+           
+        }
+    }
+    
     /** Generate relation from content */
     def produceRelational(in : List[String] = Nil, controller: Controller) {
-        val inFile = root / "content" / in
+        val inFile = contentDir / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
               if (includeDir(n)) produceRelational(in ::: List(n), controller)
