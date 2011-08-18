@@ -272,18 +272,34 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
         }
         else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected", None))
       }
-      case "getNSIntroduced" => {
+      case "getNamespaces" => {
         if (req.query.startsWith("url=")) {
           var stringUrl : String = null
           try {
             stringUrl = java.net.URLDecoder.decode(req.query.substring("url=".length), "UTF-8")
-            val URIs = catalog.getNSIntroduced(stringUrl)
+            val URIs = catalog.getNamespaces(stringUrl)
             Some(TextResponse(URIs.mkString("\n"), None))
           } catch {
             case CatalogError(s)    => Some(TextResponse(s, None))
           }
         }
+        else if (req.query.isEmpty)
+            Some(TextResponse(catalog.getNamespaces.mkString("\n"), None))
         else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected", None))
+      }
+      case "getModules" => {
+        if (req.query.startsWith("uri=")) {
+          var stringUri : String = null
+          try {
+            stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
+            val modules = catalog.getModulesInNamespace(stringUri)
+            Some(TextResponse(modules.mkString("\n"), None))
+          } catch {
+              case e: java.net.URISyntaxException => Some(TextResponse("Invalid URI: " + stringUri, None))
+              case CatalogError(s)    => Some(TextResponse("Unknown URI: " + stringUri, None))
+          }
+        }
+        else Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))
       }
       case _        => Some(TextResponse("Invalid path: " + req.uriPath, None))
     }

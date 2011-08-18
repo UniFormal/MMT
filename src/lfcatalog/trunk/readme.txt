@@ -55,8 +55,10 @@ Request               Query                  Effect
                                         file of the entity given by URI
  getOmdoc     ?    url=                 print the Omdoc skeleton of the document given by its
                                         disk address
- getNSIntroduced ? url=                 print the namespaces introduced by the document given by 
+ getNamespaces   ? url=                 print the namespaces introduced by the document given by 
                                         its disk address
+ getNamespaces                          print the namespaces introduced by all the documents
+ getModules     ? uri=                  print the modules declared in the given namespace
 
 -------------------------------
 API (see apidocs for more details)
@@ -83,7 +85,10 @@ catalog.getText(stringUri : String) : String
 catalog.getMeta(stringUri : String, asText : Boolean = false) : String
 catalog.getDependencies(stringUri : String) : Array[String]
 catalog.getChildren(stringUri : String) : Array[String]
-catalog.getNSIntroduced(stringUrl : String) : Array[String]
+catalog.getNamespaces(stringUrl : String) : Array[String]
+catalog.getNamespaces : Array[String]
+catalog.getModulesInNamespace    : Array[String]
+
 catalog.getOmdoc(stringUrl : String) : String    // only a skeleton
 catalog.writeOmdocToFile(stringUrl : String)     // only a skeleton
 
