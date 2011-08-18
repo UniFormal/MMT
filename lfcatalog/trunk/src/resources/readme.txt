@@ -22,8 +22,11 @@ Request               Query                  Effect
  getChildren     ? uri=                 print the children of the entity given by URI
  getPosition  ?    uri=                 print the file and position within file of the entity
                                         given by URI
+ getPositionInHeader ? uri=             print, in the HTTP header, the file and position within
+                                        file of the entity given by URI
  getOmdoc     ?    url=                 print the Omdoc skeleton of the document given by its
                                         disk address
- getNSIntroduced ? url=                 print the namespaces introduced by the document given by 
+ getNamespaces   ? url=                 print the namespaces introduced by the document given by 
                                         its disk address
- 
+ getNamespaces                          print the namespaces introduced by all the documents
+ getModules     ? uri=                  print the modules declared in the given namespace

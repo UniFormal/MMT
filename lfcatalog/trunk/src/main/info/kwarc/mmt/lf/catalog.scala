@@ -6,6 +6,7 @@ import java.util.regex.Pattern
 
 import scala.xml._
 import scala.collection.mutable.{HashSet, LinkedHashSet, LinkedHashMap, HashMap, MutableList, LinkedList}
+import scala.collection.immutable.SortedSet
 
 
 /** Utility object */
@@ -129,8 +130,8 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   /** Stop the web server */
   def destroy {
       server.stop
-      bkgCrawler.stop
-      bkgEliminator.stop
+      bkgCrawler.interrupt
+      bkgEliminator.interrupt
       locations.clear
       urlToDocument.clear
       uriToNamedBlock.clear
@@ -281,9 +282,9 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     val uri = new URI(stringUri)
     if (uriToNamedBlock.isDefinedAt(uri))
         uriToNamedBlock(uri) match {
-            case SigBlock(_,_,_,_,deps,_) => deps.toArray.map(_.toString)
-            case ViewBlock(_,_,_,_,deps,_,_,_) => deps.toArray.map(_.toString)
-            case StrDeclBlock(_,_,_,_,domain,_) => domain.toList.toArray.map(_.toString)
+            case SigBlock(_,_,_,children,_,_) => children.map(_.uri.toString).toArray
+            case ViewBlock(_,_,_,children,_,_,_,_) => children.map(_.uri.toString).toArray
+            case StrDeclBlock(_,_,_,children,_,_) => children.map(_.uri.toString).toArray
             case _ => Array[String]()
         }
     else
@@ -291,7 +292,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   }
   
   
-  /** Get the position of a module, constant or structure. The HTTP header also has a field X-Source-url, followed by the same information
+  /** Get the position of a module, constant or structure.
     * @param stringUri URI of a module / constant / structure, given as a string
     * @return an URL encoding the file and the position within that file
     * @throws java.net.URISyntaxException if the URI is not valid 
@@ -329,9 +330,9 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   
   /** Get all namespaces URIs introduced by a document
     * @param stringUrl URL (location on disk) of a document, given as a string
-    * @return an array of module URIs introduced, given as strings
+    * @return an array of namespace URIs given as strings
     * @throws CatalogError(s: String) if the URL is unknown */
-  def getNSIntroduced(stringUrl : String) : Array[String] = {
+  def getNamespaces(stringUrl : String) : Array[String] = {
     val document = new File(stringUrl)
     if (document == null)
       throw CatalogError("Invalid URL: " + stringUrl)
@@ -348,6 +349,28 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   }
   
   
+  /** Get the list of namespaces declared in all the files in all the maintained locations
+    * @return an array of namespace URIs given as strings */
+  def getNamespaces() : Array[String] =
+    urlToDocument.values.map(_.declaredNamespaces.map(_.toString))
+                 .foldLeft (SortedSet[String]()) ((set, iterable) => set ++ iterable)
+                 .toArray
+  
+  
+  /** Get the modules introduced by a namespace, in alphabetical order
+    * @param stringUri a namespace URI, given as a string
+    * @return an URL encoding the file and the position within that file
+    * @throws java.net.URISyntaxException if the URI is not valid 
+    * @throws CatalogError(s: String) if the namespace URI is unknown */
+  def getModulesInNamespace(stringUri : String) : Array[String] = {
+    val uri = new URI(stringUri)
+    if (uriToModulesDeclared.isDefinedAt(uri))
+        (SortedSet[String]() ++ uriToModulesDeclared(uri).map(_.toString)).toArray
+    else
+      throw CatalogError("")
+  }
+                 
+                 
   /** Write the Omdoc skeleton to a file with the same name as the original and in the same folder, but with extension .omdocsk
     * @param stringUrl the URL of the .elf file to be converted.
     * @throws CatalogError(s) if the URL is not OK or not crawled already */
@@ -650,8 +673,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends Thread {
   override def run {
     while(true) {
-      Thread.sleep(crawlingInterval * 1000)
-      catalog.crawlAll
+        try {
+            Thread.sleep(crawlingInterval * 1000)
+        } catch {
+            case e: InterruptedException => return
+        }
+        catalog.crawlAll
     }
   }
 }
@@ -660,7 +687,11 @@ class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends
 class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) extends Thread {
   override def run {
     while(true) {
-      Thread.sleep(deletingInterval * 1000)
+      try {
+          Thread.sleep(deletingInterval * 1000)
+      } catch {
+           case e: InterruptedException => return
+      }
       for (url <- catalog.urlToDocument.keySet) {
         val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
         if (!file.exists) {
