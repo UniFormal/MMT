@@ -47,7 +47,7 @@ object Instance {
    * returns the elaboration of an instance
    */
   def elaborate(inst: Instance, lib: Lookup): List[Constant] = {  
-    	val pt : Pattern = lib.getPattern(inst.pattern) //TODO There are two getPattern methods now, one should be eliminated.
+    	val pt : Pattern = lib.getPattern(inst.pattern) 
         pt.con.map {
     	  case TermVarDecl(n,tp,df,at) => 
             def auxSub(x : Term) = {
@@ -57,7 +57,7 @@ object Instance {
     	    val c = new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
     	    c.setOrigin(InstanceElaboration(inst.path))
     	    c
-          case SeqVarDecl(n,tp,df) => null//TODO  
+          case SeqVarDecl(n,tp,df) => throw ImplementationError("Pattern cannot contain sequence variable declaration")
         }
   }
   
