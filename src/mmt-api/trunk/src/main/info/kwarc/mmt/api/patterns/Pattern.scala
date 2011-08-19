@@ -1,9 +1,10 @@
 package info.kwarc.mmt.api.patterns
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 import scala.io.Source
 
@@ -37,26 +38,38 @@ object Instance {
   def validInstance(inst: Instance, lib: Lookup) : Boolean = {
 	  val pt : Pattern = lib.getPattern(inst.pattern)
 	  pt.params match {
-	 	  case Some(p) => if (p.length == inst.matches.length) true else false
-	 	  case None => inst.matches match {
-	 	 	  case Some(_) => false
-	 	 	  case None => true
-	 	  }
+	 	  case Some(p) => p.length == inst.matches.length
+	 	  case None => inst.matches.isEmpty
 	  }
   }
+  
+  /**
+   * returns the elaboration of an instance
+   */
   def elaborate(inst: Instance, lib: Lookup): List[Constant] = {  
-    if (validInstance(inst,lib))  
     	val pt : Pattern = lib.getPattern(inst.pattern) //TODO There are two getPattern methods now, one should be eliminated.
         pt.con.map {
     	  case TermVarDecl(n,tp,df,at) => 
             def auxSub(x : Term) = {
-        	val names = pt.con.map(d => d.name)
-        	(x ^ inst.matches) ^ Substitution(names.map(y => TermSub(y,OMID(inst.home % (inst.name / y)))) : _*)
+        	   val names = pt.con.map(d => d.name)
+        	   (x ^ inst.matches) ^ Substitution(names.map(y => TermSub(y,OMID(inst.home % (inst.name / y)))) : _*)
             }
-    	    new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
-          case SeqVarDecl(n,tp,df) => //TODO  
-    }
-    else Nil
+    	    val c = new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
+    	    c.setOrigin(InstanceElaboration(inst.path))
+    	    c
+          case SeqVarDecl(n,tp,df) => null//TODO  
+        }
+  }
+  
+  /**
+   * elaborates all instances in a theory and inserts the elaborated constants after the respective instance
+   */
+  def elaborate(thy: DeclaredTheory, lib: Lookup) {
+     thy.valueList foreach {
+        case i: Instance =>
+           thy.insert(i.name, elaborate(i,lib): _*)
+        case _ => 
+     }
   }
   
 }
