@@ -55,7 +55,7 @@ object Pi {
 	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None), rest @ _*), s) if b == LF.constant("pi") =>
 	      if (rest.isEmpty) Some((n,t,s))
 	      else Some((n,t, Pi(rest.toList,s)))
-	   case OMA(f,args) if f == LF.constant("arrow") =>
+	   case OMA(LF.arrow,FlatSequence(args)) =>
 	      val name = "" //TODO: invent fresh name here
 	      if (args.length > 2)
 	     	 Some((name, args(0), OMA(LF.arrow, args.tail)))
@@ -68,7 +68,7 @@ object Pi {
 object Arrow {
 	def apply(t1 : Term, t2 : Term) = OMA(LF.arrow,List(t1,t2))
 	def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case OMA(LF.arrow,List(t1,t2)) => Some((t1,t2))
+		case OMA(LF.arrow,List(t1: Term,t2:Term)) => Some((t1,t2))
 		case _ => None
 	}
 }
@@ -76,9 +76,12 @@ object Arrow {
 object Apply {
 	def apply(f: Term, a: Term) = f(a)
 	def unapply(t: Term) : Option[(Term,Term)] = t match {
-		case OMA(f, a) =>
-		  if (a.length > 1) Some((OMA(f, a.init), a.last))
-		  else Some(f,a.head)
+		case OMA(f, a) => a.last match {
+			case t: Term =>
+			  if (a.length > 1) Some((OMA(f, a.init), t))
+			  else Some(f,t)
+			case _ => None
+		}
 		case _ => None
 	}
 }
@@ -86,7 +89,7 @@ object Apply {
 object ApplySpine {
 	def apply(f: Term, a: Term*) = OMA(f, a.toList)
 	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
-		case OMA(f, args) =>
+		case OMA(f, FlatSequence(args)) =>
 		  unapply(f) match {
 		 	 case None => Some((f, args))
 		 	 case Some((c, args0)) => Some((c, args0 ::: args))

@@ -5,11 +5,20 @@ import presentation._
 import Conversions._
 
 /** represents an MMT variable declaration */
-sealed abstract class VarDecl(val name : String) extends Content {
+sealed abstract class VarDecl extends Content {
+   val name : String
+   val tp : Option[Obj]
+   val df : Option[Obj]
    def ^(sub : Substitution) : VarDecl
-   def toOMATTR : Term
-   def toNodeID(pos : Position) : scala.xml.Node
+   /** converts to an OMV for OpenMath export */
+   def toOpenMath : Term
    def toNode : scala.xml.Node = toNodeID(Position.None)
+   def toNodeID(pos : Position) = toOpenMath.toNodeID(pos)
+   def role : Role
+   def components = List(StringLiteral(name), tp.getOrElse(Omitted), df.getOrElse(Omitted))
+   def presentation(lpar : LocalParams) =
+	   ByNotation(NotationKey(None, role), components, lpar)
+   override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
 }
 
 //TODO: add optional notation
@@ -17,17 +26,13 @@ sealed abstract class VarDecl(val name : String) extends Content {
  * @param n name
  * @param tp optional type
  * @param df optional definiens
- * @param attrs list of additional attributions, starting with the innermost
+ * @param attrs OpenMath-style attributions (will be ignored)
  */
-case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs : (OMID, Term)*) extends VarDecl(n) {
+case class TermVarDecl(name : String, tp : Option[Term], df : Option[Term], attrs: (OMID,Term)*) extends VarDecl {
    def ^(sub : Substitution) = TermVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
-   def role = Role_Variable
-   def components = List(StringLiteral(n), tp.getOrElse(Omitted), df.getOrElse(Omitted), varToOMATTR)
-   def presentation(lpar : LocalParams) =
-     ByNotation(NotationKey(None, role), components, lpar)
    /** converts to an OpenMath-style attributed variable using two special keys */
-   def varToOMATTR = attrs.toList.foldLeft[Term](OMV(n)) {(v,a) => OMATTR(v, a._1, a._2)}
-   def toOMATTR : Term = {
+   def toOpenMath : Term = {
+	  val varToOMATTR = OMV(name) // attrs.toList.foldLeft[Term](toOpenMath) {(v,a) => OMATTR(v, a._1, a._2)}
       (tp, df) match {
          case (None, None) => varToOMATTR
          case (Some(t), None) => OMATTR(varToOMATTR, OMID(mmt.mmttype), t)
@@ -35,9 +40,22 @@ case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs :
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
-   override def toString = varToOMATTR.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
-                           
-   def toNodeID(pos : Position) = toOMATTR.toNodeID(pos)
+   def role = Role_Variable
+}
+
+case class SeqVarDecl(name : String, tp : Option[Sequence], df : Option[Sequence]) extends VarDecl {
+   def ^(sub : Substitution) = SeqVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
+   /** converts to an OpenMath-style attributed variable using two special keys */
+   def toOpenMath : Term = {
+	  val varToOMATTR = OMV(name) // attrs.toList.foldLeft[Term](toOpenMath) {(v,a) => OMATTR(v, a._1, a._2)}
+      (tp, df) match {
+         case (None, None) => varToOMATTR
+         case (Some(t), None) => OMATTR(varToOMATTR, OMID(mmt.mmttype), t.toOpenMath)
+         case (None, Some(d)) => OMATTR(varToOMATTR, OMID(mmt.mmtdef), d.toOpenMath)
+         case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t.toOpenMath), OMID(mmt.mmtdef), d.toOpenMath)
+      }
+   }
+   def role = Role_SeqVariable
 }
 
 /** helper object */
@@ -52,10 +70,11 @@ object TermVarDecl {
          case v => doVar(v, None, None)
       }
    }
+   // ignoring attributions
    private def doVar(v : Term, tp : Option[Term], df : Option[Term], attrs : (OMID,Term)*) : TermVarDecl = {
       v match {
-         case OMV(n) => TermVarDecl(n, tp, df, attrs : _*)
-         case OMATTR(tm, key, value) => doVar(tm, tp, df, (key, value) :: attrs.toList : _*)
+         case OMV(n) => TermVarDecl(n, tp, df)
+         case OMATTR(tm, key, value) => doVar(tm, tp, df)
          case v => throw new ObjError(v + " is not an MMT variable")
       }
    }
@@ -77,7 +96,10 @@ case class Context(variables : VarDecl*) {
 	   case -1 => throw LookupError(name)
 	   case i => variables.length - i - 1 
    }
-   def id : Substitution = this.map(v => Sub(v.name,OMV(v.name)))
+   def id : Substitution = this map {
+	   case TermVarDecl(n, _, _, _*) => TermSub(n,OMV(n))
+	   case SeqVarDecl(n, _, _) => SeqSub(n,SeqVar(n))
+   }
    /** substitutes in all variable declarations except for the previously declared variables
     *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
     */  
@@ -95,35 +117,49 @@ case class Context(variables : VarDecl*) {
 }
 
 /** a case in a substitution */
-case class Sub(name: String, target: Term) {
-	def toOMATTR = OMATTR(OMV(name), OMID(mmt.mmtdef), target)
+sealed abstract class Sub {
+	val name: String
+	val target: Obj
+	def toOMATTR : Term
 	def toNodeID(pos: Position ) = toOMATTR.toNodeID(pos)
 	override def toString = toOMATTR.toString
 }
+
+case class TermSub(name : String, target : Term) extends Sub {
+	def toOMATTR = OMATTR(OMV(name), OMID(mmt.mmtdef), target)
+}
+
+case class SeqSub(name : String, target : Sequence) extends Sub {
+	def toOMATTR = OMATTR(OMV(name), OMID(mmt.mmtdef), target.toOpenMath)
+}
+
 /** helper object */
 object Sub {
    /** converts OpenMath-style attributed variable to a Sub */
    def fromTerm(t : Term) : Sub = t match {
-      case OMATTR(OMV(n), OMID(mmt.mmtdef), t) => Sub(n, t)
+      case OMATTR(OMV(n), OMID(mmt.mmtdef), t) => TermSub(n, t)
       case _ => throw ObjError(t + " is not a case in a substitution")
    }
 }
 
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) {
-   def ++(n:String, t:Term) : Substitution = this ++ Sub(n,t)
+   def ++(n:String, t:Term) : Substitution = this ++ TermSub(n,t)
    def ++(s: Sub) : Substitution = this ++ Substitution(s)
    def ++(that: Substitution) : Substitution = this ::: that
-   def ^(sub : Substitution) = this map {case Sub(v,t) => Sub(v, t ^ sub)}
-   def apply(v : String) : Term = subs.reverse.find(_.name == v) match {
-	   case None => throw SubstitutionUndefined(v)
-	   case Some(s) => s.target 
+   def ^(sub : Substitution) = this map {
+	   case TermSub(v,t) => TermSub(v, t ^ sub)
+	   case SeqSub(v,s) => SeqSub(v, s ^ sub)
    }
+   def apply(v : String) : Option[Obj] = subs.reverse.find(_.name == v).map(_.target)
    /** turns a substitution into a context by treating every substitute as a definiens
     *  this permits seeing substitution application as a let-binding
     */
    def asContext = {
-      val decls = subs map {case Sub(n, t) => TermVarDecl(n, None, Some(t))}
+      val decls = subs map {
+    	  case TermSub(n, t) => TermVarDecl(n, None, Some(t))
+    	  case SeqSub(n, t) => SeqVarDecl(n, None, Some(t))
+      }
       Context(decls : _*)
    }
    override def toString = this.map(_.toString).mkString("",", ","")
