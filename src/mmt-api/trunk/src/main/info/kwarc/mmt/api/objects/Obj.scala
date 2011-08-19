@@ -46,7 +46,7 @@ trait MMTObject {
 /**
  * A Term represents an MMT term.
  */
-sealed abstract class Term extends Obj {
+sealed abstract class Term extends SeqItem {
    def strip : Term = this
    def ^(sub : Substitution) : Term
    /** morphism application (written postfix), maps OMHID to OMHID */
@@ -160,7 +160,7 @@ case class OMSub(arg: Term, via: Context) extends Term {
  * @param fun the function term
  * @param args the list of argument terms
  */
-case class OMA(fun : Term, args : List[Term]) extends Term {
+case class OMA(fun : Term, args : List[SeqItem]) extends Term {  
    def head = fun.head
    def role = Role_application
    def components = fun :: args
@@ -169,7 +169,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       <om:OMA>{fun.toNodeID(pos + 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub))
+   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub).flatMap(_.items))
 }
 
 /**
@@ -189,12 +189,17 @@ case class OMV(name : String) extends Term {
          }
    }
    /** the substutition this/s */
-   def /(s : Term) = Substitution(Sub(name, s))
+   def /(s : Term) = Substitution(TermSub(name, s))
    /** the declaration this:tp */
    def %(tp : Term) = Context(TermVarDecl(name, Some(tp), None))
    def toNodeID(pos : Position) = <om:OMV name={name}/> % pos.toIDAttr
    override def toString = name
-   def ^(sub : Substitution) = try {sub(name)} catch {case SubstitutionUndefined(_) => this}
+   def ^(sub : Substitution) =
+	   sub(name) match {
+	  	   case Some(t: Term) => t
+	  	   case Some(_) => throw SubstitutionUndefined("substitution is applicable but does not provide a term")
+	  	   case None => this
+       }
 }
 
 /**
@@ -285,6 +290,86 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
       OMSemiFormal(newtokens)
    }
 }
+
+case class Index(seq : Sequence, term : Term) extends Term {
+	def head = term.head //TODO Sequence does not have head
+	def role = Role_index
+	def components = List(seq,term)
+	def toNodeID(pos : Position) = <index>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</index>
+	def ^(sub : Substitution) = Index(seq ^ sub, term ^ sub)
+}
+
+/*
+ def toNodeID(pos : Position) : scala.xml.Node
+   /** applies a substitution to an object (computed immediately) */
+   def ^ (sub : Substitution) : Obj
+   def head : Option[Path]
+   def role : Role
+   def components : List[Content]
+ */
+
+sealed abstract class Sequence extends Obj {
+	def ^(sub : Substitution) : Sequence
+	def items : List[SeqItem]
+    def toOpenMath : Term = OMA(OMID(mmt.seq), items)
+    
+}
+
+sealed abstract class SeqItem extends Sequence {
+   def items = List(this)
+}
+
+case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem {
+	def toNodeID(pos : Position) = 
+	    <seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
+	def ^ (sub : Substitution) = {
+	    	val subn = sub ++ (name / OMV(name)) 
+	    	SeqSubst(expr ^ subn,name,seq ^ sub)  //TODO Variable capture
+	    }
+	def head = expr.head
+	def role = Role_seqsubst
+	def components = List(expr,StringLiteral(name),seq)
+	
+}
+
+case class SeqVar(name : String) extends SeqItem {
+	def toNodeID(pos : Position) =
+		<seqvar name ={name}/>
+	def ^(sub : Substitution) =
+	   sub(name) match {
+	  	   case Some(t : Sequence) => t
+	  	   case Some(_) => throw SubstitutionUndefined("substitution is applicable but does not provide a sequence")
+	  	   case None => this
+       }
+	def head = None
+	def role = Role_SeqVariableRef
+	def components : List[Content] = List(StringLiteral(name))
+}
+
+case class SeqUpTo(num : Term) extends SeqItem {
+	def toNodeID(pos : Position) =
+		<sequpto>{num.toNodeID(pos + 0)}</sequpto>
+	def ^(sub : Substitution) =
+		num match {
+		case OMI(n) => SeqItemList(List.range(1,n.toInt).map(OMI(_)))
+		case _ => num //TODO Add other possible cases (addition, substraction, etc...)
+	}
+	def head = num.head
+	def role = Role_sequpto
+	def components : List[Content] = List(num)
+}
+
+case class SeqItemList(items: List[SeqItem]) extends Sequence {
+   def toNodeID(pos : Position) =
+	   <seqitemlist>{items.map(_.toNode)}</seqitemlist> //TODO
+   def ^(sub : Substitution) : Sequence = SeqItemList(items.map(_ ^ sub).flatMap(_.items))
+   def components :List[Content] = items
+   def head = None
+   def role = Role_seqitemlist
+}
+
+
+
 
 /**
  * A ModuleObj is a composed module level expressions.

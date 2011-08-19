@@ -350,16 +350,17 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             Nil
          case OMA(fun, args) =>
             val occf = checkTerm(home, context, fun, IsSemantic) //TODO level of application cannot be inferred
-            val occa = args.flatMap(checkTerm(home, context, _, IsSemantic))
+            val occa = checkSeq(home, context, SeqItemList(args), IsSemantic)
             occf ::: occa
          case OMBINDC(binder, bound, condition, scope) =>
             val newcontext = context ++ bound // every variable can occur in every variable declaration
             val occb = checkTerm(home, context, binder, IsEqualTo(Binder))
             val occv = bound.variables.flatMap {
                // not checking the attributions
-               case TermVarDecl(_, tp, df, attrs @ _*) => List(tp,df).filter(_.isDefined).map(_.get).flatMap(
-                     checkTerm(home, newcontext, _, IsSemantic)
-               )
+               case TermVarDecl(_, tp, df, attrs @ _*) => 
+                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkTerm(home, newcontext, _, IsSemantic))                     
+               case SeqVarDecl(_, tp, df) => 
+                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkSeq(home, newcontext, _, IsSemantic))
             }
             val occc = if (condition.isDefined) checkTerm(home, newcontext, condition.get, IsSemantic)
                else Nil
@@ -381,6 +382,8 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val occvia = via.variables.toList flatMap {
                case TermVarDecl(n, t, d, atts @ _*) =>
                   t.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil)
+               case SeqVarDecl(n, t, d) =>
+                  t.map(checkSeq(home, bigcon, _, uvcheck)).getOrElse(Nil) ::: d.map(checkSeq(home, bigcon, _, uvcheck)).getOrElse(Nil)
                }
             val occarg = checkTerm(home, bigcon, arg, uvcheck)
             occvia ::: occarg
@@ -394,7 +397,27 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
          case OMSTR(s) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMF(d) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMSemiFormal(t) => Nil //TODO
+         case Index(seq,ind) => checkSeq(home,context,seq,uvcheck) ::: checkTerm(home,context,ind,uvcheck)
       }
+   }
+   def checkSeq(home : TheoryObj, context : Context, s : objects.Sequence, uvcheck : UnivCheck)(implicit lib : Lookup) : List[Path] = s match {
+   	  case t: Term => checkTerm(home, context, t, uvcheck)
+   	  case SeqVar(n) =>
+          try {
+        	  context(n) match {
+   		  	    case SeqVarDecl(_,_,_) => Nil
+   		  	    case TermVarDecl(_,_,_,_*) => throw Invalid("sequence variable expected, found term variable: " + n)
+   	  	      }
+          } catch {
+        	  case LookupError(n) => throw Invalid("variable is not declared: " + n) 
+          }
+   	  case SeqSubst(ex,n,sq) => checkTerm(home,context,ex,uvcheck) ::: Nil ::: checkSeq(home,context,sq,uvcheck)
+   	  case SeqUpTo(t) => 
+   	  	  t match {
+   	  		  case OMI(n) => checkTerm(home,context,t,uvcheck)
+   	  		  case _ => throw Invalid("OMI expected, found term: " + t)
+   	  	  }
+   	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i,uvcheck))   	  
    }
 }
 
