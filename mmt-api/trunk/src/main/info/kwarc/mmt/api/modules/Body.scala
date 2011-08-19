@@ -84,27 +84,26 @@ trait Body[S <: Declaration] {
 	   delete(s.name)
 	   add(s)
    }
-   /** replace a declaration, keeping the order */
-   def replace(name: LocalName, decs: S*) {
-      var before : DoubleLinkedList[S] = DoubleLinkedList.empty
-      var after : DoubleLinkedList[S] = order
+   /** inserts declarations after another one */
+   def insert(after: LocalName, decs: S*) {
+      var seen : DoubleLinkedList[S] = DoubleLinkedList.empty
+      var tosee : DoubleLinkedList[S] = order
       var continue = true
-      while (continue && ! after.isEmpty) {
-         val hd = after.head
-         if (hd.name == name) {
-            order = before ++ decs.reverse ++ after.tail
+      while (continue && ! tosee.isEmpty) {
+         val hd = tosee.head
+         if (hd.name == after) {
+            order = seen ++ decs ++ tosee
             continue = false
          } else {
-            before = before :+ hd
-            after = after.tail
+            seen = seen :+ hd
+            tosee = tosee.tail
          }
       }
-      if (continue) throw DeleteError("no declaration " + name + " found")
-      statements -= name
-      decs foreach {
-        if (statements.isDefinedAt(name))
-           throw AddError("a declaration for the name " + name + " already exists") 
-        s => statements(s.name) = s
+      if (continue) throw AddError("no declaration " + after + " found")
+      decs foreach {d =>
+        if (statements.isDefinedAt(d.name))
+           throw AddError("a declaration for the name " + d.name + " already exists") 
+        statements(d.name) = d
       }
    }
    /** true iff no declarations present */
