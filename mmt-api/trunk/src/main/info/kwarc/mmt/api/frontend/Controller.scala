@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
@@ -14,7 +15,8 @@ case class NotFound(path : Path) extends java.lang.Throwable
 
 /** An interface to a controller containing read-only methods. */
 abstract class ROController {
-   val library : Lookup  
+   val localLookup : Lookup
+   val globalLookup : Lookup
    def get(path : Path) : StructuralElement
    def get(nset : MPath, key : NotationKey) : Notation
    def getNotation(path : Path) : Notation =
@@ -48,6 +50,17 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    val reader = new Reader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(reader, report)
+   
+   /** a lookup that uses only the current memory data structures */
+   val localLookup = library
+   /** a lookup that load missing modules dynamically */
+   val globalLookup = new Lookup(report) {
+      def get(path : Path) = iterate {library.get(path)}
+      def imports(from: TheoryObj, to: TheoryObj) = library.imports(from, to)
+      def importsTo(to: TheoryObj) = library.importsTo(to)
+      def preImage(p : GlobalName) = library.preImage(p)
+   }
+   
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       report.indent
@@ -55,7 +68,14 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       report.unindent
       log("retrieved " + path)
    }
-   private def iterate[A](a : => A) : A = iterate(a, Nil)
+   /**
+    * wrapping an expression in this method, evaluates the expression dynamically loading missing content
+    * dependency cycles are detected
+    * @param a this is evaluated until evaluation does not throw NotFound
+    * @return the evaluation
+    * be aware that the argument may be evaluated repeatedly
+    */
+   def iterate[A](a : => A) : A = iterate(a, Nil)
    /** repeatedly tries to evaluate a while missing resources (NotFound(p)) are retrieved
     *  stops if cyclic retrieval of resources 
     */

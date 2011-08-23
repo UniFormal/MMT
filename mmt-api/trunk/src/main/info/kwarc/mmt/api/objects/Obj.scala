@@ -189,9 +189,9 @@ case class OMV(name : String) extends Term {
          }
    }
    /** the substutition this/s */
-   def /(s : Term) = Substitution(TermSub(name, s))
+   def /(s : Term) = TermSub(name, s)
    /** the declaration this:tp */
-   def %(tp : Term) = Context(TermVarDecl(name, Some(tp), None))
+   def %(tp : Term) = TermVarDecl(name, Some(tp), None)
    def toNodeID(pos : Position) = <om:OMV name={name}/> % pos.toIDAttr
    override def toString = name
    def ^(sub : Substitution) =

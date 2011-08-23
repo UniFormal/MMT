@@ -23,10 +23,15 @@ trait StructuralElement extends Content with metadata.HasMetaData {
     * this gives its origin.
     * The origin must be set by overriding the field when creating the ContentElement. 
     */
-   private var origin : Option[Origin] = None
-   def setOrigin(o: Origin) {origin = Some(o)}
+   private var origin : Origin = Unelaborated
+   def setOrigin(o: Origin) {origin = o}
    def getOrigin = origin
-   def isGenerated = origin.isDefined
+   def isGenerated = origin != Unelaborated && origin != Elaborated
+   def inElaborated = origin match {
+      case Unelaborated => true
+      case InstanceElaboration(_) => true
+      case _ => false
+   }
 }
 
 /**

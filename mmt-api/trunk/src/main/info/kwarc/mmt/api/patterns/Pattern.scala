@@ -35,7 +35,7 @@ class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalN
 }
 
 object Instance {
-  def validInstance(inst: Instance, lib: Lookup) : Boolean = {
+  def validate(inst: Instance, lib: Lookup) : Boolean = {
 	  val pt : Pattern = lib.getPattern(inst.pattern)
 	  pt.params match {
 	 	  case Some(p) => p.length == inst.matches.length
@@ -46,28 +46,30 @@ object Instance {
   /**
    * returns the elaboration of an instance
    */
-  def elaborate(inst: Instance, lib: Lookup): List[Constant] = {  
-    	val pt : Pattern = lib.getPattern(inst.pattern) 
-        pt.con.map {
+  def elaborate(inst: Instance)(implicit lup: Lookup): List[Constant] = {  
+    	val pt : Pattern = lup.getPattern(inst.pattern) 
+      pt.con.map {
     	  case TermVarDecl(n,tp,df,at) => 
             def auxSub(x : Term) = {
-        	   val names = pt.con.map(d => d.name)
-        	   (x ^ inst.matches) ^ Substitution(names.map(y => TermSub(y,OMID(inst.home % (inst.name / y)))) : _*)
+        	      val names = pt.con.map(d => d.name)
+        	      val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
+        	      (x ^ inst.matches) ^ Substitution(subs : _*)
             }
     	    val c = new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
     	    c.setOrigin(InstanceElaboration(inst.path))
     	    c
-          case SeqVarDecl(n,tp,df) => throw ImplementationError("Pattern cannot contain sequence variable declaration")
-        }
+        case SeqVarDecl(n,tp,df) => throw ImplementationError("Pattern cannot contain sequence variable declaration")
+      }
   }
   
   /**
    * elaborates all instances in a theory and inserts the elaborated constants after the respective instance
    */
-  def elaborate(thy: DeclaredTheory, lib: Lookup) {
+  def elaborate(thy: DeclaredTheory)(implicit lup: Lookup) {
      thy.valueList foreach {
         case i: Instance =>
-           thy.insert(i.name, elaborate(i,lib): _*)
+           i.setOrigin(Elaborated)
+           thy.replace(i.name, i :: elaborate(i) : _*)
         case _ => 
      }
   }
