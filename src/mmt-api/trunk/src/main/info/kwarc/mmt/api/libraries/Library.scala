@@ -24,9 +24,9 @@ case class Delete(path : Path) extends ContentMessage
  */
 class Library(checker : Checker, relstore : RelStore, report : frontend.Report) extends Lookup(report) {
    private val modules = new scala.collection.mutable.HashMap[MPath,Module]
-   def getModule(p : MPath, die: Boolean = false) : Module =
+   private def modulesGetNF(p : MPath) : Module =
       try {modules(p)}
-      catch {case _ => if (die) throw GetError("module does not exist: " + p)
+      catch {case _ => if (false) throw GetError("module does not exist: " + p)
                        else     throw frontend.NotFound(p)
             }
    def log(s : => String) = report("library", s)
@@ -40,7 +40,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
       get(p, msg => throw GetError("error while retrieving " + p + ": " + msg))
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
-      case doc ? !(mod) => getModule(doc ? mod)
+      case doc ? !(mod) => modulesGetNF(doc ? mod)
       //case doc ? (t / !(str)) => getStructure(doc ? t ? str)    
       case doc ? _ => throw GetError("retrieval of complex module name " + p + " not possible")
       case OMMOD(p) % name => get(p, error) match {

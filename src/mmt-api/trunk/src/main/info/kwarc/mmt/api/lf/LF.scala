@@ -127,7 +127,7 @@ object LFF extends Foundation {
  * @param lib  Lookup library
  * @return type of the constant
  * */  
- def lookuptype(path : Path)(implicit lib : Lookup) : Term = {
+ def lookuptype(path : GlobalName)(implicit lib : Lookup) : Term = {
     val con = lib.getConstant(path)
     con.tp match {
        case Some(t) => t
@@ -136,7 +136,7 @@ object LFF extends Foundation {
           infer(con.df.get, Context())
     }
  }
-  def lookupdef(path : Path)(implicit lib : Lookup) : Option[Term] = lib.getConstant(path).df
+  def lookupdef(path : GlobalName)(implicit lib : Lookup) : Option[Term] = lib.getConstant(path).df
 
   /**
    * check(s,T,G) iff G |- s : T : U for some U \in {type,kind}

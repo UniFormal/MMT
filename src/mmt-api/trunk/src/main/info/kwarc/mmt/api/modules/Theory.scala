@@ -23,10 +23,15 @@ class DeclaredTheory(doc : DPath, name : LocalPath, val meta : Option[MPath])
    def components = StringLiteral(name.flat) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
    override def toString = path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
-      <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
+   <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {getMetaDataNode}
         {innerNodes}
       </theory>
+   def toNodeElab = 
+    <theory name={name.flat} base={doc.toPath}>
+        {getMetaDataNode}
+        {innerNodesElab}
+    </theory>
 }
 
 class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends Theory(doc, name) with DefinedModule[TheoryObj] {

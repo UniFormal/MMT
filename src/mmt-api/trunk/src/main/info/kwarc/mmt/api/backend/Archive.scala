@@ -4,6 +4,7 @@ import libraries._
 import frontend._
 import modules._
 import symbols._
+import patterns._
 import objects._
 import lf._
 import utils._
@@ -101,15 +102,21 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
     
     def produceFlat(in: List[String] = Nil, controller: Controller) {
-       val inFile = flatDir / in
+       val inFile = contentDir / in
        if (inFile.isDirectory) {
            inFile.list foreach {n =>
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
            }
         } else {
            val mpath = Archive.ContentPathToMMTPath(in)
-           //val mod = controller.getModule(mpath)
-           
+           val mod = controller.globalLookup.getModule(mpath)
+           val flatNode = mod match {
+              case thy: DeclaredTheory =>
+                 Instance.elaborate(thy)(controller.globalLookup)
+                 thy.toNodeElab
+              case _ => mod.toNode
+           }
+           xml.writeFile(flatNode, flatDir / in)
         }
     }
     
@@ -246,6 +253,9 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
 }
 
 object Archive {
+   /** a string containing all characters that are illegal in file names */ 
+   val illegalChars = "'"
+   // TODO: (un)escape illegal characters
    def escape(s: String) : String = s
    def unescape(s: String) : String = s
     // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
