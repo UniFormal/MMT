@@ -46,20 +46,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @param m the MPath of the module 
       * @return the File descriptor of the destination  file in the content folder
       */
-    def MMTPathToContentPath(m: MPath) : File = {            // TODO: Use narrationBase instead of "NONE"?
-       val uri = m.parent.uri
-       val schemeString = uri.scheme.map(_ + "..").getOrElse("")
-       contentDir / (schemeString + uri.authority.getOrElse("NONE")) / uri.path / (m.name + ".omdoc")
-    }
-    // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
-    def ContentPathToMMTPath(segs: List[String]) : MPath = segs match {
-       case Nil => throw ImplementationError("")
-       case hd :: tl =>
-          val p = hd.indexOf("..")
-          val tllast = tl.last
-          val name = tllast.substring(0, tllast.length - 6)
-          DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? name  
-    } 
+    def MMTPathToContentPath(m: MPath) : File = contentDir / Archive.MMTPathToContentPath(m)
     /** compile source into "compiled" */
     def compile(in : List[String] = Nil) {
         compiler match {
@@ -115,12 +102,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     def produceFlat(in: List[String] = Nil, controller: Controller) {
        val inFile = flatDir / in
-        if (inFile.isDirectory) {
+       if (inFile.isDirectory) {
            inFile.list foreach {n =>
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
            }
         } else {
-           val mpath = ContentPathToMMTPath(in)
+           val mpath = Archive.ContentPathToMMTPath(in)
            //val mod = controller.getModule(mpath)
            
         }
@@ -135,7 +122,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         } else {
            try {
-              val mpath = ContentPathToMMTPath(in)
+              val mpath = Archive.ContentPathToMMTPath(in)
               controller.get(mpath)
               val outFile = (root / "relational" / in).setExtension("rel")
               log("[CONT->REL] " + inFile + " -> " + outFile)
@@ -160,7 +147,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         } else {
            val controller = new Controller(NullChecker, report)
-           val mpath = ContentPathToMMTPath(in)
+           val mpath = Archive.ContentPathToMMTPath(in)
            controller.get(mpath)
            controller.library.getTheory(mpath) match {
               case thy : DeclaredTheory =>
@@ -256,6 +243,30 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        case mod : MPath => reader.readModules(utils.mmt.mmtbase, None, get(mod))
        case sym : GlobalName => get(sym.mod, reader)
     }}
+}
+
+object Archive {
+   def escape(s: String) : String = s
+   def unescape(s: String) : String = s
+    // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
+   def ContentPathToMMTPath(segs: List[String]) : MPath = segs match {
+       case Nil => throw ImplementationError("")
+       case hd :: tl =>
+          val p = hd.indexOf("..")
+          val tllast = tl.last
+          val name = unescape(tllast.substring(0, tllast.length - 6))
+          DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? name
+    }
+    /** Get the disk path of the module in the content folder
+      * @param m the MPath of the module 
+      * @return the File descriptor of the destination  file in the content folder
+      */
+    def MMTPathToContentPath(m: MPath) : List[String] = {            // TODO: Use narrationBase instead of "NONE"?
+       val uri = m.parent.uri
+       val schemeString = uri.scheme.map(_ + "..").getOrElse("")
+       (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(escape(m.name.flat) + ".omdoc")
+    }
+
 }
 
 /*
