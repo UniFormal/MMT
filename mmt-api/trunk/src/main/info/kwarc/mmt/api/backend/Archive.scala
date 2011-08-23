@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import libraries._
 import frontend._
 import modules._
+import symbols._
+import objects._
 import lf._
 import utils._
 import FileConversion._
@@ -149,6 +151,39 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         }       
     }
+    def produceMWS(in : List[String] = Nil, dim: String) {
+        val inFile = root / dim / in
+        val mwsbase = properties("mws-base")
+        if (inFile.isDirectory) {
+           inFile.list foreach {n =>
+              if (includeDir(n)) produceMWS(in ::: List(n), dim)
+           }
+        } else {
+           val controller = new Controller(NullChecker, report)
+           val mpath = ContentPathToMMTPath(in)
+           controller.get(mpath)
+           controller.library.getTheory(mpath) match {
+              case thy : DeclaredTheory =>
+                 val outFile = root / "mws" / dim / in
+                 val outStream = null //new ... (outFile)
+                 def writeEntry(t: Term, url: String) {
+                    //outStream.writeln("..." + t.toCML.toString)
+                 }
+                 //outStream.writeln("..")
+                 thy.valueList foreach {
+                    case c: Constant =>
+                       List(c.tp,c.df).map(tO => tO map { 
+                          t => writeEntry(t, mwsbase + "/" + c.name.flat)
+                       })
+                    case _ =>
+                 }
+                 //outStream.writeln(...)
+                 //outStream.close
+              case t: DefinedTheory =>
+           }
+        }
+    }
+    
     
     /** Generate presentation from content */
     def producePresentation(controller: Controller, label: String, style: MPath) {}
