@@ -41,7 +41,7 @@ object Instance {
   def elaborate(inst: Instance)(implicit lup: Lookup): List[Constant] = {  
     	val pt : Pattern = lup.getPattern(inst.pattern) 
       pt.con.map {
-    	  case TermVarDecl(n,tp,df,at) => 
+    	  case TermVarDecl(n,tp,df,at @ _*) => 
             def auxSub(x : Term) = {
         	      val names = pt.con.map(d => d.name)
         	      val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
@@ -50,7 +50,7 @@ object Instance {
     	    val c = new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
     	    c.setOrigin(InstanceElaboration(inst.path))
     	    c
-        case SeqVarDecl(n,tp,df) => throw ImplementationError("Pattern cannot contain sequence variable declaration")
+        case SeqVarDecl(n,tp,df, at @ _*) => throw ImplementationError("Pattern cannot contain sequence variable declaration")
       }
   }
   

@@ -197,7 +197,7 @@ case class OMV(name : String) extends Term {
    def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t: Term) => t
-	  	   case Some(_) => throw SubstitutionUndefined("substitution is applicable but does not provide a term")
+	  	   case Some(_) => throw SubstitutionUndefined(name, "substitution is applicable but does not provide a term")
 	  	   case None => this
        }
 }
@@ -338,7 +338,7 @@ case class SeqVar(name : String) extends SeqItem {
 	def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t : Sequence) => t
-	  	   case Some(_) => throw SubstitutionUndefined("substitution is applicable but does not provide a sequence")
+	  	   case Some(_) => throw SubstitutionUndefined(name, "substitution is applicable but does not provide a sequence")
 	  	   case None => this
        }
 	def head = None
