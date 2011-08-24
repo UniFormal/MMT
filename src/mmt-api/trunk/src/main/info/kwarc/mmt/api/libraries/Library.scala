@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.ontology._
 import scala.xml.{Node,NodeSeq}
@@ -50,6 +51,8 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
             t.getFirst(name, error) match {
                case (d, None) => d
                case (c: Constant, Some(ln)) => error("local name " + ln + " left after resolving to constant")
+               case (p: Pattern, Some(ln)) => error("local name " + ln + " left after resolving to pattern")
+               case (i: Instance, Some(ln)) => error("resolution in unelaborated instances not implemented yet")
                case (i: Include, Some(ln)) =>
                   get(i.from % ln, error) match {
                      // no translation needed, but we have to set the new home theory and qualified name

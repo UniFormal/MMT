@@ -80,16 +80,21 @@ abstract class ModuleChecker extends Checker {
          case l: Include =>
             val par = checkAtomic(l.home)
             val deps = checkTheo(l.from, Includes(par, _), DependsOn(par, _))
-            // flattening (transitive closure) of includes 
-            val flat = lib.importsTo(l.from).toList.mapPartial {t =>
-               if (lib.imports(t, l.home)) None
-               else {
-                  val i = new Include(l.home, t)
-                  i.setOrigin(IncludeClosure)
-                  Some(i)
+            if (lib.imports(l.from, l.home)) {
+               // ignoring redundant import
+               Reconstructed(Nil, Nil)
+            } else {
+               // flattening (transitive closure) of includes
+               val flat = lib.importsTo(l.from).toList.mapPartial {t =>
+                  if (lib.imports(t, l.home)) None
+                  else {
+                     val i = new Include(l.home, t)
+                     i.setOrigin(IncludeClosure)
+                     Some(i)
+                  }
                }
+               Reconstructed(l :: flat, deps)
             }
-            Reconstructed(l :: flat, deps)
          case s: DeclaredStructure =>
             checkEmpty(s)
             val par = checkAtomic(s.home)
