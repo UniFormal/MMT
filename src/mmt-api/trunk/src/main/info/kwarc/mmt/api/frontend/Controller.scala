@@ -167,12 +167,11 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
-	      case AddTwelf(f) =>
-            val c = new lf.Twelf(File(f))
-            backend.addCompiler(c)
-	      case AddMizar =>
-            //val c = new Mizar
-            //backend.addCompiler(c)
+	      case AddCompiler(c, args) =>
+            val Comp = java.lang.Class.forName(c).asInstanceOf[java.lang.Class[Compiler]]
+            val comp = Comp.newInstance
+            comp.init(args)
+            backend.addCompiler(comp)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>

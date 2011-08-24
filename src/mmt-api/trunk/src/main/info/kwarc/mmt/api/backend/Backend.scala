@@ -230,10 +230,10 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
          d.init(reader)
       }
    }
+   /** adds a compiler, must be initialized already */
    def addCompiler(c: Compiler) {
        log("adding compiler " + c.toString)
        compilers ::= c
-       c.init
    }
    /** @throws NotFound if the root file cannot be read
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */

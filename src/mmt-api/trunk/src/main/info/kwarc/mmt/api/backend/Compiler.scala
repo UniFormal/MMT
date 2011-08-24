@@ -16,7 +16,7 @@ abstract class Compiler {
      */
    def compile(in: File, out: File) : List[CompilerError]
    /** initialization (empty by default) */
-   def init {}
+   def init(args: List[String]) {}
    /** registers an archive with this compiler */
    def register(arch: Archive) {}
    /** termination (empty by default)
