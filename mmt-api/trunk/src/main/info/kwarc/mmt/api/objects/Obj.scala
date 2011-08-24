@@ -599,7 +599,7 @@ object Obj {
    }
    def parseSeqItem(N: Node, base: Path) : SeqItem = N match {
       case <seqsubst>{e}{s}</seqsubst> =>
-         SeqSubst(parseTerm(e, base), xml.attr(N, "name"), parseSequence(s, base))
+         SeqSubst(parseTerm(e, base), xml.attr(N, "var"), parseSequence(s, base))
       case <seqvar/> => SeqVar(xml.attr(N, "name"))
       case <sequpto>{e}</sequpto> => SeqUpTo(parseTerm(e, base))
       case t => parseTerm(t, base)
