@@ -96,7 +96,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               doc.getModulesResolved(controller.library) foreach writeToContent
            } catch {
               case e: Error => report(e)
-              case e => report("error", e.getMessage)
+              //case e => report("error", e.getMessage)
            }
         }
     }

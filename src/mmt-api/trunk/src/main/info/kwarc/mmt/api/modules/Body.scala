@@ -6,7 +6,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 
 import scala.xml.Node
-import scala.collection.mutable.DoubleLinkedList
 
 /**
  * StatementSet represents the content of modules, i.e., a set of declarations.
@@ -20,7 +19,7 @@ trait Body[S <: Declaration] {
    //invariant: order contains the keys for which statements is defined in the order of addition
    protected val statements = new scala.collection.mutable.HashMap[LocalName,S]
    // all declarations in reverse order of addition
-   protected var order : DoubleLinkedList[S] = DoubleLinkedList.empty
+   protected var order : List[S] = Nil
    //invariant: "prefixes" stores all prefixes for all LocalPaths in the domain of "statements", together with a counter how often they occur
    //protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
    /** true iff a declaration for a name is present */ 
@@ -64,7 +63,7 @@ trait Body[S <: Declaration] {
 	      if (statements.isDefinedAt(name))
 	         throw AddError("a declaration for the name " + name + " already exists")
 	      statements(name) = s
-	      order = s +: order
+	      order = s :: order
    }
    /** delete a declaration (does not have to exist) */
    def delete(name : LocalName) {
@@ -85,16 +84,16 @@ trait Body[S <: Declaration] {
    }
    /** replaces a declaration with others (preserving the order) */
    def replace(name: LocalName, decs: S*) {
-      var seen : DoubleLinkedList[S] = DoubleLinkedList.empty
-      var tosee : DoubleLinkedList[S] = order
+      var seen : List[S] = Nil
+      var tosee : List[S] = order
       var continue = true
       while (continue && ! tosee.isEmpty) {
          val hd = tosee.head
          if (hd.name == name) {
-            order = seen ++ decs.reverse ++ tosee.tail
+            order = seen.reverse ::: decs.reverse.toList ::: tosee.tail
             continue = false
          } else {
-            seen = seen :+ hd
+            seen = hd :: seen
             tosee = tosee.tail
          }
       }

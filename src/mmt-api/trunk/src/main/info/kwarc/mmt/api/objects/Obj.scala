@@ -311,7 +311,7 @@ case class Index(seq : Sequence, term : Term) extends Term {
 sealed abstract class Sequence extends Obj {
 	def ^(sub : Substitution) : Sequence
 	def items : List[SeqItem]
-    def toOpenMath : Term = OMA(OMID(mmt.seq), items)
+   def toOpenMath : Term = OMA(OMID(mmt.seq), items)
     
 }
 
@@ -334,7 +334,7 @@ case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem 
 
 case class SeqVar(name : String) extends SeqItem {
 	def toNodeID(pos : Position) =
-		<seqvar name ={name}/>
+		<seqvar name ={name}/> % pos.toIDAttr
 	def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t : Sequence) => t
@@ -348,7 +348,7 @@ case class SeqVar(name : String) extends SeqItem {
 
 case class SeqUpTo(num : Term) extends SeqItem {
 	def toNodeID(pos : Position) =
-		<sequpto>{num.toNodeID(pos + 0)}</sequpto>
+		<sequpto>{num.toNodeID(pos + 0)}</sequpto> % pos.toIDAttr
 	def ^(sub : Substitution) =
 		num match {
 		case OMI(n) => SeqItemList(List.range(1,n.toInt).map(OMI(_)))
@@ -361,15 +361,12 @@ case class SeqUpTo(num : Term) extends SeqItem {
 
 case class SeqItemList(items: List[SeqItem]) extends Sequence {
    def toNodeID(pos : Position) =
-	   <seqitemlist>{items.map(_.toNode)}</seqitemlist> //TODO
+	   <seq>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</seq> % pos.toIDAttr
    def ^(sub : Substitution) : Sequence = SeqItemList(items.map(_ ^ sub).flatMap(_.items))
    def components :List[Content] = items
    def head = None
    def role = Role_seqitemlist
 }
-
-
-
 
 /**
  * A ModuleObj is a composed module level expressions.
@@ -543,78 +540,89 @@ object Obj {
    //base: base reference, may be set by any object
    //lib: optional library against which to validate and parse paths
    /** parses a term relative to a base address */
-   def parseTerm(N : Node, base : Path) : Term = parseTerm(N, base, x => ())
-   /** parses a term relative to a base address and calls a function on every encountered identifier */
-   def parseTerm(N : Node, base : Path, callback : Path => Unit) : Term = {
+   def parseTerm(N : Node, base : Path) : Term = {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       //this function unifies the two cases for binders in the case distinction below
       def doBinder(binder : Node, context : Node, condition : Option[Node], body : Node) = {
-         val bind = parseTerm(binder, nbase, callback)
-         val cont = Context.parse(context, base, callback)
+         val bind = parseTerm(binder, nbase)
+         val cont = Context.parse(context, base)
          if (cont.isEmpty)
             throw new ParseError("at least one variable required in " + cont.toString)
-         val cond = condition.map(parseTerm(_, nbase, callback))
-         val bod = parseTerm(body, nbase, callback)
+         val cond = condition.map(parseTerm(_, nbase))
+         val bod = parseTerm(body, nbase)
          OMBINDC(bind, cont, cond, bod)
       }
       N match {
          case <OMS/> =>
             parseOMS(N, base) match {
-               case p : GlobalName => callback(p); OMID(p)
+               case p : GlobalName => OMID(p)
                case p => throw new ParseError("Not a term: " + p + N.toString)
             }
          case <OMV/> =>
             OMV(xml.attr(N,"name"))
          case <OMA>{child @ _*}</OMA> if child.length == 3 && parseOMS(child.head, base) == mmt.morphismapplication =>
-            val arg = parseTerm(child(1), nbase, callback)
-            val morph = parseMorphism(child(2), nbase, callback)
+            val arg = parseTerm(child(1), nbase)
+            val morph = parseMorphism(child(2), nbase)
             OMM(arg, morph)
          case <OMA>{child @ _*}</OMA> =>
             if (child.length <= 1)
                throw ParseError("No arguments given: " + N.toString)
-            val ch = child.toList.map(parseTerm(_, nbase, callback))
-            OMA(ch.head,ch.tail)
+            val fun = parseTerm(child.head, base)
+            val args = child.tail.toList.map(parseSeqItem(_, nbase))
+            OMA(fun, args)
          case <OME>{child @ _*}</OME> =>
-            val ch = child.toList.map(parseTerm(_, nbase, callback))
+            val ch = child.toList.map(parseTerm(_, nbase))
             OME(ch.head,ch.tail)
          case <OMBIND>{binder}{context}{condition}{body}</OMBIND> =>
            	doBinder(binder, context, Some(condition), body)
          case <OMBIND>{binder}{context}{body}</OMBIND> =>
             doBinder(binder, context, None, body)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
-            val k = parseTerm(key, nbase, callback)
+            val k = parseTerm(key, nbase)
             if (! k.isInstanceOf[OMID])
                throw new ParseError("key must be OMS in " + N.toString)
-            val v = parseTerm(value, nbase, callback)
+            val v = parseTerm(value, nbase)
             if (rest.length == 0)
                throw ParseError("not a well-formed attribution: " + N.toString)
             val n = if (rest.length == 1)
                rest(0) else <OMATTR>{rest}</OMATTR>
-            val t = parseTerm(n, nbase, callback)
+            val t = parseTerm(n, nbase)
             OMATTR(t, k.asInstanceOf[OMID], v)
          case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s}</OMSTR> => OMSTR(s.toString)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding
-         case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase, callback)
+         case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
-   } 
+   }
+   def parseSeqItem(N: Node, base: Path) : SeqItem = N match {
+      case <seqsubst>{e}{s}</seqsubst> =>
+         SeqSubst(parseTerm(e, base), xml.attr(N, "name"), parseSequence(s, base))
+      case <seqvar/> => SeqVar(xml.attr(N, "name"))
+      case <sequpto>{e}</sequpto> => SeqUpTo(parseTerm(e, base))
+      case t => parseTerm(t, base)
+      // case _ => throw ParseError("not a well-formed sequence item: " + N.toString)
+   }
+   def parseSequence(N: Seq[Node], base: Path) : Sequence = N match {
+      case <seq>{its @ _*}</seq> =>
+         val items = its.map {parseSeqItem(_, base)}
+         SeqItemList(items.toList)
+      case _ => throw ParseError("not a well-formed sequence: " + N.toString)
+   }
    
    /** parses a morphism relative to a base address */
-   def parseMorphism(N : Node, base : Path) : Morph = parseMorphism(N, base, p => ())
-   /** parses a morphism relative to a base address and calls a function on every encountered identifier */
-   def parseMorphism(N : Node, base : Path, callback : Path => Unit) : Morph = {
+   def parseMorphism(N : Node, base : Path) : Morph = {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       N match {
-         case <OMOBJ>{mor}</OMOBJ> => parseMorphism(mor, base, callback)
-         case <OMMOR>{mor}</OMMOR> => parseMorphism(mor, base, callback)
+         case <OMOBJ>{mor}</OMOBJ> => parseMorphism(mor, base)
+         case <OMMOR>{mor}</OMMOR> => parseMorphism(mor, base)
          case <OMS/> =>
             parseOMS(N, base) match {
-               case p : MPath => callback(p); OMMOD(p)
-               case (t: TheoryObj) % name => callback(t % name); OMDL(t, name)
+               case p : MPath => OMMOD(p)
+               case (t: TheoryObj) % name => OMDL(t, name)
 /*               case doc ? mod ?? str =>
                   throw ParseError("not a well-formed link reference (case was removed): " + N.toString)
                   val p = doc ? (mod / str)
@@ -623,38 +631,36 @@ object Obj {
                case _ => throw ParseError("not a well-formed link reference: " + N.toString)
             }
          case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.composition =>
-            val links = child.toList.tail.map(parseMorphism(_, nbase, callback))
+            val links = child.toList.tail.map(parseMorphism(_, nbase))
             OMCOMP(links)
          case <OMA>{child @ _*}</OMA> if child.length == 2 && parseOMS(child(0), base) == mmt.identity =>
-            val theory = parseTheory(child(1), nbase, callback)
+            val theory = parseTheory(child(1), nbase)
             OMIDENT(theory)
          case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.munion =>
-            val mors = child.toList.tail.map(parseMorphism(_, nbase, callback))
+            val mors = child.toList.tail.map(parseMorphism(_, nbase))
             MUnion(mors)
          case _ => throw ParseError("not a well-formed morphism: " + N.toString)
       }
    }
-<om:OMA xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns"><om:OMS name="theory-union" module="mmt" base="http://cds.omdoc.org/omdoc/mmt.omdoc"></om:OMS><om:OMS module="TND"></om:OMS><om:OMS module="EqLogic"></om:OMS></om:OMA>
+
   /** parses a theory object relative to a base address */
-  def parseTheory(N : Node, base : Path) : TheoryObj = parseTheory(N, base, p => ())
-  /** parses a theory object relative to a base address and calls a function on every encountered identifier */
-  def parseTheory(N : Node, base : Path, callback : Path => Unit) : TheoryObj = {
+  def parseTheory(N : Node, base : Path) : TheoryObj = {
      val nbase = newBase(N, base)
      N match {
-        case <OMOBJ>{thy}</OMOBJ> => parseTheory(thy, base, callback)
+        case <OMOBJ>{thy}</OMOBJ> => parseTheory(thy, base)
         case <OMS/> =>
            parseOMS(N, base) match {
-               case p : MPath => callback(p); OMMOD(p)
+               case p : MPath => OMMOD(p)
                case _ => throw ParseError("not a well-formed theory reference: " + N.toString)
            }
         case <OMA>{child @ _*}</OMA> if child.length >= 2 && parseOMS(child.head, base) == mmt.tunion =>
-            val thys = child.toList.tail.map(parseTheory(_, nbase, callback))
+            val thys = child.toList.tail.map(parseTheory(_, nbase))
             TUnion(thys)
         case _ => throw ParseError("not a well-formed theory: " + N.toString)
     }
   }
   
-  private def parseOMS(N : Node, base : Path) : Path = {
+  def parseOMS(N : Node, base : Path) : Path = {
      val doc = URI(xml.attr(N,"base"))
      val mod = xml.attr(N,"module")
      val name = xml.attr(N,"name")
