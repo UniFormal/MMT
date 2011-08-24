@@ -22,58 +22,6 @@ sealed abstract class VarDecl extends Content {
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
 }
 
-object VarDecl {
-   def parseAttrs[T <: Obj, D <: Obj](N: Seq[Node], base: Path, parseType: Node => T, parseDef : Node => D, parseOther : Node => Term) :
-                                                    (Option[T], Option[D], List[(GlobalName,Term)]) = {
-      var tp : Option[T] = None
-      var df : Option[D] = None
-      var attrs : List[(GlobalName, Term)] = Nil
-      var left = N.toList
-      while (left != Nil) {
-         left.head match {
-            case <type>{t}</type> => tp = Some(parseType(t))
-            case <definition>{t}</definition> => df = Some(parseDef(t))
-            case k @ <OMS/> =>
-               val key = Obj.parseOMS(k, base) match {
-                  case g: GlobalName => g
-                  case _ => throw ParseError("key must be symbol in " + N.toString)
-               }
-               left = left.tail
-               if (left == Nil) throw ParseError("missing attribution value: " + N)
-               val vl = left.head
-               key match {
-                  case mmt.mmttype => tp = Some(parseType(vl))
-                  case mmt.mmtdef => df = Some(parseDef(vl))
-                  case _ =>
-                     val value = parseOther(vl)
-                     attrs = (key, value) :: attrs
-               }
-         }
-         left = left.tail
-      }
-      (tp, df, attrs)
-   }
-   def parse(N: Node, base: Path) : VarDecl = {
-      val pTerm = (x:Node) => Obj.parseTerm(x, base)
-      val pSeq = (x:Node) => Obj.parseSequence(x, base)
-      N match {      
-         case <OMATTR><OMATP>{ats @ _*}</OMATP>{v}</OMATTR> =>
-            val name = xml.attr(v, "name")
-            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
-            TermVarDecl(name, tp, df, attrs : _*)
-         case <OMV>{ats @ _*}</OMV> =>
-            val name = xml.attr(N, "name")
-            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
-            TermVarDecl(name, tp, df, attrs : _*)
-         case <seqvar>{ats @ _*}</seqvar> =>
-            val name = xml.attr(N, "name")
-            val (tp, df, attrs) = parseAttrs(ats, base, pSeq, pSeq, pTerm)
-            SeqVarDecl(name, tp, df)
-         case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
-      }
-   }
-}
-
 //TODO: add optional notation
 /** represents an MMT term variable declaration
  * @param n name
@@ -104,8 +52,8 @@ case class SeqVarDecl(name : String, tp : Option[Sequence], df : Option[Sequence
    def toNodeID(pos : Position) = {
       val tpN = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
       val dfN = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
-      // attrs.toList.foldLeft[Term](toOpenMath) {(v,a) => OMATTR(v, a._1, a._2)}
-      <seqvar name={name}>{tp}{df}</seqvar>
+      val attrsN = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
+      <seqvar name={name}>{tpN}{dfN}{attrsN}</seqvar>
    }
    def role = Role_SeqVariable
 }
@@ -160,15 +108,6 @@ case class SeqSub(name : String, target : Sequence) extends Sub {
    def toNodeID(pos: Position): Node = <seqvar name={name}>{target.toNodeID(pos + 1)}</seqvar>
 }
 
-/** helper object */
-object Sub {
-   def parse(N: Node, base: Path) = N match {
-      case <OMV>{e}</OMV> => TermSub(xml.attr(N, "name"), Obj.parseTerm(e, base))
-      case <seqvar>{e}</seqvar> => SeqSub(xml.attr(N, "name"), Obj.parseSequence(e, base))
-      case _ => throw ParseError("not a well-formed case in a substitution: " + N.toString)
-   }
-}
-
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) {
    def ++(n:String, t:Term) : Substitution = this ++ TermSub(n,t)
@@ -203,10 +142,75 @@ object Context {
       case _ => throw ParseError("not a well-formed context: " + N.toString)
 	}
 }
+/** helper object */
+object VarDecl {
+   def parseAttrs[T <: Obj, D <: Obj](N: Seq[Node], base: Path, parseType: Node => T, parseDef : Node => D, parseOther : Node => Term) :
+                                                    (Option[T], Option[D], List[(GlobalName,Term)]) = {
+      var tp : Option[T] = None
+      var df : Option[D] = None
+      var attrs : List[(GlobalName, Term)] = Nil
+      var left = N.toList
+      while (left != Nil) {
+         left.head match {
+            case <type>{t}</type> => tp = Some(parseType(t))
+            case <definition>{t}</definition> => df = Some(parseDef(t))
+            case a @ <attribution>{t}</attribution> =>
+               val key = Path.parseS(xml.attr(a, "key"), base)
+               val value = parseOther(t)
+               attrs = (key, value) :: attrs
+            case k @ <OMS/> =>
+               val key = Obj.parseOMS(k, base) match {
+                  case g: GlobalName => g
+                  case _ => throw ParseError("key must be symbol in " + N.toString)
+               }
+               left = left.tail
+               if (left == Nil) throw ParseError("missing attribution value: " + N)
+               val vl = left.head
+               key match {
+                  case mmt.mmttype => tp = Some(parseType(vl))
+                  case mmt.mmtdef => df = Some(parseDef(vl))
+                  case _ =>
+                     val value = parseOther(vl)
+                     attrs = (key, value) :: attrs
+               }
+         }
+         left = left.tail
+      }
+      (tp, df, attrs.reverse)
+   }
+   def parse(N: Node, base: Path) : VarDecl = {
+      val pTerm = (x:Node) => Obj.parseTerm(x, base)
+      val pSeq = (x:Node) => Obj.parseSequence(x, base)
+      N match {      
+         case <OMATTR><OMATP>{ats @ _*}</OMATP>{v}</OMATTR> =>
+            val name = xml.attr(v, "name")
+            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
+            TermVarDecl(name, tp, df, attrs : _*)
+         case <OMV>{ats @ _*}</OMV> =>
+            val name = xml.attr(N, "name")
+            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
+            TermVarDecl(name, tp, df, attrs : _*)
+         case <seqvar>{ats @ _*}</seqvar> =>
+            val name = xml.attr(N, "name")
+            val (tp, df, attrs) = parseAttrs(ats, base, pSeq, pSeq, pTerm)
+            SeqVarDecl(name, tp, df)
+         case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
+      }
+   }
+}
+/** helper object */
 object Substitution {
 	/** parsers an OMBVAR into a substitution */
 	def parse(N : scala.xml.Node, base : Path) : Substitution = N match {
 		case <om:OMBVAR>{sbs @ _*}</om:OMBVAR> => sbs.toList.map(Sub.parse(_, base))
       case _ => throw ParseError("not a well-formed substitution: " + N.toString)
 	}
+}
+/** helper object */
+object Sub {
+   def parse(N: Node, base: Path) = N match {
+      case <OMV>{e}</OMV> => TermSub(xml.attr(N, "name"), Obj.parseTerm(e, base))
+      case <seqvar>{e}</seqvar> => SeqSub(xml.attr(N, "name"), Obj.parseSequence(e, base))
+      case _ => throw ParseError("not a well-formed case in a substitution: " + N.toString)
+   }
 }
