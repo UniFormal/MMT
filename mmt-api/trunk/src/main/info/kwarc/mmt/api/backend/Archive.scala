@@ -242,12 +242,13 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, narrationDir)
     /** Get a module from content folder */ 
-    def get(m: MPath) : scala.xml.Node = {
-       utils.xml.readFile(MMTPathToContentPath(m)).child(0)
-    }
+    def get(m: MPath) : scala.xml.Node = utils.xml.readFile(MMTPathToContentPath(m)).child(0)
     def get(p: Path, reader: Reader) {p match {
        case doc : DPath => narrationBackend.get(doc, reader)  
-       case mod : MPath => reader.readModules(utils.mmt.mmtbase, None, get(mod))
+       case mod : MPath =>
+          val node = try { get(mod) }
+          catch {case e: java.io.FileNotFoundException => throw NotApplicable}
+          reader.readModules(mod.doc, None, get(mod))
        case sym : GlobalName => get(sym.mod, reader)
     }}
 }

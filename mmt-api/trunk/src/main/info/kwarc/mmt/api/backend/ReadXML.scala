@@ -145,7 +145,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
          add(c,md)
       }
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
-    	  log("pattern" + name.flat + " found")
+    	  log("pattern " + name.flat + " found")
     	  val pr = parOpt match {
     	 	  case Some(par) => Context.parse(par, base)
     	 	  case None      => Context()
@@ -184,7 +184,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
             val forpath = Path.parseS(xml.attr(s, "for"), base)
             log("found alias " + name + " for " + forpath)
             add(new Alias(thy, name, forpath), md)
-         case <include/> =>
+         case <include>{_*}</include> =>
             val (_, from) = Reader.getTheoryFromAttributeOrChild(s, "from", base)
             log("include from " + from + " found")
             add(Include(OMMOD(tpath), from), md)

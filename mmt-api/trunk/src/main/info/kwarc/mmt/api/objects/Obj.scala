@@ -593,6 +593,7 @@ object Obj {
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s}</OMSTR> => OMSTR(s.toString)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding
+         case <index>{s}{i}</index> => Index(parseSequence(s, base), parseTerm(i,base))
          case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
@@ -609,7 +610,7 @@ object Obj {
       case <seq>{its @ _*}</seq> =>
          val items = its.map {parseSeqItem(_, base)}
          SeqItemList(items.toList)
-      case _ => throw ParseError("not a well-formed sequence: " + N.toString)
+      case i : scala.xml.Elem => parseSeqItem(i,base) //throw ParseError("not a well-formed sequence: " + N.toString)
    }
    
    /** parses a morphism relative to a base address */
