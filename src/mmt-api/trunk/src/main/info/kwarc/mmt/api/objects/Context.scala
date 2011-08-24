@@ -27,14 +27,14 @@ sealed abstract class VarDecl extends Content {
  * @param n name
  * @param tp optional type
  * @param df optional definiens
- * @param attrs OpenMath-style attributions (will be ignored)
+ * @param attrs OpenMath-style attributions
  */
 case class TermVarDecl(name : String, tp : Option[Term], df : Option[Term], ats: (GlobalName,Term)*) extends VarDecl {
    val attrs = ats.toList
    def ^(sub : Substitution) = TermVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
-	   val varToOMATTR = OMV(name) // attrs.toList.foldLeft[Term](toOpenMath) {(v,a) => OMATTR(v, a._1, a._2)}
+	   val varToOMATTR = attrs.toList.foldLeft[Term](OMV(name)) {(v,a) => OMATTR(v, OMID(a._1), a._2)}
       (tp, df) match {
          case (None, None) => varToOMATTR
          case (Some(t), None) => OMATTR(varToOMATTR, OMID(mmt.mmttype), t)
