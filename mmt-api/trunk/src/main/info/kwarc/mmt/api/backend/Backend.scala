@@ -248,14 +248,16 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
               val in = new java.io.BufferedReader(new java.io.FileReader(manifest))
               var line : String = null
               while ({line = in.readLine(); line != null}) {
-                  val p = line.indexOf(":")
-                  val key = line.substring(0,p).trim
-                  val value = line.substring(p+1).trim
-                  properties(key) = value
+                  if (! line.trim.startsWith("//")) {
+                     val p = line.indexOf(":")
+                     val key = line.substring(0,p).trim
+                     val value = line.substring(p+1).trim
+                     properties(key) = value
+                  }
               }
               in.close
               properties.get("source") foreach (
-              src => compilers.find(_.isApplicable(src)) match {
+                src => compilers.find(_.isApplicable(src)) match {
                   case Some(c) => compiler = Some(c)
                   case None => log("no compiler registered for source " + src)
               }
