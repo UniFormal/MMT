@@ -26,7 +26,7 @@ class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, va
 class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution) extends Symbol {
    def toNode = 
      <instance name={name.flat} pattern={pattern.toPath}>
-     matches.toNode
+     {matches.toNode}
      </instance>
    def role = info.kwarc.mmt.api.Role_Instance
    def components = Nil

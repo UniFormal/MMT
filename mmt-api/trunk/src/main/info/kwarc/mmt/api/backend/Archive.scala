@@ -112,7 +112,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            val mod = controller.globalLookup.getModule(mpath)
            val flatNode = mod match {
               case thy: DeclaredTheory =>
-                 Instance.elaborate(thy)(controller.globalLookup)
+                 //Instance.elaborate(thy)(controller.globalLookup)
                  thy.toNodeElab
               case _ => mod.toNode
            }

@@ -281,7 +281,9 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val pt : Pattern = lib.getPattern(i.pattern)
             val paths = checkSubstitution(i.home, i.matches, pt.params, Context())
             val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
-            Success(deps) //Reconstructed(List(Pattern.elaborate(i,lib)),Nil)
+            val elab = Instance.elaborate(i)
+            i.setOrigin(Elaborated)
+            Reconstructed(i :: elab, deps)
          case _ => Success(Nil)
    }
 /*       case a : Alias =>
