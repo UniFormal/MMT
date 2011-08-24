@@ -24,9 +24,9 @@ case class Delete(path : Path) extends ContentMessage
  */
 class Library(checker : Checker, relstore : RelStore, report : frontend.Report) extends Lookup(report) {
    private val modules = new scala.collection.mutable.HashMap[MPath,Module]
-   def getModule(p : MPath, die: Boolean = false) : Module =
+   private def modulesGetNF(p : MPath) : Module =
       try {modules(p)}
-      catch {case _ => if (die) throw GetError("module does not exist: " + p)
+      catch {case _ => if (false) throw GetError("module does not exist: " + p)
                        else     throw frontend.NotFound(p)
             }
    def log(s : => String) = report("library", s)
@@ -40,7 +40,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
       get(p, msg => throw GetError("error while retrieving " + p + ": " + msg))
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
-      case doc ? !(mod) => getModule(doc ? mod)
+      case doc ? !(mod) => modulesGetNF(doc ? mod)
       //case doc ? (t / !(str)) => getStructure(doc ? t ? str)    
       case doc ? _ => throw GetError("retrieval of complex module name " + p + " not possible")
       case OMMOD(p) % name => get(p, error) match {
@@ -75,6 +75,18 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
             }
          case v : View => getInLink(v, name, error) 
       }
+      case TEmpty(mtO) % name => name match {
+         case IncludeStep(f) / tl =>
+            if (mtO.isDefined && imports(f, OMMOD(mtO.get))) get(f % tl)
+            else throw GetError("empty theory has no declarations")
+         case _ => throw GetError("empty theory has no declarations")
+      }
+      case TUnion(l,r) % name => name match {
+         case IncludeStep(f) / tl =>
+            if (imports(f, TUnion(l,r))) get(f % tl)
+            else throw GetError("union of theories has no declarations except includes")
+         case _ => throw GetError("union of theories has no declarations except includes")
+      }
       case OMDL(h,n) % name => get(h % n, error) match {
          case l : DefinitionalLink => getInLink(l, name, error)
          case _ => throw GetError("declaration exists but is not a structure: " + p)
@@ -93,9 +105,16 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
          case c: Constant => new ConstantAssignment(m, name, c.toTerm)
          case l: DefinitionalLink => new DefLinkAssignment(m, name, l.toMorph)
       }
-      case (m @ OMEMPTY(f,t)) % name => get(f % name) match {
+      case (m @ MEmpty(f,t)) % name => get(f % name) match {
          case c: Constant => new ConstantAssignment(m, name, OMHID)
-         case l: DefinitionalLink => new DefLinkAssignment(m, name, OMEMPTY(l.from, t))
+         case l: DefinitionalLink => new DefLinkAssignment(m, name, MEmpty(l.from, t))
+      }
+      case MUnion(l,r) % name => name match {
+         case IncludeStep(f) / tl =>
+            if (imports(f, Morph.domain(l)(this))) get(l % tl)
+            else if (imports(f, Morph.domain(r)(this))) get(r % tl)
+            else throw GetError("union of morphisms has no assignments except includes")
+         case _ => throw GetError("union of morphisms has no assignments except includes")
       }
    }
    //TODO definition expansion, partiality
@@ -118,7 +137,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
                case (l: Structure, c:Constant) => new ConstantAssignment(l.toMorph, name, OMID(l.to % (l.name / name)))
                case (l: View, c:Constant) => new ConstantAssignment(l.toMorph, name, OMHID)
                case (l: Structure, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, OMCOMP(d.toMorph, l.toMorph))
-               case (l: View, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, OMEMPTY(d.from, l.to))
+               case (l: View, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, MEmpty(d.from, l.to))
             }
          }
    }
@@ -140,7 +159,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
         imported ++ local
    }*/
    /** iterator over all includes into a theory
-    * a new iterator is needed once e this has been traversed 
+    * a new iterator is needed once this has been traversed 
     */
    def importsTo(to: TheoryObj) : Iterator[TheoryObj] = to match {
       case OMMOD(p) =>
@@ -167,11 +186,38 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
                   def hasNext = n.isDefined
                }*/
          }
+      case TEmpty(mt) => mt match {
+         case None => Iterator.empty
+         case Some(t) => Iterator.single(OMMOD(t)) ++ importsTo(OMMOD(t))
+      }
+      case TUnion(l,r) => importsTo(l) ++ importsTo(r) //TODO remove duplicates
    }
    def imports(from: TheoryObj, to: TheoryObj) : Boolean = {
       from == to || ((from,to) match {
          case (OMMOD(f), OMMOD(t)) => importsTo(to) contains from
+         case (TEmpty(_), _ ) => true
+         case (_, TEmpty(_)) => false
+         case (_, TUnion(l,r)) => imports(from, l) || imports(from, r)
+         case (TUnion(l,r), _) => imports(l, from) && imports(r, from)
       })
+   }
+   def materialize(exp: ModuleObj) : Module = {
+      val path = exp.toMPath
+      exp match {
+         case OMMOD(p) => getTheory(p)
+         case texp : TheoryObj =>
+            val meta = Theory.meta(texp)(this)
+            val t = new DeclaredTheory(path.parent, path.name, meta)
+            texp match {
+               case TEmpty(mt) => t 
+               case TUnion(l,r) =>
+                  t.add(new Include(texp, l))
+                  t.add(new Include(texp, r))
+                  t
+               case OMMOD(_) => throw ImplementationError("impossible case")
+            }
+         case mexp: Morph => throw ImplementationError("materializing morphisms not implemented yet")
+      }
    }
 	 /*  
 	   

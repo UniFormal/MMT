@@ -4,12 +4,23 @@ import utils._
 import presentation._
 import Conversions._
 
+import scala.xml.Node
+
 /** represents an MMT variable declaration */
-sealed abstract class VarDecl(val name : String) extends Content {
+sealed abstract class VarDecl extends Content {
+   val name : String
+   val tp : Option[Obj]
+   val df : Option[Obj]
+   val attrs : List[(GlobalName, Obj)]
    def ^(sub : Substitution) : VarDecl
-   def toOMATTR : Term
-   def toNodeID(pos : Position) : scala.xml.Node
-   def toNode : scala.xml.Node = toNodeID(Position.None)
+   def toNode : Node = toNodeID(Position.None)
+   def toNodeID(pos : Position) : Node
+   def toCML : Node
+   def role : Role
+   def components = List(StringLiteral(name), tp.getOrElse(Omitted), df.getOrElse(Omitted))
+   def presentation(lpar : LocalParams) =
+	   ByNotation(NotationKey(None, role), components, lpar)
+   override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
 }
 
 //TODO: add optional notation
@@ -17,17 +28,14 @@ sealed abstract class VarDecl(val name : String) extends Content {
  * @param n name
  * @param tp optional type
  * @param df optional definiens
- * @param attrs list of additional attributions, starting with the innermost
+ * @param attrs OpenMath-style attributions
  */
-case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs : (OMID, Term)*) extends VarDecl(n) {
+case class TermVarDecl(name : String, tp : Option[Term], df : Option[Term], ats: (GlobalName,Term)*) extends VarDecl {
+   val attrs = ats.toList
    def ^(sub : Substitution) = TermVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
-   def role = Role_Variable
-   def components = List(StringLiteral(n), tp.getOrElse(Omitted), df.getOrElse(Omitted), varToOMATTR)
-   def presentation(lpar : LocalParams) =
-     ByNotation(NotationKey(None, role), components, lpar)
    /** converts to an OpenMath-style attributed variable using two special keys */
-   def varToOMATTR = attrs.toList.foldLeft[Term](OMV(n)) {(v,a) => OMATTR(v, a._1, a._2)}
-   def toOMATTR : Term = {
+   def toOpenMath : Term = {
+	   val varToOMATTR = attrs.toList.foldLeft[Term](OMV(name)) {(v,a) => OMATTR(v, OMID(a._1), a._2)}
       (tp, df) match {
          case (None, None) => varToOMATTR
          case (Some(t), None) => OMATTR(varToOMATTR, OMID(mmt.mmttype), t)
@@ -35,30 +43,23 @@ case class TermVarDecl(n : String, tp : Option[Term], df : Option[Term], attrs :
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
-   override def toString = varToOMATTR.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
-                           
-   def toNodeID(pos : Position) = toOMATTR.toNodeID(pos)
+   def toNodeID(pos : Position) = toOpenMath.toNodeID(pos) 
+   def toCML = toOpenMath.toCML
+   def role = Role_Variable
 }
 
-/** helper object */
-object TermVarDecl {
-   /** converts OpenMath-style attributed variable to MMT term variable */
-   def fromTerm(t : Term) : TermVarDecl = {
-      t match {
-         case OMATTR(OMATTR(v, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d) => doVar(v, Some(t), Some(d))
-         case OMATTR(OMATTR(v, OMID(mmt.mmtdef), d), OMID(mmt.mmttype), t) => doVar(v, Some(t), Some(d))
-         case OMATTR(v, OMID(mmt.mmttype), t) => doVar(v, Some(t), None)
-         case OMATTR(v, OMID(mmt.mmtdef), d) => doVar(v, None, Some(d))
-         case v => doVar(v, None, None)
-      }
+case class SeqVarDecl(name : String, tp : Option[Sequence], df : Option[Sequence], ats: (GlobalName,Term)*) extends VarDecl {
+   val attrs = ats.toList
+   def ^(sub : Substitution) = SeqVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
+   def toNodeID(pos : Position) = {
+      val tpN = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
+      val dfN = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
+      val attrsN = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
+      <seqvar name={name}>{tpN}{dfN}{attrsN}</seqvar>
    }
-   private def doVar(v : Term, tp : Option[Term], df : Option[Term], attrs : (OMID,Term)*) : TermVarDecl = {
-      v match {
-         case OMV(n) => TermVarDecl(n, tp, df, attrs : _*)
-         case OMATTR(tm, key, value) => doVar(tm, tp, df, (key, value) :: attrs.toList : _*)
-         case v => throw new ObjError(v + " is not an MMT variable")
-      }
-   }
+   
+   def toCML = null
+   def role = Role_SeqVariable
 }
 
 /** represents an MMT context as a list of variable declarations */
@@ -77,7 +78,10 @@ case class Context(variables : VarDecl*) {
 	   case -1 => throw LookupError(name)
 	   case i => variables.length - i - 1 
    }
-   def id : Substitution = this.map(v => Sub(v.name,OMV(v.name)))
+   def id : Substitution = this map {
+	   case TermVarDecl(n, _, _, _*) => TermSub(n,OMV(n))
+	   case SeqVarDecl(n, _, _) => SeqSub(n,SeqVar(n))
+   }
    /** substitutes in all variable declarations except for the previously declared variables
     *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
     */  
@@ -91,62 +95,129 @@ case class Context(variables : VarDecl*) {
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode = toNodeID(Position.None)
    def toNodeID(pos : Position) =
-     <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + (i+1))})}</om:OMBVAR>
+     <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + i)})}</om:OMBVAR>
+   def toCML = 
+     <m:bvar>{this.map(v => v.toCML)}</m:bvar>
 }
 
 /** a case in a substitution */
-case class Sub(name: String, target: Term) {
-	def toOMATTR = OMATTR(OMV(name), OMID(mmt.mmtdef), target)
-	def toNodeID(pos: Position ) = toOMATTR.toNodeID(pos)
-	override def toString = toOMATTR.toString
+sealed abstract class Sub {
+	val name: String
+	val target: Obj
+	def toNodeID(pos: Position): Node
+	override def toString = name + "/" + target.toString
 }
-/** helper object */
-object Sub {
-   /** converts OpenMath-style attributed variable to a Sub */
-   def fromTerm(t : Term) : Sub = t match {
-      case OMATTR(OMV(n), OMID(mmt.mmtdef), t) => Sub(n, t)
-      case _ => throw ObjError(t + " is not a case in a substitution")
-   }
+case class TermSub(name : String, target : Term) extends Sub {
+   def toNodeID(pos: Position): Node = <om:OMV name={name}>{target.toNodeID(pos + 1)}</om:OMV>
+}
+case class SeqSub(name : String, target : Sequence) extends Sub {
+   def toNodeID(pos: Position): Node = <seqvar name={name}>{target.toNodeID(pos + 1)}</seqvar>
 }
 
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) {
-   def ++(n:String, t:Term) : Substitution = this ++ Sub(n,t)
+   def ++(n:String, t:Term) : Substitution = this ++ TermSub(n,t)
    def ++(s: Sub) : Substitution = this ++ Substitution(s)
    def ++(that: Substitution) : Substitution = this ::: that
-   def ^(sub : Substitution) = this map {case Sub(v,t) => Sub(v, t ^ sub)}
-   def apply(v : String) : Term = subs.reverse.find(_.name == v) match {
-	   case None => throw SubstitutionUndefined(v)
-	   case Some(s) => s.target 
+   def ^(sub : Substitution) = this map {
+	   case TermSub(v,t) => TermSub(v, t ^ sub)
+	   case SeqSub(v,s) => SeqSub(v, s ^ sub)
    }
+   def apply(v : String) : Option[Obj] = subs.reverse.find(_.name == v).map(_.target)
    /** turns a substitution into a context by treating every substitute as a definiens
     *  this permits seeing substitution application as a let-binding
     */
    def asContext = {
-      val decls = subs map {case Sub(n, t) => TermVarDecl(n, None, Some(t))}
+      val decls = subs map {
+    	  case TermSub(n, t) => TermVarDecl(n, None, Some(t))
+    	  case SeqSub(n, t) => SeqVarDecl(n, None, Some(t))
+      }
       Context(decls : _*)
    }
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode = toNodeID(Position.None)
-   def toNodeID(pos : Position) = asContext.toNodeID(pos)
+   def toNodeID(pos : Position) =
+      <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos + x._2))}</om:OMBVAR>
+   def toCML = asContext.toCML
 }
 
 /** helper object */
 object Context {
 	/** parsers an OMBVAR into a context */
-	def parse(N : scala.xml.Node, base : Path, callback : Path => Unit = x => ()) : Context = N match {
-		case <om:OMBVAR>{context @ _*}</om:OMBVAR> => fromTerms(context.map(Obj.parseTerm(_, base, callback)).toList)
-        case _ => throw ParseError("not a well-formed context: " + N.toString)
+	def parse(N : scala.xml.Node, base : Path) : Context = N match {
+		case <om:OMBVAR>{decls @ _*}</om:OMBVAR> => decls.toList.map(VarDecl.parse(_, base))
+      case _ => throw ParseError("not a well-formed context: " + N.toString)
 	}
-   /** converts a list of OpenMath-style attributed variable to a context */
-   def fromTerms(l : List[Term]) = Context(l.map(TermVarDecl.fromTerm) : _*)
 }
+/** helper object */
+object VarDecl {
+   def parseAttrs[T <: Obj, D <: Obj](N: Seq[Node], base: Path, parseType: Node => T, parseDef : Node => D, parseOther : Node => Term) :
+                                                    (Option[T], Option[D], List[(GlobalName,Term)]) = {
+      var tp : Option[T] = None
+      var df : Option[D] = None
+      var attrs : List[(GlobalName, Term)] = Nil
+      var left = N.toList
+      while (left != Nil) {
+         left.head match {
+            case <type>{t}</type> => tp = Some(parseType(t))
+            case <definition>{t}</definition> => df = Some(parseDef(t))
+            case a @ <attribution>{t}</attribution> =>
+               val key = Path.parseS(xml.attr(a, "key"), base)
+               val value = parseOther(t)
+               attrs = (key, value) :: attrs
+            case k @ <OMS/> =>
+               val key = Obj.parseOMS(k, base) match {
+                  case g: GlobalName => g
+                  case _ => throw ParseError("key must be symbol in " + N.toString)
+               }
+               left = left.tail
+               if (left == Nil) throw ParseError("missing attribution value: " + N)
+               val vl = left.head
+               key match {
+                  case mmt.mmttype => tp = Some(parseType(vl))
+                  case mmt.mmtdef => df = Some(parseDef(vl))
+                  case _ =>
+                     val value = parseOther(vl)
+                     attrs = (key, value) :: attrs
+               }
+         }
+         left = left.tail
+      }
+      (tp, df, attrs.reverse)
+   }
+   def parse(N: Node, base: Path) : VarDecl = {
+      val pTerm = (x:Node) => Obj.parseTerm(x, base)
+      val pSeq = (x:Node) => Obj.parseSequence(x, base)
+      N match {      
+         case <OMATTR><OMATP>{ats @ _*}</OMATP>{v}</OMATTR> =>
+            val name = xml.attr(v, "name")
+            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
+            TermVarDecl(name, tp, df, attrs : _*)
+         case <OMV>{ats @ _*}</OMV> =>
+            val name = xml.attr(N, "name")
+            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
+            TermVarDecl(name, tp, df, attrs : _*)
+         case <seqvar>{ats @ _*}</seqvar> =>
+            val name = xml.attr(N, "name")
+            val (tp, df, attrs) = parseAttrs(ats, base, pSeq, pSeq, pTerm)
+            SeqVarDecl(name, tp, df)
+         case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
+      }
+   }
+}
+/** helper object */
 object Substitution {
 	/** parsers an OMBVAR into a substitution */
-	def parse(N : scala.xml.Node, base : Path, callback : Path => Unit = x => ()) : Substitution = N match {
-		case <om:OMBVAR>{sb @ _*}</om:OMBVAR> => fromTerms(sb.map(Obj.parseTerm(_, base, callback)).toList)
-        case _ => throw ParseError("not a well-formed substitution: " + N.toString)
+	def parse(N : scala.xml.Node, base : Path) : Substitution = N match {
+		case <om:OMBVAR>{sbs @ _*}</om:OMBVAR> => sbs.toList.map(Sub.parse(_, base))
+      case _ => throw ParseError("not a well-formed substitution: " + N.toString)
 	}
-   /** converts a list of OpenMath-style attributed variable to a substitution */
-   def fromTerms(l : List[Term]) = Substitution(l.map(Sub.fromTerm) : _*)
+}
+/** helper object */
+object Sub {
+   def parse(N: Node, base: Path) = N match {
+      case <OMV>{e}</OMV> => TermSub(xml.attr(N, "name"), Obj.parseTerm(e, base))
+      case <seqvar>{e}</seqvar> => SeqSub(xml.attr(N, "name"), Obj.parseSequence(e, base))
+      case _ => throw ParseError("not a well-formed case in a substitution: " + N.toString)
+   }
 }

@@ -65,7 +65,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	         val r = MRef(docParent.get, Path.parseM(t,modParent), false)
 	         add(r)
          case scala.xml.Comment(_) =>
-         case <metadata>{_*}</metadata> => 
+         case <metadata>{_*}</metadata> => //TODO
          case _ =>
            val name = Path.parseName(xml.attr(m,"name")).toLocalPath
            val base = Path.parse(xml.attr(m,"base"), modParent)
@@ -93,12 +93,12 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                        readSymbols(tpath, tpath, d)
         	              report.unindent
         	     }
-	         case (base : DPath, <view>{seq @ _*}</view>) =>
+	         case (base : DPath, <view>{_*}</view>) =>
 	            log("view " + name + " found")
 	            val vpath = base ? name
-	            val from = OMMOD(Path.parseM(xml.attr(m, "from"), base))
-	            val to = OMMOD(Path.parseM(xml.attr(m, "to"), base))
-	            val (v, body) = seq match {
+	            val (m2, from) = Reader.getTheoryFromAttributeOrChild(m, "from", base)
+	            val (m3, to) = Reader.getTheoryFromAttributeOrChild(m2, "to", base)
+	            val (v, body) = m3.child match {
                   case <definition>{d}</definition> =>
 		            val df = Obj.parseMorphism(d, vpath)
 		            (new DefinedView(modParent, name, from, to, df), None)
@@ -112,6 +112,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	               readAssignments(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
 	               report.unindent
 	            }
+	         case (_, <rel>{_*}</rel>) => () //ignoring logical relations, produced by Twelf, but not implemented yet
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			     val npath = base ? name
@@ -144,13 +145,13 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
          add(c,md)
       }
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
-    	  log("pattern" + name.flat + " found")
+    	  log("pattern " + name.flat + " found")
     	  val pr = parOpt match {
     	 	  case Some(par) => Context.parse(par, base)
     	 	  case None      => Context()
     	  }
     	  val cn = Context.parse(con, base)
-    	  val p = new Pattern(thy, name, Some(pr), cn)
+    	  val p = new Pattern(thy, name, pr, cn)
     	  add(p, md)
       }
       for (s <- symbols; name = Path.parseName(xml.attr(s,"name")).toLocalName) {
@@ -183,10 +184,10 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
             val forpath = Path.parseS(xml.attr(s, "for"), base)
             log("found alias " + name + " for " + forpath)
             add(new Alias(thy, name, forpath), md)
-         case <include/> =>
-            val from = Path.parseM(xml.attr(s, "from"), base)
+         case <include>{_*}</include> =>
+            val (_, from) = Reader.getTheoryFromAttributeOrChild(s, "from", base)
             log("include from " + from + " found")
-            add(PlainInclude(from, tpath), md)
+            add(Include(OMMOD(tpath), from), md)
          case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols
             readNotations(tpath, base, s)
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
@@ -201,40 +202,44 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
             val inst = new Instance(thy,name,Path.parseS(p,base),Substitution.parse(sb,base))
             add(inst, md)
          case scala.xml.Comment(_) =>
-         case _ => throw new ParseError("symbol level element expected: " + s)
+         case _ => throw new ParseError("symbol level element expected: " + s2)
          }
       }
    }
    def readAssignments(link : Morph, base : Path, assignments : NodeSeq) {
-      for (A <- assignments) {
-         val name = Path.parseLocal(xml.attr(A, "name")).toLocalName
-         A match {
+      for (amd <- assignments) {
+         val (a, md) = MetaData.parseMetaDataChild(amd, base) 
+         val name = Path.parseLocal(xml.attr(a, "name")).toLocalName
+         a match {
             case <conass>{t}</conass> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseTerm(t, base)
                val m = new ConstantAssignment(link, name, tg)
-               add(m)
+               add(m, md)
             case <strass>{t}</strass> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseMorphism(t, base)
                val m = new DefLinkAssignment(link, name, tg)
-               add(m)
+               add(m, md)
             case <include>{mor}</include> =>
                val of = Obj.parseMorphism(mor, base)
                log("include of " + of + " found")
-               val f = xml.attr(A, "from")
+               val f = xml.attr(a, "from")
                val from = if (f == "")
-                  Morph.domain(of)(controller.library) // throws Invalid if domain cannot be inferred
+                  // this throws Invalid if the domain cannot be inferred
+                  // the domain should only be omitted if its domain can be inferred locally, i.e., from the current document
+                  // even then, it might be a bug to allow omitting it 
+                  Morph.domain(of)(controller.library)
                else
                   OMMOD(Path.parseM(f, base))
-               add(new DefLinkAssignment(link, LocalName(IncludeStep(from)), of))
+               add(new DefLinkAssignment(link, LocalName(IncludeStep(from)), of), md)
             case <open/> =>
                log("open for " + name + " found")
-               val as = xml.attr(A, "as") match {case "" => None case a => Some(a)}
+               val as = xml.attr(a, "as") match {case "" => None case a => Some(a)}
                val m = new Open(link, name, as)
-               add(m)
+               add(m, md)
             case scala.xml.Comment(_) =>
-            case _ => throw ParseError("assignment expected: " + A)
+            case _ => throw ParseError("assignment expected: " + a)
          }
       }
    }
@@ -249,8 +254,8 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
                val roles : List[String] = xml.attr(N,"role").split("\\s").toList
                roles.map {case r =>
                   val role = info.kwarc.mmt.api.Role.parse(r)
-	              val key = NotationKey(forpath, role)
-	              log("notation read for " + key)
+	               val key = NotationKey(forpath, role)
+	               log("notation read for " + key)
                   val not = Notation.parse(N, nset, key)
                   add(not)
                }
@@ -280,5 +285,36 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
 	         case  _ => throw ParseError("ABox assertion expected: " + ass)
          }
       }
+   }
+}
+
+object Reader {
+   /** parses a theory using the attribute or child "component" of "n", returns the remaining node and the TheoryObj */
+   def getTheoryFromAttributeOrChild(n: Node, component: String, base: Path) : (Node, TheoryObj) = {
+      if (n.attribute(component).isDefined) {
+         (n, OMMOD(Path.parseM(xml.attr(n, component), base)))
+      } else {
+          val (newnode, tOpt) = splitOffChild(n, component)
+          tOpt match {
+             case Some(t) =>
+                if (t.child.length == 1) (newnode, Obj.parseTheory(t.child(0), base))
+                else throw ParseError("ill-formed theory: " + t)
+             case _ => throw ParseError("no component " + component + " found: " + n)
+         }
+      }
+   }
+   /** removes the child with label "label" from "node" (if any), returns the remaining node and that child */
+   def splitOffChild(node: Node, label : String) : (Node, Option[Node]) = node match { 
+       case scala.xml.Elem(p,l,a,s,cs @ _*) =>
+           var n : Option[Node] = None
+           val cs2 = cs flatMap {e =>
+              if (e.label == label) {
+                 n = Some(e)
+                 Nil
+              } else
+                 e
+           }
+           (scala.xml.Elem(p,l,a,s,cs2 : _*), n)
+       case n => (n, None)
    }
 }

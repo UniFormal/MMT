@@ -26,8 +26,8 @@ abstract class Path {
     */
    def toPath(long : Boolean) : String = this match {
       case DPath(uri) => uri.toString + (if (long) "??" else "")
-      case doc ? name => doc.toPath + "?" + name.flat + (if (long) "?" else "")
-      case mod % name => mod.toMPath.toPath + "?" + name.flat
+      case doc ? name => doc.toPath + "?" + name.toPath + (if (long) "?" else "")
+      case mod % name => mod.toMPath.toPath + "?" + name.toPath
    }
    /** as toPath(false) */
    def toPath : String = toPath(false)
@@ -90,7 +90,8 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
  */
 case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
    def doc = utils.mmt.mmtbase
-   def ^! = if (name.length == 1) parent.toMPath else parent % name.init
+   def mod = parent.toMPath
+   def ^! = if (name.length == 1) mod else parent % name.init
    def last = name.last.toPath
    def apply(args: List[Term]) = OMA(OMID(this), args)
    def apply(args: Term*) = OMA(OMID(this), args.toList)
@@ -102,7 +103,6 @@ case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
  */
 case class LocalPath(fragments : List[String]) {
    def this(n : String) = {this(List(n))}
-   def flat : String = fragments.mkString("", "/","")
    def /(n: String) = LocalPath(fragments ::: List(n)) 
    def /(that: LocalPath) = LocalPath(fragments ::: that.fragments)
    def isNative = fragments.length == 1
@@ -113,6 +113,8 @@ case class LocalPath(fragments : List[String]) {
    def length = fragments.length
    def prefixes : List[LocalPath] = if (length <= 1) List(this) else this :: tail.prefixes
    implicit def toList : List[String] = fragments
+   def flat : String = fragments.mkString("", "/","")
+   def toPath : String = fragments.map(xml.encodeURI).mkString("", "/", "")
    override def toString = flat
 }
 
@@ -129,13 +131,14 @@ case class LocalName(steps: List[LNStep]) {
       case s \ IncludeStep(_) => s / IncludeStep(from)
       case _ => this / IncludeStep(from) 
    }
-   def flat : String = steps.map(_.toPath).mkString("", "/", "")
-   override def toString = flat
    def init = LocalName(steps.init)
    def tail = LocalName(steps.tail)
    def head = steps.head
    def last = steps.last
    def length = steps.length
+   def toPath : String = steps.map(s => xml.encodeURI(s.toString)).mkString("", "/", "")
+   def flat : String = steps.map(_.toPath).mkString("", "/", "")
+   override def toString = flat
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
@@ -157,6 +160,7 @@ case class IncludeStep(from: TheoryObj) extends LNStep {
    def toPath = "[include " + from.toString + "]"
 }
 
+/*
 object LNEmpty {
    def apply() = LocalName(Nil)
    def unapply(n: LocalName) : Option[Unit] = n match {
@@ -164,6 +168,9 @@ object LNEmpty {
       case _ => None
    }
 }
+*/
+
+
 
 /**
  * A LocalRef represents a qualified local possibly relative reference to an MMT module or symbol.
@@ -255,6 +262,7 @@ object Path {
          l = l.drop(1)
       if (l.exists(_ == ""))
          throw ParseError("cannot parse " + n + " (local path may not have empty component or end in slash)")
+      l = l map xml.decodeURI
       LocalRef(l, ! relative)
    }
    /** as parseLocal but fails on relative results */

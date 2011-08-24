@@ -10,7 +10,10 @@ abstract class Report {
    def apply(group : => String, msg : => String) : Unit =
 	   if (groups.contains(group) || groups.contains("*")) log(group, msg)
    /** outputs an error (catgory "error") */
-   def apply(e : Error) : Unit = apply("error", "\n" + e.msg)
+   def apply(e : Error) {
+	   apply("error", e.msg)
+	   apply("error", "\n" + e.stackTrace)
+	}
    /** implementation specific logging hook, returns the formatted message that was logged */
    def log(group : => String, msg : => String) {
 	   val m = handle(group, msg)

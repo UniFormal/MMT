@@ -8,6 +8,7 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
    def setCausedBy(e: Error): Error = {causedBy = Some(e); this}
    def getCausedBy : Option[Error] = causedBy
    def msg : String = shortMsg + "\n" + causedBy.map(_.msg).getOrElse("")
+   def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
 }
 
 /** errors that occur during parsing */

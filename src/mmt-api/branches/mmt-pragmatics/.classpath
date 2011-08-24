@@ -4,5 +4,6 @@
 	<classpathentry kind="con" path="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/tntbase-plugin-api.jar"/>
+	<classpathentry kind="lib" path="/home/mihnea/kwarc/mmt/src/mmt-api/branches/mmt-pragmatics/lib/lfcatalog.jar"/>
 	<classpathentry kind="output" path="build/main"/>
 </classpath>

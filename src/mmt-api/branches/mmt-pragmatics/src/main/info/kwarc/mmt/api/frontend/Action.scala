@@ -1,7 +1,10 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.documents._
+import presentation._
+import documents._
+import utils._
+import utils.FileConversion._
+
 import scala.util.parsing.combinator._
 
 /** helper object for Actions
@@ -10,17 +13,28 @@ import scala.util.parsing.combinator._
  */
 object Action extends RegexParsers {
    private var base : Path = null
+   private var home : File = null
+   
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | tntbase | execfile
+   private def controller = logon | logoff | local | catalog | archive | tntbase | compiler | execfile
    private def shell = setbase | read | printall | printallxml | clear | exit
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
+   private def archive = archopen | archdim | archmar
+   private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
+   private def archdim = "archive" ~> str ~ ("compile" | "content" | "flat" | "mws" | "flat-mws" | "relational") ~ (str ?) ^^ {
+      case id ~ dim ~ s =>
+         val segs = MyList.fromString(s.getOrElse(""), "/")
+         ArchiveBuild(id, dim, segs)
+   }
+   private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
+   private def compiler = "compiler" ~> str ~ (str *) ^^ {case c ~ args => AddCompiler(c, args)}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
@@ -45,15 +59,16 @@ object Action extends RegexParsers {
    
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
-   private def file = str ^^ {s => new java.io.File(s)}
+   private def file = str ^^ {s => home.resolve(s)}
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
    /** parses an action from a string, relative to a base path */
-   def parseAct(s:String, b : Path) : Action = {
+   def parseAct(s:String, b : Path, h: File) : Action = {
       base = b
+      home = h
       val p = parseAll(commented,s)
       p match {
          case Success(tree, _) => tree
-         case e: NoSuccess => throw ParseError(s + "\n  error: " + e.msg)          
+         case e: NoSuccess => throw ParseError(s + "\n  error: " + e.msg)
       }
    }
 }
@@ -68,6 +83,8 @@ case class LoggingOff(s : String) extends Action {override def toString = "log- 
 /** set the current base path */
 case class SetBase(base : Path) extends Action {override def toString = "base " + base}
 /** read a knowledge item */
+case class ExecFile(file : java.io.File) extends Action {override def toString = "file " + file}
+/** print all loaded knowledge items to STDOUT in text syntax */
 case class Read(f : java.io.File) extends Action {override def toString = "read " + f}
 /** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
@@ -75,9 +92,18 @@ case object Local extends Action {override def toString = "local"}
 case class AddCatalog(file : java.io.File) extends Action {override def toString = "catalog " + file}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
+/** registers a compiler
+ * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
+ * @param args a list of arguments that will be passed to the compiler's init method
+ */
+case class AddCompiler(cls: String, args: List[String]) extends Action {override def toString = "compiler " + cls + args.mkString(" ", " ", "")}
+/** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
+case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
+/** builds a dimension in a previously opened archive */
+case class ArchiveBuild(id: String, dim: String, in : List[String]) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
+/** builds a dimension in a previously opened archive */
+case class ArchiveMar(id: String, file: java.io.File) extends Action {override def toString = "archive " + id + " mar " + file}
 /** load a file containing commands and execute them, fails on first error if any */
-case class ExecFile(file : java.io.File) extends Action {override def toString = "file " + file}
-/** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends Action
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action

@@ -4,25 +4,26 @@ import info.kwarc.mmt.api._
 import libraries._
 import Conversions._
 
-/** 
- * A Continuation wraps a function that traverses a Term.
+/**
+ * A Traverser is a function on Term defined by context-sensitive induction.
+ * 
+ * The auxiliary methods in the companion object can be used to handle all cases that traverse the object without any change.
+ * During the traversal, a value of type State is maintained that may be used to carry along state.  
  */
-abstract class Continuation[State] {
-   /** the traversal function
-    *  it does not call itself recursively,
-    *  instead another Continuation is taken as an argument and used for the recursive calls
-    */
-	def apply(cont : Continuation[State], t : Term)(implicit con : Context, state: State) : Term
+abstract class Traverser[State] {
+   /** the main method to call the traverser, context defaults to empty */
+   def apply(t: Term, init : State, con : Context = Context()) : Term = doTerm(t)(con, init)
+   def doTerm(t: Term)(implicit con : Context , init : State) : Term
+   def doSeq(s: Sequence)(implicit con : Context , init : State) : Sequence = null //TODO
 }
 
-/**
- * OneStep is an auxiliary Continuation that traverses one level into a Term doing nothing else.
- * Thus, OneStep.apply(OneStep, t)(con, state) = t
- * A Continuation can focus on the interesting cases of an induction and delegate all the boring cases to OneStep.  
- */
-class OneStep[State] extends Continuation[State] {
-	def apply(cont : Continuation[State], t : Term)(implicit con : Context, state : State) : Term = {
-      def rec(t: Term)(implicit con : Context, state : State) = cont(this, t)(con, state)
+object Traverser {
+   /**
+    * This method traverses one level into a Term without changing anything and recursively calling a given Traverser.  
+    */
+   def doTerm[State](trav : Traverser[State], t : Term)(implicit con : Context, state : State) : Term = {
+      def rec(t: Term)(implicit con : Context, state : State) = trav.doTerm(t)(con, state)
+      def recSeq(s : Sequence)(implicit con : Context, state : State) = trav.doSeq(s)(con, state)
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
          c.zipWithIndex map {
             case (TermVarDecl(n, t, d, attv @ _*), i) =>
@@ -30,9 +31,14 @@ class OneStep[State] extends Continuation[State] {
                val newt = t.map(rec( _)(conci, state))
                val newd = d.map(rec( _)(conci, state))
                TermVarDecl(n, newt, newd, attv :_*)  //TODO traversal into attributions
+            case (SeqVarDecl(n, t, d), i) =>
+               val conci = con ++ c.take(i+1)
+               val newt = t.map(recSeq( _)(conci, state))
+               val newd = d.map(recSeq( _)(conci, state))
+               SeqVarDecl(n, newt, newd)
          }
 	   t match {
-		   case OMA(fun,args) => OMA(rec(fun), args.map(rec))
+		   case OMA(fun,args) => OMA(rec(fun), args.map(doSeq(trav, _)))
 		   case OME(err,args) => OMA(rec(err), args.map(rec))
 		   case OMM(arg,via) => OMM(rec(arg), via)
 		   case OMSub(arg, via) => OMSub(rec(arg)(con ++ via, state), recCon(via))
@@ -51,42 +57,38 @@ class OneStep[State] extends Continuation[State] {
 		         case i => i  // One might want to recurse into informal objects here as well
 		      }
 		      OMSemiFormal(newtokens)
+		   
        }
    }
-}
-
-/**
- * A Traverser is a function on Term defined by context-sensitive induction.
- * 
- * Some auxiliary classes are used to hide the actual traversal and permit authors to implement only the important cases.
- * During the traversion, a value of type State is maintained that may be used to carry along state.  
- */
-abstract class Traverser[State] extends Continuation[State] {
-   /** the main method to call the traverser, context defaults to empty */
-	def apply(t: Term, init : State, con : Context = Context()) : Term = apply(new OneStep[State], t)(con, init)
+   def doSeq[State](trav : Traverser[State], s : SeqItem)(implicit con : Context, state: State) : SeqItem = {
+	   null
+   }
 }
 
 /** A Traverser that moves all morphisms to the inside of a term. */
 object PushMorphs extends Traverser[Morph] {
    // morph is the composition of all morphisms encountered so far 
-	def apply(cont : Continuation[Morph], t: Term)(implicit con : Context, morph : Morph) : Term = t match {
+	def doTerm(t: Term)(implicit con : Context, morph : Morph) : Term = t match {
 	   // change state: via is added to the morphisms
-		case OMM(arg, via) => cont(this, arg)(con, morph * via)
+		case OMM(arg, via) => doTerm(arg)(con, morph * via)
 		// apply the morphism to symbols
 		case OMID(path) => OMM(t, morph)
 		// in all other cases, traverse
-		case t => cont(this,t)
+		case t => Traverser.doTerm(this,t)(con, morph)
 	}
 	def apply(t: Term, thy : info.kwarc.mmt.api.MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
 }
 
-/** A Traverser that applies a fixed subsitution to a Term */
+/** A Traverser that applies a fixed substitution to a Term */
 object Substitute extends Traverser[Substitution] {
-	def apply(cont : Continuation[Substitution], t: Term)(implicit con : Context, subs: Substitution) : Term = t match {
+	def doTerm(t: Term)(implicit con : Context, subs: Substitution) : Term = t match {
 		// substitute the free but not the bound variables
-	   case OMV(n) => if (con.isDeclared(n)) OMV(n) else subs(n)
+	   case OMV(n) => if (con.isDeclared(n)) OMV(n) else subs(n) match {
+	  	   case Some(t: Term) => t
+	  	   case None => OMV(n)
+	  	   case Some(_) => throw SubstitutionUndefined("substitution is applicable but does not provide a term")
+	   }
 	   // in all other cases, traverse
-		case t => cont(this,t)
+		case t => Traverser.doTerm(this,t)(con, subs)
 	}
 }
-

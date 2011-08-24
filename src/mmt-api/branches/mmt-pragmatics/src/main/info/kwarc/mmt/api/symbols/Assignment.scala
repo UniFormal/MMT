@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.presentation._
   * @param target the term assigned to the symbol 
   */
 class ConstantAssignment(val home : Morph, val name : LocalName, val target : Term) extends Assignment {
-   def toNode = <conass name={name.flat}>{target.toOBJNode}</conass>
+   def toNode = <conass name={name.flat}>{getMetaDataNode}{target.toOBJNode}</conass>
    override def toString = name + " |-> " + target.toString 
    def components = List(StringLiteral(name.flat), target)
    def role = info.kwarc.mmt.api.Role_ConAss
@@ -26,9 +26,9 @@ class ConstantAssignment(val home : Morph, val name : LocalName, val target : Te
    */
 class DefLinkAssignment(val home : Morph, val name : LocalName, val target : Morph) extends Assignment {
    def toNode = name match {
-      case !(IncludeStep(OMMOD(p))) => <dlass from={p.toPath}>{target.toOBJNode}</dlass>
-      case !(IncludeStep(t)) =>        <dlass><from>{t.toOBJNode}</from>{target.toOBJNode}</dlass>
-      case _ =>                     <dlass name={name.flat}>{target.toOBJNode}</dlass>
+      case !(IncludeStep(OMMOD(p))) => <include from={p.toPath}>{getMetaDataNode}{target.toOBJNode}</include>
+      case !(IncludeStep(t)) =>        <include>{getMetaDataNode}<from>{t.toOBJNode}</from>{target.toOBJNode}</include>
+      case _ =>                     <strass name={name.flat}>{getMetaDataNode}{target.toOBJNode}</strass>
    }
    override def toString = name + " |-> " + target.toString 
    def components = List(StringLiteral(name.flat), target)
@@ -36,7 +36,7 @@ class DefLinkAssignment(val home : Morph, val name : LocalName, val target : Mor
 }
 
 class Open(val home : Morph, val name : LocalName, val as : Option[String]) extends Assignment {
-   def toNode = <open name={name.flat} as={as.getOrElse(null)}/>
+   def toNode = <open name={name.flat} as={as.getOrElse(null)}>{getMetaDataNode}</open>
    override def toString = "open " + name.flat + as.map(" " + _).getOrElse("")
    def components = List(StringLiteral(name.flat), as.map(StringLiteral(_)).getOrElse(Omitted))
    def role = info.kwarc.mmt.api.Role_Open
@@ -44,7 +44,7 @@ class Open(val home : Morph, val name : LocalName, val as : Option[String]) exte
 
 /*
 class Hides(parent : MPath, name : LocalPath) extends Assignment(parent, name) {
-   def toNode = <hides name={name.flat}/>
+   def toNode = <hides name={name.flat}>{getMetaDataNode}</hides>
    def components = List(Text(name.flat))
    def role = "hiding"
 }

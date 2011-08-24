@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
@@ -14,7 +15,8 @@ case class NotFound(path : Path) extends java.lang.Throwable
 
 /** An interface to a controller containing read-only methods. */
 abstract class ROController {
-   val library : Lookup  
+   val localLookup : Lookup
+   val globalLookup : Lookup
    def get(path : Path) : StructuralElement
    def get(nset : MPath, key : NotationKey) : Notation
    def getNotation(path : Path) : Notation =
@@ -32,7 +34,7 @@ abstract class ROController {
 /** A Controller is the central class maintaining all MMT knowledge items.
   * It stores all stateful entities and executes Action commands.
   */  
-class Controller(checker : Checker, report : Report) extends ROController {
+class Controller(val checker : Checker, val report : Report) extends ROController {
    protected def log(s : => String) = report("controller", s)
    /** maintains all relational elements */
    val depstore = new RelStore(report)
@@ -48,14 +50,32 @@ class Controller(checker : Checker, report : Report) extends ROController {
    val reader = new Reader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(reader, report)
+   
+   /** a lookup that uses only the current memory data structures */
+   val localLookup = library
+   /** a lookup that load missing modules dynamically */
+   val globalLookup = new Lookup(report) {
+      def get(path : Path) = iterate {library.get(path)}
+      def imports(from: TheoryObj, to: TheoryObj) = library.imports(from, to)
+      def importsTo(to: TheoryObj) = library.importsTo(to)
+      def preImage(p : GlobalName) = library.preImage(p)
+   }
+   
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       report.indent
-      backend.get(path, false)
+      backend.get(path)
       report.unindent
       log("retrieved " + path)
    }
-   private def iterate[A](a : => A) : A = iterate(a, Nil)
+   /**
+    * wrapping an expression in this method, evaluates the expression dynamically loading missing content
+    * dependency cycles are detected
+    * @param a this is evaluated until evaluation does not throw NotFound
+    * @return the evaluation
+    * be aware that the argument may be evaluated repeatedly
+    */
+   def iterate[A](a : => A) : A = iterate(a, Nil)
    /** repeatedly tries to evaluate a while missing resources (NotFound(p)) are retrieved
     *  stops if cyclic retrieval of resources 
     */
@@ -110,12 +130,20 @@ class Controller(checker : Checker, report : Report) extends ROController {
       notstore.clear
       depstore.clear
    }
+   /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
+   def cleanup {
+      backend.cleanup
+   }
+   /** reads a file and returns the Path of the document found in it */
    def read(f: java.io.File) : DPath = {
       val N = utils.xml.readFile(f)
       reader.readDocument(DPath(URI.fromJava(f.toURI)), N)
    }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
+   protected var home = File(".")
+   def getHome = home
+   def setHome(h: File) {home = h}
    protected def handleExc[A](a: => A) {
        try {a}
        catch {
@@ -124,7 +152,13 @@ class Controller(checker : Checker, report : Report) extends ROController {
        }
    }
    protected def handleLine(l : String) {
-        val act = Action.parseAct(l, base)
+        val act = try {
+           Action.parseAct(l, base, home)
+        } catch {
+           case ParseError(msg) =>
+              log(msg)
+              return
+        }
         handle(act)
    }
    /** executes an Action */
@@ -133,12 +167,31 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
+	      case AddCompiler(c, args) =>
+            val Comp = java.lang.Class.forName(c).asInstanceOf[java.lang.Class[Compiler]]
+            val comp = Comp.newInstance
+            comp.init(args)
+            backend.addCompiler(comp)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
 	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
+         case AddArchive(f) => backend.openArchive(f)
+         case ArchiveBuild(id, dim, in) =>
+            val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+            dim match {
+               case "compile" => arch.compile(in)
+               case "content" => arch.produceNarrCont(in)
+               case "flat" => arch.produceFlat(in, this)
+               case "relational" => arch.produceRelational(in, this)
+               case "mws" => arch.produceMWS(in, "content")
+               case "mws-flat" => arch.produceMWS(in, "flat")
+            }
+         case ArchiveMar(id, file) =>
+            val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
+            arch.toMar(file)
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
@@ -161,7 +214,9 @@ class Controller(checker : Checker, report : Report) extends ROController {
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)
-	      case Exit => exit
+	      case Exit =>
+	         cleanup 
+	         exit
       })
    }
 }

@@ -1,9 +1,10 @@
 package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
+import symbols._
+import libraries._
+import objects._
+import utils._
+import presentation.{StringLiteral,Omitted}
 
 abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name) {
 }
@@ -22,14 +23,39 @@ class DeclaredTheory(doc : DPath, name : LocalPath, val meta : Option[MPath])
    def components = StringLiteral(name.flat) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
    override def toString = path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
-      <theory name={name.flat} cdbase={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
-         {innerNodes}
+   <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
+        {getMetaDataNode}
+        {innerNodes}
       </theory>
+   def toNodeElab = 
+    <theory name={name.flat} base={doc.toPath}>
+        {getMetaDataNode}
+        {innerNodesElab}
+    </theory>
 }
 
 class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends Theory(doc, name) with DefinedModule[TheoryObj] {
    def role = Role_DefinedTheory
    def components = StringLiteral(name.flat) :: innerComponents
    override def toString = path + innerString
-   def toNode = <theory name={name.flat} cdbase={doc.toPath}>{innerNodes}</theory>
+   def toNode = 
+    <theory name={name.flat} base={doc.toPath}>
+        {getMetaDataNode}
+        {innerNodes}
+    </theory>
+}
+
+object Theory {
+   def meta(thy: TheoryObj)(implicit lib: Lookup) : Option[MPath] = thy match {
+      case OMMOD(p) => lib.getTheory(p) match {
+         case t: DeclaredTheory => t.meta
+         case t: DefinedTheory => meta(t.df)
+      }
+      case TEmpty(mt) => mt
+      case TUnion(l,r) =>
+         val lm = meta(l)
+         val rm = meta(r)
+         if (lm == rm) lm
+         else None
+   }
 }

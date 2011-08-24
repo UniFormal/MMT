@@ -7,7 +7,7 @@ case class Id(s: String) extends Token
 case class LineComment(s : String) extends Token
 
 abstract class Language {
-    val tokens : List[String]
+   val tokens : List[String]
 	val lineComment : List[String]
 	val idEnd : String
 }

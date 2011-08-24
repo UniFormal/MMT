@@ -24,6 +24,8 @@ trait HasMetaData {
       case None => throw new GetError("no metadata defined")
       case Some(m) => m
    }
+   /** optionally get the metadata object */
+   def getMetaDataNode : NodeSeq = metadataOpt.map(_.toNode).getOrElse(Nil)
 }
 
 /**
@@ -48,7 +50,7 @@ object MetaData {
    /** returns the argument Node without its metadata child (if any), at most one such child allowed, may occur anywhere */
    def parseMetaDataChild(node : Node, base: Path) : (Node, Option[MetaData]) = {
       val (newnode, mdxml) = node match {
-        case scala.xml.Elem(p,l,a,s,cs) =>
+        case scala.xml.Elem(p,l,a,s,cs @ _*) =>
            var md : Option[Node] = None
            val cs2 = cs flatMap {
               case e @ <metadata>{_*}</metadata> => md match {
@@ -67,9 +69,9 @@ object MetaData {
       case <metadata>{mdxml @ _*}</metadata> =>
          val lang = Path.parseM(xml.attr(node, "language"), base)
          val mdata = new MetaData(lang)
-         mdxml foreach {n => mdata.add(MetaDatum.parse(n, base))}
+         mdxml foreach {n => mdata.add(MetaDatum.parse(n, lang))}
          mdata
-      case _ => throw ParseError("meta or link expected: " + node)
+      case _ => throw ParseError("metadata expected: " + node) // TODO parse meta and link
    }
 }
 
@@ -93,12 +95,10 @@ object MetaDatum {
       case <link/> =>
          val key = Path.parseS(xml.attr(node, "rel"), base)
          Link(key, URI(xml.attr(node, "resource")))
-      case <meta>{literal}</meta> =>
+      case Elem(_,"meta",_,_,literal @ _*) => //strangely, XML matching does not work
          val key = Path.parseS(xml.attr(node, "property"), base)
-         literal match {
-            case Text(s) => new MetaDatum(key, OMSTR(s)) // TODO: for now parsing everything into a string
-            case _ => throw ParseError("object in metadatum must be text node:" + node)
-         }
+         new MetaDatum(key, OMSTR(literal.text)) // TODO: for now parsing everything into a string
+         //throw ParseError("object in metadatum must be text node:" + node)
       case _ => throw ParseError("meta or link expected: " + node)
    }
 }

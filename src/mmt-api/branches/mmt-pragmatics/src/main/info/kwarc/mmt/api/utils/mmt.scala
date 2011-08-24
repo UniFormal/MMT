@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api._
 
 object mmt {
-   val baseURI = URI("http", "cds.omdoc.org")
+   val baseURI = URI("http", "latin.omdoc.org")
    val mmtbase = DPath(baseURI / "omdoc" / "mmt.omdoc")
    val mmtcd = mmtbase ? "mmt"
    def mmtsymbol(name : String) = mmtcd ? name
@@ -12,7 +12,10 @@ object mmt {
    val composition = mmtsymbol("composition")
    val morphismapplication = mmtsymbol("morphismapplication")
    val substitutionapplication = mmtsymbol("substitutionapplication")
-   val emptymorphism = mmtsymbol("emptymorphism")
+   val tempty = mmtsymbol("theory-empty")
+   val mempty = mmtsymbol("morphism-empty")
+   val tunion = mmtsymbol("theory-union")
+   val munion = mmtsymbol("morphism-union")
 /* val poii = mmtsymbol("theory-union")
    val poiim = mmtsymbol("morphism-union")
    val poi = mmtsymbol("theory-with")

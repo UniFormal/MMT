@@ -157,7 +157,6 @@ case class Obj2Component(o : Obj) extends Component {
     case t : Term => "Term"
     case o : OMCOMP => "OMCOMP"
     case o : OMDL => "OMDL"
-    case o : OMEMPTY => "OMEMPTY"
     case o : OMIDENT => "OMIDENT"
     case o : OMMOD => "OMMOD"
         

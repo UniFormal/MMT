@@ -6,7 +6,9 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
+
 import info.kwarc.mmt.api.utils.MyList.fromList
+import info.kwarc.mmt.api.objects.Conversions._
 
 /** CheckResult is the result type of checking a content element */
 sealed abstract class CheckResult
@@ -131,6 +133,16 @@ abstract class ModuleChecker extends Checker {
      case OMMOD(p) =>
        checkTheoRef(p)
        List(atomic(p))
+     case TEmpty(mt) => mt match {
+        case None => Nil
+        case Some(mt) =>
+           checkTheo(OMMOD(mt), _ => null, _ => null)
+           List(atomic(mt))
+     }
+     case TUnion(l,r) =>
+        //TODO check same meta-theory?
+        val lr = checkTheo(l, atomic, nonatomic) ::: checkTheo(r, atomic, nonatomic)
+        lr.distinct
    }
   /** checks whether a morphism object is well-formed relative to a library and infers its type
     *  @param lib the library
@@ -161,9 +173,18 @@ abstract class ModuleChecker extends Checker {
            case None => throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
         }
         (l1 ::: l2 ::: l3, r, t)
-     case OMEMPTY(f,t) =>
+     case MEmpty(f,t) =>
         val occs = checkTheo(f, p => p, p => p) ::: checkTheo(t, p => p, p => p)
         (occs, f,t)
+     case MUnion(l,r) =>
+        val (loccs, ld, lc) = inferMorphism(l)
+        val (roccs, rd, rc) = inferMorphism(r)
+        // TODO l === r on (intersection ld rd)
+        val dom = TUnion(ld, rd)
+        val cod = if (lib.imports(lc, rc)) rc
+           else if (lib.imports(rc, lc)) lc
+           else TUnion(rc, lc)
+        (loccs ::: roccs, dom ,cod)
    }
    def checkInclude(from: TheoryObj, to: TheoryObj)(implicit lib : Lookup) : Option[List[Path]] = {
         if (from == to) Some(Nil)
@@ -252,6 +273,17 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
                }
             }
             Reconstructed(a :: flat, deps)
+         case p : Pattern =>
+            val paths = checkContext(p.home, p.params ++ p.con)  
+            val deps = IsPattern(p.path) :: paths.map(HasOccurrenceOfInDefinition(p.path, _))
+            Success(deps)
+         case i : Instance => 
+            val pt : Pattern = lib.getPattern(i.pattern)
+            val paths = checkSubstitution(i.home, i.matches, pt.params, Context())
+            val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
+            val elab = Instance.elaborate(i)
+            i.setOrigin(Elaborated)
+            Reconstructed(i :: elab, deps)
          case _ => Success(Nil)
    }
 /*       case a : Alias =>
@@ -267,8 +299,6 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val name = a.as.map(LocalName(_)).getOrElse(a.name)
             val al = new Alias(str.to, name, str.to ? str.name / source.name)
             Reconstructed(List(a, al), List(IsOpen(a.path)))
-         case p : Pattern => Success(Nil) // TODO
-         case i : Instance => Reconstructed(List(Pattern.elaborate(i,lib)),Nil)
  */
 
    private def getSource(a: Assignment)(implicit lib: Lookup) : (DeclaredLink, ContentElement) = {
@@ -324,10 +354,10 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
 } */
                   List(path)
                //added by Mihnea for patterns in Mizar (to review)
-               case i : Instance =>
-               		if (! lib.imports(i.home, home))
-               			throw Invalid("pattern " + i + " is not imported into home theory " + home)
-               		List(path)
+              // case i : Instance =>
+               //		if (! lib.imports(i.home, home))
+               //			throw Invalid("pattern " + i + " is not imported into home theory " + home)
+               	//	List(path)
                		
                case _ => 
                		throw Invalid(path + " does not refer to a constant")
@@ -338,16 +368,17 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             Nil
          case OMA(fun, args) =>
             val occf = checkTerm(home, context, fun, IsSemantic) //TODO level of application cannot be inferred
-            val occa = args.flatMap(checkTerm(home, context, _, IsSemantic))
+            val occa = checkSeq(home, context, SeqItemList(args), IsSemantic)
             occf ::: occa
          case OMBINDC(binder, bound, condition, scope) =>
             val newcontext = context ++ bound // every variable can occur in every variable declaration
             val occb = checkTerm(home, context, binder, IsEqualTo(Binder))
             val occv = bound.variables.flatMap {
                // not checking the attributions
-               case TermVarDecl(_, tp, df, attrs @ _*) => List(tp,df).filter(_.isDefined).map(_.get).flatMap(
-                     checkTerm(home, newcontext, _, IsSemantic)
-               )
+               case TermVarDecl(_, tp, df, attrs @ _*) => 
+                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkTerm(home, newcontext, _, IsSemantic))                     
+               case SeqVarDecl(_, tp, df) => 
+                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkSeq(home, newcontext, _, IsSemantic))
             }
             val occc = if (condition.isDefined) checkTerm(home, newcontext, condition.get, IsSemantic)
                else Nil
@@ -369,6 +400,8 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val occvia = via.variables.toList flatMap {
                case TermVarDecl(n, t, d, atts @ _*) =>
                   t.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil)
+               case SeqVarDecl(n, t, d) =>
+                  t.map(checkSeq(home, bigcon, _, uvcheck)).getOrElse(Nil) ::: d.map(checkSeq(home, bigcon, _, uvcheck)).getOrElse(Nil)
                }
             val occarg = checkTerm(home, bigcon, arg, uvcheck)
             occvia ::: occarg
@@ -382,7 +415,33 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
          case OMSTR(s) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMF(d) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMSemiFormal(t) => Nil //TODO
+         case Index(seq,ind) => checkSeq(home,context,seq,uvcheck) ::: checkTerm(home,context,ind,uvcheck)
       }
+   }
+   def checkSeq(home : TheoryObj, context : Context, s : objects.Sequence, uvcheck : UnivCheck)(implicit lib : Lookup) : List[Path] = s match {
+   	  case t: Term => checkTerm(home, context, t, uvcheck)
+   	  case SeqVar(n) =>
+          try {
+        	  context(n) match {
+   		  	    case SeqVarDecl(_,_,_) => Nil
+   		  	    case TermVarDecl(_,_,_,_*) => throw Invalid("sequence variable expected, found term variable: " + n)
+   	  	      }
+          } catch {
+        	  case LookupError(n) => throw Invalid("variable is not declared: " + n) 
+          }
+   	  case SeqSubst(ex,n,sq) => checkTerm(home,context,ex,uvcheck) ::: Nil ::: checkSeq(home,context,sq,uvcheck)
+   	  case SeqUpTo(t) => 
+   	  	  t match {
+   	  		  case OMI(n) => checkTerm(home,context,t,uvcheck)
+   	  		  case _ => throw Invalid("OMI expected, found term: " + t)
+   	  	  }
+   	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i,uvcheck))   	  
+   }
+   def checkContext(home: TheoryObj, con: Context)(implicit lib : Lookup) : List[Path] = {
+      Nil
+   }
+   def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
+      Nil
    }
 }
 

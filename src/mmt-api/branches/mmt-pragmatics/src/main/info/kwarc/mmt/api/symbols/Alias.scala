@@ -14,6 +14,8 @@ class Alias(val home: TheoryObj, val name : LocalName, val forpath : GlobalName)
   def components = List(StringLiteral(name.flat), OMID(forpath))
   
   def toNode =
-     <alias name={name.flat} for={forpath.toPath}/>
+    <alias name={name.flat} for={forpath.toPath}>
+        {getMetaDataNode}
+    </alias> 
   override def toString = name + " => " + forpath.toPath
 }
