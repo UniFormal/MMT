@@ -1,0 +1,6 @@
+22:17:14.672	user: file m2o-startup.mmt
+22:17:14.692	user: log+ archive
+22:17:14.693	user: log+ catalog
+22:17:14.697	user: catalog ./locutor.xml
+22:17:14.724	user: archive /home/mihnea/kwarc/omdoc
+22:17:14.740	user: archive /home/mihnea/kwarc/oaff/mml
