@@ -20,13 +20,13 @@ object Twelf {
 }
 
 /** Utility for starting the catalog and calling the Twelf compiler
-  * @param path the twelf-server script
   */
-class Twelf(path : File) extends Compiler {
+class Twelf extends Compiler {
    def isApplicable(src: String) = src == "twelf"
    
    override def includeFile(n: String) : Boolean = n.endsWith(".elf")
    
+   var path : File = null
    /** Twelf setting "set unsafe ..." */
    var unsafe : Boolean = true
    /** Twelf setting "set chatter ..." */
@@ -34,9 +34,12 @@ class Twelf(path : File) extends Compiler {
    var catalogOpt : Option[Catalog] = None
    var port = 8083
    
-   /** creates and intializes a Catalog
-     */
-   override def init {
+   /** 
+    * creates and intializes a Catalog
+    * first argument is the location of the twelf-server script
+    */
+   override def init(args: List[String]) {
+      path = File(args(0))
       val cat = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port)
       cat.init    //  throws PortUnavailable
       catalogOpt = Some(cat)
