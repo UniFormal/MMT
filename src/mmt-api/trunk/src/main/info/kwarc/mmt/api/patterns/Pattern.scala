@@ -9,12 +9,12 @@ import info.kwarc.mmt.api.utils._
 import scala.io.Source
 
 
-class Pattern(val home: TheoryObj, val name : LocalName, val params: Option[Context], val con : Context) extends Symbol {
+class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, val con : Context) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
-   		{params match {
-   			case Some(c) => <parameters>{c.toNode}</parameters>
-   			case None => Nil}}
+   		{if (! params.isEmpty)
+   		   <parameters>{params.toNode}</parameters>
+   		else Nil}
    	    <declarations>{con.toNode}</declarations>
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
@@ -35,14 +35,6 @@ class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalN
 }
 
 object Instance {
-  def validate(inst: Instance, lib: Lookup) : Boolean = {
-	  val pt : Pattern = lib.getPattern(inst.pattern)
-	  pt.params match {
-	 	  case Some(p) => p.length == inst.matches.length
-	 	  case None => inst.matches.isEmpty
-	  }
-  }
-  
   /**
    * returns the elaboration of an instance
    */

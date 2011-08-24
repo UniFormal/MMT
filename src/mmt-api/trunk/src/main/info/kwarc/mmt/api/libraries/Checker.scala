@@ -6,7 +6,9 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
+
 import info.kwarc.mmt.api.utils.MyList.fromList
+import info.kwarc.mmt.api.objects.Conversions._
 
 /** CheckResult is the result type of checking a content element */
 sealed abstract class CheckResult
@@ -271,6 +273,15 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
                }
             }
             Reconstructed(a :: flat, deps)
+         case p : Pattern =>
+            val paths = checkContext(p.home, p.params ++ p.con)  
+            val deps = IsPattern(p.path) :: paths.map(HasOccurrenceOfInDefinition(p.path, _))
+            Success(deps)
+         case i : Instance => 
+            val pt : Pattern = lib.getPattern(i.pattern)
+            val paths = checkSubstitution(i.home, i.matches, pt.params, Context())
+            val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
+            Success(deps) //Reconstructed(List(Pattern.elaborate(i,lib)),Nil)
          case _ => Success(Nil)
    }
 /*       case a : Alias =>
@@ -286,8 +297,6 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val name = a.as.map(LocalName(_)).getOrElse(a.name)
             val al = new Alias(str.to, name, str.to ? str.name / source.name)
             Reconstructed(List(a, al), List(IsOpen(a.path)))
-         case p : Pattern => Success(Nil) // TODO
-         case i : Instance => Reconstructed(List(Pattern.elaborate(i,lib)),Nil)
  */
 
    private def getSource(a: Assignment)(implicit lib: Lookup) : (DeclaredLink, ContentElement) = {
@@ -418,6 +427,12 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    	  		  case _ => throw Invalid("OMI expected, found term: " + t)
    	  	  }
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i,uvcheck))   	  
+   }
+   def checkContext(home: TheoryObj, con: Context)(implicit lib : Lookup) : List[Path] = {
+      Nil
+   }
+   def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
+      Nil
    }
 }
 

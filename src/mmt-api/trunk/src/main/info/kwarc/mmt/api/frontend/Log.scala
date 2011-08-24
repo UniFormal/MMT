@@ -12,7 +12,7 @@ abstract class Report {
    /** outputs an error (catgory "error") */
    def apply(e : Error) {
 	   apply("error", e.msg)
-	   apply("error", e.stackTrace)
+	   apply("error", "\n" + e.stackTrace)
 	}
    /** implementation specific logging hook, returns the formatted message that was logged */
    def log(group : => String, msg : => String) {

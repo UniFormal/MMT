@@ -17,11 +17,15 @@ class Shell(foundation : libraries.Foundation) extends {
       val command = args.mkString("", " ", "")
       filereport.groups += "*"
       consreport.groups += "*"
-      handleLine(command)
-      val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-      while (true) {
-         val command = Input.readLine()
+      try {
          handleLine(command)
+         val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
+         while (true) {
+            val command = Input.readLine()
+            handleLine(command)
+         }
+      } catch {
+         case e => cleanup; throw e
       }
    }
 }
