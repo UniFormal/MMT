@@ -591,7 +591,7 @@ object Obj {
             OMATTR(t, k.asInstanceOf[OMID], v)
          case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
-         case <OMSTR>{s}</OMSTR> => OMSTR(s.toString)
+         case <OMSTR>{s @ _*}</OMSTR> => OMSTR(s.text)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding
          case <index>{s}{i}</index> => Index(parseSequence(s, base), parseTerm(i,base))
          case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
