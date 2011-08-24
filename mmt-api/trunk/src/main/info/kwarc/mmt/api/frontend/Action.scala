@@ -92,7 +92,10 @@ case object Local extends Action {override def toString = "local"}
 case class AddCatalog(file : java.io.File) extends Action {override def toString = "catalog " + file}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
-/** register Twelf as a compiler */
+/** registers a compiler
+ * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
+ * @param args a list of arguments that will be passed to the compiler's init method
+ */
 case class AddCompiler(cls: String, args: List[String]) extends Action {override def toString = "compiler " + cls + args.mkString(" ", " ", "")}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
