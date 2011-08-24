@@ -13,6 +13,7 @@ object xml {
    
    /** writes an XML Node to a file */
    def writeFile(N : scala.xml.Node, file : java.io.File) {
+      file.getParentFile.mkdirs
       val out = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file),"UTF-8"))
       out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + new PrettyPrinter(160,2).format(N))
       out.close
