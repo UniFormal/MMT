@@ -81,6 +81,7 @@ object Test {
     args.map(uom.register)
     
     // Do some tests
+    
     val base = DPath(utils.URI("http", "www.openmath.org") / "cd")
 
     val constrs = new org.openmath.www.cd.constructors
@@ -120,6 +121,7 @@ object Test {
     // lcm(2, 5, 10, 13) 
     val r10 = OMA(arith1.lcm, r9::OMI(13)::OMI(10)::OMI(5)::Nil)
     println("130 = " + uom.simplify(r10))
+    
 
 /*  
     // Test cases for thesis example
