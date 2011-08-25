@@ -9,9 +9,9 @@ import java.io._
 import scala.Console._
 
 object Synthesizer extends {
-   val report = new frontend.FileReport(new java.io.File("uom.log"))
-   val checker = new libraries.FoundChecker(libraries.DefaultFoundation)
-   } with Controller(checker, report) {
+   val rep = new frontend.FileReport(new java.io.File("uom.log"))
+   val check = new libraries.FoundChecker(libraries.DefaultFoundation)
+   } with Controller(check, rep) {
 
    val uomstart = "  // UOM start "
    val uomend = "  // UOM end"
