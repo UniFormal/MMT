@@ -76,10 +76,53 @@ class UOMServer(report: frontend.Report) {
 
 object Test {
   def main (args : Array[String]) {
-    /*
+    
     val uom = new UOMServer(new frontend.FileReport(new java.io.File("uom.log")))
     args.map(uom.register)
     
+    // Do some tests
+    val base = DPath(utils.URI("http", "www.openmath.org") / "cd")
+
+    val constrs = new org.openmath.www.cd.constructors
+    val arith1 = new org.openmath.www.cd.arith1
+    
+    val r1 = OMA(arith1.plus, OMF(3) :: OMF(2) :: OMF(7) :: Nil )
+    println("12 = " + uom.simplify(r1))
+
+    val r2 = OMA(arith1.minus, OMF(3) :: OMF(2) :: Nil )
+    println("1 = " + uom.simplify(r2))
+
+    val r3 = OMA(arith1.plus, (OMA(arith1.unary_minus, OMF(3)::Nil)):: OMF(2) :: Nil )
+    println("-1 = " + uom.simplify(r3))
+
+    val r4 = OMA(arith1.times, OMF(3) :: OMF(2) :: OMF(4) :: Nil )
+    println("24 = " + uom.simplify(r4))
+
+    val r5 = OMA(arith1.divide, OMF(3) :: OMF(2) :: Nil )
+    println("1.5 = " + uom.simplify(r5))
+
+    val r6 = OMA(arith1.power, OMF(2) :: OMF(3) :: Nil )
+    println("8 = " + uom.simplify(r6))
+
+    // abs(unary_minus(3)) TIMES 2 TIMES 6 
+    val r7 = OMA(arith1.times, (OMA(arith1.abs, OMA(arith1.unary_minus, OMF(3)::Nil)::Nil)) 
+        :: OMF(2) :: OMF(5) ::Nil )
+    println("30 = " + uom.simplify(r7))
+
+    // square_root(r7+6)
+    val r8 = OMA(arith1.root, (OMA(arith1.plus, r7::OMF(6)::Nil))::OMF(2)::Nil)
+    println("6 = " + uom.simplify(r8))
+
+    // gcd(30, 6, 4) 
+    val r9 = OMA(arith1.gcd, OMI(30)::OMI(24)::OMI(4)::Nil)
+    println("2 = " + uom.simplify(r9))
+
+    // lcm(2, 5, 10, 13) 
+    val r10 = OMA(arith1.lcm, r9::OMI(13)::OMI(10)::OMI(5)::Nil)
+    println("130 = " + uom.simplify(r10))
+
+/*  
+    // Test cases for thesis example
     // Test with some example terms 
     val base = DPath(new utils.xml.URI("http://cds.omdoc.org/unsorted/uom.omdoc"))
     val gname1 = OMMOD(base ? "lists")  % LocalName("append_*")
@@ -116,7 +159,7 @@ object Test {
     // very composite, result should be a list with 10 el 
     val c4 = OMA(ext.append_many, c3::c2_equal::c1::Nil)
     println(uom.simplify(c4))
-    */
+*/    
   }
 }
 

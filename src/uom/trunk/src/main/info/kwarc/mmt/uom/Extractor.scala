@@ -10,9 +10,9 @@ import java.io._
 case class ExtractError(s: String) extends Error(s)
 
 object Extractor extends {
-   val report = new frontend.FileReport(new java.io.File("uom.log"))
-   val checker = new libraries.FoundChecker(libraries.DefaultFoundation)} 
-      with Controller(checker, report) {
+   val rep = new frontend.FileReport(new java.io.File("uom.log"))
+   val check = new libraries.FoundChecker(libraries.DefaultFoundation)} 
+      with Controller(check, rep) {
 
    /* Create unique package name for the OMDoc document */
    def UriToPackage(str : String) : String = {
@@ -91,8 +91,14 @@ object Extractor extends {
        new FileWriter("extracted.scala", true)))
      out.println(UriToPackage(t.parent.toString) + "{")
      out.println("class " + t.name + " {")
-     out.println("  val base = DPath(utils.URI(\"" +
-       t.parent.toString  + "\"))\n")
+     val baseUri = t.parent.uri
+//     out.println("  val base = DPath(utils.URI(\"" +
+//       t.parent.toString  + "\"))\n")
+     out.println("  val base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
+     "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
+     baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
+     ")"
+     )
 	   t.valueList map {
 	      case c: Constant =>  { // handle constants here
         out.println("  val " + c.name 
