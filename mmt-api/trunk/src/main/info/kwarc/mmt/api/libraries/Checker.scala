@@ -357,7 +357,6 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
                   List(path)
                case _ => throw Invalid(path + " does not refer to constant")
             }
-         //for now: variables check against any role
          case OMV(name) =>
             if (! context.isDeclared(name)) throw Invalid("variable is not declared: " + name)
             Nil
@@ -422,9 +421,9 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    		  	    case TermVarDecl(_,_,_,_*) => throw Invalid("sequence variable expected, found term variable: " + n)
    	  	      }
           } catch {
-        	  case LookupError(n) => throw Invalid("variable is not declared: " + n) 
+        	  case LookupError(n) => throw Invalid("sequence variable is not declared: " + n) 
           }
-   	  case SeqSubst(ex,n,sq) => checkTerm(home,context,ex) ::: Nil ::: checkSeq(home,context,sq)
+   	  case SeqSubst(ex,n,sq) => checkTerm(home,context ++ TermVarDecl(n,None,None),ex) ::: checkSeq(home,context,sq)
    	  case SeqUpTo(t) => checkTerm(home,context,t)
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
    }
