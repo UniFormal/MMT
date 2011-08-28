@@ -135,9 +135,10 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       backend.cleanup
    }
    /** reads a file and returns the Path of the document found in it */
-   def read(f: java.io.File) : DPath = {
+   def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
       val N = utils.xml.readFile(f)
-      reader.readDocument(DPath(URI.fromJava(f.toURI)), N)
+      val dpath = docBase.getOrElse(DPath(URI.fromJava(f.toURI)))
+      reader.readDocument(dpath, N)
    }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base

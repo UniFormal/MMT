@@ -208,7 +208,7 @@ class Lambda(lambda: GlobalName, app: GlobalName) {
                vars.take(numargs).zip(after)
             else
                vars.zip(after.take(numvars))
-            val sub = reds map {case (v,a) => Sub(v.name, a)}
+            val sub = reds map {case (v,a) => TermSub(v.name, a)}
             val reduced = scope ^ sub
             if (numvars > numargs)
                GlobalChange(OMBIND(OMID(lambda), vars.drop(numargs), reduced))
@@ -292,13 +292,13 @@ class Collect(comp : GlobalName, unit: Option[GlobalName], inv: Option[GlobalNam
       }
       inv match {
          case Some(i) => t match {
-            case OMA(OMID(`i`), List(arg)) => return Some(Quantity(arg, count.minusone))
+            case OMA(OMID(`i`), List(arg:Term)) => return Some(Quantity(arg, count.minusone))
             case _ =>
          }
          case _ =>
       }
       t match {
-         case OMA(OMID(action), List(arg, amount)) => Some(Quantity(arg, amount))
+         case OMA(OMID(action), List(arg:Term, amount:Term)) => Some(Quantity(arg, amount))
          case t => Some(Quantity(t, count.one))
       }
    }

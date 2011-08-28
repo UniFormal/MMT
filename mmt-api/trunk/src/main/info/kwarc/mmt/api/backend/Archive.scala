@@ -84,11 +84,11 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
-              val dpath = controller.read(inFile)
+              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val doc = controller.getDocument(dpath)
               val narrFile = narrationDir / in
-              log("[COMPILED->CONT+NARR] " + inFile)
-              log("[COMPILED->NARR]        -> " + narrFile)
+              log("[COMP->CONT+NARR] " + inFile)
+              log("[COMP->NARR]        -> " + narrFile)
               // write narration file
               narrFile.getParentFile.mkdirs
               xml.writeFile(doc.toNode, narrFile)
