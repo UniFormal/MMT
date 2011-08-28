@@ -34,14 +34,14 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
       documents foreach {readDocument(location, _)}
    }
    def readDocument(location : DPath, D : Node) : DPath = {
-        D match {
+      D match {
         case <omdoc>{modules @ _*}</omdoc> =>
            val path = xml.attr(D, "base") match {case "" => location case s => DPath(URI(s))}
            log("document with base " + path + " found")
-           val d = new Document(path)
+           val d = new Document(location)
            add(d)
-           readModules(path, Some(path), modules)
-           path
+           readModules(path, Some(location), modules)
+           location
         case <mmtabox>{decls @ _*}</mmtabox> =>
            readAssertions(decls)
            location
