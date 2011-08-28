@@ -42,10 +42,10 @@ span.pagelink {
 #sidebar {
    position: fixed;
    overflow: auto;
-   top: 18%;
+   top: 30%;
    left: 0;
    width: 15%;
-   height: 82%;
+   height: 70%;
 }
 
 #pathtree {
