@@ -425,11 +425,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
         	  case LookupError(n) => throw Invalid("variable is not declared: " + n) 
           }
    	  case SeqSubst(ex,n,sq) => checkTerm(home,context,ex) ::: Nil ::: checkSeq(home,context,sq)
-   	  case SeqUpTo(t) => 
-   	  	  t match {
-   	  		  case OMI(n) => checkTerm(home,context,t)
-   	  		  case _ => throw Invalid("OMI expected, found term: " + t)
-   	  	  }
+   	  case SeqUpTo(t) => checkTerm(home,context,t)
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
    }
    def checkContext(home: TheoryObj, con: Context)(implicit lib : Lookup) : List[Path] = {
