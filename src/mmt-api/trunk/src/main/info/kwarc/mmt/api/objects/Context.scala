@@ -193,7 +193,7 @@ object VarDecl {
          case <seqvar>{ats @ _*}</seqvar> =>
             val name = xml.attr(N, "name")
             val (tp, df, attrs) = parseAttrs(ats, base, pSeq, pSeq, pTerm)
-            SeqVarDecl(name, tp, df)
+            SeqVarDecl(name, tp, df, attrs : _*)
          case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
       }
    }
