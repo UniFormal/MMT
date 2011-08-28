@@ -240,8 +240,8 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    def checkSymbolLevel(s : ContentElement)(implicit lib : Lookup) : CheckResult = s match {
          case c : Constant =>
             //checkHomeTheory(c)
-            val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get, c.uv) else Nil
-            val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get, c.uv) else Nil
+            val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get) else Nil
+            val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get) else Nil
             if (! foundation.typing(c.df, c.tp)) return Fail("definition of constant does not type-check")
             val deps = IsConstant(c.path) ::  
               occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
@@ -252,7 +252,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
                 case c : Constant => c
                 case _ => return Fail("constant-assignment to non-constant")
             }
-            val occas = checkTerm(l.to, a.target, c.uv)
+            val occas = checkTerm(l.to, a.target)
             if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home)))
                return Fail("assignment does not type-check")
             val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)
@@ -328,17 +328,17 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
     * @param univ the universe to check the term against
     * @return the list of identifiers occurring in s (no duplicates, random order)
     */
-   def checkTerm(home: TheoryObj, s : Term, univ : Universe)(implicit lib : Lookup) : List[Path] = {
+   def checkTerm(home: TheoryObj, s : Term)(implicit lib : Lookup) : List[Path] = {
       checkTheo(home, p => p, p => p)
-      checkTerm(home, Context(), s, IsEqualTo(univ)).distinct
+      checkTerm(home, Context(), s).distinct
    }
    //TODO redesign role checking, currently not done
-   private def checkTerm(home : TheoryObj, context : Context, s : Term, uvcheck : UnivCheck)(implicit lib : Lookup) : List[Path] = {
+   private def checkTerm(home : TheoryObj, context : Context, s : Term)(implicit lib : Lookup) : List[Path] = {
       s match {
          case OMID((h: TheoryObj) % (IncludeStep(from) / ln)) =>
             if (! lib.imports(from, h))
                throw Invalid(from + " is not imported into " + h + " in " + s)
-            checkTerm(home, context, OMID(from % ln), uvcheck)
+            checkTerm(home, context, OMID(from % ln))
          case OMID(path) =>
             //val toccs = checkTheo(path.parent) TODO check theory?
             val s = try {lib.get(path)}
@@ -353,10 +353,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
                case c : Constant =>
                   if (! lib.imports(c.home, home))
                      throw Invalid("constant " + s.path + " is not imported into home theory " + home)
-/*                  uvcheck(c.uv) match {
-                     case None => ()
-                     case Some(msg) => //throw Invalid(msg)
-} */
+
                   List(path)
                case _ => throw Invalid(path + " does not refer to constant")
             }
@@ -365,59 +362,59 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             if (! context.isDeclared(name)) throw Invalid("variable is not declared: " + name)
             Nil
          case OMA(fun, args) =>
-            val occf = checkTerm(home, context, fun, IsSemantic) //TODO level of application cannot be inferred
-            val occa = checkSeq(home, context, SeqItemList(args), IsSemantic)
+            val occf = checkTerm(home, context, fun) //TODO level of application cannot be inferred
+            val occa = checkSeq(home, context, SeqItemList(args))
             occf ::: occa
          case OMBINDC(binder, bound, condition, scope) =>
             val newcontext = context ++ bound // every variable can occur in every variable declaration
-            val occb = checkTerm(home, context, binder, IsEqualTo(Binder))
+            val occb = checkTerm(home, context, binder)
             val occv = bound.variables.flatMap {
                // not checking the attributions
                case TermVarDecl(_, tp, df, attrs @ _*) => 
-                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkTerm(home, newcontext, _, IsSemantic))                     
+                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkTerm(home, newcontext, _))                     
                case SeqVarDecl(_, tp, df) => 
-                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkSeq(home, newcontext, _, IsSemantic))
+                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkSeq(home, newcontext, _))
             }
-            val occc = if (condition.isDefined) checkTerm(home, newcontext, condition.get, IsSemantic)
+            val occc = if (condition.isDefined) checkTerm(home, newcontext, condition.get)
                else Nil
-            val occs = checkTerm(home, newcontext, scope, IsSemantic)
+            val occs = checkTerm(home, newcontext, scope)
             occb ::: occv.toList ::: occc ::: occs
          case OMATTR(arg, key, value) =>
-            val occa = checkTerm(home, context, arg, uvcheck)
-            val occk = checkTerm(home, context, key, IsEqualTo(Key))
-            val occv = checkTerm(home, context, value, IsSemantic)
+            val occa = checkTerm(home, context, arg)
+            val occk = checkTerm(home, context, key)
+            val occv = checkTerm(home, context, value)
             occa ::: occk ::: occv
          case OMM(arg, morph) =>
             val (occm, from, to) = inferMorphism(morph)
             if (! lib.imports(to, home))
                throw Invalid("codomain of morphism is not imported into expected home theory")
-            val occa = checkTerm(from, context, arg, uvcheck) // using the same context because variable attributions are ignored anyway
+            val occa = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
             occm ::: occa
          case t @ OMSub(arg, via) =>
             val bigcon = context ++ via
             val occvia = via.variables.toList flatMap {
                case TermVarDecl(n, t, d, atts @ _*) =>
-                  t.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _, uvcheck)).getOrElse(Nil)
+                  t.map(checkTerm(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _)).getOrElse(Nil)
                case SeqVarDecl(n, t, d) =>
-                  t.map(checkSeq(home, bigcon, _, uvcheck)).getOrElse(Nil) ::: d.map(checkSeq(home, bigcon, _, uvcheck)).getOrElse(Nil)
+                  t.map(checkSeq(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkSeq(home, bigcon, _)).getOrElse(Nil)
                }
-            val occarg = checkTerm(home, bigcon, arg, uvcheck)
+            val occarg = checkTerm(home, bigcon, arg)
             occvia ::: occarg
          case OMHID => Nil//TODO roles
          case OME(err, args) =>
-            val occe = checkTerm(home, context, err, IsEqualTo(Error))
-            val occa = args.flatMap(checkTerm(home, context, _, IsSemantic))
+            val occe = checkTerm(home, context, err)
+            val occa = args.flatMap(checkTerm(home, context, _))
             occe ::: occa
          case OMFOREIGN(node) => Nil //TODO roles, dependencies?
          case OMI(i) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMSTR(s) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMF(d) => Nil //TODO roles; check import of pseudo-theories, dependencies?
          case OMSemiFormal(t) => Nil //TODO
-         case Index(seq,ind) => checkSeq(home,context,seq,uvcheck) ::: checkTerm(home,context,ind,uvcheck)
+         case Index(seq,ind) => checkSeq(home,context,seq) ::: checkTerm(home,context,ind)
       }
    }
-   def checkSeq(home : TheoryObj, context : Context, s : objects.Sequence, uvcheck : UnivCheck)(implicit lib : Lookup) : List[Path] = s match {
-   	  case t: Term => checkTerm(home, context, t, uvcheck)
+   def checkSeq(home : TheoryObj, context : Context, s : objects.Sequence)(implicit lib : Lookup) : List[Path] = s match {
+   	  case t: Term => checkTerm(home, context, t)
    	  case SeqVar(n) =>
           try {
         	  context(n) match {
@@ -427,21 +424,25 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
           } catch {
         	  case LookupError(n) => throw Invalid("variable is not declared: " + n) 
           }
-   	  case SeqSubst(ex,n,sq) => checkTerm(home,context,ex,uvcheck) ::: Nil ::: checkSeq(home,context,sq,uvcheck)
+   	  case SeqSubst(ex,n,sq) => checkTerm(home,context,ex) ::: Nil ::: checkSeq(home,context,sq)
    	  case SeqUpTo(t) => 
    	  	  t match {
-   	  		  case OMI(n) => checkTerm(home,context,t,uvcheck)
+   	  		  case OMI(n) => checkTerm(home,context,t)
    	  		  case _ => throw Invalid("OMI expected, found term: " + t)
    	  	  }
-   	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i,uvcheck))   	  
+   	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
    }
    def checkContext(home: TheoryObj, con: Context)(implicit lib : Lookup) : List[Path] = {
-      con.flatMap ({
-    	  case TermVarDecl(name, Some(tp), Some(df), attrs) => checkTerm(home,con,tp,_) ::: checkTerm(home,con,df,_) //TODO not checking attributes
-    	  })
-    	  
-   
-      
+      con.flatMap {
+    	  case TermVarDecl(name, tp, df, attrs @_*) => 
+    	   val tpl = tp.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
+    	   val dfl = df.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
+    	   tpl ::: dfl //TODO not checking attributes
+    	  case SeqVarDecl(name, tp, df, attrs @_*) => 
+    	   val tpl = tp.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
+    	   val dfl = df.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
+    	   tpl ::: dfl //TODO not checking attributes
+    	  }
    }
    def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
       Nil

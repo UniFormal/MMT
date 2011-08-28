@@ -322,7 +322,7 @@ sealed abstract class SeqItem extends Sequence {
 }
 
 case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem {
-	def toNodeID(pos : Position) 		
+	def toNodeID(pos : Position)= 		
 	    <seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
 	def toCML(pos : Position) = 
 	    <cm:seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</cm:seqsubst> % pos.toIDAttr
