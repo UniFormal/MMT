@@ -436,7 +436,12 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i,uvcheck))   	  
    }
    def checkContext(home: TheoryObj, con: Context)(implicit lib : Lookup) : List[Path] = {
-      Nil
+      con.flatMap ({
+    	  case TermVarDecl(name, Some(tp), Some(df), attrs) => checkTerm(home,con,tp,_) ::: checkTerm(home,con,df,_) //TODO not checking attributes
+    	  })
+    	  
+   
+      
    }
    def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
       Nil
