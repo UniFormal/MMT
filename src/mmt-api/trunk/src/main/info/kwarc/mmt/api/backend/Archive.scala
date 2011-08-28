@@ -76,7 +76,6 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
 
     /** Generate content and narration from compiled. It uses the files map generated in compile */
     def produceNarrCont(in : List[String] = Nil) {
-        val controller = new Controller(NullChecker, report)
         val inFile = root / "compiled" / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
@@ -84,6 +83,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
+              val controller = new Controller(NullChecker, report)
               val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val doc = controller.getDocument(dpath)
               val narrFile = narrationDir / in
@@ -186,8 +186,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     def writeToContent(mod: Module) {
        val destfile = MMTPathToContentPath(mod.path)
        log("[COMP->CONT]        -> " + destfile.getPath)
-       destfile.getParentFile.mkdirs // make sure the destination folder exists
-       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"> { mod.toNode } </omdoc>
+       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
        xml.writeFile(omdocNode, destfile)
     }
     
