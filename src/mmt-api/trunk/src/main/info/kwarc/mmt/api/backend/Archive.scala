@@ -74,7 +74,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
 
-    /** Generate content and narration from compiled. It uses the files map generated in compile */
+    /** Generate content and narration from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
         val inFile = root / "compiled" / in
         if (inFile.isDirectory) {
