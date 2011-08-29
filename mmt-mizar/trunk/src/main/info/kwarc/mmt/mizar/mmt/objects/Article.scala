@@ -24,19 +24,19 @@ object artPatterns {
   val SynonymicNotation : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("SynonymicNotation"),
       Context(
           TermVarDecl("nr", None, None),
-          TermVarDecl("args", Some(OMA(OMID(mmt.repetition), Mizar.constant("tp") :: OMV("") :: Nil)), None),
+          SeqVarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
           TermVarDecl("ref", Some(Mizar.constant("prop")), None)
           ),
-      Context(TermVarDecl("_not",Some(OMV("ref")), None))
+      Context(TermVarDecl("notation",Some(OMV("ref")), None))
   )
   
   val AntonymicNotation : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("AntonymicNotation"),
       Context(
           TermVarDecl("nr", None, None),
-          TermVarDecl("args", Some(OMA(OMID(mmt.repetition), Mizar.constant("tp") :: OMV("") :: Nil)), None),
+          SeqVarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
           TermVarDecl("ref", Some(Mizar.constant("prop")), None)
           ),
-      Context(TermVarDecl("_not", Some(OMA(Mizar.constant("not"),List(OMV("ref")))), None))
+      Context(TermVarDecl("notation", Some(OMA(Mizar.constant("not"),List(OMV("ref")))), None))
   )
   
   

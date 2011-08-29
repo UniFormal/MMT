@@ -37,17 +37,30 @@ object Main {
     p = p :+ DefPatterns.MizPredIsPartialDef.toNode
     p = p :+ DefPatterns.MizPredMeansCompleteDef.toNode
     p = p :+ DefPatterns.MizPredMeansPartialDef.toNode
-    p = p :+ DefPatterns.MizStructDef.toNode
-    
+    p = p :+ DefPatterns.MizStructDef(1).toNode
+    p = p :+ DefPatterns.MizStructDef(2).toNode
+    p = p :+ DefPatterns.MizStructDef(3).toNode 
+    p = p :+ DefPatterns.MizStructDef(4).toNode          
+    p = p :+ DefPatterns.MizStructDef(5).toNode
+    p = p :+ DefPatterns.MizStructDef(6).toNode
+    p = p :+ DefPatterns.MizStructDef(7).toNode
+    p = p :+ DefPatterns.MizStructDef(8).toNode
+    p = p :+ DefPatterns.MizStructDef(9).toNode
+    p = p :+ DefPatterns.MizStructDef(10).toNode
+
     p = p :+ SchemePatterns.MizSchemeDef.toNode
     
     p = p :+ artPatterns.AntonymicNotation.toNode
     p = p :+ artPatterns.Lemma.toNode
     p = p :+ artPatterns.SynonymicNotation.toNode
+    
+    p = p :+ RegPatterns.MizExistentialReg.toNode
+    p = p :+ RegPatterns.MizConditionalReg.toNode
+    p = p :+ RegPatterns.MizFunctionalReg.toNode
 
     val out = new java.io.FileWriter(docPath)
     val docPath = "/home/mihnea/kwarc/omdoc/" + "content/http..latin.omdoc.org/foundations/mizar/mizar-patterns.omdoc" 
-    val base = mmt.baseURI / "foundations" / "mizar" 
+    val base = URI("http", "latin.omdoc.org") / "foundations" / "mizar" 
     val pp = new scala.xml.PrettyPrinter(100,2)
 	
     val nd : scala.xml.Node = 
@@ -66,10 +79,13 @@ object Main {
   def main(args: Array[String]): Unit = {
 		MizarCompiler.init()
 	    
-	    //dumpPatterns()
+	    dumpPatterns()
 	    
-	    val f = File("/home/mihnea/kwarc/oaff/mml/source/")
-	    val files = f.toJava.listFiles().map(f => File(f)).filter(x => MizarCompiler.isApplicable(x.toJava.getName())).toList
+	    //val f = File("/home/mihnea/kwarc/oaff/mml/source/")
+	    //val files = f.toJava.listFiles().map(f => File(f)).filter(x => MizarCompiler.isApplicable(x.toJava.getName())).toList
+	    
+	    val testFiles = List("tarski.miz","xboole_0.miz", "enumset1.miz", "zfmisc_1.miz", "subset_1.miz", "relat_1.miz", "setfam_1.miz", "funct_1.miz", "relat_2.miz", "relset_1.miz")
+	    val files = testFiles.map(x => File("/home/mihnea/kwarc/oaff/mml/source/" + x))
 	    MizarCompiler.compileLibrary(files)
 	    
 	    

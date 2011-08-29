@@ -105,11 +105,13 @@ object ArticleParser{
 	 * @return the translated node
 	 */
 	def parseJustifiedTheorem(n : scala.xml.Node) : Unit = {
-			val name : String = (n \ "@aid").text + "_thm_" + (n \ "@nr").text
-			val prop : MizProposition = PropositionParser.parseProposition(n.child(0))
+			
+	        val aid = (n \ "@aid").text
+	        val nr = (n \ "@nr").text.toInt
+	        val prop : MizProposition = PropositionParser.parseProposition(n.child(0))
 			//val just : MizJustification = JustificationParser.parseJustification(n.child(1))
 
-			val j = new MizJustifiedTheorem(name, prop)
+			val j = new MizJustifiedTheorem(aid, nr, prop)
 			ParsingController.addToArticle(j)
 	}
 
@@ -239,10 +241,8 @@ object ArticleParser{
 		
 		ParsingController.dictionary.addPattern(kind, formatnr, aid)
 		val name = ParsingController.dictionary.getNameByFormatnr(kind, formatnr) match { 
-			case None => 
-			println("notation name not found:" + aid + kind + formatnr + constrAid)
-			aid + "_" + kind + "_notation_" +  relnr 
-			case Some(s) => s//TODO integrate with resolveDef from controller
+			case None => "N" + kind + absconstrnr 
+			case Some(s) => s //TODO integrate with resolveDef from controller
 		}
 		//println(name)
 		

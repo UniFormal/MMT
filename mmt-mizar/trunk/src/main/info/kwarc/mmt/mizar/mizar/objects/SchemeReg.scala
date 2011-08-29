@@ -14,9 +14,9 @@ class MizSchemePredDecl(val argTypes : List[MizTyp]) extends MizSchemeArg
 
 trait MizClusterDef extends MizAny
 
-class MizRCluster(val aid : String, val nr : Int, val typ : MizTyp, val cluster : MizCluster) extends MizClusterDef
-class MizFCluster(val aid : String, val nr : Int, val functor : MizTerm, val args : List[MizTyp], val cluster : MizCluster) extends MizClusterDef
-class MizCCluster(val aid : String, val nr : Int, val typ : MizTyp, val first : MizCluster, val second : MizCluster) extends MizClusterDef
+class MizRCluster(val aid : String, val nr : Int, val args : List[MizTyp], val typ : MizTyp, val cluster : MizCluster) extends MizClusterDef
+class MizFCluster(val aid : String, val nr : Int, val args : List[MizTyp], val functor : MizTerm, val cluster : MizCluster) extends MizClusterDef
+class MizCCluster(val aid : String, val nr : Int, val args : List[MizTyp], val typ : MizTyp, val first : MizCluster, val second : MizCluster) extends MizClusterDef
 
 class MizRegistration(val cluster : MizClusterDef) extends MizAny
 

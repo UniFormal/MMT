@@ -141,7 +141,7 @@ def translateArticle(mml : String, aid : String) : Unit = {
 		val th = new DeclaredTheory(d.path, LocalPath(article.title :: Nil), Some(Mizar.MizarPatternsTh)) //None		
 
 		TranslationController.add(th)
-		fv.map(x => {if (!TranslationController.controller.library.imports(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
+		fv.map(x => {if (x != "HIDDEN" && !TranslationController.controller.library.imports(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
 			TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x) , th.path))
 		})
 		
@@ -163,8 +163,6 @@ def translateArticle(mml : String, aid : String) : Unit = {
 		
 		printArticle(mml, article.title)
 		lib = aid :: lib
-	} //else {
-		//println("Article " + name + " already translated -- skipping") //TODO use logger
-	//}
+	} 
 }
 }

@@ -120,15 +120,16 @@ object ArticleTranslator {
 	}
 	
 	def translateJustifiedTheorem(j : MizJustifiedTheorem) {
+	    val name = "T" + j.nr
 		val tp = Mizar.compact(OMA(Mizar.constant("proof"), PropositionTranslator.translateProposition(j.prop) :: Nil))
 		
-		val jt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(j.name), Some(tp), None, Individual(None))
+		val jt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None, Individual(None))
 		
 		TranslationController.add(jt)
 	}
 	
 	def translateLemma(l : MizLemma) {
-	  val name = "lemma_" + l.prop.nr
+	  val name = "L" + l.prop.nr
 	  val matches = ("prop" / PropositionTranslator.translateProposition(l.prop))
 	  val pattern = artPatterns.Lemma
 	  val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
