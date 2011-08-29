@@ -11,7 +11,11 @@ object Conversions {
    implicit def substitution2list(s: Substitution) : List[Sub] = s.subs.toList
    implicit def varsub2substitution(s: Sub) : Substitution = Substitution(s)   
    /** wraps OMV around a variable name, works well with the methods % and / of the OMV */ 
-   implicit def string2OMV(s: String) : OMV = OMV(s)
+   implicit def string2OMV(s: String) : OMV = OMV(s) 
+
+   /*implicit def sequence2list(s : Sequence) : List[Term] = s.items.toList.map    
+   */
+//   implicit def list2sequence(l : List[Term]): Sequence = Sequence(l.map(x => SeqTerm(x)) : _*)
    /*implicit def sequence2list(s : Sequence) : List[Term] = s.items.toList.map    
    */
 //   implicit def list2sequence(l : List[Term]): Sequence = Sequence(l.map(x => SeqTerm(x)) : _*)

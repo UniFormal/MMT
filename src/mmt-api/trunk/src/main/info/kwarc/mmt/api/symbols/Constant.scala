@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
+import info.kwarc.mmt.api.moc._
 
 /**
  * A Constant represents an MMT constant.<p>
@@ -28,4 +29,5 @@ class Constant(val home : TheoryObj, val name : LocalName,
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
      </constant>
   override def toString = name + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
+  
 }

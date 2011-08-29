@@ -30,6 +30,8 @@ object Storage {
    /** reads a locutor registry file and returns a list of Storages */
    def fromLocutorRegistry(file : java.io.File) : List[LocalCopy] = {
       val N = utils.xml.readFile(file)
+    
+      /*
       val l = for (R <- (N\\"registry"\\"repository").toList) yield {
    	     val repos = URI(xml.attr(R, "location"))
          for {wc <- R.child.toList if wc.label == "wc"} yield {
@@ -37,8 +39,16 @@ object Storage {
             val localDir = new java.io.File(xml.attr(wc, "root"))
             LocalCopy(repos.scheme.getOrElse(null), repos.authority.getOrElse(null), repos.pathAsString + path, localDir)
          }
-      }
-	  l.flatten    
+      }.toList
+      l.flatten 
+      */ 
+      
+     val l =   (N\\"registry"\\"repository").toList.flatMap(R => {
+      val repos = URI(xml.attr(R, "location"))
+      R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.getScheme, repos.getAuthority, repos.getPath + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
+     })
+      l
+
    }
    /** reads an OMBase description file and returns the described OMBases */
    def fromOMBaseCatalog(file : java.io.File) : List[OMBase] = {

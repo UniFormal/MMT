@@ -60,11 +60,23 @@ trait Body[S <: Declaration] {
 	         throw AddError("a statement name for a prefix of " + name + " already exists")
 	      //increase counters for all prefixes of the added statement
 	      pr.foreach(p => prefixes(p) = prefixes.getOrElse(p,0) + 1) */
-	      if (statements.isDefinedAt(name))
+	      if (statements.isDefinedAt(name)) {
+	     	  println("--" + statements(name))
+	     	  println("++" + s)
+	     	 //statements.toList.map(x => println(x._2))
 	         throw AddError("a declaration for the name " + name + " already exists")
+	      }
 	      statements(name) = s
 	      order = s :: order
    }
+   
+   def replace(old : S, nw : S) {
+     statements -= old.name
+     statements(nw.name) = nw
+     order = order.foldRight[List[S]](Nil)((x,o) => if (x.path == old.path) {nw :: o} else {x :: o})
+     
+   }
+   
    /** delete a declaration (does not have to exist) */
    def delete(name : LocalName) {
       if (statements.isDefinedAt(name)) {
@@ -118,5 +130,5 @@ trait Body[S <: Declaration] {
    protected def innerNodes = valueListNG.map(_.toNode)
    protected def innerNodesElab = valueListElab.map(_.toNode)
    protected def innerString = valueListNG.map("\t" + _.toString).mkString(" = {", "\n", "\n}")
-   protected def innerComponents = valueListNG.filter(! _.isGenerated)
+   def innerComponents = valueListNG.filter(! _.isGenerated)
 }

@@ -28,6 +28,7 @@ sealed abstract class Obj extends Content {
    def nkey = NotationKey(head, role)
    def components : List[Content]
    def presentation(lpar: LocalParams) = ByNotation(nkey, components, lpar)
+   def toCML: Node
 }
 
 trait MMTObject {
@@ -41,6 +42,9 @@ trait MMTObject {
       else
       <om:OMA>{components.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
       </om:OMA> % pos.toIDAttr
+   def toCML = 
+     if (args.isEmpty) <m:csymbol>{path.toPath}</m:csymbol>
+     else <m:apply>{components.zipWithIndex.map({case (m,i) => m.toCML})}</m:apply> 
 }
 
 /**
@@ -53,6 +57,7 @@ sealed abstract class Term extends SeqItem {
    def *(that : Morph) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */
    def apply(args : Term*) = OMA(this, args.toList)
+
 }
 
 /**
@@ -83,6 +88,8 @@ case class OMID(gname: GlobalName) extends Term {
       case OMMOD(doc ? mod) => <om:OMS base={doc.toPath} module={mod.flat} name={name.flat}/> % pos.toIDAttr
       case par => <om:OMS name={name.flat}>{par.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
    }
+   
+   def toCML = <csymbol>{gname.toPath}</csymbol>
 }
 
 /**
@@ -118,6 +125,11 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
       val subid = sub ++ context.id
       OMBINDC(binder ^ sub, context ^ sub, condition.map(_ ^ subid), body ^ subid)
    }
+      
+   def toCML = condition match {
+     case Some(cond) => <m:apply>{binder.toCML}{context.toCML}<m:condition>{cond.toCML}</m:condition>{body.toCML}</m:apply>
+     case None => <m:apply>{binder.toCML}{context.toCML}{body.toCML}</m:apply>
+   }
 }
 
 /**
@@ -140,6 +152,7 @@ case class OMM(arg : Term, via : Morph) extends Term with MMTObject {
    def path = mmt.morphismapplication
    def args = List(arg,via)
    def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
+   
 }
 
 /** an explicit substitution behaves like a let-binder
@@ -153,6 +166,7 @@ case class OMSub(arg: Term, via: Context) extends Term {
    private def asBinder = OMBIND(OMID(mmt.substitutionapplication), via, arg)
    def toNodeID(pos: Position) = asBinder.toNodeID(pos)
    def components = asBinder.components
+   def toCML = <m:apply><csymbol>OMSub</csymbol>{arg.toCML}</m:apply>
 }
 
 /**
@@ -170,6 +184,8 @@ case class OMA(fun : Term, args : List[SeqItem]) extends Term {
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
    def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub).flatMap(_.items))
+  def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
+
 }
 
 /**
@@ -197,9 +213,12 @@ case class OMV(name : String) extends Term {
    def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t: Term) => t
-	  	   case Some(_) => throw SubstitutionUndefined(name, "substitution is applicable but does not provide a term")
+	  	   case Some(_) => 
+	  	     throw SubstitutionUndefined(name, "substitution is applicable but does not provide a term")
 	  	   case None => this
        }
+   
+   def toCML = <m:ci>{name}</m:ci>
 }
 
 /**
@@ -216,6 +235,8 @@ case class OME(error : Term, args : List[Term]) extends Term {
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
    def ^ (sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub))
+   
+   def toCML = <m:apply>{error.toCML}{args.map(_.toCML)}</m:apply>
 }
 
 /**
@@ -235,6 +256,8 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
                  {arg.toNodeID(pos+1)}
       </om:OMATTR> % pos.toIDAttr
    def ^ (sub : Substitution) = OMATTR(arg ^ sub, key ^ sub, value ^ sub)
+   def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
+
 }
 
 /**
@@ -247,6 +270,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def components = List(XMLLiteral(node))
    def toNodeID(pos : Position) = <om:OMFOREIGN>{node}</om:OMFOREIGN> % pos.toIDAttr
    def ^(sub : Substitution) = this
+   def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{Node}</m:apply>
 }
 /*
  * OpenMath values are integers, floats, and strings (we omit byte arrays); we add URIs
@@ -264,16 +288,22 @@ abstract class OMLiteral extends Term {
 }
 case class OMI(value : BigInt) extends OMLiteral {
    def tag = "OMI"
+   def toCML = <m:cn>{value}</m:cn>
 }
 case class OMF(value : Double) extends OMLiteral {
    def tag = "OMF"
    override def toNodeID(pos : Position) = <om:OMF dec={value.toString}/> % pos.toIDAttr
+   def toCML = <m:cn>{value}</m:cn>
+
 }
 case class OMSTR(value : String) extends OMLiteral {
    def tag = "OMSTR"
+   def toCML = <m:cn>{value}</m:cn>
 }
 case class OMURI(value: URI) extends OMLiteral {
    def tag = "OMURI"
+   def toCML = <m:cn>{value}</m:cn>
+
 }
 
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
@@ -289,6 +319,8 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
       }
       OMSemiFormal(newtokens)
    }
+   def toCML = <m:apply><csymbol>OMSemiFormal</csymbol>tokens.map(_.toCML)</m:apply>
+
 }
 
 case class Index(seq : Sequence, term : Term) extends Term {
@@ -298,6 +330,7 @@ case class Index(seq : Sequence, term : Term) extends Term {
 	def toNodeID(pos : Position) = <om:OMNTH>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</om:OMNTH> //TODO Change order of index and sequence 
 	//<index>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</index>
 	def toCML(pos : Position) = <cm:nth>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</cm:nth> //TODO Change order of index and sequence
+	def toCML = null
 	def ^(sub : Substitution) = Index(seq ^ sub, term ^ sub)
 }
 
@@ -330,6 +363,7 @@ case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem 
 	    	val subn = sub ++ (name / OMV(name)) 
 	    	SeqSubst(expr ^ subn,name,seq ^ sub)  //TODO Variable capture
 	    }
+	def toCML = null
 	def head = expr.head
 	def role = Role_seqsubst
 	def components = List(expr,StringLiteral(name),seq)
@@ -339,9 +373,12 @@ case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem 
 case class SeqVar(name : String) extends SeqItem {
 	def toNodeID(pos : Position) =
 		<om:OMSV name ={name}/> % pos.toIDAttr
-		//<seqvar name ={name}/> % pos.toIDAttr
 	def toCML(pos : Position) =
 		<cm:si>{name}</cm:si> % pos.toIDAttr
+	
+	def /(s : Sequence) = SeqSub(name, s)
+
+	def toCML = null
 	def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t : Sequence) => t
@@ -359,6 +396,8 @@ case class SeqUpTo(num : Term) extends SeqItem {
 		//<sequpto>{num.toNodeID(pos + 0)}</sequpto> % pos.toIDAttr
    def toCML(pos : Position) =
 		<cm:nats>{num.toNodeID(pos + 0)}</cm:nats> % pos.toIDAttr
+	def toCML = null
+	
 	def ^(sub : Substitution) =
 		num match {
 		case OMI(n) => SeqItemList(List.range(1,n.toInt).map(OMI(_)))
@@ -374,6 +413,7 @@ case class SeqItemList(items: List[SeqItem]) extends Sequence {
 	   <sequence>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</sequence> % pos.toIDAttr
    def toCMLdeID(pos : Position) =
 	   <cm:seq>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</cm:seq> % pos.toIDAttr
+   def toCML = null
    def ^(sub : Substitution) : Sequence = SeqItemList(items.map(_ ^ sub).flatMap(_.items))
    def components :List[Content] = items
    def head = None
@@ -438,6 +478,7 @@ case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    def role = Role_ModRef
    def components = path.components
    def toNodeID(pos : Position) = <om:OMS cdbase={path.^^.toPath} cd={path.name.flat}/> % pos.toIDAttr
+   def toCML = <m:csymbol>{path.toPath}</m:csymbol>
    def links = List(path) 
    override def asPath = Some(path)
    override def toString = path.toPath
@@ -478,6 +519,7 @@ case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
    }
    def components = OMID(cod % name).components
    def toNodeID(pos : Position) = OMID(path).toNodeID(pos)
+   def toCML = <m:csymbol>{path.toPath}</m:csymbol>
    override def asPath = path match {
       case OMMOD(p) % LocalName(List(NamedStep(n))) => Some(p / n)
       case _ => None
@@ -605,7 +647,7 @@ object Obj {
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s @ _*}</OMSTR> => OMSTR(s.text)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding
-         case <index>{s}{i}</index> => Index(parseSequence(s, base), parseTerm(i,base))
+         case <OMNTH>{s}{i}</OMNTH> => Index(parseSequence(s, base), parseTerm(i,base))
          case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
@@ -613,13 +655,13 @@ object Obj {
    def parseSeqItem(N: Node, base: Path) : SeqItem = N match {
       case <seqsubst>{e}{s}</seqsubst> =>
          SeqSubst(parseTerm(e, base), xml.attr(N, "var"), parseSequence(s, base))
-      case <seqvar/> => SeqVar(xml.attr(N, "name"))
-      case <sequpto>{e}</sequpto> => SeqUpTo(parseTerm(e, base))
+      case <OMSV>{c @ _*}</OMSV> => SeqVar(xml.attr(N, "name"))
+      case <OMNATS>{e}</OMNATS> => SeqUpTo(parseTerm(e, base))
       case t => parseTerm(t, base)
       // case _ => throw ParseError("not a well-formed sequence item: " + N.toString)
    }
    def parseSequence(N: Seq[Node], base: Path) : Sequence = N match {
-      case <seq>{its @ _*}</seq> =>
+      case <sequence>{its @ _*}</sequence> =>
          val items = its.map {parseSeqItem(_, base)}
          SeqItemList(items.toList)
       case i : scala.xml.Elem => parseSeqItem(i,base) //throw ParseError("not a well-formed sequence: " + N.toString)

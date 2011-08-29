@@ -1,2 +1,2 @@
-#!/bin/sh
-java -jar build/mmt-api.jar file startup.mmt
+scala -classpath build/mmt-pragmatics.jar:bin info.kwarc.mmt.api.moc.Main 
+

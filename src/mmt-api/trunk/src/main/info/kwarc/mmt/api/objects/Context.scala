@@ -15,6 +15,7 @@ sealed abstract class VarDecl extends Content {
    def ^(sub : Substitution) : VarDecl
    def toNode : Node = toNodeID(Position.None)
    def toNodeID(pos : Position) : Node
+   def toCML : Node
    def role : Role
    def components = List(StringLiteral(name), tp.getOrElse(Omitted), df.getOrElse(Omitted))
    def presentation(lpar : LocalParams) =
@@ -37,12 +38,14 @@ case class TermVarDecl(name : String, tp : Option[Term], df : Option[Term], ats:
 	   val varToOMATTR = attrs.toList.foldLeft[Term](OMV(name)) {(v,a) => OMATTR(v, OMID(a._1), a._2)}
       (tp, df) match {
          case (None, None) => varToOMATTR
-         case (Some(t), None) => OMATTR(varToOMATTR, OMID(mmt.mmttype), t)
+         case (Some(t), None) => 
+           OMATTR(varToOMATTR, OMID(mmt.mmttype), t)
          case (None, Some(d)) => OMATTR(varToOMATTR, OMID(mmt.mmtdef), d)
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
    def toNodeID(pos : Position) = toOpenMath.toNodeID(pos) 
+   def toCML = toOpenMath.toCML
    def role = Role_Variable
 }
 
@@ -53,8 +56,10 @@ case class SeqVarDecl(name : String, tp : Option[Sequence], df : Option[Sequence
       val tpN = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
       val dfN = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
       val attrsN = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
-      <seqvar name={name}>{tpN}{dfN}{attrsN}</seqvar>
+      <om:OMSV name={name}>{tpN}{dfN}{attrsN}</om:OMSV>
    }
+   
+   def toCML = null
    def role = Role_SeqVariable
 }
 
@@ -92,6 +97,8 @@ case class Context(variables : VarDecl*) {
    def toNode = toNodeID(Position.None)
    def toNodeID(pos : Position) =
      <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + i)})}</om:OMBVAR>
+   def toCML = 
+     <m:bvar>{this.map(v => v.toCML)}</m:bvar>
 }
 
 /** a case in a substitution */
@@ -132,6 +139,7 @@ case class Substitution(subs : Sub*) {
    def toNode = toNodeID(Position.None)
    def toNodeID(pos : Position) =
       <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos + x._2))}</om:OMBVAR>
+   def toCML = asContext.toCML
 }
 
 /** helper object */
@@ -190,7 +198,7 @@ object VarDecl {
             val name = xml.attr(N, "name")
             val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
             TermVarDecl(name, tp, df, attrs : _*)
-         case <seqvar>{ats @ _*}</seqvar> =>
+         case <OMSV>{ats @ _*}</OMSV> =>
             val name = xml.attr(N, "name")
             val (tp, df, attrs) = parseAttrs(ats, base, pSeq, pSeq, pTerm)
             SeqVarDecl(name, tp, df, attrs : _*)
