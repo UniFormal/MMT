@@ -206,7 +206,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                     case c: Constant =>
                        List(c.tp,c.df).map(tO => tO map { 
                           t =>
-                            val url = mwsurl.replace("%m", thy.name.flat).replace("%s", c.name.flat).replace("%o", c.name.head.toPath) 
+                            //TODO eliminate .toLowerCase
+                            val url = mwsurl.replace("%m", thy.name.flat.toLowerCase).replace("%s", c.name.flat).replace("%o", c.name.head.toPath) 
                             val cml = makeQVars(t.toCML, Nil)
                             val node = <mws:expr url={url}>{cml}</mws:expr> 
                             outStream.write(node.toString + "\n")
