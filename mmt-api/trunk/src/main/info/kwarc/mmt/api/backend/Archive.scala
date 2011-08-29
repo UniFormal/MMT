@@ -74,6 +74,14 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
 
+    /** Write a module to content folder */
+    def writeToContent(mod: Module) {
+       val destfile = MMTPathToContentPath(mod.path)
+       log("[COMP->CONT]        -> " + destfile.getPath)
+       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
+       xml.writeFile(omdocNode, destfile)
+    }
+    
     /** Generate content and narration from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
         val inFile = root / "compiled" / in
@@ -90,7 +98,6 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               log("[COMP->CONT+NARR] " + inFile)
               log("[COMP->NARR]        -> " + narrFile)
               // write narration file
-              narrFile.getParentFile.mkdirs
               xml.writeFile(doc.toNode, narrFile)
               // write content files
               doc.getModulesResolved(controller.library) foreach writeToContent
@@ -116,7 +123,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                  thy.toNodeElab
               case _ => mod.toNode
            }
-           xml.writeFile(flatNode, flatDir / in)
+           val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
+           xml.writeFile(flatNodeOMDoc, flatDir / in)
         }
     }
     
@@ -171,23 +179,22 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
           case "mws-flat" => "flat"
           case _ => "content"
         }
-        
-        val inFile = root / sourceDim / in
         val mwsbase = properties("mws-base")
+        val inFile = root / sourceDim / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
               if (includeDir(n)) produceMWS(in ::: List(n), dim)
            }
         } else {
+           val outFile = (root / "mws" / dim / in).setExtension("mws")
+           log("[" + dim + "->MWS] " + inFile + " -> " + outFile)
            val controller = new Controller(NullChecker, NullReport)
-           println(inFile)
-           val dpath = controller.read(inFile,None)
-           println(dpath)
-           val modules = controller.getDocument(dpath).getModulesResolved(controller.library)
-           println(modules(0).name)
-           modules(0) match {
+           controller.read(inFile,None)
+           val mpath = Archive.ContentPathToMMTPath(in)
+           val mod = controller.localLookup.getModule(mpath)
+           mod match {
               case thy : DeclaredTheory =>
-                 val outFile = (root / "mws" / dim / in).setExtension("mws")
+                 log("[CONT:"+dim+ "->MWS] " + inFile + " -> " + outFile)
                  outFile.toJava.getParentFile().mkdirs()
                  val outStream = new java.io.FileWriter(outFile)
                  def writeEntry(t: Term, url: String) {
@@ -196,7 +203,6 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                  }
                  outStream.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
                  outStream.write("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-                 
                  thy.valueList foreach {
                     case c: Constant =>
                        List(c.tp,c.df).map(tO => tO map { 
@@ -216,7 +222,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                  }
                  outStream.write("</mws:harvest>\n")
                  outStream.close
-              case t: DefinedTheory =>
+              case _ => //TODO index other modules
            }
         }
     }
@@ -224,16 +230,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     /** Generate presentation from content */
     def producePresentation(controller: Controller, label: String, style: MPath) {}
-    
-    /** Write a module to content folder */
-    def writeToContent(mod: Module) {
-       val destfile = MMTPathToContentPath(mod.path)
-       log("[COMP->CONT]        -> " + destfile.getPath)
-       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
-       xml.writeFile(omdocNode, destfile)
-    }
-    
-    
+        
     /** Add a file to a MAR file (only used internally by toMar)
       * @throws java.io.IOException */
     private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {

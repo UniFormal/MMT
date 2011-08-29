@@ -359,7 +359,7 @@ case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem 
 	def toNodeID(pos : Position)= 		
 	    <seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
 	def toCML(pos : Position) = 
-	    <cm:seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</cm:seqsubst> % pos.toIDAttr
+	    <m:seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</m:seqsubst> % pos.toIDAttr
 	def ^ (sub : Substitution) = {
 	    	val subn = sub ++ (name / OMV(name)) 
 	    	SeqSubst(expr ^ subn,name,seq ^ sub)  //TODO Variable capture
@@ -376,7 +376,7 @@ case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends Seq
 	def toNodeID(pos : Position)= 		
 	    <seqsubst var ={name}>{seq1.toNodeID(pos + 0)}{seq2.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
 	def toCML = 
-	    <cm:seqsubst var={name}>{seq1.toCML}{seq2.toCML}</cm:seqsubst>
+	    <m:seqsubst var={name}>{seq1.toCML}{seq2.toCML}</m:seqsubst>
 	def ^ (sub : Substitution) = {
 	    	val subn = sub ++ (name / OMV(name)) 
 	    	SeqSubst(seq1 ^ subn,name,seq2 ^ sub)  //TODO Variable capture
