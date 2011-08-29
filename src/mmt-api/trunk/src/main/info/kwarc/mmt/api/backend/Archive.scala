@@ -183,7 +183,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            controller.get(mpath)
            controller.library.getTheory(mpath) match {
               case thy : DeclaredTheory =>
-                 val outFile = root / "mws" / dim / in
+                 val outFile = (root / "mws" / dim / in).setExtension("mws")
                  outFile.toJava.getParentFile().mkdirs()
                  val outStream = new java.io.FileWriter(outFile)
                  def writeEntry(t: Term, url: String) {
