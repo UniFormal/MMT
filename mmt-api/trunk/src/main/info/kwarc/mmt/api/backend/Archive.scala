@@ -305,7 +305,7 @@ object Archive {
           val tllast = tl.length match {
             case 1 => tl(0)
             case 0 => 
-            	throw ImplementationError("asdafs")
+            	throw ImplementationError("")
             case _ => tl.last
           }
           val name = unescape(tllast.substring(0, tllast.length - 6))
