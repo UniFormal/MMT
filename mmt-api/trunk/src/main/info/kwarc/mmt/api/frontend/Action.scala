@@ -27,7 +27,7 @@ object Action extends RegexParsers {
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
    private def archive = archopen | archdim | archmar
    private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
-   private def archdim = "archive" ~> str ~ ("compile" | "content" | "flat" | "mws" | "flmws" | "relational") ~ (str ?) ^^ {
+   private def archdim = "archive" ~> str ~ ("compile" | "content" | "mws-flat" | "mws" | "flat" | "relational") ~ (str ?) ^^ {
       case id ~ dim ~ s =>
          val segs = MyList.fromString(s.getOrElse(""), "/")
          ArchiveBuild(id, dim, segs)
