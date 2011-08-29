@@ -24,11 +24,12 @@ object SchemeRegReader {
 	def parseRCluster(n : Node) : MizRCluster = {
 	    val aid = (n \ "@aid").text
 	    val nr = (n \ "@nr").text.toInt
-	    
+	    val args = n.child(0).child.map(x => TypeParser.parseTyp(x)).toList
+
 		val typ = TypeParser.parseTyp(n.child(1))
 		val cluster = TypeParser.parseCluster(n.child(2))
 
-		new MizRCluster(aid, nr, typ, cluster)
+		new MizRCluster(aid, nr, args, typ, cluster)
 		
 	}
 
@@ -41,18 +42,20 @@ object SchemeRegReader {
 		val cluster = TypeParser.parseCluster(n.child(2))
 
 
-		new MizFCluster(aid, nr, functor, args, cluster)
+		new MizFCluster(aid, nr, args, functor, cluster)
 	}
 
 	def parseCCluster(n : Node)  : MizCCluster = {
 		val aid = (n \ "@aid").text
 	    val nr = (n \ "@nr").text.toInt
-	  
+	    
+	    val args = n.child(0).child.map(x => TypeParser.parseTyp(x)).toList
+
 		val typ = TypeParser.parseTyp(n.child(2))
 		val first = TypeParser.parseCluster(n.child(1))
 		val second = TypeParser.parseCluster(n.child(3))
 		
-		new MizCCluster(aid, nr, typ, first, second)
+		new MizCCluster(aid, nr, args, typ, first, second)
 	}
 	
 	def parseSchemePremises(n : Node) : List[MizProposition] = {

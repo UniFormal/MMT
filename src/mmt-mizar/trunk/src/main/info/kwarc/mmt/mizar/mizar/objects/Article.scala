@@ -12,7 +12,7 @@ class MizArticle(val title : String, var elems : List[MizAny]) {
 }
 
 class MizNotation(val name : String, val aid : String, val kind : String, val relnr : Int, val constrAid : String, val constrAbsnr : Int, val antonymic : Boolean) extends MizAny
-class MizJustifiedTheorem(val name : String, val prop : MizProposition) extends MizAny
+class MizJustifiedTheorem(val aid : String, val nr : Int, val prop : MizProposition) extends MizAny
 class MizLemma(val prop : MizProposition) extends MizAny
 class MizSet(val nr : Int, val constnr : Int, val term : MizTerm, val typ : MizTyp) extends MizAny
 class MizConsider(val nr : Int, val constnr : Int, val prop : MizProposition, val typs : List[MizTyp], val props : List[MizProposition]) extends MizAny
