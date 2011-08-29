@@ -375,8 +375,8 @@ case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem 
 case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends SeqItem {
 	def toNodeID(pos : Position)= 		
 	    <seqsubst var ={name}>{seq1.toNodeID(pos + 0)}{seq2.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
-	def toCML(pos : Position) = 
-	    <cm:seqsubst var ={name}>{seq1.toNodeID(pos + 0)}{seq2.toNodeID(pos + 2)}</cm:seqsubst> % pos.toIDAttr
+	def toCML = 
+	    <cm:seqsubst var={name}>{seq1.toCML}{seq2.toCML}</cm:seqsubst>
 	def ^ (sub : Substitution) = {
 	    	val subn = sub ++ (name / OMV(name)) 
 	    	SeqSubst(seq1 ^ subn,name,seq2 ^ sub)  //TODO Variable capture
@@ -389,8 +389,8 @@ case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends Seq
 case class SeqVar(name : String) extends SeqItem {
 	def toNodeID(pos : Position) =
 		<om:OMSV name ={name}/> % pos.toIDAttr
-	def toCML(pos : Position) =
-		<m:si>{name}</m:si> % pos.toIDAttr
+	def toCML =
+		<m:si>{name}</m:si> 
 	def /(s : Sequence) = SeqSub(name, s)
 	def ^(sub : Substitution) =
 	   sub(name) match {
@@ -407,8 +407,8 @@ case class SeqUpTo(num : Term) extends SeqItem {
 	def toNodeID(pos : Position) =
 		<om:OMNATS>{num.toNodeID(pos + 0)}</om:OMNATS> % pos.toIDAttr
 		//<sequpto>{num.toNodeID(pos + 0)}</sequpto> % pos.toIDAttr
-   def toCML(pos : Position) =
-		<m:nats>{num.toNodeID(pos + 0)}</m:nats> % pos.toIDAttr
+   def toCML =
+		<m:nats>{num.toCML}</m:nats>
 	def ^(sub : Substitution) =
 		num match {
 		case OMI(n) => SeqItemList(List.range(1,n.toInt).map(OMI(_)))
@@ -424,7 +424,7 @@ case class SeqItemList(items: List[SeqItem]) extends Sequence {
 	   <sequence>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</sequence> % pos.toIDAttr
    def toCMLdeID(pos : Position) =
 	   <m:seq>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</m:seq> % pos.toIDAttr
-   def toCML = null
+   def toCML = <m:seq>{items.map(_.toCML)}</m:seq>
    def ^(sub : Substitution) : Sequence = SeqItemList(items.map(_ ^ sub).flatMap(_.items))
    def components :List[Content] = items
    def head = None
