@@ -423,7 +423,8 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
           } catch {
         	  case LookupError(n) => throw Invalid("sequence variable is not declared: " + n) 
           }
-   	  case SeqSubst(ex,n,sq) => checkTerm(home,context ++ TermVarDecl(n,None,None),ex) ::: checkSeq(home,context,sq)
+   	  //case SeqSubst(ex,n,sq) => checkTerm(home,context ++ TermVarDecl(n,None,None),ex) ::: checkSeq(home,context,sq)
+      case SeqSubst(sq1,n,sq2) => checkSeq(home,context ++ TermVarDecl(n,None,None),sq1) ::: checkSeq(home,context,sq2)
    	  case SeqUpTo(t) => checkTerm(home,context,t)
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
    }

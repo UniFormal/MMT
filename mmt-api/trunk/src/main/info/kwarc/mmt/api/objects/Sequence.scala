@@ -57,6 +57,7 @@ object normalize {
 	 	//  	   	  l.map(x => en ^ Substitution(TermSub(n,OMI(x))))
 	 	//  	   case _ => List(SeqSubst(en,n,mn))
 	 	//   }
+	 	/*  
 	 	case SeqSubst(e,n,s) =>
 	 	   s match {
 	 	  	   case SeqItemList(items) =>
@@ -75,6 +76,7 @@ object normalize {
 	 	  	     	case _ => List(SeqSubst(en,n,mn))
 	 	  	     }	 	  	     
 	 	   	}
+	 	   	*/
 	 	case SeqUpTo(m) =>
 	 		m match { //TODO Shouldn't we first normalizeTerm(m) then match?
 	 			case OMI(n) => List.range(1,n.toInt).map(i => OMI(i))
