@@ -10,14 +10,14 @@
 %\usetikzlibrary{arrows} %needed for tikz package
 \usepackage[top=3cm,bottom=3cm,left=4cm,right=3cm]{geometry} %define borders
 
-\input{commands}
-\input{math}
-
+\usepackage{basics}
 \usepackage[nobook]{theorems}
 \usepackage{listings}
 \usepackage{xmldoc}
 \usepackage{xcolor}
 \usepackage{mmt_new}
+
+\usepackage{local}
 
 \usepackage{hyperref} %pdf hyper links, load this last
 
@@ -50,6 +50,9 @@ Jacobs University Bremen}
 
 \section{Notations}\label{sec:notations}
 \input{notations}
+
+\section{Archives}\label{sec:archives}
+\input{archives}
 
 \section{The Shell}\label{sec:shell}
 \input{shell}

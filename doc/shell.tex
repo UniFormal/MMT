@@ -49,6 +49,16 @@ The catalog maintains a translation map from URIs to URLs. It is initially empty
 \item \code{ombase F}: This creates a catalog entry for an OMBase server described in \code{F}. See the example file \code{ombase.xml} in the documentation.
 \end{itemize}
 
+\paragraph{Archive Commands}
+The following commands permit the registration and manipulation of archives:
+
+\begin{itemize}
+\item \code{compiler C ARGS}: This registers a compiler. \code{C} is the URI of a Java class, which must extend \texttt{info.kwarc.mmt.api.backend.Compiler} and have a constructor that takes no arguments. \code{ARGS} is a whitespace-separated list of string. The compiler will be initialized by calling its \code{init} method, to which \code{ARGS} is passed as a Scala \code{List[String]}. Compilers may maintain their own data structures and auxiliary threads; if they do so, they must clean up after themselves in their \code{destroy} method to avoid memory leaks.
+\item \code{archive add F}: This registers an archive with local root folder \code{F}.
+\item \code{archive build D F}: This builds the dimensions \code{D}, optionally restricted to the folder/file \code{F}. Legal values for \code{D} are \code{compile}, \code{content} (which will produce \texttt{content} and \texttt{narration}), \code{mws}, and \code{relational}.
+\item \code{archive mar F}: This builds the \texttt{mar} file and stores it in \code{F}.
+\end{itemize}
+
 \paragraph{Actions}
 Actions provide a simple infix syntax to pipe retrieved knowledge items through some typed post-processing operations.
 

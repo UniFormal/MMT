@@ -1,0 +1,35 @@
+An MMT archive \cite{HIJKR:dimensions:11} organizes connected documents in a file system structure. This is inspired by and similar to the project view in software engineering, specifically in Java. MMT provides archive-level functions for building and indexing document collections.
+
+\paragraph{Dimensions}
+MMT supports the following dimensions, which occur as toplevel folders in an archive:
+\begin{itemize}
+ \item source: source files in any language
+ \item compiled: one MMT file for every source file, following the same directory structure
+ \item content: one file for every MMT module with their directory structure induced by their MMT URI
+ \item narration: one MMT file for every source file, similar to the ones in compiled but containing links into the content instead of MMT modules
+ \item relational: relational index
+ \item mws: MathWebSearch \cite{mathwebsearch} index
+\end{itemize}
+
+\paragraph{Metadata}
+Archives may contain meta in a file \texttt{META-INT/MANIFEST.MF}. The syntax of this file is line-wise \texttt{key:value} pairs. Keys may occur only once.
+Predefined keys are:
+\begin{itemize}
+ \item \texttt{id}: a string. This identifies the archive.
+ \item \texttt{source}: a string. This identifies the source language and is used to choose a compiler.
+ \item \texttt{narration-base}: a URI. URIs for the source/narration documents are formed by concatenating this URI with the path within the archive (excluding the dimension).
+ \item \texttt{source-base}: a URI. A URI that is used by compilers as the base URI for source files.
+\end{itemize}
+
+\paragraph{Compilers}
+Compiler can be provided as plugins to MMT. They are classes that implement the MMT compiler interface (see Sect.~\ref{sec:shell}). This class defines an abstract file-to-file compile method. It also has a method to test applicability: This method is passed the \texttt{source} string above when finding a matching compiler for an archive.
+
+\paragraph{Build Process}
+MMT provides to build the dimensions of an archive, starting from the source:
+\begin{itemize}
+ \item \texttt{compiled} is generated from \texttt{source} using a matching compiler.
+ \item \texttt{content} and \texttt{narration} are generated generically from \texttt{content}.
+ \item Indices are generated generically from \texttt{content} and \texttt{narration}.
+ \item a \texttt{.mar} that packages all dimensions is generated generically.
+\end{itemize}
+
