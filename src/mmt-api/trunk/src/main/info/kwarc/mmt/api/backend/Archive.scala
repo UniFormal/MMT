@@ -27,6 +27,13 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     private val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
     private val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
     
+    private val custom : ArchiveCustomization = {
+       properties.get("customization") match {
+          case None => new DefaultCustomization
+          case Some(c) => java.lang.Class.forName(c).asInstanceOf[java.lang.Class[ArchiveCustomization]].newInstance
+       }
+    }
+    
     /** set of files in the compiled folder, built in sourceToNarr */
     private val files = new LinkedHashMap[File, List[CompilerError]]
     
@@ -206,8 +213,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                     case c: Constant =>
                        List(c.tp,c.df).map(tO => tO map { 
                           t =>
-                            //TODO eliminate .toLowerCase
-                            val url = mwsurl.replace("%m", thy.name.flat.toLowerCase).replace("%s", c.name.flat).replace("%o", c.name.head.toPath) 
+                            val url = custom.mwsurl(c.path) 
                             val cml = makeQVars(t.toCML, Nil)
                             val node = <mws:expr url={url}>{cml}</mws:expr> 
                             outStream.write(node.toString + "\n")
