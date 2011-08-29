@@ -166,7 +166,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
           new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_,qvars)) : _*)
     }
     
-    def produceMWS(in : List[String] = Nil, dim: String, controller: Controller) {
+    def produceMWS(in : List[String] = Nil, dim: String) {
         val sourceDim = dim match {
           case "mws-flat" => "flat"
           case _ => "content"
@@ -176,12 +176,16 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         val mwsbase = properties("mws-base")
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
-              if (includeDir(n)) produceMWS(in ::: List(n), dim, controller)
+              if (includeDir(n)) produceMWS(in ::: List(n), dim)
            }
         } else {
-           val mpath = Archive.ContentPathToMMTPath(in)
-           controller.get(mpath)
-           controller.library.getTheory(mpath) match {
+           val controller = new Controller(NullChecker, NullReport)
+           println(inFile)
+           val dpath = controller.read(inFile,None)
+           println(dpath)
+           val modules = controller.getDocument(dpath).getModulesResolved(controller.library)
+           println(modules(0).name)
+           modules(0) match {
               case thy : DeclaredTheory =>
                  val outFile = (root / "mws" / dim / in).setExtension("mws")
                  outFile.toJava.getParentFile().mkdirs()
