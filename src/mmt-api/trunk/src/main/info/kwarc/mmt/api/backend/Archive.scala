@@ -179,7 +179,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
           case "mws-flat" => "flat"
           case _ => "content"
         }
-        val mwsbase = properties("mws-base")
+        val mwsurl = properties("mws-url")
         val inFile = root / sourceDim / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
@@ -194,7 +194,6 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            val mod = controller.localLookup.getModule(mpath)
            mod match {
               case thy : DeclaredTheory =>
-                 log("[CONT:"+dim+ "->MWS] " + inFile + " -> " + outFile)
                  outFile.toJava.getParentFile().mkdirs()
                  val outStream = new java.io.FileWriter(outFile)
                  def writeEntry(t: Term, url: String) {
@@ -206,8 +205,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                  thy.valueList foreach {
                     case c: Constant =>
                        List(c.tp,c.df).map(tO => tO map { 
-                          t => 
-                            val url = mwsbase + "/" + thy.name + ".html" + "#" + c.name.flat 
+                          t =>
+                            val url = mwsurl.replace("%m", thy.name.flat).replace("%s", c.name.flat).replace("%o", c.name.head.toPath) 
                             val cml = makeQVars(t.toCML, Nil)
                             val node = <mws:expr url={url}>{cml}</mws:expr> 
                             outStream.write(node.toString + "\n")
