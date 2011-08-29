@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="mmt-api" default="build" basedir=".">
+<project name="mmt-pragmatics" default="build" basedir=".">
 
     <property environment="env" />
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <pathelement location="${scala.dir}/scala-library.jar"/>
-        <pathelement location="${scala.dir}/scala-compiler.jar"/>
-        <pathelement location="${lib}/tntbase-plugin-api.jar"/>
-        <pathelement location="${lib}/lfcatalog.jar"/>
+        <pathelement location="lib/scala-library.jar"/>
+        <pathelement location="lib/scala-compiler.jar"/>
+	<pathelement location="lib/tntbase-plugin-api.jar"/>
+        <pathelement location="lib/lfcatalog.jar"/>
         <pathelement location="${build.main}"/>
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
     </path>
+
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
+
     <taskdef resource="scala/tools/ant/antlib.xml"
         classpathref="scalac.classpath"/>
 
@@ -32,7 +34,7 @@
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
                 <!-- DM TODO: this shouldn't really be here -->
-                <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar ../lib/lfcatalog.jar"/>
+                <attribute name="Class-Path" value="../../../../../../deploy/lib/scala/scala-library.jar ../lib/lfcatalog.jar"/>
             </manifest>
             <service type="info.kwarc.tntbase.pluginapi.TntIntegrationPlugin"><!-- produces wrong directory, fix by updating to ant 1.7.1 -->
                 <provider classname="${root.pkg}.tntplugin.TNTValidation"/>
@@ -55,22 +57,13 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="compile,scaladoc">
-        <copy todir="${deploy}/apidocs">
+    <target name="deploy" depends="build,scaladoc">
+        <copy todir="${deploy}/${prj}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>
-        <jar destfile="${build}/mmt/${jar}">
-            <manifest>
-                <attribute name="Main-Class" value="${main.class}"/>
-                <!-- DM TODO: this shouldn't really be here -->
-                <attribute name="Class-Path" value="../lib/scala/scala-library.jar lfcatalog.jar"/>
-            </manifest>
-            <service type="info.kwarc.tntbase.pluginapi.TntIntegrationPlugin"><!-- produces wrong directory, fix by updating to ant 1.7.1 -->
-                <provider classname="${root.pkg}.tntplugin.TNTValidation"/>
-                <provider classname="${root.pkg}.tntplugin.TNTPresenter"/>
-            </service>
-            <fileset dir="${build.main}"/>
-        </jar>
+        <copy todir="${deploy}/${prj}/lib">
+            <fileset file="${build}/${jar}"/>
+        </copy>
     </target>
 
     <target name="clean">

@@ -21,29 +21,17 @@ object FlatSequence {
 	}
 }
 
-object Ind {//TODO mmt.index change name
-	def apply(ind : Term, seq : List[SeqItem]) : Term = OMA(OMID(mmt.index),ind :: seq)
-	def unapply(t : Term) : Option[(Term, List[SeqItem])] = 
-		t match {
-		  case OMA(OMID(mmt.index), (ind : Term) :: seq) => Some((ind,seq)) 
-		  case _ => None
-	}
-}
+object Ind {
+	def apply(seq : String, i : String) : Term = Index(SeqVar(seq),OMV(i))
 
-object RepTerm {
-	def apply(fn : Term, n : Term): Term = OMA(OMID(mmt.repetition),List(fn,n))
-    def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case OMA(mmt.repetition,List(fn : Term,n : Term)) => Some((fn,n))
-		case _ => None
-	}
 }
 
 object Rep {
-	def apply(fn : Term, n : Int): Term = OMA(OMID(mmt.repetition),List(fn,OMI(n)))
-    def unapply(t : Term) : Option[(Term,Int)] = t match {
-		case OMA(mmt.repetition,List(fn : Term,OMI(n))) => Some((fn,n.toInt))
-		case _ => None
-	}
+	def apply(tp : Term, n : Term): SeqItem = SeqSubst(tp, "i", SeqUpTo(n)) 
+}
+
+object RepInt {
+	def apply(fn : Term, n : Int): SeqItem = Rep(fn, OMI(n))
 }
 
 object normalize {

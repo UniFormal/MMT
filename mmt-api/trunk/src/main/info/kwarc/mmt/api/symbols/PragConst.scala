@@ -4,7 +4,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
-import info.kwarc.mmt.api.moc._
 
 /**
  * A Constant represents an MMT constant.<p>
@@ -15,19 +14,17 @@ import info.kwarc.mmt.api.moc._
  * @param df the optional definiens
  * @param role the role of the constant
  */
-class Constant(val home : TheoryObj, val name : LocalName,
-               val tp : Option[Term], val df : Option[Term], val uv : Universe) extends Symbol {
+class PragConst(val home : TheoryObj, val name : LocalName,
+               val by : List[Constant], val means : List[Constant], val uv : Universe) extends Symbol {
   def toTerm = OMID(path)
 
   def role = info.kwarc.mmt.api.Role_Constant(uv)
-  def components = List(OMID(path), tp.getOrElse(Omitted), df.getOrElse(Omitted))
-  
+  def components = List(OMID(path))//
+ 
   def toNode =
-     <constant name={name.flat}>
-       {getMetaDataNode}
-       {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
-       {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
-     </constant>
-  override def toString = name + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
-  
+     <pragConst name={name.flat}>
+       <by>{by.map(x => x.toNode)}</by>
+       <means>{means.map(x => x.toNode)}</means>
+     </pragConst>
+  //override def toString = name + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
 }

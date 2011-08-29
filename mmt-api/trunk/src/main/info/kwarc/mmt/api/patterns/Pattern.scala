@@ -42,7 +42,7 @@ object Instance {
     	val pt : Pattern = lup.getPattern(inst.pattern) 
       pt.con.map {
     	  case TermVarDecl(n,tp,df,at @ _*) => 
-            def auxSub(x : Term) = {
+              def auxSub(x : Term) = {
         	      val names = pt.con.map(d => d.name)
         	      val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
         	      (x ^ inst.matches) ^ Substitution(subs : _*)

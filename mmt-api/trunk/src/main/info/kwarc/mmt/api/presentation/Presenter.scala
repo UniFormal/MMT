@@ -116,6 +116,21 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 			      recurse(value)
 			      gpar.rh.attributeEnd
 		      }
+		      //testing
+		      if (comps.length > 0) {
+		        comps(0) match {
+		          case s : StructuralElement =>
+		            gpar.rh.attributeStart("","id")
+		        	gpar.rh.apply(s.path.toPath)
+		        	gpar.rh.attributeEnd
+		          case OMID(path) => 
+		            gpar.rh.attributeStart("","id")
+		        	gpar.rh.apply(path.toPath)
+		        	gpar.rh.attributeEnd
+		          case _ => 
+		        }
+		      }
+		      
 		      children.foreach(recurse)
 		      gpar.rh.elementEnd
 		  case PList(items) =>

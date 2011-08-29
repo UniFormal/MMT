@@ -93,6 +93,7 @@ object Role {
       case "seqvariable" => Role_SeqVariableRef
       case "sequpto" => Role_sequpto
       case "toplevel" => Role_ObjToplevel
+      case "value" => Role_value
       case s if s.startsWith("fragment:") => Role_Fragment(s.substring(9))
       case s => throw ParseError("illegal role: " + s)
    }

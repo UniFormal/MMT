@@ -145,34 +145,73 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         }       
     }
-    def produceMWS(in : List[String] = Nil, dim: String) {
-        val inFile = root / dim / in
+
+    
+    private def makeQVars(n : scala.xml.Node, qvars : List[String]) : scala.xml.Node = n match {
+      case <m:apply><csymbol>{s}</csymbol><m:bvar><m:apply><csymbol>{zz}</csymbol><m:ci>{v}</m:ci><csymbol>{a}</csymbol><csymbol>{b}</csymbol></m:apply></m:bvar>{c}</m:apply> =>
+        if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for")
+        	makeQVars(c,  v.toString() :: qvars)
+        else 
+        	new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_,qvars)) : _*)
+
+      case <m:ci>{v}</m:ci> => 
+        if (qvars.contains(v.toString))
+          <mws:hvar>{v}</mws:hvar>
+        else
+          n
+      case _ =>
+        if (n.child.length == 0)
+          n
+        else
+          new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_,qvars)) : _*)
+    }
+    
+    def produceMWS(in : List[String] = Nil, dim: String, controller: Controller) {
+        val sourceDim = dim match {
+          case "mws-flat" => "flat"
+          case _ => "content"
+        }
+        
+        val inFile = root / sourceDim / in
         val mwsbase = properties("mws-base")
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
-              if (includeDir(n)) produceMWS(in ::: List(n), dim)
+              if (includeDir(n)) produceMWS(in ::: List(n), dim, controller)
            }
         } else {
-           val controller = new Controller(NullChecker, report)
            val mpath = Archive.ContentPathToMMTPath(in)
            controller.get(mpath)
            controller.library.getTheory(mpath) match {
               case thy : DeclaredTheory =>
                  val outFile = root / "mws" / dim / in
-                 val outStream = null //new ... (outFile)
+                 outFile.toJava.getParentFile().mkdirs()
+                 val outStream = new java.io.FileWriter(outFile)
                  def writeEntry(t: Term, url: String) {
-                    //outStream.writeln("..." + t.toCML.toString)
+                   val node = <mws:expr url={url}>{t.toCML}</mws:expr> 
+                   outStream.write(node.toString + "\n")
                  }
-                 //outStream.writeln("..")
+                 outStream.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+                 outStream.write("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
+                 
                  thy.valueList foreach {
                     case c: Constant =>
                        List(c.tp,c.df).map(tO => tO map { 
-                          t => writeEntry(t, mwsbase + "/" + c.name.flat)
+                          t => 
+                            val url = mwsbase + "/" + thy.name + ".html" + "#" + c.name.flat 
+                            val cml = makeQVars(t.toCML, Nil)
+                            val node = <mws:expr url={url}>{cml}</mws:expr> 
+                            outStream.write(node.toString + "\n")
+                            //writeEntry(t, mwsbase + "/" + c.name.flat)
                        })
+                    /*case i : Instance => {
+                      val url = mwsbase + "/" + thy.name + ".html" + "#" + i.name.flat
+                      val node = <mws:expr url={url}>{i.matches.toCML}</mws:expr>
+                      outStream.write(node.toString + "\n")
+                    }*/
                     case _ =>
                  }
-                 //outStream.writeln(...)
-                 //outStream.close
+                 outStream.write("</mws:harvest>\n")
+                 outStream.close
               case t: DefinedTheory =>
            }
         }
@@ -263,7 +302,12 @@ object Archive {
        case Nil => throw ImplementationError("")
        case hd :: tl =>
           val p = hd.indexOf("..")
-          val tllast = tl.last
+          val tllast = tl.length match {
+            case 1 => tl(0)
+            case 0 => 
+            	throw ImplementationError("asdafs")
+            case _ => tl.last
+          }
           val name = unescape(tllast.substring(0, tllast.length - 6))
           DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? name
     }

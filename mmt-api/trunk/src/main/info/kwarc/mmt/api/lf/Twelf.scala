@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.lf
 import info.kwarc.mmt.api._
-import backend._
+import info.kwarc.mmt.api.backend._
 import utils.File
 import utils.FileConversion._
 import info.kwarc.mmt.lf._
