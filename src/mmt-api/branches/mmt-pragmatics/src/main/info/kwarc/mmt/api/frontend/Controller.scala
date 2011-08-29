@@ -135,9 +135,10 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       backend.cleanup
    }
    /** reads a file and returns the Path of the document found in it */
-   def read(f: java.io.File) : DPath = {
+   def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
       val N = utils.xml.readFile(f)
-      reader.readDocument(DPath(URI.fromJava(f.toURI)), N)
+      val dpath = docBase.getOrElse(DPath(URI.fromJava(f.toURI)))
+      reader.readDocument(dpath, N)
    }
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
@@ -186,8 +187,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
                case "content" => arch.produceNarrCont(in)
                case "flat" => arch.produceFlat(in, this)
                case "relational" => arch.produceRelational(in, this)
-               case "mws" => arch.produceMWS(in, "content")
-               case "mws-flat" => arch.produceMWS(in, "flat")
+               case "mws" => arch.produceMWS(in, "content", this)
+               case "flmws" => arch.produceMWS(in, "mws-flat", this)
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 

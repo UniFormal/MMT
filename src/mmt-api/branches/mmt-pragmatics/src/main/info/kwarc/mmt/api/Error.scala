@@ -29,4 +29,4 @@ case class ImplementationError(s : String) extends Error("implementation error: 
 // are these even used?
 case class ObjError(s : String) extends Error(s)
 case class LookupError(name : String) extends Error("variable " + name + " not declared in context")
-case class SubstitutionUndefined(name: String) extends Error("Substitution undefined at " + name)
+case class SubstitutionUndefined(name: String, m: String) extends Error("Substitution undefined at " + name + "; " + m)

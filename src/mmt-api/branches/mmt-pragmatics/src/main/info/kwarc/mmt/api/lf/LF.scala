@@ -50,6 +50,8 @@ object Lambda {
 
 object Pi { 
    def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("Pi"), OMV(name) % tp, body)
+   def apply(name : String, tp : Sequence, body : Term) = OMBIND(LF.constant("Pi"), SeqVarDecl(name, Some(tp),None), body)
+   
    def apply(con: Context, body : Term) = OMBIND(LF.constant("Pi"), con, body) //(?)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
 	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None), rest @ _*), s) if b == LF.constant("Pi") =>

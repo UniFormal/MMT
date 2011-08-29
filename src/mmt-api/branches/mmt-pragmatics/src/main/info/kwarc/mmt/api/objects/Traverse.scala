@@ -86,7 +86,7 @@ object Substitute extends Traverser[Substitution] {
 	   case OMV(n) => if (con.isDeclared(n)) OMV(n) else subs(n) match {
 	  	   case Some(t: Term) => t
 	  	   case None => OMV(n)
-	  	   case Some(_) => throw SubstitutionUndefined("substitution is applicable but does not provide a term")
+	  	   case Some(_) => throw SubstitutionUndefined(n, "substitution is applicable but does not provide a term")
 	   }
 	   // in all other cases, traverse
 		case t => Traverser.doTerm(this,t)(con, subs)

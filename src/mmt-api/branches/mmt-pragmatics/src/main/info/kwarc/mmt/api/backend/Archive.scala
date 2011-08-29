@@ -74,9 +74,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
 
-    /** Generate content and narration from compiled. It uses the files map generated in compile */
+    /** Generate content and narration from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
-        val controller = new Controller(NullChecker, report)
         val inFile = root / "compiled" / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
@@ -84,11 +83,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
-              val dpath = controller.read(inFile)
+              val controller = new Controller(NullChecker, report)
+              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val doc = controller.getDocument(dpath)
               val narrFile = narrationDir / in
-              log("[COMPILED->CONT+NARR] " + inFile)
-              log("[COMPILED->NARR]        -> " + narrFile)
+              log("[COMP->CONT+NARR] " + inFile)
+              log("[COMP->NARR]        -> " + narrFile)
               // write narration file
               narrFile.getParentFile.mkdirs
               xml.writeFile(doc.toNode, narrFile)
@@ -145,22 +145,46 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         }       
     }
+
     
+    private def makeQVars(n : scala.xml.Node, qvars : List[String]) : scala.xml.Node = n match {
+      case <m:apply><csymbol>{s}</csymbol><m:bvar><m:apply><csymbol>{zz}</csymbol><m:ci>{v}</m:ci><csymbol>{a}</csymbol><csymbol>{b}</csymbol></m:apply></m:bvar>{c}</m:apply> =>
+        if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for")
+        	makeQVars(c,  v.toString() :: qvars)
+        else 
+        	new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_,qvars)) : _*)
+
+      case <m:ci>{v}</m:ci> => 
+        if (qvars.contains(v.toString))
+          <mws:hvar>{v}</mws:hvar>
+        else
+          n
+      case _ =>
+        if (n.child.length == 0)
+          n
+        else
+          new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_,qvars)) : _*)
+    }
     
-    def produceMWS(in : List[String] = Nil, dim: String) {
-        val inFile = root / dim / in
+    def produceMWS(in : List[String] = Nil, dim: String, controller: Controller) {
+        val sourceDim = dim match {
+          case "mws-flat" => "flat"
+          case _ => "content"
+        }
+        
+        val inFile = root / sourceDim / in
         val mwsbase = properties("mws-base")
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
-              if (includeDir(n)) produceMWS(in ::: List(n), dim)
+              if (includeDir(n)) produceMWS(in ::: List(n), dim, controller)
            }
         } else {
-           val controller = new Controller(NullChecker, report)
            val mpath = Archive.ContentPathToMMTPath(in)
            controller.get(mpath)
            controller.library.getTheory(mpath) match {
               case thy : DeclaredTheory =>
                  val outFile = root / "mws" / dim / in
+                 outFile.toJava.getParentFile().mkdirs()
                  val outStream = new java.io.FileWriter(outFile)
                  def writeEntry(t: Term, url: String) {
                    val node = <mws:expr url={url}>{t.toCML}</mws:expr> 
@@ -174,15 +198,16 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                        List(c.tp,c.df).map(tO => tO map { 
                           t => 
                             val url = mwsbase + "/" + thy.name + ".html" + "#" + c.name.flat 
-                            val node = <mws:expr url={url}>{t.toCML}</mws:expr> 
+                            val cml = makeQVars(t.toCML, Nil)
+                            val node = <mws:expr url={url}>{cml}</mws:expr> 
                             outStream.write(node.toString + "\n")
                             //writeEntry(t, mwsbase + "/" + c.name.flat)
                        })
-                    case i : Instance => {
+                    /*case i : Instance => {
                       val url = mwsbase + "/" + thy.name + ".html" + "#" + i.name.flat
-                      val node = <mws:expr url={url}>i.matches.toCML</mws:expr>
+                      val node = <mws:expr url={url}>{i.matches.toCML}</mws:expr>
                       outStream.write(node.toString + "\n")
-                    }
+                    }*/
                     case _ =>
                  }
                  outStream.write("</mws:harvest>\n")
@@ -200,8 +225,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     def writeToContent(mod: Module) {
        val destfile = MMTPathToContentPath(mod.path)
        log("[COMP->CONT]        -> " + destfile.getPath)
-       destfile.getParentFile.mkdirs // make sure the destination folder exists
-       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"> { mod.toNode } </omdoc>
+       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
        xml.writeFile(omdocNode, destfile)
     }
     
@@ -278,7 +302,12 @@ object Archive {
        case Nil => throw ImplementationError("")
        case hd :: tl =>
           val p = hd.indexOf("..")
-          val tllast = tl.last
+          val tllast = tl.length match {
+            case 1 => tl(0)
+            case 0 => 
+            	throw ImplementationError("asdafs")
+            case _ => tl.last
+          }
           val name = unescape(tllast.substring(0, tllast.length - 6))
           DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? name
     }

@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api._
 
 object mmt {
-   val baseURI = URI("http", "latin.omdoc.org")
+   val baseURI = URI("http", "cds.omdoc.org")
    val mmtbase = DPath(baseURI / "omdoc" / "mmt.omdoc")
    val mmtcd = mmtbase ? "mmt"
    def mmtsymbol(name : String) = mmtcd ? name
