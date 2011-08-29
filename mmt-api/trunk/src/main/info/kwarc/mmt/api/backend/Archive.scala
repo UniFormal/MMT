@@ -186,7 +186,6 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
           case "mws-flat" => "flat"
           case _ => "content"
         }
-        val mwsurl = properties("mws-url")
         val inFile = root / sourceDim / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>

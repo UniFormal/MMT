@@ -34,35 +34,57 @@ class LListElem[A](var here : A, var prev: LListElem[A], var next: LListElem[A])
    def this(here: A) = this(here, null, null)
 }
 
-class LList[A] {
-   var _first: LListElem[A] = null
-   var _last: LListElem[A] = null
+class LList[A](private var _first: LListElem[A], private var _last: LListElem[A]) {
+   def copy : LList[A] = {
+      val l = LList[A]()
+      foreach {a => l := a}
+      l
+   }
+   def slice(from: LListElem[A], to: LListElem[A]) : LList[A] = {
+      val fst = new LListElem[A](from.here, null, from.next)
+      val lst = new LListElem[A](to.here, to.prev, null)
+      new LList[A](fst, lst)
+   }
    /** e =: l prepends e to l, l is changed */
    def =:(a: A) {
       val e = new LListElem(a, null, _first)
-      _first = e
+      if (empty) {
+         _first = e
+         _last = e
+      } else {
+         _first.prev = e
+         _first = e
+      }
    }
    /** m =: l prepends m to l, l is changed but not m
     * linear time in size of m: list structure of m is copied but not the elements of m
     */
    def =:(that: LList[A]) {
-      if (that.nonempty) {
-         that.last =: this
-         that.init =: this
+      var e : LListElem[A] = that._last
+      while (e != null) {
+         e.here =: this
+         e = e.prev
       }
    }
    /** l := e appends e to l, l is changed */
    def :=(a: A) {
       val e = new LListElem(a, _last, null)
-      _last = e
+      if (empty) {
+         _first = e
+         _last = e
+      } else {
+         _last.next = e
+         _last = e
+      }
    }
    /** l := m appends m to l, l is changed but not m
     * linear time in size of m: list structure of m is copied but not the elements of m
     */
    def :=(that: LList[A]) {
-      if (that.nonempty) {
-         this := that.head
-         this := that.tail
+      var e : LListElem[A] = that._first
+      while (e != null) {
+         this := e.here
+         e = e.next
       }
    }
    /** l :=: m concatenates l and m, both are changed
@@ -84,31 +106,64 @@ class LList[A] {
    }
    def empty : Boolean = _first == null
    def nonempty : Boolean = _first != null
-   def head : A        = if (empty) throw LList.Empty else _first.here
-   def last : A        = if (empty) throw LList.Empty else _last.here
-   /** constant time, changes to tail affect original list */
-   def tail : LList[A] = if (empty) throw LList.Empty else {
-      LList.fromto(_first.next, _last)
+   def head : A = if (empty) throw LList.Empty else _first.here
+   def last : A = if (empty) throw LList.Empty else _last.here
+   /** removes and returns the head of this list; constant time */
+   def popHead : A = {
+      if (empty) throw LList.Empty
+      val a = _first.here
+      if (_first.next == null) {
+         _first = null
+         _last = null
+      } else {
+         _first.next.prev = null
+      }
+      a
    }
-   /** constant time, changes to init affect original list */
-   def init : LList[A] = if (empty) throw LList.Empty else {
-      LList.fromto(_first, _last.prev)
+   /** removes and returns the last element of this list; constant time */
+   def popLast : A = {
+      if (empty) throw LList.Empty
+      val a = _last.here
+      if (_last.prev == null) {
+         _first = null
+         _last = null
+      } else {
+         _last.prev.next = null
+      }
+      a
    }
-   
-   def toList : List[A] = if (empty) Nil else head :: tail.toList
+   def foreach(f: A => Unit) {
+      var e = _first
+      while (e != null) {
+         f(e.here)
+         e = e.next
+      }
+   }
+   def reverseCopy : LList[A] = {
+      val l = LList[A]()
+      foreach {a => a =: l}
+      l
+   }
+   def reverseForeach(f: A => Unit) {
+      var e = _last
+      while (e != null) {
+         f(e.here)
+         e = e.prev
+      }
+   }
+   def toList : List[A] = {
+      var l : List[A] = Nil
+      reverseForeach {a => l = a :: l}
+      l
+   }
+   override def toString = toList.mkString("[",",","]")
 }
 
 object LList {
-   def apply[A]() : LList[A] = new LList[A]
-   def apply[A](a: A) : LList[A] = {
-      val l = new LList[A]
-      a =: l
-      l
-   }
-   def fromto[A](from: LListElem[A], to: LListElem[A]) : LList[A] = {
-      val l = new LList[A]()
-      l._first = new LListElem[A](from.here, null, from.next)
-      l._last  = new LListElem[A](to.here, to.prev, null)
+   def apply[A]() : LList[A] = new LList[A](null, null)
+   def apply[A](as: A*) : LList[A] = {
+      val l = apply[A]()
+      as foreach {a => l := a}
       l
    }
    case object Empty extends java.lang.Throwable
