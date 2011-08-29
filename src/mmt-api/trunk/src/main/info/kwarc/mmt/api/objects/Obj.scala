@@ -329,7 +329,7 @@ case class Index(seq : Sequence, term : Term) extends Term {
 	def components = List(seq,term)
 	def toNodeID(pos : Position) = <om:OMNTH>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</om:OMNTH> //TODO Change order of index and sequence 
 	//<index>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</index>
-	def toCML(pos : Position) = <cm:nth>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</cm:nth> //TODO Change order of index and sequence
+	def toCML(pos : Position) = <m:nth>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</m:nth> //TODO Change order of index and sequence
 	def toCML = null
 	def ^(sub : Substitution) = Index(seq ^ sub, term ^ sub)
 }
@@ -354,6 +354,7 @@ sealed abstract class SeqItem extends Sequence {
    def items = List(this)
 }
 
+/*
 case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem {
 	def toNodeID(pos : Position)= 		
 	    <seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
@@ -369,16 +370,28 @@ case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem 
 	def components = List(expr,StringLiteral(name),seq)
 	
 }
+*/
 
+case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends SeqItem {
+	def toNodeID(pos : Position)= 		
+	    <seqsubst var ={name}>{seq1.toNodeID(pos + 0)}{seq2.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
+	def toCML(pos : Position) = 
+	    <cm:seqsubst var ={name}>{seq1.toNodeID(pos + 0)}{seq2.toNodeID(pos + 2)}</cm:seqsubst> % pos.toIDAttr
+	def ^ (sub : Substitution) = {
+	    	val subn = sub ++ (name / OMV(name)) 
+	    	SeqSubst(seq1 ^ subn,name,seq2 ^ sub)  //TODO Variable capture
+	    }
+	def head = seq1.head
+	def role = Role_seqsubst
+	def components = List(seq1,StringLiteral(name),seq2)
+	
+}
 case class SeqVar(name : String) extends SeqItem {
 	def toNodeID(pos : Position) =
 		<om:OMSV name ={name}/> % pos.toIDAttr
 	def toCML(pos : Position) =
-		<cm:si>{name}</cm:si> % pos.toIDAttr
-	
+		<m:si>{name}</m:si> % pos.toIDAttr
 	def /(s : Sequence) = SeqSub(name, s)
-
-	def toCML = null
 	def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t : Sequence) => t
@@ -395,9 +408,7 @@ case class SeqUpTo(num : Term) extends SeqItem {
 		<om:OMNATS>{num.toNodeID(pos + 0)}</om:OMNATS> % pos.toIDAttr
 		//<sequpto>{num.toNodeID(pos + 0)}</sequpto> % pos.toIDAttr
    def toCML(pos : Position) =
-		<cm:nats>{num.toNodeID(pos + 0)}</cm:nats> % pos.toIDAttr
-	def toCML = null
-	
+		<m:nats>{num.toNodeID(pos + 0)}</m:nats> % pos.toIDAttr
 	def ^(sub : Substitution) =
 		num match {
 		case OMI(n) => SeqItemList(List.range(1,n.toInt).map(OMI(_)))
@@ -412,7 +423,7 @@ case class SeqItemList(items: List[SeqItem]) extends Sequence {
    def toNodeID(pos : Position) =
 	   <sequence>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</sequence> % pos.toIDAttr
    def toCMLdeID(pos : Position) =
-	   <cm:seq>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</cm:seq> % pos.toIDAttr
+	   <m:seq>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</m:seq> % pos.toIDAttr
    def toCML = null
    def ^(sub : Substitution) : Sequence = SeqItemList(items.map(_ ^ sub).flatMap(_.items))
    def components :List[Content] = items
