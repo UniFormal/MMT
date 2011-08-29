@@ -404,10 +404,10 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val occe = checkTerm(home, context, err)
             val occa = args.flatMap(checkTerm(home, context, _))
             occe ::: occa
-         case OMFOREIGN(node) => Nil //TODO roles, dependencies?
-         case OMI(i) => Nil //TODO roles; check import of pseudo-theories, dependencies?
-         case OMSTR(s) => Nil //TODO roles; check import of pseudo-theories, dependencies?
-         case OMF(d) => Nil //TODO roles; check import of pseudo-theories, dependencies?
+         case OMFOREIGN(node) => Nil //TODO
+         case OMI(i) => Nil //TODO check if integers are permitted
+         case OMSTR(s) => Nil //TODO check if strings are permitted
+         case OMF(d) => Nil //TODO check if floats are permitted
          case OMSemiFormal(t) => Nil //TODO
          case Index(seq,ind) => checkSeq(home,context,seq) ::: checkTerm(home,context,ind)
       }

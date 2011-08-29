@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.MyList.fromList
 import scala.xml.Node
-
+import scala.collection.mutable.HashMap
 /** A NotationKey identifies the situation when a notation should be applied.
  * @param path an MMTURI identifying the applicable expressions, applicable to all expressions if omitted
  * @param role the syntactical position where the notation is applicable
@@ -16,13 +16,13 @@ case class NotationKey(path : Option[Path], role : Role)
  * @param report the logging handler
  */
 class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report : frontend.Report) {
-   protected val sets = new scala.collection.mutable.HashMap[MPath, Style]
-   protected val defaults = new scala.collection.mutable.HashMap[NotationKey, Notation]
+   protected val sets = new HashMap[MPath, Style]
+   protected val defaults = new HashMap[NotationKey, Notation]
 
    /** the imports relations between notation sets */
    protected val imports = new ReflTransHashRelation[MPath]
    /** caches the list of imported notation sets */
-   protected var visible = new scala.collection.mutable.HashMap[MPath, List[MPath]]
+   protected var visible = new HashMap[MPath, List[MPath]]
    private def log(s : => String) = report("notations", s)
    def get(path : MPath) : Style = {
       try {sets(path)}
