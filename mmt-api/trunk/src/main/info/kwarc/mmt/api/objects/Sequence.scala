@@ -57,7 +57,7 @@ object normalize {
 	 	//  	   	  l.map(x => en ^ Substitution(TermSub(n,OMI(x))))
 	 	//  	   case _ => List(SeqSubst(en,n,mn))
 	 	//   }
-	 	/*  
+	      /*
 	 	case SeqSubst(e,n,s) =>
 	 	   s match {
 	 	  	   case SeqItemList(items) =>
@@ -75,8 +75,7 @@ object normalize {
 	 	  	   	  		l.map(x => en ^ Substitution(TermSub(n,OMI(x))))
 	 	  	     	case _ => List(SeqSubst(en,n,mn))
 	 	  	     }	 	  	     
-	 	   	}
-	 	   	*/
+	 	   	} */
 	 	case SeqUpTo(m) =>
 	 		m match { //TODO Shouldn't we first normalizeTerm(m) then match?
 	 			case OMI(n) => List.range(1,n.toInt).map(i => OMI(i))
@@ -107,10 +106,10 @@ object normalize {
 	 	  	   case (FlatSequence(items),OMI(n)) => items(n.toInt)
 	 	  	   case _ => Index(seqN,indN)
 	 	   }
-          case OMA(fn,args) => OMA(normalizeTerm(fn),args.flatMap(normalizeSeqItem))
+        case OMA(fn,args) => OMA(normalizeTerm(fn),args.flatMap(normalizeSeqItem))
 	 	  case OMBIND(bin,con,bdy) => OMBIND(normalizeTerm(bin),normalizeContext(con),normalizeTerm(bdy))	 	  
 	 	  case OMATTR(arg,key,value)=> OMATTR(normalizeTerm(arg),key,normalizeTerm(value)) //TODO normalize method for key?
-	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via) //TODO normalize method for via?
+	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via)
 	 	  case OME(err, args) => OME(normalizeTerm(err),args.map(normalizeTerm))
 	 	  case obj => obj //TODO cases
 	  }

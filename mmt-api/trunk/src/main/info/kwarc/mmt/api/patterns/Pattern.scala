@@ -15,7 +15,7 @@ class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, va
    		{if (! params.isEmpty)
    		   <parameters>{params.toNode}</parameters>
    		else Nil}
-   	    <declarations>{con.toNode}</declarations>
+   	   <declarations>{con.toNode}</declarations>
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
    def components = Nil
