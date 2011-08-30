@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
+import frontend._
 
 import info.kwarc.mmt.api.utils.MyList.fromList
 import info.kwarc.mmt.api.objects.Conversions._
@@ -445,4 +446,4 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    }
 }
 
-object StructuralChecker extends FoundChecker(DefaultFoundation)
+class StructuralChecker(report: Report) extends FoundChecker(new DefaultFoundation(report))

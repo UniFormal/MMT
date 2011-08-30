@@ -45,7 +45,7 @@ object Storage {
       
      val l =   (N\\"registry"\\"repository").toList.flatMap(R => {
       val repos = URI(xml.attr(R, "location"))
-      R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.getScheme, repos.getAuthority, repos.getPath + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
+      R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
      })
       l
 
