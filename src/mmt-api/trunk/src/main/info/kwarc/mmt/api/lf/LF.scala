@@ -110,9 +110,9 @@ object Univ {
 /** The LF foundation. Implements type checking and equality */
 class LFF(report: Report) extends Foundation(report) {
    private def log(msg : => String) = report("lf", msg)
-   def applicable(m : MPath) = true
+   val foundTheory = LF.lftheory
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean = {
-      lib.report("LF: ", "typing\n" + tm.toString + "\n" + tp.toString)
+      log("typing\n" + tm.toString + "\n" + tp.toString)
       (tm, tp) match {
          case (Some(s), Some(a)) => check(s, a, G)
          case (Some(s), None) => infer(s, G) != Univ(2)
@@ -121,7 +121,7 @@ class LFF(report: Report) extends Foundation(report) {
       }
    }
    def equality(tm1 : Term, tm2 : Term)(implicit lib : Lookup) : Boolean = {
-      lib.report("LF: ", "equal\n" + tm1.toString + "\n" + tm2.toString)
+      log("equal\n" + tm1.toString + "\n" + tm2.toString)
       equal(tm1, tm2)
    }
  

@@ -4,13 +4,13 @@ import objects._
 import frontend._
 
 abstract class Foundation(report: Report) {
-   def applicable(m : MPath) : Boolean
+   val foundTheory : MPath
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean
    def equality(tm1 : Term, tm2 : Term)(implicit lib : Lookup) : Boolean
 }
 
 class DefaultFoundation(report: Report) extends Foundation(report) {
-   def applicable(m : MPath) : Boolean = true
+   val foundTheory = utils.mmt.mmtcd 
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean =
       true
       //tm.isEmpty || tp.isEmpty || tp == Some(OMHID())
