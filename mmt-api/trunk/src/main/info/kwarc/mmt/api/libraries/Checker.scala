@@ -240,6 +240,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    //TODO: compatibility of multiple assignments to the same knowledge item
    def checkSymbolLevel(s : ContentElement)(implicit lib : Lookup) : CheckResult = s match {
          case c : Constant =>
+            if (c.parent == OMMOD(foundation.foundTheory)) return Success(Nil) //TODO this should be more sophisticated; it should be possible to register multiple foundations
             //checkHomeTheory(c)
             val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get) else Nil
             val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get) else Nil
