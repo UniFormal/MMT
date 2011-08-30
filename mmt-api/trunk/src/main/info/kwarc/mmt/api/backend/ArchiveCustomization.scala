@@ -10,5 +10,12 @@ class DefaultCustomization extends ArchiveCustomization {
 }
 
 class MML extends ArchiveCustomization {
-  def mwsurl(p: Path) : String = "http://www.mizar.org/version/current/html/" + "%m.html#o"
+  def mwsurl(p: Path) : String = p match {
+    case par % ln => 
+      val thyName = par.toMPath.name.flat
+      val symbolName = ln.head.toPath
+      "http://www.mizar.org/version/current/html/" + thyName.toLowerCase() + ".html#" + symbolName
+    case _ => throw ImplementationError("Module level references not implemented yet")
+     // "http://www.mizar.org/version/current/html/" + "%m.html#o"
+  }
 }

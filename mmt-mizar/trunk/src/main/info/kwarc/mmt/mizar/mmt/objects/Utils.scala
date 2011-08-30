@@ -22,9 +22,9 @@ object Mizar {
 	
 	def constant(name : String) : Term = {
 		name match {
-			case "set" => OMID(HiddenTh ? name)
-			case "=" => OMID(HiddenTh ? "==") //due to twelf constant naming limitations
-			case "<>" => OMID(HiddenTh ? "<>")
+			case "M1" => OMID(HiddenTh ? name)
+			case "R1" => OMID(HiddenTh ? name)
+			case "R2" => OMID(HiddenTh ? name)
 			case _ => OMID(MizarTh ? name)
 		}
 		
@@ -37,7 +37,7 @@ object Mizar {
 	def prop : Term = constant("prop")
 	def any : Term = constant("any")
 	def tp : Term = constant("tp")
-	def set = constant("set")
+	def set = constant("M1")
 	
 	def is(t1 : Term, t2 : Term) = OMA(constant("is"), List(t1,t2))
 	def be(t1 : Term, t2 : Term) = OMA(constant("be"), List(t1,t2))
@@ -52,7 +52,7 @@ object Mizar {
 	
 	def proof(t : Term) = OMA(constant("proof"), List(t))
 	
-	def eq(t1 : Term, t2 : Term) = OMA(constant("eq"), List(t1,t2))
+	def eq(t1 : Term, t2 : Term) = OMA(constant("R1"), List(t1,t2))
 	
 	def exists(v : String, tp : Term, prop : Term) = 
 	  OMBIND(OMA(Mizar.constant("ex"), List(tp)),Context(TermVarDecl(v, Some(Mizar.any), None)),prop)

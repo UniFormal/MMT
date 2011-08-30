@@ -123,7 +123,7 @@ def translateArticle(mml : String, aid : String) : Unit = {
 		UtilsReader.parseSymbols(getNode(idx))
 		UtilsReader.parseFormats(getNode(frx))
 		
-		ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int,Int]
+		ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int,Tuple2[Int,Int]]
 		ParsingController.attributes(aid) = new scala.collection.mutable.HashMap[Int,Int]
 
 		ArticleParser.parseArticle(getNode(xmlabs))

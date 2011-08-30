@@ -59,7 +59,7 @@ object ArticleTranslator {
 	def translateSet(s : MizSet) = {
 	  val tm = TypeTranslator.translateTerm(s.term)
 	  val tp = TypeTranslator.translateTyp(s.typ)
-	  val name = "const_" + s.constnr
+	  val name = "C" + s.constnr
 	  val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), Some(tm), Individual(None))
 	  TranslationController.add(c)
 	}
@@ -67,14 +67,14 @@ object ArticleTranslator {
 	def translateConsider(c : MizConsider) = {
 	  val startnr = c.constnr
 	  val ex_prop = PropositionTranslator.translateProposition(c.prop)
-	  val ex_c = new Constant(OMMOD(TranslationController.currentTheory), LocalName("ex_prop" + startnr), Some(ex_prop), None, Individual(None))
+	  val ex_c = new Constant(OMMOD(TranslationController.currentTheory), LocalName("ex_prop_" + startnr), Some(ex_prop), None, Individual(None))
 	  TranslationController.add(ex_c)
 	  val typs = c.typs.map(TypeTranslator.translateTyp)
 	  val props = c.props.map(PropositionTranslator.translateProposition)
 
 	  var i : Int = 0
 	  while (i < typs.length) {
-	    val name = "const_" + (startnr + i).toString
+	    val name = "C" + (startnr + i).toString
 	    val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(typs(i)), None, Individual(None))
 	    TranslationController.add(const)
 	    i += 1
@@ -98,7 +98,7 @@ object ArticleTranslator {
 	  
 	  var i : Int = 0
 	  while (i < tms.length) {
-	    val name = "const_" + (startnr + i).toString
+	    val name = "C" + (startnr + i).toString
 	    val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tms(i)._1), Some(tms(i)._2), Individual(None))
 	    TranslationController.add(c)
 	    
@@ -114,7 +114,7 @@ object ArticleTranslator {
 			case true => OMA(Mizar.constant("not"), MMTResolve(n.constrAid, n.kind, n.constrAbsnr) :: Nil )
 			case false => MMTResolve(n.constrAid, n.kind, n.constrAbsnr)
 		}
-		val name = n.aid + "_" + n.kind + "_notation_" + n.relnr 
+		val name = "N" + n.kind + n.nr 
 		val nt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None,Individual(None) )
 		TranslationController.add(nt)
 	}
@@ -129,7 +129,7 @@ object ArticleTranslator {
 	}
 	
 	def translateLemma(l : MizLemma) {
-	  val name = "L" + l.prop.nr
+	  val name = "Lm" + l.prop.nr
 	  val matches = ("prop" / PropositionTranslator.translateProposition(l.prop))
 	  val pattern = artPatterns.Lemma
 	  val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)

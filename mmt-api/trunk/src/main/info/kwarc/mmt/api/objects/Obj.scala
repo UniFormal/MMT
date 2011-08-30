@@ -411,7 +411,8 @@ case class SeqUpTo(num : Term) extends SeqItem {
 		<m:nats>{num.toCML}</m:nats>
 	def ^(sub : Substitution) =
 		num match {
-		case OMI(n) => SeqItemList(List.range(1,n.toInt).map(OMI(_)))
+		case OMI(n) => SeqItemList(1.to(n.toInt).toList.map(OMI(_)))
+		case OMV(n) => SeqUpTo(num ^ sub) ^ sub
 		case _ => num //TODO Add other possible cases (addition, substraction, etc...)
 	}
 	def head = num.head

@@ -21,7 +21,7 @@ object SchemeRegTranslator {
 	}
 	
 	def translateRCluster(rc : MizRCluster) = {
-		val name = rc.aid + "_RReg_" + rc.nr  
+		val name = "RC" + rc.nr  
 	  
 		val argTypes = rc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
@@ -32,11 +32,12 @@ object SchemeRegTranslator {
 					(OMV("typ") / typ) ++ (OMV("cluster") / cluster)
 	
 		val pattern = RegPatterns.MizExistentialReg
-		new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+		TranslationController.add(i)
 	}
 	
 	def translateFCluster(fc : MizFCluster) = {
-		val name = fc.aid + "_FReg_" + fc.nr  
+		val name = "FC" + fc.nr  
 	  
 		val argTypes = fc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
@@ -47,12 +48,14 @@ object SchemeRegTranslator {
 					(OMV("functor") / functor) ++ (OMV("cluster") / cluster)
 	
 		val pattern = RegPatterns.MizFunctionalReg
-		new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+		
+		TranslationController.add(i)
 
 	}
 	
 	def translateCCluster(cc : MizCCluster) = {
-		val name = cc.aid + "_CReg_" + cc.nr  
+		val name = "CC" + cc.nr  
 	  
 		val argTypes = cc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
@@ -64,25 +67,12 @@ object SchemeRegTranslator {
 					(OMV("typ") / typ) ++ (OMV("first") / first) ++ (OMV("second") / second)
 	
 		val pattern = RegPatterns.MizExistentialReg
-		new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+		TranslationController.add(i)
 
 	}
 	
-	/*
-	//Registration
-	def translateRegistration(reg : MizRegistration) = {
-		reg.cluster match {
-			case rc : MizRCluster => 
-			  MMTRCluster(rc.aid, rc.nr, TypeTranslator.translateTyp(rc.typ), TypeTranslator.translateCluster(rc.cluster))
-			case fc : MizFCluster => 
-			  val argNames = fc.args.map(x => TranslationController.addLocusVarBinder(x.name))
-			  MMTFCluster(fc.aid, fc.nr, TypeTranslator.translateTerm(fc.functor), argNames, fc.args.map(TypeTranslator.translateTyp).toList, TypeTranslator.translateCluster(fc.cluster))
-			  TranslationController.clearLocusVarContext()
-			case cc : MizCCluster => 
-			  MMTCCluster(cc.aid, cc.nr, TypeTranslator.translateTyp(cc.typ),TypeTranslator.translateCluster(cc.first),TypeTranslator.translateCluster(cc.second))
-		}
-	}
-	*/
+	
 	//Scheme
 	
 	def translateSchemeArg(a : MizSchemeArg) : Term = {
@@ -100,7 +90,7 @@ object SchemeRegTranslator {
 	}
 	
 	def translateScheme(s : MizSchemeDef) = {
-	  val name = "Sch_" + s.schemeNr
+	  val name = "S" + s.schemeNr
 	  val premises = s.premises.map(x => PropositionTranslator.translateProposition(x))
 	  val args = s.args.map(x => translateSchemeArg(x))
 	  val prop = PropositionTranslator.translateProposition(s.prop)
@@ -110,8 +100,9 @@ object SchemeRegTranslator {
 	    val matches = ("n" / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++
 	    			  ("m" / OMI(premises.length)) ++ (SeqVar("premises") / SeqItemList(premises)) ++
 	    			  ("prop" / prop)
-	    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
-	    
+	    val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+	    TranslationController.add(i)
+
 	  }
 	}
 	

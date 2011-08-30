@@ -16,7 +16,7 @@ object ParsingController {
 	//var vocabulary : List[String] = Nil
 	val dictionary : Dictionary = new Dictionary(Nil)
 	
-	var selectors : Map[String,Map[Int,Int]] = new HashMap()
+	var selectors : Map[String,Map[Int,Tuple2[Int,Int]]] = new HashMap()
 	val attributes : Map[String,Map[Int,Int]] = new HashMap()
 	//var definitions : LinkedList[XMLDefinition] = new LinkedList()
 	var elems : LinkedList[MizAny] = new LinkedList()

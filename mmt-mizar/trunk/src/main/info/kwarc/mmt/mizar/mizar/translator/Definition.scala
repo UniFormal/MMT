@@ -203,7 +203,7 @@ object DefinitionTranslator {
 	
 	def translateModeIsDef(m : MizModeIsDef)  = {
 		val name = m.name match {
-			case None => "M" + m.absnr
+			case None => "NM" + m.absnr
 			case Some(s) => s
 		}
 		

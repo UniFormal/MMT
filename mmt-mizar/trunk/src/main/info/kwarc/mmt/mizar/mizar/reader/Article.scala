@@ -240,15 +240,8 @@ object ArticleParser{
 		val relnr = (n \ "@relnr").text.toInt
 		
 		ParsingController.dictionary.addPattern(kind, formatnr, aid)
-		val name = ParsingController.dictionary.getNameByFormatnr(kind, formatnr) match { 
-			case None => "N" + kind + absconstrnr 
-			case Some(s) => s //TODO integrate with resolveDef from controller
-		}
-		//println(name)
 		
-		//ParsingController.dictionary.addAbsnr(kind, formatnr, nr);
-		
-		val not = new MizNotation(name, aid, kind, relnr, constrAid, absconstrnr, antonymic)
+		val not = new MizNotation(aid, kind, nr, relnr, constrAid, absconstrnr, antonymic)
 		ParsingController.addToArticle(not)
 	}
 	

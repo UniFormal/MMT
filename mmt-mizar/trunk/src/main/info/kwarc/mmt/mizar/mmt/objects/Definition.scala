@@ -287,9 +287,15 @@ object DefPatterns {
 	  }
 	}
 	
+	
 	def MizStructDef(nrSel : Int) : Pattern = {
 	  new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizStructDef" + nrSel),
 						MMTArgs("n","args",None) ++ genSelDecl(nrSel),
-						Context(TermVarDecl("struct", None, None)) ++ genSelElab(nrSel))		
+						Context(TermVarDecl("struct",Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "args", "n",Mizar.tp))) , None),
+						  TermVarDecl("aggr", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("p","x", "args", "n",Mizar.set))), None),
+						  TermVarDecl("aggr_prop",Some(MMTUtils.args("x", "n", MMTUtils.argTypes("p","x", "args", "n",
+						      Mizar.be(OMA(OMV("aggr"),List(SeqVar("x"), SeqVar("p"))), OMA(OMV("struct"), List(SeqVar("x"), SeqVar("p"))))))), None),
+						  TermVarDecl("strict",Some(Arrow(Mizar.any, Mizar.prop)), None))  ++ genSelElab(nrSel))
+						
 	}
 }
