@@ -36,56 +36,77 @@ object RepInt {
 
 object normalize {
   //def normalizeSeq(seq : List[SeqItem]) : List[SeqItem] = seq.flatMap(normalizeSeqItem)      
-  def normalizeSeq(seq : Sequence) : Sequence = SeqItemList(seq.items.flatMap(normalizeSeqItem))
-  	  
+  def normalizeSeq(seq : Sequence) : Sequence = SeqItemList(seq.items.flatMap(normalizeSeqItem))	  
   def normalizeSeqItem(sit : SeqItem) : List[SeqItem] = {
 	  //TODO Check normalization against the inference rules
-	  sit match {
-    	//case SeqSubst(e,n,SeqSubst(e',m,s)) => 
-    	//   normalizeSeqItem(SeqSubst(e',m,s)).map(t => normalizeTerm(e ^ Substitution(Sub(n,t))))
-	 	//case SeqSubst(e,n,tm : Term) => List(normalizeTerm(e) ^ Substitution(TermSub(n,normalizeTerm(tm)))	 	
-	 	//case SeqSubst(e,n,SeqVar(m)) => List(SeqSubst(normalizeTerm(e),n,SeqVar(m)))
-	 	//case SeqSubst(e,n,SeqItemList(items)) => 
-	 	//   val en = normalizeTerm(e)
-	 	//   items.flatMap(i => normalizeSeqItem(SeqSubst(en,n,i)))
-	 	//case SeqSubst(e,n,SeqUpTo(m)) =>
-	 	//   val mn = normalizeTerm(m)
-	 	//   val en = normalizeTerm(e)
-	 	//   mn match {
-	 	//  	   case OMI(i) =>
-	 	//  	   	  val l = List.range(1,i.toInt)	  
-	 	//  	   	  l.map(x => en ^ Substitution(TermSub(n,OMI(x))))
-	 	//  	   case _ => List(SeqSubst(en,n,mn))
-	 	//   }
-	      /*
-	 	case SeqSubst(e,n,s) =>
-	 	   s match {
-	 	  	   case SeqItemList(items) =>
-	 	  	     val en = normalizeTerm(e)
-	 	  	     items.flatMap(i => normalizeSeqItem(SeqSubst(en,n,i)))
-	 	  	   case tm : Term => List(normalizeTerm(e) ^ Substitution(TermSub(n,normalizeTerm(tm))))
-	 	  	   case SeqVar(m) => List(SeqSubst(normalizeTerm(e),n,SeqVar(m)))
-	 	  	   case SeqSubst(ep,np,sp) => normalizeSeqItem(SeqSubst(e,n,normalizeSeq(SeqSubst(ep,np,sp)))) 	 	  	     
-	 	  	   case SeqUpTo(m) =>
-	 	  	     val mn = normalizeTerm(m)
-	 	  	     val en = normalizeTerm(e)
-	 	  	     mn match {
-	 	  	     	case OMI(i) =>
-	 	  	     		val l = List.range(1,i.toInt)	  
-	 	  	   	  		l.map(x => en ^ Substitution(TermSub(n,OMI(x))))
-	 	  	     	case _ => List(SeqSubst(en,n,mn))
-	 	  	     }	 	  	     
-	 	   	} */
+	  sit match {	
+	 	case SeqSubst(s1,n,s2) => 
+	 		val ns2 = normalizeSeq(s2)
+	 		ns2.items.flatMap {
+	 			case e : Term => normalizeSeq(s1 ^ Substitution(TermSub(n,e))).items	 				
+	 			case s => List(SeqSubst(normalizeSeq(s1),n,s))
+	 		}	 			
 	 	case SeqUpTo(m) =>
-	 		m match { //TODO Shouldn't we first normalizeTerm(m) then match?
+	 		m match { 
 	 			case OMI(n) => List.range(1,n.toInt).map(i => OMI(i))
 	 			case _ => List(SeqUpTo(normalizeTerm(m)))
 	 		}
-	 	//case SeqUpTo(OMI(n)) => List.range(1,n.toInt).map(i => OMI(i))
-	    //case SeqUpTo(e) => List(SeqUpTo(normalizeTerm(e)))
     	case SeqVar(n) => List(sit)
     	case e : Term => List(normalizeTerm(e))
 	  }
+	  
+	 	/*case e : Term =>
+	 	    		s2 match {
+	 	    			case SeqItemList(items) =>
+	 	    				val en = normalizeTerm(e)
+	 	    				items.flatMap(i => normalizeSeqItem(SeqSubst(en,n,i)))
+	 	    			case tm : Term => List(normalizeTerm(e) ^ Substitution(TermSub(n,normalizeTerm(tm))))
+	 	    			case SeqVar(m) => List(SeqSubst(normalizeTerm(e),n,SeqVar(m)))
+	 	    			case SeqSubst(ep,np,sp) => normalizeSeqItem(SeqSubst(e,n,normalizeSeq(SeqSubst(ep,np,sp)))) 	 	  	     
+	 	    			case SeqUpTo(m) =>
+	 	    				val mn = normalizeTerm(m)
+	 	    				val en = normalizeTerm(e)
+	 	    				mn match {
+	 	    					case OMI(i) =>
+	 	    						val l = List.range(1,i.toInt)	  
+	 	    						l.map(x => en ^ Substitution(TermSub(n,OMI(x))))
+	 	    					case _ => List(SeqSubst(en,n,mn))
+	 	    				}	 	  	     
+	 	    		}
+	 			case SeqItemList(items) => 
+	 				val ns2 = normalizeSeq(s2)
+	 					items.flatMap(normalizeSeqItem(_)).map {
+	 						case e : Term => ns2.items.map {
+	 							case x : Term => e ^ Substitution(TermSub(n,x))
+	 							case  _ => e
+	 						}
+	 						case _ => this
+	 					}
+	 			case SeqSubst(s1,n,s2) => List(SeqSubst(normalizeSeq(s1),n,normalizeSeq(s2)))
+	 			case _ => throw Invalid("normalization failed")
+	 			
+	 		}
+	 	*/
+	 	//case SeqUpTo(OMI(n)) => List.range(1,n.toInt).map(i => OMI(i))
+	    //case SeqUpTo(e) => List(SeqUpTo(normalizeTerm(e)))		
+	   /*
+    	case SeqSubst(e,n,SeqSubst(e',m,s)) => 
+    	   normalizeSeqItem(SeqSubst(e',m,s)).map(t => normalizeTerm(e ^ Substitution(Sub(n,t))))
+	 	case SeqSubst(e,n,tm : Term) => List(normalizeTerm(e) ^ Substitution(TermSub(n,normalizeTerm(tm)))	 	
+	 	case SeqSubst(e,n,SeqVar(m)) => List(SeqSubst(normalizeTerm(e),n,SeqVar(m)))
+	 	case SeqSubst(e,n,SeqItemList(items)) => 
+	 	   val en = normalizeTerm(e)
+	 	   items.flatMap(i => normalizeSeqItem(SeqSubst(en,n,i)))
+	 	case SeqSubst(e,n,SeqUpTo(m)) =>
+	 	   val mn = normalizeTerm(m)
+	 	   val en = normalizeTerm(e)
+	 	   mn match {
+	 	  	   case OMI(i) =>
+	 	 	   	  val l = List.range(1,i.toInt)	  
+	 	  	   	  l.map(x => en ^ Substitution(TermSub(n,OMI(x))))
+	 	  	   case _ => List(SeqSubst(en,n,mn))
+	 	   }
+	 	*/  
   }
 
   def normalizeTerm(tm : Term) : Term = {
@@ -106,10 +127,13 @@ object normalize {
 	 	  	   case (FlatSequence(items),OMI(n)) => items(n.toInt)
 	 	  	   case _ => Index(seqN,indN)
 	 	   }
-        case OMA(fn,args) => OMA(normalizeTerm(fn),args.flatMap(normalizeSeqItem))
+          case OMA(fn,args) => 
+          	val argsN = args.flatMap(normalizeSeqItem)
+          	if (argsN.isEmpty) normalizeTerm(fn)
+          	else OMA(normalizeTerm(fn),args.flatMap(normalizeSeqItem))
 	 	  case OMBIND(bin,con,bdy) => OMBIND(normalizeTerm(bin),normalizeContext(con),normalizeTerm(bdy))	 	  
 	 	  case OMATTR(arg,key,value)=> OMATTR(normalizeTerm(arg),key,normalizeTerm(value)) //TODO normalize method for key?
-	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via)
+	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via) //TODO normalize method for via?
 	 	  case OME(err, args) => OME(normalizeTerm(err),args.map(normalizeTerm))
 	 	  case obj => obj //TODO cases
 	  }
