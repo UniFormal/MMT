@@ -232,7 +232,7 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
 class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
    private var compilers : List[Compiler] = Nil
-   private def log(msg : String) = report("backend", msg)
+   private def log(msg : => String) = report("backend", msg)
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
       s.foreach {d =>
