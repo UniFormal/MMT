@@ -45,7 +45,7 @@ object Instance {
               def auxSub(x : Term) = {
         	      val names = pt.con.map(d => d.name)
         	      val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
-        	      (x ^ inst.matches) ^ Substitution(subs : _*)
+         	      (x ^ inst.matches) ^ Substitution(subs : _*)
             }
     	    val c = new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
     	    c.setOrigin(InstanceElaboration(inst.path))

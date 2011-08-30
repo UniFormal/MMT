@@ -20,14 +20,14 @@ object MMTResolve {
 			kind match {
 			  case "R" => 
 			    val lname =  aid+kind+absnr match {
-			    	case "HIDDENR1" => "==" :: Nil
-			    	case "HIDDENR2" => "in" :: Nil
+			    	case "HIDDENR1" => "R1" :: Nil
+			    	case "HIDDENR2" => "R2" :: Nil
 			    	case _ => (kind + absnr) :: "pred" :: Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "M" => 
 			    val lname =  aid+kind+absnr match {
-			    	case "HIDDENM1" => "set" :: Nil	
+			    	case "HIDDENM1" => "M1" :: Nil	
 			    	case _ => (kind + absnr) :: "mode" :: Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
@@ -36,20 +36,21 @@ object MMTResolve {
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "V" => 
 			    val lname = ParsingController.attributes(aid).get(absnr) match {
-			      case Some(mstr) =>  ("L" + mstr) :: "_args" :: Nil
+			      case Some(mstr) =>  ("L" + mstr) :: "strict" :: Nil
 			      case None => (kind + absnr) :: "attr" :: Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
 
 			  case "L" => 
-			    val lname = (kind + absnr) :: "smode" :: Nil
+			    val lname = (kind + absnr) :: "struct" :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "U" =>
-			    val mstrnr = ParsingController.selectors(aid)(absnr)
-			    val lname = ("L" + mstrnr) :: "sel" :: Nil
+			    val mstrnr = ParsingController.selectors(aid)(absnr)._1
+			    val snr = ParsingController.selectors(aid)(absnr)._2
+			    val lname = ("L" + mstrnr) :: ("U" + snr) :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "G" => 
-			    val lname = ("L" + absnr) :: "saggr" :: Nil
+			    val lname = ("L" + absnr) :: "aggr" :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  
 			}

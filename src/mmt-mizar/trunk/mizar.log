@@ -1,49 +1,49 @@
-19:08:46.306	user: file m2o-startup.mmt
-19:08:46.327	user: log+ archive
-19:08:46.328	user: log+ catalog
-19:08:46.331	user: catalog ./locutor.xml
-19:08:46.362	user: archive /home/mihnea/kwarc/omdoc
-19:08:46.378	user: archive /home/mihnea/kwarc/oaff/mml
-19:08:46.385	user: archive mml content 
-19:08:47.902	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/ENUMSET1.omdoc
-19:08:47.903	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/ENUMSET1.omdoc
-19:08:47.914	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/ENUMSET1.omdoc
-19:08:49.175	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/FUNCT_1.omdoc
-19:08:49.176	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/FUNCT_1.omdoc
-19:08:49.177	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/FUNCT_1.omdoc
-19:08:49.601	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/XBOOLE_0.omdoc
-19:08:49.601	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/XBOOLE_0.omdoc
-19:08:49.602	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/XBOOLE_0.omdoc
-19:08:49.777	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/SETFAM_1.omdoc
-19:08:49.777	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/SETFAM_1.omdoc
-19:08:49.777	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/SETFAM_1.omdoc
-19:08:49.943	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/RELSET_1.omdoc
-19:08:49.944	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/RELSET_1.omdoc
-19:08:49.944	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/RELSET_1.omdoc
-19:08:50.78	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/TARSKI.omdoc
-19:08:50.78	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/TARSKI.omdoc
-19:08:50.78	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/TARSKI.omdoc
-19:08:50.334	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/ZFMISC_1.omdoc
-19:08:50.334	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/ZFMISC_1.omdoc
-19:08:50.335	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/ZFMISC_1.omdoc
-19:08:50.746	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/SUBSET_1.omdoc
-19:08:50.746	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/SUBSET_1.omdoc
-19:08:50.746	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/SUBSET_1.omdoc
-19:08:51.67	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/RELAT_1.omdoc
-19:08:51.67	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/RELAT_1.omdoc
-19:08:51.67	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/RELAT_1.omdoc
-19:08:51.360	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/RELAT_2.omdoc
-19:08:51.360	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/RELAT_2.omdoc
-19:08:51.361	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/RELAT_2.omdoc
-19:08:51.413	user: archive mml flat 
-19:08:55.260	user: archive mml mws-flat 
-19:08:55.261	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/ENUMSET1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/ENUMSET1.mws
-19:08:55.478	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/FUNCT_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/FUNCT_1.mws
-19:08:55.727	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/XBOOLE_0.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/XBOOLE_0.mws
-19:08:55.764	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/SETFAM_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/SETFAM_1.mws
-19:08:55.861	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/RELSET_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/RELSET_1.mws
-19:08:55.939	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/TARSKI.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/TARSKI.mws
-19:08:55.959	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/ZFMISC_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/ZFMISC_1.mws
-19:08:56.189	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/SUBSET_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/SUBSET_1.mws
-19:08:56.292	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/RELAT_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/RELAT_1.mws
-19:08:56.510	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/RELAT_2.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/RELAT_2.mws
+05:11:51.13	user: file m2o-startup.mmt
+05:11:51.34	user: log+ archive
+05:11:51.35	user: log+ catalog
+05:11:51.39	user: catalog ./locutor.xml
+05:11:51.70	user: archive /home/mihnea/kwarc/omdoc
+05:11:51.87	user: archive /home/mihnea/kwarc/oaff/mml
+05:11:51.94	user: archive mml content 
+05:11:52.447	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/ENUMSET1.omdoc
+05:11:52.448	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/ENUMSET1.omdoc
+05:11:52.456	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/ENUMSET1.omdoc
+05:11:53.780	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/FUNCT_1.omdoc
+05:11:53.781	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/FUNCT_1.omdoc
+05:11:53.781	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/FUNCT_1.omdoc
+05:11:54.245	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/XBOOLE_0.omdoc
+05:11:54.245	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/XBOOLE_0.omdoc
+05:11:54.245	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/XBOOLE_0.omdoc
+05:11:54.373	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/SETFAM_1.omdoc
+05:11:54.373	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/SETFAM_1.omdoc
+05:11:54.374	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/SETFAM_1.omdoc
+05:11:54.571	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/RELSET_1.omdoc
+05:11:54.571	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/RELSET_1.omdoc
+05:11:54.572	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/RELSET_1.omdoc
+05:11:54.710	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/TARSKI.omdoc
+05:11:54.710	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/TARSKI.omdoc
+05:11:54.710	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/TARSKI.omdoc
+05:11:54.981	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/ZFMISC_1.omdoc
+05:11:54.981	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/ZFMISC_1.omdoc
+05:11:54.981	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/ZFMISC_1.omdoc
+05:11:55.479	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/SUBSET_1.omdoc
+05:11:55.479	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/SUBSET_1.omdoc
+05:11:55.480	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/SUBSET_1.omdoc
+05:11:55.816	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/RELAT_1.omdoc
+05:11:55.817	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/RELAT_1.omdoc
+05:11:55.817	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/RELAT_1.omdoc
+05:11:56.146	archive: [COMP->CONT+NARR] /home/mihnea/kwarc/oaff/mml/compiled/RELAT_2.omdoc
+05:11:56.146	archive: [COMP->NARR]        -> /home/mihnea/kwarc/oaff/mml/narration/RELAT_2.omdoc
+05:11:56.147	archive: [COMP->CONT]        -> /home/mihnea/kwarc/oaff/mml/content/http..oaff.mathweb.org/mml/RELAT_2.omdoc
+05:11:56.199	user: archive mml flat 
+05:12:00.817	user: archive mml mws-flat 
+05:12:00.819	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/ENUMSET1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/ENUMSET1.mws
+05:12:01.9	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/FUNCT_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/FUNCT_1.mws
+05:12:01.317	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/XBOOLE_0.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/XBOOLE_0.mws
+05:12:01.372	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/SETFAM_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/SETFAM_1.mws
+05:12:01.508	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/RELSET_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/RELSET_1.mws
+05:12:01.626	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/TARSKI.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/TARSKI.mws
+05:12:01.650	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/ZFMISC_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/ZFMISC_1.mws
+05:12:01.892	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/SUBSET_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/SUBSET_1.mws
+05:12:02.28	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/RELAT_1.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/RELAT_1.mws
+05:12:02.296	archive: [mws-flat->MWS] /home/mihnea/kwarc/oaff/mml/flat/http..oaff.mathweb.org/mml/RELAT_2.omdoc -> /home/mihnea/kwarc/oaff/mml/mws/mws-flat/http..oaff.mathweb.org/mml/RELAT_2.mws

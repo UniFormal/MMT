@@ -43,7 +43,7 @@ object DefinitionParser {
 		   
 		   val selectors = xmlsel.map(x => new MizSelector(ParsingController.resolveDef(x.aid, "U", x.nr),x.aid, x.nr, x.retType)).toList
 		   
-		   selectors.map(x => ParsingController.selectors(x.aid) += (x.absnr -> xmlstr.nr))
+		   selectors.zipWithIndex.map(p => ParsingController.selectors(p._1.aid) += (p._1.absnr -> (xmlstr.nr -> (p._2 + 1))))
 		   ParsingController.attributes(xmlattr.aid) += (xmlattr.nr -> xmlstr.nr)
 		   //println(ParsingController.selectors)
 		   val args : List[(Option[String], MizTyp)] = Nil//TODO

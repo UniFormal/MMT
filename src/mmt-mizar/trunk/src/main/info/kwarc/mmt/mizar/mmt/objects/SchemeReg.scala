@@ -56,7 +56,7 @@ object RegPatterns  {
 }
 
 
-
+/*
 object  MMTRCluster {
 	def apply(aid : String, nr :Int, typ : Term, cluster : Option[Term]) {
 		val cName = aid + "_RReg_" + nr
@@ -109,7 +109,7 @@ object  MMTCCluster {
 		TranslationController.add(c)
 	}
 }
-
+*/
 
 object SchemePatterns {
   val MizSchemeDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizSchemeDef"),
@@ -119,6 +119,6 @@ object SchemePatterns {
 					                 SeqVarDecl("premises", Some(SeqSubst(Mizar.prop,"i", SeqUpTo(OMV("m")))), None)) ++
 						             Context(TermVarDecl("prop", Some(Mizar.prop), None)),
 						Context(TermVarDecl("scheme", Some( MMTUtils.args("x", "n", MMTUtils.argTypes("x", "args", "n",
-								            Mizar.proof(Mizar.implies(Mizar.and(SeqVar("premises")),OMV("prop")))))),
+								            Mizar.proof(Mizar.implies(Mizar.and(SeqVar("premises"), Mizar.constant("true")),OMV("prop")))))),
 						                    None)))
 }
