@@ -109,6 +109,7 @@ object Univ {
 //TODO: variable capture is not avoided anywhere
 /** The LF foundation. Implements type checking and equality */
 class LFF(report: Report) extends Foundation(report) {
+   private def log(msg : => String) = report("lf", msg)
    def applicable(m : MPath) = true
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean = {
       lib.report("LF: ", "typing\n" + tm.toString + "\n" + tp.toString)
