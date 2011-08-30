@@ -244,7 +244,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             //checkHomeTheory(c)
             val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get) else Nil
             val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get) else Nil
-            if (! foundation.typing(c.df, c.tp)) return Fail("definition of constant does not type-check")
+            if (! foundation.typing(c.df, c.tp)) return Fail("constant declaration does not type-check")
             val deps = IsConstant(c.path) ::  
               occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
             Success(deps)
