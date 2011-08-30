@@ -152,7 +152,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case e : java.io.FileNotFoundException => report("error", e.getMessage)
        }
    }
-   protected def handleLine(l : String) {
+   def handleLine(l : String) {
         val act = try {
            Action.parseAct(l, base, home)
         } catch {

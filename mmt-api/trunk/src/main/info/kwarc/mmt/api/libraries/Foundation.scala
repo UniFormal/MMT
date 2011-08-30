@@ -1,14 +1,15 @@
 package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
+import objects._
+import frontend._
 
-abstract class Foundation {
+abstract class Foundation(report: Report) {
    def applicable(m : MPath) : Boolean
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean
    def equality(tm1 : Term, tm2 : Term)(implicit lib : Lookup) : Boolean
 }
 
-object DefaultFoundation extends Foundation {
+class DefaultFoundation(report: Report) extends Foundation(report) {
    def applicable(m : MPath) : Boolean = true
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean =
       true

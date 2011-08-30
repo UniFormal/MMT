@@ -7,7 +7,7 @@ import info.kwarc.tntbase.pluginapi._
 
 /** TNT plugin that validates an MMT document using the default foundation */
 class TNTValidation extends 
-   Controller(new libraries.FoundChecker(libraries.DefaultFoundation), NullReport) with TntIntegrationPlugin[String] {
+   Controller(new libraries.StructuralChecker(NullReport), NullReport) with TntIntegrationPlugin[String] {
    def init(lookup : TntPluginDocumentResolver[String]) {
       backend.addStore(TNTLookup(lookup))
    }

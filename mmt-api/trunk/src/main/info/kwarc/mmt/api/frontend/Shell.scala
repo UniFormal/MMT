@@ -7,28 +7,28 @@ import info.kwarc.mmt.api.utils._
  * The command syntax is given by the Action class and the parser in its companion object.
  * @param foundation the foundation that is used for type checking
  */
-class Shell(foundation : libraries.Foundation) extends {
-      val filereport = new frontend.FileReport(new java.io.File("jomdoc.log"))
-      val consreport = new ConsoleReport
-      val r = new MultipleReports(filereport, consreport)
-      val c = new libraries.FoundChecker(foundation)
-} with Controller(c, r) {
+class Shell(f : Report => libraries.Checker) extends {
+   val filereport = new frontend.FileReport(new java.io.File("jomdoc.log"))
+   val consreport = new ConsoleReport
+   val report = new MultipleReports(filereport, consreport)
+   val checker = f(report)
+   val controller = new Controller(checker,report)
    def main(args : Array[String]) : Unit = {
       val command = args.mkString("", " ", "")
       filereport.groups += "*"
       consreport.groups += "*"
       try {
-         handleLine(command)
+         controller.handleLine(command)
          val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
          while (true) {
             val command = Input.readLine()
-            handleLine(command)
+            controller.handleLine(command)
          }
       } catch {
-         case e => cleanup; throw e
+         case e => controller.cleanup; throw e
       }
    }
 }
 
 /** A shell with the DefaultFoundation. The default entry point into the jar file. */
-object Run extends Shell(libraries.DefaultFoundation)
+object Run extends Shell(r => new libraries.StructuralChecker(r))
