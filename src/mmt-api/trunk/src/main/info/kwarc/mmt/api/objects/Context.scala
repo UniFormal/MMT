@@ -222,3 +222,12 @@ object Sub {
       case _ => throw ParseError("not a well-formed case in a substitution: " + N.toString)
    }
 }
+
+object ++ {
+   def unapply(c: Context) : Option[(Context,VarDecl)] =
+      if (c.isEmpty) None
+      else Some((c.init, c.last))
+   def unapply(s: Substitution) : Option[(Substitution,Sub)] =
+      if (s.isEmpty) None
+      else Some((s.init, s.last))
+}
