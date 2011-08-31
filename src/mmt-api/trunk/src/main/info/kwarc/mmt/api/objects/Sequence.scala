@@ -46,6 +46,7 @@ object normalize {
 	 			case e : Term => normalizeSeq(s1 ^ Substitution(TermSub(n,e))).items	 				
 	 			case s => List(SeqSubst(normalizeSeq(s1),n,s))
 	 		}	 			
+
 	 	case SeqUpTo(m) =>
 	 		m match { 
 	 			case OMI(n) => List.range(1,n.toInt).map(i => OMI(i))
@@ -127,13 +128,14 @@ object normalize {
 	 	  	   case (FlatSequence(items),OMI(n)) => items(n.toInt)
 	 	  	   case _ => Index(seqN,indN)
 	 	   }
+
           case OMA(fn,args) => 
           	val argsN = args.flatMap(normalizeSeqItem)
           	if (argsN.isEmpty) normalizeTerm(fn)
           	else OMA(normalizeTerm(fn),args.flatMap(normalizeSeqItem))
 	 	  case OMBIND(bin,con,bdy) => OMBIND(normalizeTerm(bin),normalizeContext(con),normalizeTerm(bdy))	 	  
 	 	  case OMATTR(arg,key,value)=> OMATTR(normalizeTerm(arg),key,normalizeTerm(value)) //TODO normalize method for key?
-	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via) //TODO normalize method for via?
+	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via)
 	 	  case OME(err, args) => OME(normalizeTerm(err),args.map(normalizeTerm))
 	 	  case obj => obj //TODO cases
 	  }
