@@ -11,7 +11,7 @@ case class ExtractError(s: String) extends Error(s)
 
 object Extractor extends {
    val rep = new frontend.FileReport(new java.io.File("uom.log"))
-   val check = new libraries.FoundChecker(libraries.DefaultFoundation)} 
+   val check = new libraries.StructuralChecker(rep)} 
       with Controller(check, rep) {
 
    /* Create unique package name for the OMDoc document */

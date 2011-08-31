@@ -10,7 +10,7 @@ import scala.Console._
 
 object Synthesizer extends {
    val rep = new frontend.FileReport(new java.io.File("uom.log"))
-   val check = new libraries.FoundChecker(libraries.DefaultFoundation)
+   val check = new libraries.StructuralChecker(rep)
    } with Controller(check, rep) {
 
    val uomstart = "  // UOM start "
