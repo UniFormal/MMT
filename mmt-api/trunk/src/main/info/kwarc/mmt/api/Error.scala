@@ -25,8 +25,10 @@ case class Invalid(s : String) extends Error("validation error: " + s)
 case class PresentationError(s : String) extends Error(s)
 /** errors that are not supposed to occur, e.g., when input violates the precondition of a method */
 case class ImplementationError(s : String) extends Error("implementation error: " + s)      
+/** errors that occur during substitution with name of the variable for which the substitution is defined */
+case class SubstitutionUndefined(name: String, m: String) extends Error("Substitution undefined at " + name + "; " + m)
 
 // are these even used?
 case class ObjError(s : String) extends Error(s)
 case class LookupError(name : String) extends Error("variable " + name + " not declared in context")
-case class SubstitutionUndefined(name: String, m: String) extends Error("Substitution undefined at " + name + "; " + m)
+
