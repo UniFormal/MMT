@@ -15,7 +15,7 @@ import scala.xml._
 object Rest {
    def div(n: List[Node]) : Node = Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), n :_*)
    def div(s: String) : Node = div(List(scala.xml.Text(s)))
-   def applicable(p: ParsePath) = List(":tree", ":query", ":uom", ":mmt", ":breadcrumbs", ":admin") contains p.partPath.headOption.getOrElse("")
+   def applicable(p: ParsePath) = List(":tree", ":query", ":mws", ":uom", ":mmt", ":breadcrumbs", ":admin") contains p.partPath.headOption.getOrElse("")
    val handler : LiftRules.DispatchPF = {case r : Req if applicable(r.path) =>
       val path : List[String] = r.path.wholePath
       val query : String = ReqHelpers.query(r.request) 
@@ -76,6 +76,20 @@ object Rest {
                 case _ => <error message="illegal command"/>
              }
              XmlResponse(resp)
+          case ":mws" :: _ =>
+              val resp = r.xml.toOption match {
+                 case None => <error message="no body found (did you use Content-Type=text/xml?)"/>
+                 case Some(body) =>
+                        try {
+                           //val input =  
+                           //val output = 
+                           //output.toNode
+                           <error>not implemented yet</error>
+                        } catch {
+                           case e: ParseError => <error><message>{e.getMessage}</message><input>{body}</input></error>
+                        }
+              }
+              XmlResponse(resp)
           case ":mmt" :: _ =>
               val comps = query.split("\\?",-1)
               val (doc, mod, sym, act) = comps.length match {
