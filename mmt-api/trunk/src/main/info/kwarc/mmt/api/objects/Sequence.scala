@@ -9,7 +9,12 @@ import Conversions._
 
 import scala.xml.{Node}
 
-
+/*
+object Succ {
+   def apply(n: Nat) : Nat = n + 1
+   def unapply(n:Nat) : Option[Nat] = if (n > 0) Some(n - 1) else None 
+}
+*/
 
 object FlatSequence {
 	def unapply(s: Sequence) : Option[List[Term]] = s.items match {
@@ -133,7 +138,9 @@ object normalize {
           	val argsN = args.flatMap(normalizeSeqItem)
           	if (argsN.isEmpty) normalizeTerm(fn)
           	else OMA(normalizeTerm(fn),args.flatMap(normalizeSeqItem))
-	 	  case OMBIND(bin,con,bdy) => OMBIND(normalizeTerm(bin),normalizeContext(con),normalizeTerm(bdy))	 	  
+	 	  case OMBIND(bin,con,bdy) =>
+	 	      val (conN,sub) = normalizeContext(con)
+	 	      OMBIND(normalizeTerm(bin), conN, normalizeTerm(bdy ^ sub))	 	  
 	 	  case OMATTR(arg,key,value)=> OMATTR(normalizeTerm(arg),key,normalizeTerm(value)) //TODO normalize method for key?
 	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via)
 	 	  case OME(err, args) => OME(normalizeTerm(err),args.map(normalizeTerm))
@@ -141,7 +148,29 @@ object normalize {
 	  }
   }
   
-  def normalizeContext(con : Context) : Context = con //TODO Implement this method
+  def normalizeContext(context : Context) : (Context,Substitution) = {
+     context match {
+        case con ++ TermVarDecl(x,tpO,dfO,attrs @_*) => 
+           val (conN, sub) = normalizeContext(con) 
+           val tpN = tpO map {tp => normalizeTerm(tp ^ sub)}
+           val dfN = dfO map {df => normalizeTerm(df ^ sub)}
+           (conN ++ TermVarDecl(x,tpN,dfN,attrs :_*), sub ++ TermSub(x,OMV(x)))
+         /*  
+        case con ++ SeqVarDecl(x,tpO,dfO,attrs @_*) => 
+           val (conN, sub) = normalizeContext(con) 
+           val tpN = tpO map {tp => normalizeSeq(tp ^ sub)}
+           val dfN = dfO map {df => normalizeSeq(df ^ sub)}
+           (tpN,dfN) match {
+              case (FlatSequence(ts),FlatSequence(ds)) if ts.length == ds.length =>
+                 (List.range(1,ts.length) zip (ts zip ds)).map {
+                    case (i,(t,d)) => TermVarDecl(x + "/" + i,t,d)   
+                 }
+              case (_,_) => (conN ++ SeqVarDecl(x,tpN,dfN,attrs :_*), sub ++ SeqSub(x,OMSV(x)))                     
+           }
+         */
+        case Context() => (Context(),Substitution()) 
+     }
+  }
   
   def normalizeNat(t : Term) : Term = {
 	  t match {
