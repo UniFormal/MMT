@@ -43,7 +43,6 @@ object normalize {
   //def normalizeSeq(seq : List[SeqItem]) : List[SeqItem] = seq.flatMap(normalizeSeqItem)      
   def normalizeSeq(seq : Sequence) : Sequence = SeqItemList(seq.items.flatMap(normalizeSeqItem))	  
   def normalizeSeqItem(sit : SeqItem) : List[SeqItem] = {
-	  //TODO Check normalization against the inference rules
 	  sit match {	
 	 	case SeqSubst(s1,n,s2) => 
 	 		val ns2 = normalizeSeq(s2)
@@ -51,7 +50,6 @@ object normalize {
 	 			case e : Term => normalizeSeq(s1 ^ Substitution(TermSub(n,e))).items	 				
 	 			case s => List(SeqSubst(normalizeSeq(s1),n,s))
 	 		}	 			
-
 	 	case SeqUpTo(m) =>
 	 		m match { 
 	 			case OMI(n) => List.range(1,n.toInt).map(i => OMI(i))
@@ -155,19 +153,29 @@ object normalize {
            val tpN = tpO map {tp => normalizeTerm(tp ^ sub)}
            val dfN = dfO map {df => normalizeTerm(df ^ sub)}
            (conN ++ TermVarDecl(x,tpN,dfN,attrs :_*), sub ++ TermSub(x,OMV(x)))
-         /*  
         case con ++ SeqVarDecl(x,tpO,dfO,attrs @_*) => 
            val (conN, sub) = normalizeContext(con) 
            val tpN = tpO map {tp => normalizeSeq(tp ^ sub)}
            val dfN = dfO map {df => normalizeSeq(df ^ sub)}
            (tpN,dfN) match {
-              case (FlatSequence(ts),FlatSequence(ds)) if ts.length == ds.length =>
-                 (List.range(1,ts.length) zip (ts zip ds)).map {
-                    case (i,(t,d)) => TermVarDecl(x + "/" + i,t,d)   
-                 }
-              case (_,_) => (conN ++ SeqVarDecl(x,tpN,dfN,attrs :_*), sub ++ SeqSub(x,OMSV(x)))                     
+              case (Some(FlatSequence(ts)),Some(FlatSequence(ds))) if ts.length == ds.length =>
+              	val scon = (List.range(1,ts.length) zip (ts zip ds)).map {
+              		case (i,(t,d)) => TermVarDecl(x + "/" + i,Some(t),Some(d))   
+                }              	
+              	(conN ++ scon, sub ++ SeqSub(x,SeqItemList(scon.map(d => OMV(d.name)))))
+              case (Some(FlatSequence(ts)),None) => 
+              	val scon = (List.range(1,ts.length) zip ts).map {
+              		case (i,t) => TermVarDecl(x + "/" + i,Some(t),None)
+              	}
+              	(conN ++ scon, sub ++ SeqSub(x,SeqItemList(scon.map(d => OMV(d.name)))))
+              case (None,Some(FlatSequence(ds))) =>
+              	val scon = (List.range(1,ds.length) zip ds).map {
+              		case (i,d) => TermVarDecl(x + "/" + i,None,Some(d))
+              	}
+              	(conN ++ scon, sub ++ SeqSub(x,SeqItemList(scon.map(d => OMV(d.name)))))
+              case (_,_) => (conN ++ SeqVarDecl(x,tpN,dfN,attrs :_*), sub ++ SeqSub(x,SeqVar(x)))                     
            }
-         */
+         
         case Context() => (Context(),Substitution()) 
      }
   }
@@ -189,160 +197,3 @@ object normalize {
 }  
 
  
-  
- /*(
-  def expandSeq(seq : Term) : List[Term] = {
-	seq match {
-		case Ellipsis(tm,i,OMI(a),OMI(z)) => 
-		List.range(a.intValue,z.intValue).map(x => tm ^ Substitution(Sub(i,OMI(x))))
-		case _ => throw IllTerm //TODO Do the remaining cases.
-	}
-  }
-
-  
-  def removeIndex(seq : Term, ind : Term) : Term = {
-	  ind match {
-	       case OMI(i) => expandSeq(seq)(i.intValue)
-	       case _ => throw IllTerm
-	       }
-  }
-*/
-  
-/*
-def substituteList(tm: Term, vr:String, tl: List[Term]): Term = {
-	   tm match {
-	 	  case OMA(mmt.index,List(OMI(i),fn)) => 
-	 	    OMA(OMID(mmt.index),List(OMI(i),fn ^ Substitution(Sub(vr,tl(i.toInt - 1)))))
-	 	  case OMA(fn,args) => OMA(substituteList(fn,vr,tl),args.map(arg => substituteList(arg,vr,tl)))
-	 	  case OMBIND(bin,con,bdy) => OMBIND(bin,substituteList(con,vr,tl),substituteList(bdy,vr,tl))
-	 	  case OMATTR(arg,key,value)=> OMATTR(substituteList(arg,vr,tl),key,substituteList(value,vr,tl))
-	 	  case OMM(arg,via) => OMM(substituteList(arg,vr,tl),via)
-	 	  case OME(err, args) => OME(substituteList(err,vr,tl),args.map(substituteList(_,vr,tl)))
-	 	  case obj => obj
-	 	  }
-  }
-   
-  def substituteList(con: Context, vr:String, tl: List[Term]): Context = {
-	  con.map(
-	 		  {case TermVarDecl(n,tp,df,attrs @ _*) => 
-	 		   TermVarDecl(n,tp.map(substituteList(_,vr,tl)),df.map(substituteList(_,vr,tl)),attrs.map(x => (x._1,substituteList(x._2,vr,tl))) : _*)
-	 		  case v => v
-	 		  }
-	 		   )
-  }
- */
-
-/*
-object Ellipsis {
-	def apply(body : Term, name : String, from : Term, to : Term) : Term =
-		OMBIND(OMA(OMID(mmt.ellipsis),List(from,to)),Context(TermVarDecl(name,Some(OMID(mmt.nat)),None,null)), body)
-	def unapply(t : Term) : Option[(Term,String,Term,Term)] = 
-		t match {
-		case OMBIND(OMA(OMID(mmt.ellipsis),List(k,l)),Context(TermVarDecl(i,Some(OMID(mmt.nat)),None,null)),tm) => 
-		  Some((tm,i,k,l))
-		case _ => None
-	}
-}
-*/
-/*
-abstract class SeqItem 
-case class Ellipsis(expr : Term, i : String, from : Term, to : Term) extends SeqItem 
-case class SeqVar(name : String) extends SeqItem
-case class SeqTerm(tm : Term) extends SeqItem
-case class Sequence(items : SeqItem*) extends Obj {
-	 def ::(tm : Term) : Sequence = Sequence(SeqTerm(tm) +: items : _*)
-}
-*/
-/*
-object Seq {
-	def apply(seq : Term*) = OMA(OMID(mmt.seq),seq.toList)
-	def unapplySeq(tm : Term) : Option[Seq[Term]] = 
-		tm match {
-		case OMA(OMID(mmt.seq),l) => Some(l)
-		case _ => None 
-	}
-}
-*/
-/*
-object Seq {
-	def apply(args : Term*) = 
-		//val l = args.toList.length
-		SeqTerm(args.index)	
-*/
-/*
-case class Index(index : Term, seq : Sequence) extends Term {
-	def head = None
-	def role = Role_value
-	//def components = List(ind,seq) TODO: add compinents
-}
-*/	
-	/*
-	def expandRepetitionInd(tm: Term): Term = {
-	  tm match {
-	 	  case OMA(fun,args) => 
-	 	  val expargs = 
-	 	 	  args flatMap {
-	 	    	 case OMA(fn,List(f,OMI(n))) if (fn == mmt.repetition) => 
-	 	    	 //Currently no nested repetitions, thus no recursion
-	 	           List.tabulate[Term](n.toInt)(i => OMA(OMID(mmt.index),List(OMI(i + 1),f)))
-	 	    	 case arg => List(arg) //Currently no repetition in binders, thus no case for it
-	 	     }
-	 	   OMA(fun,expargs)
-	 	  case OMBIND(bin,con,bdy) => OMBIND(bin,expandRepetition(con),expandRepetitionInd(bdy))
-	 	  case OMATTR(arg,key,value)=> OMATTR(expandRepetitionInd(arg),key,expandRepetitionInd(value))
-	 	  case OMM(arg,via) => OMM(expandRepetitionInd(arg),via)
-	 	  case OME(err, args) => OME(expandRepetitionInd(err),args.map(expandRepetitionInd))
-	 	  case obj => obj 
-	  }
-  }
-  
-  def expandRepetition(tm: Term): Term = {
-	  tm match {
-	 	  case OMA(fun,args) => 
-	 	  val expargs = 
-	 	 	  args flatMap {
-	 	    	 case OMA(fn,List(f,OMI(n))) if (fn == mmt.repetition) => 
-	 	    	 //Currently no nested repetitions, thus no recursion
-	 	         List.tabulate[Term](n.asInstanceOf[Int])(_ => f)
-	 	    	 case arg => List(arg) //Currently no repetition in binders, thus no case for it
-	 	     }
-	 	   OMA(fun,expargs)
-	 	  case OMBIND(bin,con,bdy) => OMBIND(bin,expandRepetition(con),expandRepetition(bdy))
-	 	  case OMATTR(arg,key,value)=> OMATTR(expandRepetition(arg),key,expandRepetition(value))
-	 	  case OMM(arg,via) => OMM(expandRepetition(arg),via)
-	 	  case OME(err, args) => OME(expandRepetition(err),args.map(expandRepetition))
-	 	  case obj => obj 
-	  }
-  }
-  
-  def expandRepetition(con: Context): Context = {
-	  con.map(
-	 		  {case TermVarDecl(n,tp,df,attrs @ _*) => 
-	 		   TermVarDecl(n,tp.map(expandRepetition),df.map(expandRepetition),attrs.map(x => (x._1,expandRepetition(x._2))) : _*)
-	 		  case v => v
-   }
-	    		   )
-  }
-  
-  def removeIndex(tm : Term) : Term = {
-	   tm match {
-	  	   case OMA(OMID(mmt.index),List(OMI(i),fn)) => fn
-	  	   case OMA(fn,args) => OMA(removeIndex(fn),args.map(removeIndex))
-	  	   case OMBIND(bin,con,bdy) => OMBIND(bin,removeIndex(con),removeIndex(bdy))
-	 	   case OMATTR(arg,key,value)=> OMATTR(removeIndex(arg),key,removeIndex(value))
-	 	   case OMM(arg,via) => OMM(removeIndex(arg),via)
-	 	   case OME(err, args) => OME(removeIndex(err),args.map(removeIndex))
-	 	   case obj => obj
-	   }
-  }
-  
-  def removeIndex(con : Context) : Context = {
-	  con.map(
-	 		  {case TermVarDecl(n,tp,df,attrs @ _*) => 
-	 		   TermVarDecl(n,tp.map(removeIndex),df.map(removeIndex),attrs.map(x => (x._1,removeIndex(x._2))) : _*)
-	 		  case v => v
-	 		  }
-	 		   )
-  }
-  */
-// case object IllTerm extends java.lang.Throwable
