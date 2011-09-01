@@ -18,6 +18,7 @@
         <pathelement location="${lib}/lift-json_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${deploy}/mmt/mmt-api.jar" />
         <pathelement location="${deploy}/mmt/uom.jar" />
+	<pathelement location="${deploy}/mmt/mmt-mizar.jar" />
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
@@ -46,8 +47,9 @@
             </lib>
             <lib file="${scala.dir}/scala-library.jar" />
             <lib file="${deploy}/mmt/mmt-api.jar" />
-        	   <lib file="${deploy}/mmt/uom.jar" />
-        	   <lib file="${deploy}/lfcatalog/lib/lfcatalog.jar" />
+	    <lib file="${deploy}/mmt/uom.jar" />
+	    <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
+	    <lib file="${deploy}/mmt/mmt-mizar.jar" />
         </war>
     </target>
 

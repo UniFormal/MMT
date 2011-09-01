@@ -1,0 +1,8 @@
+<registry>
+  <repository location="http://cds.omdoc.org/foundations/lf/">
+    <wc location="" root="/home/mihnea/kwarc/omdoc/old/foundations/lf/"/>
+  </repository>
+  <repository location="http://cds.omdoc.org/omdoc/">
+    <wc location="" root="/home/mihnea/kwarc/omdoc/omdoc/"/>
+  </repository>
+</registry>

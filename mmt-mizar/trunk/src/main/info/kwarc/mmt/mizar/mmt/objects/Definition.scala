@@ -271,31 +271,37 @@ object DefPatterns {
 		  )
 	
 	
-	private def genSelDecl(nrSel : Int) : Context = {
-	  nrSel match {
-	    case 1 => Context(TermVarDecl("Utp1", Some(Mizar.constant("tp")), None))
-	    case _ => genSelDecl(nrSel - 1) ++ Context(TermVarDecl("Utp" + nrSel, Some(Mizar.constant("tp")), None))
+	private def genMSDecl(nrMS : Int) : Context = {
+	  nrMS match {
+	    case 1 => Context(TermVarDecl("MS1", Some(Mizar.constant("tp")), None))
+	    case _ => genMSDecl(nrMS - 1) ++ Context(TermVarDecl("MS" + nrMS, Some(Mizar.constant("tp")), None))
 	  }
 	}
 	
-	private def genSelElab(nrSel : Int) : Context = {
-	  nrSel match {
-	    case 1 => Context(TermVarDecl("U1", Some(Mizar.any), None),
-	                      TermVarDecl("U1_prop", Some(Mizar.is(OMV("U1"),OMV("Utp1"))), None))
-	    case _ => genSelDecl(nrSel - 1) ++ Context(TermVarDecl("U" + nrSel, Some(Mizar.any), None),
-	                      TermVarDecl("U" + nrSel +"_prop", Some(Mizar.is(OMV("U" + nrSel),OMV("Utp" + nrSel))), None))
+	private def genMSElab(nrMS : Int) : Context = {
+	  nrMS match {
+	    case 1 => Context(TermVarDecl("MS1_prop", Some(Mizar.proof(Mizar.forall("t",OMV("struct"),Mizar.is(OMV("t"),OMV("MS1"))))), None))
+	    case _ => genMSElab(nrMS - 1) ++ Context(TermVarDecl("MS"+ nrMS + "_prop", Some(Mizar.proof(Mizar.forall("t",OMV("struct"),Mizar.is(OMV("t"),OMV("MS" + nrMS))))), None))
 	  }
 	}
 	
 	
-	def MizStructDef(nrSel : Int) : Pattern = {
-	  new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizStructDef" + nrSel),
-						MMTArgs("n","args",None) ++ genSelDecl(nrSel),
+	def MizStructDef(nrMS : Int) : Pattern = {
+	  new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizStructDef" + nrMS),
+						MMTArgs("n","args",None) ++ genMSDecl(nrMS),
 						Context(TermVarDecl("struct",Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "args", "n",Mizar.tp))) , None),
 						  TermVarDecl("aggr", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("p","x", "args", "n",Mizar.set))), None),
 						  TermVarDecl("aggr_prop",Some(MMTUtils.args("x", "n", MMTUtils.argTypes("p","x", "args", "n",
 						      Mizar.be(OMA(OMV("aggr"),List(SeqVar("x"), SeqVar("p"))), OMA(OMV("struct"), List(SeqVar("x"), SeqVar("p"))))))), None),
-						  TermVarDecl("strict",Some(Arrow(Mizar.any, Mizar.prop)), None))  ++ genSelElab(nrSel))
+						  TermVarDecl("strict",Some(Arrow(Mizar.any, Mizar.prop)), None))  ++ genMSElab(nrMS))
 						
 	}
+	
+	
+	val MizSelDef : Pattern =  new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizSelector"),
+			Context(TermVarDecl("mType", Some(Mizar.tp), None),
+			    	TermVarDecl("retType", Some(Mizar.tp), None)),
+			Context(TermVarDecl("sel", Some(Arrow(Mizar.any, Mizar.any)), None),
+					TermVarDecl("sel_prop", Some(Mizar.proof(Mizar.forall("t",OMV("mType"),Mizar.is(OMA(OMV("sel"), List(OMV("t"))),OMV("retType"))))), None)))
+	
 }

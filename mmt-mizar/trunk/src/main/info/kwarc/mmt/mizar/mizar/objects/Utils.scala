@@ -90,4 +90,8 @@ class Dictionary(var symbols : List[Symbol]) {
 	baseName + nr
   }
   
+  def clear() = {
+    symbols = Nil
+  }
+  
 }

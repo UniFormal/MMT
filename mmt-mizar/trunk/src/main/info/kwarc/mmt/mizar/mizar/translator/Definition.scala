@@ -20,7 +20,7 @@ object DefinitionTranslator {
 			case None => "R" + p.absnr
 			case Some(s) => s
 		}
-		p.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 		TranslationController.addRetTerm(TranslationController.currentTheory ? name)
 
 		val args = p.args.map(x => TypeTranslator.translateTyp(x._2))
@@ -30,13 +30,13 @@ object DefinitionTranslator {
 		val inst = p.form match {
 			case Some(defForm) => 
 				val default = PropositionTranslator.translateFormula(defForm)
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
 				val pattern = DefPatterns.MizPredMeansPartialDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 
 			case None => 	
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizPredMeansCompleteDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
@@ -56,7 +56,7 @@ object DefinitionTranslator {
 			case None => "R" + p.absnr
 			case Some(s) => s
 		}
-		p.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 			
 		val args = p.args.map(x => TypeTranslator.translateTyp(x._2))
 		//val retType = TypeTranslator.translateTyp(p.retType)
@@ -65,23 +65,19 @@ object DefinitionTranslator {
 		val inst = p.term match {
 			case Some(defTerm) => 
 				val default = TypeTranslator.translateTerm(defTerm)
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
 				val pattern = DefPatterns.MizPredIsPartialDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 
 			case None => 	
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizPredIsCompleteDef
 				new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 		}
 		
-		//to be removed
-		//var const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), None, None, null)
-		//TranslationController.add(const)
 		
-		//(inst)
 		TranslationController.controller.add(inst)
 		TranslationController.clearLocusVarContext()
 
@@ -94,7 +90,7 @@ object DefinitionTranslator {
 			case Some(s) => s
 		}
 		
-		f.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 		TranslationController.addRetTerm(TranslationController.currentTheory ? name)
 		val args = f.args.map(x => TypeTranslator.translateTyp(x._2))
 		val retType = TypeTranslator.translateTyp(f.retType)
@@ -106,7 +102,7 @@ object DefinitionTranslator {
 
 				val default = PropositionTranslator.translateFormula(defForm)
 
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ ("retType" / retType) ++
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ ("retType" / retType) ++
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
 
 				val pattern = DefPatterns.MizFuncMeansPartialDef
@@ -115,7 +111,7 @@ object DefinitionTranslator {
 
 			case None => 	
 
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++  ("retType" / retType) ++
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++  ("retType" / retType) ++
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizFuncMeansCompleteDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
@@ -138,7 +134,7 @@ object DefinitionTranslator {
 			case Some(s) => s
 		}
 			
-		f.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 
 		val args = f.args.map(x => TypeTranslator.translateTyp(x._2))
 		val retType = TypeTranslator.translateTyp(f.retType)
@@ -148,23 +144,19 @@ object DefinitionTranslator {
 		val inst = f.term match {
 			case Some(defTerm) => 
 				val default = TypeTranslator.translateTerm(defTerm)
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++  ("retType" / retType) ++
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++  ("retType" / retType) ++
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
 				val pattern = DefPatterns.MizFuncIsPartialDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 
 			case None => 	
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++  ("retType" / retType) ++
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++  ("retType" / retType) ++
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizFuncIsCompleteDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 		}
 		
-		//to be removed
-		//var const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), None, None, null)
-		//TranslationController.add(const)
-		
-		//println(inst)
+
 		TranslationController.controller.add(inst)
 		TranslationController.clearLocusVarContext()
 
@@ -176,7 +168,7 @@ object DefinitionTranslator {
 			case Some(s) => s
 		}
 		
-		m.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		m.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 		TranslationController.addRetTerm(TranslationController.currentTheory ? name)
 
 		val args = m.args.map(x => TypeTranslator.translateTyp(x._2))
@@ -185,29 +177,28 @@ object DefinitionTranslator {
 		val inst = m.form match {
 			case Some(defForm) => 
 				val default = PropositionTranslator.translateFormula(defForm)
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
 				val pattern = DefPatterns.MizModeMeansPartialDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 			case None => 	
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizModeMeansCompleteDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 		}
 		
-		//println(inst)
 		TranslationController.controller.add(inst)
 		TranslationController.clearLocusVarContext()		
 	}
 	
 	def translateModeIsDef(m : MizModeIsDef)  = {
 		val name = m.name match {
-			case None => "NM" + m.absnr
+			case None => "M" + m.absnr
 			case Some(s) => s
 		}
 		
-		m.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		m.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 		
 		val args = m.args.map(x => TypeTranslator.translateTyp(x._2))
 		val cases = m.cases.map(x => PropositionTranslator.translateFormula(x._2))
@@ -215,12 +206,12 @@ object DefinitionTranslator {
 		val inst = m.term match {
 			case Some(defTerm) => 
 				val default = TypeTranslator.translateTerm(defTerm)
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
-				val pattern = DefPatterns.MizPredIsPartialDef
+				val pattern = DefPatterns.MizModeIsPartialDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 			case None => 	
-				val matches = "n" / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
+				val matches = OMV("n") / OMI(args.length) ++ (SeqVar("args") / SeqItemList(args)) ++ 
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizModeIsCompleteDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
@@ -239,7 +230,7 @@ object DefinitionTranslator {
 			case Some(s) => s
 		}
 		
-		a.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 		TranslationController.addRetTerm(TranslationController.currentTheory ? name)
 
 		val args = a.args.map(x => TypeTranslator.translateTyp(x._2))
@@ -249,12 +240,12 @@ object DefinitionTranslator {
 		val inst = a.form match {
 			case Some(defForm) => 
 				val default = PropositionTranslator.translateFormula(defForm)
-				val matches =  ("n" / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
+				val matches =  (OMV("n") / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
 				val pattern = DefPatterns.MizAttrMeansPartialDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 			case None => 	
-				val matches =  ("n" / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
+				val matches =  (OMV("n") / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizAttrMeansCompleteDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
@@ -271,7 +262,7 @@ object DefinitionTranslator {
 			case Some(s) => s
 		}
 		
-		a.args.map(x => TranslationController.addLocusVarBinder(x._1))
+		a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
 		TranslationController.addRetTerm(TranslationController.currentTheory ? name)
 
 		val args = a.args.map(x => TypeTranslator.translateTyp(x._2))
@@ -281,12 +272,12 @@ object DefinitionTranslator {
 		val inst = a.term match {
 			case Some(defTerm) => 
 				val default = TypeTranslator.translateTerm(defTerm)
-				val matches =  ("n" / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
+				val matches =  (OMV("n") / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results) ++ "defRes"  / default
 				val pattern = DefPatterns.MizAttrIsPartialDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 			case None => 	
-				val matches =  ("n" / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
+				val matches =  (OMV("n") / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ ("mType" / mType) ++  
 								         "m" / OMI(cases.length) ++  SeqVar("cases") / SeqItemList(cases) ++ SeqVar("results") / SeqItemList(results)
 				val pattern = DefPatterns.MizAttrIsCompleteDef
 			    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
@@ -297,11 +288,11 @@ object DefinitionTranslator {
 		TranslationController.clearLocusVarContext()		
 	}
 		
-	private def genSelSub(s : List[Term]) : Substitution = {
+	private def genFieldsSub(s : List[Term]) : Substitution = {
 	  s.length match {
-	    case 0 => throw ImplementationError("structure with 0 selectors")
-	    case 1 => ("Utp1" / s(0))
-	    case _ => genSelSub(s.tail) ++ (("Utp" + s.length) / s(0))
+	    case 0 => Substitution()
+	    case 1 => (OMV("MS1") / s(0))
+	    case _ => genFieldsSub(s.tail) ++ (("MS2" + s.length) / s(0))
 	  }
 	}
 	
@@ -311,25 +302,43 @@ object DefinitionTranslator {
 			case Some(str) => str
 		}
 	  
-	  val args = s.args.map(x => TypeTranslator.translateTyp(x._2))
-	  
-	  val imports = s.imports.map(x => TypeTranslator.translateTyp(x))
-	  
-	  val selectors = s.selectors.map(x => x.typ match {
-	    case None => Mizar.constant("set")
-	    case Some(t) => TypeTranslator.translateTyp(t)
+	  s.selDecls.map(x => {
+	    val sname = "U" + x.absnr
+	    TranslationController.addLocusVarBinder(OMV("mType"))
+	    val rt = x.retType match {
+	    	case None => Mizar.constant("set")
+	    	case Some(t) => TypeTranslator.translateTyp(t)
+	    }
+	    val mt = TypeTranslator.translateTyp(x.mType)
+	    val matches = (OMV("mType") / mt) ++ (OMV("retType") / rt)
+	    val pattern = DefPatterns.MizSelDef
+	    val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(sname), pattern.home.toMPath ? pattern.name, matches)
+	    TranslationController.controller.add(i)
+	    TranslationController.clearLocusVarContext()		
+
 	  })
-	  val nrSel = selectors.length
+	  s.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2))))
+
+	  val args = s.args.map(x => TypeTranslator.translateTyp(x))
+	  
+	  val fields = s.fields.map(x => MMTResolve(x.aid, x.kind, x.absnr)).toList
+	  
+	  val mstructs = s.mstructs.map(x => TypeTranslator.translateTyp(x))
+	  val nrFields = fields.length
+	  
+	  
+	  
+	  
 	  
 	  val inst = {
-	    val matches = ("n" / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ genSelSub(selectors.reverse)
+	    val matches = (OMV("n") / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++ genFieldsSub(fields.reverse)
 	    
-	    val pattern = DefPatterns.MizStructDef(nrSel)
+	    val pattern = DefPatterns.MizStructDef(nrFields)
 	    new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 	  }
 	  
 	  TranslationController.controller.add(inst)
-	  //TranslationController.clearLocusVarContext()		
+	  TranslationController.clearLocusVarContext()		
 
 	}
 	

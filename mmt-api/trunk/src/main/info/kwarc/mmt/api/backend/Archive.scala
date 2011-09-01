@@ -162,12 +162,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
 
     
-    private def makeQVars(n : scala.xml.Node, qvars : List[String]) : scala.xml.Node = n match {
+    private def makeHVars(n : scala.xml.Node, qvars : List[String]) : scala.xml.Node = n match {
       case <m:apply><csymbol>{s}</csymbol><m:bvar><m:apply><csymbol>{zz}</csymbol><m:ci>{v}</m:ci><csymbol>{a}</csymbol><csymbol>{b}</csymbol></m:apply></m:bvar>{c}</m:apply> =>
         if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for")
-        	makeQVars(c,  v.toString() :: qvars)
+        	makeHVars(c,  v.toString() :: qvars)
         else 
-        	new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_,qvars)) : _*)
+        	new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,qvars)) : _*)
 
       case <m:ci>{v}</m:ci> => 
         if (qvars.contains(v.toString))
@@ -178,7 +178,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         if (n.child.length == 0)
           n
         else
-          new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_,qvars)) : _*)
+          new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,qvars)) : _*)
     }
     
     def produceMWS(in : List[String] = Nil, dim: String) {
@@ -213,7 +213,11 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                        List(c.tp,c.df).map(tO => tO map { 
                           t =>
                             val url = custom.mwsurl(c.path) 
-                            val cml = makeQVars(t.toCML, Nil)
+                            
+                            //hvars disabled until MWS adds support for them
+                            //val cml = makeHVars(t.toCML, Nil)
+                            val cml = t.toCML
+                            
                             val node = <mws:expr url={url}>{cml}</mws:expr> 
                             outStream.write(node.toString + "\n")
                             //writeEntry(t, mwsbase + "/" + c.name.flat)

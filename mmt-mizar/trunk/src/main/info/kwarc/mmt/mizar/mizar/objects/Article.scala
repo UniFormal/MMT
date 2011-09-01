@@ -50,9 +50,9 @@ class MizPredMeansDef(val name : Option[String], val aid : String, val absnr : I
 class MizAttrMeansDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], val retType : MizTyp, val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula]) extends MizMeansDef with MizAttrDef
 
 //StructDef
-
-class MizSelector(val name : Option[String], val aid : String, val absnr : Int, val typ : Option[MizTyp])
-class MizStructDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String], MizTyp)], val imports : List[MizTyp], val selectors: List[MizSelector]) extends MizAny
+class MizField(val aid : String, val kind : String, val absnr : Int)
+class MizSelector(val aid : String, val absnr : Int, val mType : MizTyp, val retType : Option[MizTyp])
+class MizStructDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[MizTyp], val mstructs : List[MizTyp],  val fields : List[MizField], val selDecls: List[MizSelector]) extends MizAny
 
 
 //ReDef Classes

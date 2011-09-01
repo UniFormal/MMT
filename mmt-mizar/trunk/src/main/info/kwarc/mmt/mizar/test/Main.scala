@@ -47,6 +47,7 @@ object Main {
     p = p :+ DefPatterns.MizStructDef(8).toNode
     p = p :+ DefPatterns.MizStructDef(9).toNode
     p = p :+ DefPatterns.MizStructDef(10).toNode
+    p = p :+ DefPatterns.MizSelDef.toNode
 
     p = p :+ SchemePatterns.MizSchemeDef.toNode
     
@@ -58,8 +59,9 @@ object Main {
     p = p :+ RegPatterns.MizConditionalReg.toNode
     p = p :+ RegPatterns.MizFunctionalReg.toNode
 
-    val out = new java.io.FileWriter(docPath)
     val docPath = "/home/mihnea/kwarc/omdoc/" + "content/http..latin.omdoc.org/foundations/mizar/mizar-patterns.omdoc" 
+    
+    val out = new java.io.FileWriter(docPath)
     val base = URI("http", "latin.omdoc.org") / "foundations" / "mizar" 
     val pp = new scala.xml.PrettyPrinter(100,2)
 	
@@ -84,10 +86,16 @@ object Main {
 	    //val f = File("/home/mihnea/kwarc/oaff/mml/source/")
 	    //val files = f.toJava.listFiles().map(f => File(f)).filter(x => MizarCompiler.isApplicable(x.toJava.getName())).toList
 	    
-	    val testFiles = List("tarski.miz","xboole_0.miz", "enumset1.miz", "zfmisc_1.miz", "subset_1.miz", "relat_1.miz", "setfam_1.miz", "funct_1.miz", "relat_2.miz", "relset_1.miz")
-	    val files = testFiles.map(x => File("/home/mihnea/kwarc/oaff/mml/source/" + x))
-	    MizarCompiler.compileLibrary(files)
+	    //val testFiles = List("tarski.miz","xboole_0.miz", "enumset1.miz", "zfmisc_1.miz", "subset_1.miz", "relat_1.miz", "setfam_1.miz", "funct_1.miz", "relat_2.miz", "relset_1.miz")
+	    //val files = testFiles.map(x => File("/home/mihnea/kwarc/oaff/mml/source/" + x))
 	    
+	    //MizarCompiler.compileLibrary(files)
+	    
+	    //println("defs:" + TranslationController.defs)
+	    //println("theorems:" + TranslationController.theorems)
+	    //println("notations:" + TranslationController.notations)
+	    //println("schemes:" + TranslationController.schemes)
+	    //println("regs:" + TranslationController.regs)
 	    
 	    //val tf = File("/home/mihnea/kwarc/oaff/mml/source/yellow_9.miz")
 	    //MizarCompiler.compile(tf,tf)
