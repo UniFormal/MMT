@@ -10,6 +10,10 @@ import net.liftweb.http._
 import net.liftweb.http.rest._
 import net.liftweb.common.{Box,Empty,Full}
 
+import java.net.HttpURLConnection;
+import java.net._
+import java.io._
+import info.kwarc.mmt.mizar.test.MwsService
 import scala.xml._
 
 object Rest {
@@ -81,10 +85,34 @@ object Rest {
                  case None => <error message="no body found (did you use Content-Type=text/xml?)"/>
                  case Some(body) =>
                         try {
-                           //val input =  
-                           //val output = 
-                           //output.toNode
-                           <error>not implemented yet</error>
+                          val currentAid = r.header("aid") match {
+                            case Full(s) => s
+                            case _ => "HIDDEN"
+                          }
+                          val mmlVersion = r.header("MMLVersion") match {
+                            case Full(s) => s
+                            case _ => "4.166" 
+                          }
+                          
+                          val input = MwsService.parseQuery(body, currentAid, mmlVersion)
+                          val urlStr = "http://localhost:6284"
+                          val url = new URL(urlStr);
+                          val conn =  url.openConnection.asInstanceOf[HttpURLConnection]
+                          conn.setRequestMethod("POST")
+                          conn.setDoOutput(true);
+                          val out = conn.getOutputStream()
+                          out.write(input.toString.getBytes())
+                          out.close()
+                          val in = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+                          var output = ""
+                          var v = ""
+                          while(v != null) {
+                             output += v
+                             v = in.readLine()
+                          }
+                          in.close()
+                          val n = XML.loadString(output)
+                          n
                         } catch {
                            case e: ParseError => <error><message>{e.getMessage}</message><input>{body}</input></error>
                         }

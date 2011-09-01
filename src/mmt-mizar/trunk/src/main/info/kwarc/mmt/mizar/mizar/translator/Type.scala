@@ -9,7 +9,14 @@ import info.kwarc.mmt.api.lf._
 
 object TypeTranslator {
 	def translateTyp(t : MizTyp) : Term = {
-		MMTResolve(t.aid, t.kind, t.absnr)
+		val tpfunc = MMTResolve(t.aid, t.kind, t.absnr)
+		val tms = t.terms.map(translateTerm)
+		val cluster = translateCluster(t.clusters(0))
+		val tp = tms.length match {
+		  case 0 => tpfunc
+		  case _ => OMA(tpfunc, tms)
+		}
+		Mizar.adjective(cluster,tp)
 	}
 	
 	def translateTerm(term : MizTerm) : Term = {

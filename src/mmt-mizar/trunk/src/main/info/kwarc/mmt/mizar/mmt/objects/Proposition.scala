@@ -23,8 +23,9 @@ object MMTFor {
 }
 
 object MMTPred {
-	def apply(aid : String, absnr : Int, kind : String, vars : List[Term]) =  {
-		OMA(MMTResolve(aid, kind, absnr), vars)
+	def apply(aid : String, absnr : Int, kind : String, vars : List[Term]) =  vars.length match {
+	  case 0 => MMTResolve(aid, kind, absnr)
+	  case _ => OMA(MMTResolve(aid, kind, absnr), vars)
 	}
 }
 /*

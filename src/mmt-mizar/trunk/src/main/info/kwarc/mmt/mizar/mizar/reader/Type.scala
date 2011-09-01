@@ -16,7 +16,7 @@ object TypeParser {
 		val absnr = (n \ "@absnr").text.toInt
 		val vid = (n \ "@vid").text
 		val pid = (n \ "@pid").text
-		val t = new MizTyp(aid, kind, absnr, vid, Nil, n.child.filter(x => x.label == "Term").map(parseTerm).toList, None)
+		val t = new MizTyp(aid, kind, absnr, vid, n.child.filter(x => x.label == "Cluster").map(parseCluster).toList, n.child.filter(x => x.label == "Term").map(parseTerm).toList, None)
 		t.setName(ParsingController.resolveDef(aid, "M", absnr))
 		t
 	}

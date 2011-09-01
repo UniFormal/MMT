@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="MizarToOMDoc" default="build-library" basedir=".">
+<project name="mmt-mizar" default="build" basedir=".">
 
   <target name="init">
 	<!-- The variable scala.home holds the directory in which to find the scala compiler. -->
-	<property name="scala.home" value=".." />
+	<property name="scala.home" value="../../../deploy/lib/scala" />
+	<property name="build" value="build" />
+	<property name="mmt.home" value="../../mmt-api/trunk/build" />
+	<property name="build.main" value="${build}/main" />
+	
+        <property name="src.main" value="src/" />
+
 	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
 	<path id="scalac.classpath">
-		<pathelement location="${scala.home}/lib/scala-library.jar"/>
-		<pathelement location="${scala.home}/lib/scala-compiler.jar"/>
+		<pathelement location="${scala.home}/scala-library.jar"/>
+		<pathelement location="${scala.home}/scala-compiler.jar"/>
+		<pathelement location="${mmt.home}/mmt-api.jar"/>
 	</path>
 	<!-- This defines the task scalac (which is similar to javac but for scala). -->
 	<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
@@ -18,23 +25,20 @@
   <target name="clean">
     <delete dir="bin" />
   </target>
+  
+  <target name="compile" depends="init">
+        <mkdir dir="${build.main}"/>
+        <scalac destdir="${build.main}" srcdir="${src.main}" classpathref="scalac.classpath" deprecation="yes"/>
+    </target>
+  
+  <target name="build" depends="compile">
+        <jar destfile="${build}/mmt-mizar.jar">
+            <manifest>
+                <!-- DM TODO: this shouldn't really be here -->
+                <attribute name="Class-Path" value="${scala.home}/scala-library.jar ${scala.home}/lfcatalog.jar ${mmt.home}/mmt-api.jar"/>
+            </manifest>
+            <fileset dir="${build.main}"/>
+        </jar>
+    </target>
 
-  <target name="compile-library" depends="init">
-    <mkdir dir="${basedir}/bin"/>
-    <path id="compile.classpath">
-      <pathelement location="../lib/scala-library.jar"/>
-      <pathelement location="bin"/>	
-    </path>
-    <scalac destdir="${basedir}/bin" srcdir="${basedir}/src" classpathref="compile.classpath" deprecation="yes"/>
-  </target>
-
-  <target name="build-library" depends="compile-library">
-    <jar destfile="MizarToOMDoc.jar">
-      <manifest>
-    	<attribute name="Main-Class" value="mizar.Reader.main"/>
-    	<attribute name="Class-Path" value="../lib/scala-library.jar"/>
-      </manifest>
-      <fileset dir="${basedir}/bin"/>
-    </jar>
-  </target>
 </project>

@@ -2,9 +2,25 @@ package info.kwarc.mmt.mizar.mizar.reader
 
 import info.kwarc.mmt.mizar.mizar.objects._
 import scala.xml._
+import info.kwarc.mmt.api._
 
 object DefinitionParser {
 	
+  
+	def parseField(n : Node) : MizField = {
+	  val aid = (n \ "@aid").text
+	  val kind = (n \ "@kind").text
+	  val absnr = (n \ "@absnr").text.toInt
+	  new MizField(aid, kind, absnr)
+	}
+	
+	def parseFields(n : Node) : List[MizField] = {
+	  if (n.label == "Fields")
+		  n.child.map(x => parseField(x)).toList
+	  else 
+	    throw ImplementationError("Parsing Error: Structure with no fields ")
+	}
+    
 	/**
 	 * parseDefinition
 	 */
@@ -38,17 +54,19 @@ object DefinitionParser {
 		 } else if (nCons.length >= 3) {
 		   val xmlattr = parseConstructor(nCons(0))
 		   val xmlstr = parseConstructor(nCons(1))
+		   val fields = parseFields(nCons(1).child(nCons(1).child.length - 1))
 		   val xmlaggr = parseConstructor(nCons(2))
 		   val xmlsel = nCons.slice(3,nCons.length).map(parseConstructor)
 		   
-		   val selectors = xmlsel.map(x => new MizSelector(ParsingController.resolveDef(x.aid, "U", x.nr),x.aid, x.nr, x.retType)).toList
+		   val selectors = xmlsel.map(x => new MizSelector(x.aid, x.nr, x.argTypes(0), x.retType)).toList
 		   
 		   selectors.zipWithIndex.map(p => ParsingController.selectors(p._1.aid) += (p._1.absnr -> (xmlstr.nr -> (p._2 + 1))))
 		   ParsingController.attributes(xmlattr.aid) += (xmlattr.nr -> xmlstr.nr)
-		   //println(ParsingController.selectors)
-		   val args : List[(Option[String], MizTyp)] = Nil//TODO
 		   
-		   new MizStructDef(ParsingController.resolveDef(xmlstr.aid, "L", xmlstr.nr), xmlstr.aid, xmlstr.nr, args, xmlstr.argTypes, selectors)		   
+		   val mstructs = xmlstr.argTypes
+		   val args = xmlaggr.argTypes
+		   
+		   new MizStructDef(ParsingController.resolveDef(xmlstr.aid, "L", xmlstr.nr), xmlstr.aid, xmlstr.nr, args, mstructs, fields, selectors)		   
 		 } else {
 			 new MizErr()
 		 }

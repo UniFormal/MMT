@@ -45,9 +45,7 @@ object MMTResolve {
 			    val lname = (kind + absnr) :: "struct" :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "U" =>
-			    val mstrnr = ParsingController.selectors(aid)(absnr)._1
-			    val snr = ParsingController.selectors(aid)(absnr)._2
-			    val lname = ("L" + mstrnr) :: ("U" + snr) :: Nil
+			    val lname = ("U" + absnr) :: ("sel") :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "G" => 
 			    val lname = ("L" + absnr) :: "aggr" :: Nil

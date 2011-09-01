@@ -56,7 +56,7 @@ object ArticleParser{
 		  parseConsider(n)
 		case "Reconsider" => 
 		  parseReconsider(n)
-		case "Proof" | "By" | "Now" |"Section" | "Reservation" => None
+		case "Proof" | "By" | "Now" |"Section" | "Reservation" | "DefPred" |"DefFunc"| "IterEquality" => None
 		case _ => {
 			println("TODO: " + n.label)
 		}
