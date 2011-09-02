@@ -40,9 +40,6 @@ object Instance {
    */
   def elaborate(inst: Instance, normalize: Boolean = false)(implicit lup: Lookup): List[Constant] = {  
     	val pt : Pattern = lup.getPattern(inst.pattern)
-    	if (inst.name.flat == "K8") {
-    	   1
-    	}
       pt.con.map {
     	  case TermVarDecl(n,tp,df,at @ _*) =>
               def auxSub(x : Term) = {
