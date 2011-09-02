@@ -232,6 +232,7 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
 class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
    private var compilers : List[Compiler] = Nil
+   var mws : Option[URI] = None
    private def log(msg : => String) = report("backend", msg)
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
@@ -287,6 +288,7 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
       }
       else throw NotApplicable
    }
+   def setMWS(uri: URI) {mws = Some(uri)}
    def cleanup {
       compilers.foreach(_.destroy)
       compilers = Nil

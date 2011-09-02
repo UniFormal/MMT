@@ -346,10 +346,8 @@ case class Index(seq : Sequence, term : Term) extends Term {
 sealed abstract class Sequence extends Obj {
 	def ^(sub : Substitution) : Sequence
 	def items : List[SeqItem]
-    def flatMap(f: SeqItem => Sequence) : Sequence = SeqItemList((items map {i => f(i).items}).flatten) 
-    
-    def toOpenMath : Term = OMA(OMID(mmt.seq), items)
-    
+   def flatMap(f: SeqItem => Sequence) : Sequence = SeqItemList((items map {i => f(i).items}).flatten) 
+   def toOpenMath : Term = OMA(OMID(mmt.seq), items)
 }
 
 sealed abstract class SeqItem extends Sequence {

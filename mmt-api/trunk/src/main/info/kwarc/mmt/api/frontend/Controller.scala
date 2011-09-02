@@ -193,6 +193,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)
+         case AddMWS(uri) => backend.setMWS(uri)
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
