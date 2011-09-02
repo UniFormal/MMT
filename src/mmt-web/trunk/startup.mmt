@@ -1,5 +1,22 @@
-log+ archive
-log+ catalog
-catalog locutor.xml
-archive add /home/mihnea/kwarc/omdoc/
-archive add /home/mihnea/kwarc/oaff/mml/
+// OMBase.war will read and execute the file startup.mmt upon startup
+
+// use // for comments
+
+// switch on logging for different parts of the code (will be written to ombase.log)
+log+ manager
+log+ controller
+log+ get
+log+ reader
+log+ uom
+log+ notations
+log+ presenter
+
+// pull content from local repository, set up a proper locutor.xml using the template
+catalog ../../catalog.xml
+// pull content from TNTBase, a proper ombase.xml file is checked
+//tntbase ../../ombase+na.xml
+archive add c:\other\ombase
+read ../../deps.xml
+
+// set the base URI for requests
+base http://docs.omdoc.org/
