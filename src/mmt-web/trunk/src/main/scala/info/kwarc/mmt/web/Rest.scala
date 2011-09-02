@@ -19,7 +19,7 @@ import scala.xml._
 object Rest {
    def div(n: List[Node]) : Node = Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), n :_*)
    def div(s: String) : Node = div(List(scala.xml.Text(s)))
-   def applicable(p: ParsePath) = List(":tree", ":query", ":mws", ":uom", ":mmt", ":breadcrumbs", ":admin") contains p.partPath.headOption.getOrElse("")
+   def applicable(p: ParsePath) = List(":tree", ":query", ":search", ":uom", ":mmt", ":breadcrumbs", ":admin") contains p.partPath.headOption.getOrElse("")
    val handler : LiftRules.DispatchPF = {case r : Req if applicable(r.path) =>
       val path : List[String] = r.path.wholePath
       val query : String = ReqHelpers.query(r.request) 
@@ -80,42 +80,31 @@ object Rest {
                 case _ => <error message="illegal command"/>
              }
              XmlResponse(resp)
-          case ":mws" :: _ =>
-              val resp = r.xml.toOption match {
-                 case None => <error message="no body found (did you use Content-Type=text/xml?)"/>
-                 case Some(body) =>
-                        try {
-                          val currentAid = r.header("aid") match {
-                            case Full(s) => s
-                            case _ => "HIDDEN"
+          case ":search" :: _ =>
+              val resp = Manager.controller.backend.mws match {
+                 case None => <error message="no MathWebSearch backend defined"/>
+                 case Some(mws) => r.xml.toOption match {
+                    case None => <error message="no body found (did you use Content-Type=text/xml?)"/>
+                    case Some(body) => try {
+                        val input = query match {
+                             case "mizar" => 
+                                val mmlVersion = r.header("MMLVersion") match {
+                                   case Full(s) => s
+                                   case _ => "4.166" 
+                                }
+                                val currentAid = r.header("aid") match {
+                                  case Full(s) => s
+                                  case _ => "HIDDEN"
+                                }
+                               MwsService.parseQuery(body, currentAid, mmlVersion) // translate mizar-xml query
+                             case _ => body // assume content math query by default
                           }
-                          val mmlVersion = r.header("MMLVersion") match {
-                            case Full(s) => s
-                            case _ => "4.166" 
-                          }
-                          
-                          val input = MwsService.parseQuery(body, currentAid, mmlVersion)
                           val urlStr = "http://localhost:6284"
-                          val url = new URL(urlStr);
-                          val conn =  url.openConnection.asInstanceOf[HttpURLConnection]
-                          conn.setRequestMethod("POST")
-                          conn.setDoOutput(true);
-                          val out = conn.getOutputStream()
-                          out.write(input.toString.getBytes())
-                          out.close()
-                          val in = new BufferedReader(new InputStreamReader(conn.getInputStream()))
-                          var output = ""
-                          var v = ""
-                          while(v != null) {
-                             output += v
-                             v = in.readLine()
-                          }
-                          in.close()
-                          val n = XML.loadString(output)
-                          n
-                        } catch {
-                           case e: ParseError => <error><message>{e.getMessage}</message><input>{body}</input></error>
-                        }
+                          utils.xml.post(urlStr, input)
+                     } catch {
+                        case e: ParseError => <error><message>{e.getMessage}</message><input>{body}</input></error>
+                     }
+                 }
               }
               XmlResponse(resp)
           case ":mmt" :: _ =>
