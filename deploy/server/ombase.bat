@@ -1,1 +1,1 @@
-java -jar ..\lib\jetty-runner.jar lib\mmt-web.war 1>2 > jetty.log
+java -jar ..\lib\jetty-runner.jar ..\mmt\mmt-web.war 1>2 > jetty.log
