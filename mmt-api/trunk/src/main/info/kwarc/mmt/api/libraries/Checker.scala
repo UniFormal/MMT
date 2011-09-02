@@ -443,7 +443,12 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
     	  }
    }
    def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
-      Nil
+      if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
+      (from zip subs).flatMap {       
+    	  case (TermVarDecl(n,tp,df,attrs @_*),TermSub(m,t)) if n == m => checkTerm(home,to,t) 
+    	  case (SeqVarDecl(n,tp,df,attrs @_*),SeqSub(m,s)) if n == m => checkSeq(home,to,s)
+    	  case (v,s) => throw Invalid("illegal case " + s + " for declaration " + v)
+      }
    }
 }
 
