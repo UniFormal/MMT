@@ -1,0 +1,5 @@
+<registry>
+  <repository location="https://alpha.tntbase.mathweb.org/repos/cds/">
+    <wc location="" root="/home/dimitar/projects/cds"/>
+  </repository>
+</registry>
