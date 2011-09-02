@@ -64,7 +64,6 @@
     <target name="jar" depends="compile">
         <jar destfile="${build}/${jar}">
             <manifest>
-                <attribute name="Main-Class" value="${main.class}"/>
             </manifest>
             <fileset dir="${build.main}"/>
         </jar>
