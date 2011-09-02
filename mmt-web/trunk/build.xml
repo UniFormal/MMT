@@ -47,9 +47,9 @@
             </lib>
             <lib file="${scala.dir}/scala-library.jar" />
             <lib file="${deploy}/mmt/mmt-api.jar" />
-	    <lib file="${deploy}/mmt/uom.jar" />
-	    <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
-	    <lib file="${deploy}/mmt/mmt-mizar.jar" />
+	         <lib file="${deploy}/mmt/uom.jar" />
+	         <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
+	         <lib file="${deploy}/mmt/mmt-mizar.jar" />
         </war>
     </target>
 
