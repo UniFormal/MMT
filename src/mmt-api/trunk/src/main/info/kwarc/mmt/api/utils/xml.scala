@@ -72,8 +72,8 @@ object xml {
       out
    }
    
-   def post(url: String, input: Node) : Node = {
-      val conn = new java.net.URL(url).openConnection()// returns java.net.HttpURLConnection if url is http
+   def post(url: java.net.URL, input: Node) : Node = {
+      val conn = url.openConnection()// returns java.net.HttpURLConnection if url is http
       conn.setDoOutput(true);
       val wr = new java.io.OutputStreamWriter(conn.getOutputStream())
       wr.write(input.toString)   // this automatically sets the request method to POST

@@ -99,8 +99,7 @@ object Rest {
                                MwsService.parseQuery(body, currentAid, mmlVersion) // translate mizar-xml query
                              case _ => body // assume content math query by default
                           }
-                          val urlStr = "http://localhost:6284"
-                          utils.xml.post(urlStr, input)
+                          utils.xml.post(mws.toJava.toURL, input)
                      } catch {
                         case e: ParseError => <error><message>{e.getMessage}</message><input>{body}</input></error>
                      }
