@@ -84,11 +84,14 @@ case class OMID(gname: GlobalName) extends Term {
                                  StringLiteral(ln.flat), StringLiteral(gname.toPathEscaped))
       case _ => List(parent, StringLiteral(name.flat)) 
    }
+   override def toString = gname match {
+      case OMMOD(mod) % name => mod.name.flat + "?" + name.flat
+      case g => g.toString
+   }
    def toNodeID(pos : Position) = parent match {
       case OMMOD(doc ? mod) => <om:OMS base={doc.toPath} module={mod.flat} name={name.flat}/> % pos.toIDAttr
       case par => <om:OMS name={name.flat}>{par.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
    }
-   
    def toCML = <csymbol>{gname.toPath}</csymbol>
 }
 
@@ -377,7 +380,7 @@ case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends Seq
 	    <seqsubst var ={name}>{seq1.toNodeID(pos + 0)}{seq2.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
 	def toCML = 
 	    <m:seqsubst var={name}>{seq1.toCML}{seq2.toCML}</m:seqsubst>
-	def ^ (sub : Substitution) = {
+	def ^(sub : Substitution) = {
 	    	val subn = sub ++ (name / OMV(name)) 
 	    	SeqSubst(seq1 ^ subn,name,seq2 ^ sub)  //TODO Variable capture
 	    }

@@ -38,14 +38,18 @@ object Instance {
   /**
    * returns the elaboration of an instance
    */
-  def elaborate(inst: Instance)(implicit lup: Lookup): List[Constant] = {  
-    	val pt : Pattern = lup.getPattern(inst.pattern) 
+  def elaborate(inst: Instance, normalize: Boolean = false)(implicit lup: Lookup): List[Constant] = {  
+    	val pt : Pattern = lup.getPattern(inst.pattern)
+    	if (inst.name.flat == "K8") {
+    	   1
+    	}
       pt.con.map {
-    	  case TermVarDecl(n,tp,df,at @ _*) => 
+    	  case TermVarDecl(n,tp,df,at @ _*) =>
               def auxSub(x : Term) = {
-        	      val names = pt.con.map(d => d.name)
-        	      val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
-         	      (x ^ inst.matches) ^ Substitution(subs : _*)
+        	        val names = pt.con.map(d => d.name)
+        	        val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
+         	     val xsub = (x ^ inst.matches) ^ Substitution(subs : _*)
+         	     if (normalize) SeqNormalize.normalizeTerm(xsub) else xsub
             }
     	    val c = new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
     	    c.setOrigin(InstanceElaboration(inst.path))

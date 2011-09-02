@@ -121,7 +121,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            inFile.list foreach {n =>
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
            }
-        } else {
+        } else if (inFile.getExtension == Some("omdoc")) {
            val mpath = Archive.ContentPathToMMTPath(in)
            val mod = controller.globalLookup.getModule(mpath)
            val flatNode = mod match {
