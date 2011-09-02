@@ -21,7 +21,6 @@ object FlatSequence {
 
 object Ind {
 	def apply(seq : String, i : String) : Term = Index(SeqVar(seq),OMV(i))
-
 }
 
 object Rep {

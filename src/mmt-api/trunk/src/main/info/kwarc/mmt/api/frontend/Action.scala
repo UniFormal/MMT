@@ -19,7 +19,7 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | archive | tntbase | compiler | execfile
+   private def controller = logon | logoff | local | catalog | archive | tntbase | compiler | mws | execfile
    private def shell = setbase | read | printall | printallxml | clear | exit
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
@@ -35,6 +35,7 @@ object Action extends RegexParsers {
    private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def compiler = "compiler" ~> str ~ (str *) ^^ {case c ~ args => AddCompiler(c, args)}
+   private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
@@ -60,6 +61,7 @@ object Action extends RegexParsers {
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
    private def file = str ^^ {s => home.resolve(s)}
+   private def uri = str ^^ {s => URI(s)}
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
    /** parses an action from a string, relative to a base path */
    def parseAct(s:String, b : Path, h: File) : Action = {
@@ -103,6 +105,8 @@ case class AddArchive(folder : java.io.File) extends Action {override def toStri
 case class ArchiveBuild(id: String, dim: String, in : List[String]) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
 /** builds a dimension in a previously opened archive */
 case class ArchiveMar(id: String, file: java.io.File) extends Action {override def toString = "archive " + id + " mar " + file}
+/** add MathWebSearch as a web service */
+case class AddMWS(uri: URI) extends Action {override def toString = "mws " + uri}
 /** load a file containing commands and execute them, fails on first error if any */
 case object PrintAll extends Action
 /** print all loaded knowledge items to STDOUT in XML syntax */

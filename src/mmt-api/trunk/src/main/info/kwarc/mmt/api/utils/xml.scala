@@ -72,6 +72,19 @@ object xml {
       out
    }
    
+   def post(url: String, input: Node) : Node = {
+      val conn = new java.net.URL(url).openConnection()// returns java.net.HttpURLConnection if url is http
+      conn.setDoOutput(true);
+      val wr = new java.io.OutputStreamWriter(conn.getOutputStream())
+      wr.write(input.toString)   // this automatically sets the request method to POST
+      wr.flush()
+      val src = scala.io.Source.fromInputStream(conn.getInputStream(), "UTF-8")
+      val output = scala.xml.parsing.ConstructingParser.fromSource(src, false).document()
+      wr.close()
+      src.asInstanceOf[scala.io.BufferedSource].close
+      output(0)
+   }
+   
    /**
     * Checks whether an XML element has illegal attribute keys.
     * Prefixed attributes are ignored.
