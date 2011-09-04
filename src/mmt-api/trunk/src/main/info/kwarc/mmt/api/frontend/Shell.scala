@@ -32,3 +32,6 @@ class Shell(f : Report => libraries.Checker) extends {
 
 /** A shell with the DefaultFoundation. The default entry point into the jar file. */
 object Run extends Shell(r => new libraries.StructuralChecker(r))
+
+/** A shell with the NullChecker */
+object RunNull extends Shell(r => libraries.NullChecker)

@@ -225,6 +225,7 @@ object SimpleChecker extends ModuleChecker {
  * A Checker that implements MMT-well-formedness relative to a foundation.
  */
 class FoundChecker(foundation : Foundation) extends ModuleChecker {
+   private implicit val report = foundation.report
    /** checks whether a content element may be added to a library
     * @param lib the library
     * @param s the content element
@@ -286,7 +287,8 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             Success(deps)
          case i : Instance => 
             val pt : Pattern = lib.getPattern(i.pattern)
-            val paths = checkSubstitution(i.home, i.matches, pt.params, Context())
+            val paths : List[Path] = Nil //checkSubstitution(i.home, i.matches, pt.params, Context())
+            // Mihnea's instances already refer to the elaborated constants stemming from the same instance
             val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
             val elab = Instance.elaborate(i, true)
             i.setOrigin(Elaborated)
@@ -445,8 +447,8 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
       if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
       (from zip subs).flatMap {       
-    	  case (TermVarDecl(n,tp,df,attrs @ _*), TermSub(m,t)) if n == m => Nil //checkTerm(home,to,t) 
-    	  case (SeqVarDecl(n,tp,df,attrs @ _*),SeqSub(m,s)) if n == m => Nil //checkSeq(home,to,s)
+    	  case (TermVarDecl(n,tp,df,attrs @ _*), TermSub(m,t)) if n == m => checkTerm(home,to,t) 
+    	  case (SeqVarDecl(n,tp,df,attrs @ _*),SeqSub(m,s)) if n == m => checkSeq(home,to,s)
     	  case (v,s) => throw Invalid("illegal case " + s + " for declaration " + v)
       }
    }

@@ -36,6 +36,7 @@ object SeqNormalize {
   def normalizeSeq(seq : Sequence) : Sequence = SeqItemList(seq.items.flatMap(normalizeSeqItem))	  
   def normalizeSeqItem(sit : SeqItem) : List[SeqItem] = {
 	  sit match {	
+      case e : Term => List(normalizeTerm(e))
 	 	case SeqSubst(s1,n,s2) => 
 	 		val ns2 = normalizeSeq(s2)
 	 		ns2.items.flatMap {
@@ -48,7 +49,6 @@ object SeqNormalize {
 	 			case _ => List(SeqUpTo(normalizeTerm(m)))
 	 		}
     	case SeqVar(n) => List(sit)
-    	case e : Term => List(normalizeTerm(e))
 	  }
   }
 
@@ -62,7 +62,17 @@ object SeqNormalize {
 	 	    	 case (OMI(n),tms : List[Term]) => tms(n.toInt)
 	 	    	 case _ => Ind(indN, seqN)
 	 	     }
-	 	  */  
+	 	  */
+	     //most frequent cases come first for optimization
+	     case OMID(p) => OMID(p)
+	     case OMV(n) => OMV(n)
+        case OMA(fn,args) => 
+            val argsN = args.flatMap(normalizeSeqItem)
+            if (argsN.isEmpty) normalizeTerm(fn)
+            else OMA(normalizeTerm(fn),argsN)
+        case OMBIND(bin,con,bdy) =>
+            val (conN,sub) = normalizeContext(con)
+            OMBIND(normalizeTerm(bin), conN, normalizeTerm(bdy ^? sub)) // calling ^? to avoid traversal in the typical case where sub is empty   
 	 	  case Index(seq,ind) => 
 	 	   val seqN = normalizeSeq(seq)
 	 	   val indN = normalizeNat(ind)
@@ -71,13 +81,6 @@ object SeqNormalize {
 	 	  	   case _ => Index(seqN,indN)
 	 	   }
 
-          case OMA(fn,args) => 
-          	val argsN = args.flatMap(normalizeSeqItem)
-          	if (argsN.isEmpty) normalizeTerm(fn)
-          	else OMA(normalizeTerm(fn),args.flatMap(normalizeSeqItem))
-	 	  case OMBIND(bin,con,bdy) =>
-	 	      val (conN,sub) = normalizeContext(con)
-	 	      OMBIND(normalizeTerm(bin), conN, normalizeTerm(bdy ^ sub))	 	  
 	 	  case OMATTR(arg,key,value)=> OMATTR(normalizeTerm(arg),key,normalizeTerm(value)) //TODO normalize method for key?
 	 	  case OMM(arg,via) => OMM(normalizeTerm(arg),via)
 	 	  case OME(err, args) => OME(normalizeTerm(err),args.map(normalizeTerm))
@@ -89,8 +92,8 @@ object SeqNormalize {
      context match {
         case con ++ TermVarDecl(x,tpO,dfO,attrs @_*) => 
            val (conN, sub) = normalizeContext(con) 
-           val tpN = tpO map {tp => normalizeTerm(tp ^ sub)}
-           val dfN = dfO map {df => normalizeTerm(df ^ sub)}
+           val tpN = tpO map {tp => normalizeTerm(tp ^? sub)}
+           val dfN = dfO map {df => normalizeTerm(df ^? sub)}
            (conN ++ TermVarDecl(x,tpN,dfN,attrs :_*), sub ++ TermSub(x,OMV(x)))
         case con ++ SeqVarDecl(x,tpO,dfO,attrs @_*) => 
            val (conN, sub) = normalizeContext(con) 

@@ -1,11 +1,12 @@
 package info.kwarc.mmt.api.patterns
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.objects.Conversions._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils._
+import libraries._
+import modules._
+import objects._
+import objects.Conversions._
+import symbols._
+import frontend._
+import utils._
 import scala.io.Source
 
 
@@ -38,17 +39,19 @@ object Instance {
   /**
    * returns the elaboration of an instance
    */
-  def elaborate(inst: Instance, normalize: Boolean)(implicit lup: Lookup): List[Constant] = {  
+  def elaborate(inst: Instance, normalize: Boolean)(implicit lup: Lookup, report: Report): List[Constant] = {  
     	val pt : Pattern = lup.getPattern(inst.pattern)
       pt.con.map {
     	  case TermVarDecl(n,tp,df,at @ _*) =>
-              def auxSub(x : Term) = {
-        	        val names = pt.con.map(d => d.name)
-        	        val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
-         	     val xsub = (x ^ inst.matches) ^ Substitution(subs : _*)
-         	     if (normalize) SeqNormalize.normalizeTerm(xsub) else xsub
-            }
-    	    val c = new Constant(inst.home, inst.name / n, tp.map(auxSub), df.map(auxSub),null)
+          def auxSub(x : Term) = {
+     	        val names = pt.con.map(d => d.name)
+     	        val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
+      	     val xsub = x ^ (inst.matches ++ Substitution(subs : _*))
+      	     if (normalize) SeqNormalize.normalizeTerm(xsub) else xsub
+          }
+          val nname = inst.name / n
+          report("elaboration", "generating constant " + nname)
+    	    val c = new Constant(inst.home, nname, tp.map(auxSub), df.map(auxSub),null)
     	    c.setOrigin(InstanceElaboration(inst.path))
     	    c
         case SeqVarDecl(n,tp,df, at @ _*) => throw ImplementationError("Pattern cannot contain sequence variable declaration")
@@ -58,7 +61,7 @@ object Instance {
   /**
    * elaborates all instances in a theory and inserts the elaborated constants after the respective instance
    */
-  def elaborate(thy: DeclaredTheory, normalize: Boolean = false)(implicit lup: Lookup) {
+  def elaborate(thy: DeclaredTheory, normalize: Boolean = false)(implicit lup: Lookup, report: Report) {
      thy.valueList foreach {
         case i: Instance =>
            i.setOrigin(Elaborated)
