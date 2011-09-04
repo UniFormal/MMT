@@ -115,28 +115,31 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
-    def produceFlat(in: List[String] = Nil) {produceFlat(in, new Controller(NullChecker, report))}
-    private def produceFlat(in: List[String], controller: Controller) {
+    def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in
+       log("to do: [CONT->FLAT]        -> " + inFile)
        if (inFile.isDirectory) {
            inFile.list foreach {n =>
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
            }
-        } else if (inFile.getExtension == Some("omdoc")) {
+       } else if (inFile.getExtension == Some("omdoc")) {
            if (!((flatDir / in).toJava.exists)) {
-           val mpath = Archive.ContentPathToMMTPath(in)
-           val mod = controller.globalLookup.getModule(mpath)
-           val flatNode = mod match {
-              case thy: DeclaredTheory =>
-                 Instance.elaborate(thy)(controller.globalLookup)
-                 thy.toNodeElab
-              case _ => mod.toNode
-           }
-           val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
-           xml.writeFile(flatNodeOMDoc, flatDir / in)
-           controller.delete(mpath)
+              val mpath = Archive.ContentPathToMMTPath(in)
+              val mod = controller.globalLookup.getModule(mpath)
+              val flatNode = mod match {
+                 case thy: DeclaredTheory =>
+                    Instance.elaborate(thy)(controller.globalLookup, report)
+                    thy.toNodeElab
+                 case _ => mod.toNode
+              }
+              val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
+              xml.writeFile(flatNodeOMDoc, flatDir / in)
+              controller.delete(mpath)
+           } else {
+              log("  skipping")
            }
         }
+       log("done:  [CONT->FLAT]        -> " + inFile)
     }
     
     /** Generate relation from content */

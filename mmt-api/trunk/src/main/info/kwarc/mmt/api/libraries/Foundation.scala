@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import objects._
 import frontend._
 
-abstract class Foundation(report: Report) {
+abstract class Foundation(val report: Report) {
    val foundTheory : MPath
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean
    def equality(tm1 : Term, tm2 : Term)(implicit lib : Lookup) : Boolean
