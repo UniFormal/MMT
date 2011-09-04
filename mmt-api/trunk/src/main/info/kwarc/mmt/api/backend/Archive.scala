@@ -123,6 +123,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
            }
         } else if (inFile.getExtension == Some("omdoc")) {
+           if (!((flatDir / in).toJava.exists)) {
            val mpath = Archive.ContentPathToMMTPath(in)
            val mod = controller.globalLookup.getModule(mpath)
            val flatNode = mod match {
@@ -134,6 +135,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
            xml.writeFile(flatNodeOMDoc, flatDir / in)
            controller.delete(mpath)
+           }
         }
     }
     

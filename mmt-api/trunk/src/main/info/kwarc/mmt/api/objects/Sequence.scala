@@ -44,7 +44,7 @@ object SeqNormalize {
 	 		}	 			
 	 	case SeqUpTo(m) =>
 	 		m match { 
-	 			case OMI(n) => List.range(1,n.toInt + 1).map(i => OMI(i))
+	 			case OMI(n) => 1.to(n.toInt).map(OMI(_)).toList
 	 			case _ => List(SeqUpTo(normalizeTerm(m)))
 	 		}
     	case SeqVar(n) => List(sit)
@@ -98,17 +98,17 @@ object SeqNormalize {
            val dfN = dfO map {df => normalizeSeq(df ^ sub)}
            (tpN,dfN) match {
               case (Some(FlatSequence(ts)),Some(FlatSequence(ds))) if ts.length == ds.length =>
-              	val scon = (List.range(1,ts.length + 1) zip (ts zip ds)).map {
+              	val scon = (1.to(ts.length).toList zip (ts zip ds)).map {
               		case (i,(t,d)) => TermVarDecl(x + "/" + i,Some(t),Some(d))   
                 }              	
               	(conN ++ scon, sub ++ SeqSub(x,SeqItemList(scon.map(d => OMV(d.name)))))
               case (Some(FlatSequence(ts)),None) => 
-              	val scon = (List.range(1,ts.length + 1) zip ts).map {
+              	val scon = (1.to(ts.length).toList zip ts).map {
               		case (i,t) => TermVarDecl(x + "/" + i,Some(t),None)
               	}
               	(conN ++ scon, sub ++ SeqSub(x,SeqItemList(scon.map(d => OMV(d.name)))))
               case (None,Some(FlatSequence(ds))) =>
-              	val scon = (List.range(1,ds.length + 1) zip ds).map {
+              	val scon = (1.to(ds.length).toList zip ds).map {
               		case (i,d) => TermVarDecl(x + "/" + i,None,Some(d))
               	}
               	(conN ++ scon, sub ++ SeqSub(x,SeqItemList(scon.map(d => OMV(d.name)))))

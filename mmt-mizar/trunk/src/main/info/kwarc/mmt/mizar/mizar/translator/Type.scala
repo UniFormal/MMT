@@ -25,8 +25,8 @@ object TypeTranslator {
 			case t : MizConst =>  OMID(MMTUtils.getPath(TranslationController.currentAid, "C" + t.nr))
 			case t : MizFunc => MMTFunc(MMTResolve(t.aid, t.kind, t.absnr), t.args.map(translateTerm).toList) 
 			case t : MizSchemeFunc => t.args.length match {
-			  case 0 => Index(SeqVar("args"), OMI(t.nr))
-			  case _ => OMA(Index(SeqVar("args"), OMI(t.nr)),t.args.map(TypeTranslator.translateTerm))
+			  case 0 => Index(SeqVar("x"), OMI(t.nr))
+			  case _ => OMA(Index(SeqVar("x"), OMI(t.nr)),t.args.map(TypeTranslator.translateTerm))
 			}
 
 			case t : MizLocusVar => TranslationController.resolveLocusVar(t.nr)

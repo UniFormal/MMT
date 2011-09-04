@@ -105,15 +105,33 @@ object MMTUtils {
 	  Pi("x", SeqSubst(Mizar.any,"i",SeqUpTo(OMV(argNr))), body)
 	}
 	
+	def args(name : String, argNr : Int, body : Term) : Term = {
+			Pi("x", SeqSubst(Mizar.any,"i",SeqUpTo(OMI(argNr))), body)
+	}
+	
 	def argTypes(args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     OMA(LF.arrow, 
 	  	         List(SeqSubst(Mizar.be(Index(SeqVar(args), OMV("i")),Index(SeqVar(types),OMV("i"))),"i", SeqUpTo(OMV(argNr))),
 	         	 body))
 	}
 	
+	def argTypes(args : String, types : List[Term], argNr : Int, body : Term) : Term = {
+	  	     OMA(LF.arrow, 
+	  	         List(SeqSubst(Mizar.be(Index(SeqVar(args), OMV("i")),Index(SeqItemList(types),OMV("i"))),"i", SeqUpTo(OMI(argNr))),
+	         	 body))
+	}
+	
+	
 	def argTypes(name : String, args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     Pi(name, 
 	  	        SeqSubst(Mizar.be(Index(SeqVar(args), OMV("i")),Index(SeqVar(types),OMV("i"))),"i", SeqUpTo(OMV(argNr))),
+	         	 body)
+	}
+	
+	
+	def argTypes(name : String, args : String, types : List[Term], argNr : Int, body : Term) : Term = {
+	  	     Pi(name, 
+	  	        SeqSubst(Mizar.be(Index(SeqVar("x"), OMV("i")),Index(SeqItemList(types),OMV("i"))),"i", SeqUpTo(OMI(argNr))),
 	         	 body)
 	}
 	

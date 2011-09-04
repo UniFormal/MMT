@@ -18,7 +18,7 @@ object TranslationController {
 	
     val controller  =  {
       val report = new FileReport(new java.io.File("mizar.log"))
-      val checker = libraries.NullChecker//new FoundChecker(new libraries.DefaultFoundation(report))
+      val checker = libraries.NullChecker //new FoundChecker(new libraries.DefaultFoundation(report))
       new frontend.Controller(checker,report)
     }
 	  
@@ -42,12 +42,12 @@ object TranslationController {
 	}
 	
 	def resolveVar(nr : Int) : Term = {
-		varContext(varContext.length - nr) 
+	    varContext(varContext.length - nr) 
 	}
 		
 	def resolveLocusVar(nr : Int) : Term = {
-		//locusVarContext(locusVarContext - nr)
-		Index(SeqVar("y"), OMI(nr - 1))
+		locusVarContext(locusVarContext.length - nr)
+		//Index(SeqVar("y"), OMI(nr - 1))
 	}
 	
 	def addQVarBinder() = {
@@ -67,6 +67,10 @@ object TranslationController {
 	
 	def clearVarBinder() = {
 		varContext.pop()
+	}
+	
+	def clearVarContext() = {
+		varContext = new ArrayStack()
 	}
 	
 	def addLocusVarBinder(tm : Term) : Unit = {

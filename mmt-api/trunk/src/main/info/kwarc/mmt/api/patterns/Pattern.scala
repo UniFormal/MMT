@@ -38,7 +38,7 @@ object Instance {
   /**
    * returns the elaboration of an instance
    */
-  def elaborate(inst: Instance, normalize: Boolean = false)(implicit lup: Lookup): List[Constant] = {  
+  def elaborate(inst: Instance, normalize: Boolean)(implicit lup: Lookup): List[Constant] = {  
     	val pt : Pattern = lup.getPattern(inst.pattern)
       pt.con.map {
     	  case TermVarDecl(n,tp,df,at @ _*) =>
@@ -58,7 +58,7 @@ object Instance {
   /**
    * elaborates all instances in a theory and inserts the elaborated constants after the respective instance
    */
-  def elaborate(thy: DeclaredTheory)(implicit lup: Lookup) {
+  def elaborate(thy: DeclaredTheory, normalize: Boolean = false)(implicit lup: Lookup) {
      thy.valueList foreach {
         case i: Instance =>
            i.setOrigin(Elaborated)

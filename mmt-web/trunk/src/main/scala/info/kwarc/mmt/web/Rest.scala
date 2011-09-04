@@ -96,7 +96,7 @@ object Rest {
                                   case Full(s) => s
                                   case _ => "HIDDEN"
                                 }
-                               MwsService.parseQuery(body, currentAid, mmlVersion) // translate mizar-xml query
+                               MwsService.parseQuery(body, currentAid, mmlVersion,"0") // translate mizar-xml query
                              case _ => body // assume content math query by default
                           }
                           utils.xml.post(mws.toJava.toURL, input)
