@@ -53,7 +53,7 @@ trait MMTObject {
 sealed abstract class Term extends SeqItem {
    def strip : Term = this
    def ^(sub : Substitution) : Term
-   def ^?(sub : Substitution) : Term = if (sub.isEmpty) this else this ^ sub
+   def ^?(sub : Substitution) : Term = if (sub.isIdentity) this else this ^ sub
    /** morphism application (written postfix), maps OMHID to OMHID */
    def *(that : Morph) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */

@@ -125,6 +125,11 @@ case class Substitution(subs : Sub*) {
 	   case SeqSub(v,s) => SeqSub(v, s ^ sub)
    }
    def apply(v : String) : Option[Obj] = subs.reverse.find(_.name == v).map(_.target)
+   def isIdentity : Boolean = subs forall {
+      case TermSub(n, OMV(m)) => m == n
+      case SeqSub(n, SeqVar(m)) => m == n
+      case _ => false 
+   }
    /** turns a substitution into a context by treating every substitute as a definiens
     *  this permits seeing substitution application as a let-binding
     */
