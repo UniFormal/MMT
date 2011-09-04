@@ -19,8 +19,8 @@ object PropositionTranslator {
 			}
 			case f : MizPred => MMTPred(f.aid, f.absnr, f.kind, f.terms.map(TypeTranslator.translateTerm))
 			case f : MizSchemePred => f.terms.length match {
-			  case 0 => Index(SeqVar("args"), OMI(f.nr))
-			  case _ => OMA(Index(SeqVar("args"), OMI(f.nr)),f.terms.map(TypeTranslator.translateTerm))
+			  case 0 => Index(SeqVar("x"), OMI(f.nr))
+			  case _ => OMA(Index(SeqVar("x"), OMI(f.nr)),f.terms.map(TypeTranslator.translateTerm))
 			}
 			case f : MizPrivPred =>  {
 				val form = translateFormula(f.formula)

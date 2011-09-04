@@ -61,9 +61,7 @@ trait Body[S <: Declaration] {
 	      //increase counters for all prefixes of the added statement
 	      pr.foreach(p => prefixes(p) = prefixes.getOrElse(p,0) + 1) */
 	      if (statements.isDefinedAt(name)) {
-	     	  println("--" + statements(name))
-	     	  println("++" + s)
-	     	 //statements.toList.map(x => println(x._2))
+	    	  //statements.toList.map(x => println(x._2))
 	         throw AddError("a declaration for the name " + name + " already exists")
 	      }
 	      statements(name) = s
