@@ -115,18 +115,19 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
-    def produceFlat(in: List[String] = Nil, controller: Controller) {
+    def produceFlat(in: List[String] = Nil) {
        val inFile = contentDir / in
        if (inFile.isDirectory) {
            inFile.list foreach {n =>
-              if (includeDir(n)) produceFlat(in ::: List(n), controller)
+              if (includeDir(n)) produceFlat(in ::: List(n))
            }
         } else if (inFile.getExtension == Some("omdoc")) {
+           val controller = new Controller(NullChecker, report)
            val mpath = Archive.ContentPathToMMTPath(in)
            val mod = controller.globalLookup.getModule(mpath)
            val flatNode = mod match {
               case thy: DeclaredTheory =>
-                 //Instance.elaborate(thy)(controller.globalLookup)
+                 Instance.elaborate(thy)(controller.globalLookup)
                  thy.toNodeElab
               case _ => mod.toNode
            }

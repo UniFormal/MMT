@@ -62,7 +62,7 @@ object Instance {
      thy.valueList foreach {
         case i: Instance =>
            i.setOrigin(Elaborated)
-           thy.replace(i.name, i :: elaborate(i) : _*)
+           thy.replace(i.name, i :: elaborate(i, true) : _*)
         case _ => 
      }
   }
