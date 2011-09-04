@@ -185,7 +185,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
             dim match {
                case "compile" => arch.compile(in)
                case "content" => arch.produceNarrCont(in)
-               case "flat" => arch.produceFlat(in, this)
+               case "flat" => arch.produceFlat(in)
                case "relational" => arch.produceRelational(in, this)
                case "mws" => arch.produceMWS(in, "content")
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
