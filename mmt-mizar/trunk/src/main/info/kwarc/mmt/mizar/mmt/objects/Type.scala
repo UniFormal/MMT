@@ -35,9 +35,12 @@ object MMTResolve {
 			    val lname = (kind + absnr) :: "func" :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "V" => 
-			    val lname = ParsingController.attributes(aid).get(absnr) match {
+			    
+			    val lname = try {ParsingController.attributes(aid).get(absnr) match {
 			      case Some(mstr) =>  ("L" + mstr) :: "strict" :: Nil
 			      case None => (kind + absnr) :: "attr" :: Nil
+			    }} catch {
+			      case _ =>  (kind + absnr) :: "attr" :: Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
 

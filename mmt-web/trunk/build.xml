@@ -16,7 +16,7 @@
         <pathelement location="${lib}/lift-webkit_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-common_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-json_2.8.1-2.2-SNAPSHOT.jar" />
-        <pathelement location="${deploy}/mmt/mmt-api.jar" />
+  	<pathelement location="${deploy}/mmt/mmt-api.jar" />
         <pathelement location="${deploy}/mmt/uom.jar" />
 	<pathelement location="${deploy}/mmt/mmt-mizar.jar" />
     </path>
@@ -46,10 +46,11 @@
                 <exclude name="servlet-api-2.5.jar"/>
             </lib>
             <lib file="${scala.dir}/scala-library.jar" />
+	    <lib file="${scala.dir}/scala-compiler.jar" />
             <lib file="${deploy}/mmt/mmt-api.jar" />
-	         <lib file="${deploy}/mmt/uom.jar" />
-	         <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
-	         <lib file="${deploy}/mmt/mmt-mizar.jar" />
+	    <lib file="${deploy}/mmt/uom.jar" />
+	    <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
+	    <lib file="${deploy}/mmt/mmt-mizar.jar" />
         </war>
     </target>
 

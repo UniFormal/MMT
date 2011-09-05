@@ -151,7 +151,7 @@ case class Substitution(subs : Sub*) {
 object Context {
 	/** parsers an OMBVAR into a context */
 	def parse(N : scala.xml.Node, base : Path) : Context = N match {
-		case <om:OMBVAR>{decls @ _*}</om:OMBVAR> => decls.toList.map(VarDecl.parse(_, base))
+	  case <om:OMBVAR>{decls @ _*}</om:OMBVAR> =>  decls.toList.map(VarDecl.parse(_, base))
       case _ => throw ParseError("not a well-formed context: " + N.toString)
 	}
 }

@@ -72,7 +72,8 @@ object SeqNormalize {
             else OMA(normalizeTerm(fn),argsN)
         case OMBIND(bin,con,bdy) =>
             val (conN,sub) = normalizeContext(con)
-            OMBIND(normalizeTerm(bin), conN, normalizeTerm(bdy ^? sub)) // calling ^? to avoid traversal in the typical case where sub is empty   
+            if (conN.isEmpty) normalizeTerm(bdy ^? sub)
+            else OMBIND(normalizeTerm(bin), conN, normalizeTerm(bdy ^? sub)) // calling ^? to avoid traversal in the typical case where sub is empty   
 	 	  case Index(seq,ind) => 
 	 	   val seqN = normalizeSeq(seq)
 	 	   val indN = normalizeNat(ind)

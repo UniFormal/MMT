@@ -55,7 +55,7 @@ object Mizar {
 	def eq(t1 : Term, t2 : Term) = OMA(constant("R1"), List(t1,t2))
 	
 	def exists(v : String, tp : Term, prop : Term) = 
-	  OMBIND(OMA(Mizar.constant("ex"), List(tp)),Context(TermVarDecl(v, Some(Mizar.any), None)),prop)
+	  not(OMBIND(OMA(Mizar.constant("for"), List(tp)),Context(TermVarDecl(v, Some(Mizar.any), None)),not(prop)))
 	
 	def forall(v : String, tp : Term, prop : Term) = 
 	  OMBIND(OMA(Mizar.constant("for"), List(tp)),Context(TermVarDecl(v, Some(Mizar.any), None)), prop)
@@ -67,7 +67,6 @@ object Mizar {
 	def choice(tp : Term) = OMA(Mizar.constant("choice"), List(tp))
 	def fraenkel(v : String, t : Term, p : Term, f : Term) = 
 	  OMA(Mizar.constant("fraenkel"), List(t,Lambda(v,Mizar.any, p),Lambda(v,Mizar.any, f)))
-	
 }
 
 
@@ -129,8 +128,9 @@ object MMTUtils {
 	}
 	
 	
-	def argTypes(name : String, args : String, types : List[Term], argNr : Int, body : Term) : Term = {
-	  	     Pi(name, 
+	def argTypes(name : String, args : String, types : List[Term], argNr : Int, body : Term) : Term = types.length match {
+	  case 0 => body
+	  case _ => Pi(name, 
 	  	        SeqSubst(Mizar.be(Index(SeqVar("x"), OMV("i")),Index(SeqItemList(types),OMV("i"))),"i", SeqUpTo(OMI(argNr))),
 	         	 body)
 	}

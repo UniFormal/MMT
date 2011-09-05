@@ -19,7 +19,12 @@ object MMTAnd {
 }
 
 object MMTFor {
-	def apply(vname : String, tp : Term, form : Term) = OMBIND(Mizar.constant("for"), Context(TermVarDecl(vname, Some(tp), None)), form)
+	def apply(vname : String, tp : Term, form : Term) = Mizar.forall(vname, tp, form)
+}
+
+//only for queries, so exists is allowed
+object MMTExists {
+	def apply(vname : String, tp : Term, form : Term) = OMBIND(OMA(Mizar.constant("ex"), List(tp)),Context(TermVarDecl(vname, Some(Mizar.any), None)), form)
 }
 
 object MMTPred {

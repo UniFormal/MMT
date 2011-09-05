@@ -92,16 +92,32 @@ object Rest {
                                    case Full(s) => s
                                    case _ => "4.166" 
                                 }
-                                val currentAid = r.header("aid") match {
+                                val currentAid = r.header("Aid") match {
                                   case Full(s) => s
                                   case _ => "HIDDEN"
                                 }
-                               MwsService.parseQuery(body, currentAid, mmlVersion,"0") // translate mizar-xml query
-                             case _ => body // assume content math query by default
+                                val Offset = r.header("Offset") match {
+                                  case Full(s) => try s.toInt catch {case _ => 0}
+                                  case _ => 0
+                                }
+                                val Size = r.header("Size") match {
+                                  case Full(s) => try s.toInt catch {case _ => 30}
+                                  case _ => 30
+                                }
+                               val q = MwsService.parseQuery(body, currentAid, mmlVersion,Offset,Size) // translate mizar-xml query
+                               val qlist = MwsService.applyImplicitInferences(q)
+                               qlist
+                               case _ => List(body) // assume content math query by default
                           }
-                          utils.xml.post(mws.toJava.toURL, input)
+                          val res = input.map(utils.xml.post(mws.toJava.toURL, _))
+                          val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
+                          val size = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
+                          
+                          val answrs = res.flatMap(_.child)
+                          <mws:answset total={total.toString} size={size.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>  
                      } catch {
                         case e: ParseError => <error><message>{e.getMessage}</message><input>{body}</input></error>
+                        case _ => <error><message>Invalid MizXML, Translation Failed</message></error>
                      }
                  }
               }

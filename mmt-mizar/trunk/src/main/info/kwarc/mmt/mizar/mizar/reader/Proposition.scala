@@ -22,6 +22,12 @@ object PropositionParser {
 			val varName = ParsingController.resolveVar(sVid)
 			new MizFor(varName, typ, parseFormula(n.child(1)))
 		}
+		case "Exists" => {
+			val typ = TypeParser.parseTyp(n.child(0))
+			val sVid = (n \ "@vid").text
+			val varName = ParsingController.resolveVar(sVid)
+			new MizExists(varName, typ, parseFormula(n.child(1)))
+		}
 		case "Pred" => {
 			val pid = (n \ "@pid").text
 			val kind = (n \ "@kind").text
