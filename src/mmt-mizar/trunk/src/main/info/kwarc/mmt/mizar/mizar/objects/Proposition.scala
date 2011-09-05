@@ -17,6 +17,7 @@ abstract class MizFormula extends MizAny
 class MizNot(val formula : MizFormula) extends MizFormula
 class MizAnd(val formulas : List[MizFormula]) extends MizFormula
 class MizFor(val varName : Option[String], val typ : MizTyp, val formula : MizFormula) extends MizFormula
+class MizExists(val varName : Option[String], val typ : MizTyp, val formula : MizFormula) extends MizFormula
 class MizPred(val aid : String, val kind : String, val absnr : Int, val terms : List[MizTerm]) extends MizFormula 
 class MizSchemePred(val aid : String, val kind : String, val nr : Int, val schemeNr : Int, val terms : List[MizTerm]) extends MizFormula
 class MizPrivPred(val nr : Int, val terms : List[MizTerm], val formula : MizFormula) extends MizFormula

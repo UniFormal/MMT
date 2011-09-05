@@ -123,7 +123,6 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
            }
        } else if (inFile.getExtension == Some("omdoc")) {
-           if (!((flatDir / in).toJava.exists)) {
               val mpath = Archive.ContentPathToMMTPath(in)
               val mod = controller.globalLookup.getModule(mpath)
               val flatNode = mod match {
@@ -135,9 +134,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
               xml.writeFile(flatNodeOMDoc, flatDir / in)
               controller.delete(mpath)
-           } else {
-              log("  skipping")
-           }
+
         }
        log("done:  [CONT->FLAT]        -> " + inFile)
     }
@@ -169,23 +166,55 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
 
     
-    private def makeHVars(n : scala.xml.Node, qvars : List[String]) : scala.xml.Node = n match {
-      case <m:apply><csymbol>{s}</csymbol><m:bvar><m:apply><csymbol>{zz}</csymbol><m:ci>{v}</m:ci><csymbol>{a}</csymbol><csymbol>{b}</csymbol></m:apply></m:bvar>{c}</m:apply> =>
-        if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for")
-        	makeHVars(c,  v.toString() :: qvars)
-        else 
-        	new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,qvars)) : _*)
+    private def makeHVars(n : scala.xml.Node, uvars : List[String], evars : List[String], negFlag : Boolean) : scala.xml.Node = n match {
+      case <m:apply><csymbol>{s}</csymbol><m:bvar><m:apply>{zz}<m:ci>{v}</m:ci>{a}{b}</m:apply>{rest @ _*}</m:bvar>{body}</m:apply> =>
+        if (s.toString == "http://cds.omdoc.org/foundations/lf/lf.omdoc?lf?Pi") {
+
+          var bd = body
+          if (rest.length > 0)
+            bd = <m:apply><csymbol>{s}</csymbol><m:bvar>{rest}</m:bvar>{body}</m:apply>
+            
+          makeHVars(bd, v.toString :: uvars, evars, negFlag)
+        }
+        else {  
+        	new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
+        }
+        
+      case <m:apply><m:apply><csymbol>{s}</csymbol>{a1}</m:apply><m:bvar><m:apply>{zz}<m:ci>{v}</m:ci>{a}{b}</m:apply></m:bvar>{body}</m:apply> => 
+    	if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for") {
+          var uv = uvars
+          var ev = evars
+          if (negFlag)
+            uv = v.toString :: uvars
+          else
+            ev = v.toString :: evars
+          makeHVars(body, uv, ev, negFlag)
+      } else {
+    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
+      }
+      case <m:apply><csymbol>{s}</csymbol>{a}</m:apply> =>
+      	if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?not") {
+      		val firstq = s.toString.indexOf('?')
+      	    <m:apply><csymbol>{s.toString.substring(firstq + 1)}</csymbol>{makeHVars(a, uvars, evars, !negFlag)}</m:apply>
+      	} else
+      		new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
 
       case <m:ci>{v}</m:ci> => 
-        if (qvars.contains(v.toString))
-          <mws:hvar>{v}</mws:hvar>
+        if (uvars.contains(v.toString))
+          <mws:uvar><m:ci>{v}</m:ci></mws:uvar>
+        else if (evars.contains(v.toString))
+          <mws:evar><m:ci>{v}</m:ci></mws:evar>
         else
           n
+      case <csymbol>{p}</csymbol> => 
+        val firstq = p.toString.indexOf('?')
+        <csymbol>{p.toString.substring(firstq + 1)}</csymbol>
+      
       case _ =>
         if (n.child.length == 0)
           n
         else
-          new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,qvars)) : _*)
+          new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
     }
     
     def produceMWS(in : List[String] = Nil, dim: String) {
@@ -221,9 +250,9 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                           t =>
                             val url = custom.mwsurl(c.path) 
                             
-                            //hvars disabled until MWS adds support for them
-                            //val cml = makeHVars(t.toCML, Nil)
-                            val cml = t.toCML
+                            val cml = makeHVars(t.toCML, Nil, Nil, true)
+                            ////hvars disabled until MWS adds support for them
+                            //val cml = t.toCML
                             
                             val node = <mws:expr url={url}>{cml}</mws:expr> 
                             outStream.write(node.toString + "\n")

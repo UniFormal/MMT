@@ -23,7 +23,7 @@ object RegPatterns  {
 				  TermVarDecl("typ", Some(Mizar.tp), None),
 				  TermVarDecl("cluster", Some(Mizar.attr(OMV("typ"))), None)),
 		  Context(TermVarDecl("reg", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
-		      Mizar.proof(Mizar.exists("y", 
+		      Mizar.proof(Mizar.exists("q", 
 		          Mizar.adjective(OMV("cluster"), OMV("typ")),
 		          Mizar.constant("true")))))),
 		      None)))
@@ -36,7 +36,7 @@ object RegPatterns  {
 				  TermVarDecl("cluster", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
 				      Mizar.attr(OMA(OMV("functor"), List(SeqVar("x"))))))), None)),
 		  Context(TermVarDecl("reg", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
-		      Mizar.proof(Mizar.exists("y", 
+		      Mizar.proof(Mizar.exists("q", 
 		          Mizar.adjective(OMV("cluster"), OMA(OMV("functor"), List(SeqVar("x")))),
 		          Mizar.constant("true")))))),
 		      None)))
@@ -50,8 +50,8 @@ object RegPatterns  {
 				  TermVarDecl("second", Some(Mizar.attr(OMV("typ"))), None)),
 		  Context(TermVarDecl("reg", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
 		      Mizar.proof(Mizar.implies(
-		          Mizar.exists("y", Mizar.adjective(OMV("first"), OMV("typ")),Mizar.constant("true")),
-		          Mizar.exists("y", Mizar.adjective(OMV("second"), OMV("typ")),Mizar.constant("true"))))))),          
+		          Mizar.exists("q", Mizar.adjective(OMV("first"), OMV("typ")),Mizar.constant("true")),
+		          Mizar.exists("q", Mizar.adjective(OMV("second"), OMV("typ")),Mizar.constant("true"))))))),          
 		      None)))
 }
 
