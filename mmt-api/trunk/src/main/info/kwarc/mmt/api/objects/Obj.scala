@@ -27,7 +27,7 @@ sealed abstract class Obj extends Content {
    def role : Role
    def nkey = NotationKey(head, role)
    def components : List[Content]
-   def presentation(lpar: LocalParams) = ByNotation(nkey, components, lpar)
+   def presentation(lpar: LocalParams) = ByNotation(nkey, ContentComponents(components), lpar)
    def toCML: Node
 }
 
@@ -116,7 +116,7 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
          }
          case _ => throw PresentationError("binder without a path: " + this)
       }
-      ByNotation(nkey, components, LocalParams(pos, ip, cont ::: addedContext, io))
+      ByNotation(nkey, ContentComponents(components), LocalParams(pos, ip, cont ::: addedContext, io))
    }
    def toNodeID(pos : Position) = 
       <om:OMBIND>{binder.toNodeID(pos + 0)}
@@ -204,7 +204,7 @@ case class OMV(name : String) extends Term {
          lpar.context.reverse.zipWithIndex.find(_._1.name == name) match {
             case Some((VarData(_, binder, pos), i)) =>
                val components = List(StringLiteral(name), StringLiteral(i.toString), StringLiteral(pos.toString)) 
-               ByNotation(NotationKey(Some(binder), role), components, lpar)
+               ByNotation(NotationKey(Some(binder), role), ContentComponents(components), lpar)
             case None => throw PresentationError("unbound variable")
          }
    }

@@ -19,7 +19,7 @@ sealed abstract class VarDecl extends Content {
    def role : Role
    def components = List(StringLiteral(name), tp.getOrElse(Omitted), df.getOrElse(Omitted))
    def presentation(lpar : LocalParams) =
-	   ByNotation(NotationKey(None, role), components, lpar)
+	   ByNotation(NotationKey(None, role), ContentComponents(components), lpar)
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
 }
 

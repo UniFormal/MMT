@@ -24,8 +24,9 @@ case class CompilationError(s: String) extends Exception(s)
   * @param report the reporting mechanism
   */
 class Archive(val root: File, val properties: Map[String,String], compiler: Option[Compiler], report: Report) extends Storage {
-    private val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
-    private val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
+    val id = properties("id")
+    val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
+    val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
     
     private val custom : ArchiveCustomization = {
        properties.get("customization") match {
