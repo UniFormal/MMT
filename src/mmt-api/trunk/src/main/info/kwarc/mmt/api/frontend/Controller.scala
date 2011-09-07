@@ -171,7 +171,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case AddCompiler(c, args) =>
             val Comp = java.lang.Class.forName(c).asInstanceOf[java.lang.Class[Compiler]]
             val comp = Comp.newInstance
-            comp.init(args)
+            comp.init(report, args)
             backend.addCompiler(comp)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)

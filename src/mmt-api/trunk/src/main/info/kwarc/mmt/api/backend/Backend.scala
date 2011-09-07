@@ -11,13 +11,13 @@ import utils.FileConversion._
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
 case object NotApplicable extends java.lang.Throwable
-case class NotFound(p : Path) extends info.kwarc.mmt.api.Error("Cannot find ressource " + p.toString)
+case class NotFound(p : Path) extends info.kwarc.mmt.api.Error("Cannot find resource " + p.toString)
 
 /** Storage is an abstraction over backends that can provide MMT content
  * A storage declares a URI u and must answer to all URIs that start with u.
  */
 abstract class Storage {
-   /** called automatically when added; a storage may send arbitrary content to the reader during intialization */
+   /** called automatically when added; a storage may send arbitrary content to the reader during initialization */
    def init(reader : Reader) {}
    /** dereferences a path and sends the content to a reader
     * a storage may send more content than the path references, e.g., the whole file or a dependency closure
@@ -43,7 +43,7 @@ object Storage {
       l.flatten 
       */ 
       
-     val l =   (N\\"registry"\\"repository").toList.flatMap(R => {
+     val l = (N\\"registry"\\"repository").toList.flatMap(R => {
       val repos = URI(xml.attr(R, "location"))
       R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
      })
@@ -330,6 +330,11 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
    /** retrieve an Archive by its id */
    def getArchive(id: String) : Option[Archive] = stores mapFind {
       case a: Archive => if (a.properties.get("id") == Some(id)) Some(a) else None
+      case _ => None
+   }
+   /** retrieves all Archives */
+   def getArchives : List[Archive] = stores mapPartial {
+      case a: Archive => Some(a)
       case _ => None
    }
 }

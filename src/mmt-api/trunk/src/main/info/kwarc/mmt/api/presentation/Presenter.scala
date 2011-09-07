@@ -31,7 +31,7 @@ case class VarData(name : String, binder : GlobalName, decl : Position)
  */
 case class StrToplevel(c: Content) extends Content {
    def presentation(lpar : LocalParams) =
-      ByNotation(NotationKey(None, Role_StrToplevel), List[Content](c), lpar)
+      ByNotation(NotationKey(None, Role_StrToplevel), ContentComponents(List(c)), lpar)
    def toNode = c.toNode
 } 
 /** A special presentable object that is wrapped around the math objects encountered during presentation
@@ -40,7 +40,7 @@ case class StrToplevel(c: Content) extends Content {
  */
 case class ObjToplevel(c: Obj, pos : Position) extends Content {
    def presentation(lpar : LocalParams) =
-      ByNotation(NotationKey(None, Role_ObjToplevel), List[Content](c, XMLLiteral(c.toNodeID(pos+0))), lpar)
+      ByNotation(NotationKey(None, Role_ObjToplevel), ContentComponents(List(c, XMLLiteral(c.toNodeID(pos+0)))), lpar)
    def toNode = c.toNode
 }
 
@@ -103,8 +103,13 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
       }
    }
 
-   protected def render(pres : Presentation, comps : List[Content], 
+   protected def render(pres : Presentation, comps : ContentComponents, 
                         ind : List[Int], gpar : GlobalParams, lpar : LocalParams) {
+      def resolve(i: CIndex) : Int = i match {
+         case NumberedIndex(n) => n
+         case NamedIndex(s) => comps.names.find(_._1 == s).map(_._2).getOrElse(throw PresentationError("undefined index: " + s))
+      }
+      implicit def int2CInxed(i: Int) = NumberedIndex(i)
       def recurse(p : Presentation) {render(p, comps, ind, gpar, lpar)}
       pres match {
 		  case Text(text) =>
@@ -116,26 +121,25 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 			      recurse(value)
 			      gpar.rh.attributeEnd
 		      }
-		      //testing
 		      if (comps.length > 0) {
 		        comps(0) match {
 		          case s : StructuralElement =>
-		            gpar.rh.attributeStart("","id")
-		        	gpar.rh.apply(s.path.toPath)
-		        	gpar.rh.attributeEnd
+                  gpar.rh.attributeStart("","id")
+                  gpar.rh.apply(s.path.toPath)
+                  gpar.rh.attributeEnd
 		          case OMID(path) => 
-		            gpar.rh.attributeStart("","id")
-		        	gpar.rh.apply(path.toPath)
-		        	gpar.rh.attributeEnd
+                  gpar.rh.attributeStart("","id")
+                  gpar.rh.apply(path.toPath)
+                  gpar.rh.attributeEnd
 		          case _ => 
 		        }
 		      }
-		      
 		      children.foreach(recurse)
 		      gpar.rh.elementEnd
 		  case PList(items) =>
 		      items.foreach(recurse)	
-		  case If(pos, test, yes, no) =>
+		  case If(cind, test, yes, no) =>
+		      val pos = resolve(cind)
 		      val p = if (pos < 0) pos + comps.length else pos
 		      val exists = p >= 0 && p < comps.length
 		      val testresult = exists && (test match {
@@ -147,17 +151,20 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		         }
 		      })
 		      if (testresult) recurse(yes) else recurse(no)
-		  case IfHead(pos, path, yes, no) =>
+		  case IfHead(cind, path, yes, no) =>
+		      val pos = resolve(cind)
 		      val p = if (pos < 0) pos + comps.length else pos
-              val yesno = if (p >= 0 && p < comps.length)
-                 comps(p) match {
+            val yesno = if (p >= 0 && p < comps.length)
+               comps(p) match {
                    case o : Obj if o.head == Some(path) => yes
                    case _ => no
-                 }
-              else 
+               }
+            else 
 		         no
 		      recurse(yesno)
-	      case Components(begin, pre, end, post, step, sep, body) =>
+	      case Components(begInd, pre, endInd, post, step, sep, body) =>
+		      val begin = resolve(begInd)
+		      val end = resolve(endInd)
 		      val l = comps.length
 		      var current = if (begin < 0) begin + l else begin
 		      val last = if (end < 0) end + l else end
@@ -171,7 +178,7 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		         recurse(sep)
 		      else
 		         recurse(post)
-		      recurse(Components(current, Presentation.Empty, last, post, step, sep, body))
+		      recurse(Components(NumberedIndex(current), Presentation.Empty, last, post, step, sep, body))
 		  case Index => gpar.rh(lpar.pos.toString)
 		  case Neighbor(offset, iPrec) =>
 		      val i = ind.head + offset
@@ -179,11 +186,13 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		         throw new PresentationError("offset out of bounds")
               val newLpar = LocalParams(lpar.pos + i, iPrec, lpar.context, lpar.inObject)
               present(comps(i), gpar, newLpar)
-	      case Nest(begin, end, stepcase, basecase) =>
+	      case Nest(begInd, endInd, stepcase, basecase) =>
+		      val begin = resolve(begInd)
+            val end = resolve(endInd)
 		      val l = comps.length
 		      var current = if (begin < 0) begin + l else begin
 		      val last = if (end < 0) end + l else end
-              val step = if (current <= last) 1 else -1
+            val step = if (current <= last) 1 else -1
 		      if (step > 0 && current > last || step < 0 && current < last) return
 		      if (current < 0 || current >= l || last < 0 || last >= l || step == 0)
 		         throw new PresentationError("begin/end/step out of bounds in " + this)

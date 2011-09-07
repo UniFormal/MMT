@@ -3,6 +3,10 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Node,NodeSeq}
 
+abstract class CIndex
+case class NumberedIndex(i: Int) extends CIndex
+case class NamedIndex(s: String) extends CIndex
+
 /** This is the type of a simple language of presentation expressions that may be used in Notation and are evaluated by Presenter */
 sealed abstract class Presentation {
    /** concatenation */
@@ -44,12 +48,14 @@ case class PList(items : List[Presentation]) extends Presentation {
 }
 
 /** test where component pos is equal to Omitted and branch accordingly */
-case class If(pos : Int, test: String, yes : Presentation, no : Presentation) extends Presentation {
+case class If(pos : CIndex, test: String, yes : Presentation, no : Presentation) extends Presentation {
    override def fill(plug : Presentation*) = If(pos, test, yes.fill(plug : _*), no.fill(plug : _*))
 }
 
 /** test whether pos is Obj with head Some(path) and branch accordingly */
-case class IfHead(pos : Int, path : Path, yes : Presentation, no : Presentation) extends Presentation
+case class IfHead(pos : CIndex, path : Path, yes : Presentation, no : Presentation) extends Presentation {
+   override def fill(plug : Presentation*) = IfHead(pos, path, yes.fill(plug : _*), no.fill(plug : _*))
+}
 
 /** loop over a presentation expression, Recurse Neighbor may be used to recurse into individual components 
  * @param begin the first component
@@ -59,7 +65,7 @@ case class IfHead(pos : Int, path : Path, yes : Presentation, no : Presentation)
  * @param step the increment (may be negative)
  * @param sep output produced between two iterations
 */
-case class Components(begin : Int, pre : Presentation, end : Int, post : Presentation, step : Int, sep : Presentation, body : Presentation)
+case class Components(begin : CIndex, pre : Presentation, end : CIndex, post : Presentation, step : Int, sep : Presentation, body : Presentation)
            extends Presentation {
    override def fill(plug : Presentation*) = {
       val List(pre2, post2, sep2, body2) = List(pre, post, sep, body).map(_.fill(plug : _*))
@@ -69,12 +75,12 @@ case class Components(begin : Int, pre : Presentation, end : Int, post : Present
 
 /** short hand to iterate over a list of components */
 object Iterate {
-	def apply(b : Int, e : Int, s : Presentation, p : Option[Precedence]) =
+	def apply(b : CIndex, e : CIndex, s : Presentation, p : Option[Precedence]) =
 		Components(b, Presentation.Empty, e, Presentation.Empty, 1, s, Recurse(p))
 }
 /** short hand to recurse into a single component */
 object Component {
-	def apply(index : Int, q : Option[Precedence]) = Iterate(index, index, Presentation.Empty, q)
+	def apply(index : CIndex, q : Option[Precedence]) = Iterate(index, index, Presentation.Empty, q)
 }
 
 /** produces the current index in a loop */
@@ -91,7 +97,7 @@ object Recurse {
 }
 
 /** like Components but nests instead of concatenating, step should contain Hole to indicate nesting */
-case class Nest(begin : Int, end : Int, step : Presentation, base : Presentation) extends Presentation {
+case class Nest(begin : CIndex, end : CIndex, step : Presentation, base : Presentation) extends Presentation {
    override def fill(plug : Presentation*) = Nest(begin, end, step.fill(plug : _*), base.fill(plug : _*))
 }
 
@@ -102,7 +108,7 @@ case object Id extends Presentation
 case object TheNotationSet extends Presentation
 
 /** used to indicate a hole that can be filled later, used with Nest and Fragment
- * @param index the index in the list of filling expresions that determines which expression is used to fill this hole
+ * @param index the index in the list of filling expressions that determines which expression is used to fill this hole
  * @param default the expression used to fill the hole if not enough filling expressions are provided 
  */
 case class Hole(index : Int, default : Presentation) extends Presentation {
@@ -148,6 +154,10 @@ object NoBrackets {
 /** Helper object for presentation s*/
 object Presentation {
    def Empty = PList(Nil)
+   private def cindex(s : String) : CIndex = {
+      try {NumberedIndex(s.toInt)}
+      catch {case _ => NamedIndex(s)}//throw ParseError("illegal index: " + s)}
+   }
    private def int(s : String) : Int = {
       try {s.toInt}
       catch {case _ => throw ParseError("illegal index: " + s)}
@@ -186,11 +196,11 @@ object Presentation {
          case <index/> => Index
          case <nset/> => TheNotationSet 
          case <component/> =>
-            val index = int(xml.attr(n, "index"))
+            val index = cindex(xml.attr(n, "index"))
             Component(index, precOpt(xml.attr(n, "precedence")))
          case <components>{child @ _*}</components> =>
-            val begin = int(xml.attr(n, "begin", "0"))
-            val end = int(xml.attr(n, "end", "-1"))
+            val begin = cindex(xml.attr(n, "begin", "0"))
+            val end = cindex(xml.attr(n, "end", "-1"))
             val step = int(xml.attr(n, "step", "1"))
             var (pre : Presentation, post : Presentation, sep : Presentation, body : Presentation) = (Empty, Empty, Empty, Recurse(None))
             for (c <- child) c match {
@@ -202,17 +212,17 @@ object Presentation {
             }
             Components(begin, pre, end, post, step, sep, body)
          case <nest><base>{base @ _*}</base><step>{step @ _*}</step></nest> =>
-            Nest(int(xml.attr(n, "begin")), int(xml.attr(n, "end")), parse(step), parse(base))
+            Nest(cindex(xml.attr(n, "begin")), cindex(xml.attr(n, "end")), parse(step), parse(base))
          case <if><then>{yes @ _*}</then><else>{no @ _*}</else></if> =>
             val test = parseTest(n)
-         	If(int(xml.attr(n,"index")), test, parse(yes), parse(no))
+         	If(cindex(xml.attr(n,"index")), test, parse(yes), parse(no))
          case <if><then>{yes @ _*}</then></if> =>
             val test = parseTest(n)
-            If(int(xml.attr(n,"index")), test, parse(yes), Empty)
+            If(cindex(xml.attr(n,"index")), test, parse(yes), Empty)
          case <ifhead><then>{yes @ _*}</then><else>{no @ _*}</else></ifhead> =>
-         	IfHead(int(xml.attr(n,"index")), Path.parse(xml.attr(n,"path"), mmt.mmtbase), parse(yes), parse(no))
+         	IfHead(cindex(xml.attr(n,"index")), Path.parse(xml.attr(n,"path"), mmt.mmtbase), parse(yes), parse(no))
          case <ifhead><then>{yes @ _*}</then></ifhead> =>
-            IfHead(int(xml.attr(n,"index")), Path.parse(xml.attr(n,"path"), mmt.mmtbase), parse(yes), Empty)
+            IfHead(cindex(xml.attr(n,"index")), Path.parse(xml.attr(n,"path"), mmt.mmtbase), parse(yes), Empty)
          //case <ifpresent>{yes @ _*}</ifpresent> =>
             //IfPresent(int(xml.attr(n,"index")), parse(yes), Empty)
          case <fragment>{child @ _*}</fragment> =>

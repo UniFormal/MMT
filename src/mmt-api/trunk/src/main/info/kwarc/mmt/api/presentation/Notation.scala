@@ -56,6 +56,7 @@ case class SimpleNotation(nset : MPath, key : NotationKey, pres : Presentation, 
 case class ComplexNotation(nset : MPath, key : NotationKey, 
                            fix : Fixity, assoc : Associativity, appstyle : AppStyle, impl : Int,
                            oPrec: Option[Precedence]) extends Notation {
+   private implicit def int2CInxed(i: Int) = NumberedIndex(i)
    val pres : Presentation = {
       val oper = Component(0, oPrec)
       val impargs = Iterate(1, impl, ArgSep(), oPrec)
