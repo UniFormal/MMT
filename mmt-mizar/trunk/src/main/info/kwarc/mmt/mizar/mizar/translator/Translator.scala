@@ -58,7 +58,7 @@ object MizarCompiler extends Compiler {
 		
 	}
 
-override def init(args : List[String] = Nil) {
+override def init(report: Report, args : List[String] = Nil) {
 	//controller-init
 
 	TranslationController.controller.handle(ExecFile(new java.io.File("m2o-startup.mmt")))
