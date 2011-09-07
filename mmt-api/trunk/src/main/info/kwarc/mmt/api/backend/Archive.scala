@@ -117,6 +117,49 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
+    /** Extract scala from a dimension */
+    def extractScala(in : List[String] = Nil, dim: String) {
+        val inFile = root / dim / in
+        if (inFile.isDirectory) {
+           inFile.list foreach {n =>
+              if (includeDir(n)) extractScala(in ::: List(n), dim)
+           }
+        } else if (inFile.getExtension == Some("omdoc")) {
+           try {
+              val controller = new Controller(NullChecker, report)
+              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
+              val outFile = (root / "scala" / in).setExtension("scala")
+              outFile.getParentFile.mkdirs
+              info.kwarc.mmt.uom.Extractor.doDocument(controller, dpath, outFile)
+           } catch {
+              case e: Error => report(e)
+              //case e => report("error", e.getMessage)
+           }
+        }
+    }
+    
+    /** Integrate scala into a dimension */
+    def integrateScala(in : List[String] = Nil, dim: String) {
+        val inFile = root / "scala" / in
+        if (inFile.isDirectory) {
+           inFile.list foreach {n =>
+              if (includeDir(n)) integrateScala(in ::: List(n), dim)
+           }
+        } else if (inFile.getExtension == Some("omdoc")) {
+           try {
+              val controller = new Controller(NullChecker, report)
+              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
+              val scalaFile = (root / "scala" / in).setExtension("scala")
+              info.kwarc.mmt.uom.Synthesizer.doDocument(controller, dpath, scalaFile)
+              val doc = controller.getDocument(dpath)
+              xml.writeFile(doc.toNodeResolved(controller.library), inFile)
+           } catch {
+              case e: Error => report(e)
+              //case e => report("error", e.getMessage)
+           }
+        }
+    }
+    
     def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in
        log("to do: [CONT->FLAT]        -> " + inFile)
