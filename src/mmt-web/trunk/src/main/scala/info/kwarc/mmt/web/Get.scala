@@ -71,13 +71,15 @@ object Get {
    }
    private val deps = Manager.controller.depstore
    private val lib = Manager.controller.library
-   private def item(p : Path, state : String) = 
+   private def item(p : Path, state : String, label : Option[String] = None) = 
       <item id={p.toPath} state={state}>
-        <content><name href="#" onclick={navigate(p)}>{p.last}</name></content>
+        <content><name href="#" onclick={navigate(p)}>{label.getOrElse(p.last)}</name></content>
       </item>
    def tree(q: String) : scala.xml.Node = {
       if (q == ":root")
-          <root>{item(Manager.basepath, "closed")}</root>
+         <root>{
+            Manager.controller.backend.getArchives map {a => item(DPath(a.narrationBase), "closed", Some(a.id))}
+         }</root>
       else {
            val path = Path.parse(q, Manager.basepath)
            val elem = Manager.controller.get(path)
