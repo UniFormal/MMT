@@ -38,7 +38,7 @@ function load(elem) {
    return res.firstChild;
 }
 function includeClick(elem) {
-   var container = $(elem).children('div.included-module')[0];
+   var container = $(elem).children('div.flat-container')[0];
    if (elem.hasAttribute('jobad:load')) {
       var m = load(elem);
       container.appendChild(m);
