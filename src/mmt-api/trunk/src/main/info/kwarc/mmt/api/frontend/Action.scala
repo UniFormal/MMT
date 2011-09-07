@@ -27,11 +27,12 @@ object Action extends RegexParsers {
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
    private def archive = archopen | archdim | archmar
    private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
-   private def archdim = "archive" ~> str ~ ("compile" | "content" | "mws-flat" | "mws" | "flat" | "relational") ~ (str ?) ^^ {
+   private def archdim = "archive" ~> str ~ dimension ~ (str ?) ^^ {
       case id ~ dim ~ s =>
          val segs = MyList.fromString(s.getOrElse(""), "/")
          ArchiveBuild(id, dim, segs)
    }
+   private def dimension = "compile" | "content" | "mws-flat" | "mws" | "flat" | "relational" | "extract" | "integrate"
    private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def compiler = "compiler" ~> str ~ (str *) ^^ {case c ~ args => AddCompiler(c, args)}

@@ -189,6 +189,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
                case "relational" => arch.produceRelational(in, this)
                case "mws" => arch.produceMWS(in, "content")
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
+               case "extract" => arch.extractScala(in, "source")
+               case "integrate" => arch.integrateScala(in, "source")
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
