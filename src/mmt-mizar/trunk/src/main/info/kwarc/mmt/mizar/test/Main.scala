@@ -81,7 +81,7 @@ object Main {
   def main(args: Array[String]): Unit = {
 	    dumpPatterns()
 	 
-        MizarCompiler.init()
+        MizarCompiler.init(NullReport)
 	    
 	    
 	    val f = File("/home/mihnea/kwarc/oaff/mml/source/")
