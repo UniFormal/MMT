@@ -27,7 +27,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     val id = properties("id")
     val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
-    
+   
     private val custom : ArchiveCustomization = {
        properties.get("customization") match {
           case None => new DefaultCustomization
@@ -44,6 +44,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     val narrationDir = root / "narration"
     val contentDir = root / "content"
     val sourceDir = root / "source"
+    val compiledDir = root / (compiler match {case Some(_) => "compiled" case None => "source"})
     val flatDir = root / "flat"
     
     def includeDir(n: String) : Boolean = n != ".svn"
@@ -61,14 +62,14 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         compiler match {
             case None => throw CompilationError("no compiler defined")
             case Some(c) => 
-              val inFile = root / "source" / in
+              val inFile = sourceDir / in
               if (inFile.isDirectory) {
                  inFile.list foreach {n =>
                     if (includeDir(n)) compile(in ::: List(n))
                  }
               } else if (c.includeFile(inFile.getName)) {
                  try {
-                    val outFile = (root / "compiled" / in).setExtension("omdoc")
+                    val outFile = (compiledDir / in).setExtension("omdoc")
                     log("[SRC->COMP] " + inFile + " -> " + outFile)
                     val errors = c.compile(inFile, outFile)
                     files(inFile) = errors
@@ -92,7 +93,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     /** Generate content and narration from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
-        val inFile = root / "compiled" / in
+        val inFile = compiledDir / in
         if (inFile.isDirectory) {
            inFile.list foreach {n =>
               if (includeDir(n)) produceNarrCont(in ::: List(n))
