@@ -18,8 +18,11 @@ import info.kwarc.mmt.api.objects._
 
 object TptpUtils {
   
-  val baseURI = URI("http", "oaff.mathweb.org") / "tptp"
-	val tptpTh = DPath(URI("http", "latin.omdoc.org") / "foundations" / "tptp") ? "tptp"
+  val baseURI = URI("http", "tptp.org")
+  
+  // meta theories
+	val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "FOF"
+	val thfTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "THF0"
 
   val PARSE_DIRS = List("Axioms", "Problems")
   val PARSE_EXTS = List("ax", "p")
@@ -27,17 +30,17 @@ object TptpUtils {
   val BASE_THEORY = "tptp";
   val UNKNOWN_THEORY = "unknown";
   val OPERATORS = Map(
-    And -> "and",
-    Or -> "or",
-    "not" -> "not",
-    Equivalence -> "equivalent",
-    Implication -> "implies",
-    ReverseImplication -> "implied",
-    Disequivalence -> "xor",
-    NotOr -> "nor",
-    NotAnd -> "nand",
-    ForAll -> "forall",
-    Exists -> "exists"
+    And -> "&",
+    Or -> "|",
+    "not" -> "~",
+    Equivalence -> "<=>",
+    Implication -> "=>",
+    ReverseImplication -> "<=",
+    Disequivalence -> "<~>",
+    NotOr -> "~|",
+    NotAnd -> "~&",
+    ForAll -> "!",
+    Exists -> "?"
   )
 
   /**

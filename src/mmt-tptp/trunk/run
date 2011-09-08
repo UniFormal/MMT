@@ -3,7 +3,6 @@
 if [ -n "$1" ]; then
     if [ "$1" = "c" ]; then
         ant clean
-    fi
 fi
 
 if [ ! -f build/mmt-tptp.jar ]; then
