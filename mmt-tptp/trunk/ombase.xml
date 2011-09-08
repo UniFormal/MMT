@@ -1,0 +1,12 @@
+<catalog>
+  <!-- docs/mods can be merged now: use mmt:lookup, mmt:getNotations, add mmt:getAssertions as well -->
+  <ombase scheme="http" authority="cds.omdoc.org" prefix="/"
+          ombase="http://srv.tntbase.org/tntbase/cds/restful/">
+    <document>
+      <documents base="%full%" path="urlContent%path%"/>
+    </document>
+    <module>
+      <modules path="query" body="tnt:doc('%path%')/omdoc/*[@name='%mod%']"/>
+    </module>
+  </ombase>
+</catalog>

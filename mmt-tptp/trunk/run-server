@@ -1,0 +1,3 @@
+#!/bin/sh
+
+java -jar ../../../deploy/lib/jetty-runner.jar --port 8080 lib/mmt/mmt-web.war 2>&1 > jetty.log
