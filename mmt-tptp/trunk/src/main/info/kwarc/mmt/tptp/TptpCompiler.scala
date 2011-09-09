@@ -26,31 +26,23 @@ class TptpCompiler extends Compiler {
   override def compile(in : File, out : File) : List[CompilerError] = {
     var errors: List[CompilerError] = Nil
     val fileName = in.toJava.getName
-    val parser = new TptpParser(in.toJava)
-    val translator = new TptpTranslator(fileName)
-    // parameterRenaming.newTheory();
+    val path = in.toJava.getPath
+    var fileDir = ""
+    if (path.contains("Axioms"))
+      fileDir = path.substring(path.lastIndexOf("Axioms"), path.lastIndexOf("/"))
+    else
+      fileDir = path.substring(path.lastIndexOf("Problems"), path.lastIndexOf("/"))
     
-    var input: TptpParserOutput.TptpInput = parser.parseNext
-    while (input != null) {
-      input match {
-        case tli: SimpleTptpParserOutput.TopLevelItem => {
-            translator.translate(tli) match {
-              case Some(x) => TptpTranslator.add(x.asInstanceOf[StructuralElement])
-              case None => println("Error translating " + tli.toString) // TODO add to errors
-            }
-        }
-        case _ => println("Error, unknown input") // TODO errors
-      }
-      input = parser.parseNext
-    }
-    write(out, fileName)
-    System.exit(1)
-    Nil
+    val translator = new TptpTranslator()
+    translator.translate(fileDir, fileName, in)
+    
+    write(out, fileDir, fileName)
+    errors
   }
   
-	def write(out: File, name: String) {
+	def write(out: File, fileDir: String, name: String) {
 		val docPath = out.toJava.getPath
-		val base = TptpUtils.baseURI
+		val base = TptpUtils.baseURI / fileDir
 		val pp = new scala.xml.PrettyPrinter(100,2)
 		val th = TptpTranslator.controller.get(new DPath(base) ? name)
 		val fw = new java.io.FileWriter(docPath)

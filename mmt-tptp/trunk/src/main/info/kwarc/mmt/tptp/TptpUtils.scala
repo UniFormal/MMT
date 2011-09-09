@@ -7,6 +7,7 @@ package info.kwarc.mmt.tptp
 
 import tptp.TptpParserOutput.BinaryConnective._
 import tptp.TptpParserOutput.Quantifier._
+import tptp.TptpParserOutput._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -27,8 +28,9 @@ object TptpUtils {
   val PARSE_DIRS = List("Axioms", "Problems")
   val PARSE_EXTS = List("ax", "p")
   val FORM = "+"; // fof
-  val BASE_THEORY = "tptp";
-  val UNKNOWN_THEORY = "unknown";
+  
+  val TRUE = "true"
+  val FALSE = "false"
   val OPERATORS = Map(
     And -> "&",
     Or -> "|",
@@ -40,8 +42,11 @@ object TptpUtils {
     NotOr -> "~|",
     NotAnd -> "~&",
     ForAll -> "!",
-    Exists -> "?"
+    Exists -> "?",
+    TRUE -> "$true",
+    FALSE -> "$false"
   )
+  val UNKNOWN = "???"
 
   /**
    * @param s string of the form DDD NNN F V [.SSS] .T[T]
@@ -58,5 +63,7 @@ object TptpUtils {
 
   def removeExtension(s: String) = s.substring(0, s.lastIndexOf("."))
 
-	def constant(name : String) : Term = OMID(tptpTh ? name)
+	def constant(name : String) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
+	def constant(name : BinaryConnective) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
+	def constant(name : Quantifier) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
 }
