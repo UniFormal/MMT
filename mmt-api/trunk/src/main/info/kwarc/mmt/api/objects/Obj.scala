@@ -109,14 +109,13 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
    def components = binder :: context.toList ::: List(body) //condition.getOrElse(Omitted)
    def role = Role_binding
    override def presentation(lpar : LocalParams) = {
-      val LocalParams(pos, ip, cont, io) = lpar
       val addedContext = head match {
          case Some(path : GlobalName) => context.zipWithIndex.map {
-           case (v, i) => VarData(v.name, path, pos + (i+1))
+           case (v, i) => VarData(v.name, path, lpar.pos + (i+1))
          }
          case _ => throw PresentationError("binder without a path: " + this)
       }
-      ByNotation(nkey, ContentComponents(components), LocalParams(pos, ip, cont ::: addedContext, io))
+      ByNotation(nkey, ContentComponents(components), lpar.copy(context = lpar.context ::: addedContext))
    }
    def toNodeID(pos : Position) = 
       <om:OMBIND>{binder.toNodeID(pos + 0)}

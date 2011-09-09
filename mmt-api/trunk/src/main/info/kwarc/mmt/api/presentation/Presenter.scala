@@ -16,9 +16,7 @@ case class GlobalParams(rh : RenderingHandler, nset : MPath)
  * @param context some information about how to present the free variables that were bound on higher levels
  * @param inObject a flag to indicate whether the presented expression is a declaration or an object
  */
-case class LocalParams(pos : Position, iPrec : Option[Precedence], context : List[VarData], inObject : Boolean) {
-   def toggle = LocalParams(pos, iPrec, context, ! inObject)
-}
+case class LocalParams(pos : Position, iPrec : Option[Precedence], context : List[VarData], inObject : Boolean, ids : List[(String,String)])
 
 /** This class stores information about a bound variable.
  * @param name the variable name
@@ -50,15 +48,15 @@ case class ObjToplevel(c: Obj, pos : Position) extends Content {
  */
 class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.frontend.Report) { 
    private def log(s : => String) = report("presenter", s)
-
+   private var nextID : Int = 0 // the next available id (for generating unique ids)
    /** the main presentation method
     * @param c the presented expressions
     * @param gpar the rendering handler that collects the output and the style to be used
     */
    def apply(c : Content, gpar : GlobalParams) {
       c match {
-        case c : objects.Obj => present(ObjToplevel(c, Position.Init), gpar, LocalParams(Position.Init, None, Nil, true))
-        case _ => present(StrToplevel(c), gpar, LocalParams(Position.Init, None, Nil, false))
+        case c : objects.Obj => present(ObjToplevel(c, Position.Init), gpar, LocalParams(Position.Init, None, Nil, true, Nil))
+        case _ => present(StrToplevel(c), gpar, LocalParams(Position.Init, None, Nil, false, Nil))
       }
    }
 
@@ -94,8 +92,8 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
       }
       //transition between object and structural level
       (c, lpar.inObject) match {
-         case (c : Obj, false) => present(ObjToplevel(c, lpar.pos), gpar, lpar.toggle)
-         case (c : ContentElement, true) => present(StrToplevel(c), gpar, lpar.toggle)
+         case (c : Obj, false) => present(ObjToplevel(c, lpar.pos), gpar, lpar.copy(inObject = true))
+         case (c : ContentElement, true) => present(StrToplevel(c), gpar, lpar.copy(inObject = false))
          case _ => c.presentation(lpar) match {
 		     case IsLiteral(l) => gpar.rh(l)
 		     case bn : ByNotation => doByNotation(bn)
@@ -113,7 +111,11 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
       def recurse(p : Presentation) {render(p, comps, ind, gpar, lpar)}
       pres match {
 		  case Text(text) =>
-		      gpar.rh(text)
+		      var t = text
+		      lpar.ids foreach {
+		         case (n,i) => t = t.replace(n, i)
+		      }
+		      gpar.rh(t)
 		  case Element(prefix, label, attributes, children) =>
 		      gpar.rh.elementStart(prefix, label)
 		      attributes.foreach {case Attribute(prefix, name, value) =>
@@ -123,7 +125,7 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		      }
 		      if (comps.length > 0) {
 		        comps(0) match {
-		          case s : StructuralElement =>
+		          case s : StructuralElement => //TODO this should be called less often
                   gpar.rh.attributeStart("","id")
                   gpar.rh.apply(s.path.toPath)
                   gpar.rh.attributeEnd
@@ -184,7 +186,7 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		      val i = ind.head + offset
 		      if (i < 0 || i >= comps.length)
 		         throw new PresentationError("offset out of bounds")
-              val newLpar = LocalParams(lpar.pos + i, iPrec, lpar.context, lpar.inObject)
+              val newLpar = lpar.copy(pos = lpar.pos + i, iPrec = iPrec)
               present(comps(i), gpar, newLpar)
 	      case Nest(begInd, endInd, stepcase, basecase) =>
 		      val begin = resolve(begInd)
@@ -205,6 +207,15 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		  case TheNotationSet =>
 		      gpar.rh(gpar.nset.toPath.replace("?","%3F"))
 		  case Hole(i, default) => recurse(default)
+		  case GenerateID(name, scope) =>
+		     val id = "generated_" + nextID
+		     nextID += 1
+		     val newlpar = lpar.copy(ids = (name, id) :: lpar.ids)
+		     render(scope, comps, ind, gpar, newlpar)
+		  case UseID(name) => lpar.ids find (_._1 == name) match {
+		      case None => throw PresentationError("undeclared ID: " + name)
+		      case Some(i) => i._2
+		  }
 		  case Fragment(name, args @ _*) =>
              val notation = controller.get(gpar.nset, NotationKey(None, Role_Fragment(name)))
 		       val pres = notation.pres.fill(args : _*)
