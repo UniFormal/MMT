@@ -20,6 +20,7 @@ case object Role_DefinedView         extends Role(false, "DefinedView")
 case object Role_Notationset         extends Role(false, "Style")
 case object Role_Structure           extends Role(false, "Structure")
 case object Role_DefinedStructure    extends Role(false, "DefinedStructure")
+case object Role_TGroup              extends Role(false, "TGroup")
 case class  Role_Constant(univ : objects.Universe)
   extends Role(false , "Constant" + (univ.toString match {case "" => "" case s => ":" + s}), ("name",0), ("type",1), ("definition",2))
 case object Role_Alias               extends Role(false, "Alias")
@@ -38,12 +39,16 @@ case object Role_ConstantRef         extends Role(false, "constant")
 case object Role_ComplexConstantRef extends Role(false, "complex-constant")
 case object Role_VariableRef         extends Role(false, "variable")
 case object Role_hidden              extends Role(false, "Toplevel")
-case object Role_application         extends Role(true,  "application" )
-case object Role_attribution         extends Role(true,  "attribution" )
-case object Role_binding             extends Role(true,  "binding" )
+case object Role_application         extends Role(true,  "application")
+case object Role_attribution         extends Role(true,  "attribution")
+case object Role_binding             extends Role(true,  "binding")
 case object Role_value               extends Role(false, "value")
 case object Role_foreign             extends Role(false, "foreign")
-case object Role_index               extends Role(false, "index" )
+case object Role_index               extends Role(false, "index")
+case object Role_context             extends Role(false, "context")
+case object Role_substitution        extends Role(false, "substitution")
+case object Role_termsub             extends Role(false, "termsub")
+case object Role_seqsub              extends Role(false, "seqsub")
 case object Role_SeqVariable         extends Role(false, "SeqVariable")
 case object Role_SeqVariableRef      extends Role(false, "seqvariable")
 case object Role_seqsubst            extends Role(false, "seqsubst")
@@ -66,6 +71,7 @@ object Role {
       case "DefinedView" => Role_DefinedView
       case "Style" => Role_Notationset
       case "Structure" => Role_Structure
+      case "TGroup" => Role_TGroup
       case "Constant" => Role_Constant(objects.Individual(None))
       case s if s.startsWith("Constant:") => Role_Constant(objects.Universe.parse(s.substring(9)))
       case "Variable" => Role_Variable
@@ -92,6 +98,12 @@ object Role {
       case "seqsubst" => Role_seqsubst
       case "seqvariable" => Role_SeqVariableRef
       case "sequpto" => Role_sequpto
+      case "seqitemlist" => Role_seqitemlist
+      case "index" => Role_index
+      case "substitution" => Role_substitution
+      case "termsub" => Role_termsub
+      case "seqsub" => Role_seqsub
+      case "context" => Role_context
       case "toplevel" => Role_ObjToplevel
       case "value" => Role_value
       case s if s.startsWith("fragment:") => Role_Fragment(s.substring(9))

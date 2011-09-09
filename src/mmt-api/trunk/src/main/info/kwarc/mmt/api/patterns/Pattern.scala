@@ -19,7 +19,8 @@ class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, va
    	   <declarations>{con.toNode}</declarations>
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
-   def components = Nil
+   override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("conBegin",params.length + 1)) 
+   def components = OMID(path) :: params ::: con
    override def toString = 
      "Pattern for " + name.flat + " " + params.toString + " " + con.toString
 }
@@ -30,7 +31,7 @@ class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalN
      {matches.toNode}
      </instance>
    def role = info.kwarc.mmt.api.Role_Instance
-   def components = Nil
+   def components = List(OMID(path), OMID(pattern)) ::: matches
    override def toString = 
      "Instance " + name.flat + " of pattern " + pattern.toString  
 }
@@ -51,7 +52,7 @@ object Instance {
           }
           val nname = inst.name / n
           report("elaboration", "generating constant " + nname)
-    	    val c = new Constant(inst.home, nname, tp.map(auxSub), df.map(auxSub),null)
+    	    val c = new Constant(inst.home, nname, tp.map(auxSub), df.map(auxSub),Individual(None))
     	    c.setOrigin(InstanceElaboration(inst.path))
     	    c
         case SeqVarDecl(n,tp,df, at @ _*) => throw ImplementationError("Pattern cannot contain sequence variable declaration")

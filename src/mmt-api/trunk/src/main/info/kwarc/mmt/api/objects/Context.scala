@@ -64,7 +64,7 @@ case class SeqVarDecl(name : String, tp : Option[Sequence], df : Option[Sequence
 }
 
 /** represents an MMT context as a list of variable declarations */
-case class Context(variables : VarDecl*) {
+case class Context(variables : VarDecl*) extends Obj {
    /** add variable at the end */
    def ++(v : VarDecl) : Context = this ++ Context(v)
    /** concatenate contexts */
@@ -94,29 +94,38 @@ case class Context(variables : VarDecl*) {
    }
 
    override def toString = this.map(_.toString).mkString("",", ","")
-   def toNode = toNodeID(Position.None)
    def toNodeID(pos : Position) =
      <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + i)})}</om:OMBVAR>
    def toCML = 
      <m:bvar>{this.map(v => v.toCML)}</m:bvar>
+   def head : Option[Path] = None
+   def role : Role = Role_context
+   def components = variables.toList 
 }
 
 /** a case in a substitution */
-sealed abstract class Sub {
-	val name: String
+sealed abstract class Sub extends Content {
+	val name: String 
 	val target: Obj
+	def toNode : Node = toNodeID(Position.None)
 	def toNodeID(pos: Position): Node
 	override def toString = name + "/" + target.toString
+	def role : Role
+    def components = List(StringLiteral(name), target)
+    def presentation(lpar : LocalParams) =
+	   ByNotation(NotationKey(None, role), ContentComponents(components), lpar)
 }
 case class TermSub(name : String, target : Term) extends Sub {
    def toNodeID(pos: Position): Node = <om:OMV name={name}>{target.toNodeID(pos + 1)}</om:OMV>
+   def role : Role = Role_termsub
 }
 case class SeqSub(name : String, target : Sequence) extends Sub {
-   def toNodeID(pos: Position): Node = <seqvar name={name}>{target.toNodeID(pos + 1)}</seqvar>
+   def toNodeID(pos: Position): Node = <om:OMSV name={name}>{target.toNodeID(pos + 1)}</om:OMSV>
+   def role : Role = Role_seqsub
 }
 
 /** substitution between two contexts */
-case class Substitution(subs : Sub*) {
+case class Substitution(subs : Sub*) extends Obj {
    def ++(n:String, t:Term) : Substitution = this ++ TermSub(n,t)
    def ++(s: Sub) : Substitution = this ++ Substitution(s)
    def ++(that: Substitution) : Substitution = this ::: that
@@ -141,10 +150,12 @@ case class Substitution(subs : Sub*) {
       Context(decls : _*)
    }
    override def toString = this.map(_.toString).mkString("",", ","")
-   def toNode = toNodeID(Position.None)
    def toNodeID(pos : Position) =
       <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos + x._2))}</om:OMBVAR>
    def toCML = asContext.toCML
+   def head : Option[Path] = None
+   def role : Role = Role_substitution
+   def components = subs.toList
 }
 
 /** helper object */
@@ -207,6 +218,10 @@ object VarDecl {
             val name = xml.attr(N, "name")
             val (tp, df, attrs) = parseAttrs(ats, base, pSeq, pSeq, pTerm)
             SeqVarDecl(name, tp, df, attrs : _*)
+         case <seqvar>{ats @ _*}</seqvar> =>//TODO remove this case
+            val name = xml.attr(N, "name")
+            val (tp, df, attrs) = parseAttrs(ats, base, pSeq, pSeq, pTerm)
+            SeqVarDecl(name, tp, df, attrs : _*)
          case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
       }
    }
@@ -223,7 +238,8 @@ object Substitution {
 object Sub {
    def parse(N: Node, base: Path) = N match {
       case <OMV>{e}</OMV> => TermSub(xml.attr(N, "name"), Obj.parseTerm(e, base))
-      case <seqvar>{e}</seqvar> => SeqSub(xml.attr(N, "name"), Obj.parseSequence(e, base))
+      case <OMSV>{e}</OMSV> => SeqSub(xml.attr(N, "name"), Obj.parseSequence(e, base))
+      case <seqvar>{e}</seqvar> => SeqSub(xml.attr(N, "name"), Obj.parseSequence(e, base)) //TODO remove
       case _ => throw ParseError("not a well-formed case in a substitution: " + N.toString)
    }
 }

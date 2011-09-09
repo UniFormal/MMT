@@ -2,6 +2,8 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import presentation._
 import documents._
+import patterns._
+import symbols._
 import utils._
 import utils.FileConversion._
 
@@ -9,7 +11,7 @@ import scala.util.parsing.combinator._
 
 /** helper object for Actions
  * This object provides a combinator parser for Actions that is used when commands are sent to a controller as strings.
- * It is straighforward to understand the concrete syntax from the source code.
+ * It is straightforward to understand the concrete syntax from the source code.
  */
 object Action extends RegexParsers {
    private var base : Path = null
@@ -54,8 +56,9 @@ object Action extends RegexParsers {
    private def present = content ~ ("present" ~> mpath) ^^ {case c ~ p => Present(c,p)}
    private def deps = path <~ "deps" ^^ {case p => Deps(p)}
    private def tostring = content ^^ {c => ToString(c)}
-   private def content = closure | component | get
+   private def content = closure | elaboration | component | get
    private def closure = path <~ "closure" ^^ {p => Closure(p)}
+   private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
    private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, s)}
    private def get = path ^^ {p => Get(p)}
    
@@ -167,6 +170,16 @@ case class Closure(p : Path) extends MakeAbstract {
          new Document(doc, clp)
    }
    override def toString = p + " closure"
+}
+/** retrieves the elaboration of an instance */
+case class Elaboration(p : Path) extends MakeAbstract {
+   def make(controller : Controller) : TGroup = {
+	   controller.get(p) match {
+	  	   case i : Instance => new TGroup(i.parent,p,Instance.elaborate(i,true)(controller.globalLookup,controller.report))
+	  	   case _ => throw ImplementationError("Non-instance element at " + p)  
+       }
+   }
+   override def toString = p + " elaboration"
 }
 
 /** represents the first post-processing phase

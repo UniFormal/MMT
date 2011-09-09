@@ -13,7 +13,7 @@ import scala.xml.{Node}
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
-sealed abstract class Obj extends Content {
+abstract class Obj extends Content {
    /** prints to OpenMath (with OMOBJ wrapper) */
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.None)
@@ -204,7 +204,9 @@ case class OMV(name : String) extends Term {
             case Some((VarData(_, binder, pos), i)) =>
                val components = List(StringLiteral(name), StringLiteral(i.toString), StringLiteral(pos.toString)) 
                ByNotation(NotationKey(Some(binder), role), ContentComponents(components), lpar)
-            case None => throw PresentationError("unbound variable")
+            case None => //throw PresentationError("unbound variable")
+               ByNotation(NotationKey(None, role),
+            		   ContentComponents(List(StringLiteral(name), Omitted, Omitted)), lpar)
          }
    }
    /** the substutition this/s */
@@ -387,6 +389,11 @@ case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends Seq
 	def head = seq1.head
 	def role = Role_seqsubst
 	def components = List(seq1,StringLiteral(name),seq2)
+    override def presentation(lpar : LocalParams) = {
+      val LocalParams(pos, ip, cont, io) = lpar
+      val addedContext = List(VarData(name, utils.mmt.ellipsis, pos + 1))
+      ByNotation(nkey, ContentComponents(components), LocalParams(pos, ip, cont ::: addedContext, io))
+   }
 	
 }
 case class SeqVar(name : String) extends SeqItem {
