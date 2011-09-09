@@ -37,14 +37,13 @@ function load(elem) {
    elem.removeAttribute('jobad:load');
    return res.firstChild;
 }
-function includeClick(elem) {
-   var container = $(elem).children('div.flat-container')[0];
+function flatClick(elem) {
    if (elem.hasAttribute('jobad:load')) {
       var m = load(elem);
-      container.appendChild(m);
-      $(container).toggle();
+      elem.appendChild(m);
+      $(elem).toggle();
    } else {
-      $(container).toggle();
+      $(elem).toggle();
    }
 }
 function remoteClick(elem) {
