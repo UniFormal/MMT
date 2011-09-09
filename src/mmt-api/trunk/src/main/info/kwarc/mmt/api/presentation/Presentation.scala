@@ -115,6 +115,14 @@ case class Hole(index : Int, default : Presentation) extends Presentation {
    override def fill(plug : Presentation*) = if (plug.length > index) plug(index) else default 
 }
 
+/** generates a unique ID that is available during the recursion */
+case class GenerateID(name: String, scope: Presentation) extends Presentation {
+   override def fill(plug : Presentation*) = GenerateID(name, scope.fill(plug : _*))
+}
+
+/** refers to a previously generated ID */
+case class UseID(name: String) extends Presentation
+
 /** a call to a macro that is defined as fragment notation 
  * @param name the used notation will have role "fragment:name"
  * @param args the list of arguments that fill the holes in that notation
@@ -225,6 +233,8 @@ object Presentation {
             IfHead(cindex(xml.attr(n,"index")), Path.parse(xml.attr(n,"path"), mmt.mmtbase), parse(yes), Empty)
          //case <ifpresent>{yes @ _*}</ifpresent> =>
             //IfPresent(int(xml.attr(n,"index")), parse(yes), Empty)
+         case <generateid>{scope}</generateid> => GenerateID(xml.attr(n, "name"), parse(scope))
+         case <useid/> => UseID(xml.attr(n, "name"))
          case <fragment>{child @ _*}</fragment> =>
             val args = if (! child.isEmpty && child(0).label != "arg")
                Seq(parse(child))
@@ -235,6 +245,12 @@ object Presentation {
                }
             }
             Fragment(xml.attr(n,"name"), args : _*)
+         case e @ scala.xml.Elem(prefix, label, atts, scope, children) if prefix != null =>
+            val pAtts = atts map {
+               case scala.xml.PrefixedAttribute(p, k, v, _) => Attribute(p, k, Text(v.text)) 
+               case scala.xml.UnprefixedAttribute(k, v, _) => Attribute("", k, Text(v.text))
+            }
+            Element(prefix, label, pAtts.toList, (children map parse).toList)
          case scala.xml.Comment(_) => Empty
          case _ => throw ParseError("illegal presentation item: " + n)
       }
