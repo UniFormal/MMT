@@ -16,9 +16,16 @@
         <pathelement location="${lib}/lift-webkit_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-common_2.8.1-2.2-SNAPSHOT.jar" />
         <pathelement location="${lib}/lift-json_2.8.1-2.2-SNAPSHOT.jar" />
-  	<pathelement location="${deploy}/mmt/mmt-api.jar" />
-        <pathelement location="${deploy}/mmt/uom.jar" />
-	<pathelement location="${deploy}/mmt/mmt-mizar.jar" />
+        
+        <pathelement location="${lib}/lift-actor_2.8.1-2.2-SNAPSHOT.jar"/>
+        <pathelement location="${lib}/joda-time-1.6.2.jar"/>
+        <pathelement location="${lib}/slf4j-log4j12-1.6.1.jar"/>
+        <pathelement location="${lib}/slf4j-api-1.6.1.jar"/>
+        <pathelement location="${lib}/commons-fileupload-1.2.1.jar"/>
+        <pathelement location="${lib}/log4j-1.2.16.jar"/>
+
+      	<pathelement location="${deploy}/mmt/mmt-api.jar" />
+	      <pathelement location="${deploy}/mmt/mmt-mizar.jar" />
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
