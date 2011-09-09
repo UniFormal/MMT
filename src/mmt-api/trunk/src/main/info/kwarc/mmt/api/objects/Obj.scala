@@ -390,9 +390,8 @@ case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends Seq
 	def role = Role_seqsubst
 	def components = List(seq1,StringLiteral(name),seq2)
     override def presentation(lpar : LocalParams) = {
-      val LocalParams(pos, ip, cont, io) = lpar
-      val addedContext = List(VarData(name, utils.mmt.ellipsis, pos + 1))
-      ByNotation(nkey, ContentComponents(components), LocalParams(pos, ip, cont ::: addedContext, io))
+      val addedContext = List(VarData(name, utils.mmt.ellipsis, lpar.pos + 1))
+      ByNotation(nkey, ContentComponents(components), lpar.copy(context = lpar.context ::: addedContext))
    }
 	
 }
