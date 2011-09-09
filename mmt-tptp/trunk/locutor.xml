@@ -1,5 +1,5 @@
 <registry>
-  <repository location="https://alpha.tntbase.mathweb.org/repos/cds/">
+  <repository location="http://cds.omdoc.org/">
     <wc location="omdoc" root="/home/dimitar/projects/cds/old/omdoc"/>
     <wc location="foundations" root="/home/dimitar/projects/cds/old/foundations"/> <!-- lf -->
   </repository>

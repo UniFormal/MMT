@@ -86,8 +86,7 @@ class TptpTranslator {
     }
     
     // add constants
-    addConstants.foreach {
-      x =>
+    addConstants.foreach { x =>
       val con = new Constant(OMMOD(theoryPath), LocalName(x), None, None, Individual(None))
       try {
         TptpTranslator.add(con)
@@ -95,6 +94,11 @@ class TptpTranslator {
         case e => None
       }
       TptpTranslator.addToSignature(x, theoryPath)
+    }
+    
+    // imports
+    imports.foreach { imported =>
+      TptpTranslator.add(PlainInclude(imported, theoryPath))
     }
   }
 
@@ -126,9 +130,6 @@ class TptpTranslator {
     val targetPath = targetBase + theoryDir + "/" + theoryName
     println("...importing/translating " + targetPath)
     translator.translate(theoryDir, theoryName, File(targetPath))
-    
-    // add the include object
-    TptpTranslator.add(PlainInclude(targetTheory, theoryPath))
   }
 
   def translate(item: AnnotatedFormula): Option[StructuralElement] = {
