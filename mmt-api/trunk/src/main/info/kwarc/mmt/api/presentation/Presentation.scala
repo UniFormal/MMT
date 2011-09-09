@@ -233,7 +233,7 @@ object Presentation {
             IfHead(cindex(xml.attr(n,"index")), Path.parse(xml.attr(n,"path"), mmt.mmtbase), parse(yes), Empty)
          //case <ifpresent>{yes @ _*}</ifpresent> =>
             //IfPresent(int(xml.attr(n,"index")), parse(yes), Empty)
-         case <generateid>{scope}</generateid> => GenerateID(xml.attr(n, "name"), parse(scope))
+         case <generateid>{scope @ _*}</generateid> => GenerateID(xml.attr(n, "name"), parse(scope))
          case <useid/> => UseID(xml.attr(n, "name"))
          case <fragment>{child @ _*}</fragment> =>
             val args = if (! child.isEmpty && child(0).label != "arg")
