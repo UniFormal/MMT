@@ -44,7 +44,7 @@ class TptpTranslator {
     val d = new Document(new DPath(baseURI / theoryDir))
     
     // handle theory
-    val t = new DeclaredTheory(d.path, LocalPath(theory::Nil), None)
+    val t = new DeclaredTheory(d.path, LocalPath(theory::Nil), Some(fofTh))
     this.theoryPath = t.path
     try {
       TptpTranslator.controller.get(t.path)
