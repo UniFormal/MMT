@@ -22,8 +22,7 @@ object TptpUtils {
   val baseURI = URI("http", "tptp.org")
   
   // meta theories
-	val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "FOF"
-	val thfTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "THF0"
+	val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "tptp"
 
   val PARSE_DIRS = List("Axioms", "Problems")
   val PARSE_EXTS = List("ax", "p")

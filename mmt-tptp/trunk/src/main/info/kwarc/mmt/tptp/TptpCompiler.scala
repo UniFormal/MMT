@@ -22,6 +22,13 @@ class TptpCompiler extends Compiler {
   def isApplicable(src : String) : Boolean = {
     true
   }
+  
+  def mkdir(dir: java.io.File) {
+    if (dir != null && !dir.exists) {
+      mkdir(dir.getParentFile)
+      dir.mkdir
+    }
+  }
 
   override def compile(in : File, out : File) : List[CompilerError] = {
     var errors: List[CompilerError] = Nil
@@ -32,6 +39,10 @@ class TptpCompiler extends Compiler {
       fileDir = path.substring(path.lastIndexOf("Axioms"), path.lastIndexOf("/"))
     else
       fileDir = path.substring(path.lastIndexOf("Problems"), path.lastIndexOf("/"))
+    
+    val dir = out.toJava.getParentFile
+    if (!dir.exists)
+      mkdir(dir)
     
     val translator = new TptpTranslator()
     translator.translate(fileDir, fileName, in)
