@@ -201,14 +201,18 @@ object Differ {
 	        case AddComponent(name, comp) => (name, comp) match {
 	          case ("type", Obj2Component(t : Term)) => tp = Some(t)
 	          case ("definition", Obj2Component(t : Term)) => df = Some(t)
+	          case _ => throw ImplementationError("match error in Constant components")
 	        }   
 	        case DeleteComponent(ctp,name) => (name) match {
 	          case "type" => tp = None
 	          case "definition" => df = None
+	          case _ => throw ImplementationError("match error in Constant components")
 	        }
 	        case UpdateComponent(name,comp) => (name,comp) match {
 	          case ("type", Obj2Component(t : Term)) => tp = Some(t)
 	          case ("definition", Obj2Component(t : Term)) => df = Some(t)
+	          case _ => throw ImplementationError("match error in Constant components")
+
 	        }
 	        case IdenticalComponent(ctp,name) => None //already set above
 	      })
@@ -221,12 +225,17 @@ object Differ {
 	      componentChanges.map(x => x match {
 	        case AddComponent(name, comp) => (name, comp) match {
 	          case ("meta", Path2Component(p : MPath)) => meta = Some(p)
+	          case _ => throw ImplementationError("match error in Declared Theory components")
+
 	        }   
 	        case DeleteComponent(ctp,name) => (name) match {
 	          case "meta" => meta = None
+	          case _ => throw ImplementationError("match error in Declared Theory components")
 	        }
 	        case UpdateComponent(name,comp) => (name,comp) match {
 	          case ("meta", Path2Component(p : MPath)) => meta = Some(p)
+	          case _ => throw ImplementationError("match error in Declared Theory components")
+
 	        }
 	        case IdenticalComponent(ctp,name) => None //already set above
 	      })
