@@ -100,7 +100,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     //override def buffered = true
     def resolve(req : HReqHeaderData) : Option[HLet] = {
       if (req.uriPath != "favicon.ico")
-        print(Time + "Query: " + req.uriPath + "?" + req.query + " ")
+        catalog.log(Time + "Query: " + req.uriPath + "?" + req.query + " ")
         
       val response : Option[HLet] = req.uriPath match {
       case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
@@ -186,20 +186,20 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
                 case CatalogError(s) =>  // if the uri does not point to a module, cst or structure declaration, don't return the position
             }
             if (position.isDefined) {
-                print("OK")
+                catalog.log("OK")
                 Some(TextResponse(text, Some(Pair("X-Source-url", "file:" + position.get))))
             }
             else {
-                print("NOT FOUND")
+                catalog.log("NOT FOUND")
                 Some(TextResponse(text, None))
             }
           } catch {
-              case e: java.net.URISyntaxException => {print("NOT FOUND"); Some(TextResponse("Invalid URI or URL: " + stringUri, None))}
-              case CatalogError(s)    => {print("NOT FOUND"); Some(TextResponse("Unknown URI or URL: " + stringUri, None))}
-              case FileOpenError(s)   => {print("NOT FOUND"); Some(TextResponse(s, None))}
+              case e: java.net.URISyntaxException => {catalog.log("NOT FOUND"); Some(TextResponse("Invalid URI or URL: " + stringUri, None))}
+              case CatalogError(s)    => {catalog.log("NOT FOUND"); Some(TextResponse("Unknown URI or URL: " + stringUri, None))}
+              case FileOpenError(s)   => {catalog.log("NOT FOUND"); Some(TextResponse(s, None))}
           }
         }
-        else {print("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
+        else {catalog.log("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
       }
       case "getDependencies" => {
         if (req.query.startsWith("uri=")) {
@@ -235,14 +235,14 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val position = catalog.getPosition(stringUri)
-            print("OK")
+            catalog.log("OK")
             Some(TextResponse(position, Some(Pair("X-Source-url", "file:" + position))))
           } catch {
-              case e: java.net.URISyntaxException => {print("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
-              case CatalogError(s)    => {print("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
+              case e: java.net.URISyntaxException => {catalog.log("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
+              case CatalogError(s)    => {catalog.log("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
           }
         }
-        else {print("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
+        else {catalog.log("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
       }
       case "getPositionInHeader" => {
         if (req.query.startsWith("uri=")) {
@@ -250,14 +250,14 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val position = catalog.getPosition(stringUri)
-            print("OK")
+            catalog.log("OK")
             Some(TextResponse("", Some(Pair("X-Source-url", "file:" + position))))
           } catch {
-              case e: java.net.URISyntaxException => {print("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
-              case CatalogError(s)    => {print("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
+              case e: java.net.URISyntaxException => {catalog.log("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
+              case CatalogError(s)    => {catalog.log("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
           }
         }
-        else {print("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
+        else {catalog.log("NOT FOUND"); Some(TextResponse("Invalid query: " + req.query + "\nuri=URI expected", None))}
       }
       case "getOmdoc" => {
         if (req.query.startsWith("url=")) {
