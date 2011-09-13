@@ -41,7 +41,7 @@ class MetaData(language: MPath) {
    def getAll : List[MetaDatum] = data
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
-   def toNode = <metadata>{data.map(_.toNode)}</metadata>
+   def toNode = <metadata lang={language.toPath}>{data.map(_.toNode)}</metadata>
    // def toString
 }
 
@@ -67,7 +67,10 @@ object MetaData {
    /** parses a MetaData */
    def parse(node: Node, base: Path) : MetaData = node match {
       case <metadata>{mdxml @ _*}</metadata> =>
-         val lang = Path.parseM(xml.attr(node, "language"), base)
+         val lang : MPath = xml.attr(node, "language") match {
+            case "" => utils.mmt.mmtbase ? "metadata" //TODO temporary default
+            case s => Path.parseM(s, base)
+         }
          val mdata = new MetaData(lang)
          mdxml foreach {n => mdata.add(MetaDatum.parse(n, lang))}
          mdata

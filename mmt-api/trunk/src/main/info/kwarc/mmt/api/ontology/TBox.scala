@@ -90,6 +90,7 @@ case class Individual(path : Path, tp : Unary) extends RelationalElement {
 
 /**
  * An object of type Relation represents a binary predicate in the ABox.
+ * The path of a Relation is always the knowledge item reading which produced the Relation.
  */
 case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalElement {
    val path = subj

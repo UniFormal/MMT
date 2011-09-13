@@ -100,12 +100,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
-              val controller = new Controller(NullChecker, report)
-              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
-              val doc = controller.getDocument(dpath)
               val narrFile = narrationDir / in
               log("[COMP->CONT+NARR] " + inFile)
               log("[COMP->NARR]        -> " + narrFile)
+              val controller = new Controller(NullChecker, report)
+              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
+              val doc = controller.getDocument(dpath)
               // write narration file
               xml.writeFile(doc.toNode, narrFile)
               // write content files
@@ -198,11 +198,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               val outFile = (root / "relational" / in).setExtension("rel")
               log("[CONT->REL] " + inFile + " -> " + outFile)
               outFile.getParentFile.mkdirs
-              val outFileHandle = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(outFile),"UTF-8"))
+              val outFileHandle = FileWriter(outFile)
               (controller.depstore.getInds ++ controller.depstore.getDeps) foreach {
                  case d : RelationalElement => if (d.path <= mpath) outFileHandle.write(d.toNode.toString + "\n")
               }
               outFileHandle.close
+              controller.delete(mpath)
            } catch {
               case e: Error => throw e
               //case e => report("error", e.getMessage)
