@@ -1,0 +1,1 @@
+HReqHeader.scala:122: remove (extParts(1).trim.size > 0)
