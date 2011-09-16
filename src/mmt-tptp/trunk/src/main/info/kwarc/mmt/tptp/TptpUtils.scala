@@ -23,6 +23,10 @@ object TptpUtils {
   
   // meta theories
 	val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "tptp"
+	val lfTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "tptp"
+  
+  val term = OMID(fofTh ? "$term")
+  val form = OMID(fofTh ? "$form")
 
   val PARSE_DIRS = List("Axioms", "Problems")
   val PARSE_EXTS = List("ax", "p")

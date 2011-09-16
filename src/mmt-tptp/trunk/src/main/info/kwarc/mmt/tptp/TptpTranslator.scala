@@ -21,15 +21,18 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.presentation._
+import info.kwarc.mmt.api.lf._
 
 class TptpTranslator {
   
   // imports in this file
   var imports = new HashSet[MPath]()
-  // constants to be added 
-  var addConstants = new HashSet[String]()
+  // function and predicate constants (name -> object)
+  var constants = new scala.collection.mutable.LinkedHashMap[String, Constant]()
+  // translated formulae
+  var translated: List[StructuralElement] = Nil
+  
   // errors encountered during translation
   var errors: List[CompilerError] = Nil
   
@@ -85,39 +88,32 @@ class TptpTranslator {
       input = parser.parseNext
     }
     
-    // add constants
-    addConstants.foreach { x =>
-      val con = new Constant(OMMOD(theoryPath), LocalName(x), None, None, Individual(None))
-      try {
-        TptpTranslator.add(con)
-      } catch {
-        case e => None
-      }
-      TptpTranslator.addToSignature(x, theoryPath)
-    }
-    
-    // imports
-    imports.foreach { imported =>
-      TptpTranslator.add(PlainInclude(imported, theoryPath))
-    }
+    // add imports
+    imports.foreach { x => TptpTranslator.add(PlainInclude(x, theoryPath)) }
+    // add predicate/function constants
+    constants.foreach { case (k,v) => TptpTranslator.add(v) }
+    // add translated formulae
+    translated.reverse.foreach { TptpTranslator.add(_) }
   }
 
   def translate(item: TopLevelItem): List[CompilerError] = {
-//    println("Translating TopLevelItem")
+    println("Translating TopLevelItem " + item.toString)
     item.getKind match {
       case TptpInput.Kind.Formula =>
         translate(item.asInstanceOf[AnnotatedFormula]) match {
-          case Some(x) => TptpTranslator.add(x)
+          case Some(x) => println(x.toString)
+            translated = x::translated
           case None => None // an error has already been reported
         }
       case TptpInput.Kind.Include => translate(item.asInstanceOf[IncludeDirective])
       case _ => error("Unknown input type, can not translate", item)
     }
+    println("")
     errors
   }
 
   def translate(item: IncludeDirective) {
-//    println("Translating IncludeDirective")
+    println("Translating IncludeDirective " + item.toString)
     val included = item.getFileName.substring(1, item.getFileName.length - 1)
     val theoryDir = included.substring(0, included.lastIndexOf("/"));
     val theoryName = included.substring(included.lastIndexOf("/") + 1);
@@ -133,7 +129,7 @@ class TptpTranslator {
   }
 
   def translate(item: AnnotatedFormula): Option[StructuralElement] = {
-//    println("Translating AnnotatedFormula: " + item.getName)
+    println("Translating AnnotatedFormula " + item.toString)
     item.getFormula match {
       case f: Formula =>
         term(f) match {
@@ -141,13 +137,12 @@ class TptpTranslator {
             // Axiom, Hypothesis, Definition, Lemma, Theorem, Conjecture,
             // LemmaConjecture, NegatedConjecture, Plain, FiDomain, FiFunctors,
             // FiPredicates, Unknown;
-            val tmp = item.getRole match {
+            val tp = item.getRole match {
               case Axiom | Conjecture => OMA(constant(TRUE), x::Nil)
               case _ => x
             }
-            TptpTranslator.addToSignature(item.getName, theoryPath)
             Some(new Constant(OMMOD(theoryPath),
-                              LocalName(item.getName), Some(tmp),
+                              LocalName(item.getName), Some(tp),
                               None, Individual(None)))
           case None => None
         }
@@ -156,7 +151,7 @@ class TptpTranslator {
   }
 
   def term(item: Formula): Option[Term] = {
-//    println("Translating Formula")
+    println("Translating Formula " + item.toString)
     item.getKind match {
       case Kind.Atomic => term(item.asInstanceOf[Atomic])
       case Kind.Negation => term(item.asInstanceOf[Negation])
@@ -165,56 +160,96 @@ class TptpTranslator {
       case _ => None
     }
   }
-
+  
   def term(item: Atomic): Option[Term] = {
-//    println("Translating Atomic")
-    val id = omid(item.getPredicate)
+    println("Translating Atomic " + item.toString)
+    var id: OMID = null
+    var eq = false
+    if (item.getPredicate.equals("=")) {
+      id = OMID(fofTh ? "=")
+      eq = true
+    } else
+      id = omid(item.getPredicate)
+    
     if (item.getNumberOfArguments == 0) {
       Some(id)
     } else {
       var args: List[Term] = Nil
+      var argTypes: List[Term] = Nil
       for (arg <- item.getArguments) {
         term(arg) match {
-          case Some(x) => args = x::args
+          case Some(x) => 
+            args = x::args
+            argTypes = funType::argTypes
           case None => error("Error translating argument", arg)
         }
       }
-      Some(OMA(id, args))
+      if (!eq) {
+        addConstant(item.getPredicate, TptpUtils.form::argTypes)
+      }
+      Some(OMA(id, args.reverse))
     }
   }
+  
+  var funType: Term = null
 
   def term(item: tptp.SimpleTptpParserOutput.Term): Option[Term] = {
-//    println("Translating Term")
+    println("Translating Term " + item.toString)
+    funType = null
     val sym = term(item.getTopSymbol)
     if (item.getNumberOfArguments == 0) {
+      funType = TptpUtils.term
       sym
     } else {
-      var args: List[Term] = Nil
-      for (arg <- item.getArguments) {
-        term(arg) match {
-          case Some(x) => args = x::args
-          case None => error("Error translating argument", arg)
-        }
-      }
       sym match {
-        case Some(x) => Some(OMA(x, args))
+        case Some(x) => 
+          var args: List[Term] = Nil
+          var argTypes: List[Term] = Nil
+          for (arg <- item.getArguments) {
+            term(arg) match {
+              case Some(x) =>
+                args = x::args
+                argTypes = funType::argTypes
+              case None => error("Error translating argument", arg)
+            }
+          }
+          addConstant(item.getTopSymbol.getText, TptpUtils.term::argTypes)
+          Some(OMA(x, args.reverse))
         case None => None
       }
     }
   }
   
   def term(item: tptp.SimpleTptpParserOutput.Symbol): Option[Term] = {
-//    println("Translating Symbol")
+    println("Translating Symbol " + item.toString)
     if (item == null)
       None
     else if (item.isVariable)
       Some(OMV(item.getText))
-    else
+    else {
+      val name = item.getText
+      if (!constants.contains(name)) {
+        val con = new Constant(OMMOD(theoryPath),
+                               LocalName(name), Some(TptpUtils.term),
+                               None, Individual(None))
+        constants.put(name, con)
+      }
       Some(omid(item.getText))
+    }
+  }
+  
+  def addConstant(name: String, argTypes: List[Term]) {
+    funType = OMA(LF.arrow, argTypes.reverse)
+    if (!constants.contains(name)) {
+      val con = new Constant(OMMOD(theoryPath),
+                             LocalName(name), Some(funType),
+                             None, Individual(None))
+      constants.put(name, con)
+    }
   }
 
   def term(item: Negation): Option[Term] = {
-//    println("Translating Negation")
+    println("Translating Negation")
     term(item.getArgument) match {
       case Some(x) => Some(OMA(constant("not"), x::Nil))
       case None => None
@@ -222,7 +257,7 @@ class TptpTranslator {
   }
 
   def term(item: Binary): Option[Term] = {
-//    println("Translating Binary")
+    println("Translating Binary " + item.toString)
     (term(item.getLhs), term(item.getRhs)) match {
       case (Some(l: Term), Some(r: Term)) => Some(OMA(constant(item.getConnective), l::r::Nil))
       case (_, _) => None
@@ -230,7 +265,7 @@ class TptpTranslator {
   }
 
   def term(item: Quantified): Option[Term] = {
-//    println("Translating Quantified")
+    println("Translating Quantified " + item.toString)
     term(item.getMatrix) match {
       case Some(x) =>
         var ctx: Context = Context()
@@ -249,27 +284,15 @@ class TptpTranslator {
   
   def omid(name: String): OMID = {
 //    println("Creating OMID for " + name)
-    TptpTranslator.signature.get(name) match {
-      case Some(x) =>
-        val s = x.foreach {
-          el => if (imports.contains(el))
-            return OMID(el ? name)
-        }
-      case None => None
-    }
-    addConstants += name
     OMID(theoryPath ? name)
   }
 }
 
 object TptpTranslator {
-  
-  // all formulae
-  val signature = new scala.collection.mutable.HashMap[String, HashSet[MPath]]()
 	
   val controller = {
     val report = new FileReport(new java.io.File("tptp.log"))
-    val checker = libraries.NullChecker // TODO use structural checker
+    val checker = NullChecker //new StructuralChecker(report)
     new Controller(checker,report)
   }
   
@@ -277,13 +300,8 @@ object TptpTranslator {
     controller.add(e)
   }
   
-  def addToSignature(name: String, theory: MPath) {
-    var values: HashSet[MPath] = null
-    signature.get(name) match {
-      case Some(s) => values = s
-      case None =>
-        values = new HashSet() + theory
-    }
-    signature.put(name, values)
+  def main(args:Array[String]) = {
+    val translator = new TptpTranslator()
+    translator.translate("Axioms", "ALG002+0.ax", File("/home/dimitar/projects/oaff/tptp/source/Axioms/ALG002+0.ax"))
   }
 }
