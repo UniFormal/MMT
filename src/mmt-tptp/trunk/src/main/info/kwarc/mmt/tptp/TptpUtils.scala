@@ -49,7 +49,7 @@ object TptpUtils {
     TRUE -> "$true",
     FALSE -> "$false"
   )
-  val UNKNOWN = "???"
+  val UNKNOWN = "Unknown"
 
   /**
    * @param s string of the form DDD NNN F V [.SSS] .T[T]
