@@ -42,6 +42,8 @@ class TptpTranslator {
   var theoryPath: MPath = null
   var theoryFile: String = ""
   
+  val LOG = false
+  
   def translate(theoryDir: String, theory: String, file: File) {
     // handle document
     val d = new Document(new DPath(baseURI / theoryDir))
@@ -51,7 +53,7 @@ class TptpTranslator {
     this.theoryPath = t.path
     try {
       TptpTranslator.controller.get(t.path)
-      println("..." + t.path.toString + " already translated")
+      log("..." + t.path.toString + " already translated")
       return // the document has already been translated
     } catch {
       case e: info.kwarc.mmt.api.backend.NotFound =>
@@ -69,7 +71,7 @@ class TptpTranslator {
       val translator = new TptpTranslator()
       val targetBase = theoryFile.substring(0, theoryFile.indexOf(theory))
       val targetPath = targetBase + newTheory
-      println("...importing/translating " + targetPath)
+      log("...importing/translating " + targetPath)
       translator.translate(theoryDir, newTheory, File(targetPath))
       imports += MPath(d.path, LocalPath(newTheory::Nil))
     }
@@ -93,27 +95,72 @@ class TptpTranslator {
     // add predicate/function constants
     constants.foreach { case (k,v) => TptpTranslator.add(v) }
     // add translated formulae
-    translated.reverse.foreach { TptpTranslator.add(_) }
+    translated.reverse.foreach { x =>
+      try {
+        TptpTranslator.add(x)
+      } catch {
+        case _ => log("Error adding to controller " + x.toString)
+      }
+    }
+  }
+  
+  /**
+   * Translates a TPTP formula given as a string, and returns the reference
+   * to the resulting theory
+   */
+  def translate(tptpFormula: String): Option[Term] = {
+    // handle document
+    this.theoryDir = UNKNOWN
+    this.theory = UNKNOWN
+    val d = new Document(new DPath(baseURI / theoryDir))
+    val t = new DeclaredTheory(d.path, LocalPath(theory::Nil), Some(fofTh))
+    this.theoryPath = t.path
+    
+    val parser = new TptpParser(tptpFormula)
+    val parsed = parser.parseString
+    if (parsed == null) {
+      println("Failed parsing " + tptpFormula)
+      return None
+    }
+    val res = parsed match {
+      case x: Quantified => term(x)
+      case x: Negation => term(x)
+      case x: Binary => term(x)
+      case x: tptp.SimpleTptpParserOutput.Term => term(x)
+      case x: tptp.SimpleTptpParserOutput.Symbol => term(x)
+      case x: Atomic => term(x)
+      case x: Formula => term(x)
+      case x: AnnotatedFormula => term(x.getFormula)
+      case x: TopLevelItem => term(x.asInstanceOf[AnnotatedFormula].getFormula)
+      case _ =>
+        println("Failed translating to OMDoc: " + parsed.toString)
+        return None
+    }
+    res match {
+      case Some(x: Term) => Some(x)
+      case _ => 
+        println("Failed translating to OMDoc: " + parsed.toString)
+        return None
+    }
   }
 
   def translate(item: TopLevelItem): List[CompilerError] = {
-    println("Translating TopLevelItem " + item.toString)
+    log("Translating TopLevelItem " + item.toString)
     item.getKind match {
       case TptpInput.Kind.Formula =>
         translate(item.asInstanceOf[AnnotatedFormula]) match {
-          case Some(x) => println(x.toString)
+          case Some(x) => log(x.toString)
             translated = x::translated
           case None => None // an error has already been reported
         }
       case TptpInput.Kind.Include => translate(item.asInstanceOf[IncludeDirective])
       case _ => error("Unknown input type, can not translate", item)
     }
-    println("")
     errors
   }
 
   def translate(item: IncludeDirective) {
-    println("Translating IncludeDirective " + item.toString)
+    log("Translating IncludeDirective " + item.toString)
     val included = item.getFileName.substring(1, item.getFileName.length - 1)
     val theoryDir = included.substring(0, included.lastIndexOf("/"));
     val theoryName = included.substring(included.lastIndexOf("/") + 1);
@@ -124,12 +171,12 @@ class TptpTranslator {
     val translator = new TptpTranslator()
     val targetBase = theoryFile.substring(0, theoryFile.indexOf(this.theoryDir))
     val targetPath = targetBase + theoryDir + "/" + theoryName
-    println("...importing/translating " + targetPath)
+    log("...importing/translating " + targetPath)
     translator.translate(theoryDir, theoryName, File(targetPath))
   }
 
   def translate(item: AnnotatedFormula): Option[StructuralElement] = {
-    println("Translating AnnotatedFormula " + item.toString)
+    log("Translating AnnotatedFormula " + item.toString)
     item.getFormula match {
       case f: Formula =>
         term(f) match {
@@ -151,7 +198,7 @@ class TptpTranslator {
   }
 
   def term(item: Formula): Option[Term] = {
-    println("Translating Formula " + item.toString)
+    log("Translating Formula " + item.toString)
     item.getKind match {
       case Kind.Atomic => term(item.asInstanceOf[Atomic])
       case Kind.Negation => term(item.asInstanceOf[Negation])
@@ -162,7 +209,7 @@ class TptpTranslator {
   }
   
   def term(item: Atomic): Option[Term] = {
-    println("Translating Atomic " + item.toString)
+    log("Translating Atomic " + item.toString)
     var id: OMID = null
     var eq = false
     if (item.getPredicate.equals("=")) {
@@ -194,7 +241,7 @@ class TptpTranslator {
   var funType: Term = null
 
   def term(item: tptp.SimpleTptpParserOutput.Term): Option[Term] = {
-    println("Translating Term " + item.toString)
+    log("Translating Term " + item.toString)
     funType = null
     val sym = term(item.getTopSymbol)
     if (item.getNumberOfArguments == 0) {
@@ -221,7 +268,7 @@ class TptpTranslator {
   }
   
   def term(item: tptp.SimpleTptpParserOutput.Symbol): Option[Term] = {
-    println("Translating Symbol " + item.toString)
+    log("Translating Symbol " + item.toString)
     if (item == null)
       None
     else if (item.isVariable)
@@ -249,7 +296,7 @@ class TptpTranslator {
   }
 
   def term(item: Negation): Option[Term] = {
-    println("Translating Negation")
+    log("Translating Negation")
     term(item.getArgument) match {
       case Some(x) => Some(OMA(constant("not"), x::Nil))
       case None => None
@@ -257,7 +304,7 @@ class TptpTranslator {
   }
 
   def term(item: Binary): Option[Term] = {
-    println("Translating Binary " + item.toString)
+    log("Translating Binary " + item.toString)
     (term(item.getLhs), term(item.getRhs)) match {
       case (Some(l: Term), Some(r: Term)) => Some(OMA(constant(item.getConnective), l::r::Nil))
       case (_, _) => None
@@ -265,7 +312,7 @@ class TptpTranslator {
   }
 
   def term(item: Quantified): Option[Term] = {
-    println("Translating Quantified " + item.toString)
+    log("Translating Quantified " + item.toString)
     term(item.getMatrix) match {
       case Some(x) =>
         var ctx: Context = Context()
@@ -283,8 +330,13 @@ class TptpTranslator {
   }
   
   def omid(name: String): OMID = {
-//    println("Creating OMID for " + name)
+//    log("Creating OMID for " + name)
     OMID(theoryPath ? name)
+  }
+  
+  def log(s: String) {
+    if (LOG)
+      println(s)
   }
 }
 
@@ -302,6 +354,9 @@ object TptpTranslator {
   
   def main(args:Array[String]) = {
     val translator = new TptpTranslator()
-    translator.translate("Axioms", "ALG002+0.ax", File("/home/dimitar/projects/oaff/tptp/source/Axioms/ALG002+0.ax"))
+//    val res = translator.translate("fof(majority,axiom,(! [X,Y] : f(X,X,Y) = X )).")
+//    println(res.toString)
+    translator.translate("Axioms", "GEO006+1.ax", File("/home/dimitar/projects/oaff/tptp/source/Axioms/GEO006+1.ax"))
+    println("Done.")
   }
 }
