@@ -17,37 +17,32 @@ import info.kwarc.mmt.api.presentation._
  */
 class TptpCompiler extends Compiler {
   
-//  val parameterRenaming: ParameterRenaming
-
   def isApplicable(src : String) : Boolean = {
     true
-  }
-  
-  def mkdir(dir: java.io.File) {
-    if (dir != null && !dir.exists) {
-      mkdir(dir.getParentFile)
-      dir.mkdir
-    }
   }
 
   override def compile(in : File, out : File) : List[CompilerError] = {
     var errors: List[CompilerError] = Nil
     val fileName = in.toJava.getName
     val path = in.toJava.getPath
+    
+    // compute TPTP directory in which the input file is (e.g. Axioms/SET007/inputFile)
     var fileDir = ""
     if (path.contains("Axioms"))
       fileDir = path.substring(path.lastIndexOf("Axioms"), path.lastIndexOf("/"))
     else
       fileDir = path.substring(path.lastIndexOf("Problems"), path.lastIndexOf("/"))
-    
     val dir = out.toJava.getParentFile
     if (!dir.exists)
-      mkdir(dir)
+      dir.mkdirs
     
+    // translate the input file to OMDoc
     val translator = new TptpTranslator()
     translator.translate(fileDir, fileName, in)
     
+    // write to output file
     write(out, fileDir, fileName)
+    
     errors
   }
   
@@ -62,21 +57,8 @@ class TptpCompiler extends Compiler {
 		<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={base.toString}>
 			{th.toNode}
 		</omdoc>
-	
 		val docNode = pp.format(nd)
 		fw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + docNode.toString)
 		fw.close
 	}
-
-  override def init(args : List[String] = Nil) {
-//    this.transformer = new FormulaTransformer();
-//    this.transformer.registerRule(new AlphaRename());
-//    this.transformer.registerRule(new EliminateEquivalence());
-//    this.transformer.registerRule(new EliminateImplication());
-//    this.transformer.registerRule(new NegationNormalization());
-//    this.transformer.registerRule(new PrenexNormalization());
-//    this.transformer.registerRule(new ACStandardization());
-//    parameterRenaming = new ParameterRenaming();
-//    this.transformer.registerRule(parameterRenaming);
-  }
 }

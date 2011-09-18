@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package info.kwarc.mmt.tptp
 
 import tptp.TptpParserOutput.BinaryConnective._
@@ -17,23 +12,25 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 
+/**
+ * Utility stuff.
+ */
 object TptpUtils {
   
   val baseURI = URI("http", "tptp.org")
   
   // meta theories
-	val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "tptp"
-	val lfTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "tptp"
+	val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "FOF"
   
   val term = OMID(fofTh ? "$term")
   val form = OMID(fofTh ? "$form")
+  val t = OMID(fofTh ? "$true")
+  val f = OMID(fofTh ? "$false")
 
   val PARSE_DIRS = List("Axioms", "Problems")
   val PARSE_EXTS = List("ax", "p")
   val FORM = "+"; // fof
   
-  val TRUE = "true"
-  val FALSE = "false"
   val OPERATORS = Map(
     And -> "&",
     Or -> "|",
@@ -45,11 +42,9 @@ object TptpUtils {
     NotOr -> "~|",
     NotAnd -> "~&",
     ForAll -> "!",
-    Exists -> "?",
-    TRUE -> "$true",
-    FALSE -> "$false"
+    Exists -> "?"
   )
-  val UNKNOWN = "Unknown"
+  val UNKNOWN = "tmp"
 
   /**
    * @param s string of the form DDD NNN F V [.SSS] .T[T]
@@ -69,4 +64,10 @@ object TptpUtils {
 	def constant(name : String) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
 	def constant(name : BinaryConnective) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
 	def constant(name : Quantifier) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
+  
+  val LOG = true
+  def log(s: String) {
+    if (LOG)
+      println(s)
+  }
 }
