@@ -25,7 +25,11 @@
         <pathelement location="${lib}/log4j-1.2.16.jar"/>
 
       	<pathelement location="${deploy}/mmt/mmt-api.jar" />
-	      <pathelement location="${deploy}/mmt/mmt-mizar.jar" />
+	    <pathelement location="${deploy}/mmt/mmt-mizar.jar" />
+	    <pathelement location="${deploy}/mmt/mmt-tptp.jar" />
+	    <pathelement location="../../mmt-tptp/trunk/lib/tptp-parser.jar" />
+	    <pathelement location="../../mmt-tptp/trunk/lib/antlr-3.2.jar" />
+	    <pathelement location="../../mmt-tptp/trunk/lib/antlr-runtime-3.2.jar" />
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
@@ -58,6 +62,10 @@
 	    <lib file="${deploy}/mmt/uom.jar" />
 	    <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
 	    <lib file="${deploy}/mmt/mmt-mizar.jar" />
+	    <lib file="${deploy}/mmt/mmt-tptp.jar" />
+	    <lib file="../../mmt-tptp/trunk/lib/tptp-parser.jar" />
+	    <lib file="../../mmt-tptp/trunk/lib/antlr-3.2.jar" />
+	    <lib file="../../mmt-tptp/trunk/lib/antlr-runtime-3.2.jar" />
         </war>
     </target>
 
