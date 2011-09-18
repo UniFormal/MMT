@@ -1,4 +1,8 @@
-#!/bin/sh
+#!/bin/bash
+
+pushd .
+cd ../../mmt-web/trunk/ && ant
+popd
 
 java -jar ../../../deploy/lib/jetty-runner.jar --port 8080 \
     --lib ../../mmt-web/trunk/lib \
