@@ -75,7 +75,7 @@
         <copy todir="${deploy}/${prj}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>
-        <copy todir="${deploy}/${prj}/lib">
+        <copy todir="${deploy}/mmt">
             <fileset file="${build}/${jar}"/>
         </copy>
     </target>
