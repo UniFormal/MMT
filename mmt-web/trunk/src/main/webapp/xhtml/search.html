@@ -1,0 +1,22 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xhtml="http://www.w3.org/1999/xhtml">
+    <head>
+        <link rel="stylesheet" type="text/css" href="/css/search.css"/>
+        <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"/>
+        <script type="text/javascript">
+            function run(command) {
+                req=new XMLHttpRequest();
+                req.open("POST", '/:search?tptp', false);
+                req.setRequestHeader("Content-type","text/xml");
+                req.send(command);
+            };
+        </script>
+    </head>
+    <body>
+        <div id="search">
+            <textarea rows="2" id="inputsearch" style="width:100%"></textarea>
+            <button onclick="javascript:run($('#inputsearch').val())">Search</button>
+        </div>
+        <div id="output">
+        </div>
+    </body>
+</html>
