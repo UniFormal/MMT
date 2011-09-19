@@ -24,6 +24,8 @@ class TptpCompiler extends Compiler {
   override def compile(in : File, out : File) : List[CompilerError] = {
     var errors: List[CompilerError] = Nil
     val fileName = in.toJava.getName
+    if (!fileName.contains(TptpUtils.FORM))
+      return errors
     val path = in.toJava.getPath
     
     // compute TPTP directory in which the input file is (e.g. Axioms/SET007/inputFile)
