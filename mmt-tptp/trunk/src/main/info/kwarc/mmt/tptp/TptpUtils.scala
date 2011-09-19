@@ -17,6 +17,8 @@ import info.kwarc.mmt.api.objects._
  */
 object TptpUtils {
   
+  val LOG = false
+  
   val baseURI = URI("http", "tptp.org")
   
   // meta theories
@@ -26,6 +28,7 @@ object TptpUtils {
   val form = OMID(fofTh ? "$form")
   val t = OMID(fofTh ? "$true")
   val f = OMID(fofTh ? "$false")
+  val equals = OMID(fofTh ? "==")
 
   val PARSE_DIRS = List("Axioms", "Problems")
   val PARSE_EXTS = List("ax", "p")
@@ -65,7 +68,6 @@ object TptpUtils {
 	def constant(name : BinaryConnective) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
 	def constant(name : Quantifier) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
   
-  val LOG = true
   def log(s: String) {
     if (LOG)
       println(s)

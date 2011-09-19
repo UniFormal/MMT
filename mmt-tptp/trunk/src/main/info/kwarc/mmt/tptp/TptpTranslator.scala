@@ -107,9 +107,18 @@ class TptpTranslator {
         TptpTranslator.add(x)
       } catch {
         case e: AddError =>
-          println("Error adding to controller " + x.toString)
-          println(e.toString)
-          println("")
+          if (e.toString.endsWith("already exists")) {
+            x match {
+              case c: Constant => TptpTranslator.add(new Constant(c.home,
+                LocalName(c.name.last + "_rule"), c.tp, c.df, c.uv))
+              case _ =>
+                println("Error adding " + x.toString)
+                println(e.toString)
+            }
+          } else {
+            println("Error adding " + x.toString)
+            println(e.toString)
+          }
       }
     }
   }
@@ -215,9 +224,14 @@ class TptpTranslator {
     log("Translating Atomic " + item.toString)
     var id: OMID = null
     var eq = false
-    if (item.getPredicate.equals("=")) {
-      id = OMID(fofTh ? "=")
+    val pred = item.getPredicate
+    if (pred.equals("=")) {
+      id = TptpUtils.equals
       eq = true
+    } else if (pred.equals("$true")) {
+      id = TptpUtils.t
+    } else if (pred.equals("$false")) {
+      id = TptpUtils.f
     } else
       id = omid(item.getPredicate)
     
@@ -245,6 +259,12 @@ class TptpTranslator {
     log("Translating Term " + item.toString)
     val sym = term(item.getTopSymbol)
     if (item.getNumberOfArguments == 0) {
+      item.getTopSymbol match {
+        case x: tptp.SimpleTptpParserOutput.Symbol =>
+          if (!x.isVariable)
+            addConstant(x.getText, Nil)
+        case _ =>
+      }
       sym
     } else {
       sym match {
@@ -335,7 +355,7 @@ object TptpTranslator {
 	
   val controller = {
     val report = new FileReport(new java.io.File("tptp.log"))
-    val checker = new StructuralChecker(report)
+    val checker = NullChecker//new StructuralChecker(report)
     val con = new Controller(checker,report)
     con.handleLine("catalog /home/dimitar/projects/mmt/src/mmt-tptp/trunk/locutor.xml")
     con.handleLine("archive add /home/dimitar/projects/cds/")
@@ -359,7 +379,7 @@ object TptpTranslator {
     val translator = new TptpTranslator()
 //    val res = translator.translateFormula("f(X,Y,$$z)")
 //    println(res.toString)
-    translator.translate("Axioms", "KLE001+0.ax", File("/home/dimitar/projects/oaff/tptp/source/Axioms/KLE001+0.ax"))
+    translator.translate("Axioms", "LCL007+0.ax", File("/home/dimitar/projects/oaff/tptp/source/Axioms/LCL007+0.ax"))
     println("Done.")
   }
 }
