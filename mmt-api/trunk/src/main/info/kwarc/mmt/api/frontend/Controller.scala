@@ -1,12 +1,13 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.utils._
+import backend._
+import presentation._
+import libraries._
+import objects._
+import documents._
+import ontology._
+import utils._
+import utils.FileConversion._
 
 /** An exception that is throw when a needed knowledge item is not available.
  * A Controller catches it and retrieves the item dynamically.  
@@ -186,7 +187,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
                case "compile" => arch.compile(in)
                case "content" => arch.produceNarrCont(in)
                case "flat" => arch.produceFlat(in, this)
-               case "relational" => arch.produceRelational(in, this)
+               case "relational" => arch.readRelational(in, this)
                case "mws" => arch.produceMWS(in, "content")
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
                case "extract" => arch.extractScala(in, "source")
@@ -201,15 +202,11 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	         report("response", "base: " + base)
 	      case Clear => clear
 	      case ExecFile(f) =>
-	         val file = new java.io.BufferedReader(new java.io.FileReader(f))
 	         var line : String = null
-	         while ({line = file.readLine(); line != null})
-	            try {handleLine(line)}
-	            catch {
-	            	case e : Error => report(e); file.close; throw e
-	            	case e => file.close; throw e
-	            }
-	         file.close
+	         val oldHome = home
+	         home = f.getParentFile
+            File.ReadLineWise(f)(handleLine)
+	         home = oldHome
 	      case LoggingOn(g) => report.groups += g
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
