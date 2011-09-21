@@ -30,6 +30,20 @@ case class File(toJava: java.io.File) {
 object File {
    /** constructs a File from a string, using the java.io.File parser */  
    def apply(s: String) : File = File(new java.io.File(s))
+   
+   def Writer(f: File) = new java.io.PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+   def Reader(f: File) = new java.io.BufferedReader(new java.io.FileReader(f.toJava))
+   def ReadLineWise(f: File)(proc: String => Unit) {
+      val r = Reader(f)
+      var line : String = null
+      while ({line = r.readLine; line != null}) {
+         try {
+            proc(line)
+         } catch {
+            case e => r.close; throw e 
+         }
+      }
+   }
 }
 
 /** implicit conversions between File and java.io.File */ 

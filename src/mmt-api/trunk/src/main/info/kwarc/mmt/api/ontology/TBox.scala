@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
+import utils._
 
 /**
  * An object of type Unary represents a unary predicate on MMT paths in the MMT ontology.
@@ -27,7 +28,7 @@ case object IsNotation extends Unary("notation")
 /** helper object for unary items */ 
 object Unary {
    private val all = List(IsDocument,IsTheory,IsView,IsStyle,IsStructure,IsConstant,IsAlias,IsConAss,
-                          IsStrAss,IsOpen,IsNotation)
+                          IsStrAss,IsOpen,IsNotation,IsPattern,IsInstance)
    def parse(s: String) : Unary = all.find(_.toString == s) match {
       case Some(i) => i
       case _ => throw ParseError("unary predicate expected, found: " + s)
@@ -86,6 +87,7 @@ object Binary {
  */
 case class Individual(path : Path, tp : Unary) extends RelationalElement {
    def toNode = <individual path={path.toPath} predicate={tp.toString}/>
+   def toPath = tp.toString + " " + path.toPath
 }
 
 /**
@@ -95,4 +97,19 @@ case class Individual(path : Path, tp : Unary) extends RelationalElement {
 case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalElement {
    val path = subj
    def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
+   override def toString = subj.toString + " " + dep.toString + " " + obj.toString
+   def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
+}
+
+object RelationalElementReader {
+   def read(f: File, base: Path, as: RelStore) {
+      File.ReadLineWise(f) {line => as += parse(line, base)}
+   }
+   def parse(s: String, base: Path) : RelationalElement = {
+      s.split(" ").toList match {
+         case List(tp, ind) => Individual(Path.parse(ind, base), Unary.parse(tp))
+         case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, base), Path.parse(obj, base))
+         case _ => throw ParseError("not a valid assertion: " + s)
+      }
+   }
 }

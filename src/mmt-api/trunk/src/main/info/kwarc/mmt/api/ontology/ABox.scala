@@ -33,29 +33,18 @@ class RelStore(report : frontend.Report) {
         case Individual(p, tp) => individuals += (tp, p)
       }
    }
-      /**
+  /**
     * Executes a query.
     * There is no result set; instead, a continuation is passed that can be used to build the result set;
     * this permits, e.g., to keep track of the order in which results were found.
-    * @param start the MMTURI to which the results are related
-    * @param q the query to be executed; the way in which results are related to the start
+    * @param conc the queried concept
     * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
     */
-
-   def query(conc : Concept, add : Path => Unit) {conc match {
+   def query(conc : Concept)(add : Path => Unit) {conc match {
       case OneOf(ps @ _*) => ps foreach add
-      case Relatives(c,r) => query(c) foreach {p => query(p,r,add)}
+      case Relatives(c,r) => query(c) {p => query(p,r)(add)}
       case OfType(tp) => individuals(tp) foreach add
    }}
-   /**
-    * Special case of query(_,_) that stores the result set as a list.
-    * Elements are ordered as they are found, duplicates are removed.   
-    */
-  def query(conc: Concept) : List[Path] = {
-      var result : List[Path] = Nil
-      query(conc, (p : Path) => result ::= p)
-      result.distinct      
-   }
    /**
     * Executes a relational query from a fixed start path.
     * There is no result set; instead, a continuation is passed that can be used to build the result set;
@@ -64,7 +53,7 @@ class RelStore(report : frontend.Report) {
     * @param q the query to be executed; the way in which results are related to the start
     * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
     */
-   def query(start : Path, q : Query, add : Path => Unit) {q match {
+   def query(start : Path, q : Query)(implicit add : Path => Unit) {q match {
       case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d 
       case ToSubject(d) => subjects(d, start).foreach(add) //all paths inversely related to start via d
       //only start itself
@@ -75,42 +64,34 @@ class RelStore(report : frontend.Report) {
          def step(p : Path) {
             if (! added.contains(p)) {
                added += p
-               val next = query(p, q)
-               next.foreach(step)
+               val next = query(p, q)(step)
                add(p) //add parent only after children
             }
          }
-         val next = query(start, q)
-         next.foreach(step)
+         val next = query(start, q)(step)
       //the set of paths related to start by any of the relations in qs (in the order listed)
-      case Choice(qs @ _*) => qs.foreach(q => query(start, q, add))
+      case Choice(qs @ _*) => qs.foreach(q => query(start, q))
       //the set of paths related to start by making steps according to qs
       case Sequence(qs @ _*) => qs.toList match {
          case Nil => add(start)
-         case hd :: tl => query(start, hd).foreach(p => query(p, Sequence(tl : _*), add))
+         case hd :: tl => query(start, hd) {p => query(p, Sequence(tl : _*))}
       }
       //only start itself iff it has the right type
-      case HasType(tp) => if (individuals(tp) contains start) add(start)
+      case HasType(tp) => if (hasType(start, tp)) add(start)
    }}
+   def hasType(p: Path, tp: Unary) : Boolean = individuals(tp) contains p
    
-   /**
-    * Special case of query(_,_,_) that stores the result set as a list.
-    * Elements are ordered as they are found, duplicates are removed.   
-    */
-   def query(start : Path, q : Query) : List[Path] = {
-      var result : List[Path] = Nil
-      query(start, q, (p : Path) => result ::= p)
-      result.distinct
-   }
-      
    /**
     * Returns the set of theories a theory depends on
     */
    def theoryClosure(p : MPath) : List[MPath] = {
       val q = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
-      val l = query(p, q)
-      //for well-formed MMT, l can only contain MPaths
-      l.mapPartial {case p : MPath => Some(p) case _ => None}
+      var l : List[MPath] = Nil
+      query(p, q) {
+         case p : MPath => l ::= p
+         case _ =>
+      }
+      l
    }
    /**
     * Returns the set of MMT paths an object depends on

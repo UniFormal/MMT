@@ -44,7 +44,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     val narrationDir = root / "narration"
     val contentDir = root / "content"
     val sourceDir = root / "source"
-    val compiledDir = root / (compiler match {case Some(_) => "compiled" case None => "source"})
+    val relDir = root / "relational"
+    val compiledDir = root / "compiled"
     val flatDir = root / "flat"
     
     def includeDir(n: String) : Boolean = n != ".svn"
@@ -70,7 +71,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               } else if (c.includeFile(inFile.getName)) {
                  try {
                     val outFile = (compiledDir / in).setExtension("omdoc")
-                    log("[SRC->COMP] " + inFile + " -> " + outFile)
+                    log("[SRC -> COMP] " + inFile + " -> " + outFile)
                     val errors = c.compile(inFile, outFile)
                     files(inFile) = errors
                     if (!errors.isEmpty)
@@ -84,14 +85,22 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
 
     /** Write a module to content folder */
-    def writeToContent(mod: Module) {
-       val destfile = MMTPathToContentPath(mod.path)
-       log("[COMP->CONT]        -> " + destfile.getPath)
+    private def writeToContent(mod: Module) {
+       val contFile = MMTPathToContentPath(mod.path)
+       log("[  -> CONT]     " + contFile.getPath)
        val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
-       xml.writeFile(omdocNode, destfile)
+       xml.writeFile(omdocNode, contFile)
+    }
+    private def writeToRel(mod: Module) {
+       val relFile = (relDir / Archive.MMTPathToContentPath(mod.path)).setExtension("rel")
+       log("[  -> REL ]     " + relFile.getPath)
+       relFile.getParentFile.mkdirs
+       val relFileHandle = FileWriter(relFile)
+       ontology.Extract(mod, r => relFileHandle.write(r.toPath + "\n")) 
+       relFileHandle.close
     }
     
-    /** Generate content and narration from compiled. */
+    /** Generate content, narration, and relational from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
         val inFile = compiledDir / in
         if (inFile.isDirectory) {
@@ -101,15 +110,15 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
               val narrFile = narrationDir / in
-              log("[COMP->CONT+NARR] " + inFile)
-              log("[COMP->NARR]        -> " + narrFile)
+              log("[COMP ->  ]  " + inFile)
+              log("[  -> NARR]     " + narrFile)
               val controller = new Controller(NullChecker, report)
               val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val doc = controller.getDocument(dpath)
               // write narration file
               xml.writeFile(doc.toNode, narrFile)
               // write content files
-              doc.getModulesResolved(controller.library) foreach writeToContent
+              doc.getModulesResolved(controller.library) foreach {mod => {writeToContent(mod); writeToRel(mod)}}
            } catch {
               case e: Error => report(e)
               //case e => report("error", e.getMessage)
@@ -160,6 +169,26 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
+    /** traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this */
+    def traverse(dim: String, in: List[String])(f: File => Unit) {
+        val inFile = root / dim / in
+        if (inFile.isDirectory) {
+           log("entering " + inFile)
+           inFile.list foreach {n =>
+              if (includeDir(n)) traverse(dim, in ::: List(n))(f)
+           }
+           log("leaving  " + inFile)
+        } else {
+           f(inFile)
+        }
+    }
+    
+    def readRelational(in: List[String], controller: Controller) {
+       traverse("relational", in) {
+          inFile => ontology.RelationalElementReader.read(inFile, sourceBase, controller.depstore)
+       }
+    }
+
     def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in
        log("to do: [CONT->FLAT]        -> " + inFile)
@@ -179,36 +208,8 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
               xml.writeFile(flatNodeOMDoc, flatDir / in)
               controller.delete(mpath)
-
         }
        log("done:  [CONT->FLAT]        -> " + inFile)
-    }
-    
-    /** Generate relation from content */
-    def produceRelational(in : List[String] = Nil, controller: Controller) {
-        val inFile = contentDir / in
-        if (inFile.isDirectory) {
-           inFile.list foreach {n =>
-              if (includeDir(n)) produceRelational(in ::: List(n), controller)
-           }
-        } else {
-           try {
-              val mpath = Archive.ContentPathToMMTPath(in)
-              controller.get(mpath)
-              val outFile = (root / "relational" / in).setExtension("rel")
-              log("[CONT->REL] " + inFile + " -> " + outFile)
-              outFile.getParentFile.mkdirs
-              val outFileHandle = FileWriter(outFile)
-              (controller.depstore.getInds ++ controller.depstore.getDeps) foreach {
-                 case d : RelationalElement => if (d.path <= mpath) outFileHandle.write(d.toNode.toString + "\n")
-              }
-              outFileHandle.close
-              controller.delete(mpath)
-           } catch {
-              case e: Error => throw e
-              //case e => report("error", e.getMessage)
-           }
-        }       
     }
     
     def produceMWS(in : List[String] = Nil, dim: String) {

@@ -66,6 +66,8 @@ trait RelationalElement {
    val path : Path
    /** XML representation */
    def toNode : scala.xml.Node
+   /** text representation */
+   def toPath : String
 }
 
 /**

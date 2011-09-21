@@ -9,31 +9,15 @@ import scala.xml._
  * The trait MetaData is mixed into any class that can carry metadata
  */
 trait HasMetaData {
-   private var metadataOpt : Option[MetaData] = None
-   /** sets the metadata, may be called once */
-   def setMetaData(md: MetaData) {setMetaData(Some(md))}
-   /** convenience method to set MetaData */
-   def setMetaData(md: Option[MetaData]) {
-      metadataOpt match {
-         case None => metadataOpt = md
-         case Some(_) => throw AddError("metadata already defined") 
-      }
-   }
-   /** get the metadata object */
-   def metadata : MetaData = metadataOpt match {
-      case None => throw new GetError("no metadata defined")
-      case Some(m) => m
-   }
-   /** optionally get the metadata object */
-   def getMetaDataNode : NodeSeq = metadataOpt.map(_.toNode).getOrElse(Nil)
+   var metadata = new MetaData
+   def getMetaDataNode : NodeSeq = if (metadata.getAll.isEmpty) Nil else metadata.toNode 
 }
 
 /**
  * represents a list of metadata key-value pairs
  * duplicates keys or key-value pairs are permitted
- * @param language the theory from which the keys are taken
  */
-class MetaData(language: MPath) {
+class MetaData {
    protected var data: List[MetaDatum] = Nil
    /** add metadata item, order of insertion is preserved */
    def add(newdata: MetaDatum*) {data = data ::: newdata.toList}
@@ -41,7 +25,7 @@ class MetaData(language: MPath) {
    def getAll : List[MetaDatum] = data
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
-   def toNode = <metadata lang={language.toPath}>{data.map(_.toNode)}</metadata>
+   def toNode = <metadata>{data.map(_.toNode)}</metadata>
    // def toString
 }
 
@@ -67,12 +51,8 @@ object MetaData {
    /** parses a MetaData */
    def parse(node: Node, base: Path) : MetaData = node match {
       case <metadata>{mdxml @ _*}</metadata> =>
-         val lang : MPath = xml.attr(node, "language") match {
-            case "" => utils.mmt.mmtbase ? "metadata" //TODO temporary default
-            case s => Path.parseM(s, base)
-         }
-         val mdata = new MetaData(lang)
-         mdxml foreach {n => mdata.add(MetaDatum.parse(n, lang))}
+         val mdata = new MetaData
+         mdxml foreach {n => mdata.add(MetaDatum.parse(n, base))}
          mdata
       case _ => throw ParseError("metadata expected: " + node) // TODO parse meta and link
    }
@@ -93,13 +73,14 @@ class MetaDatum(val key: GlobalName, val value: Obj) {
 
 /** helper object */
 object MetaDatum {
+   val keyBase = DPath(URI("http", "purl.org") / "dc" / "terms") ? "_"
    /** parses a MetaDatum */
    def parse(node: Node, base: Path) : MetaDatum = node match {
       case <link/> =>
-         val key = Path.parseS(xml.attr(node, "rel"), base)
+         val key = Path.parseS(xml.attr(node, "rel"), keyBase)
          Link(key, URI(xml.attr(node, "resource")))
       case Elem(_,"meta",_,_,literal @ _*) => //strangely, XML matching does not work
-         val key = Path.parseS(xml.attr(node, "property"), base)
+         val key = Path.parseS(xml.attr(node, "property"), keyBase)
          new MetaDatum(key, OMSTR(literal.text)) // TODO: for now parsing everything into a string
          //throw ParseError("object in metadatum must be text node:" + node)
       case _ => throw ParseError("meta or link expected: " + node)

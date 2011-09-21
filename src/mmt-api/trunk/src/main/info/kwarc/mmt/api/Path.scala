@@ -157,7 +157,7 @@ case class NamedStep(name: String) extends LNStep {
 }
 /** an include declaration; these are unnamed and identified by the imported theory */
 case class IncludeStep(from: TheoryObj) extends LNStep {
-   def toPath = "[include " + from.toString + "]"
+   def toPath = "[" + from.toString + "]"
 }
 
 /*
@@ -179,7 +179,7 @@ object LNEmpty {
  */
 case class LocalRef(segments : List[String], absolute : Boolean) {
    def toLocalPath = LocalPath(segments)
-   def toLocalName = LocalName(segments.map(NamedStep(_)))
+   def toLocalName = LocalName(segments.map(NamedStep(_))) //TODO: IncludeSteps
    override def toString = segments.mkString(if (absolute) "/" else "","/","")
 }
 
@@ -202,7 +202,6 @@ object Path {
          l.toLocalName
       else
          bl.get / l.toLocalName
-   //TODO: parsing of includes in names
    /** turns an MMT-URI reference (d,m,n) into an MMT-URI relative to base (omitting a component is possible by making it empty) */
    def parse(d : URI, m : String, n : String, base : Path) : Path = {
       //to make the case distinctions simpler, all omitted (= empty) components become None

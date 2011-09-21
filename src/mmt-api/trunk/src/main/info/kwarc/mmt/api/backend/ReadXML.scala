@@ -20,7 +20,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
       controller.add(e)
    }
    def add(e : StructuralElement, md: Option[MetaData]) {
-      e.setMetaData(md)
+      md map {e.metadata = _}
       controller.add(e)
    }
    
