@@ -7,6 +7,6 @@
 	<classpathentry kind="lib" path="lib/antlr-3.2.jar"/>
 	<classpathentry kind="lib" path="lib/antlr-runtime-3.2.jar"/>
 	<classpathentry kind="lib" path="lib/tptp-parser.jar"/>
-	<classpathentry kind="lib" path="lib/mmt-api/mmt-api.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
 	<classpathentry kind="output" path="build/main"/>
 </classpath>

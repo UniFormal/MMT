@@ -45,6 +45,11 @@ class RelStore(report : frontend.Report) {
       case Relatives(c,r) => query(c) {p => query(p,r)(add)}
       case OfType(tp) => individuals(tp) foreach add
    }}
+   def queryList(start : Path, q : Query) : List[Path] = {
+      var ps : List[Path] = Nil
+      query(start, q) {p => ps ::= p}
+      ps
+   }
    /**
     * Executes a relational query from a fixed start path.
     * There is no result set; instead, a continuation is passed that can be used to build the result set;

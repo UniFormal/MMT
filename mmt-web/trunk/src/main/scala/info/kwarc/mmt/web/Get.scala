@@ -24,11 +24,11 @@ object Get {
       "latin_navigate('" + p.toPath + "')"
    def incoming(path: Path) : Node = {
       val deps = Manager.controller.depstore
-      val meta = deps.query(path, - HasMeta)
-      val imps = deps.query(path, - Includes)
-      val strs = deps.query(path, - Query.HasStructureFrom)
-      val doms = deps.query(path, - HasDomain * HasType(IsView))
-      val cods = deps.query(path, - HasCodomain * HasType(IsView))
+      val meta = deps.queryList(path, - HasMeta)
+      val imps = deps.queryList(path, - Includes)
+      val strs = deps.queryList(path, - Query.HasStructureFrom)
+      val doms = deps.queryList(path, - HasDomain * HasType(IsView))
+      val cods = deps.queryList(path, - HasCodomain * HasType(IsView))
       def refs(rel : String, subjs: List[Path]) : NodeSeq = {
         val lis = subjs map {p =>
           <li class="jstree-leaf">{Get.ahref(p)}</li>
@@ -85,7 +85,7 @@ object Get {
            val elem = Manager.controller.get(path)
            path match {
               case p: DPath => 
-                 val children = deps.query(path, + Declares) 
+                 val children = deps.queryList(path, + Declares) 
                  <root>{children.map{c => item(c, "closed")}}</root>
               case p:MPath =>
                  val rels : List[(String,Query)] = elem match {
@@ -95,7 +95,7 @@ object Get {
                             ("views out of", - HasDomain * HasType(IsView)), ("views into",  - HasCodomain * HasType(IsView)))
                     case v: View => List(("included into", - Includes), ("domain", + HasDomain), ("codomain", + HasCodomain))
                  }
-                 val results = rels map {case (desc, rel) => (desc, deps.query(path, rel))}
+                 val results = rels map {case (desc, rel) => (desc, deps.queryList(path, rel))}
                  val resultsNonNil = results.filterNot(_._2.isEmpty) 
                  <root>{
                     resultsNonNil map {case (desc,res) =>
@@ -116,14 +116,6 @@ object Get {
       val nodes : Iterator[Path] = deps.getInds(IsTheory)
       val views : Iterator[Path] = deps.getInds(IsView)
       val structures : Iterator[Path] = deps.getInds(IsStructure)
-      def domain(p: Path) = deps.query(p, + HasDomain) match {
-         case Nil => utils.mmt.mmtbase  // At the moment I'm still using a precomputed dataset that might not be complete; for now, assume a dummy value if the lookup fails  
-         case hd :: _ => hd
-      }
-      def codomain(p: Path) = deps.query(p, + HasCodomain) match {
-         case Nil => 
-         case hd :: _ => hd
-      }
       // dummy return value to make the code compile 
       JNothing
    }
