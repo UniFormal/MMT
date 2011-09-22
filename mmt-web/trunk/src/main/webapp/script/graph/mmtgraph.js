@@ -470,3 +470,7 @@ function initGraph(json) {
         }
     });
 }
+
+function loadAndInitGraph() {
+   $.getJSON("/:graph", function(json){initGraph(json);})
+}

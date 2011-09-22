@@ -20,7 +20,8 @@ import scala.xml._
 object Rest {
   def div(n: List[Node]) : Node = Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), n :_*)
   def div(s: String) : Node = div(List(scala.xml.Text(s)))
-  def applicable(p: ParsePath) = List(":tree", ":query", ":search", ":uom", ":mmt", ":breadcrumbs", ":admin") contains p.partPath.headOption.getOrElse("")
+  val services = List(":tree", ":query", ":graph", ":search", ":uom", ":mmt", ":breadcrumbs", ":admin")
+  def applicable(p: ParsePath) = services contains p.partPath.headOption.getOrElse("")
   val handler : LiftRules.DispatchPF = {case r : Req if applicable(r.path) =>
       val path : List[String] = r.path.wholePath
       val query : String = ReqHelpers.query(r.request) 

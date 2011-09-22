@@ -1,6 +1,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
 <head>
   <link rel="stylesheet" type="text/css" href="/css/jit/ForceDirected.css"/>
+  <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"/>
   <script type="text/javascript" src="/script/graph/jit.js"/>
   <script type="text/javascript" src="/script/graph/mmtgraph.js"/>
   <script type="text/javascript" src="/script/graph/staticgraph.js"/>
@@ -11,7 +12,7 @@
     };
   </script>
 </head>
-<body onload="initGraph(staticgraph);">
+<body onload="loadAndInitGraph();">
 
 Currently this is only a small static graph. But you can already click on nodes and edges.
 
