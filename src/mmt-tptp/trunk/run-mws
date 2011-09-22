@@ -1,0 +1,6 @@
+#!/bin/bash
+
+MWS_HOME=/home/dimitar/projects/mws
+
+$MWS_HOME/build/mwsd &
+$MWS_HOME/build/restd -p 20000 &

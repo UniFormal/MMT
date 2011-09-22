@@ -64,9 +64,7 @@ class TptpTranslator {
       log("..." + t.path.toString + " already translated")
       return
     } catch {
-      case e: info.kwarc.mmt.api.backend.NotFound =>
-        TptpTranslator.add(d)
-        TptpTranslator.add(t)
+      case _ => TptpTranslator.add(d); TptpTranslator.add(t)
     }
     
     this.theoryDir = theoryDir
