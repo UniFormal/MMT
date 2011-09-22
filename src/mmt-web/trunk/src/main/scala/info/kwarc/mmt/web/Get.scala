@@ -108,15 +108,56 @@ object Get {
           }
       }
    }
+   /** returns a string identifying the kind of an edge */
+   def edgeKind(e: Edge) : String = e match {
+      case ViewEdge(_) => "View"
+      case StructureEdge(_) => "Structure"
+      case IncludeEdge => "Include"
+      case MetaEdge => "Meta"
+   }
+   /** returns the URI of an edge, empty if none */
+   def edgeUri(e: Edge) : String = e match {
+      case ViewEdge(p) => p.toPath
+      case StructureEdge(p) => p.toPath
+      case IncludeEdge => ""
+      case MetaEdge => ""
+   }
+   /** returns short name of an edge, empty if none */
+   def edgeName(e: Edge) : String = e match {
+      case ViewEdge(p) => p.last
+      case StructureEdge(p) => p.last
+      case IncludeEdge => ""
+      case MetaEdge => ""
+   }
    /**
-    * returns the Json object representing a graph
-    * @param p the MMT URI that is currently focused (ignore for now)
+    * returns the JSON object representing a graph
+    * @param p the MMT URI that is currently focused (ignored for now)
     */
    def graph(p: Path) : JValue = {
-      val nodes : Iterator[Path] = deps.getInds(IsTheory)
-      val views : Iterator[Path] = deps.getInds(IsView)
-      val structures : Iterator[Path] = deps.getInds(IsStructure)
-      // dummy return value to make the code compile 
-      JNothing
+      val tg = new TheoryGraph(deps)
+      JArray(
+        tg.nodes.toList map { f =>
+           JObject(List(
+              JField("id", JString(f.toPath)),
+              JField("name", JString(f.last)),
+              JField("adjacencies", JArray(tg.edgesFrom(f) map {case EdgeTo(t, e, backwards) =>
+                  JObject(List(
+                     JField("nodeTo", JString(t.toPath)),
+                     JField("nodeFrom", JString(f.toPath)),
+                     JField("data", JObject(List(
+                        JField("$type", JString("multiple_arrow")),
+                        JField("direction", JObject(List(
+                           JField("from", JString((if (backwards) t else f).toPath)),
+                           JField("to", JString((if (backwards) f else t).toPath)),
+                           JField("kind", JString(edgeKind(e))),
+                           JField("uri", JString(edgeUri(e))),
+                           JField("name", JString(edgeName(e)))
+                        )))
+                     )))
+                  ))
+              }))
+           ))
+        }
+      )
    }
 }
