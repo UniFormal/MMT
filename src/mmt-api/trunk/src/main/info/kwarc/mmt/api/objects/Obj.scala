@@ -445,7 +445,7 @@ sealed trait ModuleObj extends Obj {
 	def asPath : Option[MPath] = None
 	def %(n: LocalName) = GlobalName(this, n)
 	/** converts the object into an MPath */
-	def toMPath : MPath = utils.mmt.mmtbase ? toString
+	def toMPath : MPath = utils.mmt.mmtbase ? (toString.replace(" ", "_"))
 }
 
 /**

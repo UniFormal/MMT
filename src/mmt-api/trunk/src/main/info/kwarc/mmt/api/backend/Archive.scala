@@ -58,29 +58,43 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
       * @return the File descriptor of the destination  file in the content folder
       */
     def MMTPathToContentPath(m: MPath) : File = contentDir / Archive.MMTPathToContentPath(m)
+
+    /** holds information about the current file during a traversal */
+    case class Current(file: File, path: List[String])
+    /** returns a functions that filters by file name extension */
+    def extensionIs(e: String) : String => Boolean = _.endsWith("." + e)  
+    /** traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this */
+    def traverse(dim: String, in: List[String], filter: String => Boolean)(f: Current => Unit) {
+        val inFile = root / dim / in
+        if (inFile.isDirectory) {
+           log("entering " + inFile)
+           inFile.list foreach {n =>
+              if (includeDir(n)) traverse(dim, in ::: List(n), filter)(f)
+           }
+           log("leaving  " + inFile)
+        } else {
+           try {
+              if (filter(inFile.getName)) f(Current(inFile, in))
+           } catch {
+              case e : Error => report(e)
+              case e => throw e
+           }
+        }
+    }
+    
     /** compile source into "compiled" */
     def compile(in : List[String] = Nil) {
-        compiler match {
-            case None => throw CompilationError("no compiler defined")
-            case Some(c) => 
-              val inFile = sourceDir / in
-              if (inFile.isDirectory) {
-                 inFile.list foreach {n =>
-                    if (includeDir(n)) compile(in ::: List(n))
-                 }
-              } else if (c.includeFile(inFile.getName)) {
-                 try {
-                    val outFile = (compiledDir / in).setExtension("omdoc")
-                    log("[SRC -> COMP] " + inFile + " -> " + outFile)
-                    val errors = c.compile(inFile, outFile)
-                    files(inFile) = errors
-                    if (!errors.isEmpty)
-                        log(errors.mkString("[SRC->COMP] ", "\n[SRC->COMP] ", ""))
-                 } catch {
-                    case e: Error => report(e)
-                    case e => report("error", e.getMessage)
-                 }
-              }
+       compiler match {
+          case None => throw CompilationError("no compiler defined")
+          case Some(c) => 
+             traverse("compiled", in, c.includeFile) {case Current(inFile, in) =>
+                 val outFile = (compiledDir / in).setExtension("omdoc")
+                 log("[SRC -> COMP] " + inFile + " -> " + outFile)
+                 val errors = c.compile(inFile, outFile)
+                 files(inFile) = errors
+                 if (!errors.isEmpty)
+                     log(errors.mkString("[SRC->COMP] ", "\n[SRC->COMP] ", ""))
+             }
         }
     }
 
@@ -102,27 +116,17 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     
     /** Generate content, narration, and relational from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
-        val inFile = compiledDir / in
-        if (inFile.isDirectory) {
-           inFile.list foreach {n =>
-              if (includeDir(n)) produceNarrCont(in ::: List(n))
-           }
-        } else if (inFile.getExtension == Some("omdoc")) {
-           try {
-              val narrFile = narrationDir / in
-              log("[COMP ->  ]  " + inFile)
-              log("[  -> NARR]     " + narrFile)
-              val controller = new Controller(NullChecker, report)
-              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
-              val doc = controller.getDocument(dpath)
-              // write narration file
-              xml.writeFile(doc.toNode, narrFile)
-              // write content files
-              doc.getModulesResolved(controller.library) foreach {mod => {writeToContent(mod); writeToRel(mod)}}
-           } catch {
-              case e: Error => report(e)
-              //case e => report("error", e.getMessage)
-           }
+        traverse("compiled", in, extensionIs("omdoc")) {case Current(inFile, in) =>
+           val narrFile = narrationDir / in
+           log("[COMP ->  ]  " + inFile)
+           log("[  -> NARR]     " + narrFile)
+           val controller = new Controller(NullChecker, report)
+           val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
+           val doc = controller.getDocument(dpath)
+           // write narration file
+           xml.writeFile(doc.toNode, narrFile)
+           // write content files
+           doc.getModulesResolved(controller.library) foreach {mod => {writeToContent(mod); writeToRel(mod)}}
         }
     }
     
@@ -169,23 +173,11 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
-    /** traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this */
-    def traverse(dim: String, in: List[String])(f: File => Unit) {
-        val inFile = root / dim / in
-        if (inFile.isDirectory) {
-           log("entering " + inFile)
-           inFile.list foreach {n =>
-              if (includeDir(n)) traverse(dim, in ::: List(n))(f)
-           }
-           log("leaving  " + inFile)
-        } else {
-           f(inFile)
-        }
-    }
-    
-    def readRelational(in: List[String], controller: Controller) {
-       traverse("relational", in) {
-          inFile => ontology.RelationalElementReader.read(inFile, sourceBase, controller.depstore)
+    def readRelational(in: List[String] = Nil, controller: Controller) {
+       if ((root / "relational").exists) {
+          traverse("relational", in, extensionIs("rel")) {case Current(inFile, _) =>
+             ontology.RelationalElementReader.read(inFile, sourceBase, controller.depstore)
+          }
        }
     }
 
