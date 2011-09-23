@@ -180,7 +180,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
 	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
-         case AddArchive(f) => backend.openArchive(f)
+         case AddArchive(f) =>
+	         backend.openArchive(f)
          case ArchiveBuild(id, dim, in) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             dim match {
