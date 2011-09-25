@@ -11,7 +11,7 @@ import scala.collection.mutable.Map
  * An MMT path refers to a document (doc), a module (doc?mod), or a symbol (M % sym).
  * Use the objects ?, %, /, \, and ! for pattern matching paths.
  */
-abstract class Path {
+abstract class Path extends ontology.BaseType {
    /** the document part of the path */
    def doc : DPath
    /** goes one step up, identity if URI-path already empty */

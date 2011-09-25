@@ -1,9 +1,68 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.utils.MyList.fromList
-import info.kwarc.mmt.api.objects._
+import utils._
+import utils.MyList.fromList
+import objects._
+import libraries._
 import scala.collection.mutable.{HashSet,HashMap}
+
+trait BaseType
+
+abstract class RProduct[A <: BaseType, B <: BaseType] extends BaseType {
+   def asPair : (A,B)
+}
+case class RPair[A <: BaseType, B <: BaseType](first: A, second: B) extends RProduct[A,B] {
+   def asPair : (A,B) = (first,second)
+}
+
+sealed abstract class Exp[S <: BaseType]
+sealed abstract class Result[S <: BaseType]
+
+case class AllOfType(tp: Unary) extends Result[Path]
+
+case class Bound[S <: BaseType](index: Int) extends Exp[S]
+
+case class ByURI(p: Path) extends Exp[Path]
+case class ComponentOf(of: Exp[Path], component: String) extends Exp[Obj]
+case class SubObject(of: Exp[Obj], position: Position) extends Exp[Obj]
+
+case class Related(to: Exp[Path], by: Query) extends Result[Path]
+case class Union[T <: BaseType](left: Result[T], right: Result[T]) extends Result[T]
+case class Comprehension[S <: BaseType](domain: Result[S], pred : Prop) extends Result[S]
+case class BigUnion[S <: BaseType, T <: BaseType](domain: Result[S], of: Result[T]) extends Result[T]
+
+case class UnifiesWith(query: Obj) extends Result[RProduct[Path,Obj]]
+
+sealed abstract class Prop
+case class IsIn[S <: BaseType](elem: Exp[S], tp: Result[S]) extends Prop
+case class IsEmpty[S <: BaseType](r: Result[S]) extends Prop
+case class IsOfType(e: Exp[Path], t: Unary) extends Prop
+case class PrefixOf(short: Exp[Path], long: Exp[Path]) extends Prop
+case class Equal[S <: BaseType](left: Exp[S], right: Exp[S]) extends Prop 
+case class And(left: Prop, right: Prop) extends Prop
+case class Forall[S <: BaseType](domain: Result[S], scope: Prop) extends Prop
+
+object Engine {
+   def evaluate[S <: BaseType](e: Exp[S])(implicit lup: Lookup, context: List[BaseType]) : S = e match {
+      case Bound(i) => context(i) match {
+         case s: S => s
+         case _ => throw ImplementationError("variable has wrong type")
+      }
+      case SubObject(of, pos) => pos.indices.foldLeft(evaluate(of))({
+         case (o, i) => o.components(i) match {case s: Obj => s case _ => throw GetError("illegal position")}
+      })
+   }
+   def evaluate[S <: BaseType](q: Result[S])(implicit lup: Lookup, context: List[BaseType]) : HashSet[S] = q match {
+      case Comprehension(dom, pred) => evaluate(dom) filter {e => evaluate(pred)(lup, e :: context)}
+      
+   }
+   def evaluate(p: Prop)(implicit lup: Lookup, context: List[BaseType]) : Boolean = p match {
+      case IsIn(e,t) => evaluate(t) contains evaluate(e)
+      case PrefixOf(short,long) => evaluate(short) <= evaluate(long)
+      case Equal(e,f) => evaluate(e) == evaluate(f)
+      case And(q,r) => evaluate(q) && evaluate(r)
+   }
+}
 /**
  * Objects of type Query are expressions of a simple query language over an MMT ABox.
  * The semantics of a query is that it denotes a binary relation between MMT paths.
