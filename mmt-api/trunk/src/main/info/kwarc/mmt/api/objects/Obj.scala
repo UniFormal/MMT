@@ -13,7 +13,7 @@ import scala.xml.{Node}
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
-abstract class Obj extends Content {
+abstract class Obj extends Content with ontology.BaseType {
    /** prints to OpenMath (with OMOBJ wrapper) */
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.None)

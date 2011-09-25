@@ -1,13 +1,13 @@
 package info.kwarc.mmt.api.objects
 
-case class Position(p : List[Int]) {
-   def +(i : Int) = p match {
+case class Position(indices : List[Int]) {
+   def +(i : Int) = indices match {
 	   case Nil => Position.None
-	   case _ => Position(i :: p)
+	   case _ => Position(i :: indices)
    }
-   def current = p.head
-   override def toString = p.mkString("id_","_","")
-   def toIDAttr = if (p != Nil) new scala.xml.PrefixedAttribute("xml", "id", toString, scala.xml.Null)
+   def current = indices.head
+   override def toString = indices.mkString("id_","_","")
+   def toIDAttr = if (indices != Nil) new scala.xml.PrefixedAttribute("xml", "id", toString, scala.xml.Null)
       else scala.xml.Null
 }
 object Position {
