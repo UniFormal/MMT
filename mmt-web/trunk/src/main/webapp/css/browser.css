@@ -82,7 +82,7 @@ table.decllist {
 table.decllist td {
 }
 
-div.included-module {
+div.flat-container {
        border-style: dotted;
        border-width: thin;
        padding: 2px;
