@@ -1,4 +1,5 @@
 package info.kwarc.mmt.api.utils
+import java.io._
 
 /** File wraps around java.io.File to extend it with convenience methods */
 case class File(toJava: java.io.File) {
@@ -31,8 +32,8 @@ object File {
    /** constructs a File from a string, using the java.io.File parser */  
    def apply(s: String) : File = File(new java.io.File(s))
    
-   def Writer(f: File) = new java.io.PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
-   def Reader(f: File) = new java.io.BufferedReader(new java.io.FileReader(f.toJava))
+   def Writer(f: File) = new PrintWriter(new OutputStreamWriter(new FileOutputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+   def Reader(f: File) = new BufferedReader(new InputStreamReader(new FileInputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
    def ReadLineWise(f: File)(proc: String => Unit) {
       val r = Reader(f)
       var line : String = null

@@ -87,13 +87,13 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        compiler match {
           case None => throw CompilationError("no compiler defined")
           case Some(c) => 
-             traverse("compiled", in, c.includeFile) {case Current(inFile, in) =>
+             traverse("source", in, c.includeFile) {case Current(inFile, in) =>
                  val outFile = (compiledDir / in).setExtension("omdoc")
                  log("[SRC -> COMP] " + inFile + " -> " + outFile)
                  val errors = c.compile(inFile, outFile)
                  files(inFile) = errors
                  if (!errors.isEmpty)
-                     log(errors.mkString("[SRC->COMP] ", "\n[SRC->COMP] ", ""))
+                     log(errors.mkString("[SRC -> COMP] ", "\n[SRC -> COMP] ", ""))
              }
         }
     }
@@ -109,12 +109,27 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        val relFile = (relDir / Archive.MMTPathToContentPath(mod.path)).setExtension("rel")
        log("[  -> REL ]     " + relFile.getPath)
        relFile.getParentFile.mkdirs
-       val relFileHandle = FileWriter(relFile)
+       val relFileHandle = File.Writer(relFile)
        ontology.Extract(mod, r => relFileHandle.write(r.toPath + "\n")) 
        relFileHandle.close
     }
+    private def writeToNot(mod: Module, nots : Iterator[presentation.Notation]) {
+       mod match {
+          case t: DeclaredTheory =>
+             val tpath = t.path
+             val notFile = (root / "notation" / Archive.MMTPathToContentPath(tpath)).setExtension("not")
+             log("[  -> NOT ]     " + notFile.getPath)
+             notFile.getParentFile.mkdirs
+             val notFileHandle = File.Writer(notFile)
+             nots foreach {n =>
+                if (n.nset == tpath) notFileHandle.write(n.toString + "\n") 
+             }
+             notFileHandle.close
+          case _ => // nothing to do
+       }
+    }
     
-    /** Generate content, narration, and relational from compiled. */
+    /** Generate content, narration, notation, and relational from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
         traverse("compiled", in, extensionIs("omdoc")) {case Current(inFile, in) =>
            val narrFile = narrationDir / in
@@ -125,11 +140,39 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            val doc = controller.getDocument(dpath)
            // write narration file
            xml.writeFile(doc.toNode, narrFile)
-           // write content files
-           doc.getModulesResolved(controller.library) foreach {mod => {writeToContent(mod); writeToRel(mod)}}
+           doc.getModulesResolved(controller.library) foreach {mod => {
+              // write content file
+              writeToContent(mod)
+              // write relational file
+              writeToRel(mod)
+              // write notation file using fresh iterator on all notations declared within one of the theories of this document
+              writeToNot(mod, controller.notstore.getDefaults)
+           }}
         }
     }
-    
+    /** deletes content, narration, notation, and relational; argument is are treated as paths in compiled */
+    def deleteNarrCont(in:List[String] = Nil) {
+       def deleteFile(f: File) {
+          log("deleting " + f)
+          f.delete
+       }
+       val controller = new Controller(NullChecker, report)
+       traverse("narration", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+          val dpath = controller.read(inFile, Some(DPath(narrationBase / inPath)))
+          val doc = controller.getDocument(dpath)
+          //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
+          doc.getItems foreach {
+             case r: documents.MRef =>
+                val cPath = Archive.MMTPathToContentPath(r.target)
+                deleteFile(root / "content" / cPath)
+                deleteFile((root / "notation" / cPath).setExtension("not"))
+                deleteFile((root / "relational" / cPath).setExtension("rel"))
+             case r: documents.DRef => //TODO recursively delete subdocuments
+          }
+          deleteFile(inFile)
+       }
+    }
+        
     /** Extract scala from a dimension */
     def extractScala(in : List[String] = Nil, dim: String) {
         val inFile = root / dim / in
@@ -177,6 +220,14 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        if ((root / "relational").exists) {
           traverse("relational", in, extensionIs("rel")) {case Current(inFile, _) =>
              ontology.RelationalElementReader.read(inFile, sourceBase, controller.depstore)
+          }
+       }
+    }
+    def readNotation(in: List[String] = Nil, controller: Controller) {
+       if ((root / "notation").exists) {
+          traverse("notation", in, extensionIs("not")) {case Current(inFile, inPath) =>
+             val thy = Archive.ContentPathToMMTPath(inPath)
+             File.ReadLineWise(inFile) {line => controller.notstore.add(presentation.Notation.parseString(line, thy))}
           }
        }
     }
@@ -324,21 +375,21 @@ object Archive {
    /** a string containing all characters that are illegal in file names */ 
    val illegalChars = "'"
    // TODO: (un)escape illegal characters
-   def escape(s: String) : String = s
-   def unescape(s: String) : String = s
+   def escape(s: String) : String = s.replace("'","(apos)")
+   def unescape(s: String) : String = s.replace("(apos)", "'")
     // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
    def ContentPathToMMTPath(segs: List[String]) : MPath = segs match {
        case Nil => throw ImplementationError("")
        case hd :: tl =>
           val p = hd.indexOf("..")
-          val tllast = tl.length match {
-            case 1 => tl(0)
-            case 0 => 
-            	throw ImplementationError("")
-            case _ => tl.last
+          val fileNameNoExt = tl.length match {
+            case 0 => throw ImplementationError("")
+            case _ => tl.last.lastIndexOf(".") match {
+               case -1 => tl.last
+               case i => tl.last.substring(0,i)
+            }
           }
-          val name = unescape(tllast.substring(0, tllast.length - 6))
-          DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? name
+          DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? unescape(fileNameNoExt)
     }
     /** Get the disk path of the module in the content folder
       * @param m the MPath of the module 

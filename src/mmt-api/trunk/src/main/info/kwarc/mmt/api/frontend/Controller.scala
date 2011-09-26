@@ -187,8 +187,14 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
             dim match {
                case "compile" => arch.compile(in)
                case "content" => arch.produceNarrCont(in)
+               case "delete" => arch.deleteNarrCont(in)
                case "flat" => arch.produceFlat(in, this)
-               case "relational" => arch.readRelational(in, this)
+               case "relational" =>
+                  arch.readRelational(in, this)
+                  log(" done reading relational index")
+               case "notation" => 
+                  arch.readNotation(in, this)
+                  log("done reading notation index")
                case "mws" => arch.produceMWS(in, "content")
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
                case "extract" => arch.extractScala(in, "source")
