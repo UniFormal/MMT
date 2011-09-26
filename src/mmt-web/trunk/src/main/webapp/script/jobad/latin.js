@@ -38,12 +38,13 @@ function load(elem) {
    return res.firstChild;
 }
 function flatClick(elem) {
+   var cont = $(elem).children('.flat-container');
    if (elem.hasAttribute('jobad:load')) {
       var m = load(elem);
-      elem.appendChild(m);
-      $(elem).toggle();
+      cont.append(m);
+      cont.toggle();
    } else {
-      $(elem).toggle();
+      cont.toggle();
    }
 }
 function remoteClick(elem) {
