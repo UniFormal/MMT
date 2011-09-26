@@ -31,6 +31,7 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
          throw frontend.NotFound(path)
       }
    }
+   def getDefaults = defaults.valuesIterator
    /**
     * looks up a notation in a style by a key
     * 

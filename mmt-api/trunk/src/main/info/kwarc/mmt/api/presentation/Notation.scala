@@ -27,8 +27,7 @@ abstract class Notation extends PresentationElement {
    val components = Nil //TODO
    val path = nset
    val parent = nset
-   def maintoString = "notation " + "for " + key
-   override def toString = maintoString + " " + pres.toString
+   def maintoString = "notation for " + key
    def toNode = <notation/>
 }
 
@@ -40,8 +39,9 @@ abstract class Notation extends PresentationElement {
  * @param oPrec the output precedence (used for bracket generation)
  * @param wrap a flag indicating whether this notation should be wrapped more with a more specific one if applicable
  */
-case class SimpleNotation(nset : MPath, key : NotationKey, pres : Presentation, oPrec : Option[Precedence], wrap : Boolean)
-   extends Notation
+case class SimpleNotation(nset : MPath, key : NotationKey, pres : Presentation, oPrec : Option[Precedence], wrap : Boolean) extends Notation {
+   override def toString = maintoString + " " + pres.toString
+}
 
 /**
  * Representation of a declarative notation where the presentation is computed from parameters 
@@ -57,7 +57,7 @@ case class ComplexNotation(nset : MPath, key : NotationKey,
                            fix : Fixity, assoc : Associativity, appstyle : AppStyle, impl : Int,
                            oPrec: Option[Precedence]) extends Notation {
    private implicit def int2CInxed(i: Int) = NumberedIndex(i)
-   val pres : Presentation = {
+   lazy val pres : Presentation = {
       val oper = Component(0, oPrec)
       val impargs = Iterate(1, impl, ArgSep(), oPrec)
       val args = Iterate(impl + 1, -1, ArgSep(), oPrec)
@@ -76,6 +76,9 @@ case class ComplexNotation(nset : MPath, key : NotationKey,
       }
    }
    val wrap = false
+   override def toString = key.path.getOrElse("[nopath]") + " " + key.role.toString + " " +
+                           fix.toString + " " + assoc.toString + " " + appstyle.toString + " " +
+                           impl.toString + " " + oPrec.map(_.toString).getOrElse("none") 
 }
 /**
  * Helper object for notations
@@ -104,34 +107,50 @@ object Notation {
           }
           SimpleNotation(nset, key, Presentation.parse(N.child), oPrec, wrap)
        } else {
-          val fix = fx match { 
-             case "" | "pre" => Pre
-             case "post" => Post
-             case "in" => In(1)
-             case "inter" => Inter
-             case "bind" => Bind
-             case s => try {In(s.toInt)}
-                       catch {case _ => throw ParseError("illegal fixity value: " + s)}
-          }
-          val app = ap match {
-             case "math" => Math
-             case "lc" => LC
-             case "" => LC
-             case v => throw ParseError("illegal associativity value: " + v)
-          }
-          val ass = as match {
-             case "left" => Left
-             case "right" => Right
-             case "none" => AssocNone
-             case "" => AssocNone
-             case v => throw ParseError("illegal associativity value: " + v)
-          }
-          val imp = im match {
-             case "" => 0
-             case s => try {s.toInt}
-                       catch {case _ => throw ParseError("illegal number of implicit arguments: " + s)}
-          }
+          val fix = parseFix(fx)
+          val app = parseAppSt(ap)
+          val ass = parseAss(as)
+          val imp = parseImp(im)
           ComplexNotation(nset, key, fix, ass, app, imp, oPrec)
       }
    }
+   /** parses the output of ComplexNotation.toString */
+   def parseString(s: String, nset: MPath) : ComplexNotation = {
+      val tokens = s.split(" ").iterator
+      val path = Path.parse(tokens.next, nset)
+      val role = Role.parse(tokens.next)
+      val fix = parseFix(tokens.next)
+      val ass = parseAss(tokens.next)
+      val app = parseAppSt(tokens.next)
+      val imp = parseImp(tokens.next) 
+      val prec = Precedence.parseOpt(tokens.next)
+      ComplexNotation(nset, NotationKey(Some(path), role), fix, ass, app, imp, prec)
+   }
+   def parseFix(s: String) = s match { 
+       case "" | "pre" => Pre
+       case "post" => Post
+       case "in" => In(1)
+       case "inter" => Inter
+       case "bind" => Bind
+       case s => try {In(s.toInt)}
+                 catch {case _ => throw ParseError("illegal fixity value: " + s)}
+    }
+   def parseAppSt(s: String) = s match {
+       case "math" => Math
+       case "lc" => LC
+       case "" => LC
+       case v => throw ParseError("illegal associativity value: " + v)
+   }
+   def parseAss(s: String) = s match {
+       case "left" => Left
+       case "right" => Right
+       case "none" => AssocNone
+       case "" => AssocNone
+       case v => throw ParseError("illegal associativity value: " + v)
+    }
+   def parseImp(s: String) = s match {
+       case "" => 0
+       case s => try {s.toInt}
+                 catch {case _ => throw ParseError("illegal number of implicit arguments: " + s)}
+    }
 }
