@@ -33,19 +33,7 @@ class RelStore(report : frontend.Report) {
         case Individual(p, tp) => individuals += (tp, p)
       }
    }
-  /**
-    * Executes a query.
-    * There is no result set; instead, a continuation is passed that can be used to build the result set;
-    * this permits, e.g., to keep track of the order in which results were found.
-    * @param conc the queried concept
-    * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
-    */
-   def query(conc : Concept)(add : Path => Unit) {conc match {
-      case OneOf(ps @ _*) => ps foreach add
-      case Relatives(c,r) => query(c) {p => query(p,r)(add)}
-      case OfType(tp) => individuals(tp) foreach add
-   }}
-   def queryList(start : Path, q : Query) : List[Path] = {
+   def queryList(start : Path, q : RelationExp) : List[Path] = {
       var ps : List[Path] = Nil
       query(start, q) {p => ps ::= p}
       ps
@@ -58,7 +46,7 @@ class RelStore(report : frontend.Report) {
     * @param q the query to be executed; the way in which results are related to the start
     * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
     */
-   def query(start : Path, q : Query)(implicit add : Path => Unit) {q match {
+   def query(start : Path, q : RelationExp)(implicit add : Path => Unit) {q match {
       case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d 
       case ToSubject(d) => subjects(d, start).foreach(add) //all paths inversely related to start via d
       //only start itself
@@ -98,30 +86,24 @@ class RelStore(report : frontend.Report) {
       }
       l
    }
-   /**
-    * Returns the set of MMT paths an object depends on
-    * If <code>splittable</code> is empty, this is simply the theory closure of the (smallest possible) home theory of o.
-    * But theories listed in <code>splittable</code> will not be in the output.
-    * Rather, the smallest set of their components that <code>o</code> depends on is contained in the output.
-    * This permits to extract from a large monolithic theory the minimal required subtheory.
-    * Example application: Assume a theory L for a logic, an L-theory T with lots of definitions and theorems,
-    * and a conjecture C. Then objectClosure(C, List(T)) will return only those parts in T that are (indirectly)
-    * mentioned in C. This permits to compute a significantly smaller theory when presenting C to an ATP system.
-    * Note that L is not splittable, thus L itself and thus all axioms and connectives given in L are returned
-    * even if they are not mentioned by C.
-    * This is currently not implemented.
-    * @param o the MMT object
-    * @param splittable a list of theories that may be split.
-    * @return the list of MMT paths needed to make the object well-formed
-    */
-   def objectClosure(o : Obj, splittable : List[MPath]) : HashSet[Path] = {
-      null //TODO
-   }
    /** deletes all declarations */
    def clear {
       dependencies.clear
       subjects.clear
       objects.clear
       individuals.clear
+   }
+}
+
+object RelationalElementReader {
+   def read(f: File, base: Path, as: RelStore) {
+      File.ReadLineWise(f) {line => as += parse(line, base)}
+   }
+   def parse(s: String, base: Path) : RelationalElement = {
+      s.split(" ").toList match {
+         case List(tp, ind) => Individual(Path.parse(ind, base), Unary.parse(tp))
+         case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, base), Path.parse(obj, base))
+         case _ => throw ParseError("not a valid relational element: " + s)
+      }
    }
 }

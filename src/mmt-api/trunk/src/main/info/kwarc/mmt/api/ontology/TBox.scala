@@ -7,7 +7,6 @@ import utils._
  * The semantics of these objects is given by their name
  */
 sealed abstract class Unary(val desc : String) {
-   implicit def toQuery : Query = HasType(this)
    /** yields the corresponding relational item that classifies p */ 
    def apply(p : Path) = Individual(p, this)
 }
@@ -42,7 +41,6 @@ object Unary {
 sealed abstract class Binary(val desc : String) {
    /** yields the corresponding relational item that classifies p */ 
    def apply(subj : Path, obj : Path) = Relation(this, subj, obj)
-   implicit def toQuery : Query = ToObject(this)
    /** syntactic sugar for queries: ToSubject(this) */
    def unary_- = ToSubject(this)
    /** syntactic sugar for queries: ToObject(this) */
@@ -99,17 +97,4 @@ case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalEle
    def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
    override def toString = subj.toString + " " + dep.toString + " " + obj.toString
    def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
-}
-
-object RelationalElementReader {
-   def read(f: File, base: Path, as: RelStore) {
-      File.ReadLineWise(f) {line => as += parse(line, base)}
-   }
-   def parse(s: String, base: Path) : RelationalElement = {
-      s.split(" ").toList match {
-         case List(tp, ind) => Individual(Path.parse(ind, base), Unary.parse(tp))
-         case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, base), Path.parse(obj, base))
-         case _ => throw ParseError("not a valid assertion: " + s)
-      }
-   }
 }
