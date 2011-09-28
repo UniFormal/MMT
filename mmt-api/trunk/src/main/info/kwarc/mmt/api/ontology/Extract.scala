@@ -34,7 +34,8 @@ object Extract {
                   case i: Instance => 
                      f(dec)
                      f(IsInstanceOf(i.path, i.pattern))
-                  case _: Alias => 
+                  case a: Alias =>
+                     f(IsAliasFor(a.path, a.forpath))
                      f(dec)
                   case _: Assignment =>
                      f(dec)

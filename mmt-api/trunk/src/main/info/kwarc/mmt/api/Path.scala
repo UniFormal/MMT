@@ -185,6 +185,7 @@ case class LocalRef(segments : List[String], absolute : Boolean) {
 
 /** helper object for paths */
 object Path {
+   def parse(s : String) : Path = parse(s, utils.mmt.mmtbase)
    /** parses an MMT-URI reference into a triple and then makes it absolute */
    def parse(s : String, base : Path) : Path = {
       val (d,m,n) = toTriple(s)

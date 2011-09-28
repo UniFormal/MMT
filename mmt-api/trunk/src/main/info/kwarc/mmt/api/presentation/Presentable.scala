@@ -26,6 +26,16 @@ case object Omitted extends Literal {
 }
 
 case class ContentComponents(comps : List[Content], names: List[(String, Int)] = Nil) {
-   def apply(i: Int) = comps(i)
+   def apply(i: Int) : Content = apply(NumberedIndex(i))
+   def apply(s: String) : Content = apply(NamedIndex(s))
+   def apply(i: CIndex): Content = resolve(i).map(x => comps(x)).getOrElse(throw GetError("undefined component: " + i))
+   def resolve(i: CIndex) : Option[Int] = i match {
+      case NumberedIndex(n) => Some(n)
+      case NamedIndex(s) => names.find(_._1 == s).map(_._2)
+   }
    def length = comps.length
 }
+
+abstract class CIndex
+case class NumberedIndex(i: Int) extends CIndex
+case class NamedIndex(s: String) extends CIndex

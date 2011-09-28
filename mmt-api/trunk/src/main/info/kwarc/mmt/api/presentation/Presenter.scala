@@ -103,10 +103,7 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 
    protected def render(pres : Presentation, comps : ContentComponents, 
                         ind : List[Int], gpar : GlobalParams, lpar : LocalParams) {
-      def resolve(i: CIndex) : Int = i match {
-         case NumberedIndex(n) => n
-         case NamedIndex(s) => comps.names.find(_._1 == s).map(_._2).getOrElse(throw PresentationError("undefined index: " + s))
-      }
+      def resolve(i: CIndex) : Int = comps.resolve(i).getOrElse(throw PresentationError("undefined index: " + i))
       implicit def int2CInxed(i: Int) = NumberedIndex(i)
       def recurse(p : Presentation) {render(p, comps, ind, gpar, lpar)}
       pres match {

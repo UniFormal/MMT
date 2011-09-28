@@ -31,10 +31,38 @@ object Rest {
           //val ct = "Content-Type" -> "text/html; charset=utf-8"
           XmlResponse(node)
         case ":query" :: _ =>
-          // for now: assume always incoming edges are desired
-          val mmtpath = Path.parse(query, Manager.basepath)
-          val node = Get.incoming(mmtpath)
-          XmlResponse(node)
+           // default incoming edges
+           if (query == "") {
+              val mmtpath = Path.parse(query, Manager.basepath)
+              val node = Get.incoming(mmtpath)
+              XmlResponse(node)
+           } else {
+              case class Error(n: Node) extends java.lang.Throwable
+              try {
+                 val bodyWS = r.xml.toOption.getOrElse(throw Error(<error message="no body found (did you use Content-Type=text/xml?)"/>))
+                 val body = scala.xml.Utility.trim(bodyWS)
+                 val resp = query match {
+                    case "set_path" =>
+                       val q = ontology.ESet.parsePath(body)
+                       val res = Manager.eval.evaluate(q)(Nil)
+                       <results>{res.toList map {p => <result path={p.toPath}/>}}</results>
+                    case "set_obj" => 
+                       val q = ontology.ESet.parseObj(body)
+                       val res = Manager.eval.evaluate(q)(Nil)
+                       <results>{res.toList map {x => <result>{x.toNode}</result>}}</results>
+                    case "elem_path" =>
+                       val q = ontology.Elem.parsePath(body)
+                       val res = Manager.eval.evaluate(q)(Nil)
+                       <result uri={res.toPath}/>
+                    case "elem_obj" => 
+                       val q = ontology.Elem.parseObj(body)
+                       val res = Manager.eval.evaluate(q)(Nil)
+                       <result>{res.toNode}</result>
+                 }
+                 XmlResponse(resp)
+              }
+              catch {case Error(n) => XmlResponse(n)}
+           }
         case ":graph" :: _ =>
           val mmtpath = Path.parse(query, Manager.basepath)
           val json = Get.graph(mmtpath)
@@ -174,7 +202,6 @@ object Rest {
               val rest = comps.drop(3).mkString("","?","")
               (comps(0), comps(1), comps(2), rest.replace("_", " "))
           }
-          // "xml": render and xml response; "text": render and text response; "xhtml": render via template/snippet and xml response
           val textresponse : Boolean = try {
             Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, Manager.basepath, Manager.controller.getHome) match {
               case DefaultGet(p) => p match {

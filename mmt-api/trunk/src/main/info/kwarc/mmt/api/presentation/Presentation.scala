@@ -3,10 +3,6 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Node,NodeSeq}
 
-abstract class CIndex
-case class NumberedIndex(i: Int) extends CIndex
-case class NamedIndex(s: String) extends CIndex
-
 /** This is the type of a simple language of presentation expressions that may be used in Notation and are evaluated by Presenter */
 sealed abstract class Presentation {
    /** concatenation */

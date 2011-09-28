@@ -20,6 +20,7 @@ class Constant(val home : TheoryObj, val name : LocalName,
   def toTerm = OMID(path)
 
   def role = info.kwarc.mmt.api.Role_Constant(uv)
+  override def compNames = List(("name", 0), ("type",1), ("definition", 2))
   def components = List(OMID(path), tp.getOrElse(Omitted), df.getOrElse(Omitted))
   
   def toNode =

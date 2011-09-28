@@ -26,7 +26,7 @@ object Get {
       val deps = Manager.controller.depstore
       val meta = deps.queryList(path, - HasMeta)
       val imps = deps.queryList(path, - Includes)
-      val strs = deps.queryList(path, - Query.HasStructureFrom)
+      val strs = deps.queryList(path, - RelationExp.HasStructureFrom)
       val doms = deps.queryList(path, - HasDomain * HasType(IsView))
       val cods = deps.queryList(path, - HasCodomain * HasType(IsView))
       def refs(rel : String, subjs: List[Path]) : NodeSeq = {
@@ -66,7 +66,7 @@ object Get {
       }
       // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
       //<div xmlns={utils.xml.namespace("xhtml")} xmlns:jobad={utils.xml.namespace("jobad")}>{crumbs}</div>
-      Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"),
+      xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"),
                               NamespaceBinding("jobad", utils.xml.namespace("jobad"), TopScope)), crumbs : _*)
    }
    private val deps = Manager.controller.depstore
@@ -88,10 +88,10 @@ object Get {
                  val children = deps.queryList(path, + Declares) 
                  <root>{children.map{c => item(c, "closed")}}</root>
               case p:MPath =>
-                 val rels : List[(String,Query)] = elem match {
+                 val rels : List[(String,RelationExp)] = elem match {
                     case t: Theory =>
                        List(("meta for",  - HasMeta), ("included into",  - Includes),
-                            ("instantiated in",  - Query.HasStructureFrom),
+                            ("instantiated in",  - RelationExp.HasStructureFrom),
                             ("views out of", - HasDomain * HasType(IsView)), ("views into",  - HasCodomain * HasType(IsView)))
                     case v: View => List(("included into", - Includes), ("domain", + HasDomain), ("codomain", + HasCodomain))
                  }
