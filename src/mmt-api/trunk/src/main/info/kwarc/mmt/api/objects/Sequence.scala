@@ -17,6 +17,13 @@ object FlatSequence {
 			case _ => None
 		}
 	}
+   def unapply(s: List[SeqItem]) : Option[List[Term]] = s match {
+      case Nil => Some(Nil)
+      case hd :: tl => hd match {
+         case t: Term => unapply(tl).map(t :: _)
+         case _ => None
+      }
+   }
 }
 
 object Ind {
