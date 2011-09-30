@@ -25,13 +25,18 @@ case object Omitted extends Literal {
    def toNode = scala.xml.Text("")
 }
 
-case class ContentComponents(comps : List[Content], names: List[(String, Int)] = Nil) {
+case class OPath(parent: Path, component: String)
+
+case class ContentComponents(comps : List[Content], names: List[(String, Int)] = Nil, owner: Option[Path] = None) {
    def apply(i: Int) : Content = apply(NumberedIndex(i))
    def apply(s: String) : Content = apply(NamedIndex(s))
    def apply(i: CIndex): Content = resolve(i).map(x => comps(x)).getOrElse(throw GetError("undefined component: " + i))
    def resolve(i: CIndex) : Option[Int] = i match {
       case NumberedIndex(n) => Some(n)
       case NamedIndex(s) => names.find(_._1 == s).map(_._2)
+   }
+   def getObjectPath(i:Int) : Option[OPath] = owner flatMap {p => 
+      names.find(_._2 == i).map(x => OPath(p, x._1))
    }
    def length = comps.length
 }

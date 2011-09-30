@@ -31,14 +31,21 @@ case class StrToplevel(c: Content) extends Content {
    def presentation(lpar : LocalParams) =
       ByNotation(NotationKey(None, Role_StrToplevel), ContentComponents(List(c)), lpar)
    def toNode = c.toNode
-} 
+}
 /** A special presentable object that is wrapped around the math objects encountered during presentation
  * @param c the presented object
  * @param pos the position of the object
  */
-case class ObjToplevel(c: Obj, pos : Position) extends Content {
+case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
+   private def components : List[Content] = {
+      val l = opath match {
+         case None => List(Omitted, Omitted)
+         case Some(p) => List(StringLiteral(p.parent.toPath), StringLiteral(p.component))
+      }
+      c :: l
+   }
    def presentation(lpar : LocalParams) =
-      ByNotation(NotationKey(None, Role_ObjToplevel), ContentComponents(List(c, XMLLiteral(c.toNodeID(pos+0)))), lpar)
+      ByNotation(NotationKey(None, Role_ObjToplevel), ContentComponents(components), lpar)
    def toNode = c.toNode
 }
 
@@ -55,7 +62,7 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
     */
    def apply(c : Content, gpar : GlobalParams) {
       c match {
-        case c : objects.Obj => present(ObjToplevel(c, Position.Init), gpar, LocalParams(Position.Init, None, Nil, true, Nil))
+        case c : objects.Obj => present(ObjToplevel(c, None), gpar, LocalParams(Position.Init, None, Nil, true, Nil))
         case _ => present(StrToplevel(c), gpar, LocalParams(Position.Init, None, Nil, false, Nil))
       }
    }
@@ -90,14 +97,9 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
          log("rendering with components " + bn.components)
          render(presentation, bn.components, List(0), gpar, bn.lpar)
       }
-      //transition between object and structural level
-      (c, lpar.inObject) match {
-         case (c : Obj, false) => present(ObjToplevel(c, lpar.pos), gpar, lpar.copy(inObject = true))
-         case (c : ContentElement, true) => present(StrToplevel(c), gpar, lpar.copy(inObject = false))
-         case _ => c.presentation(lpar) match {
-		     case IsLiteral(l) => gpar.rh(l)
-		     case bn : ByNotation => doByNotation(bn)
-	     }
+      c.presentation(lpar) match {
+		   case IsLiteral(l) => gpar.rh(l)
+		   case bn : ByNotation => doByNotation(bn)
       }
    }
 
@@ -169,7 +171,7 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		      val last = if (end < 0) end + l else end
 		      if (step > 0 && current > last || step < 0 && current < last) return
 		      if (current < 0 || current >= l || last < 0 || last >= l || step == 0)
-		         throw new PresentationError("begin/end/step out of bounds in " + this)
+		         throw new PresentationError("begin/end/step out of bounds in " + pres)
 		      recurse(pre)
 		      render(body, comps, current :: ind, gpar, lpar)
 		      current += step
@@ -183,8 +185,12 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		      val i = ind.head + offset
 		      if (i < 0 || i >= comps.length)
 		         throw new PresentationError("offset out of bounds")
-              val newLpar = lpar.copy(pos = lpar.pos + i, iPrec = iPrec)
-              present(comps(i), gpar, newLpar)
+            val newLpar = lpar.copy(pos = lpar.pos + i, iPrec = iPrec)
+            comps(i) match {
+		         //transition from structural to object level
+		         case o: Obj if ! lpar.inObject => present(ObjToplevel(o, comps.getObjectPath(i)), gpar, newLpar.copy(pos = Position.None, inObject = true))
+		         case c => present(c, gpar, newLpar)
+		      }
 	      case Nest(begInd, endInd, stepcase, basecase) =>
 		      val begin = resolve(begInd)
             val end = resolve(endInd)
