@@ -18,7 +18,7 @@ trait StructuralElement extends Content with metadata.HasMetaData {
    /** the components are an abstract definition of the children of a knowledge item */
    def components : List[Content]
    def compNames : List[(String,Int)] = Nil
-   def contComponents = ContentComponents(components, compNames)
+   def contComponents = ContentComponents(components, compNames, Some(path))
    /** The presentation is determined by Notations according to role and components. */ 
    def presentation(lpar : LocalParams) = ByNotation(NotationKey(Some(path), role), contComponents, lpar)
    /** If a StructuralElement has been generated (as opposed to being physically present in the document),

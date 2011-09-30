@@ -24,8 +24,10 @@ abstract class Obj extends Content with ontology.BaseType {
    /** applies a substitution to an object (computed immediately) */
    def ^ (sub : Substitution) : Obj
    /** returns the subobject at a given position */
-   def subobject(pos: Position) : Obj = pos.indices.foldLeft(this)({
-         case (o, i) => o.components(i) match {case s: Obj => s case _ => throw GetError("illegal position")}
+   def subobject(pos: Position) : Obj = if (pos == Position.Init) this else pos.indices.tail.foldLeft(this)({
+         case (o, i) => o.components(i) match {
+            case s: Obj => s
+            case _ => throw GetError("position " + pos + " not valid in " + this)}
       })
    def head : Option[Path]
    def role : Role
