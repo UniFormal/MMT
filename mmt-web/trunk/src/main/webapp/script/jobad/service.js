@@ -232,7 +232,6 @@ function expandCMsubItems(a, subitem){
 
 function click(e){
     if (e.which == 3) {//we have a right click
-        //var selection = getSelectedElementTags(window);
         focus = e.target;
         focusIsMath = ($(focus).closest('math').length !== 0);
         xpos = e.clientX;

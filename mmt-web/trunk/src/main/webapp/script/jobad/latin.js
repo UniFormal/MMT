@@ -284,13 +284,23 @@ function setSelected(target){
    unsetSelected();
    $(target).addMClass('math-selected');
 }
+function getSelectedParent(elem){
+   var s = $(elem).closest('.math-selected');
+   if (s.length == 0)
+      return elem;
+   else
+      return s[0];
+}
+function isSelected(elem){
+   return $(elem).closest('.math-selected').length != 0;
+}
 
 latin.leftClick = function(target){
 	//handling clicks on parts of the document - active only for elements that have jobad:href
 	if (target.hasAttribute('jobad:href')) {
 		var mr = $(target).closest('mrow');
 		var select = (mr.length == 0) ? target : mr[0];
-		setSelected(select)
+		setSelected(select);
 		return true;
 	}
 	// highlight bracketed expression
@@ -300,7 +310,7 @@ latin.leftClick = function(target){
 	}
 	// highlight variable declaration
 	if (target.hasAttribute('jobad:varref')) {
-	   var v = $(target).parents('mrow').children().filterMAttr('jobad:xref', '#' + target.getAttribute('jobad:varref'));
+	   var v = $(target).parents('mrow').children().filterMAttr('jobad:xref', target.getAttribute('jobad:varref'));
 		setSelected(v[0]);
 		return true;
 	}
@@ -315,9 +325,23 @@ latin.hoverText = function(target){
 	   return null;
 }
 
-/* currentURI is used as an auxiliary variable to communicate the MMTURI of the current symbol from the context menu entries to the methods
-   this is not passed as an argument to avoid encoding problems */  
+/* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
+//URI of the symbol clicked on
 var currentURI = null;
+//URI of the OMDoc ContentElement that generated the math object clicked on
+var currentElement = null;
+//name of the component of currentElement that generated the math object clicked on
+var currentComponent = null;
+//position of the subobject clicked on within its math object
+var currentPosition = null;
+
+function setCurrentPosition(elem){
+   var math = $(elem).closest('math');
+   currentElement = math.attr('jobad:owner');
+   currentComponent = math.attr('jobad:component');
+   currentPosition = getSelectedParent(elem).getAttribute('jobad:xref');
+}
+
 function quoteSetVisib(prop, val){
    return "setVisib('" + prop + "','" + val + "')";
 }
@@ -333,16 +357,21 @@ var visibMenu = [
    ["redundant brackets", '', visibSubmenu('brackets')],
 ];
 latin.contextMenuEntries = function(target){
-	if (target.hasAttribute("jobad:href")) {
+   if (isSelected(target)) {
+      setCurrentPosition(target);
+      return [
+         ["infer type", "inferType()"],
+      ];
+	} else if (target.hasAttribute("jobad:href")) {
 		currentURI = target.getAttribute('jobad:href');
 		return [
-		         ["show type", "showComp('type')"],
-		         ["show definition", "showComp('definition')"],
-		         ["(un)mark occurrences", "showOccurs()"],
-		         ["open in new window", "openCurrent()"],
-		         ["show URI", "alert('" + currentURI + "')"],
-		         ["get OMDoc", "openCurrentOMDoc()"],
-		        ];
+         ["show type", "showComp('type')"],
+         ["show definition", "showComp('definition')"],
+         ["(un)mark occurrences", "showOccurs()"],
+         ["open in new window", "openCurrent()"],
+         ["show URI", "alert('" + currentURI + "')"],
+         ["get OMDoc", "openCurrentOMDoc()"],
+      ];
 	} else if ($(target).hasClass('folder') || focusIsMath)
 		return visibMenu;
    else
@@ -350,7 +379,7 @@ latin.contextMenuEntries = function(target){
 }
 
 function setVisib(prop, val){
-   var root = focusIsMath ? focus : focus.parentNode;
+   var root = focusIsMath ? getSelectedParent(focus) : focus.parentNode;
    if (val == 'true')
       $(root).find('.' + prop).removeMClass(prop + '-hidden');
    if (val == 'false')
@@ -378,6 +407,40 @@ function showComp(comp){
 		proxyAjax('get', target, '', continuationDef, false, 'text/xml');
 	if(comp == 'type')
 		proxyAjax('get', target, '', continuationType, false, 'text/xml');
+}
+
+// helper function to produce xml attributes
+function XMLAttr(key, value) {return ' ' + key + '="' + value + '"';}
+// helper function to produce xml elements
+function XMLElem(tag, content) {return XMLElem1(tag, null, null, content);}
+// helper function to produce xml elements with 1 attribute
+function XMLElem1(tag, key, value, content) {
+  var atts = (key == null) ? "" : XMLAttr(key,value);
+  var begin = '<' + tag + atts;
+  if (content == null) {
+    return begin + '/>';
+  } else {
+    return begin + '>' + content + '</' + tag + '>';
+  }
+}
+
+//helper functions to build queries (as XML strings)
+function Qindividual(p) {return XMLElem1('individual', 'uri', p);}
+function Qcomponent(o, c) {return XMLElem1('component', 'index', c, o);}
+function Qsubobject(o, p) {return XMLElem1('subobject', 'position', p, o);}
+function Qtype(o) {return XMLElem('type', o);}
+
+/** sends type inference query to server for the currentComponent and currentPosition */
+function inferType(){
+   var query = Qtype(Qsubobject(Qcomponent(Qindividual(currentElement), currentComponent), currentPosition));
+   $.ajax({
+       url:'/:query?elem_obj', 
+       type:'POST',
+       data:query,
+       processData:false,
+       contentType:'text/xml',
+       success:function(data){setLatinDialog(data.firstChild.firstChild, 'type');},
+   });
 }
 
 function continuationDef (data) {	continuation(data,'definition');}
