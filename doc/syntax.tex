@@ -1,4 +1,4 @@
-The {\mmt} language and its semantics have been described in depth in \cite{rabe:mmt:09}. Here we will focus on describing the XML syntax to someone who already has a general understanding of {\mmt}.
+The {\mmt} language and its semantics have been described in depth in \cite{RK:mmt:10}. Here we will focus on describing the XML syntax to someone who already has a general understanding of {\mmt}.
 
 The semantics of notations is described in Sect.~\ref{sec:notations}.
 
@@ -8,19 +8,24 @@ We define three data types for addressing {\mmt} elements: the type {\mmturi} of
 
 \begin{center}
 \begin{tabular}{|ll@{\tb}c@{\tb}l|}\hline
+MMT URI         & \mmturi  & $\bnfas$ & $N\bnfalt M\bnfalt S$    \\
+Namespace URI   & $N$      & $\bnfas$ & $\op{URI}$, no query, no fragment  \\
+Module URI      & $M$      & $\bnfas$ & $N?\mmtqname \bnfalt ?/\mmtqname$  \\
+Symbol URI      & $S$      & $\bnfas$ & $M?\mmtqname \bnfalt ??\mmtqname \bnfalt ??/\mmtqname$ \\
 Unqualified name& \mmtname & $\bnfas$ & $pchar^+$ \\
 Qualified name  & \mmtqname& $\bnfas$ & $\mmtname (/\mmtname)^*$ \\
-MMT URI         & \mmturi  & $\bnfas$ & $D\bnfalt M\bnfalt S$    \\
-Document URI    & $D$      & $\bnfas$ & $\op{URI}$, no query, no fragment  \\
-Module URI      & $M$      & $\bnfas$ & $D?\mmtqname \bnfalt ?(/\mmtname)^*$  \\
-Symbol URI      & $S$      & $\bnfas$ & $M?\mmtqname \bnfalt ??(/\mmtname)^*$ \\
   & $\op{URI}$, $pchar$ & & see RFC 3986~\cite{BerFieMas:05} \\
 \hline
 \end{tabular}
 \end{center}
 
-We will use $Q$ and $R$ to range over qualified names. In a URI $D[?Q[?R]]$, $D$, $Q$, and $R$ are called the document, module, and symbol part.
-A URI is called \defemph{absolute} if the document part is an absolute URI and if --- if present --- neither $Q$ nor $R$ are of the form $(/\mmtname)^*$. Otherwise, it is called \defemph{relative} or an MMT URI \defemph{reference}.
+Namespaces $N$ have no semantics and only serve to disambiguate toplevel declarations.
+Modules are any kind of named resource that introduces a scope within which other resources (i.e., symbols) are introduced such as signatures, theories, ontologies. Modules may be nested, in which case they have qualified names.
+Symbols are any kind of named atomic resource such as constants, functions, predicates, sorts, axioms, theorems. The names of symbols may be qualified as well, which {\mmt} uses to form qualified names for symbols induced by named imports.
+
+We will use $Q$ and $R$ to range over qualified names. In a URI $N[?Q[?R]]$, $N$, $Q$, and $R$ are called the namespace, module name, and symbol name, respectively.
+A URI of this form is called \defemph{absolute} if $N$ is an absolute URI. Otherwise, it is called \defemph{relative} or an {\mmturi} \defemph{reference}.
+Every absolute MMT URI has exactly one of the following three forms: $N$, $N?Q$, or $N?Q?R$ where $N$ is an absolute URI. Every relative MMT URI has exactly one of the following seven forms: $n$, $n?q$, $n?q?r$, $?/q$, $?/q?r$, $??r$, or $??/r$ where $n$ is a relative (possibly empty) URI.
 
 Note that a $pchar$ may be any character permitted in a URI except for ``/'',  ``?'', ``\#'' ``['', ``]'', and ``\%''. Furtermore, all percent-encoded characters are permitted.
 
@@ -34,26 +39,12 @@ The $/$-character in the module part separates submodules. \snippet{A?monoid/lat
 The $/$-character in the symbol part separates named imports, called structures in MMT. Let \snippet{A?group?mon} refer to an import \snippet{mon} declared within the module \snippet{A?group} that imports the module \snippet{A?monoid}. Then \snippet{A?group?mon/unit} refers to the symbol \snippet{A?monoid?unit} imported via this import. In general, if the symbol part of an MMT URI has $n$ components, then the first $n-1$ must be the names of named imports.
 \end{example}
 
-The grammar is unambiguous. Every absolute MMT URI has exactly one of the following three forms: $D?Q?R$, $D?Q$, or $D$. Every relative MMT URI has exactly one of the following six forms:
-
-\begin{center}
-\begin{tabular}{|l|lll|}\hline
-relative to \ldots & 1. \ldots document URI   & 2. \ldots module URI  & 3. \ldots symbol URI \\ \hline
-Document reference & $d$                      &                       &                     \\
-Module reference   & $d?q$                    & $?q_{ref}$                 &                     \\
-Symbol reference   & $d?q?r$                  & $?q_{ref}?r$               & $??r_{ref}$              \\
-\hline
-\end{tabular}
-\end{center}
-
-Here we distinguish three kinds of relative URIs according to whether they are relative to a document, a module, or a symbol URI. For these three cases, the resolution of MMT URI references $u$ against an absolute base URI $U$ is defined as follows:
+The resolution of an MMT URI reference $u$ against an absolute base URI $U$ is defined as follows:
 \begin{enumerate}
-	\item $u$ starts with a URI reference $d$: If $D'$ is the result of resolving $d$ against the document part of $D$ of $U$ according to RFC 3986, then the resulting MMT URI is $D'$, $D'?q$, or $D'?q?r$ depending on the form of $u$. \\
-	The special case where $d$ is empty implies $D'=D$. (Beware that software packages for the URI data type such as in Java 1.5 might implement the obsolete RFC 2396, where empty $d$ was resolved as $D'=D/..$.)
-	\item $u$ is of the form $?q_{ref}$ or $?q_{ref}?r$ where $q_{ref}$ is of the form $(/\mmtname)^*$: If $U$ is of the form $D?Q$ or $D?Q?R$, then $u$ is interpreted relative to $D?Q$ yielding $D?Qq_{ref}$ or $D?Qq_{ref}?r$, respectively. It is an error if $U$ is a document URI.
-	In particular, the special cases where $q_{ref}$ is empty yield $D?Q$ and $D?Q?r$, respectively.
-	\item $u$ is of the form $??r_{ref}$ where $r_{ref}$ is of the form $(/\mmtname)^*$: If $U=D?Q?R$ is a symbol URI, then the resolution yields $D?Q?R/r$. It is an error if $U$ is a module or document URI.
-	In particular, the special case where $r_{ref}$ is empty yields $D?Q?R$.
+	\item $u$ is of the form $n$, $n?q$, or $n?q?r$: $u$ is resolved relative to the namespace $N$ of $U$. (A possible module or symbol name in $U$ are ignored.) If $N'$ is the result of resolving $n$ against $N$ according to RFC 3986, then the resulting MMT URI is $N'$, $N'?q$, or $N'?q?r$, respectively. \\
+	Note that in the special case where $n$ is empty, this implies $N'=n$. (Beware that software packages for the URI data type such as in Java 1.5 might implement the obsolete RFC 2396, where empty $d$ was resolved in the same way as $.$.)
+	\item $u$ is of the form $?/q$ or $?/q?r$: $u$ is resolved relative to the namespace $N$ and module name $Q$ of $U$. (A possible symbol name in $U$ is ignored. It is an error if $U$ has no module name.) The resolution is $N?Q/q$ or $N?Q/q?r$, respectively.
+	\item $u$ is of the form $??r$ or $??/r$ and $U=N?Q?R$. (It is an error if $U$ is a module or document URI.) The resolution is $N?Q?r$ or $N?Q?R/r$, respectively.
 \end{enumerate}
 \medskip
 
@@ -74,9 +65,19 @@ URI   & Resolution \\
 \end{example}
 \bigskip
 
-In addition to the above grammars, we introduce the following convention: MMT URIs that contain less than two occurrences of $?$, can also be written with $2$ $?s$ by appending $?$. In other words, $D??$ and $D?Q?$ abbreviate $D$ and $D?Q$, respectively.
+In addition to the above grammars, we introduce the following convention: {\mmturi}s that contain less than two occurrences of $?$, can also be written with $2$ $?s$ by appending $?$. In other words, $n??$ and $N?Q?$ abbreviate $N$ and $N?Q$, respectively.
 
-Thus, (recalling that no $?$-character may occur in URIs that have no query component) every MMT URI can be written uniquely as a $?$-separated triple. The components of this triple are a URI and two lists of strings, and empty lists may be used to represent the absence of a component.
+Thus, (recalling that no $?$-character may occur in URIs that have no query component) every absolute MMT URI can be written uniquely as a $?$-separated triple. The components of this triple are a URI and two $/$-separated lists of strings.
+
+\paragraph{Relationship between URI and {\mmturi}s.}
+Every absolute/relative {\mmturi} is also a legal absolute/relative URI. In particular, if we consider an {\mmturi} $N?Q?R$ as a URI, then $Q?R$ is its query component.
+Moreover, the {\mmturi} resolution of $n?q?r$ against $D?Q?R$ is identical to the usual resolution of relative URIs.
+
+The situation is more complicated for those relative {\mmturi}s that begin with $?/$ or $??$. Here, the resolution must be implemented separately. This is unavoidable: In order to subsume common practices regarding XML namespaces, the module and symbol name must be put into the query component; but URIs do not permit relative resolution within the query component.
+
+\paragraph{Relationship between OpenMath identifiers and {\mmturi}s.}
+Every absolute {\mmturi} is a triple of namespace, module name, and symbol name. This corresponds directly to the cdbase-cd-name triple in OpenMath identifiers \cite{openmath}. Note that {\openmath} use the fragment component when forming URIs from {\openmath} identifiers; {\mmturis} avoid this because it would preclude efficient retrieval of individual symbols.
+
 
 \subsection{Document Level Elements}
 
