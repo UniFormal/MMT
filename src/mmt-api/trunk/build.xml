@@ -56,10 +56,7 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="build,scaladoc">
-        <copy todir="${deploy}/${prj}/apidocs">
-            <fileset dir="${apidocs}" includes="**/*"/>
-        </copy>
+    <target name="deploy">
         <copy todir="${deploy}/mmt">
             <fileset file="${build}/${jar}"/>
         </copy>
