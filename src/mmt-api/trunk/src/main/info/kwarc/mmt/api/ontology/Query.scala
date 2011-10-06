@@ -4,7 +4,7 @@ import objects._
 import utils._
 import scala.xml.Node
 
-/** types of the query language; atomic types are paths and objects */
+/** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
 trait BaseType
 
 /** type formation for product types */ 
@@ -16,63 +16,76 @@ case class RPair[A <: BaseType, B <: BaseType](first: A, second: B) extends RPro
    def asPair : (A,B) = (first,second)
 }
 
-/** elements of a type */
-sealed abstract class Elem[S <: BaseType]
-/** set elements of a type */
-sealed abstract class ESet[S <: BaseType]
+/** base types, used in the formation of QueryType */
+sealed abstract class QueryBaseType
+/** queries regarding the BaseType Path */
+case object PathType extends QueryBaseType
+/** queries regarding the BaseType Obj */
+case object ObjType extends QueryBaseType
+
+/** the types of the query language */
+sealed abstract class QueryType
+/** type of query that returns an element of a base type */
+case class Elem(tp: QueryBaseType) extends QueryType
+/** type oa a query that returns a set of values of a base type */
+case class ESet(tp: QueryBaseType) extends QueryType
+
 /** propositions */
 sealed abstract class Prop
 
-/** auxiliary trait to formalize which constructors introduce bound variables */
-trait Binder
+/** the expressions of the query language */
+sealed abstract class Query
 
 /** a bound variable; we use de-Bruijn indices starting from 0 to refer to bound variables */
-case class Bound[S <: BaseType](index: Int) extends Elem[S]
-
-/** constants */
-case class TheElem[A <: BaseType](a: A) extends Elem[A]
+case class Bound(index: Int) extends Query
+/** constant path */
+case class ThePath(a: Path) extends Query
+/** constant object */
+case class TheObject(a: Obj) extends Query
 /** component of a declaration with a certain Path */
-case class Component(of: Elem[Path], component: String) extends Elem[Obj]
+case class Component(of: Query, component: String) extends Query
 /** subobject of an object at a certain position */
-case class SubObject(of: Elem[Obj], position: Position) extends Elem[Obj]
+case class SubObject(of: Query, position: Position) extends Query
 /** type of an object */
-case class InferedType(of: Elem[Obj]) extends Elem[Obj]
+case class InferedType(of: Query) extends Query
 /** the set of all elements related to a certain path by a certain relation */
-case class Related(to: Elem[Path], by: RelationExp) extends ESet[Path]
+case class Related(to: Query, by: RelationExp) extends Query
 
-/** finite sets */
-case class TheSet[A <: BaseType](as: A*) extends ESet[A]
+/** finite set of paths */
+case class ThePaths(as: Path*) extends Query
+/** finite set of objects */
+case class TheObjects(as: Obj*) extends Query
 /** singleton sets */
-case class Singleton[A <: BaseType](e: Elem[A]) extends ESet[A]
+case class Singleton(e: Query) extends Query
 /** the set of all elements of a certain concept in the MMT ontology */ 
-case class AllThatAre(tp: Unary) extends ESet[Path]
+case class AllThatAre(tp: Unary) extends Query
 /** unification query; returns all objects in the database that unify with a certain object and the respective substitutions */
-case class Unifies(wth: Obj) extends ESet[RProduct[Path,Obj]]
+case class Unifies(wth: Obj) extends Query
 /** dependency closure of a path */
-case class Closure(of: Elem[Path]) extends ESet[Path]
+case class Closure(of: Query) extends Query
 /** union of sets */
-case class Union[T <: BaseType](left: ESet[T], right: ESet[T]) extends ESet[T]
+case class Union(left: Query, right: Query) extends Query
 /** union of a collection of sets indexed by a set */
-case class BigUnion[S <: BaseType, T <: BaseType](domain: ESet[S], of: ESet[T]) extends ESet[T] with Binder
+case class BigUnion(domain: Query, of: Query) extends Query
 /** comprehension subset of a set */
-case class Comprehension[S <: BaseType](domain: ESet[S], pred : Prop) extends ESet[S] with Binder
+case class Comprehension(domain: Query, pred : Prop) extends Query
 
 /** typing relation between a path and a concept of the MMT ontology */
-case class IsA(e: Elem[Path], t: Unary) extends Prop
+case class IsA(e: Query, t: Unary) extends Prop
 /** ancestor relation between paths */
-case class PrefixOf(short: Elem[Path], long: Elem[Path]) extends Prop
+case class PrefixOf(short: Query, long: Query) extends Prop
 /** element relation between elements and sets */
-case class IsIn[S <: BaseType](elem: Elem[S], tp: ESet[S]) extends Prop
+case class IsIn(elem: Query, tp: Query) extends Prop
 /** emptiness of a set */
-case class IsEmpty[S <: BaseType](r: ESet[S]) extends Prop
+case class IsEmpty(r: Query) extends Prop
 /** equality of elements */
-case class Equal[S <: BaseType](left: Elem[S], right: Elem[S]) extends Prop 
+case class Equal(left: Query, right: Query) extends Prop 
 /** negation */
 case class Not(arg: Prop) extends Prop
 /** conjunction */
 case class And(left: Prop, right: Prop) extends Prop
 /** universal quantification over a set */
-case class Forall[S <: BaseType](domain: ESet[S], scope: Prop) extends Prop with Binder
+case class Forall(domain: Query, scope: Prop) extends Prop
 
 /**
  * binary relations between paths, i.e., relation in the MMT ontology
@@ -124,7 +137,7 @@ case class HasType(tp : Unary) extends RelationExp {
    override def toString = ":" + tp
 }
 
-/** helper object for queries */
+/** helper object for relation expressions */
 object RelationExp {
    def parse(n: Node) : RelationExp = n match {
       case <sequence>{r @ _*}</sequence> => Sequence(r map parse : _*)
@@ -143,63 +156,152 @@ object RelationExp {
    def AnyDep = Choice(Binary.all.map(+ _) : _*)
 }
 
-object Prop {
-   def parse(n: Node) : Prop = n match {
-      case <equal>{e}{f}</equal> => xml.attr(n, "type") match {
-         case "path" => Equal(Elem.parsePath(e), Elem.parsePath(f))
-         case "object" => Equal(Elem.parseObj(e), Elem.parseObj(f))
+/** helper object for query expressions */
+object Query {
+   /** checks a query against a query type
+    *  throws an exception if the query is ill-formed
+    */
+   def check(q: Query, tp : QueryType)(implicit context: List[QueryBaseType]) {
+      val it = infer(q)
+      if (it != tp) {
+         throw ParseError("illegal query: " + q + "\nexpected: " + tp + "\nfound: " + it)
       }
-      case <and>{f}{g}</and> => And(parse(f), parse(g))
-      case <not>{f}</not> => Not(parse(f))
-      case <forall>{d}{f}</forall> => xml.attr(n, "type") match {
-         case "path" => Forall(ESet.parsePath(d), parse(f))
-         case "object" => Forall(ESet.parseObj(d), parse(f))
-      }
-      //TODO missing cases
-      case n => throw ParseError("illegal proposition: " + n)
    }
-}
-
-object Elem {
-   def parsePath(n: Node) : Elem[Path] = n match {
-      case <individual/> => TheElem(Path.parse(xml.attr(n, "uri")))
-      case n => parseGeneric[Path](n)
+   /** infers the type of a query
+    *  throws an exception if the query is ill-formed
+    */
+   def infer(q: Query)(implicit context: List[QueryBaseType]) : QueryType = q match {
+      case Bound(i) => try {Elem(context(i))} catch {case _ => throw ParseError("illegal variable index: " + i)}
+      case ThePath(_) => Elem(PathType)
+      case TheObject(_) => Elem(ObjType)
+      case Component(of, _) =>
+         infer(of) match {
+            case Elem(PathType) => Elem(ObjType)
+            case ESet(PathType) => ESet(ObjType)
+            case _ => throw ParseError("illegal query: " + q)
+         }
+      case SubObject(of,_) =>
+         check(of, Elem(ObjType))
+         Elem(ObjType)
+      case InferedType(of) =>
+         infer(of) match {
+            case Elem(ObjType) => Elem(ObjType)
+            case ESet(ObjType) => ESet(ObjType)
+            case _ => throw ParseError("illegal query: " + q)
+         }
+      case Related(to,_) =>
+         infer(to) match {
+            case Elem(PathType) => ESet(PathType)
+            case ESet(PathType) => ESet(PathType)
+            case _ => throw ParseError("illegal query: " + q)
+         }
+      case ThePaths(_*) => ESet(PathType)
+      case TheObjects(_*) => ESet(ObjType)
+      case Singleton(it) =>
+         infer(it) match {
+            case Elem(t) => ESet(t)
+            case _ => throw ParseError("expected element query, found set query " + q)
+         }
+      case AllThatAre(_) => ESet(PathType)
+      case Unifies(_) => ESet(ObjType)
+      case Closure(of) =>
+         check(of, Elem(PathType))
+         ESet(PathType)
+      case Union(l,r) =>
+         (infer(l), infer(l)) match {
+            case (ESet(s), ESet(t)) if s == t => ESet(s)
+            case (Elem(s), Elem(t)) if s == t => ESet(s)
+            case (ESet(s), Elem(t)) if s == t => ESet(s)
+            case (Elem(s), ESet(t)) if s == t => ESet(s)
+            case _ => throw ParseError("expected set queries of equal type " + q)
+         }
+      case BigUnion(d,of) => infer(d) match {
+            case ESet(s) => infer(of)(s :: context) match {
+               case ESet(t) => ESet(t)
+               case _ => throw ParseError("illegal query " + q)
+            }
+            case _ => throw ParseError("illegal query " + q)
+         }
+      case Comprehension(d, p) =>
+         infer(d) match {
+            case ESet(t) => 
+               Prop.check(p)(t :: context)
+               ESet(t)
+            case _ => throw ParseError("illegal query " + q)
+         }
    }
-   def parseObj(n: Node) : Elem[Obj] = n match {
-      case <component>{o}</component> => Component(parsePath(o), xml.attr(n, "index"))
-      case <subobject>{o}</subobject> => SubObject(parseObj(o), Position.parse(xml.attr(n, "position")))
-      case <type>{o}</type> => InferedType(parseObj(o))
-      case n => parseGeneric[Obj](n)
-   }
-   def parseGeneric[A <: BaseType](n: Node) : Elem[A] = n match {
+   /** parses a query; infer must be called to sure well-formedness */
+   def parse(n: Node) : Query = n match {
+      case <individual/> => ThePath(Path.parse(xml.attr(n, "uri")))
+      case <component>{o}</component> => Component(parse(o), xml.attr(n, "index"))
+      case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
+      case <type>{o}</type> => InferedType(parse(o))
       case <var/> =>
          val s = xml.attr(n, "index")
          val i = try {s.toInt} catch {case _ => throw ParseError("illegal variable index: " + s)}
-         Bound[A](i)
-      case n => throw ParseError("illegal element expression: " + n)
+         Bound(i)
+      case <related>{to}{by}</related> => Related(parse(to), RelationExp.parse(by))
+      case <closure>{of}</closure> => Closure(parse(of))
+      case <singleton>{e}</singleton> => Singleton(parse(e))
+      case <union>{l}{r}</union> => Union(parse(l), parse(r))
+      case <bigunion>{d}{s}</bigunion> =>
+         val dom = xml.attr(n, "type") match {
+            case "path" => parse(d)
+            case "object" => parse(d)
+         }
+         BigUnion(dom, parse(s))
+      case <comprehension>{d}{f}</comprehension> =>
+         Comprehension(parse(d), Prop.parse(f))
+      //TODO missing cases
+      case n => throw ParseError("illegal query expression: " + n)
    }
 }
 
-object ESet {
-   def parsePath(n: Node) : ESet[Path] = n match {
-      case <related>{to}{by}</related> => Related(Elem.parsePath(to), RelationExp.parse(by))
-      case <closure>{of}</closure> => Closure(Elem.parsePath(of))
-      case n => parseGeneric[Path](n)
-   }
-   def parseObj(n: Node) : ESet[Obj] = parseGeneric[Obj](n)
-   def parseGeneric[A <: BaseType](n: Node) : ESet[A] = n match {
-      case <singleton>{e}</singleton> => Singleton(Elem.parseGeneric[A](e))
-      case <union>{l}{r}</union> => Union(parseGeneric[A](l), parseGeneric[A](r))
-      case <bigunion>{d}{s}</bigunion> =>
-         val dom = xml.attr(n, "type") match {
-            case "path" => ESet.parsePath(d)
-            case "object" => ESet.parseObj(d)
+/** helper object for relation expressions */
+object Prop {
+   /** checks a proposition
+    *  throws an exception if the proposition is ill-formed
+    */
+   def check(p: Prop)(implicit context: List[QueryBaseType]) {p match {
+      case IsA(e,_) => Query.infer(e) match {
+         case Elem(_) =>
+         case _ => throw ParseError("illegal proposition " + p)
+      }
+      case PrefixOf(s, l) =>
+         Query.check(s, Elem(PathType))
+         Query.check(l, Elem(PathType))
+     case IsIn(elem, tp) =>
+         (Query.infer(elem), Query.infer(tp)) match {
+            case (Elem(s), ESet(t)) if s == t =>
+            case _ => throw ParseError("illegal proposition " + p)
          }
-         BigUnion(dom, parseGeneric[A](s))
-      case <comprehension>{d}{f}</comprehension> =>
-         Comprehension(ESet.parseGeneric[A](d), Prop.parse(f))
+     case IsEmpty(r) => Query.infer(r) match {
+        case ESet(_) =>
+        case _ => throw ParseError("illegal proposition " + p)
+     }
+     case Equal(left, right) => (Query.infer(left), Query.infer(right)) match {
+        case (Elem(s), Elem(t)) if s == t => 
+        case _ => throw ParseError("illegal proposition " + p)
+     }
+     case Not(arg) => check(arg)
+     case And(left, right) => check(left); check(right)
+     case Forall(domain: Query, scope: Prop) => Query.infer(domain) match {
+        case ESet(t) => check(scope)(t :: context)
+        case _ => throw ParseError("illegal proposition " + p)
+     }
+   }}
+   
+   /** parses a propositions; check must be called to ensure well-formedness */
+   def parse(n: Node) : Prop = n match {
+      case <equal>{e}{f}</equal> => Equal(Query.parse(e), Query.parse(f))
+      case <isin>{e}{f}</isin> => IsIn(Query.parse(e), Query.parse(f))
+      case <isa>{e}</isa> => IsA(Query.parse(e), Unary.parse(xml.attr(n, "concept")))
+      case <isempty>{e}</isempty> => IsEmpty(Query.parse(e))
+      case <and>{f}{g}</and> => And(parse(f), parse(g))
+      case <not>{f}</not> => Not(parse(f))
+      case <forall>{d}{f}</forall> => Forall(Query.parse(d), parse(f))
       //TODO missing cases
-      case n => throw ParseError("illegal set expression: " + n)
+      case n => throw ParseError("illegal proposition: " + n)
    }
 }
 
