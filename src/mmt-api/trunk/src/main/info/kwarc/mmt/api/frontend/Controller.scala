@@ -51,7 +51,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    val reader = new Reader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(reader, report)
-   
+   /** the http server */
+   //val server = new Server
    /** a lookup that uses only the current memory data structures */
    val localLookup = library
    /** a lookup that load missing modules dynamically */
@@ -207,6 +208,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
+	      case ServerOn(p) =>
+	      case ServerOff =>
 	      case Clear => clear
 	      case ExecFile(f) =>
 	         var line : String = null

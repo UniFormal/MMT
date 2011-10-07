@@ -21,7 +21,7 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | archive | tntbase | compiler | mws | execfile
+   private def controller = logon | logoff | local | catalog | archive | tntbase | compiler | mws | server | execfile
    private def shell = setbase | read | printall | printallxml | clear | exit
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
@@ -39,6 +39,9 @@ object Action extends RegexParsers {
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def compiler = "compiler" ~> str ~ (str *) ^^ {case c ~ args => AddCompiler(c, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
+   private def server = serveron | serveroff
+   private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
+   private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
@@ -66,6 +69,7 @@ object Action extends RegexParsers {
    private def mpath = str ^^ {s => Path.parseM(s, base)}
    private def file = str ^^ {s => home.resolve(s)}
    private def uri = str ^^ {s => URI(s)}
+   private def int = str ^^ {s => s.toInt}
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
    /** parses an action from a string, relative to a base path */
    def parseAct(s:String, b : Path, h: File) : Action = {
@@ -115,6 +119,10 @@ case class AddMWS(uri: URI) extends Action {override def toString = "mws " + uri
 case object PrintAll extends Action
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
+/** shut down server */
+case object ServerOff extends Action {override def toString = "server off"}
+/** start server */
+case class ServerOn(port: Int) extends Action {override def toString = "server on " + port}
 /** clear the state */
 case object Clear extends Action {override def toString = "clear"}
 /** exit */
