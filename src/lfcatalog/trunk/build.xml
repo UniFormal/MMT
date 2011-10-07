@@ -28,6 +28,11 @@
 
     <property environment="env" />
     <property file="build.properties" />
+    
+    <!-- One-JAR ant task, for packaging all dependency JARs into the main JAR file -->
+    <taskdef name="one-jar" classname="com.simontuffs.onejar.ant.OneJarTask" 
+        classpath="${lib}/one-jar-ant-task-0.97.jar" onerror="report"/>
+    
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
         <pathelement location="${scala.dir}/scala-library.jar"/>
@@ -60,8 +65,8 @@
                 <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar"/>
             </manifest>
             <fileset dir="${build.main}"/>
+            <fileset dir="${resources}"/>
             <zipfileset dir="${src.main}" prefix="src"/>
-            <zipfileset dir="${src.resources}" prefix="resources"/>
             <zipfileset src="${tiscaf}" includes="zgs/**/*"/>
             <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
         </jar>
@@ -82,12 +87,34 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="jar,docs">
+    <target name="jar-standalone" depends="compile">
+         <one-jar destfile="${build}/${jar-standalone}">
+            <!-- The main class of the jar -->
+            <manifest>
+                <attribute name="One-Jar-Main-Class" value="${main.class}"/>
+            </manifest>
+            <main>
+                <!-- The main code, which will be packaged into main/main.jar -->
+                <fileset dir="${build.main}" />
+                <fileset dir="${src.main}" />
+                <fileset dir="${resources}" />
+            </main>
+            <!-- Jar dependencies, which will be packaged as lib/*.jar -->
+            <lib>
+                <fileset file="${lib}/tiscaf.jar" />
+                <fileset file="${lib}/scala-library.jar" />
+            </lib>
+            <zipfileset dir="${lib}" includes="*.txt" prefix="doc"/>
+         </one-jar>
+    </target>
+    
+    <target name="deploy" depends="jar,jar-standalone,docs">
         <copy todir="${deploy}/${prj}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy>
         <copy todir="${deploy}/${prj}">
 			   <fileset file="readme.txt"/>
+			   <fileset file="${build}/${jar-standalone}"/>
 		  </copy>
 		  <copy todir="${mmtapi}/lib">
 			   <fileset file="${build}/${jar}"/>
@@ -98,8 +125,8 @@
                 <attribute name="Class-Path" value="../lib/scala/scala-library.jar"/>
             </manifest>
             <fileset dir="${build.main}"/>
+            <fileset dir="${resources}"/>
             <zipfileset dir="${src.main}" prefix="src"/>
-            <zipfileset dir="${src.resources}" prefix="resources"/>
             <zipfileset src="${tiscaf}" includes="zgs/**/*"/>
             <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
         </jar>
@@ -107,7 +134,7 @@
             <fileset file="${deploy}/${prj}/${jar}"/>
         </copy>
     </target>
-
+    
     <target name="clean">
         <delete dir="${build}" />
     </target>

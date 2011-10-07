@@ -19,51 +19,46 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   var adminHtml : Option[scala.xml.Elem] = None
   
   /** Error page returned by the server */
-  val adminError = "<html><body>Bummer, can't find jar://resources/admin.html.</body></html>"
+  val adminError = "<html><body>Bummer, can't find jar://server-resources/admin.html.</body></html>"
   
   /** Readme page, read from jar://resources/readme.txt */
   var readmeText : Option[String] = None
   
   /** Error page returned by the server */
-  val readmeError = "Bummer, can't find jar://resources/readme.html."
-    
+  val readmeError = "Bummer, can't find jar://server-resources/readme.html."
   
   // Read jar://resources/admin.html
-  Option(getClass.getResourceAsStream("/resources/admin.html")) match {
-    case None => 
-      catalog.log("warning: /resources/admin.html inside JAR does not exist")   // ignore if not found
-    case Some(adminFile) =>
-      var source : scala.io.BufferedSource = null
-      try {
-        source = scala.io.Source.fromInputStream(adminFile, "UTF-8")
-        adminHtml = Option(scala.xml.parsing.XhtmlParser(source).head.asInstanceOf[scala.xml.Elem])
-      } catch {
-        case _ =>
-          catalog.log("critical error: /resources/admin.html inside JAR contains malformed XML")   // this should never happen
-          exit(1)
-      } finally {
-          source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
-      }
+  try {
+    loadResource("/server-resources/admin.html", "UTF-8") match {
+      case Some(bufferedSource) => 
+         try {
+           adminHtml = Option(scala.xml.parsing.XhtmlParser(bufferedSource).head.asInstanceOf[scala.xml.Elem])
+         } catch {
+           case _ =>
+              catalog.log("critical error: /server-resources/admin.html inside JAR contains malformed XML")   // this should never happen
+              exit(1)
+         } finally {
+              bufferedSource.close       // close the file, since scala.io.Source doesn't close it
+         }
+      case None => catalog.log("warning: /server-resources/admin.html does not exist") 
+    }
+  }
+  catch {
+    case EncodingException(msg) => catalog.log(msg); exit(1)
   }
   
   // Read jar://resources/readme.txt
-  Option(getClass.getResourceAsStream("/resources/readme.txt")) match {
-    case None => 
-      catalog.log("warning: /resources/readme.txt inside JAR does not exist or cannot be read")   // ignore if not found
-    case Some(readmeFile) =>
-      var source : scala.io.BufferedSource = null
-      try {
-        source = scala.io.Source.fromInputStream(readmeFile, "UTF-8")
-        readmeText = Option(source.getLines.toArray.mkString("\n"))                           
-      } catch {
-          case e =>
-            catalog.log("critical error: /resources/readme.txt inside JAR cannot be opened in the UTF-8 encoding")    // this should never happen
-            exit(1)
-      } finally {
-          source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
-      }
+  try {
+    loadResource("/server-resources/readme.txt", "UTF-8") match {
+      case Some(bufferedSource) => 
+         readmeText = Option(bufferedSource.getLines.toArray.mkString("\n"))
+         bufferedSource.close       // close the file, since scala.io.Source doesn't close it
+      case None => catalog.log("warning: /server-resources/readme.txt does not exist") 
+    }
   }
- 
+  catch {
+    case EncodingException(msg) => catalog.log(msg); exit(1)
+  }
   
   override def name = "lfserver"
   override def writeBufSize = 16*1024

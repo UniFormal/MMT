@@ -1,6 +1,11 @@
 package info.kwarc.mmt.lf
 
 
+/** Occurs during file opening */
+case class EncodingException(s : String) extends Exception(s) {
+    override def toString = s
+}
+
 /** Exception thrown when a location specified does not exist on disk */
 case class InexistentLocation(s : String) extends Exception(s) {
     override def toString = s
@@ -67,3 +72,51 @@ object isTaken {
 }
 
 
+/** Get a stream to a resource within the JAR file. If it's not found in the JAR, then it looks into the file system
+  * @param path to the resource, starting with a slash, e.g. /some-path/resource.txt. 
+  * If the resource is in the JAR, then the JAR must look like 
+  *       jar-name.jar/some-path/resource.txt
+  * If the resource is a separate file and the code is run from outside any JAR, then the folder structure must look like
+  *       compiled-folder
+  *        |--top-level-package-name/../class-files
+  *        |--some-path/resource.txt 
+  * @param encoding the encoding of the resource file
+  * @return Some(stream to the resource) if found, None otherwise. **The caller must close the stream after reading!**
+  * @throws EncodingException(message) if the file is not in the given encoding
+  */
+object loadResource {
+  def apply(path : String, encoding : String) : Option[scala.io.BufferedSource] = {
+    val zippedFile = getClass.getResourceAsStream(path)  // the file inside the JAR
+    if (zippedFile != null) {
+        // Try reading from jar-name.jar/some-path/resource.txt
+        try {
+          return Some(scala.io.Source.fromInputStream(zippedFile, encoding))
+        } catch {
+          case _ => throw EncodingException("critical error: " + path + " inside JAR cannot be opened in the " + encoding + " encoding")
+        }
+    }
+    else {
+        var filePath : String = null
+        try {
+          val rootFolder : java.io.File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toString)  // e.g. .../lfcatalog/trunk/build/main
+          val resourceFolder : String = rootFolder.getParentFile.getParentFile.toString + "/resources"  // e.g. .../lfcatalog/trunk/resources
+          filePath = (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + path
+        }
+        catch {
+          case _ => return None
+        }
+        val file = new java.io.File(filePath)  // the file on disk
+        if (file.exists) {
+          // Try reading from compiled-folder/some-path/resource.txt
+          val inputStream = new java.io.FileInputStream(file)
+          try {
+            return Some(scala.io.Source.fromInputStream(inputStream, encoding))
+          } catch {
+            case _ => throw EncodingException("critical error: " + filePath + " inside JAR cannot be opened in the " + encoding + " encoding")
+          }
+        }
+        else
+          return None
+    }
+  }
+}
