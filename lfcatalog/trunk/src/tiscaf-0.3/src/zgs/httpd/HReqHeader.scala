@@ -119,7 +119,7 @@ final private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderDa
     if (parts.size == 2) aQuery = parts(1) else aQuery = ""
     val extParts = anUriPath.split(";", 2)
     anUriPath = extParts(0) // like index.html;sessionid=12312839183
-    if (extParts.size == 2 && extParts(1).trim.size > 0) anUriExt = Some(extParts(1).trim)
+    if (extParts.size == 2) anUriExt = Some(extParts(1).trim)
   }
 
   private def fillInPairs : Unit = {

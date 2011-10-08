@@ -37,7 +37,7 @@
     <path id="scalac.classpath">
         <pathelement location="${scala.dir}/scala-library.jar"/>
         <pathelement location="${scala.dir}/scala-compiler.jar"/>
-        <pathelement location="${lib}/tiscaf.jar"/>
+        <pathelement location="${tiscaf}"/>
         <pathelement location="${build.main}"/>
     </path>
     <path id="scaladoc.classpath">
@@ -101,7 +101,7 @@
             </main>
             <!-- Jar dependencies, which will be packaged as lib/*.jar -->
             <lib>
-                <fileset file="${lib}/tiscaf.jar" />
+                <fileset file="${tiscaf}" />
                 <fileset file="${lib}/scala-library.jar" />
             </lib>
             <zipfileset dir="${lib}" includes="*.txt" prefix="doc"/>
