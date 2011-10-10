@@ -59,24 +59,15 @@
     </target>
 
     <target name="jar" depends="compile">
-        <one-jar destfile="${build}/${jar}">
-            <!-- The main class of the jar -->
+        <jar destfile="${build}/${jar}">
             <manifest>
-                <attribute name="One-Jar-Main-Class" value="${main.class}"/>
-                <attribute name="Class-Path" value="../../../../deploy/lib/scala/scala-library.jar"/>
+                <attribute name="Main-Class" value="${main.class}"/>
             </manifest>
-            <main>
-                <!-- The main code, which will be packaged into main/main.jar -->
-                <fileset dir="${build.main}" />
-                <fileset dir="${src.main}" />
-                <fileset dir="${resources}" />
-            </main>
-            <!-- Jar dependencies, which will be packaged as lib/*.jar -->
-            <lib>
-                <fileset file="${tiscaf}" />
-            </lib>
-            <zipfileset dir="${lib}" includes="*.txt" prefix="doc"/>
-        </one-jar>
+            <fileset dir="${build.main}"/>
+            <fileset dir="${resources}"/>
+            <zipfileset dir="${src.main}" prefix="src"/>
+            <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
+        </jar>
     </target>
 
     <target name="docs" depends="scaladoc"/>
@@ -122,31 +113,8 @@
         <copy todir="${deploy}/${prj}">
 			   <fileset file="readme.txt"/>
 			   <fileset file="${build}/${jar-standalone}"/>
-		  </copy>
-		  <copy todir="${mmtapi}/lib">
 			   <fileset file="${build}/${jar}"/>
 		  </copy>
-		  <one-jar destfile="${deploy}/${prj}/${jar}">
-            <!-- The main class of the jar -->
-            <manifest>
-                <attribute name="One-Jar-Main-Class" value="${main.class}"/>
-                <attribute name="Class-Path" value="../lib/scala/scala-library.jar"/>
-            </manifest>
-            <main>
-                <!-- The main code, which will be packaged into main/main.jar -->
-                <fileset dir="${build.main}" />
-                <fileset dir="${src.main}" />
-                <fileset dir="${resources}" />
-            </main>
-            <!-- Jar dependencies, which will be packaged as lib/*.jar -->
-            <lib>
-                <fileset file="${tiscaf}" />
-            </lib>
-            <zipfileset dir="${lib}" includes="*.txt" prefix="doc"/>
-        </one-jar>
-        <copy todir="${deploy}/mmt">
-            <fileset file="${deploy}/${prj}/${jar}"/>
-        </copy>
     </target>
     
     <target name="clean">
