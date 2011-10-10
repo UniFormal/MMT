@@ -5,8 +5,8 @@
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <pathelement location="${scala.dir}/scala-library.jar"/>
-        <pathelement location="${scala.dir}/scala-compiler.jar"/>
+        <pathelement location="${deploy}/lib/scala-library.jar"/>
+        <pathelement location="${deploy}/lib/scala-compiler.jar"/>
     </path>
     <!-- compile.classpath holds all paths needed to compile the library. -->
     <path id="compile.classpath">

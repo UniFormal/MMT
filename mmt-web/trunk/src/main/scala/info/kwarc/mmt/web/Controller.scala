@@ -5,8 +5,8 @@ import info.kwarc.mmt.uom._
 object Manager {
    val report = new frontend.FileReport(new java.io.File("server.log"))
    val controller = new frontend.Controller(libraries.NullChecker, report)
-   val eval = new ontology.Evaluator(controller.depstore, controller.globalLookup)
-   val uom = new UOMServer(report)
+   val eval = controller.evaluator
+   val uom = controller.uom
    
    def log(msg: => String) = report("manager", msg)
       

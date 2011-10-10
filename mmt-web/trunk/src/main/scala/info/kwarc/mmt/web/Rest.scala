@@ -4,18 +4,19 @@ import info.kwarc.mmt._
 import web._
 import api._
 import frontend._
+import backend._
 
 import net.liftweb._
 import net.liftweb.http._
 import net.liftweb.http.rest._
 import net.liftweb.common.{Box,Empty,Full}
 
-import java.net.HttpURLConnection;
+import java.net.HttpURLConnection
 import java.net._
 import java.io._
-import info.kwarc.mmt.mizar.test.MwsService
-import info.kwarc.mmt.tptp._
 import scala.xml._
+
+case class ServerError(n: Node) extends java.lang.Throwable
 
 object Rest {
   def div(n: List[Node]) : Node = Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), n :_*)
@@ -100,87 +101,49 @@ object Rest {
           }
           XmlResponse(resp)
         case ":search" :: _ =>
-          val resp = Manager.controller.backend.mws match {
-            case None => <error message="no MathWebSearch backend defined"/>
-            case Some(mws) =>
-              r.xml.toOption match {
-                
-                // TPTP
-                case None =>
-                  r.body.toOption match {
-                    case None => <error message="empty query string"/>
-                    case Some(body) =>
-                      try {
-                        val b = new String(body)
-                        query match {
-                          case "tptp" =>
-                            val Offset = r.header("Offset") match {
-                              case Full(s) => try s.toInt catch {case _ => 0}
-                              case _ => 0
-                            }
-                            val Size = r.header("Size") match {
-                              case Full(s) => try s.toInt catch {case _ => 30}
-                              case _ => 30
-                            }
-                            val translator = new TptpTranslator()
-                            val translated = translator.translateFormula(b)
-                            translated match {
-                              case Some(x) =>
-                                val node = TptpTranslator.toMwsQuery(x.toCML, Offset, Size)
-//                                val res = node.map(utils.xml.post(new URL(mws.toJava.toURL), _))
-                                val res = node.map(utils.xml.post(new URL("http://localhost:20000"), _))
-                                val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
-                                val size = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
-                                val answrs = res.flatMap(_.child)
-                                <mws:answset total={total.toString} size={size.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>
-                              case None => <error><message>Error translating the given query to OMDoc</message></error>
-                            }
-                          case _ => <error><message>Only TPTP queries can be specified as string</message></error>
-                        }
-                      } catch {
-                        case e: ParseError => <error><message>{e.getMessage}</message></error>
-                        case _ => <error><message>Translation Failed</message></error>
-                      }
-                  }
-                  
-                // Mizar
-                case Some(body) => try {
-                    val input = query match {
-                      case "mizar" => 
-                        val mmlVersion = r.header("MMLVersion") match {
-                          case Full(s) => s
-                          case _ => "4.166" 
-                        }
-                        val currentAid = r.header("Aid") match {
-                          case Full(s) => s
-                          case _ => "HIDDEN"
-                        }
-                        val Offset = r.header("Offset") match {
-                          case Full(s) => try s.toInt catch {case _ => 0}
-                          case _ => 0
-                        }
-                        val Size = r.header("Size") match {
-                          case Full(s) => try s.toInt catch {case _ => 30}
-                          case _ => 30
-                        }
-                        val q = MwsService.parseQuery(body, currentAid, mmlVersion,Offset,Size) // translate mizar-xml query
-                        val qlist = MwsService.applyImplicitInferences(q)
-                        qlist
-                      case _ => List(body) // assume content math query by default
-                    }
-                    val res = input.map(utils.xml.post(mws.toJava.toURL, _))
-                    val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
-                    val size = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
-                          
-                    val answrs = res.flatMap(_.child)
-                    <mws:answset total={total.toString} size={size.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>  
-                  } catch {
-                    case e: ParseError => <error><message>{e.getMessage}</message><input>{body}</input></error>
-                    case _ => <error><message>Invalid MizXML, Translation Failed</message></error>
-                  }
-              }
+      val controller = Manager.controller
+      val resp = try {
+         val mws = controller.backend.mws.getOrElse(throw ServerError(<error message="no MathWebSearch backend defined"/>))
+         val body = r.body.getOrElse(throw ServerError(<error message="no query given"/>))
+         val offset = r.header("Offset").toOption match {
+            case Some(s) => try s.toInt catch {case _ => 0}
+            case _ => 0
+         }
+         val size = r.header("Size").toOption match {
+            case Some(s) => try s.toInt catch {case _ => 30}
+            case _ => 30
+         }
+         val mwsqs : List[Node] = query match {
+             case "mizar" =>
+                val bodyXML = scala.xml.XML.loadString(body.mkString).head
+                val mmlVersion = r.header("MMLVersion").toOption match {
+                   case Some(s) => s
+                   case _ => "4.166" 
+                }
+                val currentAid = r.header("Aid").toOption match {
+                   case Some(s) => s
+                   case _ => "HIDDEN"
+                }
+                val mizar = java.lang.Class.forName("info.kwarc.mmt.mizar.test.MwsService").asInstanceOf[java.lang.Class[QueryTransformer]].newInstance
+                mizar.transformSearchQuery(bodyXML, List(currentAid, mmlVersion))
+             case "tptp" =>
+                 val bodyString = body.mkString
+                 val tptp = java.lang.Class.forName("info.kwarc.mmt.tptp.TptpCompiler").asInstanceOf[java.lang.Class[QueryTransformer]].newInstance
+                 tptp.transformSearchQuery(scala.xml.Text(bodyString), Nil)
+             case _ => List(scala.xml.XML.loadString(body.mkString).head) // default: body is forwarded to MWS untouched
           }
-          XmlResponse(resp)
+          def wrapMWS(n: Node) : Node = <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}>{n}</mws:query>
+          val res = mwsqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q)))
+          val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
+          val totalsize = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
+          val answrs = res.flatMap(_.child)
+          <mws:answset total={total.toString} size={totalsize.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>
+      } catch {
+         case ServerError(n) => n
+         case e: ParseError => <error><message>{e.getMessage}</message></error>
+         case _ => <error><message>error translating query</message></error>
+      }
+      XmlResponse(resp)
         case ":mmt" :: _ =>
           val comps = query.split("\\?",-1)
           val (doc, mod, sym, act) = comps.length match {
