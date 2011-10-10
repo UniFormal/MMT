@@ -56,6 +56,10 @@ object TypeParser {
 					new MizFunc(aid, kind, absnr, n.child.map(parseTerm).toList) 
 				}
 			}
+			case "ConstFunc" => {
+			  new MizConstFunc((n \ "@nr").text.toInt, n.child.map(parseTerm).toList)
+			}
+
 			case "PrivFunc" => 
 				val ls = n.child.map(parseTerm).toList
 				new MizPrivFunc((n \ "@nr").text.toInt, ls.head, ls.tail)

@@ -24,6 +24,11 @@ class M2OThread extends M2OWebServer with Runnable {
 */
 object MwsService {
   
+  
+  
+  
+  
+  
   def applyInferences(f : scala.xml.Node, args : List[scala.xml.Node]) : List[scala.xml.Node] = (f.toString, args) match {
     case ("HIDDEN?R1", a :: b :: Nil) => 
       if (!(a.label == "qvar" && b.label == "qvar")) {
@@ -53,26 +58,36 @@ object MwsService {
   }
   
   
-  def makeQVars(n : scala.xml.Node, qvars : List[String]) : scala.xml.Node = n match {
+  def makeQVars(n : scala.xml.Node, evars : List[String], uvars : List[String]) : scala.xml.Node = n match {
     case <m:apply><m:apply><csymbol>{s}</csymbol>{a1}</m:apply><m:bvar><m:apply>{zz}<m:ci>{v}</m:ci>{a}{b}</m:apply></m:bvar>{body}</m:apply> =>
       if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?ex") {
-    	  makeQVars(body,  v.toString() :: qvars)
+    	  makeQVars(body,  v.toString() :: evars, uvars)
+      } else if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for") {
+    	  makeQVars(body, evars, v.toString() :: uvars) 
       } else {
-    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_, qvars)) : _*)
+    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_, evars, uvars)) : _*)
 
       }
     case <m:apply><csymbol>{c}</csymbol><m:ci>{name}</m:ci></m:apply> => 
       if (c.toString == "http://oaff.mathweb.org/mml?qvar?qvar") {
         <mws:uvar><mws:qvar>{name}</mws:qvar></mws:uvar>
+      } else if (c.toString == "http://oaff.mathweb.org/mml?qvar?const") {
+        <mws:uvar><mws:qvar>{name}</mws:qvar></mws:uvar>
+      } else if (c.toString == "http://oaff.mathweb.org/mml?qvar?constFunc") {
+        <mws:qvar>{name}</mws:qvar>
       } else { 
         n
-      }
+      }	
+    
     case <m:ci>{s}</m:ci> => {
-      if (qvars.contains(s.toString))
+      if (evars.contains(s.toString))
         <mws:qvar>{s}</mws:qvar>
+      else if (uvars.contains(s.toString))
+        <mws:uvar><mws:qvar>{s}</mws:qvar></mws:uvar>
       else
         n
     }
+    
     case <csymbol>{p}</csymbol> => 
         val firstq = p.toString.indexOf('?')
         <csymbol>{p.toString.substring(firstq + 1)}</csymbol>
@@ -80,10 +95,11 @@ object MwsService {
       if (n.child.length == 0)
           n
       else
-    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_, qvars)) : _*)
+    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_, evars, uvars)) : _*)
   }
   
   def parseQuery(n : scala.xml.Node, aid : String, mmlversion : String, offset : Int, size : Int) : scala.xml.Node = {
+    TranslationController.query = true
     TranslationController.currentAid = aid
     TranslationController.currentTheory = DPath(Mizar.baseURI) ? TranslationController.currentAid
 	
@@ -107,7 +123,7 @@ object MwsService {
     	  mmtq.toCML
     }
     TranslationController.clearVarContext()
-    val q = makeQVars(cml, Nil)
+    val q = makeQVars(cml, Nil, Nil)
     <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}><mws:expr>{q}</mws:expr></mws:query>
 
   }

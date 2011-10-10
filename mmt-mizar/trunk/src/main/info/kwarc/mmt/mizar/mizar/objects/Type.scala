@@ -20,6 +20,8 @@ class MizFreeVar(val nr : Int) extends MizTerm
 class MizLambdaVar(val nr : Int) extends MizTerm
 class MizConst(val nr : Int, val vid : Int) extends MizTerm
 class MizInfConst(val nr : Int) extends MizTerm
+class MizConstFunc(val nr : Int, val args : List[MizTerm]) extends MizTerm
+
 class MizNum(val nr : Int) extends MizTerm
 class MizFunc(val aid : String, val kind : String, val absnr : Int, val args : List[MizTerm]) extends MizTerm
 class MizSchemeFunc(val aid : String, val kind : String, val nr : Int, val schemeNr : Int, val args : List[MizTerm]) extends MizTerm

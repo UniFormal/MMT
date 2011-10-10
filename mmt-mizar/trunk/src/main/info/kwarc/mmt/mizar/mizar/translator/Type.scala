@@ -22,7 +22,11 @@ object TypeTranslator {
 	def translateTerm(term : MizTerm) : Term = {
 		term match {
 			case t : MizVar => TranslationController.resolveVar(t.nr) 
-			case t : MizConst =>  OMID(MMTUtils.getPath(TranslationController.currentAid, "C" + t.nr))
+			case t : MizConst =>  TranslationController.resolveConst(t.nr)
+			case t : MizConstFunc => t.args.length match {
+			  case 0 => OMA(OMID(MMTUtils.getPath("qvar","constFunc")), List(OMV("f" + t.nr.toString)))
+			  case _ => OMA(OMA(OMID(MMTUtils.getPath("qvar","constFunc")), List(OMV("f" + t.nr.toString))), t.args.map(translateTerm))
+			}
 			case t : MizFunc => MMTFunc(MMTResolve(t.aid, t.kind, t.absnr), t.args.map(translateTerm).toList) 
 			case t : MizSchemeFunc => t.args.length match {
 			  case 0 => Index(SeqVar("x"), OMI(t.nr))
