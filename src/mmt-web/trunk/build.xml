@@ -56,25 +56,18 @@
             <lib dir="${lib}">
                 <exclude name="servlet-api-2.5.jar"/>
             </lib>
-            <lib file="${scala.dir}/scala-library.jar" />
-	    <lib file="${scala.dir}/scala-compiler.jar" />
+            <lib file="${deploy}/lib/scala-library.jar" />
+            <lib file="${deploy}/lib/scala-compiler.jar" />
             <lib file="${deploy}/mmt/mmt-api.jar" />
-	    <lib file="${deploy}/mmt/uom.jar" />
-	    <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
-	    <lib file="${deploy}/mmt/mmt-mizar.jar" />
-	    <lib file="${deploy}/mmt/mmt-tptp.jar" />
-	    <lib file="../../mmt-tptp/trunk/lib/tptp-parser.jar" />
-	    <lib file="../../mmt-tptp/trunk/lib/antlr-3.2.jar" />
-	    <lib file="../../mmt-tptp/trunk/lib/antlr-runtime-3.2.jar" />
+      	   <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
+      	   <lib file="${deploy}/mmt/mmt-mizar.jar" />
+      	   <lib file="${deploy}/mmt/mmt-tptp.jar" />
         </war>
     </target>
 
     <target name="build" depends="compile,war"/>
 
     <target name="deploy" depends="build">
-        <copy todir="${deploy}/${prj}/apidocs">
-            <fileset dir="${apidocs}" includes="**/*"/>
-        </copy>
         <copy todir="${deploy}/mmt">
             <fileset file="${build}/${jar}"/>
         </copy>
