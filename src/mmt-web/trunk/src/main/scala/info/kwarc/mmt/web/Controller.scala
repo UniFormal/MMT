@@ -12,7 +12,6 @@ object Manager {
       
    def start() {
       controller.handle(frontend.ExecFile(new java.io.File("startup.mmt")))
-      uom.init
    }
    def doGet(doc : String, mod : String, sym : String, act : String) = {
       val action = frontend.Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, basepath, controller.getHome)

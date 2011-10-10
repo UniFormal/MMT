@@ -58,6 +58,7 @@
             </lib>
             <lib file="${deploy}/lib/scala-library.jar" />
             <lib file="${deploy}/lib/scala-compiler.jar" />
+        	   <lib file="${deploy}/lib/tiscaf.jar" />
             <lib file="${deploy}/mmt/mmt-api.jar" />
       	   <lib file="${deploy}/lfcatalog/lfcatalog.jar" />
       	   <lib file="${deploy}/mmt/mmt-mizar.jar" />
@@ -67,7 +68,7 @@
 
     <target name="build" depends="compile,war"/>
 
-    <target name="deploy" depends="build">
+    <target name="deploy">
         <copy todir="${deploy}/mmt">
             <fileset file="${build}/${jar}"/>
         </copy>
