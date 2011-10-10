@@ -2,11 +2,9 @@ package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
 import frontend._
+import backend._
 import ontology._
 import modules._
-
-import info.kwarc.mmt.mizar.test.MwsService
-import info.kwarc.mmt.tptp._
 
 import zgs.httpd._  // tiscaf
 import zgs.httpd.let._
@@ -18,7 +16,7 @@ import java.net.HttpURLConnection;
 import java.net._
 import java.io._
 
-
+case class ServerError(n: Node) extends java.lang.Throwable
 
 /** An HTTP RESTful server. */  
 class Server(val port : Int, controller : Controller) extends HServer {
@@ -39,76 +37,76 @@ class Server(val port : Int, controller : Controller) extends HServer {
     //override def buffered = true
     override def chunked = true   // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     def resolve(req : HReqHeaderData) : Option[HLet] = {
-      log("request: " + req.uriPath + "  " + req.uriExt + "   " + req.query);
+      log("request: " + req.uriPath + "  " + req.uriExt + "   " + req.query)
       Util.getComponents(req.uriPath) match {
-      case ":tree" :: _ => Some(XmlResponse(tree(req.query)))
-      case ":query" :: _ => Some(QueryResponse)
-      case ":graph" :: _ =>
-          val mmtpath = Path.parse(req.query, controller.getBase)
-          val json : JSONType = graph(mmtpath)
-          Some(JsonResponse(json))
-      case ":breadcrumbs" :: _ =>
-          val mmtpath = Path.parse(req.query, controller.getBase)
-          val node = scala.xml.Utility.trim(Util.breadcrumbs(mmtpath))
-          Some(XmlResponse(node))
-      case ":admin" :: _ =>
-          try {
-            controller.report.record
-            val c = req.query.replace("%20", " ")
-            val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
-            controller.handle(act)
-            val r = controller.report.recall
-            controller.report.clear
-            Some(XmlResponse(Util.div(r reverseMap Util.div)))
-          } catch {
-            case e: Error =>
-              controller.report(e)
-              controller.report.clear
-              Some(XmlResponse(Util.div("error: " + e.msg)))
-          }
-      case ":uom" :: _ => Some(UomResponse)          
-      case ":search" :: _ => Some(MwsResponse)
-      case ":mmt" :: _ => Some(MmtResponse)
-      // empty path 
-      case List("") | Nil => Some(resourceResponse("browse.html"))
-      // HTML files in xhtml/ folder can be accessed without xhtml/ prefix
-      //case List(s) if (s.endsWith(".html")) => {println("tt"); Some(resourceResponse("xhtml/" + s))}
-      // other resources
-      case _ => Some(resourceResponse(req.uriPath))
+         case ":tree" :: _ => Some(XmlResponse(tree(req.query)))
+         case ":query" :: _ => Some(QueryResponse)
+         case ":graph" :: _ =>
+             val mmtpath = Path.parse(req.query, controller.getBase)
+             val json : JSONType = graph(mmtpath)
+             Some(JsonResponse(json))
+         case ":breadcrumbs" :: _ =>
+             val mmtpath = Path.parse(req.query, controller.getBase)
+             val node = scala.xml.Utility.trim(Util.breadcrumbs(mmtpath))
+             Some(XmlResponse(node))
+         case ":admin" :: _ =>
+             try {
+               controller.report.record
+               val c = req.query.replace("%20", " ")
+               val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
+               controller.handle(act)
+               val r = controller.report.recall
+               controller.report.clear
+               Some(XmlResponse(Util.div(r reverseMap Util.div)))
+             } catch {
+               case e: Error =>
+                 controller.report(e)
+                 controller.report.clear
+                 Some(XmlResponse(Util.div("error: " + e.msg)))
+             }
+         case ":uom" :: _ => Some(UomResponse)          
+         case ":search" :: _ => Some(MwsResponse)
+         case ":mmt" :: _ => Some(MmtResponse)
+         // empty path 
+         case List("") | Nil => Some(resourceResponse("browse.html"))
+         // HTML files in xhtml/ folder can be accessed without xhtml/ prefix
+         //case List(s) if (s.endsWith(".html")) => {println("tt"); Some(resourceResponse("xhtml/" + s))}
+         // other resources
+         case _ => Some(resourceResponse(req.uriPath))
+      }
     }
-  }}
+  }
   
   
   /** Response when the first path component is :query */
   private def QueryResponse : HLet = new HLet {
     def act(tk : HTalk) {
-           // default incoming edges
-           if (tk.req.query == "") {
-              val mmtpath = Path.parse(tk.req.query, controller.getBase)
-              val node = incoming(mmtpath)
-              XmlResponse(node).act(tk)
-           } else {
-              case class Error(n: Node) extends java.lang.Throwable
+        // default incoming edges
+        if (tk.req.query == "") {
+           val mmtpath = Path.parse(tk.req.query, controller.getBase)
+           val node = incoming(mmtpath)
+           XmlResponse(node).act(tk)
+        } else {
+           try {
+              val bodyWS : Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
+              var bodyXML : scala.xml.Node = null
               try {
-                 val bodyWS : Array[Byte] = tk.req.octets.getOrElse(throw Error(<error message="no body found"/>))
-                 var bodyXML : scala.xml.Node = null
-                 try {
-                   bodyXML = scala.xml.XML.loadString(bodyWS.mkString).head
-                 } catch {
-                   case _ => throw Error(<error message="invalid XML"/>)
-                 }
-                 val body = scala.xml.Utility.trim(bodyXML)
-                 val q = ontology.Query.parse(body)
-                 val res = try {controller.evaluator.evaluate(q)}
-                           catch {
-                              case ParseError(s) => throw Error(<error message={s}/>)
-                              case GetError(s) => throw Error(<error message={s}/>)
-                           }
-                 val resp = res.toNode
-                 XmlResponse(resp).act(tk)
+                bodyXML = scala.xml.XML.loadString(bodyWS.mkString).head
+              } catch {
+                case _ => throw ServerError(<error message="invalid XML"/>)
               }
-              catch {case Error(n) => XmlResponse(n).act(tk)}
+              val body = scala.xml.Utility.trim(bodyXML)
+              val q = ontology.Query.parse(body)
+              val res = try {controller.evaluator.evaluate(q)}
+                        catch {
+                           case ParseError(s) => throw ServerError(<error message={s}/>)
+                           case GetError(s) => throw ServerError(<error message={s}/>)
+                        }
+              val resp = res.toNode
+              XmlResponse(resp).act(tk)
            }
+           catch {case ServerError(n) => XmlResponse(n).act(tk)}
+        }
     }
   }
   
@@ -145,93 +143,50 @@ class Server(val port : Int, controller : Controller) extends HServer {
   /** Response when the first path component is :search */
   private def MwsResponse : HLet = new HLet {
     def act(tk : HTalk) {
-      val resp = controller.backend.mws match {
-            case None => <error message="no MathWebSearch backend defined"/>
-            case Some(mws) =>
-              tk.req.octets match {
-                case None => <error message="empty query string"/>
-                case Some(body) =>
-                  val bodyXML = null
-                  try {
-                    val bodyXML = scala.xml.XML.loadString(body.mkString).head
-                    // XML => Mizar
-                    try {
-                      val input = tk.req.query match {
-                        case "mizar" => 
-                          val mmlVersion = tk.req.header("MMLVersion") match {
-                            case Some(s) => s
-                            case _ => "4.166" 
-                          }
-                          val currentAid = tk.req.header("Aid") match {
-                            case Some(s) => s
-                            case _ => "HIDDEN"
-                          }
-                          val Offset = tk.req.header("Offset") match {
-                            case Some(s) => try s.toInt catch {case _ => 0}
-                            case _ => 0
-                          }
-                          val Size = tk.req.header("Size") match {
-                            case Some(s) => try s.toInt catch {case _ => 30}
-                            case _ => 30
-                          }
-                          val q = MwsService.parseQuery(bodyXML, currentAid, mmlVersion,Offset,Size) // translate mizar-xml query
-                          val qlist = MwsService.applyImplicitInferences(q)
-                          qlist
-                        case _ => List(bodyXML) // assume content math query by default
-                      }
-                      val res = input.map(utils.xml.post(mws.toJava.toURL, _))
-                      val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
-                      val size = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
-                            
-                      val answrs = res.flatMap(_.child)
-                      <mws:answset total={total.toString} size={size.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>  
-                    }
-                    catch {
-                      case e: ParseError => <error><message>{e.getMessage}</message><input>{body.mkString}</input></error>
-                      case _ => <error><message>Invalid MizXML, Translation Failed</message></error>
-                    }  // end[Mizar]
-                  }
-                  catch { case _ => 
-                    // text, not XML => TPTP
-                    try {
-                      val bodyString = body.mkString
-                      tk.req.query match {
-                        case "tptp" =>
-                          val Offset = tk.req.header("Offset") match {
-                            case Some(s) => try s.toInt catch {case _ => 0}
-                            case _ => 0
-                          }
-                          val Size = tk.req.header("Size") match {
-                            case Some(s) => try s.toInt catch {case _ => 30}
-                            case _ => 30
-                          }
-                          val translator = new TptpTranslator()
-                          val translated = translator.translateFormula(bodyString)
-                          translated match {
-                            case Some(x) =>
-                              val node = TptpTranslator.toMwsQuery(x.toCML, Offset, Size)
-//                              val res = node.map(utils.xml.post(new URL(mws.toJava.toURL), _))
-                              val res = node.map(utils.xml.post(new URL("http://localhost:20000"), _))
-                              val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
-                              val size = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
-                              val answrs = res.flatMap(_.child)
-                              <mws:answset total={total.toString} size={size.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>
-                            case None => <error><message>Error translating the given query to OMDoc</message></error>
-                          }
-                        case _ => <error><message>Only TPTP queries can be specified as string</message></error>
-                      }
-                    }
-                    catch {
-                      case e: ParseError => <error><message>{e.getMessage}</message></error>
-                      case _ => <error><message>Translation Failed</message></error>
-                    }
-                  } // end[case Some(body)]
-              } // end[tk.req.octets match]
-      } // end[controller.backend.mws match]
+      val resp = try {
+         val mws = controller.backend.mws.getOrElse(throw ServerError(<error message="no MathWebSearch backend defined"/>))
+         val body = tk.req.octets.getOrElse(throw ServerError(<error message="no query given"/>))
+         val offset = tk.req.header("Offset") match {
+            case Some(s) => try s.toInt catch {case _ => 0}
+            case _ => 0
+         }
+         val size = tk.req.header("Size") match {
+            case Some(s) => try s.toInt catch {case _ => 30}
+            case _ => 30
+         }
+         val mwsqs : List[Node] = tk.req.query match {
+             case "mizar" =>
+                val bodyXML = scala.xml.XML.loadString(body.mkString).head
+                val mmlVersion = tk.req.header("MMLVersion") match {
+                   case Some(s) => s
+                   case _ => "4.166" 
+                }
+                val currentAid = tk.req.header("Aid") match {
+                   case Some(s) => s
+                   case _ => "HIDDEN"
+                }
+                val mizar = java.lang.Class.forName("info.kwarc.mmt.mizar.test.MwsService").asInstanceOf[java.lang.Class[QueryTransformer]].newInstance
+                mizar.transformSearchQuery(bodyXML, List(currentAid, mmlVersion))
+             case "tptp" =>
+                 val bodyString = body.mkString
+                 val tptp = java.lang.Class.forName("info.kwarc.mmt.tptp.TptpCompiler").asInstanceOf[java.lang.Class[QueryTransformer]].newInstance
+                 tptp.transformSearchQuery(scala.xml.Text(bodyString), Nil)
+             case _ => List(scala.xml.XML.loadString(body.mkString).head) // default: body is forwarded to MWS untouched
+          }
+          def wrapMWS(n: Node) : Node = <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}>{n}</mws:query>
+          val res = mwsqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q)))
+          val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
+          val totalsize = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
+          val answrs = res.flatMap(_.child)
+          <mws:answset total={total.toString} size={totalsize.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>
+      } catch {
+         case ServerError(n) => n
+         case e: ParseError => <error><message>{e.getMessage}</message></error>
+         case _ => <error><message>error translating query</message></error>
+      }
       XmlResponse(resp).act(tk)
     }
   }
-  
   
   /** Response when the first path component is :mmt */
   private def MmtResponse : HLet = new HLet {

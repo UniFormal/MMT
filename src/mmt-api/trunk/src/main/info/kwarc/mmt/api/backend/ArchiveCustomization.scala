@@ -88,18 +88,11 @@ class MML extends ArchiveCustomization {
 class TPTP extends ArchiveCustomization {
   def mwsurl(p: Path) : String = p.toPath
   
-  def prepareQuery(t: Obj): Node = {
-    TPTP.process(t.toCML)
-  }
-}
-
-object TPTP {
-  
   /**
    * Traverse the node, fixing symbol names and translating $$ terms to qvar
    */
-  def process(n: Node): Node = {
-    n match {
+  def prepareQuery(t: Obj): Node = process(t.toCML)
+  def process(n: Node) : Node = n match {
       case <csymbol>{s}</csymbol> =>
         val ss = getSymbolName(s.toString)
         if (isQvar(ss)) {
@@ -114,12 +107,11 @@ object TPTP {
         } else {
           <ci>{ss}</ci>
         }
-      case _ =>
+      case n =>
         if (n.child.length == 0)
           n
         else
           new Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(process(_)) : _*)
-    }
   }
   
   /**

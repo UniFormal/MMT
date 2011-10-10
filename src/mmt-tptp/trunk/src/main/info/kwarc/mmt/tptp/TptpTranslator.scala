@@ -365,14 +365,6 @@ object TptpTranslator {
     controller.add(e)
   }
   
-  /**
-   * Translate the given node q to a MathWebSearch query. Used from mmt-web
-   */
-  def toMwsQuery(q: Node, offset : Int, size : Int): Node = {
-    val query = TPTP.process(q) // ArchiveCustomization for TPTP in mmt-api
-    <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}><mws:expr>{query}</mws:expr></mws:query> 
-  }
-  
   def main(args:Array[String]) = {
     val translator = new TptpTranslator()
 //    val res = translator.translateFormula("f(X,Y,$$z)")

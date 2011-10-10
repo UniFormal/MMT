@@ -1,21 +1,22 @@
 package info.kwarc.mmt.tptp
 
 import tptp._
+
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.presentation._
+import documents._
+import utils._
+import frontend._
+import backend._
+import symbols._
+import libraries._
+import modules._
+import objects._
+import presentation._
 
 /**
  * TPTP Compiler, translates TPTP sources to OMDoc
  */
-class TptpCompiler extends Compiler {
+class TptpCompiler extends Compiler with QueryTransformer {
   
   def isApplicable(src : String) : Boolean = {
     true
@@ -63,4 +64,14 @@ class TptpCompiler extends Compiler {
 		fw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + docNode.toString)
 		fw.close
 	}
+	
+	def transformSearchQuery(n: scala.xml.Node, params : List[String]) : List[scala.xml.Node] = {
+	   val translator = new TptpTranslator()
+	   val s = n match {
+	      case scala.xml.Text(s) => s
+	   }
+      val translated = translator.translateFormula(s).get
+      val query = (new TPTP).prepareQuery(translated) // ArchiveCustomization for TPTP in mmt-api
+      List(<mws:expr>{query}</mws:expr>)
+   }
 }

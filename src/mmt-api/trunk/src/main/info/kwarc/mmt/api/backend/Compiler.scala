@@ -5,7 +5,7 @@ import utils.File
 /**
  * A Compiler transforms source files into OMDoc files
  */
-abstract class Compiler {
+trait Compiler {
    /** true if this compiler can compile a certain kind of source files */
    def isApplicable(src : String): Boolean
    /** source files that the compiler is able to process */
@@ -34,4 +34,8 @@ case class CompilerError(region: Region, msg : List[String], warning: Boolean) {
 /** represents the location of an error */
 case class Region(file: File, beginLine: Int, beginColumn: Int, endLine: Int, endColumn: Int) {
    override def toString = file.toString + "#" + beginLine + "." + beginColumn + "-" + endLine + "." + endColumn
+}
+
+trait QueryTransformer {
+   def transformSearchQuery(n: scala.xml.Node, params : List[String]) : List[scala.xml.Node]
 }

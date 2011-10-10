@@ -1,10 +1,12 @@
 package info.kwarc.mmt.mizar.test
 
-import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mizar.translator._
 import info.kwarc.mmt.mizar.mmt.objects._
+
+import info.kwarc.mmt.api._
+import objects._
+import backend._
 
 import java.net.HttpURLConnection;
 import java.net._
@@ -22,13 +24,14 @@ class M2OThread extends M2OWebServer with Runnable {
   
 }
 */
-object MwsService {
-  
-  
-  
-  
-  
-  
+class MwsService extends QueryTransformer {
+  def transformSearchQuery(n : scala.xml.Node, params: List[String]) : List[scala.xml.Node] = {
+     val aid = params(0)
+     val mmlversion = params(1)
+     val q = parseQuery(n, aid, mmlversion)
+     applyImplicitInferences(q)
+  }
+
   def applyInferences(f : scala.xml.Node, args : List[scala.xml.Node]) : List[scala.xml.Node] = (f.toString, args) match {
     case ("HIDDEN?R1", a :: b :: Nil) => 
       if (!(a.label == "qvar" && b.label == "qvar")) {
@@ -98,7 +101,7 @@ object MwsService {
     	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_, evars, uvars)) : _*)
   }
   
-  def parseQuery(n : scala.xml.Node, aid : String, mmlversion : String, offset : Int, size : Int) : scala.xml.Node = {
+  def parseQuery(n : scala.xml.Node, aid : String, mmlversion : String) : scala.xml.Node = {
     TranslationController.query = true
     TranslationController.currentAid = aid
     TranslationController.currentTheory = DPath(Mizar.baseURI) ? TranslationController.currentAid
@@ -124,15 +127,13 @@ object MwsService {
     }
     TranslationController.clearVarContext()
     val q = makeQVars(cml, Nil, Nil)
-    <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}><mws:expr>{q}</mws:expr></mws:query>
-
+    <mws:expr>{q}</mws:expr>
   }
-  
   
   
   def main(args: Array[String]): Unit = {
     val n = MizarCompiler.getNode("test.xml")
-	val q = parseQuery(n,"ORDINAL2","",0,30)
+	val q = transformSearchQuery(n, List("ORDINAL2",""))
 	println(q)
 	val urlStr = "http://localhost:6284"
     val url = new URL(urlStr);

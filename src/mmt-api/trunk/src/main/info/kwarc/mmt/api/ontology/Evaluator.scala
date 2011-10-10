@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import utils._
+import frontend._
 import objects._
 import libraries._
 import scala.collection.mutable.{HashSet}
@@ -23,7 +24,9 @@ case class ESetResult(h: HashSet[BaseType]) extends QueryResult {
 }
 
 /** evaluates a query expression to a query result */
-class Evaluator(rs: RelStore, lup: Lookup) {
+class Evaluator(controller: Controller) {
+   private val rs = controller.depstore
+   private val lup = controller.globalLookup
    private val lff = new lf.LFF(frontend.NullReport)
    
    /** evaluation of a query

@@ -53,7 +53,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    val reader = new Reader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(reader, report)
-   val evaluator = new ontology.Evaluator(depstore, globalLookup)
+   val evaluator = new ontology.Evaluator(this)
    val uom = {val u = new UOMServer(report); u.init; u}
    /** the http server */
    var server : Option[Server] = None
