@@ -8,8 +8,8 @@
         <pathelement location="${deploy}/lib/scala-library.jar"/>
         <pathelement location="${deploy}/lib/scala-compiler.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
+        <pathelement location="${deploy}/lfcatalog/lfcatalog.jar"/>
         <pathelement location="lib/tntbase-plugin-api.jar"/>
-        <pathelement location="${deploy}/mmt/lfcatalog.jar"/>
         <pathelement location="${build.main}"/>
     </path>
     <path id="scaladoc.classpath">
@@ -40,6 +40,7 @@
                 <provider classname="${root.pkg}.tntplugin.TNTValidation"/>
                 <provider classname="${root.pkg}.tntplugin.TNTPresenter"/>
             </service>
+        	   <fileset dir="resources"/>
             <fileset dir="${build.main}"/>
         </jar>
     </target>
