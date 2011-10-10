@@ -39,7 +39,7 @@
         </jar>
     </target>
 
-   <target name="deploy">
+   <target name="deploy" depends="init">
        <copy todir="${deploy}/mmt">
            <fileset file="${build}/mmt-mizar.jar"/>
        </copy>
