@@ -20,7 +20,7 @@ trait ResourceLet  extends HLet {
   //-------------------- init ------------------------------
 
   // starts with anf ends with "/"
-  private val theDirRoot : String = "/" + dirRoot + { if (dirRoot.endsWith("/")) "" else "/" }
+  private val theDirRoot : String = "/" + dirRoot + { if (dirRoot.endsWith("/")) "" else if (dirRoot == "") "" else "/" }
 
   private val theUriRoot = { // remove leading and trailing "/"
     val anUri = uriRoot
@@ -32,13 +32,15 @@ trait ResourceLet  extends HLet {
     val uriExt = if (tk.req.uriExt.isDefined) { ";" + tk.req.uriExt.get } else ""
     val pathRest =  tk.req.uriPath.substring(theUriRoot.length)
     val path = theDirRoot + { if (pathRest.startsWith("/")) pathRest.substring(1) else pathRest }
+    //println("ResourceLet.resolvePath: " + path)
     new java.io.File(path).getCanonicalPath
   }
   
   //------------------ HLet implemented --------------------
 
-  def act(tk : HTalk) = if ((tk.req.uriPath).startsWith(theUriRoot)) {
-    val path = resolvePath(tk)
+  def act(tk : HTalk) {
+    if ((tk.req.uriPath).startsWith(theUriRoot)) {
+    val path = tk.req.uriPath
     val io = ("" :: indexes.toList)
       .view
       .map(idx => getResource((path + { if (idx.length == 0) "" else "/" + idx}).replace("//", "/")))
@@ -65,6 +67,7 @@ trait ResourceLet  extends HLet {
     }
   }
   else notFound(tk)
+  }
 
   private def notFound(tk : HTalk) = new ErrLet(HStatus.NotFound, tk.req.uriPath) act(tk)
 }

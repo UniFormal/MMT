@@ -6,8 +6,10 @@ import libraries._
 import objects._
 import documents._
 import ontology._
+import web._
 import utils._
 import utils.FileConversion._
+import info.kwarc.mmt.uom._
 
 /** An exception that is throw when a needed knowledge item is not available.
  * A Controller catches it and retrieves the item dynamically.  
@@ -51,8 +53,10 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    val reader = new Reader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(reader, report)
+   val evaluator = new ontology.Evaluator(depstore, globalLookup)
+   val uom = {val u = new UOMServer(report); u.init; u}
    /** the http server */
-   //val server = new Server
+   var server : Option[Server] = None
    /** a lookup that uses only the current memory data structures */
    val localLookup = library
    /** a lookup that load missing modules dynamically */
@@ -147,6 +151,31 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    protected var home = File(".")
    def getHome = home
    def setHome(h: File) {home = h}
+
+   /** starts the HTTP server on the given port */
+   def startServer(port : Int) {
+    server match {
+      case Some(serv) => log("server already started on port " + serv.port)
+      case None if (Util.isTaken(port)) => log("port " + port + " is taken. Server not started.")
+      case _ =>
+        val serv = new Server(port, this)
+        serv.start
+        log("Server started at http://localhost:" + port)
+        server = Some(serv)
+    }
+  }
+  
+   /** stops the HTTP server */
+   def stopServer {
+    server match {
+      case Some(serv) => 
+        serv.stop
+        log("Server stopped")
+        server = None
+      case None => log("server is not running, so it can't be stopped")
+    }
+  }
+
    protected def handleExc[A](a: => A) {
        try {a}
        catch {
@@ -208,8 +237,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
-	      case ServerOn(p) =>
-	      case ServerOff =>
+	      case ServerOn(p) => startServer(p)
+	      case ServerOff => stopServer
 	      case Clear => clear
 	      case ExecFile(f) =>
 	         var line : String = null

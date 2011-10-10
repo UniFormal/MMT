@@ -5,3 +5,17 @@ HReqHeader.scala:122: instead of
 have
  
      if (extParts.size == 2) anUriExt = Some(extParts(1).trim)
+     
+     
+ResourceLet.scala:23: instead of 
+
+
+have
+
+        private val theDirRoot : String = "/" + dirRoot + { if (dirRoot.endsWith("/")) "" else if (dirRoot == "") "" else "/" }
+        
+        
+ResourceLet.scala:42
+
+
+val path = tk.req.uriPath
