@@ -1,0 +1,7 @@
+HReqHeader.scala:122: instead of 
+
+     if (extParts.size == 2 && extParts(1).trim.size > 0) anUriExt = Some(extParts(1).trim)
+     
+have
+ 
+     if (extParts.size == 2) anUriExt = Some(extParts(1).trim)
