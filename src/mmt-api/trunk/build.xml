@@ -5,16 +5,12 @@
     <property file="build.properties" />
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <pathelement location="lib/scala-library.jar"/>
-        <pathelement location="lib/scala-compiler.jar"/>
+        <pathelement location="${deploy}/lib/scala-library.jar"/>
+        <pathelement location="${deploy}/lib/scala-compiler.jar"/>
+        <pathelement location="${deploy}/lib/tiscaf.jar"/>
         <pathelement location="lib/tntbase-plugin-api.jar"/>
-        <pathelement location="lib/lfcatalog.jar"/>
+        <pathelement location="${deploy}/mmt/lfcatalog.jar"/>
         <pathelement location="${build.main}"/>
-        <pathelement location="${deploy}/mmt/mmt-mizar.jar" />
-        <pathelement location="${deploy}/mmt/mmt-tptp.jar" />
-        <pathelement location="../../mmt-tptp/trunk/lib/tptp-parser.jar" />
-        <pathelement location="../../mmt-tptp/trunk/lib/antlr-3.2.jar" />
-        <pathelement location="../../mmt-tptp/trunk/lib/antlr-runtime-3.2.jar" />
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
