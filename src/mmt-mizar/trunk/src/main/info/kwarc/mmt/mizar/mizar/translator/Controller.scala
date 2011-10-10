@@ -21,6 +21,8 @@ object TranslationController {
       val checker = libraries.NullChecker //new FoundChecker(new libraries.DefaultFoundation(report))
       new frontend.Controller(checker,report)
     }
+    
+    var query : Boolean = false
 	  
 	
 	//new frontend.Controller(libraries.NullChecker, new FileReport(new java.io.File("mizar.log")))
@@ -48,6 +50,14 @@ object TranslationController {
 	def resolveLocusVar(nr : Int) : Term = {
 		locusVarContext(locusVarContext.length - nr)
 		//Index(SeqVar("y"), OMI(nr - 1))
+	}
+	
+	def resolveConst(nr : Int) : Term = {
+	  if (query) {
+	    OMA(OMID(MMTUtils.getPath("qvar","const")), List(OMV("c" + nr.toString)))
+	  } else {
+	    OMID(MMTUtils.getPath(TranslationController.currentAid, "C" + nr))
+	  }
 	}
 	
 	def addQVarBinder() = {
@@ -78,7 +88,10 @@ object TranslationController {
 	}
 	
 	def addRetTerm(path: GlobalName) = {
-		locusVarContext.push(OMA(OMID(path), locusVarContext.toList))
+	    locusVarContext.length match {
+	      case 0 => locusVarContext.push(OMID(path))
+	      case _ => locusVarContext.push(OMA(OMID(path), locusVarContext.toList))
+	    }
 	}
 	
 	def clearLocusVarBinder() {

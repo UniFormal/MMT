@@ -87,7 +87,7 @@ object Main {
 	    val f = File("/home/mihnea/kwarc/oaff/mml/source/")
 	    val files = f.toJava.listFiles().map(f => File(f)).filter(x => MizarCompiler.isApplicable(x.toJava.getName())).toList
 	    
-	    //val testFiles = List("borsuk_3.miz", "tarski.miz","xboole_0.miz", "enumset1.miz", "zfmisc_1.miz", "subset_1.miz", "relat_1.miz", "setfam_1.miz", "funct_1.miz", "relat_2.miz", "relset_1.miz")
+	    //val testFiles = List("jordan.miz")// "tarski.miz","xboole_0.miz", "enumset1.miz", "zfmisc_1.miz", "subset_1.miz", "relat_1.miz", "setfam_1.miz", "funct_1.miz", "relat_2.miz", "relset_1.miz")
 	    //val files = testFiles.map(x => File("/home/mihnea/kwarc/oaff/mml/source/" + x))
 	    
 	    //MizarCompiler.compileLibrary(files)

@@ -21,6 +21,17 @@ object Differ {
 	  diff
 	}
   
+	def applyDiff(diff : Diff, controller : Controller) : Document = {
+	  val baseDoc = controller.getDocument(diff.old)
+	  diff.changes.map(x => x match {
+	    case c : ChangeDocument => applyDocChange(c, diff.cold, controller)
+	    case c : ChangeModule => applyModuleChange(c, diff.cold, controller)
+	    case c : ChangeDeclaration => applyDeclarationChange(c, diff.cold, controller)
+	  })
+	  
+	  controller.getDocument(diff.nw)
+	}
+	
 	
 	def genCSS(c : ChangeModule, fname : String) = {
 	  val css = new java.io.FileWriter("/home/mihnea/public_html/" + fname + ".css")
@@ -246,16 +257,7 @@ object Differ {
 	}
 	
 	
-	def applyDiff(diff : Diff, controller : Controller) : Document = {
-	  val baseDoc = controller.getDocument(diff.old)
-	  diff.changes.map(x => x match {
-	    case c : ChangeDocument => applyDocChange(c, diff.cold, controller)
-	    case c : ChangeModule => applyModuleChange(c, diff.cold, controller)
-	    case c : ChangeDeclaration => applyDeclarationChange(c, diff.cold, controller)
-	  })
-	  
-	  controller.getDocument(diff.nw)
-	}
+	
 	
 	
 	def _getType(s : StructuralElement) : String = s match {
