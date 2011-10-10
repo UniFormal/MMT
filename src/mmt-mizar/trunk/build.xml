@@ -3,18 +3,16 @@
 
   <target name="init">
 	<!-- The variable scala.home holds the directory in which to find the scala compiler. -->
-	<property name="scala.home" value="../../../deploy/lib/scala" />
+	<property name="deploy" value="../../../deploy" />
 	<property name="build" value="build" />
-	<property name="mmt.home" value="../../mmt-api/trunk/build" />
 	<property name="build.main" value="${build}/main" />
-	
-        <property name="src.main" value="src/" />
+   <property name="src.main" value="src/" />
 
 	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
 	<path id="scalac.classpath">
-		<pathelement location="${scala.home}/scala-library.jar"/>
-		<pathelement location="${scala.home}/scala-compiler.jar"/>
-		<pathelement location="${mmt.home}/mmt-api.jar"/>
+		<pathelement location="${deploy}/lib/scala-library.jar"/>
+		<pathelement location="${deploy}/lib/scala-compiler.jar"/>
+		<pathelement location="${deploy}/mmt/mmt-api.jar"/>
 	</path>
 	<!-- This defines the task scalac (which is similar to javac but for scala). -->
 	<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
@@ -35,7 +33,7 @@
         <jar destfile="${build}/mmt-mizar.jar">
             <manifest>
                 <!-- DM TODO: this shouldn't really be here -->
-                <attribute name="Class-Path" value="${scala.home}/scala-library.jar ${scala.home}/lfcatalog.jar ${mmt.home}/mmt-api.jar"/>
+                <attribute name="Class-Path" value="${deploy}/lib/scala-library.jar ${deploy}/lfcatalog/lfcatalog.jar ${deploy}/mmt/mmt-api.jar"/>
             </manifest>
             <fileset dir="${build.main}"/>
         </jar>
