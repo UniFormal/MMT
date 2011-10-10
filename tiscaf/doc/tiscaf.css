@@ -1,0 +1,10 @@
+body {padding:1em;font-family:sans-serif;font-size:medium;color:#433;background-color:#FFFFF7;}
+h1 {text-align:right;border-bottom: 0.1em solid;}
+h1, h2, h3 {color:#B33;}
+h2, h3 {margin-top:2em;}
+h1 {font-size:150%;}
+h2 {font-size:130%;border-bottom: 0.1em solid;}
+h3 {font-size:110%;font-style:italic;}
+code {font-family:monospace;font-weight:bold;}
+pre, .mono {font-family:monospace;}
+
