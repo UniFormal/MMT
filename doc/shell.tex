@@ -49,13 +49,27 @@ The catalog maintains a translation map from URIs to URLs. It is initially empty
 \item \code{ombase F}: This creates a catalog entry for an OMBase server described in \code{F}. See the example file \code{ombase.xml} in the documentation.
 \end{itemize}
 
+\paragraph{Extension Commands}
+MMT provides several interfaces for language-specific customization in external implementations. All extensions must provide a class \code{C} (as a qualified Java class name using dots to separate components), instantiate a certain interface, and must have a constructor that takes no arguments. \code{ARGS} is a whitespace-separated list of string.
+
+An extension will be initialized by calling its \code{init} method, to which \code{ARGS} is passed as a Scala \code{List[String]}. Instantiation uses Java reflection, and it is the user's responsibility to make sure that \code{C} is on the class path at run time.
+
+\begin{itemize}
+\item \code{importer C ARGS}: This registers an importer. \code{C} must extend \texttt{info.kwarc.mmt.api.backend.Importer}. Importers are used to translate custom syntax into MMT. Relevant subinterfaces of \texttt{Importer} are
+  \begin{itemize}
+    \item \texttt{info.kwarc.mmt.api.backend.Compiler} for compiling external files into MMT files
+    \item \texttt{info.kwarc.mmt.api.backend.QueryTransformer} for translating search queries into MMT objects
+  \end{itemize}
+Importers may maintain their own data structures and auxiliary threads; if they do so, they must clean up after themselves in their \code{destroy} method to avoid memory leaks.
+\item \code{foundation C ARGS}: This registers a foundation in the sense of \cite{RK:mmt:10}. A foundation implements type and equality checking for a certain foundational theory.
+\end{itemize}
+
 \paragraph{Archive Commands}
 The following commands permit the registration and manipulation of archives:
 
 \begin{itemize}
-\item \code{compiler C ARGS}: This registers a compiler. \code{C} is the URI of a Java class, which must extend \texttt{info.kwarc.mmt.api.backend.Compiler} and have a constructor that takes no arguments. \code{ARGS} is a whitespace-separated list of string. The compiler will be initialized by calling its \code{init} method, to which \code{ARGS} is passed as a Scala \code{List[String]}. Compilers may maintain their own data structures and auxiliary threads; if they do so, they must clean up after themselves in their \code{destroy} method to avoid memory leaks.
 \item \code{archive add F}: This registers an archive with local root folder \code{F}.
-\item \code{archive ID D F}: This builds the dimensions \code{D} in the archive with id \code{ID}, optionally restricted to the folder/file \code{F}. Legal values for \code{D} are \code{compile}, \code{content} (which will produce \texttt{content} and \texttt{narration}), \code{mws}, and \code{relational}.
+\item \code{archive ID O F}: This executes operation \code{O} on the archive with id \code{ID}, optionally restricted to the folder/file \code{F} (slashes as path separators). Legal values for \code{O} are \code{compile}, \code{content} (which will produce \texttt{content}, \texttt{narration}, \texttt{relational}, and \texttt{notation}), \code{mws}, \code{relational} (which reads the relational index), and \code{notation} (which reads the notation index).
 \item \code{archive mar F}: This builds the \texttt{mar} file and stores it in \code{F}.
 \end{itemize}
 
