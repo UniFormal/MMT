@@ -224,8 +224,7 @@ object SimpleChecker extends ModuleChecker {
 /**
  * A Checker that implements MMT-well-formedness relative to a foundation.
  */
-class FoundChecker(foundation : Foundation) extends ModuleChecker {
-   private implicit val report = foundation.report
+class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecker {
    /** checks whether a content element may be added to a library
     * @param lib the library
     * @param s the content element
@@ -290,7 +289,7 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
             val paths : List[Path] = Nil //checkSubstitution(i.home, i.matches, pt.params, Context())
             // Mihnea's instances already refer to the elaborated constants stemming from the same instance
             val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
-            val elab = Instance.elaborate(i, true)
+            val elab = Instance.elaborate(i, true)(lib, report)
             i.setOrigin(Elaborated)
             Reconstructed(i :: elab, deps)
          case _ => Success(Nil)
@@ -454,4 +453,4 @@ class FoundChecker(foundation : Foundation) extends ModuleChecker {
    }
 }
 
-class StructuralChecker(report: Report) extends FoundChecker(new DefaultFoundation(report))
+class StructuralChecker(report: Report) extends FoundChecker(new DefaultFoundation, report)

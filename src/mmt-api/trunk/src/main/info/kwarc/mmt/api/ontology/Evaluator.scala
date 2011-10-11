@@ -27,7 +27,7 @@ case class ESetResult(h: HashSet[BaseType]) extends QueryResult {
 class Evaluator(controller: Controller) {
    private val rs = controller.depstore
    private val lup = controller.globalLookup
-   private val lff = new lf.LFF(frontend.NullReport)
+   private val lff = java.lang.Class.forName("info.kwarc.mmt.lf.LFF").asInstanceOf[java.lang.Class[Foundation]].newInstance
    
    /** evaluation of a query
     *  the result is typed according to the type of the query
