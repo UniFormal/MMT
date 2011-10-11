@@ -421,7 +421,7 @@ class FileCrawler(file : File) {
     
     val entireComment = flat.substring(start+2, endsAt-1).trim
     val commentLines = entireComment.split("\n")
-    var firstPropertyLine = commentLines.findIndexOf(_.trim.startsWith("@"))      
+    var firstPropertyLine = commentLines.indexWhere(_.trim.startsWith("@"))      
     if (firstPropertyLine == -1) firstPropertyLine = commentLines.length 
     
     // Add the short comment
@@ -433,7 +433,7 @@ class FileCrawler(file : File) {
       if (commentLines.slice(1, firstPropertyLine).mkString("\n").trim.nonEmpty) {
         // Remove initial and final empty lines
         val longCommentLines = commentLines.slice(1, firstPropertyLine)
-        val firstNonEmptyLine = longCommentLines.findIndexOf(_.trim.nonEmpty)
+        val firstNonEmptyLine = longCommentLines.indexWhere(_.trim.nonEmpty)
         val lastNonEmptyLine = longCommentLines.lastIndexWhere(_.trim.nonEmpty)
         properties += Pair("long", longCommentLines.slice(firstNonEmptyLine, lastNonEmptyLine + 1).mkString("\n"))
       }

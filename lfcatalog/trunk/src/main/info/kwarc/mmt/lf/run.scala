@@ -33,11 +33,11 @@ object Run {
       // read the optional --port argument
       if (args.head == "--port")
         if (args.length < 2) { 
-          println("error: port number expected\n\n" + usage); exit(1)
+          println("error: port number expected\n\n" + usage); sys.exit(1)
         }
         else {
           try { port = Integer.parseInt(args(1)) }
-          catch { case _ => println("error: port number expected\n\n" + usage); exit(1) }
+          catch { case _ => println("error: port number expected\n\n" + usage); sys.exit(1) }
           patternsAndLocations = patternsAndLocations.drop(2)
         }   
       // read the patterns and locations
@@ -63,7 +63,7 @@ object Run {
           if (words.length >= 1)
             if (words(0) == "exit") {       // exit the program
                 catalog.destroy             // stop the server
-                exit(0)
+                sys.exit(0)
             }
             else if (words(0) == "delete") {    // delete a location
                 if (words.length >= 2)
