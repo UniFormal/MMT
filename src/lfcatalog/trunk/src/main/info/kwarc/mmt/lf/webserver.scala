@@ -36,7 +36,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
          } catch {
            case _ =>
               catalog.log("critical error: /server-resources/admin.html inside JAR contains malformed XML")   // this should never happen
-              exit(1)
+              sys.exit(1)
          } finally {
               bufferedSource.close       // close the file, since scala.io.Source doesn't close it
          }
@@ -44,7 +44,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     }
   }
   catch {
-    case EncodingException(msg) => catalog.log(msg); exit(1)
+    case EncodingException(msg) => catalog.log(msg); sys.exit(1)
   }
   
   // Read jar://resources/readme.txt
@@ -57,7 +57,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     }
   }
   catch {
-    case EncodingException(msg) => catalog.log(msg); exit(1)
+    case EncodingException(msg) => catalog.log(msg); sys.exit(1)
   }
   
   override def name = "lfserver"
@@ -138,7 +138,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
         Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
       }}
       case "exit"   => {stop         // stop the server
-                         exit(0)      // exit the program
+                         sys.exit(0)      // exit the program
                          None}
       case "getMetaText" => {
         if (req.query.startsWith("uri=")) {
