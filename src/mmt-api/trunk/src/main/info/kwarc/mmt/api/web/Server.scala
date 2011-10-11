@@ -144,7 +144,7 @@ class Server(val port : Int, controller : Controller) extends HServer {
   private def MwsResponse : HLet = new HLet {
     def act(tk : HTalk) {
       val resp = try {
-         val mws = controller.backend.mws.getOrElse(throw ServerError(<error message="no MathWebSearch backend defined"/>))
+         val mws = controller.extman.getMWS.getOrElse(throw ServerError(<error message="no MathWebSearch engine defined"/>))
          val body = tk.req.octets.getOrElse(throw ServerError(<error message="no query given"/>))
          val offset = tk.req.header("Offset") match {
             case Some(s) => try s.toInt catch {case _ => 0}
@@ -154,31 +154,30 @@ class Server(val port : Int, controller : Controller) extends HServer {
             case Some(s) => try s.toInt catch {case _ => 30}
             case _ => 30
          }
-         val mwsqs : List[Node] = tk.req.query match {
-             case "mizar" =>
-                val bodyXML = scala.xml.XML.loadString(body.mkString).head
-                val mmlVersion = tk.req.header("MMLVersion") match {
-                   case Some(s) => s
-                   case _ => "4.166" 
-                }
-                val currentAid = tk.req.header("Aid") match {
-                   case Some(s) => s
-                   case _ => "HIDDEN"
-                }
-                val mizar = java.lang.Class.forName("info.kwarc.mmt.mizar.test.MwsService").asInstanceOf[java.lang.Class[QueryTransformer]].newInstance
-                mizar.transformSearchQuery(bodyXML, List(currentAid, mmlVersion))
-             case "tptp" =>
-                 val bodyString = body.mkString
-                 val tptp = java.lang.Class.forName("info.kwarc.mmt.tptp.TptpCompiler").asInstanceOf[java.lang.Class[QueryTransformer]].newInstance
-                 tptp.transformSearchQuery(scala.xml.Text(bodyString), Nil)
-             case _ => List(scala.xml.XML.loadString(body.mkString).head) // default: body is forwarded to MWS untouched
-          }
-          def wrapMWS(n: Node) : Node = <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}>{n}</mws:query>
-          val res = mwsqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q)))
-          val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
-          val totalsize = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
-          val answrs = res.flatMap(_.child)
-          <mws:answset total={total.toString} size={totalsize.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>
+         val query = tk.req.query
+         val qt = controller.extman.getQueryTransformer(query).getOrElse(TrivialQueryTransformer)
+         val (mwsquery, params) = query match {
+            case "mizar" => 
+               val bodyXML = scala.xml.XML.loadString(body.mkString).head
+               val mmlVersion = tk.req.header("MMLVersion") match {
+                  case Some(s) => s
+                  case _ => "4.166" 
+               }
+               val currentAid = tk.req.header("Aid") match {
+                 case Some(s) => s
+                 case _ => "HIDDEN"
+               }
+               (bodyXML, List(currentAid, mmlVersion))
+            case "tptp" => (scala.xml.Text(body.mkString), Nil)
+            case _ => (scala.xml.XML.loadString(body.mkString).head, Nil) // default: body is forwarded to MWS untouched
+         }
+         val tqs = qt.transformSearchQuery(mwsquery, params)
+         def wrapMWS(n: Node) : Node = <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}>{n}</mws:query>
+         val res = tqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q))) // calling MWS via HTTP post
+         val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
+         val totalsize = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)
+         val answrs = res.flatMap(_.child)
+         <mws:answset total={total.toString} size={totalsize.toString} xmlns:mws="http://www.mathweb.org/mws/ns">{answrs}</mws:answset>
       } catch {
          case ServerError(n) => n
          case e: ParseError => <error><message>{e.getMessage}</message></error>

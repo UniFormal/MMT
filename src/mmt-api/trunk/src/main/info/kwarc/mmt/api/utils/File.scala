@@ -44,6 +44,7 @@ object File {
             case e => r.close; throw e 
          }
       }
+      r.close
    }
 }
 

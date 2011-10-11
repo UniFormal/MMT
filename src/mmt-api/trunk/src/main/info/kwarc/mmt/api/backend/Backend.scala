@@ -1,6 +1,8 @@
 package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils._
+import utils._
+import frontend._
+
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
 import java.util.zip._
@@ -229,10 +231,8 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
 }
 
 /** a Backend holds a list of Storages and uses them to dereference Paths */
-class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
+class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
-   private var compilers : List[Compiler] = Nil
-   var mws : Option[URI] = None
    private def log(msg : => String) = report("backend", msg)
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
@@ -240,11 +240,6 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
          log("adding storage " + d.toString)
          d.init(reader)
       }
-   }
-   /** adds a compiler, must be initialized already */
-   def addCompiler(c: Compiler) {
-       log("adding compiler " + c.toString)
-       compilers ::= c
    }
    /** @throws NotFound if the root file cannot be read
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
@@ -268,10 +263,10 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
               }
               in.close
               properties.get("source") foreach (
-                src => compilers.find(_.isApplicable(src)) match {
+                src => extman.getCompiler(src) match {
                   case Some(c) => compiler = Some(c)
                   case None => log("no compiler registered for source " + src)
-              }
+                }
               )
           }
           val arch = new Archive(root, properties, compiler, report)
@@ -288,11 +283,6 @@ class Backend(reader : Reader, report : info.kwarc.mmt.api.frontend.Report) {
       }
       else throw NotApplicable
    }
-   def setMWS(uri: URI) {mws = Some(uri)}
-   def cleanup {
-      compilers.foreach(_.destroy)
-      compilers = Nil
-   } 
    
    private def extractMar(file: java.io.File, newRoot: java.io.File) {
        val mar = new ZipFile(file)

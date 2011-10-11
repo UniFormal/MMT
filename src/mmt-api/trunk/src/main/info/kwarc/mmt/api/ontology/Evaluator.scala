@@ -26,8 +26,8 @@ case class ESetResult(h: HashSet[BaseType]) extends QueryResult {
 /** evaluates a query expression to a query result */
 class Evaluator(controller: Controller) {
    private val rs = controller.depstore
+   private val extman = controller.extman
    private val lup = controller.globalLookup
-   private val lff = java.lang.Class.forName("info.kwarc.mmt.lf.LFF").asInstanceOf[java.lang.Class[Foundation]].newInstance
    
    /** evaluation of a query
     *  the result is typed according to the type of the query
@@ -63,8 +63,10 @@ class Evaluator(controller: Controller) {
          res
       case InferedType(of) =>
          val res = new HashSet[BaseType]
+         //TODO: find an applicable foundation
+         val found = extman.getFoundation(null).getOrElse(throw GetError("no applicable type inference engine defined"))
          evaluateESet(of) foreach {
-            case t: Term => res += lff.infer(t, Context())(lup)
+            case t: Term => res += found.infer(t, Context())(lup)
             case o => throw GetError("object exists but is not a term: " + o)
          }
          res
