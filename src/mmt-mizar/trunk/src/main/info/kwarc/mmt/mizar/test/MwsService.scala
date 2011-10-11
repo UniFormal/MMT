@@ -11,6 +11,7 @@ import backend._
 import java.net.HttpURLConnection;
 import java.net._
 import java.io._
+
 /*
 class M2OWebServer {
   def main() {
@@ -24,7 +25,10 @@ class M2OThread extends M2OWebServer with Runnable {
   
 }
 */
+
 class MwsService() extends QueryTransformer {
+  def isApplicable(src : String) : Boolean = src == "mizar"
+
   def transformSearchQuery(n : scala.xml.Node, params: List[String]) : List[scala.xml.Node] = {
      val aid = params(0)
      val mmlversion = params(1)
