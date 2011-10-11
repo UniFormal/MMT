@@ -115,7 +115,8 @@ object Rest {
          }
          val mwsqs : List[Node] = query match {
              case "mizar" =>
-                val bodyXML = scala.xml.XML.loadString(body.mkString).head
+	        	       
+                val bodyXML = scala.xml.XML.loadString(new String(body)).head
                 val mmlVersion = r.header("MMLVersion").toOption match {
                    case Some(s) => s
                    case _ => "4.166" 
@@ -132,7 +133,7 @@ object Rest {
                  tptp.transformSearchQuery(scala.xml.Text(bodyString), Nil)
              case _ => List(scala.xml.XML.loadString(body.mkString).head) // default: body is forwarded to MWS untouched
           }
-          def wrapMWS(n: Node) : Node = <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}>{n}</mws:query>
+         def wrapMWS(n: Node) : Node = <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}>{n}</mws:query>
           val res = mwsqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q)))
           val total = res.foldRight(0)((r,x) => x + (r \ "@total").text.toInt)
           val totalsize = res.foldRight(0)((r,x) => x + (r \ "@size").text.toInt)

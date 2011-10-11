@@ -24,11 +24,11 @@ class M2OThread extends M2OWebServer with Runnable {
   
 }
 */
-class MwsService extends QueryTransformer {
+class MwsService() extends QueryTransformer {
   def transformSearchQuery(n : scala.xml.Node, params: List[String]) : List[scala.xml.Node] = {
      val aid = params(0)
      val mmlversion = params(1)
-     val q = parseQuery(n, aid, mmlversion)
+     val q = parseQuery(scala.xml.Utility.trim(n), aid, mmlversion)
      applyImplicitInferences(q)
   }
 
