@@ -1,12 +1,12 @@
-package info.kwarc.mmt.api.lf
+package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.frontend._
-import Conversions._
+import libraries._
+import modules._
+import symbols._
+import objects._
+import utils._
+import frontend._
+import objects.Conversions._
 
 /* Meta-variable names
    s, t: Terms
@@ -26,7 +26,7 @@ import Conversions._
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
 object LF {
-   val lfbase = new DPath(URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
+   val lfbase = new DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
    val lftheory = lfbase ? "lf"
    def constant(name : String) = OMID(lftheory ? name)
    val ktype = constant("type")
