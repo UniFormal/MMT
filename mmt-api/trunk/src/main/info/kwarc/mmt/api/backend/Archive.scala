@@ -6,7 +6,6 @@ import modules._
 import symbols._
 import patterns._
 import objects._
-import lf._
 import utils._
 import FileConversion._
 

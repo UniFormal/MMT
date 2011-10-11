@@ -108,7 +108,7 @@ object Univ {
 
 //TODO: variable capture is not avoided anywhere
 /** The LF foundation. Implements type checking and equality */
-class LFF(report: Report) extends Foundation(report) {
+class LFF extends Foundation {
    private def log(msg : => String) = report("lf", msg)
    val foundTheory = LF.lftheory
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean = {
@@ -271,4 +271,4 @@ class LFF(report: Report) extends Foundation(report) {
  	
   }
 
-object Run extends frontend.Shell(r => new FoundChecker(new LFF(r)))
+object Run extends frontend.Shell(r => new FoundChecker((new LFF).init(r), r))

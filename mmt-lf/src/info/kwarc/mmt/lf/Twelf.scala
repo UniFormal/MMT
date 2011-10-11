@@ -1,9 +1,8 @@
-package info.kwarc.mmt.api.lf
+package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import utils.File
 import utils.FileConversion._
-import info.kwarc.mmt.lf._
 
 import java.io._
 import scala.collection.mutable.HashSet
