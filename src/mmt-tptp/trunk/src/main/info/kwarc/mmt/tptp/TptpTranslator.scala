@@ -24,7 +24,7 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.lf._
+import info.kwarc.mmt.lf._
 
 /**
  * Translates a Java structure representing parsed TPTP formula (parts) to OMDoc.

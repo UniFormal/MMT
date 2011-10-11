@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.lf._
+import info.kwarc.mmt.lf._
 import info.kwarc.mmt.api.patterns._
 import objects.Conversions._
 

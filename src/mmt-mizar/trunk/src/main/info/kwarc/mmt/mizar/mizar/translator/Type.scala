@@ -5,7 +5,7 @@ import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mmt.objects._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.lf._
+import info.kwarc.mmt.lf._
 
 object TypeTranslator {
 	def translateTyp(t : MizTyp) : Term = {

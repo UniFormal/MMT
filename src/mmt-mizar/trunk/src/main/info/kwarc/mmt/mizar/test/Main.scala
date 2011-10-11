@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.lf._
+import info.kwarc.mmt.lf._
 import scala.xml._
 
 object Main {
