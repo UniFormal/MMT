@@ -18,9 +18,7 @@ import presentation._
  */
 class TptpCompiler extends Compiler with QueryTransformer {
   
-  def isApplicable(src : String) : Boolean = {
-    true
-  }
+  def isApplicable(src : String) : Boolean = src == "tptp"
 
   override def compile(in : File, out : File) : List[CompilerError] = {
     var errors: List[CompilerError] = Nil
