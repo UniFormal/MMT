@@ -21,7 +21,7 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | archive | tntbase | compiler | mws | server | execfile
+   private def controller = logon | logoff | local | catalog | archive | tntbase | importer | foundation | mws | server | execfile
    private def shell = setbase | read | printall | printallxml | clear | exit
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
@@ -37,7 +37,8 @@ object Action extends RegexParsers {
    private def dimension = "compile" | "content" | "mws-flat" | "mws" | "flat" | "relational" | "notation" | "delete" | "extract" | "integrate"
    private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
-   private def compiler = "compiler" ~> str ~ (str *) ^^ {case c ~ args => AddCompiler(c, args)}
+   private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
+   private def foundation = "foundation" ~> str ~ (str *) ^^ {case f ~ args => AddFoundation(f, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def server = serveron | serveroff
    private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
@@ -106,9 +107,10 @@ case class AddTNTBase(file : java.io.File) extends Action {override def toString
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
  * @param args a list of arguments that will be passed to the compiler's init method
  */
-case class AddCompiler(cls: String, args: List[String]) extends Action {override def toString = "compiler " + cls + args.mkString(" ", " ", "")}
+case class AddImporter(cls: String, args: List[String]) extends Action {override def toString = "importer " + cls + args.mkString(" ", " ", "")}
+case class AddFoundation(cls: String, args: List[String]) extends Action {override def toString = "foundation " + cls + args.mkString(" ", " ", "")}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive " + folder}
+case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(id: String, dim: String, in : List[String]) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
 /** builds a dimension in a previously opened archive */

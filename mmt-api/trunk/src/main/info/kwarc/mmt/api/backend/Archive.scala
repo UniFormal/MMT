@@ -233,7 +233,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
 
     def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in
-       log("to do: [CONT->FLAT]        -> " + inFile)
+       log("to do: [CONT -> FLAT]        -> " + inFile)
        if (inFile.isDirectory) {
            inFile.list foreach {n =>
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
@@ -251,7 +251,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
               xml.writeFile(flatNodeOMDoc, flatDir / in)
               controller.delete(mpath)
         }
-       log("done:  [CONT->FLAT]        -> " + inFile)
+       log("done:  [CONT -> FLAT]        -> " + inFile)
     }
     
     def produceMWS(in : List[String] = Nil, dim: String) {
@@ -259,14 +259,9 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
           case "mws-flat" => "flat"
           case _ => "content"
         }
-        val inFile = root / sourceDim / in
-        if (inFile.isDirectory) {
-           inFile.list foreach {n =>
-              if (includeDir(n)) produceMWS(in ::: List(n), dim)
-           }
-        } else {
-           val outFile = (root / "mws" / dim / in).setExtension("mws")
-           log("[" + dim + "->MWS] " + inFile + " -> " + outFile)
+        traverse(sourceDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+           val outFile = (root / "mws" / dim / inPath).setExtension("mws")
+           log("[  -> MWS]  " + inFile + " -> " + outFile)
            val controller = new Controller(NullChecker, NullReport)
            controller.read(inFile,None)
            val mpath = Archive.ContentPathToMMTPath(in)

@@ -39,6 +39,8 @@ abstract class ROController {
   */  
 class Controller(val checker : Checker, val report : Report) extends ROController {
    protected def log(s : => String) = report("controller", s)
+   /** maintains all customizations for specific languages */
+   val extman = new ExtensionManager(report)
    /** maintains all relational elements */
    val depstore = new RelStore(report)
    /** maintains all content elements */
@@ -52,11 +54,14 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    /** the MMT parser (XML syntax) */
    val reader = new Reader(this, report)
    /** the catalog maintaining all registered physical storage units */
-   val backend = new Backend(reader, report)
+   val backend = new Backend(reader, extman, report)
+   /** the query engine */
    val evaluator = new ontology.Evaluator(this)
+   /** the universal machine, a computation engine */
    val uom = {val u = new UOMServer(report); u.init; u}
    /** the http server */
    var server : Option[Server] = None
+
    /** a lookup that uses only the current memory data structures */
    val localLookup = library
    /** a lookup that load missing modules dynamically */
@@ -138,7 +143,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    }
    /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
    def cleanup {
-      backend.cleanup
+      extman.cleanup
    }
    /** reads a file and returns the Path of the document found in it */
    def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
@@ -199,11 +204,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	   (act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
-	      case AddCompiler(c, args) =>
-            val Comp = java.lang.Class.forName(c).asInstanceOf[java.lang.Class[Compiler]]
-            val comp = Comp.newInstance
-            comp.init(report, args)
-            backend.addCompiler(comp)
+	      case AddImporter(c, args) => extman.addImporter(c, args)
+	      case AddFoundation(c, args) => extman.addFoundation(c, args)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
@@ -233,7 +235,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)
-         case AddMWS(uri) => backend.setMWS(uri)
+         case AddMWS(uri) => extman.setMWS(uri)
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
@@ -256,7 +258,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case PrintAll => report("response", "\n" + library.toString)
 	      case Exit =>
 	         cleanup 
-	         exit
+	         sys.exit
       })
    }
 }

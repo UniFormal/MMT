@@ -4,10 +4,10 @@ package info.kwarc.mmt.api
  * @param msg the error message 
  */
 abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg) {
-   private var causedBy: Option[Error] = None
-   def setCausedBy(e: Error): Error = {causedBy = Some(e); this}
-   def getCausedBy : Option[Error] = causedBy
-   def msg : String = shortMsg + "\n" + causedBy.map(_.msg).getOrElse("")
+   private var causedBy: Option[java.lang.Throwable] = None
+   def setCausedBy(e: java.lang.Throwable): Error = {causedBy = Some(e); this}
+   def getCausedBy : Option[java.lang.Throwable] = causedBy
+   def msg : String = shortMsg + "\n" + causedBy.map("\ncaused by\n" + _.getMessage).getOrElse("")
    def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
 }
 
@@ -23,6 +23,8 @@ case class GetError(s : String) extends Error("get error: " + s)
 case class Invalid(s : String) extends Error("validation error: " + s)      
 /** errors that occur when presenting a knowledge item */
 case class PresentationError(s : String) extends Error(s)
+/** errors that occur when registering extensions  */
+case class ExtensionError(s : String) extends Error(s)
 /** errors that are not supposed to occur, e.g., when input violates the precondition of a method */
 case class ImplementationError(s : String) extends Error("implementation error: " + s)      
 /** errors that occur during substitution with name of the variable for which the substitution is defined */
