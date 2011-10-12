@@ -7,15 +7,6 @@ import scala.xml.Node
 /** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
 trait BaseType
 
-/** type formation for product types */ 
-abstract class RProduct[A <: BaseType, B <: BaseType] extends BaseType {
-   def asPair : (A,B)
-}
-/** introductory form for product types (pairs) */
-case class RPair[A <: BaseType, B <: BaseType](first: A, second: B) extends RProduct[A,B] {
-   def asPair : (A,B) = (first,second)
-}
-
 /** base types, used in the formation of QueryType */
 sealed abstract class QueryBaseType
 /** queries regarding the BaseType Path */
@@ -26,9 +17,28 @@ case object ObjType extends QueryBaseType
 /** the types of the query language */
 sealed abstract class QueryType
 /** type of query that returns an element of a base type */
-case class Elem(tp: QueryBaseType) extends QueryType
+case class Elem(tp: List[QueryBaseType]) extends QueryType
 /** type oa a query that returns a set of values of a base type */
-case class ESet(tp: QueryBaseType) extends QueryType
+case class ESet(tp: List[QueryBaseType]) extends QueryType
+
+object Elem {
+   def apply(b: QueryBaseType) : QueryType = Elem(List(b))
+}
+object ESet {
+   def apply(b: QueryBaseType) : QueryType  = ESet(List(b)) 
+}
+object Elem1 {
+   def unapply(t: QueryType) : Option[QueryBaseType] = t match {
+      case Elem(List(b)) => Some(b)
+      case _ => None
+   }
+}
+object ESet1 {
+   def unapply(t: QueryType) : Option[QueryBaseType] = t match {
+      case Elem(List(b)) => Some(b)
+      case _ => None
+   }
+}
 
 /** propositions */
 sealed abstract class Prop
@@ -36,7 +46,9 @@ sealed abstract class Prop
 /** the expressions of the query language */
 sealed abstract class Query
 
-/** a bound variable; we use de-Bruijn indices starting from 0 to refer to bound variables */
+/** a bound variable; we use de-Bruijn indices starting from 1 to refer to bound variables
+ *  if a variable of tuple type is bound, each component is added separately, the first one has index 1
+ */
 case class Bound(index: Int) extends Query
 /** constant path */
 case class ThePath(a: Path) extends Query
@@ -69,6 +81,10 @@ case class Union(left: Query, right: Query) extends Query
 case class BigUnion(domain: Query, of: Query) extends Query
 /** comprehension subset of a set */
 case class Comprehension(domain: Query, pred : Prop) extends Query
+/** tupling */
+case class Tuple(components: List[Query]) extends Query
+/** projectiong */
+case class Projection(of: Query, index: Int) extends Query
 
 /** typing relation between a path and a concept of the MMT ontology */
 case class IsA(e: Query, t: Unary) extends Prop
@@ -176,8 +192,8 @@ object Query {
       case TheObject(_) => Elem(ObjType)
       case Component(of, _) =>
          infer(of) match {
-            case Elem(PathType) => Elem(ObjType)
-            case ESet(PathType) => ESet(ObjType)
+            case Elem1(PathType) => Elem(ObjType)
+            case ESet1(PathType) => ESet(ObjType)
             case _ => throw ParseError("illegal query: " + q)
          }
       case SubObject(of,_) =>
@@ -185,14 +201,14 @@ object Query {
          Elem(ObjType)
       case InferedType(of) =>
          infer(of) match {
-            case Elem(ObjType) => Elem(ObjType)
-            case ESet(ObjType) => ESet(ObjType)
+            case Elem1(ObjType) => Elem(ObjType)
+            case ESet1(ObjType) => ESet(ObjType)
             case _ => throw ParseError("illegal query: " + q)
          }
       case Related(to,_) =>
          infer(to) match {
-            case Elem(PathType) => ESet(PathType)
-            case ESet(PathType) => ESet(PathType)
+            case Elem1(PathType) => ESet(PathType)
+            case ESet1(PathType) => ESet(PathType)
             case _ => throw ParseError("illegal query: " + q)
          }
       case ThePaths(_*) => ESet(PathType)
@@ -216,7 +232,7 @@ object Query {
             case _ => throw ParseError("expected set queries of equal type " + q)
          }
       case BigUnion(d,of) => infer(d) match {
-            case ESet(s) => infer(of)(s :: context) match {
+            case ESet(s) => infer(of)(s ::: context) match {
                case ESet(t) => ESet(t)
                case _ => throw ParseError("illegal query " + q)
             }
@@ -225,10 +241,21 @@ object Query {
       case Comprehension(d, p) =>
          infer(d) match {
             case ESet(t) => 
-               Prop.check(p)(t :: context)
+               Prop.check(p)(t ::: context)
                ESet(t)
             case _ => throw ParseError("illegal query " + q)
          }
+      case Tuple(qs) =>
+         val ts = qs map infer
+         val bts = ts map {
+           case Elem1(b) => b
+           case _ => throw ParseError("illegal query " + q)
+         }
+         Elem(bts)
+      case Projection(q, i) => infer(q) match {
+         case Elem(s) if 0 <= i && i < s.length => Elem(s(i-1))
+         case _ => throw ParseError("illegal query " + q)
+      }
    }
    /** parses a query; infer must be called to sure well-formedness */
    def parse(n: Node) : Query = n match {
@@ -286,7 +313,7 @@ object Prop {
      case Not(arg) => check(arg)
      case And(left, right) => check(left); check(right)
      case Forall(domain: Query, scope: Prop) => Query.infer(domain) match {
-        case ESet(t) => check(scope)(t :: context)
+        case ESet(t) => check(scope)(t ::: context)
         case _ => throw ParseError("illegal proposition " + p)
      }
    }}
