@@ -82,7 +82,7 @@ object Util {
     * @return stream to the resource, if found, null otherwise. **The caller must close the stream after reading!**
     */
   def loadResource(path : String) : java.io.InputStream = {
-    val stream = getClass.getResourceAsStream(path)  // the file inside the JAR
+    val stream = getClass.getResourceAsStream("/mmt-web/" + path)  // the file inside the JAR
     if (stream != null)
         return stream
     else {

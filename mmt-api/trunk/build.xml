@@ -39,7 +39,7 @@
                 <provider classname="${root.pkg}.tntplugin.TNTValidation"/>
                 <provider classname="${root.pkg}.tntplugin.TNTPresenter"/>
             </service>
-        	   <fileset dir="." includes="resources/mmt-web/**"/>
+            <fileset dir="resources" />
             <fileset dir="${build.main}"/>
         </jar>
     </target>
