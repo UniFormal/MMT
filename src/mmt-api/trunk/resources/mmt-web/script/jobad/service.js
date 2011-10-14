@@ -120,7 +120,7 @@ function lowlight(target){
 
 /** helper function for the methods below: gets the classes of an element as an array */
 function getClassArray(elem) {
-   var classes = (elem.hasAttribute('class')) ? $(elem).attr('class') : "";
+   var classes = (elem.hasAttribute('class')) ? elem.getAttribute('class') : "";
    return classes.split(/\s+/);
 }
 
@@ -132,7 +132,7 @@ $.fn.addMClass = function(cl){
       if (this.hasAttribute('class'))
          $(this).attr('class', $(this).attr('class') + ' ' + cl);   
       else
-         $(this).attr('class', cl);
+         this.setAttribute('class', cl);
    });
    return this;
 }
@@ -145,7 +145,7 @@ $.fn.removeMClass = function(cl){
       if (newclassesAttr == "")
          $(this).removeAttr('class');
       else
-         $(this).attr('class', newclassesAttr);
+         this.setAttribute('class', newclassesAttr);
    });
    return this;
 }
@@ -170,16 +170,15 @@ $.fn.filterMClass = function(cl){
 /** keep elements that have attribute attr */
 $.fn.hasMAttr = function(attr) {
     return this.filter(function() {
-        return $(this).attr(attr) !== undefined;
+        return this.getAttribute(attr) !== undefined;
     });
 };
 /** keep elements that have attribute attr=value */
 $.fn.filterMAttr = function(attr, value) {
     return this.filter(function() {
-        return $(this).attr(attr) == value;
+        return this.getAttribute(attr) == value;
     });
 };
-
 
 //bind all document events to the respective functions
 function keyPress(key){

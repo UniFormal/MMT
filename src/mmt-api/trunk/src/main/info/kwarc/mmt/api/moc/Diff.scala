@@ -170,7 +170,7 @@ object Differ {
 	        	controller.add(MRef(nd.path.parent ,nd.path, true))
 	        	_declarations(d).map(x => x match {
 	        	  case c : Constant => 
-	        	    val nc = new Constant(OMMOD(c.home.toMPath.doc ? name), c.name, c.tp, c.df, c.uv)
+	        	    val nc = new Constant(OMMOD(c.home.toMPath.doc ? name), c.name, c.tp, c.df, c.rl)
 	        	    controller.add(nc)
 	        	  case i : Include => 
 	        	    val in = new Include(OMMOD(i.home.toMPath.doc ? name), i.from)
@@ -193,7 +193,7 @@ object Differ {
 	    case DeleteDeclaration(path, tp) => None
 	    case RenameDeclaration(path, tp, name) => (tp, cold.get(path)) match {
 	      case ("Constant", c : Constant) => 
-	        val nd = new Constant(c.home, name, c.tp, c.df, c.uv)
+	        val nd = new Constant(c.home, name, c.tp, c.df, c.rl)
 	        controller.add(nd)
 	    }
 	    case IdenticalDeclaration(path, tp) => controller.add(cold.get(path))
@@ -207,7 +207,7 @@ object Differ {
 	      val name = c.name
 	      var tp = c.tp
 	      var df = c.df
-	      var uv = c.uv
+	      var rl = c.rl
 	      componentChanges.map(x => x match {
 	        case AddComponent(name, comp) => (name, comp) match {
 	          case ("type", Obj2Component(t : Term)) => tp = Some(t)
@@ -227,7 +227,7 @@ object Differ {
 	        }
 	        case IdenticalComponent(ctp,name) => None //already set above
 	      })
-	      val cn = new Constant(home, name, tp, df, uv)
+	      val cn = new Constant(home, name, tp, df, rl)
 	      cn
 	    case ("DeclaredTheory", d : DeclaredTheory) => 
 	      val doc = d.parent

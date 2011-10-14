@@ -33,7 +33,7 @@ abstract class Obj extends Content with ontology.BaseType {
    def role : Role
    def nkey = NotationKey(head, role)
    def components : List[Content]
-   def presentation(lpar: LocalParams) = ByNotation(nkey, ContentComponents(components), lpar)
+   def presentation(lpar: LocalParams) = ByNotation(nkey, ContentComponents(components, Nil, None, Some(this)), lpar)
    def toCML: Node
 }
 
@@ -42,7 +42,7 @@ trait MMTObject {
    def components = OMID(path) :: args
    def path : GlobalName
    def head = Some(path)
-   def role = if (args.isEmpty) Role_ConstantRef else Role_application
+   def role = if (args.isEmpty) Role_ConstantRef else Role_application(None)
    def toNodeID(pos : Position) =
       if (args.isEmpty) OMID(path).toNode
       else
@@ -117,7 +117,7 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
    override def presentation(lpar : LocalParams) = {
       val addedContext = head match {
          case Some(path : GlobalName) => context.zipWithIndex.map {
-           case (v, i) => VarData(v.name, path, lpar.pos + (i+1))
+           case (v, i) => VarData(v, path, lpar.pos + (i+1))
          }
          case _ => throw PresentationError("binder without a path: " + this)
       }
@@ -185,7 +185,7 @@ case class OMSub(arg: Term, via: Context) extends Term {
  */
 case class OMA(fun : Term, args : List[SeqItem]) extends Term {  
    def head = fun.head
-   def role = Role_application
+   def role = Role_application(None)
    def components = fun :: args
    override def toString = (fun :: args).map(_.toString).mkString("@(", ", ", ")")
    def toNodeID(pos : Position) =
@@ -212,7 +212,7 @@ case class OMV(name : String) extends Term {
                ByNotation(NotationKey(Some(binder), role), ContentComponents(components), lpar)
             case None => //throw PresentationError("unbound variable")
                ByNotation(NotationKey(None, role),
-            		   ContentComponents(List(StringLiteral(name), Omitted, Omitted)), lpar)
+            		   ContentComponents(List(StringLiteral(name), Omitted, Omitted), Nil, None, Some(this)), lpar)
          }
    }
    /** the substutition this/s */
@@ -239,7 +239,7 @@ case class OMV(name : String) extends Term {
  */
 case class OME(error : Term, args : List[Term]) extends Term {
    def head = error.head
-   def role = Role_application
+   def role = Role_application(None)
    def components = error :: args
    def toNodeID(pos : Position) =
       <om:OMA>{error.toNodeID(pos + 0)}
@@ -396,7 +396,7 @@ case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends Seq
 	def role = Role_seqsubst
 	def components = List(seq1,StringLiteral(name),seq2)
     override def presentation(lpar : LocalParams) = {
-      val addedContext = List(VarData(name, utils.mmt.ellipsis, lpar.pos + 1))
+      val addedContext = List(VarData(TermVarDecl(name, None, None), utils.mmt.ellipsis, lpar.pos + 1))
       ByNotation(nkey, ContentComponents(components), lpar.copy(context = lpar.context ::: addedContext))
    }
 	

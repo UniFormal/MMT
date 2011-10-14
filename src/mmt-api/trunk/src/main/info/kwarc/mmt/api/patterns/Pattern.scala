@@ -52,7 +52,7 @@ object Instance {
           }
           val nname = inst.name / n
           report("elaboration", "generating constant " + nname)
-    	    val c = new Constant(inst.home, nname, tp.map(auxSub), df.map(auxSub),Individual(None))
+    	    val c = new Constant(inst.home, nname, tp.map(auxSub), df.map(auxSub),None)
     	    c.setOrigin(InstanceElaboration(inst.path))
     	    c
         case SeqVarDecl(n,tp,df, at @ _*) => throw ImplementationError("Pattern cannot contain sequence variable declaration")

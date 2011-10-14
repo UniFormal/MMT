@@ -138,10 +138,10 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
       val thy = OMMOD(tpath)
       def doCon(name : LocalName, t : Option[Node], d : Option[Node], r : String, md: Option[MetaData]) {
          log("constant " + name.flat + " found")
-         val uv = Universe.parse(r)
          val tp = t.map(Obj.parseTerm(_, base))
          val df = d.map(Obj.parseTerm(_, base))
-         val c = new Constant(thy, name, tp, df, uv)
+         val rl = if (r == "") None else Some(r)
+         val c = new Constant(thy, name, tp, df, rl)
          add(c,md)
       }
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {

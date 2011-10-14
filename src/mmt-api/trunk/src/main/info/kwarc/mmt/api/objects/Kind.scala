@@ -17,6 +17,8 @@ case class One[A](r: SynRole) extends ArgList[A]
 case class Repetition[A](r: SynRole) extends ArgList[A]
 
 */
+/*
+ FR: Universes are deprecated
 
 sealed abstract class Universe(override val toString : String)
 case class Individual(kind : Option[String]) extends Universe(kind.getOrElse(""))
@@ -53,3 +55,5 @@ object Universe {
       case s => Individual(Some(s))
    }
 }
+
+*/

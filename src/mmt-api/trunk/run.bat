@@ -1,1 +1,1 @@
-java -jar build/mmt-api.jar file startup.mmt
+java -cp build/mmt-api.jar;../../../deploy/lib/*;../../../deploy/lfcatalog/*;../../../deploy/mmt/* info.kwarc.mmt.api.frontend.Run

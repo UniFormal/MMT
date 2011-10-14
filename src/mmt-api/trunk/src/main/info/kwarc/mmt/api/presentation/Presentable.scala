@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
+import objects._
 
 /** information provided by a content expression about how it is to be presented */
 abstract class PresentationData
@@ -27,7 +28,7 @@ case object Omitted extends Literal {
 
 case class OPath(parent: Path, component: String)
 
-case class ContentComponents(comps : List[Content], names: List[(String, Int)] = Nil, owner: Option[Path] = None) {
+case class ContentComponents(comps : List[Content], names: List[(String, Int)] = Nil, owner: Option[Path] = None, obj: Option[Obj] = None) {
    def apply(i: Int) : Content = apply(NumberedIndex(i))
    def apply(s: String) : Content = apply(NamedIndex(s))
    def apply(i: CIndex): Content = resolve(i).map(x => comps(x)).getOrElse(throw GetError("undefined component: " + i))

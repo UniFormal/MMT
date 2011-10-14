@@ -15,10 +15,10 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  * @param role the role of the constant
  */
 class PragConst(val home : TheoryObj, val name : LocalName,
-               val by : List[Constant], val means : List[Constant], val uv : Universe) extends Symbol {
+               val by : List[Constant], val means : List[Constant], val rl : Option[String]) extends Symbol {
   def toTerm = OMID(path)
 
-  def role = info.kwarc.mmt.api.Role_Constant(uv)
+  def role = Role_Constant(rl)
   def components = List(OMID(path))//
  
   def toNode =

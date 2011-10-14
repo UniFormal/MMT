@@ -16,13 +16,19 @@ case class GlobalParams(rh : RenderingHandler, nset : MPath)
  * @param context some information about how to present the free variables that were bound on higher levels
  * @param inObject a flag to indicate whether the presented expression is a declaration or an object
  */
-case class LocalParams(pos : Position, iPrec : Option[Precedence], context : List[VarData], inObject : Boolean, ids : List[(String,String)])
+case class LocalParams(pos : Position, iPrec : Option[Precedence], context : List[VarData], inObject : Boolean, ids : List[(String,String)]) {
+   def asContext = Context(context map (_.decl) : _*)
+}
 
 /** This class stores information about a bound variable.
- * @param name the variable name
- * @param binder the path of the binder 
+ * @param decel the variable declaration
+ * @param binder the path of the binder
+ * @param declpos the position of the variable declaration 
  */
-case class VarData(name : String, binder : GlobalName, decl : Position)
+case class VarData(decl : VarDecl, binder : GlobalName, declpos : Position) {
+   /** the variable name */
+   def name = decl.name
+}
 
 /** A special presentable object that is wrapped around the toplevel of the presented expression if it is a declaration.
  * @param c the presented expression
@@ -53,7 +59,7 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
  * @param controller the controller storing all information about MMT expressions and notations
  * @param report the logging handler
  */
-class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.frontend.Report) { 
+class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.frontend.Report) { 
    private def log(s : => String) = report("presenter", s)
    private var nextID : Int = 0 // the next available id (for generating unique ids)
    /** the main presentation method
@@ -106,6 +112,11 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
    protected def render(pres : Presentation, comps : ContentComponents, 
                         ind : List[Int], gpar : GlobalParams, lpar : LocalParams) {
       def resolve(i: CIndex) : Int = comps.resolve(i).getOrElse(throw PresentationError("undefined index: " + i))
+      def getComponent(i: CIndex): Content = {
+	      val pos = resolve(i)
+         val p = if (pos < 0) pos + comps.length else pos
+	      comps(p)
+      }
       implicit def int2CInxed(i: Int) = NumberedIndex(i)
       def recurse(p : Presentation) {render(p, comps, ind, gpar, lpar)}
       pres match {
@@ -224,6 +235,24 @@ class Presenter(controller : frontend.ROController, report : info.kwarc.mmt.api.
 		       val pres = notation.pres.fill(args : _*)
              log("found fragment notation: " + notation)
              recurse(pres)
+		  case Compute(iOpt, f) =>
+           val o = iOpt match {
+              case None => comps.obj.getOrElse(throw PresentationError("no object found"))
+              case Some(i) => getComponent(i)
+           }
+		     if (f != "infer") throw PresentationError("undefined function: " + f)
+		     o match {
+		        case o: Term =>
+		           val meta = controller.notstore.get(gpar.nset).from match {
+		              case m : MPath => m
+		              case _ => throw PresentationError("no foundation found")
+		           }
+		           val found = controller.extman.getFoundation(meta).getOrElse(throw PresentationError("no foundation found"))
+		           val tp = try {found.infer(o, lpar.asContext)(controller.globalLookup)}
+		              catch {case e => OMID(utils.mmt.mmtbase ? "dummy" ? "error")} 
+		           present(tp, gpar, lpar)
+		        case c => throw PresentationError("cannot infer type of " + c)
+		     }
 	  }
    }
 }
