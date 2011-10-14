@@ -21,8 +21,8 @@ case object Role_Notationset         extends Role(false, "Style")
 case object Role_Structure           extends Role(false, "Structure")
 case object Role_DefinedStructure    extends Role(false, "DefinedStructure")
 case object Role_TGroup              extends Role(false, "TGroup")
-case class  Role_Constant(univ : objects.Universe)
-  extends Role(false , "Constant" + (univ.toString match {case "" => "" case s => ":" + s}), ("name",0), ("type",1), ("definition",2))
+case class  Role_Constant(role: Option[String])
+  extends Role(false , "Constant" + (role match {case None => "" case Some(s) => ":" + s}), ("name",0), ("type",1), ("definition",2))
 case object Role_Alias               extends Role(false, "Alias")
 case object Role_Pattern             extends Role(false, "Pattern")
 case object Role_Instance            extends Role(false, "Instance")
@@ -39,7 +39,7 @@ case object Role_ConstantRef         extends Role(false, "constant")
 case object Role_ComplexConstantRef extends Role(false, "complex-constant")
 case object Role_VariableRef         extends Role(false, "variable")
 case object Role_hidden              extends Role(false, "Toplevel")
-case object Role_application         extends Role(true,  "application")
+case class  Role_application(role: Option[String]) extends Role(true,  "application" + (role match {case None => "" case Some(s) => ":" + s}))
 case object Role_attribution         extends Role(true,  "attribution")
 case object Role_binding             extends Role(true,  "binding")
 case object Role_value               extends Role(false, "value")
@@ -72,8 +72,8 @@ object Role {
       case "Style" => Role_Notationset
       case "Structure" => Role_Structure
       case "TGroup" => Role_TGroup
-      case "Constant" => Role_Constant(objects.Individual(None))
-      case s if s.startsWith("Constant:") => Role_Constant(objects.Universe.parse(s.substring(9)))
+      case "Constant" => Role_Constant(None)
+      case s if s.startsWith("Constant:") => Role_Constant(Some(s.substring(9)))
       case "Variable" => Role_Variable
       case "SeqVariable" => Role_SeqVariable
       case "Include" => Role_Include
@@ -92,7 +92,8 @@ object Role {
       case "complex-constant" => Role_ComplexConstantRef
       case "variable" => Role_VariableRef
       case "hidden" => Role_hidden
-      case "application" => Role_application
+      case "application" => Role_application(None)
+      case s if s.startsWith("application:") => Role_application(Some(s.substring(12)))
       case "attribution" => Role_attribution
       case "binding" => Role_binding
       case "seqsubst" => Role_seqsubst

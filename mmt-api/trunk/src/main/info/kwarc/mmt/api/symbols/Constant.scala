@@ -16,15 +16,15 @@ import info.kwarc.mmt.api.moc._
  * @param role the role of the constant
  */
 class Constant(val home : TheoryObj, val name : LocalName,
-               val tp : Option[Term], val df : Option[Term], val uv : Universe) extends Symbol {
+               val tp : Option[Term], val df : Option[Term], val rl : Option[String]) extends Symbol {
   def toTerm = OMID(path)
 
-  def role = info.kwarc.mmt.api.Role_Constant(uv)
+  def role = Role_Constant(rl)
   override def compNames = List(("name", 0), ("type",1), ("definition", 2))
   def components = List(OMID(path), tp.getOrElse(Omitted), df.getOrElse(Omitted))
   
   def toNode =
-     <constant name={name.flat}>
+     <constant name={name.flat} role={rl.getOrElse(null)}>
        {getMetaDataNode}
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}

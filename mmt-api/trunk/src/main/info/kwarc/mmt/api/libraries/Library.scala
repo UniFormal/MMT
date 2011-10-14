@@ -56,7 +56,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
                case (i: Include, Some(ln)) =>
                   get(i.from % ln, error) match {
                      // no translation needed, but we have to set the new home theory and qualified name
-                     case c: Constant => new Constant(OMMOD(p), i.name / ln, c.df, c.tp, c.uv)
+                     case c: Constant => new Constant(OMMOD(p), i.name / ln, c.df, c.tp, c.rl)
                      // structure followed by include yields a defined structure
                      case s: Structure => new DefinedStructure(OMMOD(p), i.name / ln, s.from, s.toMorph)
                      // transitivity of includes
@@ -71,7 +71,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
                            c.df.map(_ * l.toMorph)                               // translate old definition
                         else
                            Some(a.target)                                        // use assignment as new definition
-                        new Constant(l.to, l.name / ln, c.tp.map(_ * l.toMorph), newDef, c.uv)
+                        new Constant(l.to, l.name / ln, c.tp.map(_ * l.toMorph), newDef, c.rl)
                      case (s: DefinitionalLink, a: DefLinkAssignment) =>
                         new DefinedStructure(l.to, l.name / s.name, s.from, a.target)
                   }

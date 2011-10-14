@@ -119,6 +119,8 @@ case class GenerateID(name: String, scope: Presentation) extends Presentation {
 /** refers to a previously generated ID */
 case class UseID(name: String) extends Presentation
 
+case class Compute(index : Option[CIndex], function : String) extends Presentation
+
 /** a call to a macro that is defined as fragment notation 
  * @param name the used notation will have role "fragment:name"
  * @param args the list of arguments that fill the holes in that notation
@@ -231,6 +233,10 @@ object Presentation {
             //IfPresent(int(xml.attr(n,"index")), parse(yes), Empty)
          case <generateid>{scope @ _*}</generateid> => GenerateID(xml.attr(n, "name"), parse(scope))
          case <useid/> => UseID(xml.attr(n, "name"))
+         case <compute/> => 
+            val i = xml.attr(n, "index")
+            val ci = if (i == "") None else Some(cindex(i))
+            Compute(ci, xml.attr(n, "function"))
          case <fragment>{child @ _*}</fragment> =>
             val args = if (! child.isEmpty && child(0).label != "arg")
                Seq(parse(child))
