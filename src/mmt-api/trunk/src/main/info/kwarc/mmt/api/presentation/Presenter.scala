@@ -1,31 +1,34 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils._
-import scala.xml.{Node,NodeSeq}
-import scala.collection.mutable._
+import objects._
+import objects.Conversions._
+import utils._
 
 /** This class collects the parameters that are globally fixed during one presentation task.
  * @param rh the rendering handler that collects the generated output
  * @param nset the style containing the notations 
  */
 case class GlobalParams(rh : RenderingHandler, nset : MPath)
+
 /** This class collects the parameters that vary locally during one presentation task.
  * @param pos the current position within the presented expressions
  * @param iPrec the input precedence possible provided by the parent level (used for bracket generation)
  * @param context some information about how to present the free variables that were bound on higher levels
  * @param inObject a flag to indicate whether the presented expression is a declaration or an object
  */
-case class LocalParams(pos : Position, iPrec : Option[Precedence], context : List[VarData], inObject : Boolean, ids : List[(String,String)]) {
+case class LocalParams(ids : List[(String,String)], pos : Position,
+                       inObject : Boolean, iPrec : Precedence, context : List[VarData]) {
    def asContext = Context(context map (_.decl) : _*)
 }
-
+object LocalParams {
+   val objectTop = LocalParams(Nil, Position.Init, true, Precedence.neginfinite, Nil)
+}
 /** This class stores information about a bound variable.
  * @param decel the variable declaration
- * @param binder the path of the binder
+ * @param binder the path of the binder (if atomic)
  * @param declpos the position of the variable declaration 
  */
-case class VarData(decl : VarDecl, binder : GlobalName, declpos : Position) {
+case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Position) {
    /** the variable name */
    def name = decl.name
 }
@@ -68,47 +71,77 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
     */
    def apply(c : Content, gpar : GlobalParams) {
       c match {
-        case c : objects.Obj => present(ObjToplevel(c, None), gpar, LocalParams(Position.Init, None, Nil, true, Nil))
-        case _ => present(StrToplevel(c), gpar, LocalParams(Position.Init, None, Nil, false, Nil))
+        case c : Obj => present(ObjToplevel(c, None), gpar, LocalParams.objectTop)
+        case _ => present(StrToplevel(c), gpar, LocalParams.objectTop.copy(inObject = false))
       }
    }
 
    protected def present(c : Content, gpar : GlobalParams, lpar : LocalParams) {
-      def doByNotation(bn : ByNotation) {
-         val key = bn.key
-         log("notation key: " + key)
-         val notation = controller.get(gpar.nset, key)
-         log("looked up notation: " + notation)
-         val pres = notation.pres
-         val presentation =
-            (key.role.bracketable, lpar.iPrec) match {
-               case (true, None) => NoBrackets(pres)                            //brackets excluded by higher level
-               case (true, Some(ip)) =>
-                  // error should be impossible as parser forces non-None value for bracketable roles
-                  val op = notation.oPrec.getOrElse(throw PresentationError("notation for bracketable role must have precedence"))
-                  // case-split according to how much stronger the outer operator binds than the inner one
-                  // the stronger the inner operator binds, the less necessary its brackets are
-                  // the outer operator decides how a tie is broken
-                  (ip.prec - op.prec) match {
-                     case Infinite    => Brackets(pres)
-                     case Finite(i)   =>
-                             if (i > 0)      Brackets(pres)
-                        else if (i < 0)      EBrackets(pres, -i) 
-                        else if (ip.loseTie) EBrackets(pres, -i)
-                        else                 Brackets(pres)
-                     case NegInfinite => NoBrackets(pres)
+      c match {
+         case l: Literal =>
+            gpar.rh(l)
+         case s: StructuralElement =>
+            val key = NotationKey(Some(s.path), s.role)
+            val notation = controller.get(gpar.nset, key)
+            render(notation.pres, s.contComponents, List(0), gpar, lpar)
+         case o: Obj =>
+            //default values
+            var key = NotationKey(o.head, o.role)
+            var newlpar = lpar
+            var comps = o.components
+            //some adjustments for certain objects 
+            o match {
+               //for binders, change newlpar to remember VarData for rendering the bound variables later 
+               case OMBINDC(binder,context,_,_) =>
+                  val pOpt = binder match {case OMID(b) => Some(b) case _ => None}
+                  val vds = context.zipWithIndex.map {
+                      case (v, i) => VarData(v, pOpt, newlpar.pos + (i+1))
                   }
-               case (false, _) => pres                                          //no brackets possible
+                  newlpar = newlpar.copy(context = newlpar.context ::: vds)
+               //for bound variables, look up VarData   
+               case OMV(name) =>
+                  newlpar.context.reverse.zipWithIndex.find(_._1.name == name) match {
+                     case Some((VarData(_, binder, pos), i)) =>
+                        comps = List(StringLiteral(name), StringLiteral(i.toString), StringLiteral(pos.toString))
+                        key = NotationKey(binder, o.role)
+                     case None => // free variable
+                  }
+               // one more binder
+               case SeqSubst(_, name, _) =>
+                  val vd = VarData(TermVarDecl(name, None, None), Some(utils.mmt.ellipsis), lpar.pos + 1)
+                  newlpar = newlpar.copy(context = newlpar.context ::: List(vd))
+               case _ =>
             }
-         log("rendering with components " + bn.components)
-         render(presentation, bn.components, List(0), gpar, bn.lpar)
-      }
-      c.presentation(lpar) match {
-		   case IsLiteral(l) => gpar.rh(l)
-		   case bn : ByNotation => doByNotation(bn)
+            val notation = controller.get(gpar.nset, key)
+            //log("looked up notation: " + notation)
+            val presentation = if (o.role.bracketable) {
+               val ip = newlpar.iPrec
+               val op = notation.oPrec match {
+                  case Some(p) => p
+                  // error should be impossible as parser forces non-None value for bracketable roles
+                  case None => throw PresentationError("notation for bracketable role must have precedence")
+               }
+               // case-split according to how much stronger the outer operator binds than the inner one
+               // the stronger the inner operator binds, the less necessary its brackets are
+               // the outer operator decides how a tie is broken
+               val pres = notation.pres
+               (ip.prec - op.prec) match {
+                  case Infinite    =>     Brackets(pres)
+                  case Finite(i)   =>
+                          if (i > 0)      Brackets(pres)
+                     else if (i < 0)      EBrackets(pres, -i) 
+                     else if (ip.loseTie) EBrackets(pres, -i)
+                     else                 Brackets(pres)
+                  case NegInfinite =>     NoBrackets(pres)
+               }
+            } else
+               notation.pres
+            val contComps = ContentComponents(comps, Nil, None, Some(o))
+            log("rendering with components " + contComps)
+            render(presentation, contComps, List(0), gpar, newlpar)
       }
    }
-
+   
    protected def render(pres : Presentation, comps : ContentComponents, 
                         ind : List[Int], gpar : GlobalParams, lpar : LocalParams) {
       def resolve(i: CIndex) : Int = comps.resolve(i).getOrElse(throw PresentationError("undefined index: " + i))
@@ -191,16 +224,20 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
 		      else
 		         recurse(post)
 		      recurse(Components(NumberedIndex(current), Presentation.Empty, last, post, step, sep, body))
-		  case Index => gpar.rh(lpar.pos.toString)
-		  case Neighbor(offset, iPrec) =>
+        case Id => gpar.rh(lpar.pos.toString)
+		  case Index => gpar.rh(lpar.pos.current.toString)
+		  case Neighbor(offset, ip) =>
 		      val i = ind.head + offset
 		      if (i < 0 || i >= comps.length)
 		         throw new PresentationError("offset out of bounds")
-            val newLpar = lpar.copy(pos = lpar.pos + i, iPrec = iPrec)
             comps(i) match {
-		         //transition from structural to object level
-		         case o: Obj if ! lpar.inObject => present(ObjToplevel(o, comps.getObjectPath(i)), gpar, newLpar.copy(pos = Position.None, inObject = true))
-		         case c => present(c, gpar, newLpar)
+		         case o: Obj =>
+		            if (lpar.inObject)
+		               present(o, gpar, lpar.copy(pos = lpar.pos + i, iPrec = ip.getOrElse(Precedence.neginfinite)))
+		            else 
+		               //transition from structural to object level
+		               present(ObjToplevel(o, comps.getObjectPath(i)), gpar, LocalParams.objectTop)
+		         case c => present(c, gpar, lpar)
 		      }
 	      case Nest(begInd, endInd, stepcase, basecase) =>
 		      val begin = resolve(begInd)
@@ -217,7 +254,6 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
 		      else
 		         stepcase.fill(Nest(current + step, last, stepcase, basecase))
 		      render(pres, comps, current :: ind, gpar, lpar)
-		  case Id => gpar.rh(lpar.pos.toString)
 		  case TheNotationSet =>
 		      gpar.rh(gpar.nset.toPath.replace("?","%3F"))
 		  case Hole(i, default) => recurse(default)

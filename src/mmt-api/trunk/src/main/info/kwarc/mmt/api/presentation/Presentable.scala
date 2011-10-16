@@ -6,14 +6,9 @@ import objects._
 abstract class PresentationData
 /** a content expression provides a key that yields a notation, which is rendered in the context of some components */
 case class ByNotation(key : NotationKey, components : ContentComponents, lpar : LocalParams) extends PresentationData
-/** a content expressions provides a literal rendering, used, e.g., for names */
-case class IsLiteral(l : Literal) extends PresentationData
 
 /** some literal values that IsLiteral may use */
-abstract class Literal extends info.kwarc.mmt.api.Content {
-   def presentation(lpar : LocalParams) = IsLiteral(this)
-}
-
+abstract class Literal extends Content
 case class StringLiteral(s : String) extends Literal {
    def toNode = scala.xml.Text(s)
 }

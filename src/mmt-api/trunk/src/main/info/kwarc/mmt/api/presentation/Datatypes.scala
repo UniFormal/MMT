@@ -90,8 +90,8 @@ sealed case class Precedence(prec : InfInt, loseTie : Boolean) {
 /** helper object for precedences */
 object Precedence {
    def integer(ones : Int) = Precedence(Finite(ones), false)
-   def infinite = Precedence(Infinite, false)
-   def neginfinite = Precedence(NegInfinite, false)
+   val infinite = Precedence(Infinite, false)
+   val neginfinite = Precedence(NegInfinite, false)
    /** parses a precedence from a string ([-]infinity | INT)[*] */
    def parse(s : String) : Precedence = {
       try {Precedence(InfInt.parse(s.replace("*","")), s.endsWith("*"))}

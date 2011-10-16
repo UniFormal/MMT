@@ -21,7 +21,8 @@ class Constant(val home : TheoryObj, val name : LocalName,
 
   def role = Role_Constant(rl)
   override def compNames = List(("name", 0), ("type",1), ("definition", 2))
-  def components = List(OMID(path), tp.getOrElse(Omitted), df.getOrElse(Omitted))
+  def components = List(OMID(path), tp.getOrElse(Omitted), df.getOrElse(Omitted),
+                                    rl.map(StringLiteral(_)).getOrElse(Omitted))
   
   def toNode =
      <constant name={name.flat} role={rl.getOrElse(null)}>

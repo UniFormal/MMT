@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.utils.MyList.fromList
+import utils._
+import utils.MyList.fromList
 import scala.xml.Node
 import scala.collection.mutable.HashMap
 /** A NotationKey identifies the situation when a notation should be applied.
@@ -46,7 +46,7 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
      // look up key in defaults
      def getDefault(key : NotationKey) : Option[Notation] = {
          key.path match {
-             case None => None
+            case None => None
 	         case Some(_ : DPath) => None
 	         case Some(p : MPath) => try {sets(p).get(key)} catch {case _ => None}
 	         case Some(p : GlobalName) =>
@@ -57,7 +57,7 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
 	      }
       }
 
-      //look up key in all visisble sets, return first found notation
+      //look up key in all visible sets, return first found notation
       def getDeep(key : NotationKey) : Option[Notation] = {
          //a list containing all imported sets in depth-first order
          //value is cached in visible
@@ -70,21 +70,33 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
          } else
             not
       }
-      val not =
-        if (key.path.isEmpty)
+      val not = key.path match {
+        case None =>
            getDeep(key) match {
               case Some(hn) => hn
               case None => 
                  throw PresentationError("no notation found for " + key + " in notation set " + path)
            }
-        else {
-           val highNot = getDeep(NotationKey(None, key.role))
+        case Some(p) =>
+           val r = key.role
+           //to find the default notation highNot, we use keys without a path and try some roles in order
+           val roles : List[Role] = r match {
+              case Role_application(None) => 
+                 depstore.getType(p).map(_.toString) match {
+                    case None => List(r)
+                    case tp => List(Role_application(tp), r)
+                 }
+              case Role_Constant(Some(s)) => List(r, Role_Constant(None))
+              case r => List(r)
+           }
+           val highNot = roles mapFind {r => getDeep(NotationKey(None, r))} 
            val lowNot = getDeep(key) 
            (highNot, lowNot) match {
               case (Some(hn), None) => hn
               case (None, Some(ln)) => ln
               case (Some(hn), Some(ln)) =>
                  log("merging notations")
+                 // the default notation may force being wrapped around lowNot
                  if (hn.wrap) SimpleNotation(ln.nset, ln.key, hn.pres.fill(ln.pres), hn.oPrec, false)
                  else ln
               case (None, None) =>
