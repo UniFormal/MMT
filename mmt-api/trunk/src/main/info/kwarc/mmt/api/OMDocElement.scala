@@ -19,8 +19,6 @@ trait StructuralElement extends Content with metadata.HasMetaData {
    def components : List[Content]
    def compNames : List[(String,Int)] = Nil
    def contComponents = ContentComponents(components, compNames, Some(path))
-   /** The presentation is determined by Notations according to role and components. */ 
-   def presentation(lpar : LocalParams) = ByNotation(NotationKey(Some(path), role), contComponents, lpar)
    /** If a StructuralElement has been generated (as opposed to being physically present in the document),
     * this gives its origin.
     * The origin must be set by overriding the field when creating the ContentElement. 
@@ -75,8 +73,6 @@ trait RelationalElement {
  * The trait Content is mixed into any class that can be rendered using notations.
  */
 trait Content {
-   /** returns instructions how to present this item based on the current presentation context */
-   def presentation(lpar : LocalParams) : PresentationData
    /** XML representation */
    def toNode : Node
 }

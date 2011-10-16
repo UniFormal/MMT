@@ -12,6 +12,7 @@ import scala.collection.mutable.{HashSet,HashMap}
  */
 class RelStore(report : frontend.Report) {
    private val individuals = new HashMapToSet[Unary, Path]
+   private val types = new HashMap[Path,Unary]
    private val subjects = new HashMapToSet[(Binary,Path), Path]
    private val objects = new HashMapToSet[(Path,Binary), Path]
    private val dependencies = new HashMapToSet[(Path,Path), Binary]
@@ -20,6 +21,8 @@ class RelStore(report : frontend.Report) {
    def getInds : Iterator[Individual] = individuals.pairs map {case (t,p) => Individual(p,t)}
    /** retrieves all individual of a certain type */
    def getInds(tp: Unary) : Iterator[Path] = individuals(tp).iterator
+   /** retrieves type of an Individual */
+   def getType(p: Path) : Option[Unary] = types.get(p)
    /** retrieves all Relation declarations */
    def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
    /** adds a declaration */
@@ -30,7 +33,9 @@ class RelStore(report : frontend.Report) {
            subjects += ((dep, obj), subj)
            objects += ((subj, dep), obj)
            dependencies += ((subj, obj), dep)
-        case Individual(p, tp) => individuals += (tp, p)
+        case Individual(p, tp) =>
+           types(p) = tp
+           individuals += (tp, p)
       }
    }
    def queryList(start : Path, q : RelationExp) : List[Path] = {

@@ -20,7 +20,7 @@ object Extract {
                d match {
                   case c: Constant =>
                      f(dec)
-                     f(IsConstant(c.path))
+                     f(IsConstant(c.rl).apply(c.path))
                   case s: Structure =>
                      f(dec)
                      f(HasDomain(s.path, s.from.toMPath))
@@ -30,7 +30,7 @@ object Extract {
                      f(Includes(t.path, i.from.toMPath)) 
                   case p: Pattern =>
                      f(dec)
-                     f(IsConstant(p.path))
+                     f(IsPattern(p.path))
                   case i: Instance => 
                      f(dec)
                      f(IsInstanceOf(i.path, i.pattern))

@@ -31,9 +31,7 @@ abstract class Obj extends Content with ontology.BaseType {
       })
    def head : Option[Path]
    def role : Role
-   def nkey = NotationKey(head, role)
    def components : List[Content]
-   def presentation(lpar: LocalParams) = ByNotation(nkey, ContentComponents(components, Nil, None, Some(this)), lpar)
    def toCML: Node
 }
 
@@ -114,15 +112,6 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
    val numVars = context.variables.length
    def components = binder :: context.toList ::: List(body) //condition.getOrElse(Omitted)
    def role = Role_binding
-   override def presentation(lpar : LocalParams) = {
-      val addedContext = head match {
-         case Some(path : GlobalName) => context.zipWithIndex.map {
-           case (v, i) => VarData(v, path, lpar.pos + (i+1))
-         }
-         case _ => throw PresentationError("binder without a path: " + this)
-      }
-      ByNotation(nkey, ContentComponents(components), lpar.copy(context = lpar.context ::: addedContext))
-   }
    def toNodeID(pos : Position) = 
       <om:OMBIND>{binder.toNodeID(pos + 0)}
                  {context.toNodeID(pos)}
@@ -205,16 +194,6 @@ case class OMV(name : String) extends Term {
    def head = None
    def role = Role_VariableRef
    def components = Nil 
-   override def presentation(lpar : LocalParams) = {
-         lpar.context.reverse.zipWithIndex.find(_._1.name == name) match {
-            case Some((VarData(_, binder, pos), i)) =>
-               val components = List(StringLiteral(name), StringLiteral(i.toString), StringLiteral(pos.toString)) 
-               ByNotation(NotationKey(Some(binder), role), ContentComponents(components), lpar)
-            case None => //throw PresentationError("unbound variable")
-               ByNotation(NotationKey(None, role),
-            		   ContentComponents(List(StringLiteral(name), Omitted, Omitted), Nil, None, Some(this)), lpar)
-         }
-   }
    /** the substutition this/s */
    def /(s : Term) = TermSub(name, s)
    /** the declaration this:tp */
@@ -395,12 +374,8 @@ case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends Seq
 	def head = seq1.head
 	def role = Role_seqsubst
 	def components = List(seq1,StringLiteral(name),seq2)
-    override def presentation(lpar : LocalParams) = {
-      val addedContext = List(VarData(TermVarDecl(name, None, None), utils.mmt.ellipsis, lpar.pos + 1))
-      ByNotation(nkey, ContentComponents(components), lpar.copy(context = lpar.context ::: addedContext))
-   }
-	
 }
+
 case class SeqVar(name : String) extends SeqItem {
 	def toNodeID(pos : Position) =
 		<om:OMSV name ={name}/> % pos.toIDAttr
