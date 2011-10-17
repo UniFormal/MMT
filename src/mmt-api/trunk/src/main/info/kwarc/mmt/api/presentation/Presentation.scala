@@ -247,12 +247,12 @@ object Presentation {
                }
             }
             Fragment(xml.attr(n,"name"), args : _*)
-         case e @ scala.xml.Elem(prefix, label, atts, scope, children) if prefix != null =>
+         case e @ scala.xml.Elem(prefix, label, atts, scope, _*) if prefix != null =>
             val pAtts = atts map {
                case scala.xml.PrefixedAttribute(p, k, v, _) => Attribute(p, k, Text(v.text)) 
                case scala.xml.UnprefixedAttribute(k, v, _) => Attribute("", k, Text(v.text))
             }
-            Element(prefix, label, pAtts.toList, (children map parse).toList)
+            Element(prefix, label, pAtts.toList, (e.child map parse).toList)
          case scala.xml.Comment(_) => Empty
          case _ => throw ParseError("illegal presentation item: " + n)
       }

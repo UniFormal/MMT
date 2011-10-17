@@ -7,20 +7,21 @@ import Conversions._
 import scala.xml.Node
 
 /** represents an MMT variable declaration */
-sealed abstract class VarDecl extends Content {
+sealed abstract class VarDecl extends Obj {
    val name : String
    val tp : Option[Obj]
    val df : Option[Obj]
    val attrs : List[(GlobalName, Obj)]
    def ^(sub : Substitution) : VarDecl
-   def toNode : Node = toNodeID(Position.None)
    def toNodeID(pos : Position) : Node
    def toCML : Node
+   def head = None
    def role : Role
    def components = List(StringLiteral(name), tp.getOrElse(Omitted), df.getOrElse(Omitted))
-   def presentation(lpar : LocalParams) =
-	   ByNotation(NotationKey(None, role), ContentComponents(components), lpar)
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
+   protected def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
+   protected def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
+   protected def attrsN(pos : Position) = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
 }
 
 //TODO: add optional notation
@@ -35,7 +36,7 @@ case class TermVarDecl(name : String, tp : Option[Term], df : Option[Term], ats:
    def ^(sub : Substitution) = TermVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
-	   val varToOMATTR = attrs.toList.foldLeft[Term](OMV(name)) {(v,a) => OMATTR(v, OMID(a._1), a._2)}
+	   val varToOMATTR = attrs.foldLeft[Term](OMV(name)) {(v,a) => OMATTR(v, OMID(a._1), a._2)}
       (tp, df) match {
          case (None, None) => varToOMATTR
          case (Some(t), None) => 
@@ -44,7 +45,7 @@ case class TermVarDecl(name : String, tp : Option[Term], df : Option[Term], ats:
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
-   def toNodeID(pos : Position) = toOpenMath.toNodeID(pos) 
+   def toNodeID(pos : Position) = <om:OMV name={name}>{tpN(pos)}{dfN(pos)}{attrsN(pos)}</om:OMV> % pos.toIDAttr 
    def toCML = toOpenMath.toCML
    def role = Role_Variable
 }
@@ -53,13 +54,9 @@ case class SeqVarDecl(name : String, tp : Option[Sequence], df : Option[Sequence
    val attrs = ats.toList
    def ^(sub : Substitution) = SeqVarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
    def toNodeID(pos : Position) = {
-      val tpN = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
-      val dfN = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
-      val attrsN = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
-      <om:OMSV name={name}>{tpN}{dfN}{attrsN}</om:OMSV>
+      <om:OMSV name={name}>{tpN(pos)}{dfN(pos)}{attrsN(pos)}</om:OMSV>  % pos.toIDAttr
    }
-   
-   def toCML = null
+   def toCML = null //TODO
    def role = Role_SeqVariable
 }
 
@@ -104,24 +101,27 @@ case class Context(variables : VarDecl*) extends Obj {
 }
 
 /** a case in a substitution */
-sealed abstract class Sub extends Content {
+sealed abstract class Sub extends Obj {
 	val name: String 
 	val target: Obj
-	def toNode : Node = toNodeID(Position.None)
+	def ^(sub : Substitution) : Sub
 	def toNodeID(pos: Position): Node
 	override def toString = name + "/" + target.toString
+   def head = None
 	def role : Role
-    def components = List(StringLiteral(name), target)
-    def presentation(lpar : LocalParams) =
-	   ByNotation(NotationKey(None, role), ContentComponents(components), lpar)
+   def components = List(StringLiteral(name), target)
 }
 case class TermSub(name : String, target : Term) extends Sub {
-   def toNodeID(pos: Position): Node = <om:OMV name={name}>{target.toNodeID(pos + 1)}</om:OMV>
+   def ^(sub : Substitution) = TermSub(name, target ^ sub)
    def role : Role = Role_termsub
+   def toNodeID(pos: Position): Node = <om:OMV name={name}>{target.toNodeID(pos + 1)}</om:OMV>
+   def toCML : Node = <m:mi name={name}>{target.toCML}</m:mi>
 }
 case class SeqSub(name : String, target : Sequence) extends Sub {
+   def ^(sub : Substitution) = SeqSub(name, target ^ sub)
    def toNodeID(pos: Position): Node = <om:OMSV name={name}>{target.toNodeID(pos + 1)}</om:OMSV>
    def role : Role = Role_seqsub
+   def toCML = null  //TODO
 }
 
 /** substitution between two contexts */
@@ -164,6 +164,25 @@ object Context {
 	def parse(N : scala.xml.Node, base : Path) : Context = N match {
 	  case <om:OMBVAR>{decls @ _*}</om:OMBVAR> =>  decls.toList.map(VarDecl.parse(_, base))
       case _ => throw ParseError("not a well-formed context: " + N.toString)
+	}
+	//crude renaming to kind of avoid variable capture
+	private def rename(s: String) = "_" + s
+	def makeFresh(con: Context) : (Context,Substitution) = con match {
+	   case Context() => (Context(), Substitution())
+	   case Context(TermVarDecl(x,tp,df,ats @ _*), tail @ _*) =>
+	      val xn = rename(x)
+	      val tailn = Context(tail : _*) ^ OMV(x) / OMV(xn)
+	      val (newTail, tailSub) = makeFresh(tailn)
+	      val newCon = TermVarDecl(xn, tp, df, ats : _*) ++ newTail
+	      val sub = OMV(x) / OMV(xn) ++ tailSub
+	      (newCon, sub)
+      case Context(SeqVarDecl(x,tp,df,ats @ _*), tail @ _*) =>
+         val xn = rename(x)
+         val tailn = Context(tail : _*) ^ OMV(x) / OMV(xn)
+         val (newTail, tailSub) = makeFresh(tailn)
+         val newCon = SeqVarDecl(xn, tp, df, ats : _*) ++ newTail
+         val sub = SeqVar(x) / OMV(xn) ++ tailSub
+         (newCon, sub)
 	}
 }
 /** helper object */

@@ -43,7 +43,7 @@ object LF {
 object Lambda {
    def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("lambda"), OMV(name) % tp, body)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
-	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None)), s) if b == LF.constant("lambda") => Some(n,t,s)
+	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None,_*)), s) if b == LF.constant("lambda")  || b == LF.constant("implicit_lambda")=> Some(n,t,s)
 	   case _ => None
    }
 }
@@ -54,7 +54,7 @@ object Pi {
    
    def apply(con: Context, body : Term) = OMBIND(LF.constant("Pi"), con, body) //(?)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
-	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None), rest @ _*), s) if b == LF.constant("Pi") =>
+	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.constant("Pi") || b == LF.constant("implicit_Pi") =>
 	      if (rest.isEmpty) Some((n,t,s))
 	      else Some((n,t, Pi(rest.toList,s)))
 	   case OMA(LF.arrow,FlatSequence(args)) =>
@@ -78,7 +78,7 @@ object Arrow {
 object Apply {
 	def apply(f: Term, a: Term) = f(a)
 	def unapply(t: Term) : Option[(Term,Term)] = t match {
-		case OMA(f, a) => a.last match {
+		case OMA(f, a) if f != LF.arrow => a.last match {
 			case t: Term =>
 			  if (a.length > 1) Some((OMA(f, a.init), t))
 			  else Some(f,t)
@@ -91,7 +91,7 @@ object Apply {
 object ApplySpine {
 	def apply(f: Term, a: Term*) = OMA(f, a.toList)
 	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
-		case OMA(f, FlatSequence(args)) =>
+		case OMA(f, FlatSequence(args)) if f != LF.arrow =>
 		  unapply(f) match {
 		 	 case None => Some((f, args))
 		 	 case Some((c, args0)) => Some((c, args0 ::: args))
@@ -204,7 +204,7 @@ class LFF extends Foundation {
         		//val tm2r = reduce(tm2, Context())
  	 				val tm1r = reduce(tm1, G)
  	 				val tm2r = reduce(tm2, G)
- 	 				if ((!equal(tm1r, tm1, G)) || (!equal(tm2r, tm2, G))) {
+ 	 				if (tm1r != tm1 || tm2r != tm2) {
  	 					equal(tm1r, tm2r, G)
  	 				} else false
  	 			}
@@ -235,8 +235,9 @@ class LFF extends Foundation {
    		}
    		case ApplySpine(_,_) => t
    		case OMID(p) => lookupdef(p) match {
-   		case Some(d) => reduce(d, G)
-   		case None => t}
+   		   case Some(d) => reduce(d, G)
+   		   case None => t
+   		}
    		case t => t
    }
  
@@ -258,9 +259,10 @@ class LFF extends Foundation {
 	   			// need to ensure that type of argument matches with type of functions 
 	   			val funtype = infer(f, G)
 	   			val argtype = infer(arg, G)
-	   			reduce(funtype, G) match {
+	   			val r = reduce(funtype, G)
+	   			r match {
 	   				case Pi(x,a,b) =>
-	   					if(equal(argtype, a, G))	
+	   					if (equal(argtype, a, G))	
 	   						b ^ G.id ++ OMV(x)/arg
 	   					else throw LFError("ill-formed")	  
 	   				case _ => throw LFError("ill-formed")

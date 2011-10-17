@@ -18,10 +18,12 @@ case class  In(pos: Int) extends Fixity(if (pos == 1) "in" else pos.toString)
 /** interfix: operator duplicated in between all arguments */
 case object Inter extends Fixity("inter")
 /**
- * bindfix (a special fixity useful for binders):
- * the operator has a hole that is filled with the arguments except for the last one, which is appened
+ * a special fixity useful for binders:
+ * the operator has a hole that is filled with the arguments except for the last one, which is appended
  */
 case object Bind extends Fixity("bind")
+
+case object Tree extends Fixity("tree")
 
 /** The application style of a prefix of postfix notation determines how operator and arguments are connected. */
 sealed abstract class AppStyle(s: String) {

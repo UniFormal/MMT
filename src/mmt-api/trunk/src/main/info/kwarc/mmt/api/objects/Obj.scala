@@ -120,8 +120,9 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
       </om:OMBIND> % pos.toIDAttr
    override def toString = "(" + binder + " [" + context + "] " + body + ")"  
    def ^(sub : Substitution) = {
-      val subid = sub ++ context.id
-      OMBINDC(binder ^ sub, context ^ sub, condition.map(_ ^ subid), body ^ subid)
+      val (newCon, id) = Context.makeFresh(context)
+      val subid = sub ++ id
+      OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subid), body ^ subid)
    }
       
    def toCML = condition match {

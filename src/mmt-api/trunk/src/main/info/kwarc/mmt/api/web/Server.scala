@@ -221,7 +221,7 @@ class Server(val port : Int, controller : Controller) extends HServer {
           else
             XmlResponse(node).act(tk)
         } catch {
-          case e => XmlResponse(<div>{"get error:\n\n" + e.getMessage}</div>).act(tk)
+          case e : Error => XmlResponse(<div>{"get error:\n\n" + e.msg}</div>).act(tk)
         }
     }
   }
