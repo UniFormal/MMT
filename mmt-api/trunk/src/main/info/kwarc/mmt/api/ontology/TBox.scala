@@ -6,16 +6,16 @@ import utils._
  * An object of type Unary represents a unary predicate on MMT paths in the MMT ontology.
  * The semantics of these objects is given by their name
  */
-sealed abstract class Unary(val desc : String) {
+sealed abstract class Unary(override val toString : String) {
    /** yields the corresponding relational item that classifies p */ 
-   def apply(p : Path) = Individual(p, this)
+   def apply(p : Path) = Individual(p, this) 
 }
 case object IsDocument extends Unary("document")
 case object IsTheory extends Unary("theory")
 case object IsView extends Unary("view")
 case object IsStyle extends Unary("style")
 case object IsStructure extends Unary("structure")
-case class IsConstant(s: Option[String]) extends Unary("constant" + s.mkString(":",null,""))
+case class IsConstant(rl: Option[String]) extends Unary("constant" + rl.mkString(":",null,""))
 case object IsPattern extends Unary("pattern")
 case object IsInstance extends Unary("instance")
 case object IsAlias extends Unary("alias")

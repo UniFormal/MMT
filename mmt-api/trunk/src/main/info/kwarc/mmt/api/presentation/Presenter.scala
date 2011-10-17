@@ -37,8 +37,6 @@ case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Positi
  * @param c the presented expression
  */
 case class StrToplevel(c: Content) extends Content {
-   def presentation(lpar : LocalParams) =
-      ByNotation(NotationKey(None, Role_StrToplevel), ContentComponents(List(c)), lpar)
    def toNode = c.toNode
 }
 /** A special presentable object that is wrapped around the math objects encountered during presentation
@@ -46,15 +44,6 @@ case class StrToplevel(c: Content) extends Content {
  * @param pos the position of the object
  */
 case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
-   private def components : List[Content] = {
-      val l = opath match {
-         case None => List(Omitted, Omitted)
-         case Some(p) => List(StringLiteral(p.parent.toPath), StringLiteral(p.component))
-      }
-      c :: l
-   }
-   def presentation(lpar : LocalParams) =
-      ByNotation(NotationKey(None, Role_ObjToplevel), ContentComponents(components), lpar)
    def toNode = c.toNode
 }
 
@@ -77,7 +66,20 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
    }
 
    protected def present(c : Content, gpar : GlobalParams, lpar : LocalParams) {
+      log("presenting: " + c)
       c match {
+         case StrToplevel(c) => 
+            val key = NotationKey(None, Role_StrToplevel)
+            val notation = controller.get(gpar.nset, key)
+            render(notation.pres, ContentComponents(List(c)), List(0), gpar, lpar)
+         case ObjToplevel(c, opath) =>
+            val key = NotationKey(None, Role_ObjToplevel)
+            val notation = controller.get(gpar.nset, key)
+            val opComps : List[Content] = opath match {
+               case None => List(Omitted, Omitted)
+               case Some(p) => List(StringLiteral(p.parent.toPath), StringLiteral(p.component))
+            }
+            render(notation.pres, ContentComponents(c :: opComps), List(0), gpar, lpar)
          case l: Literal =>
             gpar.rh(l)
          case s: StructuralElement =>
@@ -89,6 +91,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar
             var comps = o.components
+            var namedInds : List[(String,Int)] = Nil
             //some adjustments for certain objects 
             o match {
                //for binders, change newlpar to remember VarData for rendering the bound variables later 
@@ -137,7 +140,6 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
             } else
                notation.pres
             val contComps = ContentComponents(comps, Nil, None, Some(o))
-            log("rendering with components " + contComps)
             render(presentation, contComps, List(0), gpar, newlpar)
       }
    }
@@ -152,6 +154,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
       }
       implicit def int2CInxed(i: Int) = NumberedIndex(i)
       def recurse(p : Presentation) {render(p, comps, ind, gpar, lpar)}
+      log("rendering " + pres)
       pres match {
 		  case Text(text) =>
 		      var t = text
@@ -269,7 +272,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
 		  case Fragment(name, args @ _*) =>
              val notation = controller.get(gpar.nset, NotationKey(None, Role_Fragment(name)))
 		       val pres = notation.pres.fill(args : _*)
-             log("found fragment notation: " + notation)
+             //log("found fragment notation: " + notation)
              recurse(pres)
 		  case Compute(iOpt, f) =>
            val o = iOpt match {
@@ -285,7 +288,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
 		           }
 		           val found = controller.extman.getFoundation(meta).getOrElse(throw PresentationError("no foundation found"))
 		           val tp = try {found.infer(o, lpar.asContext)(controller.globalLookup)}
-		              catch {case e => OMID(utils.mmt.mmtbase ? "dummy" ? "error")} 
+		                  catch {case _ => OMID(utils.mmt.mmtbase ? "dummy" ? "error")}
 		           present(tp, gpar, lpar)
 		        case c => throw PresentationError("cannot infer type of " + c)
 		     }

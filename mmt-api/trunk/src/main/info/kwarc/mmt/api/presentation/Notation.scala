@@ -73,6 +73,7 @@ case class ComplexNotation(nset : MPath, key : NotationKey,
             case Left => Nest(-1, impl + 1, Hole(0,Presentation.Empty) + operimp + Recurse(oPrec), Recurse(oPrec.map(_.weaken)))
          }
          case Bind => operimp + Iterate(impl + 1, -2, ArgSep(), oPrec) + OpSep() + Component(-1, oPrec)
+         case Tree => Fragment("tree", operimp, args)
       }
    }
    val wrap = false
@@ -132,6 +133,7 @@ object Notation {
        case "in" => In(1)
        case "inter" => Inter
        case "bind" => Bind
+       case "tree" => Tree
        case s => try {In(s.toInt)}
                  catch {case _ => throw ParseError("illegal fixity value: " + s)}
     }

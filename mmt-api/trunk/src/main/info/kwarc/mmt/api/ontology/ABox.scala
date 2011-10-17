@@ -97,6 +97,7 @@ class RelStore(report : frontend.Report) {
       subjects.clear
       objects.clear
       individuals.clear
+      types.clear
    }
 }
 

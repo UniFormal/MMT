@@ -41,50 +41,56 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
     * @throws PresentationError if notation found
     */
    def get(path : MPath, key : NotationKey) : Notation = {
+      log("looking up notation for " + key)
+      report.indent
       val nset = try {sets(path)}
                  catch {case _ => throw frontend.NotFound(path)}
      // look up key in defaults
      def getDefault(key : NotationKey) : Option[Notation] = {
-         key.path match {
-            case None => None
-	         case Some(_ : DPath) => None
-	         case Some(p : MPath) => try {sets(p).get(key)} catch {case _ => None}
-	         case Some(p : GlobalName) =>
+         log("looking in defaults for key " + key)
+         val not = key.path flatMap {
+	         case _ : DPath => None
+	         case p : MPath => try {sets(p).get(key)} catch {case _ => None}
+	         case p : GlobalName =>
 	            //get default notation, ...
 	            defaults.get(key) orElse
                    //... otherwise, if symbol arose from structure, get notation from preimage
                    (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role))))
 	      }
+         if (not.isDefined) log("found")
+         not
       }
 
       //look up key in all visible sets, return first found notation
       def getDeep(key : NotationKey) : Option[Notation] = {
          //a list containing all imported sets in depth-first order
          //value is cached in visible
+         log("looking in style    for key " + key)
          val vis = visible.getOrElseUpdate(path,imports.preimageDFO(path))
          val not = vis.mapFind(get(_ : MPath).get(key))
          //if applicable, lookup default notation from module
-         if (not.isEmpty && get(path).defaults == ImportsDefaults) {
-            log("trying default notation")
+         if (not.isEmpty && key.path.isDefined && get(path).defaults == ImportsDefaults)
             getDefault(key)
-         } else
+         else {
+            log("found")
             not
+         }
       }
       val not = key.path match {
         case None =>
            getDeep(key) match {
               case Some(hn) => hn
               case None => 
-                 throw PresentationError("no notation found for " + key + " in notation set " + path)
+                 throw GetError("no notation found for " + key + " in style " + path)
            }
         case Some(p) =>
            val r = key.role
            //to find the default notation highNot, we use keys without a path and try some roles in order
            val roles : List[Role] = r match {
               case Role_application(None) => 
-                 depstore.getType(p).map(_.toString) match {
-                    case None => List(r)
-                    case tp => List(Role_application(tp), r)
+                 depstore.getType(p) match {
+                    case Some(ontology.IsConstant(rl)) => List(Role_application(rl), r) // application of constants may differ depending on their role, if given 
+                    case _ => List(r)
                  }
               case Role_Constant(Some(s)) => List(r, Role_Constant(None))
               case r => List(r)
@@ -100,9 +106,10 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
                  if (hn.wrap) SimpleNotation(ln.nset, ln.key, hn.pres.fill(ln.pres), hn.oPrec, false)
                  else ln
               case (None, None) =>
-                 throw PresentationError("no notation found for " + key + " in notation set " + path)
+                 throw GetError("no notation found for " + key + " in style " + path)
            }
         }
+      report.unindent
       log("notation found for " + key + ": " + not)
       not
    }

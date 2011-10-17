@@ -5,7 +5,7 @@ case class Position(indices : List[Int]) {
    def +(i : Int) = Position(indices ::: List(i))
    def current = indices.last
    override def toString = indices.mkString("","_","")
-   def toIDAttr = if (indices != Nil) new scala.xml.PrefixedAttribute("xml", "id", toString, scala.xml.Null)
+   def toIDAttr = if (indices != Nil) new scala.xml.UnprefixedAttribute("position", toString, scala.xml.Null)
       else scala.xml.Null
 }
 object Position {
