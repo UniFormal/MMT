@@ -269,8 +269,7 @@ class LFF extends Foundation {
 	   			}
 	   		case _ => throw LFError("ill-formed")
 	 	}
-   	}
- 	
-  }
+   }
+}
 
 object Run extends frontend.Shell(r => new FoundChecker((new LFF).init(r), r))
