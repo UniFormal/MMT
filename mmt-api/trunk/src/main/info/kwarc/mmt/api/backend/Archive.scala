@@ -231,6 +231,14 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        }
     }
 
+    def check(in: List[String] = Nil, controller: Controller) {
+      traverse("compiled", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+         controller.read(inFile, Some(DPath(narrationBase / in)))
+         //val mpath = Archive.ContentPathToMMTPath(inPath)
+         //controller.globalLookup.getModule(mpath)
+      }
+    }
+
     def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in
        log("to do: [CONT -> FLAT]        -> " + inFile)
