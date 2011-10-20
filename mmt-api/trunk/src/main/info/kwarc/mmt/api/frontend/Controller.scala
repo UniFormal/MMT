@@ -221,6 +221,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
                case "content" => arch.produceNarrCont(in)
                case "check" => arch.check(in, this)
                case "delete" => arch.deleteNarrCont(in)
+               case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
                case "relational" =>
                   arch.readRelational(in, this)

@@ -250,24 +250,28 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
           var compiler : Option[Compiler] = None 
           val manifest = root / "META-INF" / "MANIFEST.MF"
           if (manifest.isFile) {
-              // read "key: value" list from "manifest" into properties
-              val in = new java.io.BufferedReader(new java.io.FileReader(manifest))
-              var line : String = null
-              while ({line = in.readLine(); line != null}) {
-                  if (! line.trim.startsWith("//")) {
-                     val p = line.indexOf(":")
-                     val key = line.substring(0,p).trim
-                     val value = line.substring(p+1).trim
-                     properties(key) = value
-                  }
-              }
-              in.close
-              properties.get("source") foreach (
-                src => extman.getCompiler(src) match {
-                  case Some(c) => compiler = Some(c)
-                  case None => log("no compiler registered for source " + src)
+             File.ReadLineWise(manifest) {line =>
+                if (! line.trim.startsWith("//")) {
+                   val p = line.indexOf(":")
+                   val key = line.substring(0,p).trim
+                   val value = line.substring(p+1).trim
+                   properties(key) = value
                 }
-              )
+             }
+             properties.get("source") foreach {
+               src => extman.getCompiler(src) match {
+                 case Some(c) => compiler = Some(c)
+                 case None => log("no compiler registered for source " + src)
+               }
+             }
+             properties.get("catalog") foreach { entry =>
+                val List(a, b) = entry.split("\\s").toList
+                val uri = URI(a)
+                val url = new java.io.File(root, b)
+                val cat = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, url)
+                log("adding catalog entry " + cat)
+                stores ::= cat
+             }
           }
           val arch = new Archive(root, properties, compiler, report)
           compiler foreach {_.register(arch)}

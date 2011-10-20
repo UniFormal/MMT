@@ -4,15 +4,14 @@ import objects._
 import utils._
 import scala.xml.Node
 
-/** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
-trait BaseType
-
 /** base types, used in the formation of QueryType */
 sealed abstract class QueryBaseType
 /** queries regarding the BaseType Path */
 case object PathType extends QueryBaseType
 /** queries regarding the BaseType Obj */
 case object ObjType extends QueryBaseType
+/** queries returning arbitrary XML */
+case object XMLType extends QueryBaseType
 
 /** the types of the query language */
 sealed abstract class QueryType
@@ -59,7 +58,7 @@ case class Component(of: Query, component: String) extends Query
 /** subobject of an object at a certain position */
 case class SubObject(of: Query, position: Position) extends Query
 /** type of an object */
-case class InferedType(of: Query) extends Query
+case class InferedType(of: Query, found: MPath) extends Query
 /** the set of all elements related to a certain path by a certain relation */
 case class Related(to: Query, by: RelationExp) extends Query
 
@@ -86,6 +85,9 @@ case class Tuple(components: List[Query]) extends Query
 /** projectiong */
 case class Projection(of: Query, index: Int) extends Query
 
+/** the XML object arising from rendering an object */
+case class Present(content: Query, style: MPath) extends Query
+
 /** typing relation between a path and a concept of the MMT ontology */
 case class IsA(e: Query, t: Unary) extends Prop
 /** ancestor relation between paths */
@@ -102,6 +104,7 @@ case class Not(arg: Prop) extends Prop
 case class And(left: Prop, right: Prop) extends Prop
 /** universal quantification over a set */
 case class Forall(domain: Query, scope: Prop) extends Prop
+
 
 /**
  * binary relations between paths, i.e., relation in the MMT ontology
@@ -199,7 +202,7 @@ object Query {
       case SubObject(of,_) =>
          check(of, Elem(ObjType))
          Elem(ObjType)
-      case InferedType(of) =>
+      case InferedType(of, p) =>
          infer(of) match {
             case Elem1(ObjType) => Elem(ObjType)
             case ESet1(ObjType) => ESet(ObjType)
@@ -256,13 +259,17 @@ object Query {
          case Elem(s) if 0 <= i && i < s.length => Elem(s(i-1))
          case _ => throw ParseError("illegal query " + q)
       }
+      case Present(c,s) => infer(c) match {
+         case Elem1(PathType) => Elem(XMLType)
+         case Elem1(ObjType) => Elem(XMLType)
+      }
    }
    /** parses a query; infer must be called to sure well-formedness */
    def parse(n: Node) : Query = n match {
       case <individual/> => ThePath(Path.parse(xml.attr(n, "uri")))
       case <component>{o}</component> => Component(parse(o), xml.attr(n, "index"))
       case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
-      case <type>{o}</type> => InferedType(parse(o))
+      case <type>{o}</type> => InferedType(parse(o), Path.parseM(xml.attr(n, "meta"), utils.mmt.mmtbase))
       case <var/> =>
          val s = xml.attr(n, "index")
          val i = try {s.toInt} catch {case _ => throw ParseError("illegal variable index: " + s)}
@@ -279,6 +286,7 @@ object Query {
          BigUnion(dom, parse(s))
       case <comprehension>{d}{f}</comprehension> =>
          Comprehension(parse(d), Prop.parse(f))
+      case <present>{o}</present> => Present(parse(o), Path.parseM(xml.attr(n, "style"), utils.mmt.mmtbase))
       //TODO missing cases
       case n => throw ParseError("illegal query expression: " + n)
    }

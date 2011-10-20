@@ -49,7 +49,7 @@ class ExtensionManager(report: Report) {
           val Found = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Foundation]]
           Found.newInstance
        } catch {
-          case _ => null 
+          case e : java.lang.ClassNotFoundException => throw ExtensionError("cannot instantiate class " + cls).setCausedBy(e)
        }
        found.init(report, args)
        foundations ::= found

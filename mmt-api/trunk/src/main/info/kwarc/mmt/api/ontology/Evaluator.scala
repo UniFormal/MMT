@@ -6,6 +6,10 @@ import objects._
 import libraries._
 import scala.collection.mutable.{HashSet}
 
+/** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
+trait BaseType
+case class XMLResult(node: scala.xml.Node) extends BaseType
+
 /** wrapper type for the result of a query */
 sealed abstract class QueryResult {
    def toNode : scala.xml.Node
@@ -15,6 +19,7 @@ case class ElemResult(l: List[BaseType]) extends QueryResult {
    def toNode : scala.xml.Node = <result>{l map {
       case p: Path => <uri path={p.toPath}/>
       case o: Obj => <object xmlns:om="http://www.openmath.org/OpenMath">{o.toNode}</object>
+      case x: XMLResult => <xml>{x.node}</xml>
    }}</result>
 }
 /** result of a set query */
@@ -52,6 +57,7 @@ class Evaluator(controller: Controller) {
    private def empty = new RHashSet 
    private def singleton(b: BaseType) = {val res = empty; res += b; res}
 
+   private val free = OMID(utils.mmt.mmtbase ? "mmt" ? "free")
    /** sets are evaluated to hash sets of the respective type
     *  pre: Query.infer(e) succeeds 
     */
@@ -59,7 +65,13 @@ class Evaluator(controller: Controller) {
       case Bound(i) => singleton(context(i-1))
       case ThePath(p) => singleton(p)
       case TheObject(o) => singleton(o)
-      case SubObject(of, pos) => singleton(evaluateElemObj(of).subobject(pos))
+      case SubObject(of, pos) =>
+         val (con, obj) = evaluateElemObj(of).subobject(pos)
+         val closure = obj match {
+            case t: Term => OMBIND(free, con, t)
+            case o => o //TODO assuming bound variables occur only in terms 
+         }
+         singleton(closure)
       case Component(of, comp) =>
          val res = empty
          evaluateESet(of) foreach {p => 
@@ -69,13 +81,16 @@ class Evaluator(controller: Controller) {
             }
          }
          res
-      case InferedType(of) =>
+      case InferedType(of, mt) =>
          val res = empty
-         //TODO: find an applicable foundation
-         val found = extman.getFoundation(null).getOrElse(throw GetError("no applicable type inference engine defined"))
+         val found = extman.getFoundation(mt).getOrElse(throw GetError("no applicable type inference engine defined"))
          evaluateESet(of) foreach {
-            case t: Term => res += List(found.infer(t, Context())(lup))
-            case o => throw GetError("object exists but is not a term: " + o)
+            case List(o) => o match { 
+               case OMBINDC(`free`, cont, _, obj) => res += List(found.infer(obj, cont)(lup))
+               case t: Term => res += List(found.infer(t, Context())(lup))
+               case o => throw GetError("object exists but is not a term: " + o)
+            }
+            case _ => throw ImplementationError("ill-typed query")
          }
          res
       case ThePaths(es @ _*) =>
@@ -123,6 +138,24 @@ class Evaluator(controller: Controller) {
         val t = evaluateElem(q)
         val res = empty
         res += t(i)
+        res
+      case Present(cont,style) =>
+        val res = empty
+        evaluateElem(cont) foreach {
+           case List(e) => e match {
+              case p: Path => 
+                 val rb = new presentation.XMLBuilder
+                 val e = controller.get(p)
+                 controller.presenter(e, presentation.GlobalParams(rb, style))
+                 res += XMLResult(rb.get)
+              case o : Obj =>
+                 val rb = new presentation.XMLBuilder
+                 controller.presenter(o, presentation.GlobalParams(rb, style))
+                 res += XMLResult(rb.get)
+              case _ => throw ImplementationError("evaluation of ill-typed query")
+           }
+           case _ => throw ImplementationError("evaluation of ill-typed query")
+        }
         res
    }
    /** propositions are evaluated to booleans */
