@@ -23,10 +23,12 @@ abstract class Obj extends Content with ontology.BaseType {
    }
    /** applies a substitution to an object (computed immediately) */
    def ^ (sub : Substitution) : Obj
-   /** returns the subobject at a given position */
-   def subobject(pos: Position) : Obj = if (pos == Position.Init) this else pos.indices.tail.foldLeft(this)({
-         case (o, i) => o.components(i) match {
-            case s: Obj => s
+   /** returns the subobject at a given position and its context */
+   def subobject(pos: Position) : (Context, Obj) =
+     if (pos == Position.Init) (Context(), this) else pos.indices.tail.foldLeft((Context(),this))({
+         case ((con,obj), i) => obj.components(i) match {
+            case o @ OMBINDC(_,context, _,_) => (con ++ context, o) 
+            case o: Obj => (con, o)
             case _ => throw GetError("position " + pos + " not valid in " + this)}
       })
    def head : Option[Path]

@@ -202,7 +202,7 @@ class Server(val port : Int, controller : Controller) extends HServer {
         val textresponse : Boolean = try {
           Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, controller.getBase, controller.getHome) match {
             case DefaultGet(p) => p match {
-              case Present(_,_) => tk.req.header("Accept") match {
+              case frontend.Present(_,_) => tk.req.header("Accept") match {
                 case Some("text/xml") => false    // TODO both false?
                 case _ => false                   // TODO both false?
               }

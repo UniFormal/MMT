@@ -149,12 +149,12 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
            }}
         }
     }
+    private def deleteFile(f: File) {
+       log("deleting " + f)
+       f.delete
+    }
     /** deletes content, narration, notation, and relational; argument is are treated as paths in compiled */
     def deleteNarrCont(in:List[String] = Nil) {
-       def deleteFile(f: File) {
-          log("deleting " + f)
-          f.delete
-       }
        val controller = new Controller(NullChecker, report)
        traverse("narration", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
           val dpath = controller.read(inFile, Some(DPath(narrationBase / inPath)))
@@ -168,6 +168,11 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
                 deleteFile((root / "relational" / cPath).setExtension("rel"))
              case r: documents.DRef => //TODO recursively delete subdocuments
           }
+          deleteFile(inFile)
+       }
+    }
+    def clean(in: List[String] = Nil, dim: String) {
+       traverse(dim, in, _ => true) {case Current(inFile,_) =>
           deleteFile(inFile)
        }
     }
@@ -232,7 +237,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
     }
 
     def check(in: List[String] = Nil, controller: Controller) {
-      traverse("compiled", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+      traverse("content", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
          controller.read(inFile, Some(DPath(narrationBase / in)))
          //val mpath = Archive.ContentPathToMMTPath(inPath)
          //controller.globalLookup.getModule(mpath)
