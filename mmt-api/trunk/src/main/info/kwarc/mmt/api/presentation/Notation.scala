@@ -73,7 +73,7 @@ case class ComplexNotation(nset : MPath, key : NotationKey,
             case Left => Nest(-1, impl + 1, Hole(0,Presentation.Empty) + operimp + Recurse(oPrec), Recurse(oPrec.map(_.weaken)))
          }
          case Bind => operimp + Iterate(impl + 1, -2, ArgSep(), oPrec) + OpSep() + Component(-1, oPrec)
-         case Tree => Fragment("tree", operimp, args)
+         case Tree => Fragment("tree", operimp, Iterate(impl + 1, -1, ArgSep() + ArgSep() + ArgSep(), Some(Precedence.neginfinite)))
       }
    }
    val wrap = false
