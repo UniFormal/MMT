@@ -1,0 +1,1151 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>info.kwarc.mmt.api</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <script type="text/javascript" src="../../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body class="value" onload="windowTitle();">
+
+      <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a></p>
+
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <h1>api</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">api</span>
+        
+        
+        
+      </span>
+      </h4>
+      <div class="fullcomment" id="comment"></div>
+
+      <div id="template">
+
+        <div id="mbrsel">
+          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+          
+          
+          <div id="visbl">
+              <span class="filtertype">Visibility</span>
+              <ol><li class="public in">Public</li><li class="all out">All</li></ol>
+            </div>
+          <div id="impl">
+              <span class="filtertype">Impl.</span>
+              <ol><li class="concrete in">Concrete</li><li class="abstract in">Abstract</li></ol>
+            </div>
+        </div>
+
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.AddError">
+      <a id="AddError:AddError"></a>
+      <h4 class="signature"><a href="AddError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">AddError</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">errors that occur when adding a knowledge item</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.Content">
+      <a id="Content:Content"></a>
+      <h4 class="signature"><a href="Content.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">Content</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">The trait Content is mixed into any class that can be rendered using notations.</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ContentElement">
+      <a id="ContentElement:ContentElement"></a>
+      <h4 class="signature"><a href="ContentElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">ContentElement</span>
+        
+        
+        <span class="result"> extends StructuralElement</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A ContentElement is any knowledge item that is used to represent mathematical content.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.DPath">
+      <a id="DPath:DPath"></a>
+      <h4 class="signature"><a href="DPath.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">DPath</span>
+        
+        <span class="params">(<span name="uri">uri: URI</span>)</span>
+        <span class="result"> extends Path with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A DPath represents an MMT document level path.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.DeleteError">
+      <a id="DeleteError:DeleteError"></a>
+      <h4 class="signature"><a href="DeleteError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">DeleteError</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">errors that occur when deleting a knowledge item</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.Error">
+      <a id="Error:Error"></a>
+      <h4 class="signature"><a href="Error.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Error</span>
+        
+        
+        <span class="result"> extends Throwable</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">The superclass of all Errors generated by MMT</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.GetError">
+      <a id="GetError:GetError"></a>
+      <h4 class="signature"><a href="GetError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">GetError</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">errors that occur when retrieving a knowledge item</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.GlobalName">
+      <a id="GlobalName:GlobalName"></a>
+      <h4 class="signature"><a href="GlobalName.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">GlobalName</span>
+        
+        <span class="params">(<span name="parent">parent: ModuleObj</span>, <span name="name">name: LocalName</span>)</span>
+        <span class="result"> extends Path with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A GlobalName represents the MMT URI of a symbol-level declaration.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ImplementationError">
+      <a id="ImplementationError:ImplementationError"></a>
+      <h4 class="signature"><a href="ImplementationError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">ImplementationError</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">errors that are not supposed to occur, e.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.IncludeStep">
+      <a id="IncludeStep:IncludeStep"></a>
+      <h4 class="signature"><a href="IncludeStep.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">IncludeStep</span>
+        
+        <span class="params">(<span name="from">from: TheoryObj</span>)</span>
+        <span class="result"> extends LNStep with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">an include declaration; these are unnamed and identified by the imported theory</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.InstanceElaboration">
+      <a id="InstanceElaboration:InstanceElaboration"></a>
+      <h4 class="signature"><a href="InstanceElaboration.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">InstanceElaboration</span>
+        
+        <span class="params">(<span name="instance">instance: GlobalName</span>)</span>
+        <span class="result"> extends Origin with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">obtained by elaborating an instance of a pattern</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Invalid">
+      <a id="Invalid:Invalid"></a>
+      <h4 class="signature"><a href="Invalid.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Invalid</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">errors that occur when checking a knowledge item (generated by the Checker classes)</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.LNStep">
+      <a id="LNStep:LNStep"></a>
+      <h4 class="signature"><a href="LNStep.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">LNStep</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">a step in a LocalName</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.LocalName">
+      <a id="LocalName:LocalName"></a>
+      <h4 class="signature"><a href="LocalName.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">LocalName</span>
+        
+        <span class="params">(<span name="steps">steps: List[LNStep]</span>)</span>
+        <span class="result"> extends Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A LocalNameh represents a local MMT symbol-level declarations (relative to a module).</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.LocalPath">
+      <a id="LocalPath:LocalPath"></a>
+      <h4 class="signature"><a href="LocalPath.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">LocalPath</span>
+        
+        <span class="params">(<span name="fragments">fragments: List[String]</span>)</span>
+        <span class="result"> extends Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A LocalPath represents a local MMT module (relative to a document).</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.LocalRef">
+      <a id="LocalRef:LocalRef"></a>
+      <h4 class="signature"><a href="LocalRef.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">LocalRef</span>
+        
+        <span class="params">(<span name="segments">segments: List[String]</span>, <span name="absolute">absolute: Boolean</span>)</span>
+        <span class="result"> extends Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A LocalRef represents a qualified local possibly relative reference to an MMT module or symbol.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.LookupError">
+      <a id="LookupError:LookupError"></a>
+      <h4 class="signature"><a href="LookupError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">LookupError</span>
+        
+        <span class="params">(<span name="name">name: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.MPath">
+      <a id="MPath:MPath"></a>
+      <h4 class="signature"><a href="MPath.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">MPath</span>
+        
+        <span class="params">(<span name="parent">parent: DPath</span>, <span name="name">name: LocalPath</span>)</span>
+        <span class="result"> extends Path with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">An MPath represents an MMT module level path.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.NamedStep">
+      <a id="NamedStep:NamedStep"></a>
+      <h4 class="signature"><a href="NamedStep.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">NamedStep</span>
+        
+        <span class="params">(<span name="name">name: String</span>)</span>
+        <span class="result"> extends LNStep with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">constant or structure declaration</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.NarrativeElement">
+      <a id="NarrativeElement:NarrativeElement"></a>
+      <h4 class="signature"><a href="NarrativeElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">NarrativeElement</span>
+        
+        
+        <span class="result"> extends StructuralElement</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A NarrativeElement is any OMDoc element that is used to represent narration and document structure.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ObjError">
+      <a id="ObjError:ObjError"></a>
+      <h4 class="signature"><a href="ObjError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">ObjError</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.Origin">
+      <a id="Origin:Origin"></a>
+      <h4 class="signature"><a href="Origin.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Origin</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">describes the origin of a generated knowledge item</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ParseError">
+      <a id="ParseError:ParseError"></a>
+      <h4 class="signature"><a href="ParseError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">ParseError</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">errors that occur during parsing</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.Path">
+      <a id="Path:Path"></a>
+      <h4 class="signature"><a href="Path.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Path</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A Path represents an MMT path.</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.PresentationElement">
+      <a id="PresentationElement:PresentationElement"></a>
+      <h4 class="signature"><a href="PresentationElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">PresentationElement</span>
+        
+        
+        <span class="result"> extends StructuralElement</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A PresentationElement is any knowledge item element that is used to represent notations.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.PresentationError">
+      <a id="PresentationError:PresentationError"></a>
+      <h4 class="signature"><a href="PresentationError.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">PresentationError</span>
+        
+        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">errors that occur when presenting a knowledge item</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.RelationalElement">
+      <a id="RelationalElement:RelationalElement"></a>
+      <h4 class="signature"><a href="RelationalElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">RelationalElement</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A RelationalElement is any element that is used in the relational representation of MMT content.</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.Role">
+      <a id="Role:Role"></a>
+      <h4 class="signature"><a href="Role.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Role</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">Roles of expressions, corresponding to productions of the abstract grammar.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Constant">
+      <a id="Role_Constant:Role_Constant"></a>
+      <h4 class="signature"><a href="Role_Constant.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Role_Constant</span>
+        
+        <span class="params">(<span name="univ">univ: Universe</span>)</span>
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Fragment">
+      <a id="Role_Fragment:Role_Fragment"></a>
+      <h4 class="signature"><a href="Role_Fragment.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Role_Fragment</span>
+        
+        <span class="params">(<span name="kind">kind: String</span>)</span>
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.StructuralElement">
+      <a id="StructuralElement:StructuralElement"></a>
+      <h4 class="signature"><a href="StructuralElement.html">
+      <span class="kind">trait</span>
+      <span class="symbol">
+        <span class="name">StructuralElement</span>
+        
+        
+        <span class="result"> extends Content with HasMetaData</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A StructuralElement is any knowledge item on the document, module, or symbol level.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.SubstitutionUndefined">
+      <a id="SubstitutionUndefined:SubstitutionUndefined"></a>
+      <h4 class="signature"><a href="SubstitutionUndefined.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">SubstitutionUndefined</span>
+        
+        <span class="params">(<span name="name">name: String</span>)</span>
+        <span class="result"> extends Error with Product</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.!">
+      <a id="!:!"></a>
+      <h4 class="signature"><a href="$bang$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">!</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax !(n) in patterns to match atomic local names.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.%">
+      <a id="%:%"></a>
+      <h4 class="signature"><a href="$percent$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">%</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax M % sym in patterns.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api./">
+      <a id="/:/"></a>
+      <h4 class="signature"><a href="$div$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">/</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax head / tail in patterns.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.?">
+      <a id="?:?"></a>
+      <h4 class="signature"><a href="$qmark$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">?</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax doc ? mod in patterns.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.DocumentSkeleton">
+      <a id="DocumentSkeleton:DocumentSkeleton"></a>
+      <h4 class="signature"><a href="DocumentSkeleton$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">DocumentSkeleton</span>
+        
+        
+        <span class="result"> extends Origin with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">obtained by replacing document parts with references</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.IncludeClosure">
+      <a id="IncludeClosure:IncludeClosure"></a>
+      <h4 class="signature"><a href="IncludeClosure$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">IncludeClosure</span>
+        
+        
+        <span class="result"> extends Origin with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">obtained by taking the closure under inclusions
+ An Include yields further Include element due to transitivity.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.LocalName">
+      <a id="LocalName:LocalName"></a>
+      <h4 class="signature"><a href="LocalName$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">LocalName</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.MetaInclude">
+      <a id="MetaInclude:MetaInclude"></a>
+      <h4 class="signature"><a href="MetaInclude$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">MetaInclude</span>
+        
+        
+        <span class="result"> extends Origin with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">include generated from meta-theory relation</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Path">
+      <a id="Path:Path"></a>
+      <h4 class="signature"><a href="Path$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Path</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">helper object for paths</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role">
+      <a id="Role:Role"></a>
+      <h4 class="signature"><a href="Role$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">helper object for roles</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Alias">
+      <a id="Role_Alias:Role_Alias"></a>
+      <h4 class="signature"><a href="Role_Alias$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Alias</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_ComplexConstantRef">
+      <a id="Role_ComplexConstantRef:Role_ComplexConstantRef"></a>
+      <h4 class="signature"><a href="Role_ComplexConstantRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ComplexConstantRef</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_ConAss">
+      <a id="Role_ConAss:Role_ConAss"></a>
+      <h4 class="signature"><a href="Role_ConAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ConAss</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_ConstantRef">
+      <a id="Role_ConstantRef:Role_ConstantRef"></a>
+      <h4 class="signature"><a href="Role_ConstantRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ConstantRef</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_DRef">
+      <a id="Role_DRef:Role_DRef"></a>
+      <h4 class="signature"><a href="Role_DRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_DRef</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_DeclaredTheory">
+      <a id="Role_DeclaredTheory:Role_DeclaredTheory"></a>
+      <h4 class="signature"><a href="Role_DeclaredTheory$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_DeclaredTheory</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_DefinedStructure">
+      <a id="Role_DefinedStructure:Role_DefinedStructure"></a>
+      <h4 class="signature"><a href="Role_DefinedStructure$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_DefinedStructure</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_DefinedTheory">
+      <a id="Role_DefinedTheory:Role_DefinedTheory"></a>
+      <h4 class="signature"><a href="Role_DefinedTheory$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_DefinedTheory</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_DefinedView">
+      <a id="Role_DefinedView:Role_DefinedView"></a>
+      <h4 class="signature"><a href="Role_DefinedView$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_DefinedView</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Document">
+      <a id="Role_Document:Role_Document"></a>
+      <h4 class="signature"><a href="Role_Document$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Document</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Include">
+      <a id="Role_Include:Role_Include"></a>
+      <h4 class="signature"><a href="Role_Include$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Include</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Instance">
+      <a id="Role_Instance:Role_Instance"></a>
+      <h4 class="signature"><a href="Role_Instance$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Instance</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_MRef">
+      <a id="Role_MRef:Role_MRef"></a>
+      <h4 class="signature"><a href="Role_MRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_MRef</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_ModRef">
+      <a id="Role_ModRef:Role_ModRef"></a>
+      <h4 class="signature"><a href="Role_ModRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ModRef</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Notation">
+      <a id="Role_Notation:Role_Notation"></a>
+      <h4 class="signature"><a href="Role_Notation$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Notation</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Notationset">
+      <a id="Role_Notationset:Role_Notationset"></a>
+      <h4 class="signature"><a href="Role_Notationset$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Notationset</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_ObjToplevel">
+      <a id="Role_ObjToplevel:Role_ObjToplevel"></a>
+      <h4 class="signature"><a href="Role_ObjToplevel$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_ObjToplevel</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Open">
+      <a id="Role_Open:Role_Open"></a>
+      <h4 class="signature"><a href="Role_Open$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Open</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Pattern">
+      <a id="Role_Pattern:Role_Pattern"></a>
+      <h4 class="signature"><a href="Role_Pattern$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Pattern</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_StrAss">
+      <a id="Role_StrAss:Role_StrAss"></a>
+      <h4 class="signature"><a href="Role_StrAss$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_StrAss</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_StrToplevel">
+      <a id="Role_StrToplevel:Role_StrToplevel"></a>
+      <h4 class="signature"><a href="Role_StrToplevel$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_StrToplevel</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Structure">
+      <a id="Role_Structure:Role_Structure"></a>
+      <h4 class="signature"><a href="Role_Structure$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Structure</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_StructureRef">
+      <a id="Role_StructureRef:Role_StructureRef"></a>
+      <h4 class="signature"><a href="Role_StructureRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_StructureRef</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_Variable">
+      <a id="Role_Variable:Role_Variable"></a>
+      <h4 class="signature"><a href="Role_Variable$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_Variable</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_VariableRef">
+      <a id="Role_VariableRef:Role_VariableRef"></a>
+      <h4 class="signature"><a href="Role_VariableRef$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_VariableRef</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_View">
+      <a id="Role_View:Role_View"></a>
+      <h4 class="signature"><a href="Role_View$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_View</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_application">
+      <a id="Role_application:Role_application"></a>
+      <h4 class="signature"><a href="Role_application$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_application</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_attribution">
+      <a id="Role_attribution:Role_attribution"></a>
+      <h4 class="signature"><a href="Role_attribution$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_attribution</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_binding">
+      <a id="Role_binding:Role_binding"></a>
+      <h4 class="signature"><a href="Role_binding$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_binding</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_foreign">
+      <a id="Role_foreign:Role_foreign"></a>
+      <h4 class="signature"><a href="Role_foreign$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_foreign</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_hidden">
+      <a id="Role_hidden:Role_hidden"></a>
+      <h4 class="signature"><a href="Role_hidden$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_hidden</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.Role_value">
+      <a id="Role_value:Role_value"></a>
+      <h4 class="signature"><a href="Role_value$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Role_value</span>
+        
+        
+        <span class="result"> extends Role with Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.\">
+      <a id="\:\"></a>
+      <h4 class="signature"><a href="$bslash$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">\</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">This permits the syntax init \ last in patterns.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend">
+      <a id="backend:backend"></a>
+      <h4 class="signature"><a href="backend/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">backend</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.documents">
+      <a id="documents:documents"></a>
+      <h4 class="signature"><a href="documents/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">documents</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend">
+      <a id="frontend:frontend"></a>
+      <h4 class="signature"><a href="frontend/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">frontend</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.lf">
+      <a id="lf:lf"></a>
+      <h4 class="signature"><a href="lf/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">lf</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries">
+      <a id="libraries:libraries"></a>
+      <h4 class="signature"><a href="libraries/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">libraries</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.metadata">
+      <a id="metadata:metadata"></a>
+      <h4 class="signature"><a href="metadata/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">metadata</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.moc">
+      <a id="moc:moc"></a>
+      <h4 class="signature"><a href="moc/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">moc</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.modules">
+      <a id="modules:modules"></a>
+      <h4 class="signature"><a href="modules/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">modules</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.objects">
+      <a id="objects:objects"></a>
+      <h4 class="signature"><a href="objects/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">objects</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology">
+      <a id="ontology:ontology"></a>
+      <h4 class="signature"><a href="ontology/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">ontology</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.patterns">
+      <a id="patterns:patterns"></a>
+      <h4 class="signature"><a href="patterns/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">patterns</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.presentation">
+      <a id="presentation:presentation"></a>
+      <h4 class="signature"><a href="presentation/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">presentation</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.symbols">
+      <a id="symbols:symbols"></a>
+      <h4 class="signature"><a href="symbols/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">symbols</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.tntplugin">
+      <a id="tntplugin:tntplugin"></a>
+      <h4 class="signature"><a href="tntplugin/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">tntplugin</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.utils">
+      <a id="utils:utils"></a>
+      <h4 class="signature"><a href="utils/package.html">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">utils</span>
+        
+        
+        
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+      </div>
+      
+      <div id="tooltip"></div>
+      
+    </body>
+      </html>

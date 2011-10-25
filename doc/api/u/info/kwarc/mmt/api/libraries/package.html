@@ -1,0 +1,284 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>info.kwarc.mmt.api.libraries</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body class="value" onload="windowTitle();">
+
+      <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
+
+      <div id="definition">
+        <img src="../../../../../lib/package_big.png" />
+        <h1>libraries</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="kind">package</span>
+      <span class="symbol">
+        <span class="name">libraries</span>
+        
+        
+        
+      </span>
+      </h4>
+      <div class="fullcomment" id="comment"></div>
+
+      <div id="template">
+
+        <div id="mbrsel">
+          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+          
+          
+          <div id="visbl">
+              <span class="filtertype">Visibility</span>
+              <ol><li class="public in">Public</li><li class="all out">All</li></ol>
+            </div>
+          <div id="impl">
+              <span class="filtertype">Impl.</span>
+              <ol><li class="concrete in">Concrete</li><li class="abstract in">Abstract</li></ol>
+            </div>
+        </div>
+
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.libraries.CheckResult">
+      <a id="CheckResult:CheckResult"></a>
+      <h4 class="signature"><a href="CheckResult.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">CheckResult</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">CheckResult is the result type of checking a content element</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.libraries.Checker">
+      <a id="Checker:Checker"></a>
+      <h4 class="signature"><a href="Checker.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Checker</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">Objects of type Checker can be used by a Library to check added ContentElements.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.Completion">
+      <a id="Completion:Completion"></a>
+      <h4 class="signature"><a href="Completion.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Completion</span>
+        
+        <span class="params">(<span name="parent">parent: Path</span>, <span name="completions">completions: Set[LocalName]</span>)</span>
+        <span class="result"> extends Product</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.Fail">
+      <a id="Fail:Fail"></a>
+      <h4 class="signature"><a href="Fail.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Fail</span>
+        
+        <span class="params">(<span name="msg">msg: String</span>)</span>
+        <span class="result"> extends CheckResult with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the content element is ill-formed</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.FoundChecker">
+      <a id="FoundChecker:FoundChecker"></a>
+      <h4 class="signature"><a href="FoundChecker.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">FoundChecker</span>
+        
+        
+        <span class="result"> extends ModuleChecker</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A Checker that implements MMT-well-formedness relative to a foundation.</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.libraries.Foundation">
+      <a id="Foundation:Foundation"></a>
+      <h4 class="signature"><a href="Foundation.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Foundation</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.Library">
+      <a id="Library:Library"></a>
+      <h4 class="signature"><a href="Library.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Library</span>
+        
+        
+        <span class="result"> extends Lookup</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A Library represents an MMT theory graph.</p>
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.libraries.Lookup">
+      <a id="Lookup:Lookup"></a>
+      <h4 class="signature"><a href="Lookup.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">Lookup</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+            
+            <div class="fullcomment"><div class="block">
+          attributes: abstract 
+        </div></div>
+          
+    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.libraries.ModuleChecker">
+      <a id="ModuleChecker:ModuleChecker"></a>
+      <h4 class="signature"><a href="ModuleChecker.html">
+      <span class="kind">class</span>
+      <span class="symbol">
+        <span class="name">ModuleChecker</span>
+        
+        
+        <span class="result"> extends Checker</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A Checker that checks only knowledge items whose well-formedness is foundation-independent.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.Reconstructed">
+      <a id="Reconstructed:Reconstructed"></a>
+      <h4 class="signature"><a href="Reconstructed.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Reconstructed</span>
+        
+        <span class="params">(<span name="recon">recon: List[ContentElement]</span>, <span name="deps">deps: List[RelationalElement]</span>)</span>
+        <span class="result"> extends CheckResult with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the content element is well-formed and was reconstructed to several new objects (e.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.Success">
+      <a id="Success:Success"></a>
+      <h4 class="signature"><a href="Success.html">
+      <span class="kind">case class</span>
+      <span class="symbol">
+        <span class="name">Success</span>
+        
+        <span class="params">(<span name="deps">deps: List[RelationalElement]</span>)</span>
+        <span class="result"> extends CheckResult with Product</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">the content element is well-formed</p>
+    </li></ol>
+            </div>
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.DefaultFoundation">
+      <a id="DefaultFoundation:DefaultFoundation"></a>
+      <h4 class="signature"><a href="DefaultFoundation$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">DefaultFoundation</span>
+        
+        
+        <span class="result"> extends Foundation</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.Library">
+      <a id="Library:Library"></a>
+      <h4 class="signature"><a href="Library$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Library</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.Names">
+      <a id="Names:Names"></a>
+      <h4 class="signature"><a href="Names$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">Names</span>
+        
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.NullChecker">
+      <a id="NullChecker:NullChecker"></a>
+      <h4 class="signature"><a href="NullChecker$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">NullChecker</span>
+        
+        
+        <span class="result"> extends Checker</span>
+      </span>
+      </a></h4>
+      <p class="comment cmt">A Checker that always succeeds.</p>
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.SimpleChecker">
+      <a id="SimpleChecker:SimpleChecker"></a>
+      <h4 class="signature"><a href="SimpleChecker$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">SimpleChecker</span>
+        
+        
+        <span class="result"> extends ModuleChecker</span>
+      </span>
+      </a></h4>
+      
+    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.libraries.StructuralChecker">
+      <a id="StructuralChecker:StructuralChecker"></a>
+      <h4 class="signature"><a href="StructuralChecker$.html">
+      <span class="kind">object</span>
+      <span class="symbol">
+        <span class="name">StructuralChecker</span>
+        
+        
+        <span class="result"> extends FoundChecker</span>
+      </span>
+      </a></h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+      </div>
+      
+      <div id="tooltip"></div>
+      
+    </body>
+      </html>
