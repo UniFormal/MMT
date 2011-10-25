@@ -1,1 +1,0 @@
-java -jar ..\lib\jetty-runner.jar ..\mmt\mmt-web.war 1>2 > jetty.log
