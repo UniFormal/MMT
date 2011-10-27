@@ -62,6 +62,13 @@ case class DPath(uri : URI) extends Path {
    def ^! = DPath(uri ^)
    def ?(n : String) : MPath = this ? new LocalPath(n)
    def ?(n : LocalPath) = MPath(this, n)
+   def version : Option[String] = uri.path match {
+       case Nil => None
+       case l => l.last.indexOf(";") match {
+          case -1 => None
+          case i => Some(l.last.substring(i+1))
+       }
+   }
 }
 
 /**
