@@ -285,14 +285,14 @@ function setSelected(target){
    $(target).addMClass('math-selected');
 }
 function getSelectedParent(elem){
-   var s = $(elem).closest('.math-selected');
+   var s = $(elem).parents().andSelf().filterMClass('math-selected');
    if (s.length == 0)
       return elem;
    else
       return s[0];
 }
 function isSelected(elem){
-   return $(elem).closest('.math-selected').length != 0;
+   return $(elem).parents().andSelf().filterMClass('math-selected').length != 0;
 }
 
 latin.leftClick = function(target){
@@ -360,8 +360,8 @@ latin.contextMenuEntries = function(target){
    if (isSelected(target)) {
       setCurrentPosition(target);
       return [
-         ["infer type", "inferType()"],
-      ];
+         ["infer type", "inferType()"]
+      ].concat(visibMenu);
 	} else if (target.hasAttribute("jobad:href")) {
 		currentURI = target.getAttribute('jobad:href');
 		return [
@@ -400,20 +400,11 @@ function openCurrent(){
 function showOccurs(){
    var occs = $('mo').filterMAttr('jobad:href', currentURI).toggleMClass('math-occurrence')
 }
-/** shows a component of the current MMT URI in a dialog */
-function showComp(comp){
-	var target = adaptMMTURI(currentURI, 'component_' + comp, true);
-	if(comp == 'definition')
-		proxyAjax('get', target, '', continuationDef, false, 'text/xml');
-	if(comp == 'type')
-		proxyAjax('get', target, '', continuationType, false, 'text/xml');
-}
-
-// helper function to produce xml attributes
+// helper function to produce xml attributes: key="value"
 function XMLAttr(key, value) {return ' ' + key + '="' + value + '"';}
-// helper function to produce xml elements
+// helper function to produce xml elements: <tag>content</tag> or <tag/>
 function XMLElem(tag, content) {return XMLElem1(tag, null, null, content);}
-// helper function to produce xml elements with 1 attribute
+// helper function to produce xml elements with 1 attribute: <tag key="value">content</tag> or <tag key="value"/>
 function XMLElem1(tag, key, value, content) {
   var atts = (key == null) ? "" : XMLAttr(key,value);
   var begin = '<' + tag + atts;
@@ -428,28 +419,33 @@ function XMLElem1(tag, key, value, content) {
 function Qindividual(p) {return XMLElem1('individual', 'uri', p);}
 function Qcomponent(o, c) {return XMLElem1('component', 'index', c, o);}
 function Qsubobject(o, p) {return XMLElem1('subobject', 'position', p, o);}
-function Qtype(o) {return XMLElem('type', o);}
+function Qtype(o,meta) {return XMLElem1('type', 'meta', meta, o);}
+function QtypeLF(o) {return Qtype(o, 'http://cds.omdoc.org/foundations/lf/lf.omdoc?lf');}
+function Qpresent(o) {return XMLElem1('present', 'style', notstyle, o);}
 
 /** sends type inference query to server for the currentComponent and currentPosition */
 function inferType(){
-   var query = Qtype(Qsubobject(Qcomponent(Qindividual(currentElement), currentComponent), currentPosition));
+   var query = Qpresent(QtypeLF(Qsubobject(Qcomponent(Qindividual(currentElement), currentComponent), currentPosition)));
    $.ajax({
-       url:'/:query?elem_obj', 
+       url:'/:query', 
        type:'POST',
        data:query,
        processData:false,
        contentType:'text/xml',
-       success:function(data){setLatinDialog(data.firstChild.firstChild, 'type');},
+       success:function(data){setLatinDialog(data.firstChild.firstChild.firstChild, 'type');},
    });
 }
-
-function continuationDef (data) {	continuation(data,'definition');}
-function continuationType (data) {	continuation(data,'type');}
-function continuation(data, comp){
-   var split = currentURI.split("?");
-   var name = split[split.length - 1];
-   var title = name + ((comp == 'type') ? ' : ' : ' = ');
-	setLatinDialog(data.firstChild, title);	
+/** shows a component of the current MMT URI in a dialog */
+function showComp(comp){
+   var query = Qpresent(Qcomponent(Qindividual(currentURI), comp));
+   $.ajax({
+       url:'/:query', 
+       type:'POST',
+       data:query,
+       processData:false,
+       contentType:'text/xml',
+       success:function(data){setLatinDialog(data.firstChild.firstChild.firstChild, comp);},
+   });
 }
 
 /*

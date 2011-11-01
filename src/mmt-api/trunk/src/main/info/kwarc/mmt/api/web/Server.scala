@@ -21,7 +21,7 @@ case class ServerError(n: Node) extends java.lang.Throwable
 /** An HTTP RESTful server. */  
 class Server(val port : Int, controller : Controller) extends HServer {
     
-  override def name = "mmt rest server"
+  override def name = "MMT rest server"
   override def writeBufSize = 16*1024
   override def tcpNoDelay = true       // make this false if you have extremely frequent requests
   override def startStopListener = {}  // prevents tiscaf from creating a "stop" listener
@@ -33,11 +33,25 @@ class Server(val port : Int, controller : Controller) extends HServer {
   
   private def log(message : =>String) {controller.report("server", message)}
   
+  private def bodyAsString(tk: HTalk) : String = {
+     val bodyArray : Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
+     new String(bodyArray, "UTF-8")
+  }
+  private def bodyAsXML(tk: HTalk) : Node = {
+     val bodyString = bodyAsString(tk)
+     val bodyXML = try {
+        scala.xml.XML.loadString(bodyString).head
+     } catch {
+        case _ => throw ServerError(<error message="invalid XML"/>)
+     }
+     scala.xml.Utility.trim(bodyXML)
+  }
+  
   protected class RequestHandler extends HApp {
     //override def buffered = true
     override def chunked = true   // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     def resolve(req : HReqHeaderData) : Option[HLet] = {
-      log("request: " + req.uriPath + "  " + req.uriExt + "   " + req.query)
+      log("request: /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
       Util.getComponents(req.uriPath) match {
          case ":tree" :: _ => Some(XmlResponse(tree(req.query)))
          case ":query" :: _ => Some(QueryResponse)
@@ -81,60 +95,35 @@ class Server(val port : Int, controller : Controller) extends HServer {
   /** Response when the first path component is :query */
   private def QueryResponse : HLet = new HLet {
     def act(tk : HTalk) {
-        // default incoming edges
-        if (tk.req.query == "") {
-           val mmtpath = Path.parse(tk.req.query, controller.getBase)
-           val node = incoming(mmtpath)
-           XmlResponse(node).act(tk)
-        } else {
-           try {
-              val bodyWS : Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
-              var bodyXML : scala.xml.Node = null
-              try {
-                bodyXML = scala.xml.XML.loadString(bodyWS.mkString).head
-              } catch {
-                case _ => throw ServerError(<error message="invalid XML"/>)
-              }
-              val body = scala.xml.Utility.trim(bodyXML)
-              val q = ontology.Query.parse(body)
-              val res = try {controller.evaluator.evaluate(q)}
-                        catch {
-                           case ParseError(s) => throw ServerError(<error message={s}/>)
-                           case GetError(s) => throw ServerError(<error message={s}/>)
-                        }
-              val resp = res.toNode
-              XmlResponse(resp).act(tk)
-           }
-           catch {case ServerError(n) => XmlResponse(n).act(tk)}
-        }
+      try {
+         val q = ontology.Query.parse(bodyAsXML(tk))
+         val res = try {controller.evaluator.evaluate(q)}
+            catch {
+               case ParseError(s) => throw ServerError(<error message={s}/>)
+               case GetError(s) => throw ServerError(<error message={s}/>)
+            }
+           val resp = res.toNode
+           XmlResponse(resp).act(tk)
+      } catch {
+        case ServerError(n) => XmlResponse(n).act(tk)
+      }
     }
   }
   
   /** Response when the first path component is :uom */
   private def UomResponse : HLet = new HLet {
     def act(tk : HTalk) {
-      val resp = tk.req.query match {
-        case "register" => <error message="not implemented yet"/>
-        case "simplify" =>
-          tk.req.octets match {
-            case None => <error message="no body found"/>
-            case Some(body) => 
-              //               val bodyNode = javax.xml.parsers.DocumentBuilderFactory
-              //                .newInstance()
-              //                .newDocumentBuilder()
-              //                //.parse(new java.io.StringInputStream(body)
-              //                .parse(new org.xml.sax.InputSource(new java.io.StringReader(body)))
-              //                .getDocumentElement()
+       val resp = tk.req.query match {
+          case "register" => <error message="not implemented yet"/>
+          case "simplify" =>
               try {
-                val bodyXML = scala.xml.XML.loadString(body.mkString).head
-                val input = objects.Obj.parseTerm(bodyXML, controller.getBase)
-                val output = controller.uom.simplify(input)
-                output.toNode
+                 val input = objects.Obj.parseTerm(bodyAsXML(tk), controller.getBase)
+                 val output = controller.uom.simplify(input)
+                 output.toNode
               } catch {
-                case e => <error><message>{e.getMessage}</message><input>{body.mkString}</input></error>
+                 case e => <error>{e.getMessage}</error>
               }
-          }
-        case _ => <error message="illegal command"/>
+          case _ => <error message="illegal command"/>
       }
       XmlResponse(resp).act(tk)
     }
@@ -145,7 +134,6 @@ class Server(val port : Int, controller : Controller) extends HServer {
     def act(tk : HTalk) {
       val resp = try {
          val mws = controller.extman.getMWS.getOrElse(throw ServerError(<error message="no MathWebSearch engine defined"/>))
-         val body = tk.req.octets.getOrElse(throw ServerError(<error message="no query given"/>))
          val offset = tk.req.header("Offset") match {
             case Some(s) => try s.toInt catch {case _ => 0}
             case _ => 0
@@ -158,7 +146,7 @@ class Server(val port : Int, controller : Controller) extends HServer {
          val qt = controller.extman.getQueryTransformer(query).getOrElse(TrivialQueryTransformer)
          val (mwsquery, params) = query match {
             case "mizar" => 
-               val bodyXML = scala.xml.XML.loadString(body.mkString).head
+               val bodyXML = bodyAsXML(tk)
                val mmlVersion = tk.req.header("MMLVersion") match {
                   case Some(s) => s
                   case _ => "4.166" 
@@ -168,8 +156,8 @@ class Server(val port : Int, controller : Controller) extends HServer {
                  case _ => "HIDDEN"
                }
                (bodyXML, List(currentAid, mmlVersion))
-            case "tptp" => (scala.xml.Text(body.mkString), Nil)
-            case _ => (scala.xml.XML.loadString(body.mkString).head, Nil) // default: body is forwarded to MWS untouched
+            case "tptp" => (scala.xml.Text(bodyAsString(tk)), Nil)
+            case _ => (bodyAsXML(tk), Nil) // default: body is forwarded to MWS untouched
          }
          val tqs = qt.transformSearchQuery(mwsquery, params)
          def wrapMWS(n: Node) : Node = <mws:query output="xml" limitmin={offset.toString} answsize={size.toString}>{n}</mws:query>
@@ -275,7 +263,7 @@ class Server(val port : Int, controller : Controller) extends HServer {
     */
   private def XmlResponse(node : scala.xml.Node) : HLet = new HLet {
     def act(tk : HTalk) {
-      val out : Array[Byte] = new scala.xml.PrettyPrinter(80,2).format(node).getBytes("UTF-8")
+      val out : Array[Byte] = node.toString.getBytes("UTF-8")
       tk.setContentLength(out.size) // if not buffered
             .setContentType("text/xml; charset=utf8")
             .write(out)
@@ -308,53 +296,26 @@ class Server(val port : Int, controller : Controller) extends HServer {
       ret
    }
    
-   
-   def incoming(path: Path) : Node = {
-      val deps = controller.depstore
-      val meta = deps.queryList(path, - HasMeta)
-      val imps = deps.queryList(path, - Includes)
-      val strs = deps.queryList(path, - RelationExp.HasStructureFrom)
-      val doms = deps.queryList(path, - HasDomain * HasType(IsView))
-      val cods = deps.queryList(path, - HasCodomain * HasType(IsView))
-      def refs(rel : String, subjs: List[Path]) : NodeSeq = {
-        val lis = subjs map {p =>
-          <li class="jstree-leaf">{Util.ahref(p)}</li>
-        }
-        <li class="jstree-leaf"><a href="">{rel}</a>{if (lis == Nil) Nil else <ul>{lis}</ul>}</li>
-      }
-      <ul xmlns={utils.mmt.namespace("xhtml")}>
-        <li class="jstree-open">
-          <a href="">known references</a>
-          <ul>
-           {refs("meta for", meta)}
-           {refs("imported in",imps)}
-           {refs("instantiated in",strs)}
-           {refs("domain of",doms)}
-           {refs("codomain of",cods)}
-          </ul>
-        </li>
-      </ul>
-   }
-   
-   def tree(q: String) : scala.xml.Node = {
+  def tree(q: String) : scala.xml.Node = {
       if (q == ":root")
          <root>{
             controller.backend.getArchives map {a => Util.item(DPath(a.narrationBase), "closed", Some(a.id))}
          }</root>
       else {
            val path = Path.parse(q, controller.getBase)
-           val elem = controller.get(path)
+           val role = controller.depstore.getType(path)
            path match {
-              case p: DPath => 
-                 val children = controller.depstore.queryList(path, + Declares) 
-                 <root>{children.map{c => Util.item(c, "closed")}}</root>
+              case p: DPath =>
+                 val doc = controller.getDocument(p)
+                 <root>{doc.getItems.map{i => Util.item(i.target, "closed")}}</root>
               case p:MPath =>
-                 val rels : List[(String,RelationExp)] = elem match {
-                    case t: Theory =>
+                 val rels : List[(String,RelationExp)] = role match {
+                    case Some(IsTheory) =>
                        List(("meta for",  - HasMeta), ("included into",  - Includes),
                             ("instantiated in",  - RelationExp.HasStructureFrom),
                             ("views out of", - HasDomain * HasType(IsView)), ("views into",  - HasCodomain * HasType(IsView)))
-                    case v: View => List(("included into", - Includes), ("domain", + HasDomain), ("codomain", + HasCodomain))
+                    case Some(IsView) => List(("included into", - Includes), ("domain", + HasDomain), ("codomain", + HasCodomain))
+                    case _ => Nil // should be impossible
                  }
                  val results = rels map {case (desc, rel) => (desc, controller.depstore.queryList(path, rel))}
                  val resultsNonNil = results.filterNot(_._2.isEmpty) 

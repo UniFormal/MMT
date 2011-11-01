@@ -21,8 +21,6 @@ case object Omitted extends Literal {
    def toNode = scala.xml.Text("")
 }
 
-case class OPath(parent: Path, component: String)
-
 case class ContentComponents(comps : List[Content], names: List[(String, Int)] = Nil, owner: Option[Path] = None, obj: Option[Obj] = None) {
    def apply(i: Int) : Content = apply(NumberedIndex(i))
    def apply(s: String) : Content = apply(NamedIndex(s))
