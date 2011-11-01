@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AntConfiguration">
+    <defaultAnt bundledAnt="true" />
+  </component>
+  <component name="CompilerConfiguration">
+    <option name="DEFAULT_COMPILER" value="Javac" />
+    <resourceExtensions />
+    <wildcardResourcePatterns>
+      <entry name="?*.properties" />
+      <entry name="?*.xml" />
+      <entry name="?*.gif" />
+      <entry name="?*.png" />
+      <entry name="?*.jpeg" />
+      <entry name="?*.jpg" />
+      <entry name="?*.html" />
+      <entry name="?*.dtd" />
+      <entry name="?*.tld" />
+      <entry name="?*.ftl" />
+    </wildcardResourcePatterns>
+    <annotationProcessing enabled="false" useClasspath="true" />
+  </component>
+  <component name="DependencyValidationManager">
+    <option name="SKIP_IMPORT_STATEMENTS" value="false" />
+  </component>
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" />
+  <component name="EntryPointsManager">
+    <entry_points version="2.0" />
+  </component>
+  <component name="JavadocGenerationManager">
+    <option name="OUTPUT_DIRECTORY" />
+    <option name="OPTION_SCOPE" value="protected" />
+    <option name="OPTION_HIERARCHY" value="true" />
+    <option name="OPTION_NAVIGATOR" value="true" />
+    <option name="OPTION_INDEX" value="true" />
+    <option name="OPTION_SEPARATE_INDEX" value="true" />
+    <option name="OPTION_DOCUMENT_TAG_USE" value="false" />
+    <option name="OPTION_DOCUMENT_TAG_AUTHOR" value="false" />
+    <option name="OPTION_DOCUMENT_TAG_VERSION" value="false" />
+    <option name="OPTION_DOCUMENT_TAG_DEPRECATED" value="true" />
+    <option name="OPTION_DEPRECATED_LIST" value="true" />
+    <option name="OTHER_OPTIONS" value="" />
+    <option name="HEAP_SIZE" />
+    <option name="LOCALE" />
+    <option name="OPEN_IN_BROWSER" value="true" />
+  </component>
+  <component name="NullableNotNullManager">
+    <option name="myDefaultNullable" value="org.jetbrains.annotations.Nullable" />
+    <option name="myDefaultNotNull" value="org.jetbrains.annotations.NotNull" />
+    <option name="myNullables">
+      <value>
+        <list size="3">
+          <item index="0" class="java.lang.String" itemvalue="org.jetbrains.annotations.Nullable" />
+          <item index="1" class="java.lang.String" itemvalue="javax.annotation.Nullable" />
+          <item index="2" class="java.lang.String" itemvalue="edu.umd.cs.findbugs.annotations.Nullable" />
+        </list>
+      </value>
+    </option>
+    <option name="myNotNulls">
+      <value>
+        <list size="3">
+          <item index="0" class="java.lang.String" itemvalue="org.jetbrains.annotations.NotNull" />
+          <item index="1" class="java.lang.String" itemvalue="javax.annotation.Nonnull" />
+          <item index="2" class="java.lang.String" itemvalue="edu.umd.cs.findbugs.annotations.NonNull" />
+        </list>
+      </value>
+    </option>
+  </component>
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/mmt-api.iml" filepath="$PROJECT_DIR$/mmt-api.iml" />
+    </modules>
+  </component>
+  <component name="ProjectResources">
+    <default-html-doctype>http://www.w3.org/1999/xhtml</default-html-doctype>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" assert-keyword="true" jdk-15="true" project-jdk-name="1.7" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/main" />
+  </component>
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="" />
+  </component>
+  <component name="libraryTable">
+    <library name="dependencies">
+      <CLASSES>
+        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/mmt-lf.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/MMTPlugin.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/mmt-tptp.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/mmt-mizar.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../deploy/lib/tiscaf.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../deploy/lib/scala-library.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../deploy/lib/scala-compiler.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../deploy/lfcatalog/lfcatalog.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/tntbase-plugin-api.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="http://www.scala-lang.org/api/current/index.html" />
+        <root url="http://download.oracle.com/javase/7/docs/api/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="file://$PROJECT_DIR$/../../tiscaf/src" />
+        <root url="file://$PROJECT_DIR$/../../lfcatalog/trunk/src/main" />
+        <root url="jar://$PROJECT_DIR$/../../../../scala-2.9.1.final/src/scala-library-src.jar!/" />
+        <root url="file://$PROJECT_DIR$/../../mmt-lf/src" />
+        <root url="file://$PROJECT_DIR$/../../mmt-mizar/trunk/src/main" />
+        <root url="file://$PROJECT_DIR$/../../mmt-tptp/trunk/src/main" />
+      </SOURCES>
+    </library>
+  </component>
+</project>
+
