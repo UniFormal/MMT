@@ -30,17 +30,21 @@ case class ESetResult(h : HashSet[List[BaseType]]) extends QueryResult {
 
 /** evaluates a query expression to a query result */
 class Evaluator(controller: Controller) {
-   private val rs = controller.depstore
-   private val extman = controller.extman
-   private val lup = controller.globalLookup
+   private lazy val rs = controller.depstore
+   private lazy val extman = controller.extman
+   private lazy val lup = controller.globalLookup
+   private def log(msg: => String) {controller.report("query", msg)}
    
    /** evaluation of a query
     *  the result is typed according to the type of the query
     *  if the query is ill-formed, this will throw an exception  
     */
-   def evaluate(q: Query) : QueryResult = Query.infer(q)(Nil) match {
-      case Elem(_) => ElemResult(evaluateElem(q)(Nil))
-      case ESet(_) => ESetResult(evaluateESet(q)(Nil))
+   def evaluate(q: Query) : QueryResult = {
+      log(q.toString)
+      Query.infer(q)(Nil) match {
+         case Elem(_) => ElemResult(evaluateElem(q)(Nil))
+         case ESet(_) => ESetResult(evaluateESet(q)(Nil))
+      }
    }
    /** pre: Query.infer(e) = Elem(_) */
    private def evaluateElem(q: Query)(implicit context: List[BaseType]) : List[BaseType] = evaluateESet(q).head
@@ -74,11 +78,13 @@ class Evaluator(controller: Controller) {
          singleton(closure)
       case Component(of, comp) =>
          val res = empty
-         evaluateESet(of) foreach {p => 
-            lup.get(p.asInstanceOf[Path]).contComponents(comp) match {
-               case obj : Obj => res += List(obj)
-               case _ => throw GetError("component exists but does not indicate an object: " + comp)
-            }
+         evaluateESet(of) foreach {
+            case List(p: Path) =>
+               lup.get(p).contComponents(comp) match {
+                  case obj : Obj => res += List(obj)
+                  case _ => throw GetError("component exists but does not indicate an object: " + comp)
+               }
+            case _ => throw ImplementationError("ill-typed query") 
          }
          res
       case InferedType(of, mt) =>
@@ -86,7 +92,8 @@ class Evaluator(controller: Controller) {
          val found = extman.getFoundation(mt).getOrElse(throw GetError("no applicable type inference engine defined"))
          evaluateESet(of) foreach {
             case List(o) => o match { 
-               case OMBINDC(`free`, cont, _, obj) => res += List(found.infer(obj, cont)(lup))
+               case OMBINDC(`free`, cont, _, obj) =>
+                 res += List(found.infer(obj, cont)(lup))
                case t: Term => res += List(found.infer(t, Context())(lup))
                case o => throw GetError("object exists but is not a term: " + o)
             }
@@ -141,7 +148,8 @@ class Evaluator(controller: Controller) {
         res
       case Present(cont,style) =>
         val res = empty
-        evaluateElem(cont) foreach {
+        val a = evaluateESet(cont)
+        a foreach {
            case List(e) => e match {
               case p: Path => 
                  val rb = new presentation.XMLBuilder

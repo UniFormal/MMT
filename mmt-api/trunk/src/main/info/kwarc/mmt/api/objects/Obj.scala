@@ -16,21 +16,26 @@ import scala.xml.{Node}
 abstract class Obj extends Content with ontology.BaseType {
    /** prints to OpenMath (with OMOBJ wrapper) */
    def toNodeID(pos : Position) : scala.xml.Node
-   def toNode : scala.xml.Node = toNodeID(Position.None)
+   def toNode : scala.xml.Node = toNodeID(Position.Init)
    def toOBJNode = {
       val om = xml.namespace("om") // inlining this into XML literal does not work
       <OMOBJ xmlns:om={om}>{toNode}</OMOBJ>
    }
    /** applies a substitution to an object (computed immediately) */
    def ^ (sub : Substitution) : Obj
-   /** returns the subobject at a given position and its context */
+   /** returns the subobject at a given position and its context; first index of pos is always 0 and is ignored */
    def subobject(pos: Position) : (Context, Obj) =
-     if (pos == Position.Init) (Context(), this) else pos.indices.tail.foldLeft((Context(),this))({
-         case ((con,obj), i) => obj.components(i) match {
-            case o @ OMBINDC(_,context, _,_) => (con ++ context, o) 
-            case o: Obj => (con, o)
-            case _ => throw GetError("position " + pos + " not valid in " + this)}
-      })
+     pos.indices.tail.foldLeft((Context(),this)) {
+         case ((con,obj), i) =>
+            val newContext = obj match {
+               case OMBINDC(_,context, _,_) => con ++ context.take(i)
+               case _ => con
+            }
+            obj.components(i) match {
+               case o : Obj => (newContext, o)
+               case _ => throw GetError("position " + pos + " not valid in " + this)
+            }
+      }
    def head : Option[Path]
    def role : Role
    def components : List[Content]
