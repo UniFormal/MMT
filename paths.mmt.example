@@ -1,0 +1,5 @@
+// path to the LATIN archive
+archive add c:/CDS
+
+// path to the Twelf compiler executable
+importer info.kwarc.mmt.lf.Twelf c:/twelf-mod/bin/twelf-server.bat
