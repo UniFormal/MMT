@@ -4,7 +4,7 @@ import scala.collection. { mutable => mute }
 
 
 protected object HReqState extends Enumeration {
-  val WaitsForHeader, WaitsForData, WaitsForPart, IsInvalid, IsReady = Value
+  val WaitsForHeader, WaitsForData, WaitsForOctets, WaitsForPart, IsInvalid, IsReady = Value
 }
 
 
@@ -58,6 +58,7 @@ final private[httpd] class HConn(
     state = state match {
       case HReqState.WaitsForHeader => inHeader
       case HReqState.WaitsForData   => inData
+      case HReqState.WaitsForOctets => inOctets
       case HReqState.WaitsForPart   => inParts
       case x => x // don't change
     }
@@ -136,7 +137,7 @@ final private[httpd] class HConn(
   private def inOctets : HReqState.Value = {
     val length = header.get.contentLength.get.toInt
     if (length > maxPostDataLength) HReqState.IsInvalid
-    else if (length > tail.size) HReqState.WaitsForData else {
+    else if (length > tail.size) HReqState.WaitsForOctets else {
       val ar = new Array[Byte](length)
       (0 until length).foreach { i => ar(i) = tail(i)}
       octetStream = Some(ar)
