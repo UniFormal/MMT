@@ -108,7 +108,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
                         comps = List(StringLiteral(name), StringLiteral(i.toString), StringLiteral(pos.toString))
                         key = NotationKey(binder, o.role)
                      case None =>
-                       comps = List(StringLiteral(name), Omitted, Omitted)
+                       comps = List(StringLiteral(name), Omitted, Omitted) // free variable
                   }
                // one more binder
                case SeqSubst(_, name, _) =>
