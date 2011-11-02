@@ -26,7 +26,7 @@ function adaptMMTURI(uri, act, present){
 	   var pres = "_present_" + notstyle;
 	else
 	   var pres = '';
-	return catalog + '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
+	return '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
 }
 
 function load(elem) {
@@ -75,30 +75,8 @@ function latin_navigate(uri) {
               "plugins" : ["html_data", "themes", "ui", "hotkeys"]
       }); */
 		// breadcrumbs
-		var bcurl = catalog + '/:breadcrumbs?' + uri;
+		var bcurl = '/:breadcrumbs?' + uri;
 		ajaxReplaceIn(bcurl, 'breadcrumbs');
-}
-
-function browserInit() {
-   // path (; at end of path is ignored; maybe use window.location.href and parse properly)
-   var path = window.location.pathname;
-   // query
-   var query = window.location.search.substring(1);
-   // will be the requested MMT URI
-   var uri = null;
-   catalog = window.location.protocol + '//' + window.location.host;
-	var i = query.indexOf('present_', 0);
-	if (i !== -1) {
-      uri = query.substring(0,i-1);
-	   setStyle(query.substring(i+8));
-	} else {
-	   uri = query;
-	   setStyle(notstyle);
-   }
-   if ((path.indexOf("/xhtml") != 0) && (path !== "/;") && (path !== "/")) {
-      uri = path + '?' + uri;
-   }
-   latin_navigate(uri);
 }
 
 /**
@@ -273,8 +251,9 @@ var latin = clone(Service);
  * Initialize the latin service
  */
 latin.init = function(){
-	updateVisibility(document.documentElement);
-	browserInit();
+	//updateVisibility(document.documentElement);
+   var query = window.location.search.substring(1);
+   latin_navigate(query);
 }
 
 function unsetSelected(){
@@ -426,25 +405,26 @@ function Qpresent(o) {return XMLElem1('present', 'style', notstyle, o);}
 /** sends type inference query to server for the currentComponent and currentPosition */
 function inferType(){
    var query = Qpresent(QtypeLF(Qsubobject(Qcomponent(Qindividual(currentElement), currentComponent), currentPosition)));
-   $.ajax({
-       url:'/:query', 
-       type:'POST',
-       data:query,
-       processData:false,
-       contentType:'text/xml',
-       success:function(data){setLatinDialog(data.firstChild.firstChild.firstChild, 'type');},
-   });
+   execQuery(query,
+     function(result){setLatinDialog(result.firstChild.firstChild.firstChild, 'type');}
+   );
 }
 /** shows a component of the current MMT URI in a dialog */
 function showComp(comp){
    var query = Qpresent(Qcomponent(Qindividual(currentURI), comp));
-   $.ajax({
+   execQuery(query,
+     function(result){setLatinDialog(result.firstChild.firstChild.firstChild, comp);}
+   );
+}
+
+function execQuery(q, cont) {
+  $.ajax({
        url:'/:query', 
        type:'POST',
-       data:query,
+       data:q,
        processData:false,
        contentType:'text/xml',
-       success:function(data){setLatinDialog(data.firstChild.firstChild.firstChild, comp);},
+       success:cont,
    });
 }
 
