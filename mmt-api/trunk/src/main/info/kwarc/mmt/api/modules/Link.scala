@@ -23,7 +23,7 @@ trait Link {
 }
 
  /**
-  * A DeclaredLink represents an MMT link given by a set assignments.<p> 
+  * A DeclaredLink represents an MMT link given by a set of assignments.<p>
   *
   * Declared links are constructed empty. {@link info.kwarc.mmt.api.modules.StatementSet[Assignment]} is derived to hold a set of name-indexed assignments.
   */
