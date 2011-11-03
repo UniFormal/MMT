@@ -96,6 +96,7 @@
       <JAVADOC>
         <root url="http://www.scala-lang.org/api/current/index.html" />
         <root url="http://download.oracle.com/javase/7/docs/api/" />
+        <root url="file://$PROJECT_DIR$/../../../doc/api" />
       </JAVADOC>
       <SOURCES>
         <root url="file://$PROJECT_DIR$/../../tiscaf/src" />

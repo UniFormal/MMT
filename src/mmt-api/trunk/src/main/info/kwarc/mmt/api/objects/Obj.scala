@@ -425,7 +425,7 @@ case class SeqItemList(items: List[SeqItem]) extends Sequence {
 }
 
 /**
- * A ModuleObj is a composed module level expressions.
+ * A ModuleObj is a composed module level expression.
  */
 sealed trait ModuleObj extends Obj {
 	/**
