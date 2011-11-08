@@ -8,9 +8,9 @@ import info.kwarc.mmt.api.utils._
 import scala.xml.Node
 
 /**
- * StatementSet represents the content of modules, i.e., a set of declarations.
+ * Body represents the content of modules, i.e., a set of declarations.
  * 
- * It provides (i) a name-indexed hash map of symbol level Declarations, and a list of Imports.
+ * It provides a name-indexed hash map of symbol level Declarations, and a list of Imports.
  * It is mixed into theories and links to hold the symbols/imports and assignments/imports, respectively.
  * 
  * @param S symbols.Symbol for theories and symbols.Assignment for links
