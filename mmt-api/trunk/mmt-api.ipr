@@ -69,7 +69,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/mmt-api.iml" filepath="$PROJECT_DIR$/mmt-api.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../../../omdocschema/omdocschema.iml" filepath="$PROJECT_DIR$/../../../../omdocschema/omdocschema.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../../omdocschema/omdocschema2.iml" filepath="$PROJECT_DIR$/../../../../omdocschema/omdocschema2.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../../../omdocschema3/omdocschema3.iml" filepath="$PROJECT_DIR$/../../../../omdocschema3/omdocschema3.iml" />
     </modules>
   </component>
