@@ -16,9 +16,11 @@ import scala.xml.{Node,NodeSeq}
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
 class Reader(controller : frontend.Controller, report : frontend.Report) {
    def log(s : String) = report("reader", s)
+   /** tells the controller given as class parameter to add the StructuralElement */
    def add(e : StructuralElement) {
       controller.add(e)
    }
+   /** tells the controller given as class parameter to add the StructuralElement, with the MetaData (if present) */
    def add(e : StructuralElement, md: Option[MetaData]) {
       md map {e.metadata = _}
       controller.add(e)
@@ -29,10 +31,11 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
       case "assertions" => readAssertions(node)
       case l => throw ParseError("unexpected label: " + l)
    }
-   
+   /** parses a sequence of documents (xml.Node) into the controller */
    def readDocuments(location : DPath, documents : NodeSeq) {
       documents foreach {readDocument(location, _)}
    }
+   /** parses a document (xml.Node) into the controller */
    def readDocument(location : DPath, D : Node) : DPath = {
       D match {
         case <omdoc>{modules @ _*}</omdoc> =>
