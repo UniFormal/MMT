@@ -6,6 +6,9 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.presentation._
 
+/**
+ * An Import: either Structure or Include
+ */
 trait DefinitionalLink extends Symbol with Link {
    val to = home
    def toMorph = OMDL(home, name)

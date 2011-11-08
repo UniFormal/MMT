@@ -126,7 +126,7 @@ case class LocalPath(fragments : List[String]) {
 }
 
 /**
- * A LocalNameh represents a local MMT symbol-level declarations (relative to a module).
+ * A LocalName represents a local MMT symbol-level declarations (relative to a module).
  * @param steps the list of (in MMT: slash-separated) components
  */
 case class LocalName(steps: List[LNStep]) {

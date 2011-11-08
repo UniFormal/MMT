@@ -14,9 +14,13 @@ trait Link {
    val to : TheoryObj
    def toMorph : Morph
    protected def innerNodes : Seq[scala.xml.Node]
+   /** name, from, to, etc */
    protected def outerComponents : List[Content]
+   /** the body of the link */
    protected def innerComponents : List[Content]
+   /** outerComponents as a string */
    protected def outerString : String
+   /** innerComponents as a string */
    protected def innerString : String
    def components = outerComponents ::: innerComponents
    override def toString = outerString + innerString
