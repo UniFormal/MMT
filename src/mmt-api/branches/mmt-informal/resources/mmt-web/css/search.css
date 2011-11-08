@@ -1,0 +1,14 @@
+#search {
+   position: fixed;
+   top: 10px;
+   width: 100%;
+   margin-right: 5px;
+   margin-bottom: 5px;
+}
+#output {
+   position: fixed;
+   top: 90px;
+   height: 90%;
+   width: 98%;
+   padding: 5px;
+}

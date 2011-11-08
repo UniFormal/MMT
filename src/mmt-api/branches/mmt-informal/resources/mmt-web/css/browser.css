@@ -1,0 +1,90 @@
+#title {
+   position: fixed;
+   width: 100%;
+   height: 8%;
+
+   font-size:20px;
+   font-weight:bold;
+   text-align: center;
+
+   background: lightgray;
+   border-style: solid;
+   border-color: black;
+}
+
+#styleselector {
+   position: fixed;
+   top: 12%;
+   left: 0%;
+   width: 15%;
+   height: 4%;
+}
+
+#breadcrumbs {
+   position: fixed;
+   top: 12%;
+   left: 15%;
+   width: 85%;
+   height: 4%;
+   border-style: solid;
+   border-width: thin;
+}
+span.crumb {
+   margin-left: 10px;
+   margin-right: 10px;
+}
+
+span.pagelink {
+   margin-left:5%;
+   margin-right:5%;
+}
+
+#sidebar {
+   position: fixed;
+   overflow: auto;
+   top: 30%;
+   left: 0;
+   width: 15%;
+   height: 70%;
+}
+
+#pathtree {
+   margin-bottom:10px;
+   background: lightgray;
+}
+a.treerelation {
+  background: blue;
+}
+
+#crossrefs {
+   background: lightgray;
+}
+
+#main {
+   position: fixed;
+   top: 18%;
+   left: 15%;
+   height: 82%;
+   width: 85%;
+   overflow: auto;
+   border-style: solid;
+   border-width: thin;
+   padding: 2px;
+}
+
+table.decllist {
+  border-left-style: solid;
+  border-left-width: 1px;
+  margin-left:5px;
+  padding-left:25px;
+}
+
+table.decllist td {
+}
+
+div.flat-container {
+       border-style: dotted;
+       border-width: thin;
+       padding: 2px;
+
+}
