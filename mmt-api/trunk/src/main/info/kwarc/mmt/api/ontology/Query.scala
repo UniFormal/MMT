@@ -341,6 +341,6 @@ object Prop {
 }
 
 /*
-<type><subobject position="2_2"><component index="type"><individual uri="http://latin.omdoc.org/logics/syntax?CONJ?and"/></component></subobject></type>
+<type meta="http://cds.omdoc.org/foundations/lf/lf.omdoc?lf"><subobject position="2_2"><component index="type"><individual uri="http://latin.omdoc.org/logics/syntax?CONJ?and"/></component></subobject></type>
 <related><individual uri="http://latin.omdoc.org/logics/syntax?FOL"/><sequence><transitive><toobject relation="Includes"/></transitive><toobject relation="Declares"/></sequence></related>
 */
