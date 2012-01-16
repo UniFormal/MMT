@@ -5,9 +5,13 @@ import scala.collection.mutable.{HashSet,HashMap}
 
 /** types of edges in a theory multigraph; edges may have an id; there may be at most one edge without id between two nodes */
 abstract class Edge
+/** inclusion edge */
 case object IncludeEdge extends Edge
+/** meta-theory edge */
 case object MetaEdge extends Edge
+/** named view */
 case class ViewEdge(id: Path) extends Edge
+/** named import */
 case class StructureEdge(id: Path) extends Edge
 
 /** an edge together with its end point, optionally may be backwards */
