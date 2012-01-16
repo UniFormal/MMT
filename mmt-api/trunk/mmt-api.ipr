@@ -27,6 +27,9 @@
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
   </component>
+  <component name="HighlightingAdvisor">
+    <option name="SUGGEST_TYPE_AWARE_HIGHLIGHTING" value="false" />
+  </component>
   <component name="JavadocGenerationManager">
     <option name="OUTPUT_DIRECTORY" />
     <option name="OPTION_SCOPE" value="protected" />
@@ -68,9 +71,7 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/mmt-api.iml" filepath="$PROJECT_DIR$/mmt-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../../../omdocschema/omdocschema2.iml" filepath="$PROJECT_DIR$/../../../../omdocschema/omdocschema2.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../../../omdocschema3/omdocschema3.iml" filepath="$PROJECT_DIR$/../../../../omdocschema3/omdocschema3.iml" />
     </modules>
   </component>
   <component name="ProjectResources">
