@@ -73,11 +73,16 @@ case class DPath(uri : URI) extends Path {
 }
 
 /**
+ * A path to a module or symbol
+ */
+trait ContentPath extends Path
+
+/**
  * An MPath represents an MMT module level path.
  * @param parent the path of the parent document
  * @param name the name of the module
  */
-case class MPath(parent : DPath, name : LocalPath) extends Path {
+case class MPath(parent : DPath, name : LocalPath) extends ContentPath {
    def doc = parent
    def last = name.fragments.last
    /** go up to containing document */
@@ -88,7 +93,7 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
    /** go down to a submodule */
    def /(n : LocalPath) = MPath(parent, name / n)
    /** go down to a symbol */
-   def ?(n : LocalName) : GlobalName = OMMOD(this) % n
+   def ?(n : LocalName) : GlobalName = this % n
    def ?(n : String) : GlobalName = this ? LocalName(n)
    def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
 }
@@ -96,13 +101,14 @@ case class MPath(parent : DPath, name : LocalPath) extends Path {
 /** A GlobalName represents the MMT URI of a symbol-level declaration.
  * This includes virtual declarations and declarations within complex module expressions.
  */
-case class GlobalName(parent: ModuleObj, name: LocalName) extends Path {
+case class GlobalName(parent: Term, name: LocalName) extends ContentPath {
    def doc = utils.mmt.mmtbase
-   def mod = parent.toMPath
-   def ^! = if (name.length == 1) mod else parent % name.init
+   def ^! = if (name.length == 1) parent else parent % name.init
    def last = name.last.toPath
    def apply(args: List[Term]) = OMA(OMID(this), args)
-   def apply(args: Term*) = OMA(OMID(this), args.toList)
+   def apply(args: Term*) = apply(args.toList)
+   /** true iff the parent is a named module and each include step is a named module or structure */
+   def isSimple : Boolean = parent.isInstanceOf[OMID] && name.steps.filter(isInstanceOf[IncludeStep]).forall(isInstanceOf[OMID])
 }
 
 /**
@@ -135,7 +141,7 @@ case class LocalName(steps: List[LNStep]) {
    def /(n: LNStep) : LocalName = this / LocalName(List(n))
    def /(n: String) : LocalName = this / LocalName(n)
    /** append an IncludeStep, drop the last step if it is already an IncludeStep */ 
-   def thenInclude(from: TheoryObj) = this match {
+   def thenInclude(from: Term) = this match {
       case s \ IncludeStep(_) => s / IncludeStep(from)
       case _ => this / IncludeStep(from) 
    }
@@ -158,14 +164,19 @@ abstract class LNStep {
    override def toString = toPath
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
+   /** true iff it's a structure or module reference */
+   def isSimple : Boolean
 }
 /** constant or structure declaration */
 case class NamedStep(name: String) extends LNStep {
    def toPath = name
+   def isSimple = true
 }
 /** an include declaration; these are unnamed and identified by the imported theory */
-case class IncludeStep(from: TheoryObj) extends LNStep {
+case class IncludeStep(from: Term) extends LNStep {
    def toPath = "[" + from.toString + "]"
+   /** true iff the IncludeStep is a named module */
+   def isSimple : Boolean = from.isInstanceOf[OMID]
 }
 
 /*
@@ -289,6 +300,7 @@ object Path {
  * This permits the syntax doc ? mod in patterns. 
  */
 object ? {
+   def apply(d: DPath,  l: LocalPath) : MPath = MPath(d, l)
    def unapply(p : Path) : Option[(DPath,LocalPath)] = p match {
       case p : MPath => Some((p ^^, p.name))
       case _ => None
@@ -296,11 +308,11 @@ object ? {
 }
 
 /** 
- * This permits the syntax M % sym in patterns. 
+ * This permits the syntax mod % sym in patterns.
  */
 object % {
-   def apply(p: ModuleObj, n: LocalName) : GlobalName = GlobalName(p,n)
-   def unapply(p : Path) : Option[(ModuleObj,LocalName)] = p match {
+   def apply(p: Term, n: LocalName) : GlobalName = GlobalName(p,n)
+   def unapply(p : Path) : Option[(Term,LocalName)] = p match {
       case GlobalName(p,n) => Some((p,n))
       case _ => None
    }

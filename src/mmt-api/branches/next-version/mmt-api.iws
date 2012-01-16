@@ -67,88 +67,70 @@
       <file leaf-file-name="Obj.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Obj.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="276" column="17" selection-start="10006" selection-end="10006" vertical-scroll-proportion="-3.08">
+            <state line="814" column="99" selection-start="30658" selection-end="30658" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Context.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Context.scala">
+      <file leaf-file-name="Document.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/documents/Document.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="266" column="7" selection-start="11418" selection-end="11418" vertical-scroll-proportion="0.0">
+            <state line="75" column="41" selection-start="3148" selection-end="3148" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Implementation.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/uom/Implementation.scala">
+      <file leaf-file-name="Position.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Position.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="25" column="7" selection-start="776" selection-end="776" vertical-scroll-proportion="0.0">
+            <state line="4" column="11" selection-start="97" selection-end="97" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Parser.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/utils/Parser.scala">
+      <file leaf-file-name="Path.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/Path.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="61" column="6" selection-start="1686" selection-end="1686" vertical-scroll-proportion="0.0">
+            <state line="304" column="17" selection-start="12755" selection-end="12755" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Structure.scala" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="ReadText.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/ReadText.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="21" column="50" selection-start="713" selection-end="713" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Change.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/moc/Change.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="185" column="23" selection-start="4933" selection-end="4933" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="View.scala" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/modules/View.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="24" column="88" selection-start="1073" selection-end="1073" vertical-scroll-proportion="0.45586592">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Structure.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/symbols/Structure.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="88" column="81" selection-start="3264" selection-end="3264" vertical-scroll-proportion="2.239521">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Extractor.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/uom/Extractor.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="150" column="18" selection-start="5143" selection-end="5143" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Library.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/libraries/Library.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="25" column="91" selection-start="1006" selection-end="1006" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Lookup.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/libraries/Lookup.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="8" column="21" selection-start="266" selection-end="266" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Module.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/modules/Module.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="24" column="13" selection-start="600" selection-end="600" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Archive.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/Archive.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="238" column="63" selection-start="10262" selection-end="10262" vertical-scroll-proportion="0.0">
+            <state line="40" column="21" selection-start="1650" selection-end="1650" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -164,8 +146,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/ReadXML.scala" />
-        <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/tntplugin/TNTValidator.scala" />
         <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/Archive.scala" />
         <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/Backend.scala" />
         <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/frontend/Action.scala" />
@@ -177,15 +157,33 @@
         <option value="$PROJECT_DIR$/startup.mmt" />
         <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/libraries/Library.scala" />
         <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/modules/Body.scala" />
-        <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/ReadText.scala" />
         <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Position.scala" />
+        <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/ReadText.scala" />
+        <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/Path.scala" />
         <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Obj.scala" />
+        <option value="$PROJECT_DIR$/src/main/info/kwarc/mmt/api/modules/View.scala" />
       </list>
     </option>
   </component>
   <component name="ModuleEditorState">
     <option name="LAST_EDITED_MODULE_NAME" />
     <option name="LAST_EDITED_TAB_NAME" />
+  </component>
+  <component name="ProjectInspectionProfilesVisibleTreeState">
+    <entry key="Project Default">
+      <profile-state>
+        <expanded-state>
+          <State>
+            <id />
+          </State>
+        </expanded-state>
+        <selected-state>
+          <State>
+            <id>Abstraction issues</id>
+          </State>
+        </selected-state>
+      </profile-state>
+    </entry>
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -214,84 +212,6 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="PackagesPane">
-        <subPane>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="info.kwarc.mmt" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="info.kwarc.mmt" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mmt-api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="info.kwarc.mmt" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="metadata" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Metadata.scala" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.ClassesTreeStructureProvider$PsiClassOwnerTreeNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -2503,39 +2423,116 @@
         </subPane>
       </pane>
       <pane id="Favorites" />
+      <pane id="PackagesPane">
+        <subPane>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="info.kwarc.mmt" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="info.kwarc.mmt" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="info.kwarc.mmt" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="objects" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mmt-api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="info.kwarc.mmt" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="backend" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="project.structure.last.edited" value="Modules" />
     <property name="GoToFile.includeJavaFiles" value="false" />
-    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.15" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
-    <property name="project.structure.proportion" value="0.0" />
-    <property name="recentsLimit" value="5" />
     <property name="MemberChooser.sorted" value="false" />
+    <property name="recentsLimit" value="5" />
     <property name="MemberChooser.showClasses" value="true" />
-    <property name="GoToClass.includeLibraries" value="false" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="dynamic.classpath" value="false" />
+    <property name="GoToClass.includeLibraries" value="false" />
     <property name="MemberChooser.copyJavadoc" value="false" />
+    <property name="dynamic.classpath" value="false" />
   </component>
   <component name="RunManager" selected="Application.RunNullChecker">
     <configuration default="true" type="ScalaScriptConsoleRunConfiguration" factoryName="Scala Console">
       <module name="" />
       <setting name="vmparams" value="" />
       <setting name="consoleArgs" value="" />
-      <setting name="workingDirectory" value="$PROJECT_DIR$" />
-      <method>
-        <option name="AntTarget" enabled="false" />
-        <option name="BuildArtifacts" enabled="false" />
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="Specs2RunConfiguration" factoryName="Specs2">
-      <module name="" />
-      <setting name="path" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="params" value="" />
-      <setting name="packagepath" value="" />
       <setting name="workingDirectory" value="$PROJECT_DIR$" />
       <method>
         <option name="AntTarget" enabled="false" />
@@ -2552,6 +2549,19 @@
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
+      </method>
+    </configuration>
+    <configuration default="true" type="Specs2RunConfiguration" factoryName="Specs2">
+      <module name="" />
+      <setting name="path" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="packagepath" value="" />
+      <setting name="workingDirectory" value="$PROJECT_DIR$" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
       </method>
     </configuration>
     <configuration default="true" type="SpecsRunConfiguration" factoryName="Specs">
@@ -2671,6 +2681,7 @@
     <option name="IGNORE_SPACES_IN_ANNOTATE" value="true" />
     <option name="SHOW_MERGE_SOURCES_IN_ANNOTATE" value="true" />
     <option name="FORCE_UPDATE" value="false" />
+    <configuration useDefault="true">C:\Users\alin\AppData\Roaming\Subversion</configuration>
     <myIsUseDefaultProxy>false</myIsUseDefaultProxy>
   </component>
   <component name="TodoView" selected-index="0">
@@ -2699,19 +2710,19 @@
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32962137" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24567099" sideWeight="0.9977666" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.6156388" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19679144" sideWeight="0.5974026" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39980546" sideWeight="0.6156388" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32929516" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24973261" sideWeight="0.6156388" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24187975" sideWeight="0.32599118" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39946523" sideWeight="0.6156388" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19679144" sideWeight="0.1482684" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.16096257" sideWeight="0.8552188" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39977974" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37416106" sideWeight="0.9990263" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.9987547" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.14478114" sideWeight="0.9977961" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2544053" sideWeight="0.9984639" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24973261" sideWeight="0.75278395" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
@@ -2763,9 +2774,24 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/metadata/Metadata.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/OMDocElement.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="10" column="6" selection-start="201" selection-end="201" vertical-scroll-proportion="0.25297618" />
+        <state line="74" column="6" selection-start="2838" selection-end="2838" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/libraries/Library.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="80" column="11" selection-start="4368" selection-end="4368" vertical-scroll-proportion="0.33333334" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/libraries/Checker.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="168" column="13" selection-start="6818" selection-end="6818" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/Role.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="35" column="23" selection-start="2414" selection-end="2425" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/utils/mmt.scala">
@@ -2773,84 +2799,59 @@
         <state line="5" column="7" selection-start="128" selection-end="128" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/ReadText.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/patterns/Pattern.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="569" column="23" selection-start="23426" selection-end="23426" vertical-scroll-proportion="0.0" />
+        <state line="29" column="49" selection-start="1076" selection-end="1076" vertical-scroll-proportion="0.33236995" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Position.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/ontology/Evaluator.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="3" column="3" selection-start="67" selection-end="67" vertical-scroll-proportion="0.0" />
+        <state line="12" column="69" selection-start="408" selection-end="408" vertical-scroll-proportion="-0.22109826" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/Path.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/ontology/TBox.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="62" column="7" selection-start="2624" selection-end="2624" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/modules/Theory.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="24" column="82" selection-start="1033" selection-end="1033" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/libraries/Library.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="25" column="91" selection-start="1006" selection-end="1006" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/libraries/Lookup.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="21" selection-start="266" selection-end="266" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/modules/Module.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="24" column="13" selection-start="600" selection-end="600" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/Archive.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="238" column="63" selection-start="10262" selection-end="10262" vertical-scroll-proportion="0.0" />
+        <state line="89" column="39" selection-start="3997" selection-end="3997" vertical-scroll-proportion="0.5086705" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Obj.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="276" column="17" selection-start="10006" selection-end="10006" vertical-scroll-proportion="-3.08">
-          <folding />
-        </state>
+        <state line="814" column="99" selection-start="30658" selection-end="30658" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Context.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/documents/Document.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="266" column="7" selection-start="11418" selection-end="11418" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="75" column="41" selection-start="3148" selection-end="3148" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/uom/Implementation.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/objects/Position.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="25" column="7" selection-start="776" selection-end="776" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="4" column="11" selection-start="97" selection-end="97" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/utils/Parser.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/Path.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="61" column="6" selection-start="1686" selection-end="1686" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="304" column="17" selection-start="12755" selection-end="12755" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/uom/Extractor.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/backend/ReadText.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="150" column="18" selection-start="5143" selection-end="5143" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="21" column="50" selection-start="713" selection-end="713" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/moc/Change.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="185" column="23" selection-start="4933" selection-end="4933" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/symbols/Structure.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="88" column="81" selection-start="3264" selection-end="3264" vertical-scroll-proportion="2.239521">
+        <state line="40" column="21" selection-start="1650" selection-end="1650" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/info/kwarc/mmt/api/modules/View.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="24" column="88" selection-start="1073" selection-end="1073" vertical-scroll-proportion="0.45586592">
           <folding />
         </state>
       </provider>
@@ -2908,12 +2909,11 @@
       </state>
       <state key="ModuleStructureConfigurable.UI">
         <settings>
-          <last-edited>mmt-api</last-edited>
+          <last-edited>Scala|mmt-api</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
                 <option value="0.2" />
-                <option value="0.5" />
               </list>
             </option>
           </splitter-proportions>

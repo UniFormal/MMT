@@ -72,8 +72,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/mmt-api.iml" filepath="$PROJECT_DIR$/mmt-api.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../../../omdocschema/omdocschema2.iml" filepath="$PROJECT_DIR$/../../../../omdocschema/omdocschema2.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../../../omdocschema3/omdocschema3.iml" filepath="$PROJECT_DIR$/../../../../omdocschema3/omdocschema3.iml" />
     </modules>
   </component>
   <component name="ProjectResources">
@@ -88,28 +86,28 @@
   <component name="libraryTable">
     <library name="dependencies">
       <CLASSES>
-        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/mmt-lf.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/MMTPlugin.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/mmt-tptp.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../deploy/mmt/mmt-mizar.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../deploy/lib/tiscaf.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../deploy/lib/scala-library.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../deploy/lib/scala-compiler.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../deploy/lfcatalog/lfcatalog.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/mmt/mmt-lf.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/mmt/MMTPlugin.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/mmt/mmt-tptp.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/mmt/mmt-mizar.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/lib/tiscaf.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/lib/scala-library.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/lib/scala-compiler.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../../../deploy/lfcatalog/lfcatalog.jar!/" />
         <root url="jar://$PROJECT_DIR$/lib/tntbase-plugin-api.jar!/" />
       </CLASSES>
       <JAVADOC>
         <root url="http://www.scala-lang.org/api/current/index.html" />
         <root url="http://download.oracle.com/javase/7/docs/api/" />
-        <root url="file://$PROJECT_DIR$/../../../doc/api" />
+        <root url="file://$PROJECT_DIR$/../../../../doc/api" />
       </JAVADOC>
       <SOURCES>
-        <root url="file://$PROJECT_DIR$/../../tiscaf/src" />
-        <root url="file://$PROJECT_DIR$/../../lfcatalog/trunk/src/main" />
-        <root url="jar://$PROJECT_DIR$/../../../../scala-2.9.1.final/src/scala-library-src.jar!/" />
-        <root url="file://$PROJECT_DIR$/../../mmt-lf/src" />
-        <root url="file://$PROJECT_DIR$/../../mmt-mizar/trunk/src/main" />
-        <root url="file://$PROJECT_DIR$/../../mmt-tptp/trunk/src/main" />
+        <root url="file://$PROJECT_DIR$/../../../tiscaf/src" />
+        <root url="file://$PROJECT_DIR$/../../../lfcatalog/trunk/src/main" />
+        <root url="jar://$PROJECT_DIR$/../../../../../scala-2.9.1.final/src/scala-library-src.jar!/" />
+        <root url="file://$PROJECT_DIR$/../../../mmt-lf/src" />
+        <root url="file://$PROJECT_DIR$/../../../mmt-mizar/trunk/src/main" />
+        <root url="file://$PROJECT_DIR$/../../../mmt-tptp/trunk/src/main" />
       </SOURCES>
     </library>
   </component>

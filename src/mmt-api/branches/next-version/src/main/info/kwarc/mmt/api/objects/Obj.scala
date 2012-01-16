@@ -67,7 +67,7 @@ sealed abstract class Term extends SeqItem {
    def ^(sub : Substitution) : Term
    def ^?(sub : Substitution) : Term = if (sub.isIdentity) this else this ^ sub
    /** morphism application (written postfix), maps OMHID to OMHID */
-   def *(that : Morph) : Term = OMM(this, that)
+   def *(that : Term) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */
    def apply(args : Term*) = OMA(this, args.toList)
 
@@ -83,29 +83,34 @@ case object OMHID extends Term with MMTObject {
    def args = Nil
 }
 
-case class OMID(gname: GlobalName) extends Term {
-   def parent = gname.parent
-   def name = gname.name
-   def head = Some(gname)
+/**
+ * An OMID represents an MMT reference
+ */
+case class OMID(path: ContentPath) extends Term {
+   def head = Some(path)
    def ^(sub : Substitution) = this
-   def role = gname match {
+   def role = path match {
+      case m: MPath => Role_ModRef
       case OMMOD(p) % _ => Role_ConstantRef
-      case _ => Role_ComplexConstantRef
+      case thy % name => Role_ComplexConstantRef
    }
-   def components = gname match {
+   def components = path match {
+      case m: MPath => m.components
       case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.flat),
-                                 StringLiteral(ln.flat), StringLiteral(gname.toPathEscaped))
-      case _ => List(parent, StringLiteral(name.flat)) 
+                                 StringLiteral(ln.flat), StringLiteral(path.toPathEscaped))
+      case thy % name => List(thy, StringLiteral(name.flat))
    }
-   override def toString = gname match {
+   override def toString = path match {
+      case doc ? mod => doc + "?" + mod.flat
       case OMMOD(mod) % name => mod.name.flat + "?" + name.flat
-      case g => g.toString
+      case thy % name => "[" + thy.toString + "]?" + name.flat
    }
-   def toNodeID(pos : Position) = parent match {
-      case OMMOD(doc ? mod) => <om:OMS base={doc.toPath} module={mod.flat} name={name.flat}/> % pos.toIDAttr
-      case par => <om:OMS name={name.flat}>{par.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
+   def toNodeID(pos : Position) = path match {
+      case doc ? mod => <om:OMS base={doc.toPath} cd={mod.flat}/> % pos.toIDAttr
+      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.flat}/> % pos.toIDAttr
+      case thy % name => <om:OMS name={name.flat}>{thy.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
    }
-   def toCML = <csymbol>{gname.toPath}</csymbol>
+   def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
 }
 
 /**
@@ -155,7 +160,7 @@ object OMBIND {
  * @param arg the argument term
  * @param via the applied morphism
  */
-case class OMM(arg : Term, via : Morph) extends Term with MMTObject {
+case class OMM(arg : Term, via : Term) extends Term with MMTObject {
    def path = mmt.morphismapplication
    def args = List(arg,via)
    def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
@@ -431,7 +436,7 @@ case class SeqItemList(items: List[SeqItem]) extends Sequence {
 
 /**
  * A ModuleObj is a composed module level expression.
- */
+ */     /*
 sealed trait ModuleObj extends Obj {
 	/**
 	 * returns Some(p) iff this module object refers to a real declaration with path p
@@ -440,24 +445,24 @@ sealed trait ModuleObj extends Obj {
 	def %(n: LocalName) = GlobalName(this, n)
 	/** converts the object into an MPath */
 	def toMPath : MPath = utils.mmt.mmtbase ? (toString.replace(" ", "_"))
-}
+}          */
 
 /**
  * A TheoryObj represents a Theory object.
  * Theory objects are to theory modules as terms are to constants: Theory modules introduce named theories,
  * theory objects refer to theory modules or to composed theories.
  * References to theory modules are the only possible theory objects.
- */
+ */      /*
 sealed trait TheoryObj extends ModuleObj {
    def ^ (sub : Substitution) : TheoryObj = this
    def id = OMIDENT(this)
-}
+}         */
 
 /**
  * A Morph represents a morphism.
  * Morphisms are to links as terms are to constants.
  * Morphisms are formed from links, identity, and composition.
- */
+ */  /*
 sealed trait Morph extends ModuleObj {
    /**
     * composition in diagram order
@@ -473,12 +478,20 @@ sealed trait Morph extends ModuleObj {
    def ^ (sub : Substitution) : Morph = this
 }
 
-sealed trait AtomicMorph extends Morph
+sealed trait AtomicMorph extends Morph      */
 
 /**
  * An OMMOD represents a reference to a module (which may be a theory or a morphism expression).
  * @param path the path to the link, structures are referenced by their module level path
  */
+object OMMOD {
+   def apply(path : MPath) : OMID = OMID(path)
+   def unapply(term : Term) : Option[MPath] = term match {
+     case OMID(parent ? name) => Some(parent ? name)
+     case _ => None
+   }
+}
+/*
 case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    //need to override the methods for which two implementations are inherited
    override def ^(sub : Substitution) : OMMOD = this
@@ -491,23 +504,35 @@ case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    def links = List(path) 
    override def asPath = Some(path)
    override def toString = path.toPath
-}
+} */
 
+/*object TEmpty {
+   def apply(meta: Option[MPath]) : OMID = OMID()
+}    */
 case class TEmpty(meta: Option[MPath]) extends TheoryObj with MMTObject {
    def args = meta match {case Some(m) => List(OMMOD(m)) case None => Nil}
    def path = mmt.tempty
 }
 
+/*
 case class TUnion(left: TheoryObj, right: TheoryObj) extends TheoryObj with MMTObject {
    def args = List(left,right)
    def path = mmt.tunion
    override def toString = left.toString + " + " + right.toString
-}
+}                    */
 object TUnion {
-   def apply(thys: List[TheoryObj]) : TheoryObj = thys match {
+   /*def apply(thys: List[MPath]) : Term = thys match {
       case Nil => TEmpty(None)
-      case hd :: Nil => hd
-      case hd :: tl => TUnion(hd, apply(tl))
+      case hd :: Nil => OMMOD(hd)
+      case hd :: tl => OMA(OMID(mmt.tunion), List(hd, apply(tl)))
+   } */
+   def apply(thys: Term*) : Term = thys match {
+     case Nil => TEmpty(None)
+     case hd :: Nil => OMMOD(hd)
+     case hd :: tl => OMA(OMID(mmt.tunion), tl.toList)
+   }
+   def unapplySeq(union: Term) : Option[Seq[Term]] = union match {
+     case OMA(OMID(mmt.tunion), thys) => Some(thys.toSeq : _*)
    }
 }
 
@@ -522,6 +547,13 @@ case class OMPI(push: TheoryObj, along: Morph, wth: TheoryObj) extends TheoryObj
 /**
  * An OMDL represents a structure
  */
+object OMDL {
+   def apply(cod: Term, name: LocalName) : Term = OMID(cod % name)
+   def unapply(t: Term) : Option[(Term, LocalName)] = t match {
+     case OMID(cod % name) => Some((cod, name))
+   }
+}
+/*
 case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
    def path = cod % name
    def head : Option[Path] = Some(path)
@@ -537,45 +569,71 @@ case class OMDL(cod: TheoryObj, name: LocalName) extends AtomicMorph {
       case _ => None
    }
    override def toString = path.toString
-}
+}    */
 
 /**
- * An OMComp represents the associative composition of a list of morphisms. Compositions may be nested.
+ * An OMCOMP represents the associative composition of a list of morphisms. Compositions may be nested.
  * @param morphisms the list of morphisms in diagram order
  */
+object OMCOMP {
+   def apply(morphs: Term*) : Term = morphs match {
+     case Nil => throw ImplementationError("composition of 0 morphisms")
+     case hd :: Nil => throw ImplementationError("composition of 1 morphism")
+     case _ => OMA(OMID(mmt.composition), morphs.toList)
+   }
+   def unapplySeq(t: Term) : Option[Seq[Term]] = t match {
+     case OMA(OMID(mmt.composition), morphs) => Some(morphs.toSeq :_*)
+     case _ => None
+   }
+}
+/*
 case class OMCOMP(morphisms: List[Morph]) extends Morph with MMTObject {
    def args = morphisms
    def path = mmt.composition
    override def toString = morphisms.mkString("", " ; ", "")
-}
-object OMCOMP {
-   def apply(ms: Morph*) : OMCOMP = OMCOMP(ms.toList)
-}
+}*/
 
 /**
  * An OMIDENT represents the identity morphism of a theory.
  * @param theory the theory
  */
-case class OMIDENT(theory : TheoryObj) extends Morph with MMTObject {
+object OMIDENT {
+   def apply(theory : Term) : Term = OMA(OMID(mmt.identity), theory)
+   def unapply(t : Term) : Option[Term] = t match {
+     case OMA(OMID(mmt.identity), theory) => Some(theory)
+     case _ => None
+   }
+}
+/*case class OMIDENT(theory : TheoryObj) extends Morph with MMTObject {
    def args = List(theory)
    def path = mmt.identity
-}
+}  */
 
+object MEmpty {
+   def apply(from: Term, to: Term) : Term = OMA(OMID(mmt.mempty), from, to)
+   def unapply(t : Term) : Option[(Term, Term)] = t match {
+     case OMA(OMID(mmt.mempty), from, to) => Some((from, to))
+     case _ => None
+   }
+}    /*
 case class MEmpty(from: TheoryObj, to: TheoryObj) extends Morph with MMTObject {
    def args = List(from,to)
    def path = mmt.mempty
-}
-
-case class MUnion(left: Morph, right: Morph) extends Morph with MMTObject {
+}              */
+/*
+case class MUnion(left: MPath, right: MPath) extends Morph with MMTObject {
    def args = List(left, right)
    def path = mmt.munion
    override def toString = left.toString + " + " + right.toString
-}
+} */
 object MUnion {
-   def apply(mors: List[Morph]) : Morph = mors match {
+   def apply(morphs: Term*) : Term = morphs match {
       case Nil => throw ImplementationError("union of 0 morphisms")
       case hd :: Nil => hd
-      case hd :: tl => MUnion(hd, apply(tl))
+      case hd :: tl => OMA(OMID(mmt.munion), morphs.toList)
+   }
+   def unapplySeq(t : Term) : Option[Seq[Term]] = t match {
+     case OMA(OMID(mmt.munion), morphs) => Some(morphs.toSeq :_*)
    }
 }
 
@@ -680,7 +738,7 @@ object Obj {
    }
    
    /** parses a morphism relative to a base address */
-   def parseMorphism(N : Node, base : Path) : Morph = {
+   /*def parseMorphism(N : Node, base : Path) : Morph = {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       N match {
@@ -708,10 +766,10 @@ object Obj {
             MUnion(mors)
          case _ => throw ParseError("not a well-formed morphism: " + N.toString)
       }
-   }
+   }           */
 
   /** parses a theory object relative to a base address */
-  def parseTheory(N : Node, base : Path) : TheoryObj = {
+  /*def parseTheory(N : Node, base : Path) : TheoryObj = {
      val nbase = newBase(N, base)
      N match {
         case <OMOBJ>{thy}</OMOBJ> => parseTheory(thy, base)
@@ -725,18 +783,25 @@ object Obj {
             TUnion(thys)
         case _ => throw ParseError("not a well-formed theory: " + N.toString)
     }
-  }
+  }                */
   
-  def parseOMS(N : Node, base : Path) : Path = {
-     val doc = URI(xml.attr(N,"base"))
-     val mod = xml.attr(N,"module")
-     val name = xml.attr(N,"name")
-     Path.parse(doc, mod, name, base)
+  def parseOMS(N : Node, base : Path) : Path = N match {
+      case <OMS/> =>
+        val doc = URI(xml.attr(N,"base"))
+        val mod = xml.attr(N,"module")
+        val name = xml.attr(N,"name")
+        Path.parse(doc, mod, name, base)
+      case <OMS>{n}</OMS> =>
+        val mod = parseTerm(n, base)
+        val name = xml.attr(N,"name")
+        OMID(mod % name)
+      case _ => throw ParseError("not a well-formed identifier: " + N.toString)
   }
 }
 
 object Morph {
-	def domain(m : Morph)(implicit lib : Lookup) : TheoryObj = m match {
+  /** pre: m is a well-structured morphism */
+	def domain(m : Term)(implicit lib : Lookup) : Term = m match {
       case OMIDENT(t) => t
       case OMCOMP(m :: _) => domain(m)
       case OMCOMP(Nil) => throw ImplementationError("cannot infer domain of empty composition")
@@ -753,9 +818,11 @@ object Morph {
       } catch {
          case _ => throw Invalid("not a well-formed morphism: " + m)
       }
+      case _ => throw Invalid("not a well-formed morphism: " + m)
     }
 
-   def codomain(m : Morph)(implicit lib : Lookup) : TheoryObj = m match {
+  /** pre: m is a well-structured morphism */
+   def codomain(m : Term)(implicit lib : Lookup) : Term = m match {
       case OMIDENT(t) => t
       case OMCOMP(Nil) => throw ImplementationError("cannot infer codomain of empty composition")
       case OMCOMP(l) => codomain(l.last)
@@ -771,5 +838,6 @@ object Morph {
          case _ => throw Invalid("not a well-formed morphism: " + m)
       }
       case OMDL(t, _ ) => t
+      case _ => throw Invalid("not a well-formed morphism: " + m)
    }
 }

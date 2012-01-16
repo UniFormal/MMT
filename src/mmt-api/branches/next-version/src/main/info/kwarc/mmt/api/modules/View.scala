@@ -15,13 +15,13 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  * @param from the domain theory
  * @param to the codomain theory
  */
-abstract class View(doc : DPath, name : LocalPath, val from : TheoryObj, val to : TheoryObj)
+abstract class View(doc : DPath, name : LocalPath, val from : Term, val to : Term)
          extends Module(doc, name) with Link {
    def toMorph = OMMOD(path)
    protected def outerComponents = List(StringLiteral(name.flat), from, to)
    protected def outerString = path + " : " + from.toString + " -> " + to.toString
-   def toNode = (from.asPath, to.asPath) match {
-	   case (Some(p), Some(q)) =>
+   def toNode = (from, to) match {
+	   case (OMMOD(p), OMMOD(q)) =>
          <view name={name.flat} base={doc.toPath} from={p.toPath} to={q.toPath}>
            {getMetaDataNode}
            {innerNodes}
