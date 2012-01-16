@@ -96,14 +96,15 @@ class Server(val port : Int, controller : Controller) extends HServer {
   private def QueryResponse : HLet = new HLet {
     def act(tk : HTalk) {
       try {
-         val q = ontology.Query.parse(bodyAsXML(tk))
-         val res = try {controller.evaluator.evaluate(q)}
-            catch {
+         val res = try {
+            val q = ontology.Query.parse(bodyAsXML(tk))
+            controller.evaluator.evaluate(q)
+         } catch {
                case ParseError(s) => throw ServerError(<error message={s}/>)
                case GetError(s) => throw ServerError(<error message={s}/>)
-            }
-           val resp = res.toNode
-           XmlResponse(resp).act(tk)
+         }
+         val resp = res.toNode
+         XmlResponse(resp).act(tk)
       } catch {
         case ServerError(n) => XmlResponse(n).act(tk)
       }
