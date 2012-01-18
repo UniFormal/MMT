@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.lf._
+import info.kwarc.mmt.lf._
 //import java.io.FileNotFoundException
 //import java.io.IOException
 //import java.net.UnknownHostException
@@ -77,7 +77,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   ontoIRI
    }
    
-   def classToOWL (t: Term) : OWLClassExpression = {
+   def classToOWL (t: SeqItem) : OWLClassExpression = { // t: Term
 	   t match {
 	  	 case OMID(p) => dataFactory.getOWLClass(globalNameToIRI(p))
 	  	 //case t : OMID => val p = t.gname
@@ -86,110 +86,110 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      val argsList = args.map(classToOWL)
 	  	      dataFactory.getOWLObjectIntersectionOf(argsList.toSet)
 	  	       	  	        
-	  	 case OMA(OWL2OMS("OWL2QL", "objectUnionOf"),args) => 
+	  	 case OMA(OWL2OMS("OWL2RL", "objectUnionOf"),args) => 
 	  	      val argsList = args.map(classToOWL) 
 	  	      dataFactory.getOWLObjectUnionOf(argsList.toSet)
 
-         case OMA(OWL2OMS("OWL2QL", "objectComplementOf"),args) =>     
+         case OMA(OWL2OMS("OWL2QLRL", "objectComplementOf"),args) =>     
 	  	      val operand = classToOWL(args(0))
 	  	      dataFactory.getOWLObjectComplementOf(operand) 
 	  	        
-         case OMA(OWL2OMS("OWL2QL","objectAllValuesFrom"),args) =>   
+         case OMA(OWL2OMS("OWL2RL","objectAllValuesFrom"),args) =>   
 	  	      val property = propertyToOWL(args(0))
 	  	      val filler = classToOWL(args(1))
 	  	      dataFactory.getOWLObjectAllValuesFrom(property, filler)
 	  	 
-         case OMA(OWL2OMS("OWL2EL","objectSomeValuesFrom"),args) =>   
+         case OMA(OWL2OMS("OWL2SUB","objectSomeValuesFrom"),args) =>   
 	  	      val property = propertyToOWL(args(0))
 	  	      val filler = classToOWL(args(1))
 	  	      dataFactory.getOWLObjectSomeValuesFrom(property, filler)
   	        
-         case OMA(OWL2OMS("OWL2QL","dataAllValuesFrom"), args) =>
+         case OMA(OWL2OMS("OWL2RL","dataAllValuesFrom"), args) =>
 	  	      val property = dataPropertyToOWL(args(0))
 	  	      val filler = dataRangeToOWL(args(1))
 	  	      dataFactory.getOWLDataAllValuesFrom(property, filler)
 	  	        
-	  	 case OMA(OWL2OMS("OWL2EL","dataSomeValuesFrom"), args) =>
+	  	 case OMA(OWL2OMS("OWL2SUB","dataSomeValuesFrom"), args) =>
 	  	      val property = dataPropertyToOWL(args(0))
 	  	      val filler = dataRangeToOWL(args(1))
 	  	      dataFactory.getOWLDataSomeValuesFrom(property, filler)
 
-	  	 case OMA(OWL2OMS("OWL2SUB","objectExactCardinality"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","objectExactCardinality"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = propertyToOWL(args(1))
 	  	      dataFactory.getOWLObjectExactCardinality(cardinality, property)
 	  	      
-	  	 case OMA(OWL2OMS("OWL2SUB","objectMinCardinality"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","objectMinCardinality"), args) =>
 	  	      val cardinality = termToInt(args(0)) 
 	  	      val property = propertyToOWL(args(1))
 	  	      dataFactory.getOWLObjectMinCardinality(cardinality, property)
 	  	      
-	  	 case OMA(OWL2OMS("OWL2SUB","objectMaxCardinality"), args) =>  
+	  	 case OMA(OWL2OMS("OWL2RL","objectMaxCardinality"), args) =>  
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = propertyToOWL(args(1))
 	  	      dataFactory.getOWLObjectMaxCardinality(cardinality, property)
 	  	 
-	  	 case OMA(OWL2OMS("OWL2SUB","objectExactCardinalityQualified"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","objectExactCardinalityQualified"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = propertyToOWL(args(1))
 	  	      val filler = classToOWL(args(2))
 	  	      dataFactory.getOWLObjectExactCardinality(cardinality, property, filler)
 	  	      
-	  	 case OMA(OWL2OMS("OWL2SUB","objectMinCardinalityQualified"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","objectMinCardinalityQualified"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = propertyToOWL(args(1))
 	  	      val filler = classToOWL(args(2))
 	  	      dataFactory.getOWLObjectMinCardinality(cardinality, property, filler)
 	  	      
-	  	 case OMA(OWL2OMS("OWL2SUB","objectMaxCardinalityQualified"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","objectMaxCardinalityQualified"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = propertyToOWL(args(1))
 	  	      val filler = classToOWL(args(2))
 	  	      dataFactory.getOWLObjectMinCardinality(cardinality, property, filler)
 	  	     
-	  	 case OMA(OWL2OMS("OWL2SUB","dataExactCardinality"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","dataExactCardinality"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = dataPropertyToOWL(args(1))
 	  	      dataFactory.getOWLDataExactCardinality(cardinality, property)
 	  	       
-	  	 case OMA(OWL2OMS("OWL2SUB","dataMinCardinality"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","dataMinCardinality"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = dataPropertyToOWL(args(1))
 	  	      dataFactory.getOWLDataMinCardinality(cardinality, property)
 	  	      
-	  	 case OMA(OWL2OMS("OWL2SUB","dataMaxCardinality"), args) => 
+	  	 case OMA(OWL2OMS("OWL2RL","dataMaxCardinality"), args) => 
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = dataPropertyToOWL(args(1))
 	  	      dataFactory.getOWLDataMaxCardinality(cardinality, property)
 	  	 
-	  	 case OMA(OWL2OMS("OWL2SUB","dataExactCardinalityQualified"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","dataExactCardinalityQualified"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = dataPropertyToOWL(args(1))
 	  	      val dataRange = dataRangeToOWL(args(2))
 	  	      dataFactory.getOWLDataExactCardinality(cardinality, property, dataRange)
 	  	      
-	  	 case OMA(OWL2OMS("OWL2SUB","dataMinCardinalityQualified"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","dataMinCardinalityQualified"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = dataPropertyToOWL(args(1))
 	  	      val dataRange = dataRangeToOWL(args(2))
 	  	      dataFactory.getOWLDataMinCardinality(cardinality, property, dataRange)
 	  	      
-	  	 case OMA(OWL2OMS("OWL2SUB","dataMaxCardinalityQualified"), args) =>
+	  	 case OMA(OWL2OMS("OWL2RL","dataMaxCardinalityQualified"), args) =>
 	  	      val cardinality = termToInt(args(0))
 	  	      val property = dataPropertyToOWL(args(1))
 	  	      val dataRange = dataRangeToOWL(args(2))
 	  	      dataFactory.getOWLDataMaxCardinality(cardinality, property, dataRange)
 	  	
-  	 	 case OMA(OWL2OMS("OWL2SUB", "objectOneOf"), args) =>
+  	 	 case OMA(OWL2OMS("OWL2ELRL", "objectOneOf"), args) =>
 	  	  	  val argsList = args.map(individualToOWL)
 	  	      dataFactory.getOWLObjectOneOf(argsList.toSet)
 	  	      
-	     case OMA(OWL2OMS("OWL2SUB", "objectHasValue"), args) =>
+	     case OMA(OWL2OMS("OWL2ELRL", "objectHasValue"), args) =>
 	     	  val property = propertyToOWL(args(0))
 	     	  val value = individualToOWL(args(1))
 	  	 	  dataFactory.getOWLObjectHasValue(property, value)
 	  	 
-	  	 case OMA(OWL2OMS("OWL2SUB", "objectHasSelf"), args) =>
+	  	 case OMA(OWL2OMS("OWL2EL", "objectHasSelf"), args) =>
 	  	 	  val property = propertyToOWL(args(0))
 	  	 	  dataFactory.getOWLObjectHasSelf(property)
 	  	 	
@@ -197,7 +197,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   }
    }
 
-   def individualToOWL(t: Term) : OWLIndividual = {
+   def individualToOWL(t: SeqItem) : OWLIndividual = {
 	   t match {
 	  	 case OMID(p) => dataFactory.getOWLNamedIndividual(globalNameToIRI(p))
 	   //case getOWLAnonymousIndividual getIDI
@@ -205,34 +205,34 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   }
    }
   
-   def propertyToOWL(t: Term) : OWLObjectPropertyExpression = {
+   def propertyToOWL(t: SeqItem) : OWLObjectPropertyExpression = {
    		 t match  {
 	  	   case OMID(p) => dataFactory.getOWLObjectProperty(globalNameToIRI(p))
-	  	   case OMA(OWL2OMS("OWL2QL", "objectInverseOf"), args) =>
+	  	   case OMA(OWL2OMS("OWL2QLRL", "objectInverseOf"), args) =>
 	  	        val inverse = propertyToOWL(args(0))
 	  	        dataFactory.getOWLObjectInverseOf(inverse)
 	  	   case _ => throw Exception("none of the object property expressions") 
 	  	}
    }
    
-   def dataPropertyToOWL(t: Term) : OWLDataPropertyExpression = {
+   def dataPropertyToOWL(t: SeqItem) : OWLDataPropertyExpression = {
 	   t match {
 	     case OMID(p) => dataFactory.getOWLDataProperty(globalNameToIRI(p))
 	     case _ => throw Exception("none of the data property expressions")
 	   }
    }
   
-   def dataRangeToOWL(t : Term) : OWLDataRange = {
+   def dataRangeToOWL(t : SeqItem) : OWLDataRange = {
    	   t match {
 		 case OMID(p) =>
    		     val iri : IRI = t match {
-   		    	 case OWLOMS("D1",d1) => IRI.create("http://www.w3.org/2001/XMLSchema#" + d1)
+   		    	 case OWLOMS("OWL1Datatype",d1) => IRI.create("http://www.w3.org/2001/XMLSchema#" + d1)
    		    	  		    	
-   		    	 case OWL2OMS("D2","real") => IRI.create("http://www.w3.org/2002/07/owl#real")
-   		    	 case OWL2OMS("D2","rational") => IRI.create("http://www.w3.org/2002/07/owl#rational")
-   		    	 case OWL2OMS("D2","dateTimeStamp") => IRI.create("http://www.w3.org/2001/XMLSchema#dateTimeStamp" )
-   		    	 case OWL2OMS("D2","xmlLiteral") => IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral" )
-   		    	 case OWL2OMS("D2","plainLiteral") => IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral" )
+   		    	 case OWL2OMS("OWL2Datatype","real") => IRI.create("http://www.w3.org/2002/07/owl#real")
+   		    	 case OWL2OMS("OWL2Datatype","rational") => IRI.create("http://www.w3.org/2002/07/owl#rational")
+   		    	 case OWL2OMS("OWL2Datatype","dateTimeStamp") => IRI.create("http://www.w3.org/2001/XMLSchema#dateTimeStamp" )
+   		    	 case OWL2OMS("OWL2Datatype","xmlLiteral") => IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral" )
+   		    	 case OWL2OMS("OWL2Datatype","plainLiteral") => IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral" )
    		    	 //PlainLiteral ?
    		    	 case _ => println("other data types")
    		    	 		   globalNameToIRI(p)
@@ -243,15 +243,15 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	        val argsList = args.map(dataRangeToOWL)
 	  	        dataFactory.getOWLDataIntersectionOf(argsList.toSet)
 	  	        
-	  	   case OMA(OWL2OMS("OWL2QL", "dataUnionOf"), args) =>     
+	  	   case OMA(OWL2OMS("OWL2", "dataUnionOf"), args) =>     
 	  	        val argsList = args.map(dataRangeToOWL)
 	  	        dataFactory.getOWLDataUnionOf(argsList.toSet)
 	  	        
-	  	   case OMA(OWL2OMS("OWL2QL", "dataComplementOf"), args) =>
+	  	   case OMA(OWL2OMS("OWL2", "dataComplementOf"), args) =>
 	  	        val dataRange = dataRangeToOWL(args(0))
 	  	        dataFactory.getOWLDataComplementOf(dataRange)
  	  	  	        	  	        
-	  	  case OMA(OWL2OMS("OWL2SUB","dataOneOf"), args) =>
+	  	  case OMA(OWL2OMS("OWL2EL","dataOneOf"), args) =>
 	  	        val argsList = args.map(literalToOWL)
 	  	        dataFactory.getOWLDataOneOf(argsList.toSet)
 	 	        
@@ -268,7 +268,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
    	   }
    }
 
-   def literalToOWL(t : Term) : OWLLiteral = {
+   def literalToOWL(t : SeqItem) : OWLLiteral = {
 	    t match {
 		case OMF(lt) => dataFactory.getOWLLiteral(lt)
 		case OMI(lt) => dataFactory.getOWLLiteral(lt.toInt)
@@ -293,7 +293,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 		}
 	}
 
-   def facetToOWL(t : Term) : OWLFacetRestriction = {
+   def facetToOWL(t : SeqItem) : OWLFacetRestriction = {
 	   t match {
 	  	 case OMA(OWL2OMS("OWL2SUB", "facetRestriction"), args) =>
 	  	 val facet = args(0) match {
@@ -307,7 +307,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   }
    }
  
-   def termToInt (t: Term) : Int = {
+   def termToInt (t: SeqItem) : Int = {
 	   t match { 
 	  	 case OMI(i) => i.toInt 
 	  	 case _ => throw Exception("not an integer")
@@ -341,11 +341,11 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	   	  val objectProperty = dataFactory.getOWLObjectProperty(globalNameToIRI(path)) 
 	  	   	  dataFactory.getOWLDeclarationAxiom(objectProperty)
 	  	   	  	  	   	   
-	  	  case OWL2OMS("OWL2SUB", "dataProperty") => 		
+	  	  case OWL2OMS("OWLBase", "dataProperty") => 		
 	  	   	  val dataProperty = dataFactory.getOWLDataProperty(globalNameToIRI(path)) 
 	  	   	  dataFactory.getOWLDeclarationAxiom(dataProperty)
 	  	   	  	  	   	  
-	  	  case OWLOMS("D1", "dataType") =>
+	  	  case OWLOMS("OWL1Datatype", "dataType") =>
 	  	   	  val dataType = dataFactory.getOWLDatatype(globalNameToIRI(path))
 	  	   	  dataFactory.getOWLDeclarationAxiom(dataType)
 // ClassAxiom	     
@@ -355,7 +355,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	       dataFactory.getOWLSubClassOfAxiom(subClass, superClass, asJavaSet(annotationList.toSet)) 
 	  	      // java.util.Set<? extends OWLAnnotation> annotations
 	  	       	  	        
-	  	  case OMA(OWL2OMS("OWL2SUB", "disjointUnionOf"), args) =>
+	  	  case OMA(OWL2OMS("OWL2", "disjointUnionOf"), args) =>
 	  	       val firstClass = classToOWL(args(0)) match {
 	  	      					case c : OWLClass => c
 	  	      					case _ => throw Exception("not a class")
@@ -376,15 +376,15 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      	val superProperty = propertyToOWL(args(1))
 	  	      	dataFactory.getOWLSubObjectPropertyOfAxiom(subProperty, superProperty)
 	  	      		  	      	
-	  	  case OMA(OWL2OMS("OWL2SUB", "equivalentObjectProperty"),args) =>
+	  	  case OMA(OWL2OMS("OWL2SUB", "equivalentObjectProperties"),args) =>
 	  	      	val argsList = args.map(propertyToOWL)
 	  	      	dataFactory.getOWLEquivalentObjectPropertiesAxiom(argsList.toSet)
 	  	      		  	  	  	      	
-	  	  case OMA(OWL2OMS("OWL2SUB", "disjointObjectProperty"),args) =>
+	  	  case OMA(OWL2OMS("OWL2QLRL", "disjointObjectProperties"),args) =>
 	  	      	val argsList = args.map(propertyToOWL)
 	  	      	dataFactory.getOWLDisjointObjectPropertiesAxiom(argsList.toSet)
   	      		  	      		
-  	      case OMA(OWL2OMS("OWL2QL", "inverseObjectProperties"),args) =>
+  	      case OMA(OWL2OMS("OWL2QLRL", "inverseObjectProperties"),args) =>
 	  	      	val forwardProperty = propertyToOWL(args(0))
 	  	      	val inverseProperty = propertyToOWL(args(1))
 	  	      	dataFactory.getOWLInverseObjectPropertiesAxiom(forwardProperty, inverseProperty)
@@ -399,31 +399,31 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      	val range = classToOWL(args(1))
 	  	      	dataFactory.getOWLObjectPropertyRangeAxiom(property, range)
 	  	        
-	  	   case OMA(OWL2OMS("OWL2SUB","functionalObjectProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2RL","functionalObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	      	dataFactory.getOWLFunctionalObjectPropertyAxiom(property)
 	  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2QL","inverseFunctionalObjectProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2RL","inverseFunctionalObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	      	dataFactory.getOWLInverseFunctionalObjectPropertyAxiom(property)
 	  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB","reflexiveObjectProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2ELQL","reflexiveObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	        dataFactory.getOWLReflexiveObjectPropertyAxiom(property)
 	  	      		  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB","irreflexiveObjectProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2QLRL","irreflexiveObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	      	dataFactory.getOWLIrreflexiveObjectPropertyAxiom(property)
 	  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB","symmetricObjectProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2QLRL","symmetricObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	      	dataFactory.getOWLSymmetricObjectPropertyAxiom(property)
 	  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB","asymmetricObjetProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2QLRL","asymmetricObjetProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	        dataFactory.getOWLAsymmetricObjectPropertyAxiom(property)
 	  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB","transitiveObjectProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2ELRL","transitiveObjectProperty"),args) =>
 	  	      	val property = propertyToOWL(args(0))
 	  	      	dataFactory.getOWLTransitiveObjectPropertyAxiom(property)
 // DataPropertyAxiom	  	      	
@@ -436,7 +436,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      	val argsList = args.map(dataPropertyToOWL)
 	  	      	dataFactory.getOWLEquivalentDataPropertiesAxiom(argsList.toSet)
 	  	      		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB", "disjointDataProperties"),args) =>
+	  	   case OMA(OWL2OMS("OWL2QLRL", "disjointDataProperties"),args) =>
 	  	      	val argsList = args.map(dataPropertyToOWL)
 	  	      	dataFactory.getOWLDisjointDataPropertiesAxiom(argsList.toSet)
   	      		  	      		
@@ -450,7 +450,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      	val range = dataRangeToOWL(args(1))
 	  	      	dataFactory.getOWLDataPropertyRangeAxiom(property, range)
 	  	        	  	        
-	  	   case OMA(OWL2OMS("OWL2SUB","functionalDataProperty"),args) =>
+	  	   case OMA(OWL2OMS("OWL2ELRL","functionalDataProperty"),args) =>
 	  	      	val property = dataPropertyToOWL(args(0))
 	  	      	dataFactory.getOWLFunctionalDataPropertyAxiom(property)
 // DatatypeDefinitionAxiom	  	     	
@@ -468,7 +468,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	     	val individual = individualToOWL(args(1))
 	  	     	dataFactory.getOWLClassAssertionAxiom(clss, individual)
 	  	     		  	      	
-	  	   case OMA(OWL2OMS("OWL2SUB","sameIndividual"), args) =>
+	  	   case OMA(OWL2OMS("OWL2ELRL","sameIndividual"), args) =>
 	  	     	val argsList = args.map(individualToOWL)
 	  	      	dataFactory.getOWLSameIndividualAxiom(argsList.toSet)
   	      		  	      
@@ -482,7 +482,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	     	val obj = individualToOWL(args(2))
 	  	     	dataFactory.getOWLObjectPropertyAssertionAxiom(property,individual,obj)
 	  	     		  	     	
-  	      case OMA(OWL2OMS("OWL2SUB", "negativeObjectPropertyAssertion"), args) =>
+  	      case OMA(OWL2OMS("OWL2ELRL", "negativeObjectPropertyAssertion"), args) =>
 	  	     	val property = propertyToOWL(args(0))
 	  	     	val subj = individualToOWL(args(1))
 	  	     	val obj = individualToOWL(args(2))
@@ -494,7 +494,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	     	val obj = literalToOWL(args(2)) //   float value icin ayri method var
 	  	     	dataFactory.getOWLDataPropertyAssertionAxiom(property,subj,obj)
  	      		
-  	      case OMA(OWL2OMS("OWL2SUB", "negativeDataPropertyAssertion"), args) =>
+  	      case OMA(OWL2OMS("OWL2ELRL", "negativeDataPropertyAssertion"), args) =>
 	  	     	val property = dataPropertyToOWL(args(0))
 	  	     	val subj = individualToOWL(args(1))
 	  	     	val obj = literalToOWL(args(2))
@@ -541,8 +541,9 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 object Export {	
 	
 	def main(args: Array[String]) {
-		val checker = new FoundChecker(DefaultFoundation)
-		val report = new FileReport(new java.io.File("controller.log")) 
+		
+		val report = new FileReport(new java.io.File("controller.log"))
+		val checker = new FoundChecker(new DefaultFoundation, report)
 		val controller = new Controller(checker, report)
 		controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
 		val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
@@ -553,9 +554,12 @@ object Export {
 		*/
 		//val file : File = new File("examples\\ex2.owl");
 		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.omdoc")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXMLToOWL.owl") 
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\ObjectPropertyAxiom\\objectPropertyAxiom.omdoc")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\ObjectPropertyAxiom\\objectPropertyAxiomToOWL.owl")
 		
+		//val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.omdoc")		
+		//val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXMLToOWL.owl") 
+					
 //		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")		
 //		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literalToOWL.owl")
 		
