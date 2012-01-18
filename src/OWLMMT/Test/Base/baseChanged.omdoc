@@ -19,11 +19,21 @@
 			</type>
 		</constant>
 		
+			<constant name="Bob">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
 	</theory>
 </omdoc>
 
 <!-- 
 Changes: 
-the name of the individual James is changed to John,
+the class Person is not changed,
+the name of the individual James is renamed to John,
+an individual Bob is added,
 the object property hasChild is deleted.
 -->
