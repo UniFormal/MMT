@@ -1,14 +1,33 @@
+
 <omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Base/base.owl">
-        <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
-         <constant name="Person">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="James">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="hasChild">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant>
-      </theory>
-     </omdoc>
+	<theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
+
+		<constant name="Person">
+
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="James">
+
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+		<constant name="hasChild">
+
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+
+		</constant>
+	</theory>
+</omdoc>
