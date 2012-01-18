@@ -1,6 +1,6 @@
 
 <omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Base/base.owl">
-	<theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
+	<theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
 
 		<constant name="Person">
 			<type>
