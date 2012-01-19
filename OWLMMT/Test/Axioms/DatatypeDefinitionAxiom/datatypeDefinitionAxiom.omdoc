@@ -1,13 +1,26 @@
+<?xml version="1.0"?>
 <omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DatatypeDefinitionAxiom/datatypeDefinitionAxiom.owl">
-        <theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2Full">
-         <constant name="SSN">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="D1" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
-       
-     </constant><constant name="ax1">
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc"></om:OMS>
-              <om:OMS module="_" name="SSN" base="http://example.com/owl/families"></om:OMS><om:OMS module="D1" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-      </om:OMA></OMOBJ></type>
-       
-     </constant>
-      </theory>
-     </omdoc>
+	<theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
+
+		<constant name="SSN">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWL1Datatype" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="ax1">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="SSN" base="http://example.com/owl/families" position="1"></om:OMS>
+						<om:OMS module="OWL1Datatype" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+	</theory>
+</omdoc>
