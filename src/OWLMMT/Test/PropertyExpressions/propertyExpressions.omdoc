@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/PropertyExpressions/propertyExpressions.owl">
+	<theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
+		<constant name="Dead">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="hasParent">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="Orphan">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="class" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="John">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="individual" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="hasChild">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="objectProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="hasAge">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWLBase" name="dataProperty" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="ax1">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2QLRL" name="inverseObjectProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasParent" base="http://example.com/owl/families" position="1"></om:OMS>
+						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="2"></om:OMS>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="ax2">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Orphan" base="http://example.com/owl/families" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2RL" name="objectAllValuesFrom" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMA position="2_1">
+								<om:OMS module="OWL2QLRL" name="objectInverseOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="2_1_0"></om:OMS>
+								<om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="2_1_1"></om:OMS>
+							</om:OMA>
+							<om:OMS module="_" name="Dead" base="http://example.com/owl/families" position="2_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="ax3">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families" position="1"></om:OMS>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families" position="2"></om:OMS>
+						<om:OMI position="3">51</om:OMI>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+	</theory>
+</omdoc>
