@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <Ontology xmlns="http://www.w3.org/2002/07/owl#" xml:base="http://example.com/owl/families/" ontologyIRI="http://example.com/owl/families">
+	<Prefix name="camera" IRI="http://www.xfront.com/owl/ontologies/camera/#"/>
 	
 	<Declaration>
 		<Class IRI="Man"/>
@@ -32,6 +33,16 @@
 	<Declaration>
 		<NamedIndividual IRI="Peter"/>
 	</Declaration>
+
+	<Declaration>
+		<DataProperty abbreviatedIRI="camera:cam"/>
+	</Declaration>
+	
+	<DataPropertyAssertion>
+		<DataProperty abbreviatedIRI="camera:cam"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#decimal">1234.5678</Literal>
+	</DataPropertyAssertion>
 	
 	<DataPropertyAssertion>
 		<DataProperty IRI="hasAge"/>
