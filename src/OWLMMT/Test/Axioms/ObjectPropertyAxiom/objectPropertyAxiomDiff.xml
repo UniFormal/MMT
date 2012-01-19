@@ -164,4 +164,7 @@ old="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/ObjectPropertyAxiom/obje
    </doc>
 </omdoc-diff>
 
-
+<!-- 
+when we rename only one constant, ;MMTDiff outputs that it is renamed, but
+when we rename at least two constants which have the same type, MMTDiff outputs that they are added instead of they are renamed.
+-->
