@@ -77,8 +77,8 @@
     <EquivalentClasses>
         <Class IRI="/MyBirthdayGuests"/>
         <ObjectOneOf>
-            <NamedIndividual IRI="/Mary"/>
             <NamedIndividual IRI="/John"/>
+            <NamedIndividual IRI="/Mary"/>
             <NamedIndividual IRI="/Bill"/>
         </ObjectOneOf>
     </EquivalentClasses>
