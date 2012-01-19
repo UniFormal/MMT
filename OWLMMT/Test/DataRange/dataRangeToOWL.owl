@@ -48,7 +48,6 @@
             <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
                 <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
             </FacetRestriction>
-            
         </DatatypeRestriction>
     </DatatypeDefinition>
     <DatatypeDefinition>
