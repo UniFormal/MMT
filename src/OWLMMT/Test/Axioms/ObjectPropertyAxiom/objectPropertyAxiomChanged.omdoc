@@ -265,7 +265,6 @@ Changes:
 the object property hasParent is renamed to hasparent,
 the object property haswife is renamed to haswife,
 the type of the class Man is changed to an objectProperty.
-
 -->
 
 
