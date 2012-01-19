@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<omdoc base="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DatatypeDefinitionAxiom/datatypeDefinitionAxiom.owl">
+	<theory base="http://example.com/owl/families" name="_" meta="http://cds.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
+
+		<constant name="SSN">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMS module="OWL1Datatype" name="dataType" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+		<constant name="ax1">
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="OWL1Datatype" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+		</constant>
+		
+	</theory>
+</omdoc>
+
+<!-- 
+changes:
+dataTypeDefinition is changed to dataIntersectionOf, but the arguments of it are not changed!
+the symbol SSN in the ax1 is deleted,
+-->

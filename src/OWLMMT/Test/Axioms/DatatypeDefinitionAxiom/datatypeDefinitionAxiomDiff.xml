@@ -1,0 +1,29 @@
+<omdoc-diff 
+old="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DatatypeDefinitionAxiom/datatypeDefinitionAxiom.omdoc" new="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DatatypeDefinitionAxiom/datatypeDefinitionAxiomChanged.omdoc">
+   <doc path="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DatatypeDefinitionAxiom/datatypeDefinitionAxiomChanged.omdoc" change="update">
+      <changes>
+         <module type="DeclaredTheory" path="http://example.com/owl/families?_" change="update">
+            <component name="meta" type="Path" change="identical"></component>
+            <bodyChanges>
+               <declaration type="Constant" path="http://example.com/owl/families?_?SSN" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax1" change="update">
+                  <component name="type" type="Term" change="update">
+                     <OMOBJ xmlns:om="om">
+                        <om:OMA>
+                           <om:OMS module="OWL2SUB" name="dataIntersectionOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+                           <om:OMS module="OWL1Datatype" name="integer" base="http://cds.omdoc.org/logics/description/owl/owl.omdoc" position="1"></om:OMS>
+                        </om:OMA>
+                     </OMOBJ>
+                  </component>
+                  <component name="definition" type="Term" change="identical"></component>
+               </declaration>
+            </bodyChanges>
+         </module>
+      </changes>
+   </doc>
+</omdoc-diff>
+
+<!--
+the symbol SSN in the ax1 is deleted, and MMTDiff outputs only that the axiom is updated.
+it does not say that a symbol is deleted/added.
+-->
