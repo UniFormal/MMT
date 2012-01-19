@@ -11,7 +11,13 @@
     <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
     <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
     <Declaration>
+        <Class IRI="/Man"/>
+    </Declaration>
+    <Declaration>
         <DataProperty IRI="/birthDate"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="/cam"/>
     </Declaration>
     <Declaration>
         <DataProperty IRI="/hasAge"/>
@@ -31,10 +37,18 @@
     <Declaration>
         <NamedIndividual IRI="/John"/>
     </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="/Peter"/>
+    </Declaration>
     <DataPropertyAssertion>
         <DataProperty IRI="/birthDate"/>
         <NamedIndividual IRI="/John"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#dateTime">1956-06-25T10:00:00+1:00</Literal>
+    </DataPropertyAssertion>
+    <DataPropertyAssertion>
+        <DataProperty IRI="/cam"/>
+        <NamedIndividual IRI="/John"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#decimal">1234.5678</Literal>
     </DataPropertyAssertion>
     <DataPropertyAssertion>
         <DataProperty IRI="/hasAge"/>
@@ -55,6 +69,11 @@
         <DataProperty IRI="/watch"/>
         <NamedIndividual IRI="/John"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Padre de familia</Literal>
+    </DataPropertyAssertion>
+    <DataPropertyAssertion>
+        <DataProperty IRI="/watch"/>
+        <NamedIndividual IRI="/Peter"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">States that every man is a person.</Literal>
     </DataPropertyAssertion>
     <DatatypeDefinition>
         <Datatype IRI="/hasSalary"/>
