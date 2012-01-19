@@ -4,61 +4,65 @@
      xml:base="http://example.com/owl/families/"
      ontologyIRI="http://example.com/owl/families">
      
-  <Declaration>
-   <Class IRI="Person"/>
-  </Declaration>
- 
-  <Declaration>
-   <DataProperty IRI="hasAge"/>
-  </Declaration>
- 
-  <Declaration>
-   <DataProperty IRI="Age"/>
-  </Declaration>
-  
-  <Declaration>
-   <DataProperty IRI="hasHusband"/>
-  </Declaration>
-  
-  <Declaration>
-  	<DataProperty IRI="hasName"/> 
-  </Declaration>
-  
-  <Declaration>
-   <DataProperty IRI="hasLastName"/> 
-  </Declaration>
-  
-  <Declaration>
-   <DataProperty IRI="hasAdress"/> 
-  </Declaration>
+    <Declaration>
+        <Class IRI="Person"/>
+    </Declaration>
     
-	<DataPropertyDomain>
-   <DataProperty IRI="hasAge"/>
-   <Class IRI="Person"/>
-  </DataPropertyDomain>
-
-  <DataPropertyRange>
-   <DataProperty IRI="hasAge"/>
-   <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
-  </DataPropertyRange>
- 
-  <FunctionalDataProperty>
-   <DataProperty IRI="hasHusband"/>
-  </FunctionalDataProperty>
-
-  <EquivalentDataProperties>
-   <DataProperty IRI="hasAge"/>
-   <DataProperty IRI = "Age"/>
-  </EquivalentDataProperties>
-  
-  <SubDataPropertyOf>
-   <DataProperty IRI="hasLastName"/>
-   <DataProperty IRI="hasName"/>
-  </SubDataPropertyOf>
-  
-  <DisjointDataProperties>
-   <DataProperty IRI="hasName"/>
-   <DataProperty IRI="hasAdress"/>
-  </DisjointDataProperties>
+    <Declaration>
+        <DataProperty IRI="Age"/>
+    </Declaration>
+    
+    <Declaration>
+        <DataProperty IRI="hasAdress"/>
+    </Declaration>
+    
+    <Declaration>
+        <DataProperty IRI="hasAge"/>
+    </Declaration>
+    
+    <Declaration>
+        <DataProperty IRI="hasHusband"/>
+    </Declaration>
+    
+    <Declaration>
+        <DataProperty IRI="hasLastName"/>
+    </Declaration>
+    
+    <Declaration>
+        <DataProperty IRI="hasName"/>
+    </Declaration>
+    
+    <EquivalentDataProperties>
+        <DataProperty IRI="Age"/>
+        <DataProperty IRI="hasAge"/>
+    </EquivalentDataProperties>
+    
+    <SubDataPropertyOf>
+        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasName"/>
+    </SubDataPropertyOf>
+    
+    <FunctionalDataProperty>
+        <DataProperty IRI="hasHusband"/>
+    </FunctionalDataProperty>
+    
+    <DataPropertyDomain>
+        <DataProperty IRI="hasAge"/>
+        <Class IRI="Person"/>
+    </DataPropertyDomain>
+    
+    <DataPropertyRange>
+        <DataProperty IRI="hasAge"/>
+        <Datatype abbreviatedIRI="xsd:integer"/>
+    </DataPropertyRange>
+    
+    <DisjointDataProperties>
+        <DataProperty IRI="hasAdress"/>
+        <DataProperty IRI="hasName"/>
+    </DisjointDataProperties>
     
 </Ontology>
+
+
+
+

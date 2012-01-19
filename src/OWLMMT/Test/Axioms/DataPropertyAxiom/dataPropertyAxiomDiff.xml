@@ -1,0 +1,71 @@
+<!--Exception in thread "main" info.kwarc.mmt.api.AddError: add error: content element contains ill-formed object
+validation error: ill-formed constant reference caused by
+get error: error while retrieving http://example.com/owl/families?_?hasage:  no prefix of hasage is declared
+-->
+
+<omdoc-diff 
+old="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DataPropertyAxiom/dataPropertyAxiom.omdoc" new="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DataPropertyAxiom/dataPropertyAxiomChanged.omdoc">
+   <doc path="file:/E:/Fall10/CompSem/Project/OWLMMT/Test/Axioms/DataPropertyAxiom/dataPropertyAxiomChanged.omdoc" change="update">
+      <changes>
+         <module type="DeclaredTheory" path="http://example.com/owl/families?_" change="update">
+            <component name="meta" type="Path" change="identical"></component>
+            <bodyChanges>
+               <declaration type="Constant" path="http://example.com/owl/families?_?hasHusband" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?Age" change="identical"></declaration>
+               <declaration name="hasname" type="Constant" path="http://example.com/owl/families?_?hasName" change="rename"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?hasLastName" change="identical"></declaration>
+               <declaration name="person" type="Constant" path="http://example.com/owl/families?_?Person" change="rename"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?hasAdress" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?hasAge" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax1" change="update">
+                  <component name="type" type="Term" change="update">
+                     <OMOBJ xmlns:om="om">
+                        <om:OMA>
+                           <om:OMS module="OWL2SUB" name="dataPropertyDomain" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+                           <om:OMS module="_" name="hasAge" base="http://example.com/owl/families" position="1"></om:OMS>
+                           <om:OMS module="_" name="person" base="http://example.com/owl/families" position="2"></om:OMS>
+                        </om:OMA>
+                     </OMOBJ>
+                  </component>
+                  <component name="definition" type="Term" change="identical"></component>
+               </declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax2" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax3" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax4" change="update">
+                  <component name="type" type="Term" change="update">
+                     <OMOBJ xmlns:om="om">
+                        <om:OMA>
+                           <om:OMS module="OWL2QLRL" name="disjointDataProperties" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+                           <om:OMS module="_" name="hasAdress" base="http://example.com/owl/families" position="1"></om:OMS>
+                           <om:OMS module="_" name="hasname" base="http://example.com/owl/families" position="2"></om:OMS>
+                        </om:OMA>
+                     </OMOBJ>
+                  </component>
+                  <component name="definition" type="Term" change="identical"></component>
+               </declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax5" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax6" change="update">
+                  <component name="type" type="Term" change="update">
+                     <OMOBJ xmlns:om="om">
+                        <om:OMA>
+                           <om:OMS module="OWL2SUB" name="subDataPropertyOf" base="http://cds.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+                           <om:OMS module="_" name="hasLastName" base="http://example.com/owl/families" position="1"></om:OMS>
+                           <om:OMS module="_" name="hasname" base="http://example.com/owl/families" position="2"></om:OMS>
+                        </om:OMA>
+                     </OMOBJ>
+                  </component>
+                  <component name="definition" type="Term" change="identical"></component>
+               </declaration>
+            </bodyChanges>
+         </module>
+      </changes>
+   </doc>
+</omdoc-diff>
+
+<!--
+the objectProperty hasName and the class Person are renamed to hasname and person, respectively.
+when we rename constants which have different types, MMTDiff outputs that they are renamed, which is correct!.
+
+
+-->
+
