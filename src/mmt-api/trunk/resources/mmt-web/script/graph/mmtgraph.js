@@ -17,6 +17,41 @@ var labelType, useGradients, nativeTextSupport, animate, multipleURI;
     animate = !(iStuff || !nativeCanvasSupport);
 })();
 
+// notation style, null if none
+var notstyle = 'http://cds.omdoc.org/foundations/lf/mathml.omdoc?twelf';  // hard-coding a default style for LF content
+
+/**
+ * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
+ * act: String: action to call on MMTURI
+ * present: Boolean: add presentation to action
+ */
+function adaptMMTURI(uri, act, present){
+	var arr = uri.split("?");
+	var doc = (arr.length >= 1) ? arr[0] : "";
+	var mod = (arr.length >= 2) ? arr[1] : "";
+	var sym = (arr.length >= 3) ? arr[2] : "";
+	if (present && notstyle !== null)
+	   var pres = "_present_" + notstyle;
+	else
+	   var pres = '';
+	return '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
+}
+function ajaxReplaceIn(url, targetid) {
+	function cont(data) {
+         var targetnode = $('#' + targetid).children('div');
+         targetnode.replaceWith(data.firstChild);
+	}
+	$.ajax({ 'url': url,
+            'dataType': 'xml',
+            'success': cont
+	});
+}
+
+function latin_navigate(uri) {
+		var url = adaptMMTURI(uri, '', true);
+		ajaxReplaceIn(url, 'theory_content');
+}
+
 //From the demo. Defines logging procedure
 var Log = {
     elem: false,
@@ -24,13 +59,17 @@ var Log = {
         if (!this.elem) 
             this.elem = document.getElementById('log');
         this.elem.innerHTML = text;
-        this.elem.style.left = (500 - this.elem.offsetWidth / 2) + 'px';
+        this.elem.style.left = (400 - this.elem.offsetWidth / 2) + 'px';
     }
 };
 
 function initGraph(json) {
+	config.json = json;
+	config.orig_json = json;
     //Extending the edge types
     $jit.ForceDirected.Plot.EdgeTypes.implement({
+		//CD
+		// should be re-tested.
         'double_arrow': {
             'render': function(adj, canvas) {
                 var from = adj.nodeFrom.pos.getc(true),
@@ -39,7 +78,7 @@ function initGraph(json) {
                     ctx = canvas.getCtx(),
                     vect = new $jit.Complex(to.x - from.x, to.y - from.y);
                 vect.$scale(dim / vect.norm());
-                //Needed for drawing the first arrow
+                // Needed for drawing the first arrow
                 var intermediatePoint = new $jit.Complex(to.x - vect.x, to.y - vect.y),
                     normal = new $jit.Complex(-vect.y / 2, vect.x / 2),
                     v1 = intermediatePoint.add(normal), 
@@ -47,13 +86,13 @@ function initGraph(json) {
                     
                 var vect2 = new $jit.Complex(to.x - from.x, to.y - from.y);
                 vect2.$scale(dim / vect2.norm());
-                //Needed for drawing the second arrow
+                // Needed for drawing the second arrow
                 var intermediatePoint2 = new $jit.Complex(from.x + vect2.x, from.y + vect2.y),
                     normal = new $jit.Complex(-vect2.y / 2, vect2.x / 2),
                     v12 = intermediatePoint2.add(normal), 
                     v22 = intermediatePoint2.$add(normal.$scale(-1));
                 
-                //Drawing the double arrow on the canvas, first the line, then the ends
+                // Drawing the double arrow on the canvas, first the line, then the ends
                 ctx.beginPath();
                 ctx.moveTo(from.x, from.y);
                 ctx.lineTo(to.x, to.y);
@@ -70,10 +109,10 @@ function initGraph(json) {
                 ctx.lineTo(from.x, from.y);
                 ctx.closePath();
                 ctx.fill();
-                //Check for edge label in data
+                // Check for edge label in data
                 var data = adj.data.uri;
                 if (data) {
-                    //Adjust the label placement
+                    // Adjust the label placement
                     var elabel = data.slice(data.lastIndexOf("?") + 1); 
                     var radius = this.viz.canvas.getSize();
                     var x = parseInt((from.x + to.x - (elabel.length * 5)) /2);
@@ -109,12 +148,12 @@ function initGraph(json) {
                     dist = 1; //Depends on the graph size. Might be decreased further
                 var vect = new $jit.Complex(20*dist, 20*dist);
                 vect.$scale(dim / vect.norm());
-                //Empirically - this is the point from where the arrow end will be computed
+                // Empirically - this is the point from where the arrow end will be computed
                 var intermediatePoint = new $jit.Complex(from.x + 24*dist - vect.x, from.y + 19*dist - vect.y), 
                     normal = new $jit.Complex(-vect.y / 2, vect.x / 2),
                     v1 = intermediatePoint.add(normal), 
                     v2 = intermediatePoint.$add(normal.$scale(-1));   
-                //The drawing procedure - basically a circle with an arrow at the connection to the center of the node     
+                // The drawing procedure - basically a circle with an arrow at the connection to the center of the node     
                 ctx.beginPath();
                 ctx.arc(from.x, from.y + 20*dist, dist*20, 0, 2*Math.PI, true);
                 ctx.stroke();
@@ -124,10 +163,10 @@ function initGraph(json) {
                 ctx.lineTo(from.x, from.y);
                 ctx.closePath();
                 ctx.fill();
-                //Checking for the label and drawing it
+                // Checking for the label and drawing it
                 var data = adj.data.uri;
                 if (data) {
-                    //Now adjust the label placement
+                    // Now adjust the label placement
                     var elabel = data.slice(data.lastIndexOf("?") + 1); 
                     var radius = this.viz.canvas.getSize();
                     var x = parseInt(from.x - (elabel.length * 3));
@@ -151,15 +190,15 @@ function initGraph(json) {
                     dim = adj.getData('dim'),
                     direction = adj.data.$direction,
                     ctx = canvas.getCtx(),
-                    dist = 0; //The distance of the control point to the middle of the line from "fromIn" to "toIn"
-                for (e in direction) {
+                    dist = 0; //The distance of the control point to the middle of the line from "fromIn" to "toIn"					
+                //for (e in direction) {
                     dist*=-1;
                     if (dist <= 0)
                         dist-=2;  
                     
                     //Inversing the direction of the arrow when necessary
                     var from, to; 
-                    var inv = (direction[e].from != adj.nodeFrom.id);
+                    var inv = (direction.from != adj.nodeFrom.id);
                     if (inv) {
                         from = toIn;
                         to = fromIn; 
@@ -187,7 +226,7 @@ function initGraph(json) {
                     vect.$scale(dim / vect.norm());
                     //Used for the arrow tip
                     var intermediatePoint = new $jit.Complex(to.x - vect.x, to.y - vect.y),
-                        normal = new $jit.Complex(-vect.y / 2, vect.x / 2),
+                        normal = new $jit.Complex(-vect.y / 3, vect.x / 3),
                         v1 = intermediatePoint.add(normal), 
                         v2 = intermediatePoint.$add(normal.$scale(-1));
                     //Drawing one edge - each edge is a quadratic curve defined by endpoints and the control point
@@ -201,7 +240,7 @@ function initGraph(json) {
                     ctx.lineTo(to.x, to.y);
                     ctx.closePath();
                     ctx.fill();
-                    var data = direction[e].uri;
+                    var data = direction.uri;
                     //Checking for the label and drawing it
                     if (data) {
                         //Now adjust the label placement
@@ -211,7 +250,7 @@ function initGraph(json) {
                         var y = parseInt(control.y);
                         this.viz.canvas.getCtx().fillText(elabel, x, y); 
                     }
-                }
+                //}
             },
             'contains': function(adj, pos) { //Trading precision for speed - checking for the lines connecting the control point with the end points
                 var from = adj.nodeFrom.pos.getc(true),
@@ -279,6 +318,8 @@ function initGraph(json) {
             }
         },
         'labeled_arrow': {
+			//CD
+			//should be re-tested.
             'render': function(adj, canvas) {
                 //Plot arrow edge
                 var from = adj.nodeFrom.pos.getc(true),
@@ -334,29 +375,33 @@ function initGraph(json) {
             }
         }    
     });
+	
     //Initialize the ForceDirected object
-    var fd = new $jit.ForceDirected({
+    config.graph = new $jit.ForceDirected({
         //Id of the visualization container
         injectInto: 'graph',
-        width: 600,
+        width: 800,
 		height:600,
         //Enable zooming and panning by scrolling and DnD
         Navigation: {
             enable: true,
             //Enable panning events only if we're dragging the empty canvas (and not a node).
             panning: 'avoid nodes',
-            zooming: 10 //zoom speed. higher is more sensible
+            zooming: 80 //zoom speed. higher is more sensible
         },
         //Change node and edge styles such as color and width.
         //These properties are also set per node with dollar prefixed data-properties in the JSON structure.
         Node: {
             overridable: true,
-            color: '#FF3333'
+			type: 'ellipse',
+			color: '#ffaa00',
+			height: 15,
+			width: 15,
         },
         Edge: {
             overridable: true,
             color: '#0000FF',
-            lineWidth: 0.4
+            lineWidth: 1,
         },
         //Native canvas text styling
         Label: {
@@ -382,17 +427,20 @@ function initGraph(json) {
             //Allows the same handlers to be used for edges
             enableForEdges: true,
             //Change cursor style when hovering a node
-            onMouseEnter: function() {
-                fd.canvas.getElement().style.cursor = 'move';
+            onMouseEnter: function(node, eventInfo, e) {
+                config.graph.canvas.getElement().style.cursor = 'move';
+				latin_navigate(node.id);
             },
             onMouseLeave: function() {
-                fd.canvas.getElement().style.cursor = '';
+                config.graph.canvas.getElement().style.cursor = '';
             },
             //Update node positions when dragged
             onDragMove: function(node, eventInfo, e) {
                 var pos = eventInfo.getPos();
-                node.pos.setc(pos.x, pos.y);
-                fd.plot();
+				if (node.pos) {
+					node.pos.setc(pos.x, pos.y);
+				}
+                config.graph.plot();
             },
             //Implement the same handler for touchscreens
             onTouchMove: function(node, eventInfo, e) {
@@ -405,23 +453,34 @@ function initGraph(json) {
                 // Build the right column relations list.
                 // This is done by traversing the clicked node connections.
                 var data = node.data;
-                if (data.$type == 'multiple_arrow')
+                if (data.$type == 'multiple_arrow') {
                     var msg = multipleURI;
-                else
+				}
+                else {
                     msg = data.uri;
-                navigate(msg); //XXX
-                
+				}
+				
+				if (config.modes.collapse == 1) {
+					$('#' + config.graph.canvas.id).trigger("collapse", {
+						"node" : node
+					});
+				}
+				if (config.modes.expand == 1) {
+					$('#' + config.graph.canvas.id).trigger("expand", {
+						"node" : node
+					});
+				}
             },
             //Handler for collapsing and expanding nodes - needs special behaviour for multiedges
             onRightClick: function(node) {
                 if (node)
                     if (node.collapsed)
-                        fd.op.expand(node, {  
+                        config.graph.op.expand(node, {  
                             type: 'replot',  
                             hideLabels: true                     
                         }); 
                     else
-                        fd.op.contract(node, {  
+                        config.graph.op.contract(node, {  
                             type: 'replot',  
                             hideLabels: true                     
                         });     
@@ -447,30 +506,240 @@ function initGraph(json) {
             style.left = (left - w / 2) + 'px';
             style.top = (top + 10) + 'px';
             style.display = '';
-        }
+        },		
     });
-      
+    
     //Load JSON data.
-    fd.loadJSON(json);
+    config.graph.loadJSON(config.json);
     //Compute positions incrementally and animate.
-    fd.computeIncremental({
-        iter: 40,
+    config.graph.computeIncremental({
+        iter: 10,
         property: 'end',
         onStep: function(perc){
             Log.write(perc + '% loaded...');
         },
         onComplete: function(){
-            Log.write('');
-            fd.animate({
+            Log.write('done');
+            config.graph.animate({
                 modes: ['linear'],
                 //For a nicer effect - transition: $jit.Trans.Elastic.easeOut,
-                transition: $jit.Trans.linear,
-                duration: 0
+                transition: $jit.Trans.Elastic.easeOut,
+                duration: 1000
             });
+			init_command();
         }
-    });
+    });	
+}
+
+function init_command() {
+	//helper to clean the menu
+	var reinit_menu = function() {
+		config.modes = {};
+		$('#command ul li span').attr('style', '');
+	}
+	
+	//helper to highlight a menu item
+	var highlight_menu = function(target) {
+		$(target).css('background', 'green');
+	}
+	
+	//helper refresh
+	var refresh = function() {
+		if (!config.graph) return;
+		config.graph.op.morph(config.graph.toJSON("graph"), {type: 'fade', duration: 1000});
+		reinit_menu();
+	}
+	
+	//menu constructor
+	$('#command .header').click(function() {
+		$(this).next().toggle('slow');
+		return false;
+	}).next().show();
+	
+	//menu button refresh
+	$('#command .submenu .refresh').click(function() {
+		refresh();
+	});
+	
+	//menu button collapse
+	$('#command .submenu .collapse').click(function() {
+		reinit_menu();	
+		config.modes.collapse = 1;
+		highlight_menu(this);
+	});	
+	$('#' + config.graph.canvas.id).bind("collapse", function(e,data) {		
+		if (!data.node && data.node.collapsed) {
+			config.modes.collapse = 0;
+			return;
+		}
+		config.graph.op.contract(data.node, {
+			type : 'replot',
+			hideLabels : true,
+		});
+		reinit_menu();
+	});
+	
+	//menu button expand
+	$('#command .submenu .expand').click(function() {
+		reinit_menu();
+		config.modes.expand = 1;
+		highlight_menu(this);
+	});	
+	$('#' + config.graph.canvas.id).bind("expand", function(e,data) {	
+		if (!data.node) {
+			config.modes.expand = 0;
+			return;
+		}
+		config.graph.op.expand(data.node, {
+			type : 'replot',
+			hideLabels : true,			
+		});
+		reinit_menu();
+	});
+	
+	//show external nodes
+	$('#edgetype0').click(function() {
+		var ref = false;
+		var json = config.json;
+		if (config.settings.external == true) {
+			if (!config || !config.graph || !config.graph.graph || !config.graph.graph.nodes)
+				return;
+			config.graph.graph.eachNode( function(node) {
+				if (node.name && node.id && node.name == node.id) {
+					//maybe a better heuristics is needed
+					node.collapsed = true;
+					node.ignore = true;
+					node.setData('alpha', 0, 'current');
+					ref = true;
+				}
+			});
+			if (ref) {
+				refresh();
+			}
+			config.settings.external = false;
+		} else {
+			if (config.settings.external == false) {
+				//go through the initial JSON
+				//build a list of nodes
+				//then inspect the edges
+				//build a list of nodes referenced by the edges, but not in list of nodes
+				//add nodes { id: "", name: "", data: {}}
+				//add edges
+				var lon = {}; //list of nodes				
+				var lon2 = {}; //list of nodes to be added
+				var edg = [];
+				if (!config.json) return;
+				config.graph.graph.eachNode( function(node) {
+					if (node.id) {
+						lon[node.id] = node.name;
+					}
+				});
+				$.each(config.orig_json, function(i,v) {
+					if (v.adjacencies) {
+						$.each(v.adjacencies, function(j,t) {
+							if (!t.nodeFrom || !t.nodeTo) return;
+							if (!lon[t.nodeFrom] || !lon[t.nodeTo]) {
+								if (!lon[t.nodeFrom]) {
+									//?? something should be wrong now
+									lon2[t.nodeFrom] = "";								
+								}
+								if (!lon[t.nodeTo]) {
+									lon2[t.nodeTo] = "";
+								}
+								var e = {};
+								e.nodeFrom = t.nodeFrom;
+								e.nodeTo = t.nodeTo;
+								e.data = t.data;								
+								edg.push(e);
+							}
+						});
+					}
+				});
+				//add the nodes
+				$.each(lon2, function(i,v) {					
+					var t = {};
+					t.id = i;
+					t.name = i;
+					t.data = {};
+					config.graph.graph.addNode(t);
+					ref = true;
+				});
+				config.graph.op.morph(config.graph.toJSON("graph"), {type: 'fade', duration: 1000});
+				//add the edges
+				$.each(edg, function(i,v) {
+					if (!config.graph.graph || !config.graph.graph.getNode) return;
+					var n1 = config.graph.graph.getNode(v.nodeFrom);
+					var n2 = config.graph.graph.getNode(v.nodeTo);
+					var t = v.data;				
+					if (!n1 || !n2 || !t) return;
+					config.graph.graph.addAdjacence(n1, n2, t);
+					config.graph.graph.getAdjacence(n1.id, n2.id).setData('alpha', 255);
+					ref = true;
+				});
+				
+				if (ref) {
+					refresh();
+				}
+				config.settings.external = true;
+			}
+		}
+	});
+	
+	var toggleEdge = function(type) {
+		var ref = false;
+		config.graph.graph.eachNode(function(node) {
+			node.eachAdjacency(function(e) {
+				if (e.data.$direction.kind.toUpperCase() == type.toUpperCase()) {
+					e.setData('alpha', !config.settings[type.toLowerCase()] ? 1 : 0);
+					ref = true;
+				}
+			});
+		});
+		
+		if (ref) {
+			refresh();
+		}
+		config.settings[type.toLowerCase()] = !config.settings[type.toLowerCase()];
+	}
+	
+	$('#edgetype1').click(function() {
+		if (!config.graph || !config.graph.graph) return;
+		toggleEdge('Include');
+	});
+	
+	$('#edgetype2').click(function() {
+		if (!config.graph || !config.graph.graph) return;
+		toggleEdge('Meta');
+	});
+	
+	$('#edgetype3').click(function() {
+		if (!config.graph || !config.graph.graph) return;
+		toggleEdge('Structure');
+	});
+	
+	$('#edgetype4').click(function() {
+		if (!config.graph || !config.graph.graph) return;
+		toggleEdge('View');
+	});
 }
 
 function loadAndInitGraph() {
-   $.getJSON("/:graph", function(json){initGraph(json);})
+   $.getJSON("/:graph", function(json){initGraph(json);});   
 }
+
+//catalin
+var config = {
+	settings: {
+		external : true,
+		include : true,
+		meta : true,
+		structure : true,
+		view : true
+	},
+	json : null,
+	orig_json :  null,//the initial JSON -- do not play with it :)
+	graph : null,
+	modes : {}
+};
+
+var asd = null;
