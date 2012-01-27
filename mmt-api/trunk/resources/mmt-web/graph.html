@@ -1,10 +1,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
 <head>
-  <link rel="stylesheet" type="text/css" href="/css/jit/ForceDirected.css"/>
-  <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"/>
-  <script type="text/javascript" src="/script/graph/jit.js"/>
-  <script type="text/javascript" src="/script/graph/mmtgraph.js"/>
-  <script type="text/javascript" src="/script/graph/staticgraph.js"/>
+  <link rel="stylesheet" type="text/css" href="/css/graph/ForceDirected.css"/>
+  <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"></script>
+  <script type="text/javascript" src="/script/graph/jit.js"></script>
+  <script type="text/javascript" src="/script/graph/mmtgraph.js"></script>
+  <script type="text/javascript" src="/script/graph/staticgraph.js"></script>
   <script type="text/javascript">
     var mainWindow = window.opener;
     function navigate(to) {
@@ -13,14 +13,46 @@
   </script>
 </head>
 <body onload="loadAndInitGraph();">
-
-Currently this is only a small static graph. But you can already click on nodes and edges.
-
   <div id="graph-container">
     <div id="graph"/>
  </div>
   
  <div id="log"></div>
-
+ <div id="command">
+	<h3 class="header"><span class="section">Legend</span></h3>
+	<span class="legend">
+		<ul class="legend nodes">
+			<li><span style="left:50px;font-weight:bold;">NODES</span></li>
+			<li><span class="circle red"></span>current Th Graph</li>
+			<li><span class="circle orange"></span><span>outside Th Graph</span></li>
+		</ul>
+		<ul class="legend edges">
+			<li><span style="left:50px;font-weight:bold;">EDGES</span></li>
+			<li><span class="square lightgray"></span>Include</li>
+			<li><span class="square blue"></span>Meta</li>
+			<li><span class="square darkgray"></span>Structure</li>
+			<li><span class="square green"></span>View</li>
+		</ul>
+	</span>
+	<h3 class="header"><span class="section">Re-layout</span></h3>
+	<ul class="submenu">
+		<li><span class="menuitem refresh">Re-render the current graph</span></li>
+	</ul>
+	<h3 class="header"><span class="section">Folding</span></h3>
+	<ul class="submenu">
+		<!--<li><span class="menuitem new">Create new folded node</span></li>-->
+		<li><span class="menuitem collapse">Collapse children of node</span></li>
+		<li><span class="menuitem expand">Expand children of node</span></li>
+	</ul>	
+	<h3 class="header"><span class="section">Visibility</span></h3>
+	<ul class="submenu">
+		<li><input type="checkbox" id="edgetype0" name="edges" value="view" checked="yes"/> <label for="edgetype0"> Show external nodes </label> </li>
+		<li><input type="checkbox" id="edgetype1" name="edges" value="include" checked="yes"/> <label for="edgetype1"> Show include edges </label> </li>
+		<li><input type="checkbox" id="edgetype2" name="edges" value="meta" checked="yes"/> <label for="edgetype2"> Show meta edges </label> </li>
+		<li><input type="checkbox" id="edgetype3" name="edges" value="structure" checked="yes"/> <label for="edgetype3"> Show structure edges </label> </li>
+		<li><input type="checkbox" id="edgetype4" name="edges" value="view" checked="yes"/> <label for="edgetype4"> Show view edges </label> </li>
+	</ul>	
+ </div>
+ <div id="theory_content"><div></div></div>
 </body>
 </html>

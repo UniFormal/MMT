@@ -20,6 +20,19 @@ class MyList[A](l : List[A]) {
    
    def  #:(a : A) = l.exists(_ == a)
    def !#:(a : A) = ! l.exists(_ == a)
+   
+   def quotient[B](f : A => B) : List[(B,List[A])] = {
+      var in : List[(B, A)] = l.map(x => (f(x), x))      
+      var out : List[(B, List[A])] = Nil
+      def add(e : (B,A), found: List[(B, List[A])], todo: List[(B, List[A])]) {todo match {
+        case Nil => out = (e._1,List(e._2)) :: found
+        case hd :: tl => if (hd._1 == e._1)
+           out = found ::: (hd._1, e._2 :: hd._2) :: todo
+        else add(e, hd :: found, tl) 
+      }}
+      in foreach {add(_, Nil, out)}
+      out
+   }
 }
 
 object MyList {

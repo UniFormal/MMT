@@ -1,18 +1,3 @@
-#inner-details {
-  font-size:12px;
-}
-
-span.close {
-	color:#FF5555;
-	cursor:pointer;
-	font-weight:bold;
-	margin-left:3px;
-}
-
-span.name {
-  cursor: pointer;
-}
-
 /*TOOLTIPS*/
 .tip {
    text-align: left;
@@ -27,18 +12,20 @@ span.name {
 }
 
 #graph-container {
-    width:600px;
-    left:200px;
-    background-color:#1a1a1a;
+    width:800px;
+	top:50px;
+    left:100px;
+    background-color:#fafafa;
     color:#ccc;
     height:600px;
     position:absolute;
-    top:0;
+	border-style:dashed;
+	border-width:1px;
 }
 
 #graph {
     position:relative;
-    width:600px;
+    width:800px;
     height:600px;
     margin:auto;
     overflow:hidden;
@@ -73,4 +60,135 @@ span.name {
     font-size:1.0em;
     font-weight:bold;
     color:#23A4FF;
+}
+
+#command {
+	position:absolute;
+	top:0px;
+	left:800px;
+	width: 300px;
+	border-style:dashed;
+	border-width:1px;
+	color:#0a0a0a;
+}
+
+#theory_content {
+	width: 800px;
+	left: 100px;
+	border-style: dashed;
+	border-width: 1px;
+}
+
+#command .header {
+	font: bold 13px Verdana;
+	color: white;
+	background: #616161;
+	text-transform: uppercase;
+	padding: 7px 0 7px 31px;
+	clear: both;
+}
+
+#command .header .section {
+	text-decoration: none;
+	display: block;
+	color: white;
+	cursor: pointer;
+}
+
+#command ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	margin-bottom: 0;
+	cursor: default;
+}
+
+#command ul li {
+	padding: 0 0 3px 10px;
+}
+
+#command ul li input {
+	font: normal 12px Arial;
+	background: #E9E9E9;
+	display: inline-block;
+	padding: 5px 0;
+	line-height: 17px;
+	padding-left: 8px;
+	text-decoration: none;
+}
+
+#command ul li span.menuitem {
+	font: normal 12px Arial;
+	background: #E9E9E9;
+	display: inline-block;
+	padding: 5px 5px;
+	line-height: 17px;
+	padding-left: 8px;
+	text-decoration: none;
+}
+
+#command ul li span.menuitem:hover {
+	color: white;
+	background: black;
+	cursor: pointer;
+}
+
+span.legend {
+	display:block;
+}
+
+#command .legend .nodes {
+	width: 200px;
+	float: left;
+}
+
+#command .legend.edges {
+	width: 100px;
+	float: right;
+}
+
+.circle {
+	float: left;
+	display: block;
+	width: 10px;
+	height: 10px;
+	background: #333;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	position: relative;
+	top: 6px;
+}
+
+.red {
+	background: #ff0000;
+}
+
+.orange {
+	background: #ffaa00;
+}
+
+.square {
+	float: left;
+	display: block;
+	width: 10px;
+	height: 10px;
+	background: #333;
+	position: relative;
+	top: 5px;
+}
+
+.lightgray {
+	background: #ADAD85;
+}
+
+.blue {
+	background: blue;
+}
+
+.green {
+	background: green;
+}
+
+.darkgray {
+	background: #52527A;
 }
