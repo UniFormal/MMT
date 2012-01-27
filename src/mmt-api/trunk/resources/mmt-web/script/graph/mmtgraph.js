@@ -385,6 +385,7 @@ function initGraph(json) {
         //Enable zooming and panning by scrolling and DnD
         Navigation: {
             enable: true,
+			type: 'Native',
             //Enable panning events only if we're dragging the empty canvas (and not a node).
             panning: 'avoid nodes',
             zooming: 80 //zoom speed. higher is more sensible
@@ -403,16 +404,9 @@ function initGraph(json) {
             color: '#0000FF',
             lineWidth: 1,
         },
-        //Native canvas text styling
-        Label: {
-            type: labelType, //Native or HTML
-            size: 10,
-            style: 'bold',
-            color: '#000000'
-        },
         //Add Tips
         Tips: {
-            enable: true,
+            enable: false,
             onShow: function(tip, node) {
                 //count connections
                 var count = 0;
@@ -426,10 +420,10 @@ function initGraph(json) {
             enable: true,
             //Allows the same handlers to be used for edges
             enableForEdges: true,
+			type: 'Native',
             //Change cursor style when hovering a node
             onMouseEnter: function(node, eventInfo, e) {
-                config.graph.canvas.getElement().style.cursor = 'move';
-				latin_navigate(node.id);
+                config.graph.canvas.getElement().style.cursor = 'move';				
             },
             onMouseLeave: function() {
                 config.graph.canvas.getElement().style.cursor = '';
@@ -492,10 +486,43 @@ function initGraph(json) {
         levelDistance: 130,
         //Add text to the labels. This method is only triggered on label creation and only for DOM labels (not native canvas ones).
         onCreateLabel: function(domElement, node){
-            domElement.innerHTML = node.name;
-            var style = domElement.style;
-            style.fontSize = "0.8em";
-            style.color = "#aaa";
+			var s1 = $('<span></span>').attr('class','name').html(node.name).appendTo(domElement);
+			$(s1).click(	function() {
+				config.graph.graph.eachNode(function(n) {
+					if (n.id != node.id) {
+						delete n.selected;
+					}
+					n.setData('dim', 7, 'end');
+					n.eachAdjacency(function(adj) {
+						adj.setDataset('end', {
+							lineWidth: 1
+						});
+					});
+				});
+				if (!node.selected) {
+					node.selected = true;
+					node.setData('dim', 17, 'end');
+					node.eachAdjacency(function(adj) {
+						adj.setDataset('end', {
+							lineWidth: 5,
+						});
+					});
+				} else {
+					delete node.selected;
+				}
+				config.graph.fx.animate({
+					modes: ['node-property:dim',
+						'edge-property:lineWidth'],
+					duration: 500
+				});
+				var html = "<h4>" + node.name + "</h4><b> connections:</b><ul><li>";
+				var list = [];
+				node.eachAdjacency(function(adj){
+					if (adj.getData('alpha')) list.push(adj.nodeTo.name);
+				});
+				$('#adjacencies').html(html + list.join("</li><li>") + "</li></ul>");
+				latin_navigate(node.id);
+			});
         },
         //Change node styles when DOM labels are placed or moved.
         onPlaceLabel: function(domElement, node){
@@ -691,6 +718,7 @@ function init_command() {
 			node.eachAdjacency(function(e) {
 				if (e.data.$direction.kind.toUpperCase() == type.toUpperCase()) {
 					e.setData('alpha', !config.settings[type.toLowerCase()] ? 1 : 0);
+					e.setData('ignore', !config.settings[type.toLowerCase()] ? 1 : 0);
 					ref = true;
 				}
 			});
