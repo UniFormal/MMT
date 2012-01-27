@@ -14,11 +14,12 @@ import info.kwarc.mmt.api.objects.Conversions._
 /** CheckResult is the result type of checking a content element */
 sealed abstract class CheckResult
 /** the content element is well-formed
- * @param decls the list of dependencies of the object 
+ * @param deps the list of dependencies of the object
  */
 case class Success(deps : List[RelationalElement]) extends CheckResult
 /** the content element is well-formed and was reconstructed to several new objects (e.g., type inference)
  * @param recon the reconstructed content elements
+ * @param deps the list of dependencies of the object
  */
 case class Reconstructed(recon : List[ContentElement], deps : List[RelationalElement]) extends CheckResult
 /** the content element is ill-formed
@@ -333,14 +334,14 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
     * @param univ the universe to check the term against
     * @return the list of identifiers occurring in s (no duplicates, random order)
     */
-   def checkTerm(home: TheoryObj, s : Term)(implicit lib : Lookup) : List[Path] = {
+   def checkTerm(home: Term, s : Term)(implicit lib : Lookup) : List[Path] = {
       checkTheo(home, p => p, p => p)
       checkTerm(home, Context(), s).distinct
    }
    //TODO redesign role checking, currently not done
-   private def checkTerm(home : TheoryObj, context : Context, s : Term)(implicit lib : Lookup) : List[Path] = {
+   private def checkTerm(home : Term, context : Context, s : Term)(implicit lib : Lookup) : List[Path] = {
       s match {
-         case OMID((h: TheoryObj) % (IncludeStep(from) / ln)) =>
+         case OMID((h: Term) % (IncludeStep(from) / ln)) =>
             if (! lib.imports(from, h))
                throw Invalid(from + " is not imported into " + h + " in " + s)
             checkTerm(home, context, OMID(from % ln))
@@ -417,7 +418,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
          case Index(seq,ind) => checkSeq(home,context,seq) ::: checkTerm(home,context,ind)
       }
    }
-   def checkSeq(home : TheoryObj, context : Context, s : objects.Sequence)(implicit lib : Lookup) : List[Path] = s match {
+   def checkSeq(home : Term, context : Context, s : objects.Sequence)(implicit lib : Lookup) : List[Path] = s match {
    	  case t: Term => checkTerm(home, context, t)
    	  case SeqVar(n) =>
           try {
@@ -433,7 +434,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
    	  case SeqUpTo(t) => checkTerm(home,context,t)
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
    }
-   def checkContext(home: TheoryObj, con: Context)(implicit lib : Lookup) : List[Path] = {
+   def checkContext(home: Term, con: Context)(implicit lib : Lookup) : List[Path] = {
       con.flatMap {
     	  case TermVarDecl(name, tp, df, attrs @_*) => 
     	   val tpl = tp.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
@@ -445,7 +446,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
     	   tpl ::: dfl //TODO not checking attributes
     	  }
    }
-   def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
+   def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit lib : Lookup) : List[Path] = {
       if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
       (from zip subs).flatMap {       
     	  case (TermVarDecl(n,tp,df,attrs @ _*), TermSub(m,t)) if n == m => checkTerm(home,to,t) 

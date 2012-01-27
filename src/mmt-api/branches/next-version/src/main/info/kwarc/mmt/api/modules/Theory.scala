@@ -7,7 +7,7 @@ import utils._
 import presentation.{StringLiteral,Omitted}
 
 abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name) {
-   def toTheoryObj : TheoryObj = OMMOD(path)
+   def toTheoryObj : Term = OMMOD(path)
 }
 /**
  * A Theory represents an MMT theory.<p>
@@ -35,7 +35,7 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
     </theory>
 }
 
-class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends Theory(doc, name) with DefinedModule[TheoryObj] {
+class DefinedTheory(doc : DPath, name : LocalPath, val df : Term) extends Theory(doc, name) with DefinedModule {
    def role = Role_DefinedTheory
    def components = StringLiteral(name.flat) :: innerComponents
    override def toString = path + innerString
@@ -47,7 +47,7 @@ class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends T
 }
 
 object Theory {
-   def meta(thy: TheoryObj)(implicit lib: Lookup) : Option[MPath] = thy match {
+   def meta(thy: Term)(implicit lib: Lookup) : Option[MPath] = thy match {
       case OMMOD(p) => lib.getTheory(p) match {
          case t: DeclaredTheory => t.meta
          case t: DefinedTheory => meta(t.df)

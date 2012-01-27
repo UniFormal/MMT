@@ -22,14 +22,14 @@ trait DeclaredModule[S <: Declaration] extends Body[S] {
 /**
  * Module given by existing modules/morphisms
  */
-trait DefinedModule[M <: ModuleObj] extends ModuleDefiniens[M]
+trait DefinedModule extends ModuleDefiniens
 
 /**
  * A Module or Link given by existing modules/morphisms
  */
-trait ModuleDefiniens[M <: ModuleObj] {
-  /** the ModuleObj that constitutes the definiens */
-   val df : M
+trait ModuleDefiniens {
+  /** the Term that constitutes the definiens */
+   val df : Term
    protected def innerString = " = " + df.toString
    protected def innerNodes = <definition>{df.toNode}</definition>
    protected def innerComponents = List(df)

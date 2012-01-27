@@ -71,8 +71,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    /** a lookup that load missing modules dynamically */
    val globalLookup = new Lookup(report) {
       def get(path : Path) = iterate {library.get(path)}
-      def imports(from: TheoryObj, to: TheoryObj) = library.imports(from, to)
-      def importsTo(to: TheoryObj) = library.importsTo(to)
+      def imports(from: Term, to: Term) = library.imports(from, to)
+      def importsTo(to: Term) = library.importsTo(to)
       def preImage(p : GlobalName) = library.preImage(p)
    }
    

@@ -28,4 +28,11 @@ object mmt {
    val nat = mmtsymbol("nat")
    val seq = mmtsymbol("seq")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
+   val ombind = mmtsymbol("ombind")
+   val oma = mmtsymbol("oma")
+   val omv = mmtsymbol("omv")
+   val ome = mmtsymbol("ome")
+   val omattr = mmtsymbol("omattr")
+   val omforeign = mmtsymbol("omforeign")
+   val omsemiformal = mmtsymbol("omsemiformal")
 }

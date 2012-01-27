@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.libraries._
  */
 abstract class Declaration extends ContentElement {
    val parent = home.toMPath
-   val home : ModuleObj
+   val home : Term
    val name : LocalName
    def path = GlobalName(home, name)
 }

@@ -9,8 +9,8 @@ import frontend._
 import utils._
 import scala.io.Source
 
-
-class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, val con : Context) extends Symbol {
+              // TODO term
+class Pattern(val home: Term, val name : LocalName, val params: Context, val con : Context) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
    		{if (! params.isEmpty)
@@ -24,8 +24,8 @@ class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, va
    override def toString = 
      "Pattern for " + name.flat + " " + params.toString + " " + con.toString
 }
-
-class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution) extends Symbol {
+                     // TODO term
+class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, val matches : Substitution) extends Symbol {
    def toNode = 
      <instance name={name.flat} pattern={pattern.toPath}>
      {matches.toNode}

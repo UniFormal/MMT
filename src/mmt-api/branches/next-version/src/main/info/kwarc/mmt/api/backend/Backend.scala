@@ -112,7 +112,7 @@ object OMQuery {
        p match {
           case p: DPath => s1 
           case p: MPath => s1.replace("%mod%", p.name.flat)
-          case p: GlobalName => s1.replace("%mod%", p.parent.toMPath.name.flat).replace("%name%", p.name.flat)
+          case p: GlobalName => s1.replace("%mod%", p.mod.toMPath.name.flat).replace("%name%", p.name.flat)
        }
    }
 }

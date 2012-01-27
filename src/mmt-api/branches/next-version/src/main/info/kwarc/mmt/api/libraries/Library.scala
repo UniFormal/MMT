@@ -80,7 +80,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
       }
       case TEmpty(mtO) % name => name match {
          case IncludeStep(f) / tl =>
-            if (mtO.isDefined && imports(f, OMMOD(mtO.get))) get(f % tl)
+            if (mtO.isDefined && imports(f, mtO.get)) get(f % tl)
             else throw GetError("empty theory has no declarations")
          case _ => throw GetError("empty theory has no declarations")
       }
@@ -94,7 +94,7 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
          case l : DefinitionalLink => getInLink(l, name, error)
          case _ => throw GetError("declaration exists but is not a structure: " + p)
       }
-      case OMCOMP(Nil) % _ => throw GetError("cannot lookup in identity morphism without domain: " + p) 
+      case OMCOMP(Nil) % _ => throw GetError("cannot lookup in identity morphism without domain: " + p)
       case (m @ OMCOMP(hd::tl)) % name =>
          val a = get(hd % name, error)
          tl match {
@@ -164,8 +164,8 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
    }*/
    /** iterator over all includes into a theory
     * a new iterator is needed once this has been traversed 
-    */
-   def importsTo(to: TheoryObj) : Iterator[TheoryObj] = to match {
+    */                                     // TODO term
+   def importsTo(to: Term) : Iterator[Term] = to match {
       case OMMOD(p) =>
          getTheory(p) match {
             case t: DefinedTheory => importsTo(t.df)
@@ -197,7 +197,8 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
       case TUnion(l,r) => importsTo(l) ++ importsTo(r) //TODO remove duplicates
    }
    //TODO documentation
-   def imports(from: TheoryObj, to: TheoryObj) : Boolean = {
+   // TODO term
+   def imports(from: Term, to: Term) : Boolean = {
       from == to || ((from,to) match {
          case (OMMOD(f), OMMOD(t)) => importsTo(to) contains from
          case (TEmpty(_), _ ) => true
@@ -207,7 +208,8 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
       })
    }
    //TODO documentation
-   def materialize(exp: ModuleObj) : Module = {
+   // TODO term
+   def materialize(exp: Term) : Module = {
       val path = exp.toMPath
       exp match {
          case OMMOD(p) => getTheory(p)
@@ -275,8 +277,8 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
             } catch {case _ => None}
          case !(hd) => None
    }
-   
-   private def getContainer(m: ModuleObj, error: String => Nothing) : ContentElement = m match {
+                                        // TODO Term
+   private def getContainer(m: Term, error: String => Nothing) : ContentElement = m match {
       case OMMOD(p) => get(p)
       case OMDL(OMMOD(p), !(n)) => get(OMMOD(p) % !(n), error) match {
          case s: Structure => s

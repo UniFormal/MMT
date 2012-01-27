@@ -9,10 +9,10 @@ import info.kwarc.mmt.api.utils._
  */
 trait Link {
    /** the domain of the link */
-   val from : TheoryObj
+   val from : Term
    /** the codomain of the link */
-   val to : TheoryObj
-   def toMorph : Morph
+   val to : Term
+   def toMorph : Term
    protected def innerNodes : Seq[scala.xml.Node]
    /** name, from, to, etc */
    protected def outerComponents : List[Content]
@@ -34,9 +34,9 @@ trait Link {
 trait DeclaredLink extends Link with Body[Assignment]
 
   /**
-   * A DeclaredLink represents an MMT link given by an existing morphism. 
+   * A DeclaredLink represents an MMT link given by an existing morphism.
    */
-trait DefinedLink extends Link with ModuleDefiniens[Morph]
+trait DefinedLink extends Link with ModuleDefiniens
 
 trait IncludeLink extends Link {
    protected def innerNodes : Seq[scala.xml.Node] = Nil

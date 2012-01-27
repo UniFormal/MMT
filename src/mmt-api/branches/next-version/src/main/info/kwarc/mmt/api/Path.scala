@@ -51,7 +51,7 @@ abstract class Path extends ontology.BaseType {
 
 /**
  * A DPath represents an MMT document level path.
- * @param doc the URI of the document (may not contain query or fragment)
+ * @param uri the URI of the document (may not contain query or fragment)
  */
 case class DPath(uri : URI) extends Path {
    //go down to a module
@@ -75,7 +75,10 @@ case class DPath(uri : URI) extends Path {
 /**
  * A path to a module or symbol
  */
-trait ContentPath extends Path
+trait ContentPath extends Path {
+   /** checks if the path is a generic MMT path */
+   def isGeneric : Boolean
+}
 
 /**
  * An MPath represents an MMT module level path.
@@ -93,22 +96,24 @@ case class MPath(parent : DPath, name : LocalPath) extends ContentPath {
    /** go down to a submodule */
    def /(n : LocalPath) = MPath(parent, name / n)
    /** go down to a symbol */
-   def ?(n : LocalName) : GlobalName = this % n
+   def ?(n : LocalName) : GlobalName = OMID(this) % n
    def ?(n : String) : GlobalName = this ? LocalName(n)
    def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
+   def isGeneric = (this == mmt.mmtcd)
 }
 
 /** A GlobalName represents the MMT URI of a symbol-level declaration.
  * This includes virtual declarations and declarations within complex module expressions.
  */
-case class GlobalName(parent: Term, name: LocalName) extends ContentPath {
+case class GlobalName(mod: Term, name: LocalName) extends ContentPath {
    def doc = utils.mmt.mmtbase
-   def ^! = if (name.length == 1) parent else parent % name.init
+   def ^! = if (name.length == 1) mod.toMPath else GlobalName(mod, name.init)
    def last = name.last.toPath
-   def apply(args: List[Term]) = OMA(OMID(this), args)
-   def apply(args: Term*) = apply(args.toList)
+   def apply(args: List[Term]) : Term = OMA(OMID(this), args)
+   def apply(args: Term*) : Term = apply(args.toList)
    /** true iff the parent is a named module and each include step is a named module or structure */
-   def isSimple : Boolean = parent.isInstanceOf[OMID] && name.steps.filter(isInstanceOf[IncludeStep]).forall(isInstanceOf[OMID])
+   def isSimple : Boolean = mod.isInstanceOf[OMID] && name.steps.filter(_.isInstanceOf[IncludeStep]).forall(_.isInstanceOf[OMID])
+   def isGeneric = (mod.toMPath == mmt.mmtcd)
 }
 
 /**
@@ -300,7 +305,7 @@ object Path {
  * This permits the syntax doc ? mod in patterns. 
  */
 object ? {
-   def apply(d: DPath,  l: LocalPath) : MPath = MPath(d, l)
+   //def apply(d: DPath,  l: LocalPath) : MPath = MPath(d, l)
    def unapply(p : Path) : Option[(DPath,LocalPath)] = p match {
       case p : MPath => Some((p ^^, p.name))
       case _ => None
@@ -311,9 +316,9 @@ object ? {
  * This permits the syntax mod % sym in patterns.
  */
 object % {
-   def apply(p: Term, n: LocalName) : GlobalName = GlobalName(p,n)
+   //def apply(mod: Term, n: LocalName) : GlobalName = GlobalName(mod,n)
    def unapply(p : Path) : Option[(Term,LocalName)] = p match {
-      case GlobalName(p,n) => Some((p,n))
+      case GlobalName(term,n) => Some((term,n))
       case _ => None
    }
 }

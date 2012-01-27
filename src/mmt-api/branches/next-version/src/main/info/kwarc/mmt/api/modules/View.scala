@@ -45,7 +45,7 @@ abstract class View(doc : DPath, name : LocalPath, val from : Term, val to : Ter
   * @param to the codomain theory
   * @param meta the optional meta-morphism
   */
-class DeclaredView(doc : DPath, name : LocalPath, from : TheoryObj, to : TheoryObj)
+class DeclaredView(doc : DPath, name : LocalPath, from : Term, to : Term)
       extends View(doc, name, from, to) with DeclaredModule[Assignment] with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_View
 }
@@ -59,7 +59,7 @@ class DeclaredView(doc : DPath, name : LocalPath, from : TheoryObj, to : TheoryO
    * @param to the codomain theory
    * @param df the definiens
    */
-class DefinedView(doc : DPath, name : LocalPath, from : TheoryObj, to : TheoryObj, val df : Morph)
-      extends View(doc, name, from, to) with DefinedModule[Morph] with DefinedLink {
+class DefinedView(doc : DPath, name : LocalPath, from : Term, to : Term, val df : Term)
+      extends View(doc, name, from, to) with DefinedModule with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedView
 }

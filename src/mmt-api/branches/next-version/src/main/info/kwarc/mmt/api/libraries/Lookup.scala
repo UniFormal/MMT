@@ -57,8 +57,8 @@ abstract class Lookup(val report : frontend.Report) {
    def globalImports(m : Morph) : Iterator[Morph]
     */
    
-   def imports(from: TheoryObj, to: TheoryObj) : Boolean
-   def importsTo(to: TheoryObj) : Iterator[TheoryObj]
+   def imports(from: Term, to: Term) : Boolean
+   def importsTo(to: Term) : Iterator[Term]
    //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
    //def structureModToSym(p : MPath) : SPath
    //def resolveAlias(s : Symbol) : Symbol
@@ -87,9 +87,9 @@ abstract class Lookup(val report : frontend.Report) {
    /**
     * A Traverser that recursively eliminates all explicit morphism applications.
     * apply(t,m) can be used to apply a morphism to a term.
-    */
-   object ApplyMorphs extends Traverser[Morph] {
-      def doTerm(t: Term)(implicit con: Context, morph: Morph) = t match {
+    */                                     // TODO term
+   object ApplyMorphs extends Traverser[Term] {
+      def doTerm(t: Term)(implicit con: Context, morph: Term) = t match {
          case OMM(arg, via) => doTerm(arg)(con, morph * via)
          case OMID(theo % ln) =>
            val t = getConstantAssignment(morph % ln).target

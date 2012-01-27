@@ -9,13 +9,13 @@ import presentation.{NotationProperties, StringLiteral, Omitted}
 /**
  * A Constant represents an MMT constant.<p>
  * 
- * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory
+ * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
  * @param name the name of the constant
  * @param tp the optional type
  * @param df the optional definiens
  * @param rl the role of the constant
  */
-class Constant(val home : TheoryObj, val name : LocalName,
+class Constant(val home : Term, val name : LocalName,
                val tp : Option[Term], val df : Option[Term], val rl : Option[String], val not: Option[NotationProperties]) extends Symbol {
   def toTerm = OMID(path)
 

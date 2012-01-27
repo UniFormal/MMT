@@ -38,9 +38,9 @@ abstract class Structure extends DefinitionalLink {
     */
    protected def outerComponents = List(StringLiteral(name.flat), from)
    protected def outerString = path + " : " + from.toString
-   def toNode = from.asPath match {
+   def toNode = /*from.asPath match {
 	    case Some(p) =>
-         <structure name={name.flat} from={p.toPath}>
+         <structure name={name.flat} from={p}>
            {getMetaDataNode}
            {innerNodes}
          </structure>
@@ -50,18 +50,30 @@ abstract class Structure extends DefinitionalLink {
            <from>{from.toOBJNode}</from>
            {innerNodes}
          </structure>
-     }
+     }   */ {
+        if (from.toMPath.isGeneric)
+          <structure name={name.flat} from={from.toMPath.toPath}>
+            {getMetaDataNode}
+            {innerNodes}
+          </structure>
+        else
+          <structure name={name.flat}>
+            {getMetaDataNode}
+            <from>{from.toOBJNode}</from>
+            {innerNodes}
+          </structure>
+   }
 }
 
 /**
  * A DeclaredStructure represents an MMT structure given by a list of assignments.<p>
  * 
- * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory
+ * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
  * @param name the name of the structure
  * @param from the domain theory
  * @param meta the optional meta-morphism
  */
-class DeclaredStructure(val home : TheoryObj, val name : LocalName, val from : TheoryObj)
+class DeclaredStructure(val home : Term, val name : LocalName, val from : Term)
       extends Structure with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_Structure
 }
@@ -69,12 +81,12 @@ class DeclaredStructure(val home : TheoryObj, val name : LocalName, val from : T
  /**
   * A DefinedStructure represents an MMT structure given by an existing morphism.<p>
   * 
-  * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory
+  * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
   * @param name the name of the structure
   * @param from the domain theory
   * @param df the definiens
   */
-class DefinedStructure(val home : TheoryObj, val name : LocalName, val from : TheoryObj, val df : Morph)
+class DefinedStructure(val home : Term, val name : LocalName, val from : Term, val df : Term)
       extends Structure with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedStructure
 }
@@ -82,10 +94,10 @@ class DefinedStructure(val home : TheoryObj, val name : LocalName, val from : Th
 /**
  * An Include represents an MMT inclusion into a theory.<p>
  *
- * @param parent the codomain of the inclusion
+ * @param home the codomain of the inclusion
  * @param from the included theory
- */
-case class Include(val home: TheoryObj, val from: TheoryObj) extends DefinitionalLink with IncludeLink {
+ */                                // TODO term
+case class Include(val home: Term, val from: Term) extends DefinitionalLink with IncludeLink {
    val name = LocalName(IncludeStep(from))
    val role = Role_Include
    protected def outerComponents : List[Content] = from match {
@@ -111,7 +123,7 @@ case class Include(val home: TheoryObj, val from: TheoryObj) extends Definitiona
  *
  * @param from the domain of the inclusion
  * @param to the codomain of the inclusion
- */
+ */                        // TODO change MPath to Term?
 object PlainInclude {
    def apply(from : MPath, to : MPath) = Include(OMMOD(to), OMMOD(from))
    def unapply(t: Include) : Option[(MPath,MPath)] = t match {
