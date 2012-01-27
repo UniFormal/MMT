@@ -63,13 +63,14 @@
 }
 
 #command {
-	position:absolute;
-	top:0px;
-	left:800px;
+	position: absolute;
+	top: 0px;
+	left: 800px;
 	width: 300px;
-	border-style:dashed;
-	border-width:1px;
-	color:#0a0a0a;
+	height: 600px;
+	border-style: dashed;
+	border-width: 1px;
+	color: #0a0a0a;
 }
 
 #theory_content {
@@ -77,6 +78,18 @@
 	left: 100px;
 	border-style: dashed;
 	border-width: 1px;
+}
+
+#adjacencies {
+	position: absolute;
+	width: 300px;
+	height: 500px;
+	top: 600px;
+	left: 800px;
+	border-style: dashed;
+	border-width: 1px;
+	padding: 5px 5px 5px 5px;
+	color: #000000;
 }
 
 #command .header {
@@ -191,4 +204,9 @@ span.legend {
 
 .darkgray {
 	background: #52527A;
+}
+
+span.name {
+	cursor: pointer;
+	color: #000000;
 }
