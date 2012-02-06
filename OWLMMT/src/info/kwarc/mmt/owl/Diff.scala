@@ -19,8 +19,8 @@ object Diff{
 	firstController.handle(ExecFile(new java.io.File("startup.mmt")))
 	secondController.handle(ExecFile(new java.io.File("startup.mmt")))
 	 
-    val firstSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\ObjectPropertyAxiom\\objectPropertyAxiom.omdoc")
-    val secondSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\ObjectPropertyAxiom\\objectPropertyAxiomChanged.omdoc")
+    val firstSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DatatypeDefinitionAxiom\\datatypeDefinitionAxiom.omdoc")
+    val secondSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DatatypeDefinitionAxiom\\datatypeDefinitionAxiomChanged.omdoc")
 	    
     val firstDoc : DPath  = firstController.read(firstSource)
     val secondDoc : DPath = secondController.read(secondSource)
