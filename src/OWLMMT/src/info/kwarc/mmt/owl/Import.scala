@@ -324,7 +324,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 				    else if(entity.isOWLAnnotationProperty()) // comment
 				    		OWL2OMS("OWL2SUB","annotationProperty") // type , module and name
 				    else if(entity.isOWLDataProperty) // hasAge
-				    		OWL2OMS("OWLBase", "dataProperty")
+				    		OWLOMS("OWLBase", "dataProperty")
 				    else if(entity.isOWLDatatype) 
 				    		OWLOMS("OWL1Datatype", "dataType")
 			    	else if(entity.isOWLClass) // Woman 
@@ -459,7 +459,10 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 			   (name, tp)
 			    
 // HasKeyAxiom  	/*  case ax : OWLHasKeyAxiom =>  */
+			        //each named instance of a class is uniquely identified by a (data or object) property or a set of properties
+			        //hasKey: class -> objectProperty(or dataProperty) -> type.
  
+			   
 // AssertionAxiom
 		  case ax : OWLClassAssertionAxiom =>	
 			   val name = LocalName("ax" + number())
@@ -599,17 +602,15 @@ object Import {
 		*/
 		//val file : File = new File("examples\\ex2.owl");
 		
-/*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc") 
-*/		
+
 /*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.owl")		
 		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.omdoc")
 */		
 /*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.owl")		
 		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.omdoc")
 */		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\ObjectPropertyAxiom\\objectPropertyAxiom.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\ObjectPropertyAxiom\\objectPropertyAxiom.omdoc")
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")
 		
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
