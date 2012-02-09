@@ -1,11 +1,13 @@
 package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.ontology._
+import frontend._
+import modules._
+import symbols._
+import objects._
+import patterns._
+import utils._
+import ontology._
+
 import scala.xml.{Node,NodeSeq}
 
 /*abstract class ContentMessage
@@ -20,10 +22,10 @@ case class Delete(path : Path) extends ContentMessage
  * The Library instance is the central object of the implementation. represent the main interface between frontend and intelligence.
  * All access of the frontend to the main data structures is through the library's get/add/update/delete interface.
  *
- * @param checker The checker for added declarations.
+ * @param mem the memory
  * @param report Parameter for logging.
  */
-class Library(checker : Checker, relstore : RelStore, report : frontend.Report) extends Lookup(report) {
+class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    private val modules = new scala.collection.mutable.HashMap[MPath,Module]
    private def modulesGetNF(p : MPath) : Module =
       try {modules(p)}
@@ -281,28 +283,8 @@ class Library(checker : Checker, relstore : RelStore, report : frontend.Report) 
       }
       case _ => error("not a theory, view, or structure: " + m)
    }
-   /**
-    * Validates and, if successful, adds a ContentElement to the theory graph.
-    * Note that the element already points to the intended parent element
-    * so that no target path is needed as an argument.
-    * @param e the element to be added
-    */
-   def add(e : ContentElement) {
-      log("adding: " + e.toString)
-      try {checker.check(e)(this) match {
-         case Fail(msg) => throw AddError(msg)
-         case Success(deps) =>
-            addUnchecked(e)
-            deps.map(relstore += _)
-         case Reconstructed(rs, deps) =>
-            rs.foreach(addUnchecked)
-            deps.map(relstore += _)
-      }} catch {
-         case e @ frontend.NotFound(_) => throw e
-      }
-   }
    // error checks of this method could be moved to Checker
-   protected def addUnchecked(e : ContentElement) = (e.path, e) match {
+   def add(e : ContentElement) = (e.path, e) match {
       case doc : DPath => throw ImplementationError("addtion of document to library impossible")
       case (doc ? mod, m : Module) =>
          modules(doc ? mod) = m
@@ -431,8 +413,3 @@ object Normalize extends Traverser[(Lookup,Morph)] {
 	}
 }
 */
-
-object Library {
-   def apply(rep: frontend.Report) = new Library(NullChecker, new RelStore(rep), rep)
-   def plain = apply(frontend.NullReport) 
-}

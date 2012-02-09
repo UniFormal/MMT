@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
+import frontend._
 import utils._
 import utils.MyList.fromList
 import scala.xml.Node
@@ -11,11 +12,11 @@ import scala.collection.mutable.HashMap
 case class NotationKey(path : Option[Path], role : Role)
 
 /** The NotationStore holds all styles and notations.
- * @param lib the content store
- * @param depstore the abox store
+ * @param mem the memory
  * @param report the logging handler
  */
-class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report : frontend.Report) {
+class NotationStore(mem : ROMemory, report : frontend.Report) {
+   private val lib = mem.content
    protected val sets = new HashMap[MPath, Style]
    protected val defaults = new HashMap[NotationKey, Notation]
 
@@ -88,7 +89,7 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
            //to find the default notation highNot, we use keys without a path and try some roles in order
            val roles : List[Role] = r match {
               case Role_application(None) => 
-                 depstore.getType(p) match {
+                 mem.ontology.getType(p) match {
                     case Some(ontology.IsConstant(rl)) => List(Role_application(rl), r) // application of constants may differ depending on their role, if given 
                     case _ => List(r)
                  }
@@ -118,12 +119,12 @@ class NotationStore(lib : libraries.Lookup, depstore : ontology.RelStore, report
       e match {
          case e : Style =>
             sets(e.path) = e
-            depstore += ontology.IsStyle(e.path)
-            depstore += ontology.HasDomain(e.path, e.from)
-            depstore += ontology.HasCodomain(e.path, e.to)
+            mem.ontology += ontology.IsStyle(e.path)
+            mem.ontology += ontology.HasDomain(e.path, e.from)
+            mem.ontology += ontology.HasCodomain(e.path, e.to)
          case e : NotationImport =>
             imports += (e.from, e.to)
-            depstore += ontology.Includes(e.to, e.from)
+            mem.ontology += ontology.Includes(e.to, e.from)
             visible = scala.collection.mutable.HashMap.empty
          case e : Notation =>
             if (sets.isDefinedAt(e.nset))
