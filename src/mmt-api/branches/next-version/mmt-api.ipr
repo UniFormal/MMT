@@ -80,6 +80,14 @@
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" assert-keyword="true" jdk-15="true" project-jdk-name="1.7" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/main" />
   </component>
+  <component name="ScaladocSettings">
+    <option name="outputDir" value="C:\rep\MMT\src\mmt-api\branches\next-version\build\doc" />
+    <option name="additionalFlags" value="" />
+    <option name="maxHeapSize" value="" />
+    <option name="docTitle" value="mmt-api documentation" />
+    <option name="verbose" value="false" />
+    <option name="openInBrowser" value="true" />
+  </component>
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="" />
   </component>

@@ -1,13 +1,17 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
-
+import utils.MyList.fromList
 import scala.collection.mutable.{HashSet,HashMap}
 
 /** types of edges in a theory multigraph; edges may have an id; there may be at most one edge without id between two nodes */
 abstract class Edge
+/** inclusion edge */
 case object IncludeEdge extends Edge
+/** meta-theory edge */
 case object MetaEdge extends Edge
+/** named view */
 case class ViewEdge(id: Path) extends Edge
+/** named import */
 case class StructureEdge(id: Path) extends Edge
 
 /** an edge together with its end point, optionally may be backwards */
@@ -34,7 +38,7 @@ class TheoryGraph(rs: RelStore) {
       }
       eds
    }
-   def edgesFrom(from: Path) : List[EdgeTo] = {
+   def edgesFrom(from: Path) : List[(Path,List[EdgeTo])] = {
       var eds : List[EdgeTo] = Nil
       rs.query(from, - HasDomain) {
          link => rs.query(link, + HasCodomain) {
@@ -62,6 +66,9 @@ class TheoryGraph(rs: RelStore) {
       rs.query(from, + HasMeta) {
          i => eds ::= EdgeTo(i, MetaEdge, true)
       }
-      eds
+      val filtered = eds filter {
+        case EdgeTo(t,_,_) => from <= t
+      }
+      filtered.quotient(_.to)
    }
 }

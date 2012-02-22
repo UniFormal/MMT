@@ -4,10 +4,9 @@ import symbols._
 import modules._
 import objects._
 
-// TODO documentation
 case class Completion(parent: Path, completions: scala.collection.Set[LocalName])
 
-// TODO is this used anywhere?
+/** Auxiliary methods for name lookup */
 object Names {
    def get(t: Term)(implicit lib: Lookup) : DeclaredTheory = t match {
       case OMMOD(p) => lib.get(p) match {

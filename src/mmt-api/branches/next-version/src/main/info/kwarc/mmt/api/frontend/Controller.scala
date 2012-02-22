@@ -43,14 +43,14 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    protected def log(s : => String) = report("controller", s)
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(report)
-   /** maintains all relational elements */
-   val depstore = new RelStore(report)
-   /** maintains all content elements */
-   val library = new Library(checker, depstore, report)
-   /** maintains all presentation elements */
-   val notstore = new NotationStore(library, depstore, report)
-   /** maintains all narrative elements */
-   val docstore = new DocStore(depstore, report)
+
+   /** maintains all knowledge */
+   val memory = new Memory(report)
+   val depstore = memory.ontology
+   val library = memory.content
+   val notstore = memory.presentation
+   val docstore = memory.narration
+
    /** the MMT rendering engine */
    val presenter = new presentation.Presenter(this, report)
    /** the MMT parser (XML syntax) */
@@ -120,11 +120,32 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    /** adds a knowledge item */
    def add(e : StructuralElement) {
       iterate (e match {
-         case c : ContentElement => library.add(c)
+         case c : ContentElement => addContent(c)
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
       })
    }
+  /**
+  * Validates and, if successful, adds a ContentElement to the theory graph.
+  * Note that the element already points to the intended parent element
+  * so that no target path is needed as an argument.
+  * @param e the element to be added
+  */
+  def addContent(e : ContentElement) {
+    log("adding: " + e.toString)
+    try {checker.check(e)(memory) match {
+       case Fail(msg) => throw AddError(msg)
+       case Success(deps) =>
+          memory.content.add(e)
+          deps.map(memory.ontology += _)
+       case Reconstructed(rs, deps) =>
+          rs.foreach(memory.content.add)
+          deps.map(memory.ontology += _)
+    }} catch {
+       case e @ NotFound(_) => throw e
+    }
+  }
+
    /**
     * deletes a document or module
     * no change management except that the deletion of a document also deletes its subdocuments and modules 

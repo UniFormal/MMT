@@ -24,7 +24,7 @@ object LocalParams {
    val objectTop = LocalParams(Nil, Position.Init, true, Precedence.neginfinite, Nil)
 }
 /** This class stores information about a bound variable.
- * @param decel the variable declaration
+ * @param decl the variable declaration
  * @param binder the path of the binder (if atomic)
  * @param declpos the position of the variable declaration 
  */
