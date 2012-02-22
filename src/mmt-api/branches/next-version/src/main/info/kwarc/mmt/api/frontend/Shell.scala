@@ -5,12 +5,12 @@ import info.kwarc.mmt.api.utils._
 
 /** Creates a Controller and provides a shell interface to it.
  * The command syntax is given by the Action class and the parser in its companion object.
- * @param foundation the foundation that is used for type checking
+ * @param f the checker
  */
 class Shell(f : Report => libraries.Checker) extends {
    val filereport = new frontend.FileReport(new java.io.File("jomdoc.log"))
    val consreport = new ConsoleReport
-   val report = new MultipleReports(filereport, consreport)
+   val report = new MultipleReports(filereport, consreport)       // reports to both console and file
    val checker = f(report)
    val controller = new Controller(checker,report)
    def main(args : Array[String]) : Unit = {

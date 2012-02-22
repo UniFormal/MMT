@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.utils._
 
+/** A read-only abstraction of a library. A Library is a Lookup with write methods */
 abstract class Lookup(val report : frontend.Report) {
    def apply(path : Path) = get(path)
 

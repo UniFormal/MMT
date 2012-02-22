@@ -4,6 +4,7 @@ import modules._
 import symbols._
 import patterns._
 
+/** Hepler object for ontologies */
 object Extract {
    /** apply a function to every relational element in the given module */
    def apply(mod : Module, f: RelationalElement => Unit) {

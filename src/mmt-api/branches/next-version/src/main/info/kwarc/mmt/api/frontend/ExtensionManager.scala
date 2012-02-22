@@ -57,6 +57,7 @@ class ExtensionManager(report: Report) {
    /** retrieves an applicable Foundation */
    def getFoundation(p: MPath) : Option[Foundation] = foundations.headOption
 
+   /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}
    def getMWS : Option[URI] = mws
    

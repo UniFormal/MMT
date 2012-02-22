@@ -28,6 +28,7 @@ case class File(toJava: java.io.File) {
    }
 }
 
+/** Auxiliary methods to manage files */
 object File {
    /** constructs a File from a string, using the java.io.File parser */  
    def apply(s: String) : File = File(new java.io.File(s))

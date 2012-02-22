@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api.utils.MyList.fromList
 
+/** Wrapper around List to provide some custom extensions */
 class MyList[A](l : List[A]) {
    implicit def toList : List[A] = l
    /** folding for non-associative folding functions, e.g. Nil => start; List(a) => a; List(a,b) => map(a,b), ... */

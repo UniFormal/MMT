@@ -456,4 +456,5 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
    }
 }
 
+/** A checker that uses the default foundation; amounts to structural well-formedness */
 class StructuralChecker(report: Report) extends FoundChecker(new DefaultFoundation, report)

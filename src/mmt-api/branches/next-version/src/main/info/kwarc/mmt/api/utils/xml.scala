@@ -114,6 +114,7 @@ object xml {
    }
 }
 
+/** Custom implementation of the URI RFC that's better than java.net.URI */
 case class URI(scheme: Option[String], authority: Option[String], path: List[String], absolute: Boolean, query: Option[String], fragment: Option[String]) {
    /** drop path, query, fragment, append (absolute) path of length 1 */
    def !/(n : String) : URI = this !/ List(n)

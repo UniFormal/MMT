@@ -1,6 +1,8 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api.patterns._
 
+/** Stores all implicit conversions related to MMT objects
+ * This is imported in all source files that use conversions */
 object Conversions {
    /** implicit conversion between a context and a list of variable declarations */
    implicit def list2context(l : List[VarDecl]) : Context = Context(l : _*)

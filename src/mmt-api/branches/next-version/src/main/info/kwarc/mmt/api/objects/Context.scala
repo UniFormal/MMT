@@ -26,10 +26,10 @@ sealed abstract class VarDecl extends Obj {
 
 //TODO: add optional notation
 /** represents an MMT term variable declaration
- * @param n name
+ * @param name name
  * @param tp optional type
  * @param df optional definiens
- * @param attrs OpenMath-style attributions
+ * @param ats OpenMath-style attributions
  */
 case class TermVarDecl(name : String, tp : Option[Term], df : Option[Term], ats: (GlobalName,Term)*) extends VarDecl {
    val attrs = ats.toList
@@ -263,6 +263,7 @@ object Sub {
    }
 }
 
+/** Concatenation of contexts and substitutions (extractor object) */
 object ++ {
    def unapply(c: Context) : Option[(Context,VarDecl)] =
       if (c.isEmpty) None

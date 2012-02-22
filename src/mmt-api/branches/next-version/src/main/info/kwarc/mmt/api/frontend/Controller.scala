@@ -75,7 +75,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       def importsTo(to: Term) = library.importsTo(to)
       def preImage(p : GlobalName) = library.preImage(p)
    }
-   
+   /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       report.indent
@@ -186,8 +186,10 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       source.close
       dpath
    }
+   /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
+   /** base URL In the local system */
    protected var home = File(".")
    def getHome = home
    def setHome(h: File) {home = h}
@@ -223,6 +225,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case e : java.io.FileNotFoundException => report("error", e.getMessage)
        }
    }
+   /** executes a string command */
    def handleLine(l : String) {
         val act = try {
            Action.parseAct(l, base, home)

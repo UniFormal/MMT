@@ -3,6 +3,7 @@ import scala.xml.{Node,Elem}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 
+/** Helper class to permit customizing archives */
 abstract class ArchiveCustomization {
   def mwsurl(p: Path) : String
   /**
@@ -16,6 +17,7 @@ class DefaultCustomization extends ArchiveCustomization {
   def prepareQuery(t: Obj): scala.xml.Node = t.toCML
 }
 
+/** Customization for Mizar */
 class MML extends ArchiveCustomization {
   def mwsurl(p: Path) : String = p match {
     case par % ln => 
