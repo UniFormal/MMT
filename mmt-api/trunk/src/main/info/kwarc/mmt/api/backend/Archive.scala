@@ -14,6 +14,11 @@ import java.util.zip._
 
 import scala.collection.mutable._
 
+/* FR: there should be an update method that detects all changes to a directory/file and the rebuilds the archive for those
+ * this should be based on meta-information that stores for every file the timestamp of the last update
+ * by comparing the current with the previous meta-information, missing/new/modified files can be detected and handled 
+ * open question: should this integrated with SVN or standalone? probably the latter */
+
 case class CompilationError(s: String) extends Exception(s)
 
 /** MAR archive management
