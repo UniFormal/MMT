@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+
+<style name="latex" from="http://cds.omdoc.org/foundations/lf/lf.omdoc" to="text/latex">
+   <include from="http://cds.omdoc.org/omdoc/latex.omdoc?latex"/>
+
+   <notation for="?lf?type" role="constant">
+      <text value="\texttt{type}"/>
+   </notation>
+
+   <notation for="?lf?oftype" role="constant">
+      <text value=":\;"/>
+   </notation>
+
+   <notation for="?lf?omitted" role="constant">
+      <text value="\_"/>
+   </notation>
+
+   <notation for="?lf?lambda" role="constant">
+     <text value="\lambda"/>
+   </notation>
+   <notation for="?lf?lambda" role="binding" fixity="bind">
+     <main><hole/><text value=".\;"/></main>
+   </notation>
+
+   <notation for="?lf?Pi" role="constant">
+     <text value="\Pi"/>
+   </notation>
+   <notation for="?lf?Pi" role="binding" fixity="bind">
+     <main><hole/><text value=".\;"/></main>
+   </notation>
+
+   <notation for="?lf?arrow" role="constant">
+      <text value="\to"/>
+   </notation>
+
+   <notation for="?lf?implicit_lambda" role="binding">
+     <component index="-1"/>
+   </notation>
+   <notation for="?lf?implicit_Pi" role="binding">
+     <component index="-1"/>
+   </notation>
+</style>
+
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

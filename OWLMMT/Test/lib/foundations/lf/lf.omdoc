@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc base="http://cds.omdoc.org/foundations/lf/lf.omdoc"
+xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">
+
+<theory name="lf">
+  <constant name="omitted"/>
+  <constant name="kind"/>
+  <constant name="type"/>
+  <constant name="Pi"/>
+  <constant name="implicit_Pi"/>
+  <constant name="arrow"/>
+  <constant name="lambda"/>
+  <constant name="implicit_lambda"/>
+  <constant name="oftype"/>
+
+  <notation for="??arrow" role="application" fixity="inter" associativity="right" precedence="-20"/>
+  
+  <notation for="??lambda" role="binding" precedence="-1">
+     <component index="0"/>
+     <fragment name="lambda">
+       <components begin="1" end="-2">
+         <body><recurse precedence="-infinity"/></body>
+         <separator><text value=", "/></separator>
+       </components>
+     </fragment>
+     <component index="-1" precedence="-2"/>
+   </notation>
+   
+   <notation for="??Pi" role="binding" precedence="-1">
+     <component index="0"/>
+     <fragment name="Pi">
+       <components begin="1" end="-2">
+         <body><recurse precedence="-infinity"/></body>
+         <separator><text value=", "/></separator>
+        </components>
+     </fragment>
+     <component index="-1" precedence="-2"/>
+   </notation>
+
+  <notation for="??implicit_lambda" role="binding" precedence="-1">
+    <fragment name="implicit_binder">
+        <component index="0"/>
+        <fragment name="lambda">
+          <components begin="1" end="-2">
+            <body><recurse precedence="-infinity"/></body>
+            <separator><text value=", "/></separator>
+          </components>
+        </fragment>
+     </fragment>
+     <component index="-1" precedence="-2"/>
+   </notation>
+   
+   <notation for="??implicit_Pi" role="binding" precedence="-1">
+    <fragment name="implicit_binder">
+        <component index="0"/>
+        <fragment name="Pi">
+          <components begin="1" end="-2">
+            <body><recurse precedence="-infinity"/></body>
+            <separator><text value=", "/></separator>
+           </components>
+        </fragment>
+     </fragment>
+     <component index="-1" precedence="-2"/>
+   </notation>
+
+   
+   <notation for="??oftype" role="attribution" fixity="in" precedence="-10"/>
+
+   <notation for="??omitted" role="attribution">
+     <component index="2"/>
+   </notation>
+
+</theory>
+
+<!--
+<theory name="domain">
+  <constant name="+"/>
+  <constant name="*"/>
+  <constant name="-"/>
+  <constant name="%2F"/>
+</theory>
+-->
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

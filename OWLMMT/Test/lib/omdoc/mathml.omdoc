@@ -1,0 +1,658 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns" xmlns:h="http://www.w3.org/1999/xhtml" xmlns:m="http://www.w3.org/1998/Math/MathML">
+
+<style name="common">
+
+  <notation role="Document">
+  <generateid name="//fold//">
+    <fragment name="folder"><text value="document "/></fragment>
+      <element name="span">
+         <attribute prefix="jobad" name="href"><component index="0"/></attribute>
+         <component index="1"/>
+      </element>
+    <fragment name="foldee">
+       <components begin="2" end="-1">
+         <body>
+          <element name="tr"><element name="td"><recurse/></element></element>
+         </body>
+       </components>
+    </fragment>
+    </generateid>
+  </notation>
+  
+  <notation role="fragment:Ref">
+    <element name="div">
+      <attribute prefix="jobad" name="load"><component index="0"/></attribute>
+      <element name="span">
+        <attribute name="onclick" value="remoteClick(event.target.parentNode)"/>
+        <attribute name="class" value="keyword"/>
+        <text value="remote "/><hole/>
+      </element>
+      <element name="span">
+         <attribute prefix="jobad" name="href"><component index="0"/></attribute>
+         <component index="1"/>
+      </element>
+    </element>
+  </notation>
+
+  <notation role="DRef">
+    <fragment name="Ref"><text value="document "/></fragment>
+  </notation>
+
+  <notation role="MRef">
+    <fragment name="Ref"><text value="module "/></fragment>
+  </notation>
+
+  <notation role="fragment:Module">
+    <element name="div">
+      <generateid name="//fold//">
+         <fragment name="folder"><hole index="0"/><text value=" "/></fragment>
+         <fragment name="modname"><hole index="1"/></fragment>
+         <hole index="2"/>
+         <fragment name="foldee"><hole index="3"/></fragment>
+      </generateid>      
+    </element>
+  </notation>
+  
+  <notation role="Theory">
+    <fragment name="Module">
+      <arg><text value="theory"/></arg>
+      <arg><component index="0"/></arg>
+      <arg>
+        <if test="present" index="1">
+           <then>
+             <h:span class="keyword">
+                <text value=" meta "/>
+             </h:span>
+             <component index="1"/></then>
+         </if>
+      </arg>
+      <arg>
+        <components begin="2" end="-1"/>
+      </arg>
+    </fragment>
+  </notation>
+  
+  <notation role="View">
+    <fragment name="Module">
+      <arg><text value="view"/></arg>
+      <arg><component index="0"/></arg>
+      <arg>
+         <h:span class="operator">
+            <text value=" : "/>
+         </h:span>
+         <component index="1"/>
+         <element name="span">
+            <attribute name="class" value="operator"/>
+            <text value="→"/>
+         </element>
+         <component index="2"/>
+      </arg>
+      <arg>
+        <components begin="3" end="-1"/>
+      </arg>
+    </fragment>
+  </notation>
+
+  <notation role="Include">
+    <element name="tr">
+      <element name="td">
+         <attribute name="colspan" value="3"/>
+         <if index="1" test="present">
+           <then>
+             <element name="div">
+               <attribute prefix="jobad" name="load"><component index="1"/></attribute>
+               <element name="span">
+                 <attribute name="onclick" value="flatClick(event.target.parentNode)"/>
+                 <attribute name="class" value="keyword"/>
+                 <text value="include "/>
+               </element>
+               <component index="0"/>
+               <element name="div">
+                  <attribute name="class" value="flat-container"/>
+                  <attribute name="style" value="display:none"/>
+               </element>
+             </element>
+          </then>
+          <else>
+             <element name="span">
+               <text value="include "/>
+             </element>
+             <component index="0"/>
+          </else>
+       </if>
+     </element>
+   </element>
+  </notation>
+  
+  <notation role="Constant">
+    <element name="tr">
+      <attribute name="class" value="omdoc-symbol"/>
+      <element name="td"><component index="0"/></element>
+      <if test="present" index="1">
+        <then>
+          <element name="td">
+             <attribute name="class" value="operator"/>
+             <text value=":"/>
+          </element>
+          <element name="td">
+            <component index="1"/>
+          </element>
+        </then>
+      </if>
+    </element>
+    <if test="present" index="2">
+      <then>
+        <element name="tr">
+          <attribute name="class" value="omdoc-definitiens"/>
+          <element name="td"/>
+          <element name="td">
+            <attribute name="class" value="operator"/>
+            <text value="="/>
+          </element>
+          <element name="td">
+            <component index="2"/>
+          </element>
+         </element>
+        </then>
+      </if>
+  </notation>
+  
+  <notation role="Pattern">
+    <element name="tr">
+      <element name="td">
+       <attribute name="colspan" value="3"/>
+        <element name="span">
+          <attribute name="class" value="keyword"/>
+          <text value="pattern"/>
+        </element>  
+        <component index="0"/>
+      </element>
+    </element>
+    <element name="tr"> 
+      <element name="td">   
+       <attribute name="colspan" value="3"/>
+       <element name="table">
+        <element name="td">          
+         <text value="λ"/> 
+        </element>              
+        <element name="td">  
+         <element name="table">
+          <components begin="1" end="paramsEnd">
+           <body>                        
+            <element name="tr">
+             <recurse/>
+            </element>          
+           </body>
+          </components>
+         </element>
+        </element>
+        <element name="td">
+         <element name="table">
+          <components begin="conBegin" end="-1">
+           <body>           
+             <recurse/>                         
+           </body>
+           <separator>
+              <text value=","/>
+              <element name="br"/> 
+           </separator>            
+          </components>       
+        </element>
+       </element>
+      </element>
+     </element>
+    </element>
+   </notation>
+   
+  
+<notation role="Instance">
+  <element name="tr">
+    <element name="td">
+      <attribute name="colspan" value="3"/>
+        <element name="span">    
+          <attribute name="class" value="keyword"/>
+          <text value="instance "/>
+        </element>  
+        <component index="0"/>
+     <text value=" of "/>
+     <element name="span">
+      <attribute name="class" value="keyword"/>
+      <text value="pattern "/>
+     </element>
+     <component index="1"/>
+   </element>
+  </element>
+  <element name="tr">
+     <element name="td"/>
+     <element name="td"/>
+     <element name="td">
+        <element name="table">
+         <components begin="2" end="-1">
+          <body>
+           <element name="tr">
+            <recurse/>             
+           </element>
+          </body>
+         </components>       
+        </element>
+      </element>
+    </element>
+  </notation>
+  
+  <notation role="termsub seqsub">
+   <element name="td">
+     <component index="0"/>
+   </element>
+   <element name="td">
+     <text value="↦"/>
+   </element>
+   <element name="td">
+     <component index="1"/>
+   </element>
+  </notation>
+  
+  <notation role="value">
+    <element name="mn">
+      <component index="0"/>
+    </element>
+  </notation>
+  
+  <notation role="seqitemlist">
+   <element name="mrow">
+    <element name="mo">
+     <text value="["/>
+    </element>    
+    <components begin="0" end="-1">
+       <body>         
+           <recurse/>                     
+       </body>
+       <separator>
+         <text value=","/>
+       </separator>
+    </components>     
+    <element name="mo">
+     <text value="]"/>
+    </element>
+   </element>
+  </notation>
+
+  
+  <notation role="seqvariable">
+    <element name="mi">
+      <component index="0"/>
+    </element>
+  </notation>
+  
+  <notation role="sequpto">
+   <element name="mrow">  
+     <element name="mo">
+       <text value="1.."/>
+     </element>
+       <component index="0"/>
+    </element>
+  </notation>
+  
+  <notation role="seqsubst">
+   <element name="mrow">
+    <element name="msub">
+     <element name="mrow">
+      <element name="mo">
+       <text value="["/>
+      </element>   
+      <component index="0"/>
+      <element name="mo">
+       <text value="]"/>
+      </element>
+     </element>
+     <element name="mrow">
+      <component index="1"/>
+      <element name="mo">
+       <text value="↦"/>
+      </element>
+     <component index="2"/>    
+     </element>
+    </element>
+   </element>
+  </notation>
+  
+  <notation role="index">
+   <element name="mrow">      
+    <element name="msub">      
+      <component index="0"/>
+      <component index="1"/>
+    </element>
+   </element>  
+  </notation>
+  
+  <notation role="Structure">
+    <element name="tr">
+      <attribute name="class" value="omdoc-structure"/>
+      <element name="td"><component index="0"/></element>
+      <element name="td">
+        <attribute name="class" value="operator"/>
+        <text value=":"/>
+      </element>
+      <element name="td"><component index="1"/></element>
+    </element>
+    <element name="tr">
+      <element name="td"/>
+      <element name="td"/>
+      <element name="td">
+        <element name="table">
+          <components begin="2" end="-1">
+            <body><element name="tr"><recurse/></element></body>
+          </components>
+        </element>
+      </element>
+    </element>
+  </notation>
+
+  <notation role="Alias"/>
+<!--    <element name="div">
+      <attribute name="class" value="omdoc-alias"/>
+      <fragment name="symname">
+        <arg><component index="0"/></arg>
+      </fragment>
+        <element name="span">
+          <attribute name="class" value="operator"/>
+          <text value=":="/>
+        </element>
+        <component index="1"/>
+    </element>
+  </notation>
+-->
+  <notation role="ConAss StrAss">
+    <element name="tr">
+      <element name="td">
+        <attribute name="class" value="omdoc-assignment"/>
+        <fragment name="symname">
+          <arg><component index="0"/></arg>
+        </fragment>
+      </element>
+      <element name="td">
+        <attribute name="class" value="operator"/>
+          <text value="↦"/>
+      </element>
+      <element name="td"><component index="1"/></element>
+    </element>
+  </notation>
+
+  <notation role="Open">
+    <element name="div">
+      <attribute name="class" value="omdoc-assignment"/>
+        <text value="open "/>
+        <fragment name="symname">
+          <arg><component index="0"/></arg>
+        </fragment>
+        <if test="present" index="1">
+          <then>
+            <text value="as "/>
+            <fragment name="symname">
+              <arg><component index="1"/></arg>
+            </fragment>
+          </then>
+        </if>
+    </element>
+  </notation>
+
+  <notation role="module" wrap="true">
+    <element name="mo">
+      <attribute prefix="jobad" name="xref"><id/></attribute>
+      <attribute prefix="jobad" name="href">
+        <component index="3"/>
+      </attribute>
+      <hole><component index="1"/></hole>
+    </element>
+  </notation>
+
+  <notation role="constant structure" wrap="true">
+    <element name="mo">
+      <attribute prefix="jobad" name="xref">
+        <id/>
+      </attribute>
+      <attribute prefix="jobad" name="href">
+        <component index="3"/>
+      </attribute>
+      <hole><component index="2"/></hole>
+    </element>
+  </notation>
+
+  <notation role="constant structure" wrap="true">
+    <element name="mo">
+      <attribute prefix="jobad" name="xref">
+        <id/>
+      </attribute>
+      <attribute prefix="jobad" name="href">
+        <component index="3"/>
+      </attribute>
+      <hole><component index="2"/></hole>
+    </element>
+  </notation>
+
+  <notation role="complex-constant">
+    <element name="mrow">
+      <attribute prefix="jobad" name="xref">
+        <id/>
+      </attribute>
+      <component index="0"/>
+      <element name="mo"><text value="%"/></element>
+      <component index="1"/>
+    </element>
+  </notation>
+
+  <notation role="SeqVariable Variable">
+    <element name="mrow">
+      <attribute prefix="jobad" name="xref">
+        <id/>
+      </attribute>
+      <element name="mi">
+         <component index="0"/>
+      </element>
+      <if test="present" index="1">
+        <then>
+            <element name="mo"><text value=":"/></element>
+            <component index="1"/>
+        </then>
+      </if>
+      <if test="present" index="2">
+        <then>
+            <element name="mo"><text value="="/></element>
+            <component index="2"/>
+        </then>
+      </if>
+    </element>
+  </notation>
+
+  <notation role="variable" wrap="true">
+    <element name="mi">
+      <attribute prefix="jobad" name="xref">
+        <id/>
+      </attribute>
+      <attribute prefix="jobad" name="varref">
+        <component index="2"/>
+      </attribute>
+      <hole><component index="0"/></hole>
+    </element>
+  </notation>
+  
+  <notation role="application" fixity="pre" application-style="math" associativity="none" implicit="0"/>
+
+  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?composition"
+            role="application" fixity="inter" associativity="right" precedence="-infinity">
+  </notation>
+  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?composition" role="constant"><text value=";"/></notation>
+
+  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?morphism-application"
+            role="application" fixity="in" associativity="left" precedence="-infinity">
+  </notation>
+  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?morphism-application" role="constant">
+  <text value="*"/></notation>
+
+  <notation role="binding" fixity="bind" implicit="0"/>
+  <notation role="attribution" fixity="in" associativity="none"/>
+
+  <notation role="fragment:brackets">
+      <element name="mfenced">
+        <attribute name="open"><text value="("/></attribute>
+        <attribute name="close"><text value=")"/></attribute>
+        <element name="mrow">
+          <attribute prefix="jobad" name="xref"><id/></attribute>
+          <hole/>
+        </element>
+      </element>
+  </notation>
+  <notation role="fragment:ebrackets">
+      <element name="mfenced">
+        <attribute name="open"><text value=""/></attribute>
+        <attribute name="close"><text value=""/></attribute>
+        <attribute prefix="jobad" name="open"><text value="("/></attribute>
+        <attribute prefix="jobad" name="close"><text value=")"/></attribute>
+        <attribute name="class" value="brackets"/>
+        <element name="mrow">
+          <attribute prefix="jobad" name="xref"><id/></attribute>
+          <hole/>
+        </element>
+      </element>
+  </notation>
+  <notation role="fragment:nobrackets">
+      <element name="mrow">
+        <attribute prefix="jobad" name="xref"><id/></attribute>
+          <hole/>
+      </element>
+  </notation>
+  <notation role="fragment:opsep">
+    <element name="mspace"><attribute name="width" value=".2em"/></element>
+  </notation>
+  <notation role="fragment:argsep">
+    <element name="mspace"><attribute name="width" value=".2em"/></element>
+  </notation>
+  <notation role="fragment:pre">
+     <hole index="0"/>
+     <fragment name="opsep"/>
+     <hole index="1"/>
+  </notation>
+  <notation role="fragment:operimp">
+     <hole index="0"/>
+     <element name="mrow">
+        <attribute name="class" value="implicit-arg implicit-arg-hidden"/>
+        <hole index="1"/>
+     </element>
+  </notation>
+  <notation role="fragment:tree">
+    <m:mrow>
+	    <m:mfrac>
+	      <m:mrow>
+	       <hole index="1"/>
+	      </m:mrow>
+	      <compute function="infer"/>
+	    </m:mfrac>
+	    <hole index="0"/>
+    </m:mrow>
+  </notation> 
+  
+  <notation role="fragment:foldee">
+    <h:table id="//fold//" class="decllist foldee" cellpadding="5px">
+      <hole index="0"/>
+    </h:table>
+  </notation>
+  
+  <notation role="fragment:folder">
+    <h:span class="keyword folder" onclick="$('#//fold//').toggle()">
+      <hole index="0"/>
+    </h:span>
+  </notation>
+  
+</style>
+
+
+<style name="html5" from="http://cds.omdoc.org/" to="text/html">
+  <include from="omdoc/mathml.omdoc?common"/>
+
+  <notation role="Toplevel">
+    <element name="div">
+      <attribute name="xmlns" value="http://www.w3.org/1999/xhtml"/>
+      <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
+                   <components/>
+    </element>
+  </notation>
+ 
+  <notation role="toplevel">
+    <element name="math">
+      <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
+      <attribute prefix="jobad" name="owner"><component index="2"/></attribute>
+      <attribute prefix="jobad" name="component"><component index="3"/></attribute>
+      <component index="0"/>
+    </element>
+  </notation>
+  <notation role="fragment:modname">
+   <element name="math">
+     <element name="mo">
+       <hole index="0"/>
+     </element>
+    </element>
+  </notation>
+  <notation role="fragment:symname">
+   <element name="math">
+     <element name="mo">
+       <attribute name="class" value="symdecl"/>
+       <hole index="0"/>
+     </element>
+    </element>
+  </notation>
+</style>
+
+<style name="xhtml" from="http://cds.omdoc.org/" to="text/xhtml+xml">
+  <include from="omdoc/mathml.omdoc?common"/>
+  
+    <notation role="Toplevel">
+    <element name="div">
+      <attribute name="xmlns" value="http://www.w3.org/1999/xhtml"/>
+      <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
+      <attribute prefix="xmlns" name="m" value="http://www.w3.org/1998/Math/MathML"/>
+      <attribute prefix="xmlns" name="h" value="http://www.w3.org/1999/xhtml"/>
+      <components/>
+    </element>
+  </notation>
+ 
+  <notation role="toplevel">
+    <element name="math">
+<!--      <attribute prefix="jobad" name="property" value="elevel:integer"/>
+      <attribute prefix="jobad" name="description" value="elidability level"/>
+      <attribute prefix="jobad" name="value" value="0"/> -->
+      <attribute name="xmlns" value="http://www.w3.org/1998/Math/MathML"/>
+      <attribute prefix="xmlns" name="m" value="http://www.w3.org/1998/Math/MathML"/>
+      <attribute prefix="xmlns" name="om" value="http://www.openmath.org/OpenMath"/>
+      <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
+      <attribute prefix="jobad" name="owner"><component index="1"/></attribute>
+      <attribute prefix="jobad" name="component"><component index="2"/></attribute>
+<!--      <element name="semantics"> -->
+        <component index="0"/>
+<!--    <element name="annotation-xml">
+          <component index="1"/>
+        </element>
+      </element> -->
+    </element>
+  </notation>
+
+  <notation role="fragment:modname">
+   <element prefix="m" name="math">
+     <element prefix="m" name="mo">
+       <hole index="0"/>
+     </element>
+    </element>
+  </notation>
+  <notation role="fragment:symname">
+   <element prefix="m" name="math">
+     <element prefix="m" name="mo">
+       <attribute name="class" value="symdecl"/>
+       <hole index="0"/>
+     </element>
+    </element>
+  </notation>
+  
+</style>
+
+</omdoc>
+
+
