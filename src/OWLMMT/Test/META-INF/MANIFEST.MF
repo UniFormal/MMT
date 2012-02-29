@@ -1,0 +1,5 @@
+id: owl-test
+source: owl
+source-base: http://oaff.omdoc.org/owl
+narration-base: http://docs.omdoc.org/
+catalog: http://cds.omdoc.org/ lib
