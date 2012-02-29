@@ -230,9 +230,11 @@
     <Declaration>
         <Class IRI="RefutedAssertion"/>
     </Declaration>
+    
     <Declaration>
         <Class IRI="RigorousKnowledgeItem"/>
     </Declaration>
+    
     <Declaration>
         <Class IRI="Rule"/>
     </Declaration>
@@ -618,11 +620,11 @@
         <Class IRI="InductiveDefinition"/>
         <Class IRI="RecursiveDefinition"/>
     </SubClassOf>
-
+<!--
    <Declaration>
         <NamedIndividual IRI="Informal"/>
     </Declaration>
-    
+ -->   
     <SubClassOf>
         <Class IRI="InformalKnowledgeItem"/>
         <ObjectHasValue>
@@ -743,11 +745,11 @@
             <Class IRI="Example"/>
         </ObjectSomeValuesFrom>
     </SubClassOf>
- 
+ <!--
     <Declaration>
         <NamedIndividual IRI="Rigorous"/>
     </Declaration>
-    
+ -->   
     <SubClassOf>
         <Class IRI="RigorousKnowledgeItem"/>
         <ObjectHasValue>
@@ -1132,11 +1134,11 @@
         <Class IRI="Theory"/>
         <Class IRI="Type"/>
     </DisjointClasses>
-
+<!--
     <Declaration>
         <NamedIndividual IRI="Computerized"/>
     </Declaration>
-    
+ -->   
     <ClassAssertion>
         <Class IRI="FormalityDegree"/>
         <NamedIndividual IRI="Computerized"/>
