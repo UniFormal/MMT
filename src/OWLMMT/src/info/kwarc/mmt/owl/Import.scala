@@ -8,10 +8,8 @@ import java.io.{File,FileWriter}
 import java.net.URI
 import scala.collection.mutable.Set // 
 import scala.collection.JavaConversions._ //
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.backend.{Compiler,CompilerError}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.libraries._
@@ -19,7 +17,6 @@ import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.api.objects._  //import jomdoc.objects.{Term,OMS,OMI}
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.utils.FileConversion._
 import scala.collection.immutable.List //
 import info.kwarc.mmt.api.metadata._
 
@@ -588,14 +585,6 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	    val value = annotationValueToLF(an.getValue) //Obj or a term
 	    new MetaDatum(key, value)
 	}
-}
-
-class OWLCompiler extends Compiler {
-   def isApplicable(src : String): Boolean = src == "owl"
-   def compile(in: utils.File, out: utils.File) : List[CompilerError] = {
-      
-      Nil
-   }
 }
 
 object Import {
