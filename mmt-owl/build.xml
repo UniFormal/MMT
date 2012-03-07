@@ -29,11 +29,7 @@
     </target>
 
     <target name="build-library" depends="compile-library">
-        <jar destfile="owl_mmt.jar">
-            <manifest>
-                <attribute name="Main-Class" value="info.kwarc.mmt.owl.Test2"/>
-                <attribute name="Class-Path" value="${scala.home}/scala-library.jar lib/mmt-api/mmt-api.jar lib/owlapi-bin.jar"/>
-            </manifest>
+        <jar destfile="mmt-owl.jar">
             <fileset dir="${basedir}/bin"/>
         </jar>
     </target>
