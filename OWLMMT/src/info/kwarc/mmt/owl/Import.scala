@@ -589,7 +589,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	    new MetaDatum(key, value)
 	}
 }
-
+/*
 class OWLCompiler extends Compiler {
    def isApplicable(src : String): Boolean = { src == "owl" }
    def compile(in: utils.File, out: utils.File) : List[CompilerError] = {
@@ -597,7 +597,7 @@ class OWLCompiler extends Compiler {
       Nil
    }
 }
-
+*/
 object Import {
 	def main(args: Array[String]) {
 		val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
