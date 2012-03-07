@@ -554,13 +554,15 @@ object Export {
 		*/
 		//val file : File = new File("examples\\ex2.owl");
 		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literalToOWL.owl")
+		//val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")		
+		//val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literalToOWL.owl")
 		
 		//val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXML.omdoc")		
 		//val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntologyOWLXMLToOWL.owl") 
 					
-	
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\TestTogether\\Base\\base.omdoc")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\TestTogether\\Base\\base2ToOWL.owl")
+		
 		val doc : DPath  = controller.read(source)
 		
 		def writeToFile(iri : IRI, trg : File) {
