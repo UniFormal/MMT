@@ -620,8 +620,9 @@ object Import {
 /*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.owl")		
 		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.omdoc")
 */		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")
+		
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\TestTogether\\Base\\base.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\TestTogether\\Base\\base2.omdoc")
 		
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
