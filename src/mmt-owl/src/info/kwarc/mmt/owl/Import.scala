@@ -589,7 +589,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	    new MetaDatum(key, value)
 	}
 }
-/*
+
 class OWLCompiler extends Compiler {
    def isApplicable(src : String): Boolean = { src == "owl" }
    def compile(in: utils.File, out: utils.File) : List[CompilerError] = {
@@ -597,7 +597,7 @@ class OWLCompiler extends Compiler {
       Nil
    }
 }
-*/
+
 object Import {
 	def main(args: Array[String]) {
 		val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
@@ -617,12 +617,9 @@ object Import {
 /*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.owl")		
 		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.omdoc")
 */		
-/*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.omdoc")
-*/		
 		
-		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\TestTogether\\Base\\base.owl")		
-		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\TestTogether\\Base\\base2.omdoc")
+		val source : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base.owl")		
+		val target : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc")
 		
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
