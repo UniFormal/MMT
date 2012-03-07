@@ -14,7 +14,7 @@ object Utils {
 }
 
 object OWLOMS {
-  val path = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl.omdoc") 
+  val path = new DPath(utils.URI("http", "latin.omdoc.org") / "logics" / "description" / "owl" / "owl.omdoc") 
   def apply(m: String, n: String) = {  OMID(path ? m ? n) }
   def unapply(t: Term) : Option[(String,String)] = { 
 	  t match {
@@ -25,7 +25,7 @@ object OWLOMS {
 }
 
 object OWL2OMS {
-   val path = new DPath(utils.URI("http", "cds.omdoc.org") / "logics" / "description" / "owl" / "owl2.omdoc") 
+   val path = new DPath(utils.URI("http", "latin.omdoc.org") / "logics" / "description" / "owl" / "owl2.omdoc") 
    def apply(m: String, n: String) = {  OMID(path ? m ? n) }
    def unapply(t: Term) : Option[(String,String)] = { 
 	   t match {
