@@ -591,7 +591,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 }
 
 class OWLCompiler extends Compiler {
-   def isApplicable(src : String): Boolean = src == "owl"
+   def isApplicable(src : String): Boolean = { src == "owl" }
    def compile(in: utils.File, out: utils.File) : List[CompilerError] = {
       
       Nil
@@ -620,8 +620,8 @@ object Import {
 /*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.owl")		
 		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\OMDocOntology\\OMDocOntologyOWLXML.omdoc")
 */		
-		//val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
-		//val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")
+		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.owl")		
+		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")
 		
 		
 		val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
