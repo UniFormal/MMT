@@ -14,7 +14,7 @@ import java.util.zip._
 
 import scala.collection.mutable._
 
-/* FR: there should be an update method that detects all changes to a directory/file and the rebuilds the archive for those
+/* FR: there should be an update method that detects all changes to a directory/file and then rebuilds the archive for those
  * this should be based on meta-information that stores for every file the timestamp of the last update
  * by comparing the current with the previous meta-information, missing/new/modified files can be detected and handled 
  * open question: should this integrated with SVN or standalone? probably the latter */
@@ -158,7 +158,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
        log("deleting " + f)
        f.delete
     }
-    /** deletes content, narration, notation, and relational; argument is are treated as paths in compiled */
+    /** deletes content, narration, notation, and relational; argument is treated as paths in narration */
     def deleteNarrCont(in:List[String] = Nil) {
        val controller = new Controller(NullChecker, report)
        traverse("narration", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
@@ -176,6 +176,7 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
           deleteFile(inFile)
        }
     }
+    
     def clean(in: List[String] = Nil, dim: String) {
        traverse(dim, in, _ => true) {case Current(inFile,_) =>
           deleteFile(inFile)
