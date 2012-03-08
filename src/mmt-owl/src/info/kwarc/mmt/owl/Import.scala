@@ -593,20 +593,48 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 class OWLCompiler extends Compiler {
    def isApplicable(src : String): Boolean = { src == "owl" }
    def compile(in: utils.File, out: utils.File) : List[CompilerError] = {
+       val source : File = in
+       val target : File = out
       
-      Nil
+       val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
+	   val checker = new FoundChecker(new DefaultFoundation, report)
+	   val controller = new Controller(checker, report)
+	   controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
+	   val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
+	   val importer = new Import (manager, controller)
+      
+       val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
+	   /*println("Loaded ontology: " + ontology)*/
+
+	   //manager.getOntologies.foreach {onto => ontologyToLF(manager, controller, onto )} sor ?
+	   val dpath : DPath = importer.ontologyToLF(ontology)
+	   val doc = controller.getDocument(dpath).toNodeResolved(controller.library)
+	  /* println(doc.toString)*/
+		
+	   target.getParentFile.mkdirs
+	   val file = new FileWriter(target)
+	   file.write(doc.toString)
+	   file.close
+	   
+	   Nil
+ 
+      
    }
 }
 
 object Import {
 	def main(args: Array[String]) {
-		val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
-		
+		/*val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
 		val checker = new FoundChecker(new DefaultFoundation, report)
 		val controller = new Controller(checker, report)
 		controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
 		val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 		val importer = new Import (manager, controller)
+		*/
+		
+	  //val owlcompiler = new OWLCompiler
+	
+		
 		/*	
 			val source : File = new File(arg(0))
 			val target : File = new File(arg(1))
@@ -618,6 +646,7 @@ object Import {
 		val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.omdoc")
 */		
 		
+		/*
 		val source : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base.owl")		
 		val target : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc")
 		
@@ -633,5 +662,6 @@ object Import {
 		val file = new FileWriter(target)
 		file.write(doc.toString)
 		file.close
+		*/
    }
 }
