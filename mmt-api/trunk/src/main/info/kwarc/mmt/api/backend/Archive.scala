@@ -14,18 +14,13 @@ import java.util.zip._
 
 import scala.collection.mutable._
 
-/* FR: there should be an update method that detects all changes to a directory/file and then rebuilds the archive for those
- * this should be based on meta-information that stores for every file the timestamp of the last update
- * by comparing the current with the previous meta-information, missing/new/modified files can be detected and handled 
- * open question: should this integrated with SVN or standalone? probably the latter */
-
 case class CompilationError(s: String) extends Exception(s)
 case class CompilationStep(from: String, to: String, compiler: Compiler)
 
 /** MAR archive management
   * @param root the root folder that contains the source folder
   * @param properties 
-  * @param compiler an already initialized compiler
+  * @param compsteps the list of compilation steps that produces an already initialized compiler
   * @param report the reporting mechanism
   */
 class Archive(val root: File, val properties: Map[String,String], compsteps: List[CompilationStep], report: Report) extends Storage {
@@ -43,14 +38,11 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
     /** set of files in the compiled folder, built in sourceToNarr */
     private val files = new LinkedHashMap[File, List[CompilerError]]
     
-    /** map from module MPaths found in narrToCont to its file in the narration folder */
-    private val modules = new LinkedHashMap[MPath, File]                              
-    
+    val sourceDim = compsteps.head.from
+    val compiledDim = compsteps.last.to
     val narrationDir = root / "narration"
     val contentDir = root / "content"
-    val sourceDir = root / "source"
     val relDir = root / "relational"
-    val compiledDir = root / "compiled"
     val flatDir = root / "flat"
     
     def includeDir(n: String) : Boolean = n != ".svn"
@@ -87,12 +79,14 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
         }
     }
     
+    // stores for each file the time of the last call of produceCompiled
+    private val compiledTimestamps = new Timestamps(root / sourceDim, root / "META-INF" / "timestamps" / sourceDim)
     /** apply all compilation steps, e.g., from "source" into "compiled" */
-    def compile(in : List[String] = Nil) {
+    def produceCompiled(in : List[String] = Nil) {
        compsteps map {case CompilationStep(from,to,compiler) =>
           val prefix = "[" + from + " -> " + to + "] "
           traverse(from, in, compiler.includeFile) {case Current(inFile, in) =>
-              val outFile = (compiledDir / in).setExtension("")
+              val outFile = (root / to / in).setExtension("")
               log(prefix + inFile + " -> " + outFile)
               val errors = compiler.compile(inFile, outFile)
               files(inFile) = errors
@@ -100,6 +94,34 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
                   log(errors.mkString(prefix, prefix + " ", ""))
           }
         }
+    }
+    /** deletes all files produced in the compilation chain */
+    def deleteCompiled(in: List[String] = Nil) {
+       compsteps map {case CompilationStep(_,to,_) =>
+          traverse(to, in, _ => true) {case Current(_, inPath) =>
+             deleteFile(root / to / inPath) //TODO delete files with correct extension
+          }
+        }
+    }
+    /** partially reruns produceCompiled using the time stamps and the system's last-modified information */  
+    def updateCompiled(in: List[String] = Nil) {
+       traverse(sourceDim, in, _ => true) {case Current(inFile, inPath) =>
+          compiledTimestamps.modified(inPath) match {
+             case Deleted =>
+                deleteCompiled(inPath)
+             case Added =>
+                produceCompiled(inPath)
+             case Modified =>
+                deleteCompiled(inPath)
+                produceCompiled(inPath)
+             case Unmodified => //nothing to do
+          }
+       }
+    }
+    
+    private def deleteFile(f: File) {
+       log("deleting " + f)
+       f.delete
     }
 
     /** Write a module to content folder */
@@ -132,10 +154,11 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
           case _ => // nothing to do
        }
     }
-    
+    // stores for each file the time of the last call of produceNarrCont
+    private val narrContTimestamps = new Timestamps(root / compiledDim, root / "META-INF" / "timestamps" / compiledDim)
     /** Generate content, narration, notation, and relational from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
-        traverse("compiled", in, extensionIs("omdoc")) {case Current(inFile, in) =>
+        traverse(compiledDim, in, extensionIs("omdoc")) {case Current(inFile, in) =>
            val narrFile = narrationDir / in
            log("[COMP ->  ]  " + inFile)
            log("[  -> NARR]     " + narrFile)
@@ -152,11 +175,8 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
               // write notation file using fresh iterator on all notations declared within one of the theories of this document
               writeToNot(mod, controller.notstore.getDefaults)
            }}
+           narrContTimestamps.set(in)
         }
-    }
-    private def deleteFile(f: File) {
-       log("deleting " + f)
-       f.delete
     }
     /** deletes content, narration, notation, and relational; argument is treated as paths in narration */
     def deleteNarrCont(in:List[String] = Nil) {
@@ -176,13 +196,27 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
           deleteFile(inFile)
        }
     }
+    /** partially reruns produceNarrCont using the time stamps and the system's last-modified information */  
+    def updateNarrCont(in: List[String] = Nil) {
+       traverse(compiledDim, in, _ => true) {case Current(inFile, inPath) =>
+          narrContTimestamps.modified(inPath) match {
+             case Deleted =>
+                deleteNarrCont(inPath)
+             case Added =>
+                produceNarrCont(inPath)
+             case Modified =>
+                deleteNarrCont(inPath)
+                produceNarrCont(inPath)
+             case Unmodified => //nothing to do
+          }
+       }
+    }
     
     def clean(in: List[String] = Nil, dim: String) {
        traverse(dim, in, _ => true) {case Current(inFile,_) =>
           deleteFile(inFile)
        }
     }
-        
     /** Extract scala from a dimension */
     def extractScala(in : List[String] = Nil, dim: String) {
         val inFile = root / dim / in

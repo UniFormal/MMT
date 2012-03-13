@@ -34,7 +34,8 @@ object Action extends RegexParsers {
          val segs = MyList.fromString(s.getOrElse(""), "/")
          ArchiveBuild(id, dim, segs)
    }
-   private def dimension = "compile" | "content" | "check" | "mws-flat" | "mws" | "flat" | "relational" | "notation" | "delete" | "clean" | "extract" | "integrate"
+   private def dimension = "compile" | "compile*" | "content" | "content*" | "check" | "mws-flat" | "mws" | "flat" |
+         "relational" | "notation" | "delete" | "clean" | "extract" | "integrate"
    private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
