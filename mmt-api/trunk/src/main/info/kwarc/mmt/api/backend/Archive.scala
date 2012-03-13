@@ -20,6 +20,7 @@ import scala.collection.mutable._
  * open question: should this integrated with SVN or standalone? probably the latter */
 
 case class CompilationError(s: String) extends Exception(s)
+case class CompilationStep(from: String, to: String, compiler: Compiler)
 
 /** MAR archive management
   * @param root the root folder that contains the source folder
@@ -27,7 +28,7 @@ case class CompilationError(s: String) extends Exception(s)
   * @param compiler an already initialized compiler
   * @param report the reporting mechanism
   */
-class Archive(val root: File, val properties: Map[String,String], compiler: Option[Compiler], report: Report) extends Storage {
+class Archive(val root: File, val properties: Map[String,String], compsteps: List[CompilationStep], report: Report) extends Storage {
     val id = properties("id")
     val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
@@ -86,19 +87,18 @@ class Archive(val root: File, val properties: Map[String,String], compiler: Opti
         }
     }
     
-    /** compile source into "compiled" */
+    /** apply all compilation steps, e.g., from "source" into "compiled" */
     def compile(in : List[String] = Nil) {
-       compiler match {
-          case None => throw CompilationError("no compiler defined")
-          case Some(c) => 
-             traverse("source", in, c.includeFile) {case Current(inFile, in) =>
-                 val outFile = (compiledDir / in).setExtension("omdoc")
-                 log("[SRC -> COMP] " + inFile + " -> " + outFile)
-                 val errors = c.compile(inFile, outFile)
-                 files(inFile) = errors
-                 if (!errors.isEmpty)
-                     log(errors.mkString("[SRC -> COMP] ", "\n[SRC -> COMP] ", ""))
-             }
+       compsteps map {case CompilationStep(from,to,compiler) =>
+          val prefix = "[" + from + " -> " + to + "] "
+          traverse(from, in, compiler.includeFile) {case Current(inFile, in) =>
+              val outFile = (compiledDir / in).setExtension("")
+              log(prefix + inFile + " -> " + outFile)
+              val errors = compiler.compile(inFile, outFile)
+              files(inFile) = errors
+              if (!errors.isEmpty)
+                  log(errors.mkString(prefix, prefix + " ", ""))
+          }
         }
     }
 

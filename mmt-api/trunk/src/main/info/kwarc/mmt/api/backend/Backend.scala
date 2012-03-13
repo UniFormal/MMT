@@ -247,40 +247,55 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
       //TODO: check if "root" is meta-inf file, branch accordingly
       if (root.isDirectory) {
           val properties = new scala.collection.mutable.ListMap[String,String]
-          var compiler : Option[Compiler] = None 
+          var compsteps : List[CompilationStep] = Nil 
           val manifest = root / "META-INF" / "MANIFEST.MF"
           if (manifest.isFile) {
-             File.ReadLineWise(manifest) {line =>
-                if (! line.trim.startsWith("//")) {
-                   val p = line.indexOf(":")
-                   val key = line.substring(0,p).trim
-                   val value = line.substring(p+1).trim
+             File.ReadLineWise(manifest) {case line =>
+                val tline = line.trim
+                if (! tline.startsWith("//") && ! tline.isEmpty) {
+                   val p = tline.indexOf(":")
+                   val key = tline.substring(0,p).trim
+                   val value = tline.substring(p+1).trim
                    properties(key) = value
+                   if (key == "catalog") {
+                      val List(a, b) = value.split("\\s").toList
+                      val uri = URI(a)
+                      val url = new java.io.File(root, b)
+                      val cat = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, url)
+                      log("adding catalog entry " + cat)
+                      stores ::= cat
+                   }
                 }
              }
-             properties.get("source") foreach {
-               src => extman.getCompiler(src) match {
-                 case Some(c) => compiler = Some(c)
-                 case None => log("no compiler registered for source " + src)
-               }
-             }
-             properties.get("catalog") foreach { entry =>
-                val List(a, b) = entry.split("\\s").toList
-                val uri = URI(a)
-                val url = new java.io.File(root, b)
-                val cat = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, url)
-                log("adding catalog entry " + cat)
-                stores ::= cat
+             properties.get("compilation") foreach {value =>
+                val l = value.split("->").toList.map(_.trim)  // List(..., format@folder, ...)
+                var dims = l map {s =>
+                   val i = s.indexOf("@")
+                   (s.substring(0,i), s.substring(i+1)) // List(..., (format,folder), ...)
+                }
+                val source :: compiles = dims
+                if (source._2 != "source")
+                   log("unexpected beginning of compilation chain: " + source)
+                properties("source") = source._1
+                val compiled = compiles.foldLeft[(String,String)](source) {case ((format,from), (newformat, to)) =>
+                   extman.getCompiler(format) match {
+                      case Some(c) => compsteps ::= CompilationStep(from, to, c)
+                      case None => log("no compiler registered for format " + format)
+                   }
+                   (newformat, to)
+                }
+                if (compiled != ("omdoc","compiled"))
+                   log("unexpected end of compilation chain:" + compiled)
              }
           }
-          val arch = new Archive(root, properties, compiler, report)
-          compiler foreach {_.register(arch)}
+          val arch = new Archive(root, properties, compsteps.reverse, report)
+          compsteps foreach {case CompilationStep(from,_,compiler) => compiler.register(arch, from)}
           addStore(arch)
           arch
       }
       else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
           // unpack it
-          val newRoot = new java.io.File(root.getParent + java.io.File.separator + (root.getName + "-unpacked"))
+          val newRoot = root.getParentFile / (root.getName + "-unpacked")
           extractMar(root, newRoot)
           // open the archive in newRoot
           openArchive(newRoot)

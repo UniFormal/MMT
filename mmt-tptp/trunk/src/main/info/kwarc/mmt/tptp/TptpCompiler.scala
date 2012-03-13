@@ -42,7 +42,7 @@ class TptpCompiler extends Compiler with QueryTransformer {
     translator.translate(fileDir, fileName, in)
     
     // write to output file
-    write(out, fileDir, fileName)
+    write(out.setExtension("omdoc"), fileDir, fileName)
     
     errors
   }
