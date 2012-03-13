@@ -274,9 +274,6 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
                    (s.substring(0,i), s.substring(i+1)) // List(..., (format,folder), ...)
                 }
                 val source :: compiles = dims
-                if (source._2 != "source")
-                   log("unexpected beginning of compilation chain: " + source)
-                properties("source") = source._1
                 val compiled = compiles.foldLeft[(String,String)](source) {case ((format,from), (newformat, to)) =>
                    extman.getCompiler(format) match {
                       case Some(c) => compsteps ::= CompilationStep(from, to, c)
@@ -284,8 +281,8 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
                    }
                    (newformat, to)
                 }
-                if (compiled != ("omdoc","compiled"))
-                   log("unexpected end of compilation chain:" + compiled)
+                if (compiled._1 != "omdoc")
+                   log("compilation chain does not end in omdoc:" + compiled)
              }
           }
           val arch = new Archive(root, properties, compsteps.reverse, report)

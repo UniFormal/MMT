@@ -238,8 +238,10 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case ArchiveBuild(id, dim, in) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             dim match {
-               case "compile" => arch.compile(in)
+               case "compile" => arch.produceCompiled(in)
+               case "compile*" => arch.updateCompiled(in)
                case "content" => arch.produceNarrCont(in)
+               case "content*" => arch.updateNarrCont(in)
                case "check" => arch.check(in, this)
                case "delete" => arch.deleteNarrCont(in)
                case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
