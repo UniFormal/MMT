@@ -46,8 +46,8 @@ class Twelf extends Compiler {
       cat.init    //  throws PortUnavailable
       catalogOpt = Some(cat)
    }
-   override def register(arch: Archive) {
-      addCatalogLocation(arch.sourceDir)
+   override def register(arch: Archive, dim: String) {
+      addCatalogLocation(arch.root / dim)
    }
    override def destroy {
       catalogOpt.foreach(_.destroy)
@@ -61,7 +61,7 @@ class Twelf extends Compiler {
    /** 
      * Compile a Twelf file to OMDoc
      * @param in the input Twelf file 
-     * @param out the file in which to put the generated OMDOC file
+     * @param out the file in which to put the generated OMDoc
      */
    def compile(in: File, out: File) : List[CompilerError] = {
       File(out.getParent).mkdirs
@@ -76,7 +76,7 @@ class Twelf extends Compiler {
          input.println("set catalog " + cat.queryURI)
       }
       input.println("loadFile " + in)
-      input.println("Print.OMDoc.printDoc " + in + " " + out)
+      input.println("Print.OMDoc.printDoc " + in + " " + out.setExtension("omdoc"))
       input.println("OS.exit")
       var line : String = null
       var errors : List[CompilerError] = Nil

@@ -108,7 +108,7 @@ class TptpTranslator {
           if (e.toString.endsWith("already exists")) {
             x match {
               case c: Constant => TptpTranslator.add(new Constant(c.home,
-                LocalName(c.name.last + "_rule"), c.tp, c.df, c.uv))
+                LocalName(c.name.last + "_rule"), c.tp, c.df, c.rl))
               case _ =>
                 println("Error adding " + x.toString)
                 println(e.toString)
@@ -200,7 +200,7 @@ class TptpTranslator {
             }
             Some(new Constant(OMMOD(theoryPath),
                               LocalName(item.getName), Some(tp),
-                              None, Individual(None)))
+                              None, None))
           case None => None
         }
       case _ => error("Unknown formula type, can not translate", item.getFormula)
@@ -307,7 +307,7 @@ class TptpTranslator {
     if (!constants.contains(name)) {
       val con = new Constant(OMMOD(theoryPath),
                              LocalName(name), Some(conType),
-                             None, Individual(None))
+                             None, None)
       constants.put(name, con)
     }
   }

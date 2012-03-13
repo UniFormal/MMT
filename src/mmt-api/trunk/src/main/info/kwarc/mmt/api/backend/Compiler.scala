@@ -18,17 +18,17 @@ trait Importer {
  * A Compiler transforms source files into OMDoc files
  */
 trait Compiler extends Importer {
-   /** source files that the compiler is able to process */
+   /** source file names that the compiler is able to process */
    def includeFile(n: String) : Boolean = true
 
    /** the compilation method
      * @param in the input file 
-     * @param the folder in which to put the output file(s)
+     * @param out the output file without extension
      */
    def compile(in: File, out: File) : List[CompilerError]
 
    /** registers an archive with this compiler */
-   def register(arch: Archive) {}
+   def register(arch: Archive, dim: String) {}
 
 }
 
