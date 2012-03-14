@@ -35,8 +35,8 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
        }
     }
     
-    /** set of files in the compiled folder, built in sourceToNarr */
-    private val files = new LinkedHashMap[File, List[CompilerError]]
+    /** compilation errors */
+    private val compErrors = new LinkedHashMap[List[String], List[CompilerError]]
     
     val sourceDim = compsteps.head.from
     val compiledDim = compsteps.last.to
@@ -83,15 +83,22 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
     private val compiledTimestamps = new Timestamps(root / sourceDim, root / "META-INF" / "timestamps" / sourceDim)
     /** apply all compilation steps, e.g., from "source" into "compiled" */
     def produceCompiled(in : List[String] = Nil) {
+       //reset errors
+       val CompilationStep(from, _ , compiler) = compsteps.head
+       traverse(from, in, compiler.includeFile) {case Current(_, inPath) => compErrors(inPath) = Nil}
+       //execute every compilation step for each file
        compsteps map {case CompilationStep(from,to,compiler) =>
           val prefix = "[" + from + " -> " + to + "] "
-          traverse(from, in, compiler.includeFile) {case Current(inFile, in) =>
-              val outFile = (root / to / in).setExtension("")
+          traverse(from, in, compiler.includeFile) {case Current(inFile, inPath) =>
+              val outFile = (root / to / inPath).setExtension("")
               log(prefix + inFile + " -> " + outFile)
-              val errors = compiler.compile(inFile, outFile)
-              files(inFile) = errors
-              if (!errors.isEmpty)
-                  log(errors.mkString(prefix, prefix + " ", ""))
+              // only compile if the previous compilation step did not report errors
+              if (compErrors(inPath) == Nil) {
+                 val errors = compiler.compile(inFile, outFile)
+                 compErrors(inPath) = errors
+                 if (!errors.isEmpty)
+                     log(errors.mkString(prefix, prefix + " ", ""))
+              }
           }
         }
     }
