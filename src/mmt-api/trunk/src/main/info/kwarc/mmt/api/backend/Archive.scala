@@ -91,7 +91,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
        }
        //execute every compilation step for each file
        compsteps.get map {case CompilationStep(from,to,compiler) =>
-          val prefix = "[" + from + " -> " + to + "] "
+          val prefix = "[SRC -> COMP] "
           traverse(from, in, compiler.includeFile) {case Current(inFile, inPath) =>
               val outFile = (root / to / inPath).setExtension("")
               log(prefix + inFile + " -> " + outFile)
