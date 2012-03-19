@@ -1,5 +1,5 @@
 id: owl-test
-source: owl
+compilation: owl@source -> omdoc@compiled
 source-base: http://oaff.omdoc.org/owl
 narration-base: http://docs.omdoc.org/
 catalog: http://cds.omdoc.org/ lib
