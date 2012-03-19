@@ -1,0 +1,205 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+
+ <Declaration>
+  <Class IRI="Person"/>
+ </Declaration>
+    
+ <Declaration>
+  <Class IRI="Parent"/>
+ </Declaration>
+    
+ <Declaration>
+  <Class IRI="ChildlessPerson"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Mother"/>
+ </Declaration>
+    
+ <Declaration>
+  <Class IRI="Father"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="MyBirthdayGuests"/>
+ </Declaration>
+    
+ <Declaration>
+  <NamedIndividual IRI="John"/>
+ </Declaration>
+        
+ <Declaration>
+  <NamedIndividual IRI="Bill"/>
+ </Declaration>
+ 
+ <Declaration>
+  <NamedIndividual IRI="Mary"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasChild"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasParent"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Woman"/>
+ </Declaration>
+    
+ <Declaration>
+  <Class IRI="Son"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="NarcisticPerson"/>
+ </Declaration>
+    
+ <Declaration>
+  <ObjectProperty IRI="loves"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="JohnsChildren"/>
+ </Declaration>
+
+ <EquivalentClasses>
+  <Class IRI="ChildlessPerson"/>
+  <ObjectIntersectionOf>
+   <Class IRI="Person"/>
+    <ObjectComplementOf>
+     <Class IRI="Parent"/>
+    </ObjectComplementOf>
+  </ObjectIntersectionOf>
+ </EquivalentClasses>
+      
+ <EquivalentClasses>
+  <Class IRI="Parent"/>
+  <ObjectUnionOf>
+   <Class IRI="Mother"/>
+   <Class IRI="Father"/>
+  </ObjectUnionOf>
+ </EquivalentClasses>
+                
+
+ <EquivalentClasses>
+  <Class IRI="Parent"/>
+  <ObjectSomeValuesFrom>
+   <ObjectProperty IRI="hasChild"/>
+    <Class IRI="Person"/>
+  </ObjectSomeValuesFrom>
+ </EquivalentClasses>
+    
+ <EquivalentClasses>
+  <Class IRI="Woman"/>
+  <ObjectAllValuesFrom>
+   <ObjectProperty IRI="hasChild"/>
+    <Class IRI="Son"/>
+  </ObjectAllValuesFrom>
+ </EquivalentClasses>
+    
+ <EquivalentClasses>
+  <Class IRI="JohnsChildren"/>
+  <ObjectHasValue>
+   <ObjectProperty IRI="hasParent"/>
+    <NamedIndividual IRI="John"/>
+   </ObjectHasValue>
+ </EquivalentClasses>
+  
+ <EquivalentClasses>
+  <Class IRI="NarcisticPerson"/>
+  <ObjectHasSelf>
+   <ObjectProperty IRI="loves"/>
+   </ObjectHasSelf>
+ </EquivalentClasses>
+ 
+ <EquivalentClasses>
+  <Class IRI="MyBirthdayGuests"/>
+  <ObjectOneOf>
+   <NamedIndividual IRI="Bill"/>
+   <NamedIndividual IRI="John"/>
+   <NamedIndividual IRI="Mary"/>
+  </ObjectOneOf>
+ </EquivalentClasses>
+ 
+ <ClassAssertion>
+  <ObjectExactCardinality cardinality="3">
+   <ObjectProperty IRI="hasChild"/>
+    <Class IRI="Parent"/>
+  </ObjectExactCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+ 
+  <ClassAssertion>
+  <ObjectMinCardinality cardinality="2">
+   <ObjectProperty IRI="hasChild"/>
+   <Class IRI="Parent"/>
+  </ObjectMinCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+  
+ <ClassAssertion>
+  <ObjectMaxCardinality cardinality="4">
+   <ObjectProperty IRI="hasChild"/>
+   <Class IRI="Parent"/>
+  </ObjectMaxCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+
+ <ClassAssertion>
+  <ObjectExactCardinality cardinality="3">
+   <ObjectProperty IRI="hasChild"/>
+   </ObjectExactCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+  
+ <ClassAssertion>
+  <ObjectMinCardinality cardinality="2">
+   <ObjectProperty IRI="hasChild"/>
+   </ObjectMinCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion>
+  
+ <ClassAssertion>
+  <ObjectMaxCardinality cardinality="4">
+   <ObjectProperty IRI="hasChild"/>
+    </ObjectMaxCardinality>
+  <NamedIndividual IRI="John"/>
+ </ClassAssertion> 
+ 
+ 
+ <!--
+all work, just write proper examples   
+dataAllValuesFrom:
+hasZip
+integer
+
+dataSomeValuesFrom:
+ <SubClassOf>
+  <Class IRI="Teenager"/>
+  <DataSomeValuesFrom>
+    <DataProperty IRI="hasAge"/>
+    <DatatypeRestriction>
+      <Datatype IRI="&xsd;integer"/>
+      <FacetRestriction facet="&xsd;minExclusive">
+        <Literal datatypeIRI="&xsd;integer">12</Literal>
+      </FacetRestriction>
+      <FacetRestriction facet="&xsd;maxInclusive">
+        <Literal datatypeIRI="&xsd;integer">19</Literal>
+      </FacetRestriction>
+    </DatatypeRestriction>
+  </DataSomeValuesFrom>
+</SubClassOf>
+
+ datacardinalities qualified
+ dataExactCardinality
+ dataMinCardinality
+ dataMaxCardinality
+		        
+ -->
+</Ontology>

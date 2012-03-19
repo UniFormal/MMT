@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+ 
+ <Declaration>
+  <Class IRI="Man"/>
+ </Declaration>
+ 
+  <Declaration>
+  <Class IRI="Woman"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasWife"/>
+ </Declaration>
+   
+ <Declaration>
+  <ObjectProperty IRI="hasSpouse"/>
+ </Declaration>
+    
+ <Declaration>
+  <ObjectProperty IRI="hasParent"/>
+ </Declaration>
+    
+ <Declaration>
+  <ObjectProperty IRI="hasChild"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="child"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasSon"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasDaughter"/>
+ </Declaration>
+  
+ <Declaration>
+  <ObjectProperty IRI="hasRelative"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="parentOf"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasAncestor"/>
+ </Declaration>
+ 
+ <SubObjectPropertyOf>
+  <ObjectProperty IRI="hasWife"/>
+  <ObjectProperty IRI="hasSpouse"/>
+ </SubObjectPropertyOf>
+
+ <EquivalentObjectProperties>
+  <ObjectProperty IRI="hasChild"/>
+  <ObjectProperty IRI="child"/>
+ </EquivalentObjectProperties>
+ 
+ <DisjointObjectProperties>
+  <ObjectProperty IRI="hasSon"/>
+  <ObjectProperty IRI="hasDaughter"/>
+ </DisjointObjectProperties>
+  
+ <InverseObjectProperties>
+  <ObjectProperty IRI="hasParent"/>
+  <ObjectProperty IRI="hasChild"/>
+ </InverseObjectProperties>
+ 
+ <ObjectPropertyDomain>
+  <ObjectProperty IRI="hasWife"/>
+  <Class IRI="Man"/>
+ </ObjectPropertyDomain>
+  
+ <ObjectPropertyRange>
+  <ObjectProperty IRI="hasWife"/>
+  <Class IRI="Woman"/>
+ </ObjectPropertyRange>
+ 
+ <FunctionalObjectProperty>
+  <ObjectProperty IRI="hasWife"/>
+ </FunctionalObjectProperty>
+   
+ <InverseFunctionalObjectProperty>
+  <ObjectProperty IRI="hasWife"/>
+ </InverseFunctionalObjectProperty>
+ 
+ <ReflexiveObjectProperty>
+  <ObjectProperty IRI="hasRelative"/>
+ </ReflexiveObjectProperty>
+ 
+ <IrreflexiveObjectProperty>
+  <ObjectProperty IRI="parentOf"/>
+ </IrreflexiveObjectProperty>
+ 
+ <SymmetricObjectProperty>
+  <ObjectProperty IRI="hasSpouse"/>
+ </SymmetricObjectProperty>
+    
+ <AsymmetricObjectProperty>
+  <ObjectProperty IRI="hasChild"/>
+ </AsymmetricObjectProperty>
+
+ <TransitiveObjectProperty>
+  <ObjectProperty IRI="hasAncestor"/>
+ </TransitiveObjectProperty>
+     
+</Ontology>

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+  
+ <Declaration>
+  <Class IRI="Person"/>
+ </Declaration>
+   
+ <Declaration>
+  <Class IRI="Woman"/>
+ </Declaration>
+
+ <Declaration>
+  <Class IRI="Human"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Mother"/>
+ </Declaration>
+    
+ <Declaration>
+  <Class IRI="Father"/>
+ </Declaration>
+    
+ <Declaration>
+  <Class IRI="Parent"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Man"/>
+ </Declaration>
+
+ <SubClassOf>
+  <Class IRI="Woman"/>
+  <Class IRI="Person"/>
+ </SubClassOf>
+   
+ <EquivalentClasses>
+  <Class IRI="Person"/>
+  <Class IRI="Human"/>
+ </EquivalentClasses>
+    
+ <DisjointClasses>
+  <Class IRI="Woman"/>
+  <Class IRI="Man"/>
+ </DisjointClasses>
+  
+ <DisjointUnion>
+  <Class IRI="Person"/>
+  <Class IRI="Man"/>
+  <Class IRI="Woman"/>
+ </DisjointUnion>  
+
+ 
+</Ontology>

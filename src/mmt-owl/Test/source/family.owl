@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+ 
+ <Declaration>
+  <Class IRI="Parent"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Mother"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Father"/>
+ </Declaration>
+
+ <Declaration>
+  <ObjectProperty IRI="hasWife"/>
+ </Declaration>
+ 
+ <Declaration>
+  <DataProperty IRI="hasAge"/>
+ </Declaration>
+   
+ <Declaration>
+  <NamedIndividual IRI="Liz"/>
+ </Declaration>
+ 
+ <Declaration>
+  <NamedIndividual IRI="Max"/>
+ </Declaration>
+  
+ <DataPropertyAssertion>
+  <DataProperty IRI="hasAge"/>
+   <NamedIndividual IRI="Max"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">25</Literal>
+ </DataPropertyAssertion>
+ 
+ <EquivalentClasses>
+  <Class IRI="Parent"/>
+  <ObjectUnionOf>
+   <Class IRI="Mother"/>
+   <Class IRI="Father"/>
+  </ObjectUnionOf>
+ </EquivalentClasses>
+ 
+ <ClassAssertion>
+  <Class IRI="Mother"/>
+  <NamedIndividual IRI="Liz"/>
+ </ClassAssertion>
+ 
+ <ClassAssertion>
+  <Class IRI="Father"/>
+  <NamedIndividual IRI="Max"/>
+ </ClassAssertion>
+ 
+ <ObjectPropertyAssertion>
+  <ObjectProperty IRI="hasWife"/>
+   <NamedIndividual IRI="Max"/>
+   <NamedIndividual IRI="Liz"/>
+ </ObjectPropertyAssertion>
+ 
+ 
+</Ontology>

@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" xml:base="http://example.com/owl/families/" ontologyIRI="http://example.com/owl/families">
+	<Prefix name="camera" IRI="http://www.xfront.com/owl/ontologies/camera/#"/>
+	
+	<Declaration>
+		<Class IRI="Man"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="hasAge"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="hasSalary"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="workDay"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="personID"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="birthDate"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="John"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Peter"/>
+	</Declaration>
+
+	<Declaration>
+		<DataProperty abbreviatedIRI="camera:cam"/>
+	</Declaration>
+	
+	<DataPropertyAssertion>
+		<DataProperty abbreviatedIRI="camera:cam"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#decimal">1234.5678</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#decimal">1234.5678</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="birthDate"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#dateTime">1956-06-25T10:00:00+1:00</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="personID"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#hexBinary">0203</Literal>
+	</DataPropertyAssertion>
+	
+	<Declaration>
+		<DataProperty IRI="watch"/>
+	</Declaration>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="watch"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral" xml:lang="es">Padre de familia</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<DataProperty IRI="watch"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral">Padre de familia</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="watch"/>
+		<NamedIndividual IRI="Peter"/>
+		<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">States that every man is a person.</Literal>
+	</DataPropertyAssertion>
+
+	<DatatypeDefinition>
+		<Datatype IRI="hasSalary"/>
+		<DatatypeRestriction>
+			<Datatype IRI="http://www.w3.org/2001/XMLSchema#decimal"/>
+			<FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
+				<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#decimal">15.1515</Literal>
+			</FacetRestriction>
+       <!--
+        <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#maxInclusive">
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#decimal">25.1515</Literal>
+       </FacetRestriction>
+       -->
+		</DatatypeRestriction>
+	</DatatypeDefinition>
+	
+<!--     
+  <DataPropertyAssertion>
+   <DataProperty IRI="workDay"/>
+   <NamedIndividual IRI="John"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#double">15.333333</Literal>
+ </DataPropertyAssertion>
+
+-->
+</Ontology>
