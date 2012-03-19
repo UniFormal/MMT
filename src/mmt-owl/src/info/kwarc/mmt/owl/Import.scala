@@ -592,9 +592,10 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 
 class OWLCompiler extends Compiler {
    def isApplicable(src : String): Boolean = { src == "owl" }
+   override def includeFile(f:  String) = f.endsWith("owl")
    def compile(in: utils.File, out: utils.File) : List[CompilerError] = {
        val source : File = in
-       val target : File = out
+       val target : File = out.setExtension("omdoc")
       
        val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
 	   val checker = new FoundChecker(new DefaultFoundation, report)
