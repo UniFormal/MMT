@@ -23,7 +23,7 @@ case class CompilationStep(from: String, to: String, compiler: Compiler)
   * @param compsteps the list of compilation steps that produces an already initialized compiler
   * @param report the reporting mechanism
   */
-class Archive(val root: File, val properties: Map[String,String], compsteps: List[CompilationStep], report: Report) extends Storage {
+class Archive(val root: File, val properties: Map[String,String], compsteps: Option[List[CompilationStep]], report: Report) extends Storage {
     val id = properties("id")
     val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
@@ -38,8 +38,8 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
     /** compilation errors */
     private val compErrors = new LinkedHashMap[List[String], List[CompilerError]]
     
-    val sourceDim = compsteps.head.from
-    val compiledDim = compsteps.last.to
+    val sourceDim = properties("source")
+    val compiledDim = properties("compiled")
     val narrationDir = root / "narration"
     val contentDir = root / "content"
     val relDir = root / "relational"
@@ -84,10 +84,13 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
     /** apply all compilation steps, e.g., from "source" into "compiled" */
     def produceCompiled(in : List[String] = Nil) {
        //reset errors
-       val CompilationStep(from, _ , compiler) = compsteps.head
-       traverse(from, in, compiler.includeFile) {case Current(_, inPath) => compErrors(inPath) = Nil}
+       compsteps match {
+          case Some(CompilationStep(from, _ , compiler) :: _) => 
+             traverse(from, in, compiler.includeFile) {case Current(_, inPath) => compErrors(inPath) = Nil}
+          case _ => return
+       }
        //execute every compilation step for each file
-       compsteps map {case CompilationStep(from,to,compiler) =>
+       compsteps.get map {case CompilationStep(from,to,compiler) =>
           val prefix = "[" + from + " -> " + to + "] "
           traverse(from, in, compiler.includeFile) {case Current(inFile, inPath) =>
               val outFile = (root / to / inPath).setExtension("")
@@ -104,7 +107,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Lis
     }
     /** deletes all files produced in the compilation chain */
     def deleteCompiled(in: List[String] = Nil) {
-       compsteps map {case CompilationStep(_,to,_) =>
+       compsteps.getOrElse(Nil) map {case CompilationStep(_,to,_) =>
           traverse(to, in, _ => true) {case Current(_, inPath) =>
              deleteFile(root / to / inPath) //TODO delete files with correct extension
           }

@@ -247,8 +247,8 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
       //TODO: check if "root" is meta-inf file, branch accordingly
       if (root.isDirectory) {
           val properties = new scala.collection.mutable.ListMap[String,String]
-          var compsteps : List[CompilationStep] = Nil 
           val manifest = root / "META-INF" / "MANIFEST.MF"
+          var compsteps : Option[List[CompilationStep]] = Some(Nil) 
           if (manifest.isFile) {
              File.ReadLineWise(manifest) {case line =>
                 val tline = line.trim
@@ -274,19 +274,25 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
                    (s.substring(0,i), s.substring(i+1)) // List(..., (format,folder), ...)
                 }
                 val source :: compiles = dims
+                properties("format") = source._1
+                properties("source") = source._2
                 val compiled = compiles.foldLeft[(String,String)](source) {case ((format,from), (newformat, to)) =>
                    extman.getCompiler(format) match {
-                      case Some(c) => compsteps ::= CompilationStep(from, to, c)
-                      case None => log("no compiler registered for format " + format)
+                      case Some(c) => compsteps = compsteps map {CompilationStep(from, to, c) :: _}
+                      case None =>
+                        log("no compiler registered for format " + format)
+                        compsteps = None
                    }
                    (newformat, to)
                 }
                 if (compiled._1 != "omdoc")
                    log("compilation chain does not end in omdoc:" + compiled)
+                else
+                   properties("compiled") = compiled._2
              }
           }
-          val arch = new Archive(root, properties, compsteps.reverse, report)
-          compsteps foreach {case CompilationStep(from,_,compiler) => compiler.register(arch, from)}
+          val arch = new Archive(root, properties, compsteps map {_.reverse}, report)
+          compsteps foreach {_ foreach {case CompilationStep(from,_,compiler) => compiler.register(arch, from)}}
           addStore(arch)
           arch
       }
