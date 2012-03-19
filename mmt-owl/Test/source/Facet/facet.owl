@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+
+
+  <Declaration>
+   <Datatype IRI = "personAge"/>
+  </Declaration>
+  
+   <DatatypeDefinition>
+     <Datatype IRI="personAge"/>
+     <DatatypeRestriction>
+       <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
+       <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
+       </FacetRestriction>
+       <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#maxInclusive">
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">150</Literal>
+       </FacetRestriction>
+     </DatatypeRestriction>
+     </DatatypeDefinition>
+     
+     </Ontology>

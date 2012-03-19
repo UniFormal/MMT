@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+
+ <Declaration>
+  <ObjectProperty IRI="hasParent"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasChild"/>
+ </Declaration>
+ 
+ <Declaration>
+   <Class IRI="Orphan"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Dead"/>
+ </Declaration>
+  
+ <Declaration>
+  <DataProperty IRI="hasAge"/>
+ </Declaration>
+
+ <Declaration>
+  <NamedIndividual IRI="John"/>
+ </Declaration>
+ 
+ <InverseObjectProperties>
+  <ObjectProperty IRI="hasParent"/>
+  <ObjectProperty IRI="hasChild"/>
+ </InverseObjectProperties>
+ 
+ <EquivalentClasses>
+  <Class IRI="Orphan"/>
+  <ObjectAllValuesFrom>
+    <ObjectInverseOf>
+      <ObjectProperty IRI="hasChild"/>
+    </ObjectInverseOf>
+    <Class IRI="Dead"/>
+  </ObjectAllValuesFrom>
+ </EquivalentClasses>
+ 
+ <DataPropertyAssertion>
+     <DataProperty IRI="hasAge"/>
+     <NamedIndividual IRI="John"/>
+     <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">51</Literal>
+ </DataPropertyAssertion>
+    
+ 
+ </Ontology>

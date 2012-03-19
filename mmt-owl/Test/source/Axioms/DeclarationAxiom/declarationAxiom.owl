@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+     
+ <Declaration>
+  <Class IRI="Person"/>
+ </Declaration>
+        
+ <Declaration>
+  <Datatype IRI="SSN"/>
+ </Declaration>
+     
+ <Declaration>
+  <DataProperty IRI="hasAge"/>
+ </Declaration>
+   
+ <Declaration>
+  <NamedIndividual IRI="John"/>
+ </Declaration>
+   
+ <Declaration>
+  <ObjectProperty IRI="hasChild"/>
+ </Declaration>
+<!-- 
+builtin
+annotation property
+-->
+ 	
+ 
+ </Ontology>

@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+    
+ <Declaration>
+  <Datatype IRI="personAge"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Datatype IRI="majorAge"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Datatype IRI="minorAge"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Datatype IRI="toddlerAge"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Datatype IRI="UnionDI"/>
+ </Declaration>
+ 
+ <DatatypeDefinition>
+  <Datatype IRI="majorAge"/>
+   <DataIntersectionOf>
+    <Datatype IRI="personAge"/>
+    <DataComplementOf>
+     <Datatype IRI="minorAge"/>
+    </DataComplementOf>
+   </DataIntersectionOf>
+ </DatatypeDefinition>
+
+ <DatatypeDefinition>
+  <Datatype IRI="toddlerAge"/>
+  <DataOneOf>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">1</Literal> 
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">2</Literal>
+  </DataOneOf>
+ </DatatypeDefinition>
+ 
+  <DatatypeDefinition>
+   <Datatype IRI="UnionDI"/>
+   <DataUnionOf>
+    <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
+    <Datatype IRI="http://www.w3.org/2002/07/owl#real"/>
+  </DataUnionOf> 
+  </DatatypeDefinition>
+  
+ <DatatypeDefinition>
+  <Datatype IRI="personAge"/>
+  <DatatypeRestriction>
+   <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
+    <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
+     <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
+    </FacetRestriction>
+   </DatatypeRestriction>
+ </DatatypeDefinition>
+
+ <!--
+ more than one facet restriction
+ <DatatypeDefinition>
+  <Datatype IRI="personAge"/>
+  <DatatypeRestriction>
+   <Datatype IRI="&xsd;integer"/>
+    <FacetRestriction facet="&xsd;minInclusive">
+     <Literal datatypeIRI="&xsd;integer">0</Literal>
+    </FacetRestriction>
+    <FacetRestriction facet="&xsd;maxInclusive">
+     <Literal datatypeIRI="&xsd;integer">150</Literal>
+    </FacetRestriction>
+   </DatatypeRestriction>
+ </DatatypeDefinition>
+ 
+ -->
+  
+ </Ontology>
