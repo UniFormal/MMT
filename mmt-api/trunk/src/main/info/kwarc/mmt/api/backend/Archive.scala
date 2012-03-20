@@ -25,7 +25,6 @@ case class CompilationStep(from: String, to: String, compiler: Compiler)
   */
 class Archive(val root: File, val properties: Map[String,String], compsteps: Option[List[CompilationStep]], report: Report) extends Storage {
     val id = properties("id")
-    val sourceBase = Path.parseD(properties.getOrElse("source-base", ""), utils.mmt.mmtbase)
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
    
     private val custom : ArchiveCustomization = {
@@ -273,7 +272,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     def readRelational(in: List[String] = Nil, controller: Controller) {
        if ((root / "relational").exists) {
           traverse("relational", in, extensionIs("rel")) {case Current(inFile, _) =>
-             ontology.RelationalElementReader.read(inFile, sourceBase, controller.depstore)
+             ontology.RelationalElementReader.read(inFile, narrationBase, controller.depstore)
           }
        }
     }
