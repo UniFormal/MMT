@@ -1,35 +1,51 @@
 An MMT archive \cite{HIJKR:dimensions:11} organizes connected documents in a file system structure. This is inspired by and similar to the project view in software engineering, specifically in Java. MMT provides archive-level functions for building and indexing document collections.
 
+Archives can be manipulated via the API functions or via the shell (see Sect.~\ref{sec:shell:archives}).
+
 \paragraph{Dimensions}
-MMT supports the following dimensions, which occur as toplevel folders in an archive:
+MMT supports the following dimensions, which occur as toplevel folders in an archive.
+The following dimensions contain the same tree of subfolders and files.
 \begin{itemize}
- \item source: source files in any language
- \item compiled: one MMT file for every source file, following the same directory structure
- \item content: one file for every MMT module with their directory structure induced by their MMT URI
- \item narration: one MMT file for every source file, similar to the ones in compiled but containing links into the content instead of MMT modules
- \item relational: relational index
- \item mws: MathWebSearch \cite{mathwebsearch} index
+ \item \texttt{source}: source files in any language
+ \item \texttt{compiled}: {\mmt} imports of the source files
+ \item \texttt{narration}: similar to the ones in \texttt{compiled} but all {\mmt} modules are replaced with {\mmt} URI-based references
+ \item \texttt{notation}: index of notations
+ \item \texttt{relational}: relational index
+ \item \texttt{mws}: MathWebSearch \cite{mathwebsearch} index
+\end{itemize}
+The names of the folders \texttt{source} and \texttt{compiled} may be changed by using the \texttt{compilation} key in the manifest (see below).
+
+The \texttt{content} dimension contains one file for every MMT module. The directory structure follows that of the {\mmt} namespaces. In particular, the folder immediate below \texttt{content} is named by the scheme and the authority of the namespace URI. (\texttt{..} is used as a separator instead of \texttt{://} to avoid character restrictions of operating systems.) Below these folders, one subfolder is used for every path segment.
+
+\paragraph{Manifest}
+Archives must contain a file \texttt{META-INT/MANIFEST.MF}. Syntactically, this file consists of line-wise \texttt{key:value} pairs. Except for colons in keys, all characters are allowed. However, beginning and trailing whitespace in keys and values is ignored. Empty lines and lines starting with \texttt{//} are ignored.
+Unless otherwise mentioned, keys should occur only once and later occurrences overwrite previous values.
+
+The following keys have a predefined meaning and are used by {\mmt}:
+\begin{itemize}
+ \item \texttt{id}: The identifier of the archive.
+ \item \texttt{compilation}: A string of the form \texttt{format\_1 @ folder\_1 -> ... -> format\_n @ folder\_n}. This identifies a compilation chain used for the compilation of the archive. \texttt{format\_i} defines the format of the files in \texttt{folder\_i}. \texttt{folder\_1} and \texttt{folder\_n} identify the folders storing the \texttt{source} and \texttt{compiled} dimensions; consequently, \texttt{format\_1} is the source format of the archive, and \texttt{format\_n} should be \texttt{omdoc}.
+ \item \texttt{narration-base}: This is a URI that gives the base URI for the \texttt{source} documents and all dimensions with the same folder structure.
+ \item \texttt{catalog}: A pair $(i,l)$ separated by whitespace, which produces a prefix catalog entry (see Sect.~\ref{sec:catalog}). $l$ is interpreted relative to the \texttt{file:} URL of the archive (i.e., root folder of the archive or the containing \texttt{mar} file). This key may occur multiple times.
 \end{itemize}
 
-\paragraph{Metadata}
-Archives may contain meta in a file \texttt{META-INT/MANIFEST.MF}. The syntax of this file is line-wise \texttt{key:value} pairs. Keys may occur only once.
-Predefined keys are:
-\begin{itemize}
- \item \texttt{id}: a string. This identifies the archive.
- \item \texttt{source}: a string. This identifies the source language and is used to choose a compiler.
- \item \texttt{narration-base}: a URI. URIs for the source/narration documents are formed by concatenating this URI with the path within the archive (excluding the dimension).
- \item \texttt{source-base}: a URI. A URI that is used by compilers as the base URI for source files.
-\end{itemize}
+\ednote{TODO: \texttt{narration-base} should be \texttt{base}}
+\ednote{Additional key-value pairs are ignored except for passing them on to compilers.}
 
-\paragraph{Compilers}
-Compiler can be provided as plugins to MMT. They are classes that implement the MMT compiler interface (see Sect.~\ref{sec:shell}). This class defines an abstract file-to-file compile method. It also has a method to test applicability: This method is passed the \texttt{source} string above when finding a matching compiler for an archive.
-
-\paragraph{Build Process}
+\paragraph{Build Processes}
 MMT provides to build the dimensions of an archive, starting from the source:
-\begin{itemize}
- \item \texttt{compiled} is generated from \texttt{source} using a matching compiler.
- \item \texttt{content} and \texttt{narration} are generated generically from \texttt{content}.
- \item Indices are generated generically from \texttt{content} and \texttt{narration}.
- \item a \texttt{.mar} that packages all dimensions is generated generically.
-\end{itemize}
+\begin{description}
+ \item[Compilation] \texttt{compiled} is generated from \texttt{source}.
+ \item[Indexing] \texttt{content}, \texttt{narration}, \texttt{relational}, and \texttt{notation} are generated generically from \texttt{compiled}.
+ \item[Packaging] A \texttt{id.mar} is generated generically by packaging all dimensions.
+\end{description}
 
+The compilation works as follows. According to the compilation chain defined in the manifest, compilers are called that read the files in \texttt{folder\_i} and write files into \texttt{folder\_i+1}. For each step in the chain, the appropriate compiler is chosen according to the \texttt{format\_i}.
+The available compilers are provided as extensions (see Sect.~\ref{sec:extensions}).
+
+\paragraph{Catalog Entries}
+There are two ways to generate catalog entries for accessing the content of an archive.
+\begin{itemize}
+ \item If an archive is added, its \texttt{content} folder is added to the catalog. More specifically, the URI of each module produced during compilation is mapped to the \texttt{file} URL of that module in the \texttt{content}.
+ \item \texttt{catalog} keys in the manifest generate catalog entries as described above.
+\end{itemize}

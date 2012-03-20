@@ -1,0 +1,7 @@
+All access to {\mmt} knowledge items is done via URIs, not via URLs.
+Therefore, the \emph{catalog} is necessary: It maintains a translation map from URIs to URLs.
+It is initially empty and built incrementally.
+
+The most important kind of catalog entry is a \emph{prefix}-entry: A catalog entry $(i,l)$ where $i$ is a URI and $l$ is a URL has the effect that every {\mmt}  URI $l/r$ is translated to $i/r$.
+
+Catalog entries are created automatically or explicitly through archives (see Sect.~\ref{sec:archives}) or explicitly via shell commands (see Sect.~\ref{sec:shell:catalog}).

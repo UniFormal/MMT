@@ -1,13 +1,29 @@
-\paragraph{Invocation}
 The MMT shell is invoked by
 \begin{center}
-\code{java -jar jomdoc.jar}
+\code{java -cp scala/*;mmt-api.jar info.kwarc.mmt.api.RunNull}
 \end{center}
-Further command line parameters are passed to the shell and executed as a command. In particular, the command \code{file F} can be used to execute a startup file. After invocation, the shell can be controlled via STDIN/STDOUT.
+Further command line parameters are passed to the shell and executed as a command (see below). In particular,
+\begin{center}
+  \code{java -cp mmt-api.jar info.kwarc.mmt.api.RunNull file F}
+\end{center}
+can be used to execute a startup/configuration file \code{F}. After invocation, the shell can be controlled via STDIN/STDOUT.
+
+The \code{-cp} parameter defines the Java classpath. Besides the main file \code{mmt-api.jar}, it must contain the jar file(s) of the Scala library \cite{scala}, which is here assumed to reside in a folder \code{scala}. Note that the classpath is a list of entries separated by \code{;} on Windows and \code{:} on Unix.
+
+Additional classpath entries are necessary in the following cases:
+\begin{itemize}
+\item If the {\mmt} web server is used, the classpath must contain \code{tiscaf.jar} \cite{tiscaf}.
+\item If an {\mmt} extension is used, it (and all its dependencies) must be in the classpath.
+\end{itemize}
+
+It is often reasonable to increase the memory available to {\mmt} by using the appropriate Java parameter as in (here: 1024 MB) 
+\begin{center}
+\code{java -Xmx1024m -cp scala/*;mmt-api.jar info.kwarc.mmt.api.RunNull}
+\end{center}
 
 Besides caching all loaded documents, the shell only maintains one state variable: a base MMT-URI. All paths are interpreted relative to this base.
 
-\paragraph{General Syntax}
+\subsection{General Syntax}
 \emph{Commands} are given by a keyword followed by a whitespace-separated list of arguments and terminated by a newline. Empty lines and lines starting with \code{//} are ignored.
 
 We use the following meta-variables for command arguments:
@@ -19,7 +35,7 @@ We use the following meta-variables for command arguments:
 
 An exception are \emph{actions}, where the keyword is placed after the first argument in the style of OO-programming, see below.
 
-\paragraph{Basic Commands}
+\subsection{Basic Commands}\label{sec:shell:basic}
 \begin{itemize}
 \item \code{log+ C}, \code{log- C} : Switch on/off logging of component \code{C}.
 \item \code{base U}: Sets the base path to \code{U}.
@@ -27,7 +43,7 @@ An exception are \emph{actions}, where the keyword is placed after the first arg
 \item \code{exit}: Quits the shell.
 \end{itemize}
 
-\paragraph{Interacting with Documents}
+\subsection{Interacting with Documents}\label{sec:shell:interact}
 The shell stores a set of documents that are parsed into abstract data structures and made available for querying.
 
 \begin{itemize}
@@ -38,21 +54,8 @@ The shell stores a set of documents that are parsed into abstract data structure
 \end{itemize}
 If the execution of these commands, requires documents that have not been read yet, these are retrieved automatically. This happens, for example, if the read document imports a theory from another document, or if the requested path points to a document that has not been read yet.
 
-Both reading and accessing documents is done via document URIs, not via URLs. Therefore, when reading documents, a catalog is necessary to translate URIs into URLs (see below).
-
-\paragraph{Catalog Commands}
-The catalog maintains a translation map from URIs to URLs. It is initially empty so that no addressing is possible. The following commands add entries to the catalog.
-
-\begin{itemize}
-\item \code{catalog F}: This is used to add local working copies to the catalog. It takes a file \code{F} in the locutor (see \url{https://locutor.kwarc.info/})  registry format and creates an entry for every working copy listed in it. The repository URLs are treated as URIs that are translated to the location of the local working copy. (See the example file \code{locutor.xml} file in the distribution.)
-\item \code{local}: This adds an entry for the local file system. URIs of the form \code{file:///U} are translated to themselves.
-\item \code{ombase F}: This creates a catalog entry for an OMBase server described in \code{F}. See the example file \code{ombase.xml} in the documentation.
-\end{itemize}
-
-\paragraph{Extension Commands}
-MMT provides several interfaces for language-specific customization in external implementations. All extensions must provide a class \code{C} (as a qualified Java class name using dots to separate components), instantiate a certain interface, and must have a constructor that takes no arguments. \code{ARGS} is a whitespace-separated list of string.
-
-An extension will be initialized by calling its \code{init} method, to which \code{ARGS} is passed as a Scala \code{List[String]}. Instantiation uses Java reflection, and it is the user's responsibility to make sure that \code{C} is on the class path at run time.
+\subsection{Extension Commands}\label{sec:shell:extensions}
+Extensions are registered using commands of the form \texttt{kind C ARGS}. \code{C} gives the qualified class name, and \code{ARGS} is a whitespace-separated list of arguments that is passed to the extension during initialization.
 
 \begin{itemize}
 \item \code{importer C ARGS}: This registers an importer. \code{C} must extend \texttt{info.kwarc.mmt.api.backend.Importer}. Importers are used to translate custom syntax into MMT. Relevant subinterfaces of \texttt{Importer} are
@@ -64,7 +67,7 @@ Importers may maintain their own data structures and auxiliary threads; if they 
 \item \code{foundation C ARGS}: This registers a foundation in the sense of \cite{RK:mmt:10}. A foundation implements type and equality checking for a certain foundational theory.
 \end{itemize}
 
-\paragraph{Archive Commands}
+\subsection{Archive Commands}\label{sec:shell:archives}
 The following commands permit the registration and manipulation of archives:
 
 \begin{itemize}
@@ -73,7 +76,7 @@ The following commands permit the registration and manipulation of archives:
 \item \code{archive mar F}: This builds the \texttt{mar} file and stores it in \code{F}.
 \end{itemize}
 
-\paragraph{Actions}
+\subsection{Actions}\label{sec:shell:actions}
 Actions provide a simple infix syntax to pipe retrieved knowledge items through some typed post-processing operations.
 
 The command $O\;A\;a_1\;\ldots\;a_n$ evaluates $O$ and then applies action $A$ with additional arguments $a_i$. This corresponds to $O.A(a_1,\ldots,a_n)$ in OO-programming. Actions may be chained: $O\;A\;a_1\;\ldots\;a_n \;B\;b_1\;\ldots\;b_n$ corresponds to $O.A(a_1,\ldots,a_n).B(b_1,\ldots,b_n)$. Actions are classified according to the type of $O$, which is MMT-URI, MMT-Object, or Non-MMT-Object, and the return type, which is MMT-Object, Non-MMT-object, or Nothing.
@@ -117,3 +120,19 @@ writes the presentation of the closure of the theory of groups to the file \code
 \code{U/algebra/algebra.omdoc?group?inv component type xml}
 writes the type type of \code{U/algebra/algebra.omdoc?group?inv} in XML to standard output.
 \end{example}
+
+\subsection{Catalog Commands}\label{sec:shell:catalog}
+The following catalog commands can be used to add catalog entries explicitly:
+
+\begin{itemize}
+\item \code{catalog F}: This is used to add local working copies to the catalog. It takes a file \code{F} in the locutor (see \url{https://locutor.kwarc.info/})  registry format and creates an entry for every working copy listed in it. The repository URLs are treated as URIs that are translated to the location of the local working copy. (See the example file \code{locutor.xml} file in the distribution.)
+\item \code{local}: This adds an entry for the local file system. URIs of the form \code{file:///U} are translated to themselves.
+\item \code{ombase F}: This creates a catalog entry for an OMBase server described in \code{F}. See the example file \code{ombase.xml} in the documentation.
+\end{itemize}
+
+\subsection{Server Commands}\label{sec:shell:server}
+The MMT HTTP server (see Sect.~\ref{sec:http}) is controlled by the commands
+\begin{itemize}
+\item \code{server on P}: This starts the server on port \code{P}.
+\item \code{server off}: This shuts down the server.
+\end{itemize}

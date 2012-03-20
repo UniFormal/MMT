@@ -1,7 +1,7 @@
 \documentclass{article}
 \usepackage{graphicx,url,wrapfig,amsmath,amssymb}  %standard packages
 \usepackage{amsthm}
-\usepackage[show]{ed/ed} %for ednotes
+\usepackage[hide]{ed/ed} %for ednotes
 %\usepackage{xkeyval} %needed for listings package
 %\usepackage{listings} %listings
 %\usepackage{lstomdoc} %for omdoc listings
@@ -19,11 +19,11 @@
 
 \usepackage{local}
 
-\usepackage{hyperref} %pdf hyper links, load this last
+\usepackage[bookmarksnumbered,colorlinks,linkcolor=blue,citecolor=red,urlcolor=gray]{hyperref} %pdf hyper links, load this last
 
 \setlength{\hfuzz}{3pt} \hbadness=10001 %make box warning less strict
 
-\title{The {\mmt} Language and System}
+\title{The {\mmt} API Manual}
 \author{Florian Rabe \\
 Jacobs University Bremen}
 
@@ -45,22 +45,30 @@ Jacobs University Bremen}
 %\begin{abstract}
 %\end{abstract}
 
-\section{Syntax}\label{sec:syntax}
-\input{syntax}
+\section{{\mmt} XML Syntax and {\mmt} URIs}\label{sec:syntax}
+  \input{syntax}
+
+\ednote{add API overview here}
 
 \section{Notations}\label{sec:notations}
-\input{notations}
+  \input{notations}
+
+\section{Catalog}\label{sec:catalog}
+  \input{catalog}
 
 \section{Archives}\label{sec:archives}
-\input{archives}
+  \input{archives}
 
-\section{The Shell}\label{sec:shell}
-\input{shell}
+\section{Extensions}\label{sec:extensions}
+  \input{extensions}
 
-\section{The HTTP Server}\label{sec:http}
-\input{http}
+\section{Shell}\label{sec:shell}
+  \input{shell}
+
+\section{HTTP Server}\label{sec:http}
+  \input{http}
 
 
 \bibliographystyle{alpha}
-\input{bibs}
+\bibliography{bib/systems,bib/pub_rabe,kwarc}
 \end{document}

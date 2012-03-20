@@ -88,7 +88,7 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
     \attribute{base}{\mmturi}{the base URI for the unit's content, relative to base URI given by parent, empty by default}
   \end{attdescr}
   \children{omdoc* \& xref* \& module*}{}
-  \comment{If this occurs as the root of a document that has a URL, then the name must be omitted or be equal to the last segment of that URL's path.}
+  \xmlcomment{If this occurs as the root of a document that has a URL, then the name must be omitted or be equal to the last segment of that URL's path.}
 \end{elemdescr}
 
 %\begin{elemdescr}
@@ -98,7 +98,7 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
 %    \attribute{base}{\mmturi}{the base URI for the document's content, relative to document URI, empty by default}
 %  \end{attdescr}
 %  \children{omdoc* \& omgroup \& xref* \& module*}{}
-%  \comment{If this occurs as the root of a document that has a URL, then the name must be omitted or be equal to the last segment of that URL's path.}
+%  \xmlcomment{If this occurs as the root of a document that has a URL, then the name must be omitted or be equal to the last segment of that URL's path.}
 %\end{elemdescr}
 %
 %\begin{elemdescr}
@@ -108,7 +108,7 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
 %    \attribute{base}{\mmturi}{the base URI for the omtext's content, relative to the base URI given by the parent, empty by default}
 %  \end{attdescr}
 %  \children{p* \& TEXT* }{}
-%  \comment{This represents unstructured text such as a paragraph.}
+%  \xmlcomment{This represents unstructured text such as a paragraph.}
 %\end{elemdescr}
 
 \subsection{Module Level Elements}
@@ -121,7 +121,7 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
     \attribute{meta}{\mmturi}{the URI of the optional meta-theory, relative to base URI given by parent}
   \end{attdescr}
   \children{(include* \& symbol*) | definition\{theory\}}{}
-  \comment{Here, a symbol can be a constant, a structure, or a notation. Definitions are actually not supported yet and only added for symmetry.}
+  \xmlcomment{Here, a symbol can be a constant, a structure, or a notation. Definitions are actually not supported yet and only added for symmetry.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -133,7 +133,7 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
     \attribute{to}{\mmturi}{the codomain of the view, relative to base URI given by parent}
   \end{attdescr}
   \children{(include* \& assignment*) | definition\{morph\}}{}
-  \comment{An assignment can be an assignment to a constant or an assignment to a structure.}
+  \xmlcomment{An assignment can be an assignment to a constant or an assignment to a structure.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -145,7 +145,7 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
     \attribute{defaults}{\snippet{use} $|$ \snippet{ignore}}{defaults to \snippet{use}, determines the treatment of default notations given in theories}
   \end{attdescr}
   \children{(include* \& notation*) | definition\{notset\}}{}
-  \comment{Definitions are actually not supported yet and only added for symmetry.}
+  \xmlcomment{Definitions are actually not supported yet and only added for symmetry.}
 \end{elemdescr}
 
 All module level elements are named. The base URI of a module defaults to the document URI. However, a differing URI may be provided with the \snippet{base} attribute of the module or an ancestor. The latter should only be used in generated documents because it prevents reference by location.
@@ -183,7 +183,7 @@ Some symbol level elements are named (notations optionally so). If a symbol with
     \attribute{from}{\mmturi}{the domain of the structure, relative to containing theory}
   \end{attdescr}
   \children{(include* \& assignment*) | definition\{morph\}}{}
-  \comment{An assignment can be an assignment to a constant or an assignment to a structure.}
+  \xmlcomment{An assignment can be an assignment to a constant or an assignment to a structure.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -193,7 +193,7 @@ Some symbol level elements are named (notations optionally so). If a symbol with
     \attribute{for}{\mmturi}{the symbol the alias references}
   \end{attdescr}
   \children{}{}
-  \comment{Contrary to a defined symbol, an alias is transparent and does not introduce a new symbol.}
+  \xmlcomment{Contrary to a defined symbol, an alias is transparent and does not introduce a new symbol.}
 \end{elemdescr}
 
 \subsubsection{Elements in Links}
@@ -209,7 +209,7 @@ Some symbol level elements are named (notations optionally so). If a symbol with
     \attribute{name}{\mmtqname}{the name of the constant}
   \end{attdescr}
   \children{term}{}
-  \comment{The child is the term that is assigned to the constant.}
+  \xmlcomment{The child is the term that is assigned to the constant.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -218,7 +218,7 @@ Some symbol level elements are named (notations optionally so). If a symbol with
     \attribute{name}{\mmtqname}{the name of the structure}
   \end{attdescr}
   \children{morph}{}
-  \comment{The child is the morphism that is assigned to the constant.}
+  \xmlcomment{The child is the morphism that is assigned to the constant.}
 \end{elemdescr}
 
 \subsubsection{Elements in Styles}
@@ -243,7 +243,7 @@ Every notation has a role. The permitted values of \snippet{role} are given in S
     \attribute{precedence}{$\Z^*$}{the optional output precedence}
   \end{attdescr}
   \children{pres}{}
-  \comment{A notation without a name has no URI. \snippet{precedence} may only be given if the role is bracketable.}
+  \xmlcomment{A notation without a name has no URI. \snippet{precedence} may only be given if the role is bracketable.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -259,7 +259,7 @@ Every notation has a role. The permitted values of \snippet{role} are given in S
     \attribute{implicit}{$\N$}{the number of implicit arguments}
   \end{attdescr}
   \children{}{}
-  \comment{A notation without a name has no URI. \snippet{precedence} may only be given if the role is bracketable.}
+  \xmlcomment{A notation without a name has no URI. \snippet{precedence} may only be given if the role is bracketable.}
 \end{elemdescr}
 
 \subsection{Fragment References}
@@ -272,8 +272,8 @@ In addition, document fragments defined elsewhere may be referenced. Documents w
     \attribute{href}{\mmturi}{the URI of the referenced element}
   \end{attdescr}
   \children{}{}
-  \comment{\snippet{X} may be any document, module, or symbol level label.}
-  \comment{These elements may carry additional attributes if their key and value are identical to those in the referenced element.}
+  \xmlcomment{\snippet{X} may be any document, module, or symbol level label.}
+  \xmlcomment{These elements may carry additional attributes if their key and value are identical to those in the referenced element.}
 \end{elemdescr}
 
 \subsection{Object Level Elements}

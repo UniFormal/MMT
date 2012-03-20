@@ -1,0 +1,7 @@
+MMT provides several interfaces for language-specific customization in external implementations. All extensions must provide a class \code{C} (as a qualified Java class name using dots to separate components), instantiate a certain interface, and have a constructor that takes no arguments.
+
+Extensions are registered by giving the class name \code{C} (see Sect.~\ref{sec:shell:extensions}). They are instantiated using Java reflection, and it is the user's responsibility to make sure that \code{C} is on the class path at the time of registration.
+
+Extensions are initialized using an \texttt{init} method that takes a \code{List[String]} argument that is provided during registration.
+
+\ednote{describe details of syntax and semantics extensions}

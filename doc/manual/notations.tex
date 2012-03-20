@@ -117,7 +117,7 @@ The list of children of the produced XML element is the evaluation of the childr
     \attribute{name}{string}{the label of the attribute, defaults to the empty string}
   \end{attdescr}
   \children{pres}{}
-  \comment{No child may be an \snippet{element}.}
+  \xmlcomment{No child may be an \snippet{element}.}
 \end{elemdescr}
 
 \begin{evaluation}
@@ -147,7 +147,7 @@ An \snippet{attribute} element is evaluated as the XML attribute with namespace 
     \attribute{step}{$\Z\sm\{0\}$}{the step size $s$, defaults to $1$}
   \end{attdescr}
   \children{separator\{pres\}? \& main\{pres\}? }{}
-  \comment{If \snippet{separator} is not present, it defaults to an empty element. If \snippet{main} is not present, it defaults to \snippet{<main><recurse/></main>}.}
+  \xmlcomment{If \snippet{separator} is not present, it defaults to an empty element. If \snippet{main} is not present, it defaults to \snippet{<main><recurse/></main>}.}
 \end{elemdescr}
 
 \begin{evaluation}
@@ -167,7 +167,7 @@ $b'$ and $e'$ are obtained by the following computation: If $n=0$, or if $b\nin[
     \attribute{offset}{$\Z$}{the offset relative to the current component, defaults to $0$}
   \end{attdescr}
   \children{}{}
-  \comment{A precedence may not be given if within a notation for a structural role.}
+  \xmlcomment{A precedence may not be given if within a notation for a structural role.}
 \end{elemdescr}
 
 \begin{evaluation}
@@ -200,7 +200,7 @@ where $A'$, $C'$, and $E'$ denote the recursive renderings of $A$, $C$, and $E$.
     \attribute{precedence}{$\Z$}{the relative input precedence of the recursion, defaults to $0$}
   \end{attdescr}
   \children{}{}
-  \comment{A precedence may not be given if within a notation for a structural role.}
+  \xmlcomment{A precedence may not be given if within a notation for a structural role.}
 \end{elemdescr}
 
 \begin{evaluation}
@@ -285,7 +285,7 @@ This ID is equal to the corresponding XML ID in the {\openmath} expression occur
     \attribute{index}{$\Z$}{the index of the tested component}
   \end{attdescr}
   \children{then\{pres\}? else\{pres\}?}{}
-  \comment{If \snippet{then} or \snippet{else} are not present, they default to empty elements.}
+  \xmlcomment{If \snippet{then} or \snippet{else} are not present, they default to empty elements.}
 \end{elemdescr}
 
 \begin{evaluation}
@@ -310,7 +310,7 @@ This presentation element serves as a placeholder that is replaced during the dy
     \attribute{name}{string}{the template name}
   \end{attdescr}
   \children{arg {pres} * | pres}{}
-  \comment{Children $P$ of the form \snippet{pres} abbreviate a single \snippet{arg} child with children $P$.}
+  \xmlcomment{Children $P$ of the form \snippet{pres} abbreviate a single \snippet{arg} child with children $P$.}
 \end{elemdescr}
 
 \begin{evaluation}

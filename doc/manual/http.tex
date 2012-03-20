@@ -1,22 +1,23 @@
-\paragraph{Invocation}
-The MMT HTTP server can be started by feeding \code{ombase.war} to a servlet container such as Tomcat or Jetty. A particularly easy way to start it is by executing
-\begin{center}
-\code{java -jar jetty-runner.jar ombase.war}
-\end{center}
-Jetty-runner is provided in the main directory or available as part of Jetty.
+Besides being an API, the main interface for both humans and machines to the {\mmt} system is via the web server. See Sect.~\ref{sec:shell:server} for how to start and stop the server.
 
-The MMT server will execute the \code{file startup.mmt} from the current directory to initialize itself. In particular, this file should use the command \code{base} and \code{catalog} or \code{ombase}. If logging is switched on, log output will go to standard output.
+It does not matter whether a request originates from the local or a remote machine.
 
-\paragraph{GET Requests}
-Currently only GET requests are implemented.
+\subsection{Human Interface}
 
-A GET request to the URI \code{scheme:authority/;?D?Q?R?A} is answered with the result of \code{D?Q?R A} where \code{A} must be an action taking MMT-URI and returning Non-MMT-Object. Spaces in \code{A} must be written as underscores, special characters in \code{A} must be \%-encoded.
+The {\mmt} web server can be accessed with any browser, e.g., by pointing it to \code{http://localhost:8080} after starting the server with \code{server on 8080} on the shell.
 
+\subsection{Machine Interface}
+
+The server responds to a number of requests that permit software systems to interact with {\mmt}.
+
+\paragraph{GET requests}
+A GET request of the path \code{/:mmt?URI\_A} is answered with the result of \code{URI A} where \code{A} is any action taking a MMT-URI. Spaces in \code{A} must be written as underscores, special characters in \code{A} must be \%-encoded.
 If the URI contains less than $3$ $?$, the missing components default to being empty.
 
-Similarly, a GET request to the URI \code{scheme:authority/D?Q?R?A} is answered with the result of \code{D?Q?R A} (where \code{D?Q?R} is resolved relative to the base URI of the server set in the startup script).
-
 \begin{example}
-\url{http://localhost/D?Q?R?component_type_present_U}
+\url{http://localhost:8080/:mmt?D?Q?R?component_type_present_U}
 retrieves the type of \code{D?Q?R} rendered with style \code{U}.
 \end{example}
+
+\paragraph{POST requests}
+POST requests are used to access the query \cite{rabe:querying:12} and the computation server.\ednote{add details}
