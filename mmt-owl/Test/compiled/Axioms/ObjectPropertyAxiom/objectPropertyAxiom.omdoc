@@ -13,11 +13,11 @@
        
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
        
-     </constant><constant name="hasChild" >
+     </constant><constant name="hasDaughter" >
        
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
        
-     </constant><constant name="hasDaughter" >
+     </constant><constant name="hasChild" >
        
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></OMOBJ></type>
        

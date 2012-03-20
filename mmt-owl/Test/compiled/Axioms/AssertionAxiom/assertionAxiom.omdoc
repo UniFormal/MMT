@@ -45,14 +45,14 @@
        
      </constant><constant name="ax2" >
        
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Mary" base="http://example.com/owl/families" position="2"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="differentIndividuals" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="Bill" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="John" base="http://example.com/owl/families" position="2"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax3" >
        
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="differentIndividuals" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="Bill" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="John" base="http://example.com/owl/families" position="2"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Mary" base="http://example.com/owl/families" position="2"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax4" >
