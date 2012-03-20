@@ -37,14 +37,14 @@
        
      </constant><constant name="ax2" >
        
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Person" base="http://example.com/owl/families" position="2"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2" name="disjointUnionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="Person" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="2"></om:OMS><om:OMS module="_" name="Man" base="http://example.com/owl/families" position="3"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax3" >
        
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2" name="disjointUnionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="Person" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="2"></om:OMS><om:OMS module="_" name="Man" base="http://example.com/owl/families" position="3"></om:OMS>
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Person" base="http://example.com/owl/families" position="2"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax4" >
