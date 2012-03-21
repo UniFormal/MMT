@@ -83,7 +83,9 @@ object ConsoleWriter extends TextHandler {
 
 /** writes text output to a file */
 class FileWriter(val filename : java.io.File) extends TextHandler with utils.FileWriter {
-	def write(s : String) {file.print(s)}
+	def write(s : String) {
+	  file.print(s)
+	  }
 }
 
 /** excpetion thrown by XML builder if methods are called that would lead to ill-formed XML */

@@ -10,7 +10,7 @@ var notstyle = 'http://cds.omdoc.org/foundations/lf/mathml.omdoc?twelf';  // har
 
 function setStyle(style) {
    notstyle = style;
-   $('#currentstyle').text(style);
+    $('#currentstyle').text(style.split("?").pop());
 }
 /**
  * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
@@ -34,9 +34,30 @@ function load(elem) {
    var res = null;
    function cont(data) {res = data;}
    proxyAjax('get', url, '', cont, false, 'text/xml');
+   console.log(res.firstChild);
    elem.removeAttribute('jobad:load');
    return res.firstChild;
 }
+
+
+function diff() {
+    
+    var url = adaptMMTURI(currentElement, '_diff_720', false);
+    var res = null;
+    function cont(data) {res = data;}
+    proxyAjax('get', url, '', cont, false, 'text/xml');
+    console.log(res.firstChild);
+    
+    //$('mo').filter(function() {return $(this).attr('jobad:href') == currentElement;}).each(function() {$(this).attr('style', 'color:red !important');});
+    
+    console.log(currentElement);
+    console.log(currentComponent);
+    console.log(currentPosition);
+    //return true;
+    return res.firstChild;
+}
+
+
 function flatClick(elem) {
    var cont = $(elem).children('.flat-container');
    if (elem.hasAttribute('jobad:load')) {
@@ -54,14 +75,15 @@ function remoteClick(elem) {
 
 function ajaxReplaceIn(url, targetid) {
    function cont(data) {
-         var targetnode = $('#' + targetid).children('div');
-         targetnode.replaceWith(data.firstChild);
+       var targetnode = $('#' + targetid).children('div');
+        targetnode.replaceWith(data.firstChild);
    }
    $.ajax({ 'url': url,
             'dataType': 'xml',
             'success': cont
         });
 }
+
 function latin_navigate(uri) {
 		// main div
 		var url = adaptMMTURI(uri, '', true);
@@ -252,6 +274,7 @@ var latin = clone(Service);
  */
 latin.init = function(){
 	//updateVisibility(document.documentElement);
+   $('#currentstyle').text(notstyle.split("?").pop());
    var query = window.location.search.substring(1);
    latin_navigate(query);
 }
@@ -298,10 +321,32 @@ latin.leftClick = function(target){
 }
 
 latin.hoverText = function(target){
+        //handling clicks on parts of the document - active only for elements that have jobad:href
+	if (target.hasAttribute('jobad:href')) {
+		var mr = $(target).closest('mrow');
+		var select = (mr.length == 0) ? target : mr[0];
+		setSelected(select);
+		return true;
+	}
+	// highlight bracketed expression
+	if (getTagName(target) == 'mfenced') {
+		setSelected(target);
+		return true;
+	}
+	// highlight variable declaration
+	if (target.hasAttribute('jobad:varref')) {
+	   var v = $(target).parents('mrow').children().filterMAttr('jobad:xref', target.getAttribute('jobad:varref'));
+		setSelected(v[0]);
+		return true;
+	}
+	unsetSelected();
+	return false;
+        /*
 	if (target.hasAttribute('jobad:href')) {
 		return target.getAttribute('jobad:href');
 	} else
 	   return null;
+        */
 }
 
 /* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
@@ -334,6 +379,8 @@ var visibMenu = [
    ["implicit arguments", '', visibSubmenu('implicit-arg')],
    ["implicit binders", '', visibSubmenu('implicit-binder')],
    ["redundant brackets", '', visibSubmenu('brackets')],
+   ["diff", "diff()"],
+
 ];
 latin.contextMenuEntries = function(target){
    if (isSelected(target)) {
@@ -356,6 +403,7 @@ latin.contextMenuEntries = function(target){
    else
       return [];
 }
+
 
 function setVisib(prop, val){
    var root = focusIsMath ? getSelectedParent(focus) : focus.parentNode;

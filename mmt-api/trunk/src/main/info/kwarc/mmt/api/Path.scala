@@ -51,7 +51,7 @@ abstract class Path extends ontology.BaseType {
 
 /**
  * A DPath represents an MMT document level path.
- * @param doc the URI of the document (may not contain query or fragment)
+ * @param uri the URI of the document (may not contain query or fragment)
  */
 case class DPath(uri : URI) extends Path {
    //go down to a module
@@ -62,6 +62,7 @@ case class DPath(uri : URI) extends Path {
    def ^! = DPath(uri ^)
    def ?(n : String) : MPath = this ? new LocalPath(n)
    def ?(n : LocalPath) = MPath(this, n)
+   
    def version : Option[String] = uri.path match {
        case Nil => None
        case l => l.last.indexOf(";") match {

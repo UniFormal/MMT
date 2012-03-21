@@ -142,6 +142,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
                notation.pres
             val contComps = ContentComponents(comps, Nil, None, Some(o))
             render(presentation, contComps, List(0), gpar, newlpar)
+            
       }
    }
    

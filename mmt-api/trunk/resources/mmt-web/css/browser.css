@@ -1,57 +1,98 @@
-#title {
-   position: fixed;
-   width: 100%;
-   height: 8%;
+body {
+ min-width:640px;
+ min-height:300px;
+ margin-top: 0px;
+ margin-left:0px;
+ margin-right:0px;
+ background: #eeeeee;
+}
 
+#top {
+ margin-top:0px;
+ min-width:640px;
+ background: url("../images/bg.png");
+ height : 66px;
+}
+
+#title {
+   position: absolute;
+   margin-top: 6px;
+   height: 25px;
+   width :100%;
+   min-width:640px;
    font-size:20px;
    font-weight:bold;
    text-align: center;
-
-   background: lightgray;
-   border-style: solid;
-   border-color: black;
 }
+
+
+#menu_bar {
+  text-align : center;
+  width :100%;
+  min-width:640px;
+  height:24px;
+  position: absolute;
+  margin-top: 44px;
+}
+
+span.pagelink {
+ padding:0px; 
+ height:24px;
+}
+
+span.pagelink a {
+ height:24px;
+ padding-top:2px;
+ padding-bottom:2px;
+ padding-left:5px;
+ padding-right:5px;
+ color: white;
+ 
+ font-weight:bold;
+ text-decoration:none;
+ background : none;
+}
+
+span.pagelink a:hover {
+ background : url("../images/bg-hover-bak.png")
+}
+
 
 #styleselector {
-   position: fixed;
-   top: 12%;
+   position: absolute;
+   top: 75px;
    left: 0%;
-   width: 15%;
-   height: 4%;
+   width: 100px;
+   height: 20px;
 }
 
+
 #breadcrumbs {
-   position: fixed;
-   top: 12%;
-   left: 15%;
-   width: 85%;
-   height: 4%;
-   border-style: solid;
-   border-width: thin;
+   position: absolute;
+   top: 80px;
+   left: 250px;
+   height: 20px;
+   font-size:12px;
 }
 span.crumb {
    margin-left: 10px;
    margin-right: 10px;
 }
 
-span.pagelink {
-   margin-left:5%;
-   margin-right:5%;
-}
-
 #sidebar {
-   position: fixed;
+   background: lightgray;
+   position: absolute;
    overflow: auto;
-   top: 30%;
+   top: 110px;
    left: 0;
-   width: 15%;
-   height: 70%;
+   width: 250px;
 }
 
 #pathtree {
-   margin-bottom:10px;
    background: lightgray;
 }
+
+
 a.treerelation {
   background: blue;
 }
@@ -61,15 +102,12 @@ a.treerelation {
 }
 
 #main {
-   position: fixed;
-   top: 18%;
-   left: 15%;
-   height: 82%;
-   width: 85%;
+   position: absolute;
+   top: 110px;
+   padding-left : 10px;
+   left: 250px;
    overflow: auto;
-   border-style: solid;
-   border-width: thin;
-   padding: 2px;
+   min-width:380px;
 }
 
 table.decllist {
