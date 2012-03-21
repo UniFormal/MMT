@@ -171,7 +171,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
            val narrFile = narrationDir / in
            log("[COMP ->  ]  " + inFile)
            log("[  -> NARR]     " + narrFile)
-           val controller = new Controller(NullChecker, report)
+           val controller = new Controller(report)
            val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
            val doc = controller.getDocument(dpath)
            // write narration file
@@ -189,7 +189,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     }
     /** deletes content, narration, notation, and relational; argument is treated as paths in narration */
     def deleteNarrCont(in:List[String] = Nil) {
-       val controller = new Controller(NullChecker, report)
+       val controller = new Controller(report)
        traverse("narration", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
           val dpath = controller.read(inFile, Some(DPath(narrationBase / inPath)))
           val doc = controller.getDocument(dpath)
@@ -235,7 +235,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
            }
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
-              val controller = new Controller(NullChecker, report)
+              val controller = new Controller(report)
               val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val outFile = (root / "scala" / in).setExtension("scala")
               outFile.getParentFile.mkdirs
@@ -256,7 +256,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
            }
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
-              val controller = new Controller(NullChecker, report)
+              val controller = new Controller(report)
               val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val scalaFile = (root / "scala" / in).setExtension("scala")
               info.kwarc.mmt.uom.Synthesizer.doDocument(controller, dpath, scalaFile)
@@ -272,7 +272,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     def readRelational(in: List[String] = Nil, controller: Controller) {
        if ((root / "relational").exists) {
           traverse("relational", in, extensionIs("rel")) {case Current(inFile, _) =>
-             ontology.RelationalElementReader.read(inFile, narrationBase, controller.depstore)
+             ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
           }
        }
     }
@@ -324,7 +324,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
         traverse(sourceDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
            val outFile = (root / "mws" / dim / inPath).setExtension("mws")
            log("[  -> MWS]  " + inFile + " -> " + outFile)
-           val controller = new Controller(NullChecker, NullReport)
+           val controller = new Controller(NullReport)
            controller.read(inFile,None)
            val mpath = Archive.ContentPathToMMTPath(in)
            val mod = controller.localLookup.getModule(mpath)
