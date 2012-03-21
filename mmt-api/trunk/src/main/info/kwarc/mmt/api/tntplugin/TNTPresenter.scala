@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.backend._
 import info.kwarc.tntbase.pluginapi._
 
 /** TNT plugin that presents an MMT expressions using LF and MathML notations */
-class TNTPresenter extends Controller(libraries.NullChecker, NullReport) with TntIntegrationPlugin[String] {
+class TNTPresenter extends Controller(NullReport) with TntIntegrationPlugin[String] {
    def init(lookup : TntPluginDocumentResolver[String]) {
       backend.addStore(TNTLookup(lookup))
       base = DPath(utils.mmt.baseURI)

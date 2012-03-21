@@ -101,7 +101,7 @@ object Test {
    val filereport = new frontend.FileReport(new java.io.File("test.log"))
    val consreport = new ConsoleReport
    val report = new MultipleReports(filereport, consreport)
-   val controller = new Controller(NullChecker,report)
+   val controller = new Controller(report)
    def log(msg : => String) = report("user", msg)
 
    def main(args : Array[String]) : Unit = {

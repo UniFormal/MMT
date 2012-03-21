@@ -7,12 +7,11 @@ import info.kwarc.mmt.api.utils._
  * The command syntax is given by the Action class and the parser in its companion object.
  * @param foundation the foundation that is used for type checking
  */
-class Shell(f : Report => libraries.Checker) extends {
+class Shell() extends {
    val filereport = new frontend.FileReport(new java.io.File("jomdoc.log"))
    val consreport = new ConsoleReport
    val report = new MultipleReports(filereport, consreport)
-   val checker = f(report)
-   val controller = new Controller(checker,report)
+   val controller = new Controller(report)
    def main(args : Array[String]) : Unit = {
       val command = args.mkString("", " ", "")
       filereport.groups += "*"
@@ -30,8 +29,8 @@ class Shell(f : Report => libraries.Checker) extends {
    }
 }
 
-/** A shell with the DefaultFoundation. The default entry point into the jar file. */
-object Run extends Shell(r => new libraries.StructuralChecker(r))
+/** A shell, the default way to run MMT as an application */
+object Run extends Shell()
 
-/** A shell with the NullChecker */
-object RunNull extends Shell(r => libraries.NullChecker)
+/** same as Run, obsolete */
+object RunNull extends Shell()

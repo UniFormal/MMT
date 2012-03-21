@@ -37,11 +37,8 @@ abstract class ROController {
 /** A Controller is the central class maintaining all MMT knowledge items.
   * It stores all stateful entities and executes Action commands.
   */  
-class Controller(val checker : Checker, val report : Report) extends ROController {
+class Controller(val report : Report) extends ROController {
    protected def log(s : => String) = report("controller", s)
-   /** maintains all customizations for specific languages */
-   val extman = new ExtensionManager(report)
-   
    /** maintains all knowledge */
    val memory = new Memory(report)
    val depstore = memory.ontology
@@ -49,18 +46,26 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    val notstore = memory.presentation
    val docstore = memory.narration
 
-   /** the MMT rendering engine */
-   val presenter = new presentation.Presenter(this, report)
+   /** maintains all customizations for specific languages */
+   val extman = new ExtensionManager(report)  
+   /** the http server */
+   var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
    val reader = new Reader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(reader, extman, report)
+   /** the MMT rendering engine */
+   val presenter = new presentation.Presenter(this, report)
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
    val uom = {val u = new UOMServer(report); u.init; u}
-   /** the http server */
-   var server : Option[Server] = None
+
+   /** the checker is used to validate content elements */
+   private var checker : Checker = NullChecker
+   def setCheckNone {checker = NullChecker}
+   def setCheckStructural {checker = new StructuralChecker(report)}
+   def setCheckFoundational(foundation: Foundation) {checker = new FoundChecker(foundation, report)}
 
    /** a lookup that uses only the current memory data structures */
    val localLookup = library
@@ -120,8 +125,10 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
       })
+      Extract(e, memory.ontology += _) //this should return all declaration-level relations
    }
-      /**
+
+   /**
     * Validates and, if successful, adds a ContentElement to the theory graph.
     * Note that the element already points to the intended parent element
     * so that no target path is needed as an argument.
@@ -133,7 +140,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case Fail(msg) => throw AddError(msg)
          case Success(deps) =>
             memory.content.add(e)
-            deps.map(memory.ontology += _)
+            deps.map(memory.ontology += _)  //this should return only object level relations
          case Reconstructed(rs, deps) =>
             rs.foreach(memory.content.add)
             deps.map(memory.ontology += _)
@@ -144,7 +151,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 
    /**
     * deletes a document or module
-    * no change management except that the deletion of a document also deletes its subdocuments and modules 
+    * no change management except that the deletions of scoped declarations are recursive
+    *   in particular, the deletion of a document also deletes its subdocuments and modules 
     */
    def delete(p: Path) {p match {
       case d: DPath =>
@@ -153,14 +161,11 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       case m: MPath =>
          library.delete(m)
          notstore.delete(m)
-      case s: GlobalName => throw DeleteError("deleting symbols not possible")
+      case s: GlobalName => library.delete(s)
    }}
    /** clears the state */
    def clear {
-      docstore.clear
-      library.clear
-      notstore.clear
-      depstore.clear
+      memory.clear
    }
    /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
    def cleanup {
