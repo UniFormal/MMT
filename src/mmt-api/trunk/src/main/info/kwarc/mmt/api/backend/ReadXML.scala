@@ -39,7 +39,7 @@ class Reader(controller : frontend.Controller, report : frontend.Report) {
    def readDocument(location : DPath, D : Node) : DPath = {
       D match {
         case <omdoc>{modules @ _*}</omdoc> =>
-           val path = xml.attr(D, "base") match {case "" => location case s => DPath(URI(s))}
+           val path = Path.parseD(xml.attr(D, "base"), location)
            log("document with base " + path + " found")
            val d = new Document(location)
            add(d)

@@ -6,6 +6,8 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.moc._
+
 import frontend._
 
 import info.kwarc.mmt.api.utils.MyList.fromList
@@ -13,43 +15,63 @@ import info.kwarc.mmt.api.objects.Conversions._
 
 /** CheckResult is the result type of checking a content element */
 sealed abstract class CheckResult
+sealed abstract class CheckContentResult extends CheckResult
+sealed abstract class CheckChangeResult extends CheckResult
 /** the content element is well-formed
- * @param decls the list of dependencies of the object 
+ * @param deps the list of dependencies of the object
  */
-case class Success(deps : List[RelationalElement]) extends CheckResult
+case class ContentSuccess(deps : List[RelationalElement]) extends CheckContentResult
 /** the content element is well-formed and was reconstructed to several new objects (e.g., type inference)
  * @param recon the reconstructed content elements
  */
-case class Reconstructed(recon : List[ContentElement], deps : List[RelationalElement]) extends CheckResult
+case class ContentReconstructed(recon : List[ContentElement], deps : List[RelationalElement]) extends CheckContentResult
+
+/** the change is well-formed and was reconstructed to several new objects (e.g., type inference)
+ * @param recon the reconstructed content elements
+ */
+case class ChangeSuccess(recon : List[ContentElement], deps : List[RelationsChange]) extends CheckChangeResult
+
 /** the content element is ill-formed
  * @param msg an error message 
  */
-case class Fail(msg : String) extends CheckResult
+case class ContentFail(msg : String) extends CheckContentResult 
+/** the content element is ill-formed
+ * @param msg an error message 
+ */
+case class ChangeFail(msg : String) extends CheckChangeResult 
+
 
 /** Objects of type Checker can be used by a Library to check added ContentElements.
-  *  They may return reconstructed declarations and can infer the relational represtnestion. */
+  *  They may return reconstructed declarations and can infer the relational representation. */
 abstract class Checker {
-   def check(s : ContentElement)(implicit mem: ROMemory) : CheckResult
+   
+   def check(s : ContentElement)(implicit mem: ROMemory) : CheckContentResult
+   
+   def get(p : Path, component : String, callerPath : Path, callerComponent : String)(implicit mem: ROMemory) : ContentElement = {
+     mem.ontology += FineGrainedRelation(DependsOn, callerPath, callerComponent, p, component) 
+     mem.content.get(p)
+   }
+   
 }
 
 /**
  * A Checker that always succeeds.
  */
 object NullChecker extends Checker {
-   def check(s : ContentElement)(implicit mem : ROMemory) = Success(Nil)
+   def check(s : ContentElement)(implicit mem : ROMemory) = ContentSuccess(Nil)
 }
 
 /**
  * A Checker that checks only knowledge items whose well-formedness is foundation-independent.
  */
 abstract class ModuleChecker extends Checker {
-   def check(s : ContentElement)(implicit mem : ROMemory) : CheckResult = try {
+   def check(s : ContentElement)(implicit mem : ROMemory) : CheckContentResult = try {
       checkModuleLevel(s)
    } catch {
-      case e : Error => Fail("content element contains ill-formed object\n" + e.msg)
+      case e : Error => ContentFail("content element contains ill-formed object\n" + e.msg)
       //case e => Fail("error during checking: " + e.msg)
    }
-   def checkModuleLevel(e: ContentElement)(implicit mem : ROMemory) : CheckResult = {
+   def checkModuleLevel(e: ContentElement)(implicit mem : ROMemory) : CheckContentResult = {
       e match {
          case t: DeclaredTheory =>
             checkEmpty(t)
@@ -64,26 +86,26 @@ abstract class ModuleChecker extends Checker {
                      i.setOrigin(MetaInclude)
                      i
                   }
-                  Reconstructed(t :: mincl :: minclflat, HasMeta(t.path, mt) :: d)
+                  ContentReconstructed(t :: mincl :: minclflat, HasMeta(t.path, mt) :: d)
                case _ =>
-                  Success(d)
+                  ContentSuccess(d)
             }
          case t : DefinedTheory =>
             val deps = checkTheo(t.df, IsAliasFor(t.path, _), DependsOn(t.path, _))
-            Success(IsTheory(t.path) :: deps)
+            ContentSuccess(IsTheory(t.path) :: deps)
          case l : DeclaredView =>
             checkEmpty(l)
-            Success(checkLink(l, e.path))
+            ContentSuccess(checkLink(l, e.path))
          case l : DefinedView =>
             val occs = checkMorphism(l.df, l.from, l.to)
             val deps = occs.map(DependsOn(l.path, _))
-            Success(checkLink(l, e.path) ::: deps)
+            ContentSuccess(checkLink(l, e.path) ::: deps)
          case l: Include =>
             val par = checkAtomic(l.home)
             val deps = checkTheo(l.from, Includes(par, _), DependsOn(par, _))
             if (mem.content.imports(l.from, l.home)) {
                // ignoring redundant import
-               Reconstructed(Nil, Nil)
+               ContentReconstructed(Nil, Nil)
             } else {
                // flattening (transitive closure) of includes
                val flat = mem.content.importsTo(l.from).toList.mapPartial {t =>
@@ -94,21 +116,21 @@ abstract class ModuleChecker extends Checker {
                      Some(i)
                   }
                }
-               Reconstructed(l :: flat, deps)
+               ContentReconstructed(l :: flat, deps)
             }
          case s: DeclaredStructure =>
             checkEmpty(s)
             val par = checkAtomic(s.home)
-            Success(checkLink(s, s.path))
+            ContentSuccess(checkLink(s, s.path))
          case s: DefinedStructure =>
             checkAtomic(s.home)
             val ldeps = checkLink(s, s.path)
             val ddeps = checkMorphism(s.df, s.from, s.to).map(DependsOn(s.path, _))
-            Success(ldeps ::: ddeps)
+            ContentSuccess(ldeps ::: ddeps)
          case e => checkSymbolLevel(e)
       }
    }
-   def checkSymbolLevel(e: ContentElement)(implicit mem: ROMemory) : CheckResult
+   def checkSymbolLevel(e: ContentElement)(implicit mem: ROMemory) : CheckContentResult
    
    protected def checkLink(l : Link, path : Path)(implicit mem: ROMemory) : List[RelationalElement] = {
 	  val todep = l match {
@@ -132,7 +154,7 @@ abstract class ModuleChecker extends Checker {
     *  @param t the theory
     *  @param atomic return value to construct if the theory is atomic
     *  @param nonatomic return value to construct for all occurrences in a nonatomic theory 
-    *  @param lib the library
+    *  @param mem the memory
     *  @return the list of return values
     */
    def checkTheo[A](t : TheoryObj, atomic: Path => A, nonatomic: Path => A)(implicit mem: ROMemory) : List[A] = t match {
@@ -151,7 +173,7 @@ abstract class ModuleChecker extends Checker {
         lr.distinct
    }
   /** checks whether a morphism object is well-formed relative to a library and infers its type
-    *  @param lib the library
+    *  @param mem the memory
     *  @param m the theory
     *  @return the list of named objects occurring in m, the domain and codomain of m
     */
@@ -198,7 +220,7 @@ abstract class ModuleChecker extends Checker {
         else None
    }
    /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
-    *  @param lib the library
+    *  @param mem the memory
     *  @param m the morphism
     *  @param dom the domain
     *  @param cod the codomain
@@ -218,54 +240,141 @@ abstract class ModuleChecker extends Checker {
 }
 
 object SimpleChecker extends ModuleChecker {
-   def checkSymbolLevel(e: ContentElement)(implicit mem: ROMemory) = Success(Nil)
+   def checkSymbolLevel(e: ContentElement)(implicit mem: ROMemory) = ContentSuccess(Nil)
 }
 
 /**
  * A Checker that implements MMT-well-formedness relative to a foundation.
  */
 class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecker {
-   /** checks whether a content element may be added to a library
-    * @param lib the library
+     def checkModuleChange(c : ChangeModule)(implicit mem: ROMemory) : CheckChangeResult = c match {
+     case AddModule(m) => check(m) match {
+       case ContentSuccess(l) => ChangeSuccess(Nil,AddRelations(l) :: Nil)
+       case ContentReconstructed(r,l) => ChangeSuccess(r, AddRelations(l) :: Nil)
+       case ContentFail(msg) => ChangeFail(msg)
+     }
+     case RenameModule(pold, pnew) => 
+       try {
+         mem.content.get(pold)
+    	 try {
+    	   mem.content.get(pnew)
+           ChangeFail("trying to rename module to already existent path " + pnew)
+    	 } catch {
+    	   case e : Error => ChangeSuccess(Nil, RenameRelations(pold, pnew) :: Nil)
+         }
+       } catch {
+         case e : Error => ChangeFail("trying to rename non-existent module path " + e.msg)
+       }
+     
+     case DeleteModule(m) => 
+       try {
+         val v = mem.content.get(m.path)
+         if (v == m) {
+           ChangeSuccess(Nil, DeleteRelations(m.path) :: Nil)
+         } else {
+           ChangeFail("deleted module does not fit with actual value, change would not be inversable: Change Value:\n " + m.toString + "\n LibraryValue\n" + v.toString)
+         }
+       } catch {
+         case e : Error => ChangeFail("trying to delete non-existent module " + e.msg)
+       }
+   }
+   
+   def checkDeclarationChange(ch : ChangeDeclaration)(implicit mem : ROMemory) : CheckChangeResult = ch match {
+     case AddDeclaration(d) => check(d) match {
+       case ContentSuccess(l) => ChangeSuccess(Nil, AddRelations(l) :: Nil)
+       case ContentReconstructed(r,l) => ChangeSuccess(r, AddRelations(l) :: Nil)
+       case ContentFail(msg) => ChangeFail(msg)
+     }
+     case DeleteDeclaration(d) => 
+       try {
+         val v = mem.content.get(d.path)
+         if (v == d) {
+           ChangeSuccess(Nil, DeleteRelations(d.path) :: Nil)
+         } else {
+           ChangeFail("deleted module does not fit with actual value, change would not be inversable: Change Value:\n " + d.toString + "\n LibraryValue\n" + v.toString)
+         }
+       } catch {
+         case e : Error => ChangeFail("trying to delete non-existent module " + e.msg)
+       }
+
+     case RenameDeclaration(pold,pnew) =>
+       try {
+         mem.content.get(pold)
+    	 try {
+    	   mem.content.get(pold.mod ? pnew)
+           ChangeFail("trying to rename declaration to already existent path " + pnew)
+    	 } catch {
+    	   case e : Error => ChangeSuccess(Nil, RenameRelations(pold, pold.mod ? pnew) :: Nil)
+         }
+       } catch {
+         case e : Error => ChangeFail("trying to rename non-existent declaration path " + e.msg)
+       }
+   }
+   
+   def checkComponentChange(home : TheoryObj, path : Path, ch : UpdateComponent)(implicit mem : ROMemory) : CheckChangeResult = ch match {
+
+     case UpdateComponent(name,old, nw, chs) => {
+       val dec = mem.content.get(path)
+       val compNames = dec.compNames.toMap
+       val libco = dec.components(compNames(name.toPath))
+       if (libco == old) {
+         nw match {
+           case t : Term => 
+           	 try {
+           	   val s = checkTerm(home, Context(), t).map(p => FineGrainedRelation(DependsOn,path, name.toPath, p, "TODO")) //TODO component, either add here or remove in FineGrainedRelation class
+           	   ChangeSuccess(Nil, AddRelations(s) :: Nil)  
+             } catch {
+               case e : Error => ChangeFail(e.msg)
+             }
+         case _ => throw ImplementationError(nw.toString)
+         }
+       } else {
+         ChangeFail("Trying to delete nonexistent component")
+       }
+     }
+   }
+
+  //Note: Even Library.addUnchecked checks that declarations can only be added to atomic declared theories/views.
+  //Therefore, the home modules are not checked here.
+  //Body.add checks that no two declarations of the same name exist. Therefore, names are not checked here.
+  //Names that are prefixes of other names in the same body are permitted.
+  //  This works well for links, for theories it is questionable. Refusing declaration with non-primitive names might be forbidden.
+  //  When retrieving, more specific entries overrule the more general ones.
+
+  //TODO: compatibility of multiple assignments to the same knowledge item
+  /** checks whether a content element may be added to a library
+    * @param mem the memory
     * @param s the content element
     * throws backend.NotFound(p) if possibly well-formed after retrieving p
     */
-   //Note: Even Library.addUnchecked checks that declarations can only be added to atomic declared theories/views.
-   //Therefore, the home modules are not checked here.
-   //Body.add checks that no two declarations of the same name exist. Therefore, names are not checked here.
-   //Names that are prefixes of other names in the same body are permitted.
-   //  This works well for links, for theories it is questionable. Refusing declaration with non-primitive names might be forbidden.
-   //  When retrieving, more specific entries overrule the more general ones.
-
-   //TODO: compatibility of multiple assignments to the same knowledge item
-   def checkSymbolLevel(s : ContentElement)(implicit mem: ROMemory) : CheckResult = s match {
+   def checkSymbolLevel(s : ContentElement)(implicit mem: ROMemory) : CheckContentResult = s match {
          case c : Constant =>
-            if (c.parent == foundation.foundTheory) return Success(Nil) //TODO this should be more sophisticated; it should be possible to register multiple foundations
+            if (c.parent == foundation.foundTheory) return ContentSuccess(Nil) //TODO this should be more sophisticated; it should be possible to register multiple foundations
             //checkHomeTheory(c)
             val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get) else Nil
             val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get) else Nil
-            if (! foundation.typing(c.df, c.tp)(mem.content)) return Fail("constant declaration does not type-check")
+            if (! foundation.typing(c.df, c.tp)(mem.content)) return ContentFail("constant declaration does not type-check")
             val deps = IsConstant(c.rl).apply(c.path) ::  
               occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
-            Success(deps)
+            ContentSuccess(deps)
          case a : ConstantAssignment =>
             val (l,d) = getSource(a)
             val c = d match {
                 case c : Constant => c
-                case _ => return Fail("constant-assignment to non-constant")
+                case _ => return ContentFail("constant-assignment to non-constant")
             }
             val occas = checkTerm(l.to, a.target)
             if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home))(mem.content))
-               return Fail("assignment does not type-check")
+               return ContentFail("assignment does not type-check")
             val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)(mem.content)
-            if (! defleq) return Fail("assignment violates definedness ordering")
+            if (! defleq) return ContentFail("assignment violates definedness ordering")
             val deps = IsConAss(a.path) :: occas.map(HasOccurrenceOfInTarget(a.path, _))
-            Success(deps)
+            ContentSuccess(deps)
          case a : DefLinkAssignment =>
             val (l,d) = getSource(a)
             val s = d match {
                 case s : Structure => s
-                case _ => return Fail("structure-assignment to non-structure")
+                case _ => return ContentFail("structure-assignment to non-structure")
             }
             val occs = checkMorphism(a.target, s.from, l.to)
             val deps = IsStrAss(a.path) :: occs.map(DependsOn(a.path, _))
@@ -279,11 +388,11 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
                   Some(r)
                }
             }
-            Reconstructed(a :: flat, deps)
+            ContentReconstructed(a :: flat, deps)
          case p : Pattern =>
             val paths = checkContext(p.home, p.params ++ p.con)  
             val deps = IsPattern(p.path) :: paths.map(HasOccurrenceOfInDefinition(p.path, _))
-            Success(deps)
+            ContentSuccess(deps)
          case i : Instance => 
             val pt : Pattern = mem.content.getPattern(i.pattern)
             val paths : List[Path] = Nil //checkSubstitution(i.home, i.matches, pt.params, Context())
@@ -291,8 +400,8 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
             val elab = Instance.elaborate(i, true)(mem.content, report)
             i.setOrigin(Elaborated)
-            Reconstructed(i :: elab, deps)
-         case _ => Success(Nil)
+            ContentReconstructed(i :: elab, deps)
+         case _ => ContentSuccess(Nil)
    }
 /*       case a : Alias =>
             mem.content.get(a.forpath)
@@ -325,10 +434,9 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
    }
    /**
     * Checks structural well-formedness of a closed term relative to a library and a home theory.
-    * @param lib the library
     * @param home the home theory
     * @param s the term
-    * @param univ the universe to check the term against
+    * @param mem  the memory
     * @return the list of identifiers occurring in s (no duplicates, random order)
     */
    def checkTerm(home: TheoryObj, s : Term)(implicit mem: ROMemory) : List[Path] = {

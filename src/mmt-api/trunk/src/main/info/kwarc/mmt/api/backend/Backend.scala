@@ -10,6 +10,12 @@ import java.util.zip._
 import utils.File
 import utils.FileConversion._
 
+import org.tmatesoft.svn.core._
+import org.tmatesoft.svn.core.io._
+import org.tmatesoft.svn.core.auth._
+//import org.tmatesoft.svn.core.wc.SVNWCUtil
+import org.tmatesoft.svn.core.wc.SVNWCUtil
+
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
 case object NotApplicable extends java.lang.Throwable
@@ -30,7 +36,7 @@ abstract class Storage {
 /** convenience methods for backends */
 object Storage {
    /** reads a locutor registry file and returns a list of Storages */
-   def fromLocutorRegistry(file : java.io.File) : List[LocalCopy] = {
+   def fromLocutorRegistry(file : java.io.File) : List[Storage] = {
       val N = utils.xml.readFile(file)
     
       /*
@@ -45,13 +51,28 @@ object Storage {
       l.flatten 
       */ 
       
-     val l = (N\\"registry"\\"repository").toList.flatMap(R => {
+     val lc = (N\\"registry"\\"repository").toList.flatMap(R => {
       val repos = URI(xml.attr(R, "location"))
       R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
      })
-      l
+     
+     val svn = (N\\"registry"\\"svn-repository").toList.flatMap(R => {
+      val repos = URI(xml.attr(R, "location"))
+      R.child.toList.filter(wc => wc.label == "wc").map(wc => {
+        val url = xml.attr(wc, "root")
+        val name = xml.attr(wc, "username")
+        val password = xml.attr(wc, "password")
+        val defRev = try {xml.attr(wc, "revision").toInt} catch {case _ => -1}
+        
+        val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
+        val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager(name, password)
+        repository.setAuthenticationManager(authManager)
+        SVNRepo(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), repository, defRev)
+      }).toList}) 
 
+     lc ::: svn
    }
+   
    /** reads an OMBase description file and returns the described OMBases */
    def fromOMBaseCatalog(file : java.io.File) : List[OMBase] = {
       val N = utils.xml.readFile(file)
@@ -205,9 +226,49 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
           val prefix = if (target != base) target.getName + "/" else ""
           Storage.virtDoc(entries, prefix)
       } else throw NotFound(path)
+      reader.readDocuments(DPath(uri), N)   
+   }
+}
+
+/** a Storage that retrieves repository URIs over SVN connection */
+case class SVNRepo(scheme : String, authority : String, prefix : String, repository : SVNRepository, defaultRev : Int = -1) extends Storage  {
+   def localBase = URI(scheme + "://" + authority + prefix) 
+   
+   def get(path : Path, reader : Reader) = get(path, reader, defaultRev)
+   def get(path : Path, reader : Reader, rev : Int) {
+      val uri = path.doc.uri
+      val target = Storage.getSuffix(localBase, uri)
+      
+      val revision = path.doc.version match {
+        case None => rev
+        case Some(s) => try {s.toInt} catch {case _ => rev}
+      }
+      println("getting revision " + revision + " of file " + path)
+      val N : scala.xml.Node = repository.checkPath(target, revision) match {
+        case SVNNodeKind.FILE => 
+          var fileProperties : SVNProperties = new SVNProperties()
+          val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
+          repository.getFile(target, revision, null, baos)
+          scala.xml.Utility.trim(scala.xml.XML.loadString(baos.toString))
+        case SVNNodeKind.DIR =>
+          val coll : java.util.Collection[SVNDirEntry] = null
+          val entries = repository.getDir(target, revision, null, coll)
+          val prefix = if (target != "") target + "/" else ""
+          var it = entries.iterator()
+          var strEntries : List[SVNDirEntry] = Nil
+          while (it.hasNext()) {
+            it.next match {
+              case e : SVNDirEntry => strEntries = e :: strEntries
+              case _ => None
+            }
+          }
+          Storage.virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
+        case SVNNodeKind.NONE => throw NotFound(path)
+      }
       reader.readDocuments(DPath(uri), N)
    }
 }
+
 
 /** a Storage that retrieves content from a TNTBase database */
 case class TNTBase(scheme : String, authority : String, prefix : String, ombase : URI,
@@ -230,6 +291,7 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
    }
 }
 
+
 /** a Backend holds a list of Storages and uses them to dereference Paths */
 class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
@@ -241,6 +303,15 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
          d.init(reader)
       }
    }
+   
+   //this must be redesigned
+   def copyStorages(newRev : Int = -1) : List[Storage] = {
+     stores.map(s => s match {
+       case SVNRepo(sch, auth, pref, repo, rev) => new SVNRepo(sch,auth,pref, repo, newRev)
+       case _ => s
+     })
+   }
+   
    /** @throws NotFound if the root file cannot be read
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
    def openArchive(root: java.io.File) : Archive = {
@@ -337,8 +408,10 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
                getInList(tl, p)
             }
       }}
+      
       getInList(stores, p)
    }
+   
    /** retrieve an Archive by its id */
    def getArchive(id: String) : Option[Archive] = stores mapFind {
       case a: Archive => if (a.properties.get("id") == Some(id)) Some(a) else None
@@ -348,5 +421,12 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
    def getArchives : List[Archive] = stores mapPartial {
       case a: Archive => Some(a)
       case _ => None
+   }
+   /** closes all svn sessions */
+   def cleanup = {
+     stores.map(x => x match {
+       case SVNRepo(scheme,authority,prefix,repo, rev) => repo.closeSession()
+       case _ => None
+     })
    }
 }

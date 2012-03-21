@@ -15,6 +15,8 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
 case class ParseError(s : String) extends Error("parse error: " + s)
 /** errors that occur when adding a knowledge item */
 case class AddError(s : String) extends Error("add error: " + s)
+/** errors that occur when updating a knowledge item */
+case class UpdateError(s : String) extends Error("update error: " + s)
 /** errors that occur when deleting a knowledge item */
 case class DeleteError(s : String) extends Error("delete error: " + s)
 /** errors that occur when retrieving a knowledge item */

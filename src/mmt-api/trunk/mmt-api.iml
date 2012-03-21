@@ -2,6 +2,8 @@
 <module type="JAVA_MODULE" version="4">
   <component name="EclipseModuleManager">
     <libelement value="jar://$MODULE_DIR$/lib/tntbase-plugin-api.jar!/" />
+    <libelement value="jar://$MODULE_DIR$/lib/tiscaf.jar!/" />
+    <libelement value="jar://$MODULE_DIR$/lib/svnkit.jar!/" />
     <conelement value="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER" />
     <src_description expected_position="0">
       <src_folder value="file://$MODULE_DIR$/src/main" expected_position="0" />
@@ -11,7 +13,9 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Global" />
-        <option name="compilerLibraryName" value="scala-compiler-2.9.1" />
+        <option name="compilerLibraryName" value="scala-library-2.9.1.r0-b20110831114755" />
+        <option name="deprecationWarnings" value="true" />
+        <option name="uncheckedWarnings" value="true" />
       </configuration>
     </facet>
   </component>
@@ -22,8 +26,38 @@
       <sourceFolder url="file://$MODULE_DIR$/src/main" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="inheritedJdk" />
-    <orderEntry type="library" name="dependencies" level="project" />
+    <orderEntry type="library" name="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER" level="application" />
+    <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
+    <orderEntry type="module-library" exported="">
+      <library name="tntbase-plugin-api.jar">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/tntbase-plugin-api.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="tiscaf.jar">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/tiscaf.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module" module-name="lfcatalog" />
+    <orderEntry type="module-library" exported="">
+      <library name="svnkit.jar">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/svnkit.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" exported="" name="scala-compiler-2.9.1.r0-b20110831114755" level="application" />
+    <orderEntry type="library" exported="" name="scala-library-2.9.1.r0-b20110831114755" level="application" />
   </component>
 </module>
 

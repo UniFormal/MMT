@@ -1,5 +1,5 @@
 <registry>
-  <repository location="http://cds.omdoc.org/">
-    <wc location="" root="/home/mihnea/kwarc/moc-test/r2"/>
-  </repository>
+  <svn-repository location="http://cds.omdoc.org/">
+    <wc location="" root="http://alpha.tntbase.mathweb.org/repos/cds/moc-test" revision="752" username="miancu" password="trac0opj6s"/>
+  </svn-repository>
 </registry>

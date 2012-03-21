@@ -38,6 +38,13 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    def log(s : => String) = report("library", s)
    
    /**
+    * returns all module paths indexed by this library
+    */
+   def getAllPaths = modules.keys
+   
+   def getModule(p : MPath) : Module = modulesGetNF(p)
+   
+   /**
     * Dereferences a path and returns the found ContentElement.
     * @param path the path to be dereferenced
     * @return the content element

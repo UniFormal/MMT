@@ -94,7 +94,7 @@ object Util {
         catch {
           case _ => return null
         }
-        println("trying to get resource from "  + filePath)
+        //println("trying to get resource from "  + filePath)
         val file = new java.io.File(filePath)  // the file on disk
         // Try reading from compiled-folder/some-path/resource.txt
         if (file.exists)

@@ -59,7 +59,7 @@ class Controller(val report : Report) extends ROController {
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
-   val uom = {val u = new UOMServer(report); u.init; u}
+   val uom : UOMServer = {val u = new UOMServer(report); u.init; u}
 
    /** the checker is used to validate content elements */
    private var checker : Checker = NullChecker
@@ -113,7 +113,7 @@ class Controller(val report : Report) extends ROController {
    }
    /** selects a notation
     *  @param nset the style from which to select
-    *  @param the notation key identifying the knowledge item to be presented
+    *  @param key the notation key identifying the knowledge item to be presented
     */
    def get(nset : MPath, key : NotationKey) : Notation = {
       iterate (notstore.get(nset,key))
@@ -137,11 +137,11 @@ class Controller(val report : Report) extends ROController {
    def addContent(e : ContentElement) {
       log("adding: " + e.toString)
       try {checker.check(e)(memory) match {
-         case Fail(msg) => throw AddError(msg)
-         case Success(deps) =>
+         case ContentFail(msg) => throw AddError(msg)
+         case ContentSuccess(deps) =>
             memory.content.add(e)
             deps.map(memory.ontology += _)  //this should return only object level relations
-         case Reconstructed(rs, deps) =>
+         case ContentReconstructed(rs, deps) =>
             rs.foreach(memory.content.add)
             deps.map(memory.ontology += _)
       }} catch {
@@ -170,6 +170,8 @@ class Controller(val report : Report) extends ROController {
    /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
    def cleanup {
       extman.cleanup
+      //closes all open svn sessions from storages in backend
+      backend.cleanup
    }
    /** reads a file and returns the Path of the document found in it */
    def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
@@ -240,7 +242,7 @@ class Controller(val report : Report) extends ROController {
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
 	         backend.openArchive(f)
-         case ArchiveBuild(id, dim, in) =>
+          case ArchiveBuild(id, dim, in, params) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             dim match {
                case "compile" => arch.produceCompiled(in)
@@ -261,6 +263,7 @@ class Controller(val report : Report) extends ROController {
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
                case "extract" => arch.extractScala(in, "source")
                case "integrate" => arch.integrateScala(in, "source")
+               case "present" => params.foreach(p => arch.producePres(Nil,p, this))
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
@@ -286,7 +289,8 @@ class Controller(val report : Report) extends ROController {
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)
-	      case Exit =>
+        case Compare(p,r) => //TODO
+        case Exit =>
 	         cleanup 
 	         sys.exit
       })

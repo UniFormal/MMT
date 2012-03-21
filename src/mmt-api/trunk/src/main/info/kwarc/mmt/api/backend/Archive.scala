@@ -276,6 +276,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
           }
        }
     }
+
     def readNotation(in: List[String] = Nil, controller: Controller) {
        if ((root / "notation").exists) {
           traverse("notation", in, extensionIs("not")) {case Current(inFile, inPath) =>
@@ -284,6 +285,27 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
           }
        }
     }
+    
+    def getPresentation(in : MPath, controller: Controller, nset : MPath) : Option[scala.xml.Node] = {
+      try {
+      val fpath = root / "presentation" / nset.last / {
+        val uri = in.parent.uri
+        val schemeString = uri.scheme.map(_ + "..").getOrElse("")
+        (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(Archive.escape(in.name.flat) + ".xhtml")
+      }
+      
+      val src = scala.io.Source.fromFile(fpath)
+      val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
+      val input : scala.xml.Node = cp.document()(0)
+      src.close
+      Some(input)
+      } catch {
+        case _ => None
+      }
+      
+    }
+    
+    
 
     def check(in: List[String] = Nil, controller: Controller) {
       traverse("content", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
@@ -293,6 +315,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
       }
     }
 
+    
     def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in
        log("to do: [CONT -> FLAT]        -> " + inFile)
@@ -315,6 +338,27 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
         }
        log("done:  [CONT -> FLAT]        -> " + inFile)
     }
+    
+    
+    def producePres(in : List[String] = Nil, style : MPath, controller : Controller) {
+      val inFile = contentDir / in
+      log("to do: [CONT -> PRES]        -> " + inFile)
+
+      traverse("content", in, extensionIs("omdoc")) { case Current(inFile, inPath) =>
+        val outFile = (root/ "presentation" / style.last / inPath).setExtension("xhtml")
+        controller.read(inFile,None)
+        val mpath = Archive.ContentPathToMMTPath(inPath)
+        val file = File(outFile)
+        file.getParentFile.mkdirs
+        val fs = new presentation.FileWriter(file)
+        frontend.Present(Get(mpath),style).make(controller, fs)
+        fs.file.close()
+      }
+      
+      log("done:  [CONT -> PRES]        -> " + inFile)
+
+    }
+    
     
     def produceMWS(in : List[String] = Nil, dim: String) {
         val sourceDim = dim match {
