@@ -32,7 +32,6 @@ class Twelf extends Compiler {
    var chatter : Int = 5
    var catalogOpt : Option[Catalog] = None
    var port = 8083
-   var report: frontend.Report = frontend.NullReport
    private def log(msg : => String) {report("twelf", msg)}
    
    /** 
@@ -40,7 +39,7 @@ class Twelf extends Compiler {
     * first argument is the location of the twelf-server script
     */
    override def init(rep: frontend.Report, args: List[String]) {
-      report = rep
+      super.init(rep, Nil)
       path = File(args(0))
       val cat = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
       cat.init    //  throws PortUnavailable
