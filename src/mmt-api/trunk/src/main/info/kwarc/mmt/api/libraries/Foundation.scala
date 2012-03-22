@@ -5,7 +5,9 @@ import frontend._
 
 abstract class Foundation {
    protected var report : Report = NullReport
-   def init(r: Report, params: List[String] = Nil) {report = r}
+   def init(r: Report, params: List[String] = Nil) {
+      report = r
+   }
    val foundTheory : MPath
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean
    def equality(tm1 : Term, tm2 : Term)(implicit lib : Lookup) : Boolean
