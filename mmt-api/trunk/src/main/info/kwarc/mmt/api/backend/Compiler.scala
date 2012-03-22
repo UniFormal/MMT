@@ -1,12 +1,16 @@
 package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
+import frontend._
 import utils.File
 
 trait Importer {
+   protected var report : Report = NullReport
    /** true if this compiler can compile a certain kind of source files */
    def isApplicable(src : String): Boolean
    /** initialization (empty by default) */
-   def init(report: frontend.Report, args: List[String]) {}
+   def init(report: Report, args: List[String]) {
+      this.report = report
+   }
    /** termination (empty by default)
     * Importers may create persistent data structures and processes,
     * but they must clean up after themselves in this method
