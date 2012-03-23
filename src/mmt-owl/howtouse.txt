@@ -1,0 +1,13 @@
+How to use:
+
+run "run.bat" file in https://svn.kwarc.info/repos/MMT/src/mmt-owl
+then, type "file build-test.mmt"
+
+It compiles all owl files in the source folder to omdoc files in the compiled folder at once by a default command
+"archive owl-test compile" in the build-test.mmt file
+
+To compile all owl files in a specific folder A in the source folder
+replace the default command by "archive owl-test compile A"
+
+To compile a specific file f in a specific folder A in the source folder
+replace the default command by "archive owl-test compile A/f.owl"

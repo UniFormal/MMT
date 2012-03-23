@@ -31,16 +31,16 @@
        
      </constant><constant name="ax1" >
        
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Max" base="http://example.com/owl/families" position="2"></om:OMS><om:OMS module="_" name="Liz" base="http://example.com/owl/families" position="3"></om:OMS>
-      </om:OMA></OMOBJ></type>
-       
-     </constant><constant name="ax2" >
-       
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
               <om:OMS module="_" name="Parent" base="http://example.com/owl/families" position="1"></om:OMS><om:OMA position="2"><om:OMS module="OWL2RL" name="objectUnionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
               <om:OMS module="_" name="Father" base="http://example.com/owl/families" position="2_1"></om:OMS><om:OMS module="_" name="Mother" base="http://example.com/owl/families" position="2_2"></om:OMS>
       </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax2" >
+       
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Max" base="http://example.com/owl/families" position="2"></om:OMS><om:OMS module="_" name="Liz" base="http://example.com/owl/families" position="3"></om:OMS>
       </om:OMA></OMOBJ></type>
        
      </constant><constant name="ax3" >

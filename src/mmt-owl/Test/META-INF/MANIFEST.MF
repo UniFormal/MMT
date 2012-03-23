@@ -1,5 +1,15 @@
+//mmt-owl/Test archive contains a manifest file giving information about it
+
+//the identifier of the archive
 id: owl-test
+
+//used for the compilation of the archive, i.e. owl files in source folder is compiled to omdoc files in compiled folder
 compilation: owl@source -> omdoc@compiled
+
 source-base: http://oaff.omdoc.org/owl
+
+//gives the base URI for the source documents
 narration-base: http://docs.omdoc.org/
+
+//anything that has uri starting with http://cds.omdoc.org/ is in the lib folder
 catalog: http://cds.omdoc.org/ lib
