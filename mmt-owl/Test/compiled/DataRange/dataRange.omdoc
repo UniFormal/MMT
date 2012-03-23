@@ -24,6 +24,16 @@
      </constant><constant name="ax1" >
        
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="personAge" base="http://example.com/owl/families" position="1"></om:OMS><om:OMA position="2"><om:OMS module="OWL2SUB" name="dataTypeRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+              <om:OMS module="OWL1Datatype" name="integer" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2_1"></om:OMS><om:OMA position="2_2"><om:OMS module="OWL2SUB" name="facetRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
+              <om:OMS module="OWL2SUB" name="minInclusive" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_1"></om:OMS><om:OMI position="2_2_2">0</om:OMI>
+      </om:OMA>
+      </om:OMA>
+      </om:OMA></OMOBJ></type>
+       
+     </constant><constant name="ax2" >
+       
+       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
               <om:OMS module="_" name="majorAge" base="http://example.com/owl/families" position="1"></om:OMS><om:OMA position="2"><om:OMS module="OWL2SUB" name="dataIntersectionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
               <om:OMA position="2_1"><om:OMS module="OWL2" name="dataComplementOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_1_0"></om:OMS>
               <om:OMS module="_" name="minorAge" base="http://example.com/owl/families" position="2_1_1"></om:OMS>
@@ -31,21 +41,11 @@
       </om:OMA>
       </om:OMA></OMOBJ></type>
        
-     </constant><constant name="ax2" >
+     </constant><constant name="ax3" >
        
        <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
               <om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families" position="1"></om:OMS><om:OMA position="2"><om:OMS module="OWL2EL" name="dataOneOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
               <om:OMI position="2_1">1</om:OMI><om:OMI position="2_2">2</om:OMI>
-      </om:OMA>
-      </om:OMA></OMOBJ></type>
-       
-     </constant><constant name="ax3" >
-       
-       <type><OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="personAge" base="http://example.com/owl/families" position="1"></om:OMS><om:OMA position="2"><om:OMS module="OWL2SUB" name="dataTypeRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-              <om:OMS module="OWL1Datatype" name="integer" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2_1"></om:OMS><om:OMA position="2_2"><om:OMS module="OWL2SUB" name="facetRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
-              <om:OMS module="OWL2SUB" name="minInclusive" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_1"></om:OMS><om:OMI position="2_2_2">0</om:OMI>
-      </om:OMA>
       </om:OMA>
       </om:OMA></OMOBJ></type>
        
