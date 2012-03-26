@@ -352,9 +352,9 @@ class TptpTranslator {
 object TptpTranslator {
 	
   val controller = {
-    val report = new FileReport(new java.io.File("tptp.log"))
-    val checker = NullChecker//new StructuralChecker(report)
-    val con = new Controller(checker,report)
+    val con = new Controller
+    con.setFileReport(File("tptp.log"))
+    con.setCheckNone
     con.handleLine("catalog /home/dimitar/projects/mmt/src/mmt-tptp/trunk/locutor.xml")
     con.handleLine("archive add /home/dimitar/projects/cds/")
     con.handleLine("archive add /home/dimitar/projects/oaff/tptp")

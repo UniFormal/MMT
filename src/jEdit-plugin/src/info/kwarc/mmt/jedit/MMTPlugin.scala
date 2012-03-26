@@ -1,8 +1,10 @@
 package info.kwarc.mmt.jedit
 import org.gjt.sp.jedit._
+
 import info.kwarc.mmt.api._
 import frontend._
 import libraries._
+import utils.FileConversion._
 
 /**
  * The main class of the MMTPlugin
@@ -11,24 +13,20 @@ import libraries._
  * the home directory is obtained from jEdit, e.g., settings/plugins/info.kwarc.mmt.jedit.MMTPlugin
  */
 class MMTPlugin extends EditPlugin {
-   // initialized only in start method
-   private var controller : Controller = null
-   // initialized only in start method, log messages are written to home/mmtplugin.log
-   private var report : Report = null
-   private def log(msg: String) {report("jEdit", msg)}
+   val controller : Controller = new Controller
+   private def log(msg: String) {controller.report("jEdit", msg)}
    /** called by jEdit when plugin is loaded */
    override def start() {
       val home = getPluginHome()
       home.mkdirs()
-      val checker = new FoundChecker(DefaultFoundation)
-      report = new FileReport(new java.io.File(home, "mmtplugin.log"))
-      controller = new Controller(checker, report)
+      controller.setFileReport(home / "mmtplugin.log")
       controller.setHome(home)
+      controller.setCheckStructural
       val startup = new java.io.File(home, "startup.mmt")
       if (startup.isFile())
          controller.handle(ExecFile(startup))
       else
-         report("error", "could not find startup.mmt file")
+         controller.report("error", "could not find startup.mmt file")
    }
    /** called by jEdit when plugin is unloaded */
    override def stop() {

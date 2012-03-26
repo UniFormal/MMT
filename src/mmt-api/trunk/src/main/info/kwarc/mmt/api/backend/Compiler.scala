@@ -4,7 +4,7 @@ import frontend._
 import utils.File
 
 trait Importer {
-   protected var report : Report = NullReport
+   protected var report : Report = null
    /** true if this compiler can compile a certain kind of source files */
    def isApplicable(src : String): Boolean
    /** initialization (empty by default) */

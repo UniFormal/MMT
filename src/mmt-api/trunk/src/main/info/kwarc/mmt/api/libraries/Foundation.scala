@@ -4,7 +4,7 @@ import objects._
 import frontend._
 
 abstract class Foundation {
-   protected var report : Report = NullReport
+   protected var report : Report = null
    def init(r: Report, params: List[String] = Nil) {
       report = r
    }

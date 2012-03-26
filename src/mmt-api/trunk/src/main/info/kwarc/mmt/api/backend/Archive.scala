@@ -368,7 +368,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
         traverse(sourceDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
            val outFile = (root / "mws" / dim / inPath).setExtension("mws")
            log("[  -> MWS]  " + inFile + " -> " + outFile)
-           val controller = new Controller(NullReport)
+           val controller = new Controller
            controller.read(inFile,None)
            val mpath = Archive.ContentPathToMMTPath(in)
            val mod = controller.localLookup.getModule(mpath)

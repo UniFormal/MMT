@@ -37,8 +37,14 @@ abstract class ROController {
 /** A Controller is the central class maintaining all MMT knowledge items.
   * It stores all stateful entities and executes Action commands.
   */  
-class Controller(val report : Report) extends ROController {
-   protected def log(s : => String) = report("controller", s)
+class Controller extends ROController {
+   def this(r: Report) {
+      this()
+      report_ = r
+   }
+   /** handles all output and log messages */
+   private var report_ : Report = new Report 
+   def report = report_
    /** maintains all knowledge */
    val memory = new Memory(report)
    val depstore = memory.ontology
@@ -61,12 +67,17 @@ class Controller(val report : Report) extends ROController {
    /** the universal machine, a computation engine */
    val uom : UOMServer = {val u = new UOMServer(report); u.init; u}
 
+   protected def log(s : => String) = report("controller", s)
+
    /** the checker is used to validate content elements */
    private var checker : Checker = NullChecker
    def setCheckNone {checker = NullChecker}
    def setCheckStructural {checker = new StructuralChecker(report)}
    def setCheckFoundational(foundation: Foundation) {checker = new FoundChecker(foundation, report)}
 
+   def setFileReport(file: File) {report.addHandler(new FileHandler(file))}
+   def setConsoleReport {report.addHandler(ConsoleHandler)}
+   
    /** a lookup that uses only the current memory data structures */
    val localLookup = library
    /** a lookup that load missing modules dynamically */

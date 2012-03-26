@@ -11,10 +11,10 @@ object Main {
   def main(args: Array[String]): Unit = {
     val p = new DPath(mmt.baseURI / "set_theories" / "mizar" / "HIDDEN.omdoc")    
     
-    val fr = new FileReport(new java.io.File("moc.log"))
-    val fc = new libraries.FoundChecker(new libraries.DefaultFoundation, NullReport)
-    val cold = new Controller( fr)
-    val cnew = new Controller( NullReport)
+    val fc = new libraries.FoundChecker(new libraries.DefaultFoundation, new Report)
+    val cold = new Controller
+    cold.setFileReport(File("moc.log"))
+    val cnew = new Controller
     
     
     cold.handle(ExecFile(new java.io.File("moc1-startup.mmt")))

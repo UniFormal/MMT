@@ -542,9 +542,9 @@ object Export {
 	
 	def main(args: Array[String]) {
 		
-		val report = new FileReport(new java.io.File("controller.log"))
-		val checker = new FoundChecker(new DefaultFoundation, report)
-		val controller = new Controller(checker, report)
+		val controller = new Controller
+		controller.setFileReport(utils.File("controller.log"))
+		controller.setCheckStructural
 		controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
 		val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 		val exporter = new Export (manager, controller)
