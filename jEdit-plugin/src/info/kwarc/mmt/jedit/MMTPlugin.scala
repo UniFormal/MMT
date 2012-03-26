@@ -30,7 +30,7 @@ class MMTPlugin extends EditPlugin {
    }
    /** called by jEdit when plugin is unloaded */
    override def stop() {
-      controller.clear
+      controller.cleanup
    }
    
    def read(view : View) {
