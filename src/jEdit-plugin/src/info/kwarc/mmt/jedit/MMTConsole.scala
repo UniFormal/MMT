@@ -20,14 +20,22 @@ class MMTConsole extends console.Shell("mmt") {
    //If your shell executes commands in a separate thread, this method should stop the currently running thread, if any. 
    override def stop (console: Console) {}
 
+   
+   private var success : Option[Boolean] = Some(true) 
+   
    //This method should block until the currently running command has completed, and return true if the command executed successfully, false otherwise. If no command is currently running, it should return the status of the most recently run command. 
-   override def waitFor(console: Console) : Boolean = true
+   override def waitFor(console: Console) : Boolean = {
+      do {} while (success.isEmpty)
+      success.get
+   }
 
    def execute(console: Console, input: String, output: Output, error: Output, command: String) {
       val han = new OutputAsReport(output)
       controller.report.addHandler(han)
+      success = None
       controller.reportException(controller.handleLine(command))
       controller.report.removeHandler(han.id)
+      success = Some(true)
       output.commandDone()
    }
 }
