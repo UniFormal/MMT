@@ -3,9 +3,9 @@ import org.gjt.sp.jedit._
 import console._
 import info.kwarc.mmt.api.frontend.ReportHandler
 
-class OutputAsReport(console: Console, output: Output) extends ReportHandler(output.toString) {
+class OutputAsReport(output: Output) extends ReportHandler(output.toString) {
    def apply(ind: String, group : String, msg : String) {
-      output.print(console.getPlainColor, ind + group + ": " + msg)
+      output.print(null, ind + group + ": " + msg) // null for default color
    }
 }
 
@@ -14,7 +14,7 @@ class MMTConsole extends console.Shell("mmt") {
    val controller = mmt.controller
    //This method is invoked by the console when the user selects the shell in question. It should print a short informational message, outlining the main capabilities of the shell.
    override def printInfoMessage (output: Output) {
-      
+      output.print(null, "This is the MMT Shell")
    }
 
    //If your shell executes commands in a separate thread, this method should stop the currently running thread, if any. 
@@ -24,9 +24,9 @@ class MMTConsole extends console.Shell("mmt") {
    override def waitFor(console: Console) : Boolean = true
 
    def execute(console: Console, input: String, output: Output, error: Output, command: String) {
-      val han = new OutputAsReport(console, output)
+      val han = new OutputAsReport(output)
       controller.report.addHandler(han)
-      controller.handleLine(command + " " + input)
+      controller.reportException(controller.handleLine(command))
       controller.report.removeHandler(han.id)
       output.commandDone()
    }

@@ -220,7 +220,7 @@ class Controller extends ROController {
     }
   }
 
-   protected def handleExc[A](a: => A) {
+   def reportException[A](a: => A) {
        try {a}
        catch {
     	   case e : info.kwarc.mmt.api.Error => report(e)
