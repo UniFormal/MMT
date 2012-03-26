@@ -1,5 +1,8 @@
 <SERVICES>
-        <SERVICE CLASS="sidekick.SideKickParser" NAME="mmt">
-                new info.kwarc.mmt.jedit.MMTSideKick();
-        </SERVICE>
+   <SERVICE CLASS="sidekick.SideKickParser" NAME="mmt">
+      new info.kwarc.mmt.jedit.MMTSideKick();
+   </SERVICE>
+   <SERVICE CLASS="console.Shell" NAME="mmt">
+      new info.kwarc.mmt.jedit.MMTConsole();
+   </SERVICE>
 </SERVICES>

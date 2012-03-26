@@ -21,7 +21,7 @@ object Differ {
     def diff(c : Controller, p : MPath, rev : Int) : Diff = {
       
       println(p)
-      val c2 = new Controller(NullReport)
+      val c2 = new Controller
       c2.backend.addStore(c.backend.copyStorages(rev) :_ *)
       
       val mold = c.get(p) match {

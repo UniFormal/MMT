@@ -12,13 +12,16 @@ import scala.xml._
 object Diff{
   def main(args: Array[String]) {
     
-    val report = new FileReport(new java.io.File("controller.log"))
-	val checker = new FoundChecker(new DefaultFoundation, report)
-	val firstController = new Controller(checker, report)
-    val secondController = new Controller(checker, report)
+	val firstController = new Controller
+   val secondController = new Controller
+   firstController.setFileReport(utils.File("controller.log"))
 	firstController.handle(ExecFile(new java.io.File("startup.mmt")))
+   firstController.setCheckStructural
+	
+	secondController.setFileReport(utils.File("controller.log"))
 	secondController.handle(ExecFile(new java.io.File("startup.mmt")))
-	 
+	secondController.setCheckStructural
+	
     val firstSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DatatypeDefinitionAxiom\\datatypeDefinitionAxiom.omdoc")
     val secondSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DatatypeDefinitionAxiom\\datatypeDefinitionAxiomChanged.omdoc")
 	    

@@ -4,7 +4,7 @@
 	<classpathentry kind="con" path="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/tntbase-plugin-api.jar"/>
-	<classpathentry kind="lib" path="lib/tiscaf.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/tiscaf.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/lfcatalog"/>
 	<classpathentry kind="lib" path="lib/svnkit.jar"/>
 	<classpathentry kind="output" path="build/main"/>

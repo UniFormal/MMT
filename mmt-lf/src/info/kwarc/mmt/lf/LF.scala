@@ -274,6 +274,6 @@ class LFF extends Foundation {
 
 object Run extends frontend.Shell() {
    val found = new LFF()
-   found.init(report, Nil)
+   found.init(controller.report, Nil)
    controller.setCheckFoundational(found)
 }

@@ -16,10 +16,11 @@ import scala.collection.mutable.ArrayStack
 
 object TranslationController {
 	
-    val controller  =  {
-      val report = new FileReport(new java.io.File("mizar.log"))
-      val checker = libraries.NullChecker //new FoundChecker(new libraries.DefaultFoundation(report))
-      new frontend.Controller(checker,report)
+    val controller = {
+       val c = new frontend.Controller
+       c.setFileReport(File("mizar.log"))
+       c.setCheckNone //c.setFoundChecker(new libraries.DefaultFoundation(controller.report))
+       c
     }
     
     var query : Boolean = false

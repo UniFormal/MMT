@@ -5,7 +5,8 @@
 	<classpathentry kind="lib" path="lib/jedit.jar"/>
 	<classpathentry kind="lib" path="lib/SideKick.jar"/>
 	<classpathentry kind="lib" path="lib/ErrorList.jar"/>
+	<classpathentry kind="lib" path="lib/Console.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-	<classpathentry kind="lib" path="E:/homedir/MMT/deploy/mmt/mmt-api.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

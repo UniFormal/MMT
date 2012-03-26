@@ -6,9 +6,9 @@ import sidekick._
 import info.kwarc.mmt.api._
 import frontend._
 import libraries._
-import javax.swing.tree.DefaultMutableTreeNode
 
-import scala.collection.JavaConversions.asJavaList
+import javax.swing.tree.DefaultMutableTreeNode
+import scala.collection.JavaConversions.seqAsJavaList
 
 case class MyPosition(offset : Int) extends javax.swing.text.Position {
    def getOffset = offset
@@ -30,6 +30,8 @@ class MyCompletion(view : View, text: String, items: List[String])
 }
 
 class MMTSideKick extends SideKickParser("mmt") {
+   // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
+   val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = buffer.getPath()
       val tree = new SideKickParsedData(path)

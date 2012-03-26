@@ -98,15 +98,14 @@ class ObjectChecker(report: Report) {
 
 
 object Test {
-   val filereport = new frontend.FileReport(new java.io.File("test.log"))
-   val consreport = new ConsoleReport
-   val report = new MultipleReports(filereport, consreport)
-   val controller = new Controller(report)
-   def log(msg : => String) = report("user", msg)
+   val controller = new Controller
+   def log(msg : => String) = controller.report("user", msg)
 
    def main(args : Array[String]) : Unit = {
+      controller.setConsoleReport
+      controller.setFileReport(utils.File("test.log"))
       controller.handle(ExecFile(new java.io.File("test-init.mmt")))
-      val oc = new ObjectChecker(report)
+      val oc = new ObjectChecker(controller.report)
       val t1 = OMV("x")
       val t2 = OMV("x")
       log("solving " + t1 + " = " + t2)

@@ -8,14 +8,11 @@ import info.kwarc.mmt.api.utils._
  * @param foundation the foundation that is used for type checking
  */
 class Shell() extends {
-   val filereport = new frontend.FileReport(new java.io.File("jomdoc.log"))
-   val consreport = new ConsoleReport
-   val report = new MultipleReports(filereport, consreport)
-   val controller = new Controller(report)
+   val controller = new Controller
    def main(args : Array[String]) : Unit = {
+      controller.setConsoleReport
+      controller.setFileReport(File("jomdoc.log"))
       val command = args.mkString("", " ", "")
-      filereport.groups += "*"
-      consreport.groups += "*"
       try {
          controller.handleLine(command)
          val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
