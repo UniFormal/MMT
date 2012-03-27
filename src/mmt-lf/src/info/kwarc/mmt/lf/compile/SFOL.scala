@@ -10,7 +10,7 @@ object SFOL {
    val terms   = Category("tm", List(funapp, termvar)) 
 
    val and     = Connective("AND", List(CatRef("o"), CatRef("o")))
-   val forall  = Binder("FORALL", List(CatRef("S")), (CatRef("tm"), List(1)), CatRef("o"))
+   val forall  = Binder("FORALL", Some(CatRef("S")), CatRef("tm"), CatRef("o"))
    val predapp = ConstantSymbol("pred", "p", List(CatRef("tm"), CatRef("tm")))
    val forms   = Category("o", List(and, forall, predapp))
 
