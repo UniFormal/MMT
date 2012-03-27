@@ -1,38 +1,54 @@
 package info.kwarc.mmt.api.moc
 
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.modules._
-import scala.collection.mutable._
-import scala.xml.Node
+import info.kwarc.mmt.api.patterns._
+import info.kwarc.mmt.api.libraries._
 
+/*
+import org.tmatesoft.svn.core._
+import org.tmatesoft.svn.core.io._
+import org.tmatesoft.svn.core.auth._
+import org.tmatesoft.svn.core.wc._
+*/
 
 object Differ {
   
+    def diff(c : Controller, p : MPath, rev : Int) : Diff = {
+      
+      println(p)
+      val c2 = new Controller
+      c2.backend.addStore(c.backend.copyStorages(rev) :_ *)
+      
+      val mold = c.get(p) match {
+        case m : Module => m
+        case _ => throw NotFound(p)
+      }
+      
+      val mnew = c2.get(p) match {
+        case m : Module => m
+        case _ => throw NotFound(p)
+      }
+      compareModules(mold,mnew)
+    }
+    
 	def diff(cold : Controller, cnew : Controller, pold : DPath, pnew : DPath) : Diff = {
-	  val old = cold.getDocument(pold)	
+
+	  val old = cold.getDocument(pold)
+
 	  val nw = cnew.getDocument(pnew)
-	  val change = compareDocuments(old, nw, cold, cnew)
-	  var diff = new Diff(cold, cnew, pold, pnew)
-	  diff.changes = List(change)
-	  diff
-	}
-  
-	def applyDiff(diff : Diff, controller : Controller) : Document = {
-	  val baseDoc = controller.getDocument(diff.old)
-	  diff.changes.map(x => x match {
-	    case c : ChangeDocument => applyDocChange(c, diff.cold, controller)
-	    case c : ChangeModule => applyModuleChange(c, diff.cold, controller)
-	    case c : ChangeDeclaration => applyDeclarationChange(c, diff.cold, controller)
-	  })
-	  
-	  controller.getDocument(diff.nw)
+
+	  //TODO
+	  val mold = old.getModulesResolved(cold.library)(0)
+	  val mnw = nw.getModulesResolved(cnew.library)(0)
+	  compareModules(mold, mnw)
 	}
 	
-	
+	/*
 	def genCSS(c : ChangeModule, fname : String) = {
 	  val css = new java.io.FileWriter("/home/mihnea/public_html/" + fname + ".css")
 	  val js = new java.io.FileWriter("/home/mihnea/public_html/" + fname + ".js")
@@ -114,657 +130,272 @@ object Differ {
 	  case c : UpdateModule => 
 	    css.write("div[id=\"" + c.path.toPath + "\"]\n{\ncolor:#00DDDD;\n}\n")
 	    js.write("document.querySelectorAll(\"div[id=\\\"" + c.path.toPath + "\\\"] span:first-of-type\")[0].setAttribute(\"title\", \"Updated Module \");\n")
-	    c.componentChanges.map(decl2CSS(_, css, js))
+	    c.childChanges.map(decl2CSS(_, css, js))
 	  case c : RenameModule =>
 	  	css.write("div[id=\"" + (c.path.parent ? c.name).toPath + "\"]\n{\ncolor:#EEBB00;\n}\n")
 	  	js.write("document.querySelectorAll(\"div[id=\\\"" + (c.path.parent ? c.name).toPath + "\\\"] span:first-of-type\")[0].setAttribute(\"title\", \"Renamed Module (from " + c.path.name + ")\");\n")
 	  case c : DeleteModule =>
 	  	css.write("div[id=\"" + c.path.toPath + "\"]\n{\ncolor:red;\n}\n")
 	  case c : IdenticalModule => None
+	}	
+	*/
+		
+	def _fullType(o : Obj) : List[String] = o.toNode.label :: o.toNode.attributes.toString :: Nil
+	def _getType(s : StructuralElement) : String = s.toNode.label	
+	
+	
+	def areEqual(old : Option[Obj], nw : Option[Obj]) : Boolean = (old,nw) match {
+	  case (None,None) => true
+	  case (Some(o), None) => false
+	  case (None, Some(n)) => false
+	  case (Some(o), Some(n)) => o == n
 	}
 	
 	
-	def  applyDocChange(cd : ChangeDocument, cold : Controller, controller : Controller) : Unit = {
-	  cd match {
-	    case AddDocument(d) => controller.add(d)
-	    case UpdateDocument(path, changes) => 
-	     val doc = new Document(path)
-	     
-	     controller.add(doc)
-	     changes.map( _ match { 
-	      case mc : ChangeModule => applyModuleChange(mc, cold, controller) 
-	      case dc : ChangeDocument => applyDocChange(dc, cold, controller)
+	def compareObjects(o : Obj, n : Obj, pos : Position = Position(Nil)) : List[Position] = {
+	  if (o == n) Nil
+	  else if (_fullType(o) == _fullType(n) && o.components.length == n.components.length) {
+	    o.components.zip(n.components).zipWithIndex.flatMap(p => p._1 match {
+	      case (o1 : Obj, n1 : Obj) => compareObjects(o1, n1, pos + p._2)
+	      case _ => if (p._1._1 == p._1._2) Nil else pos :: Nil
 	    })
-	    case DeleteDocument(path) => None
-	    case RenameDocument(path, name) => None
-	    case IdenticalDocument(path) => controller.add(cold.getDocument(path))
+	  } else {
+	    pos :: Nil
 	  }
 	}
 	
 	
-	
-	def applyModuleChange(cm : ChangeModule, cold : Controller, controller : Controller) = {
-	  cm match {
-	    case AddModule(m,tp) => (tp,m) match {
-	        case ("DeclaredTheory",d : DeclaredTheory) => 
-	        	val nd = new DeclaredTheory(d.parent, d.name, d.meta)
-	        	controller.add(nd)
-	        	controller.add(MRef(m.path.parent ,m.path, true))
-	        	_declarations(d).map(x => controller.add(x))
-	      }
-	      
-	    case UpdateModule(path,tp, bodyChanges, componentChanges) => 
-	      val m = applyComponentChanges(cold.get(path), tp, componentChanges)
-	      controller.add(m)
-	      m.path match {
-	        case pth : MPath => controller.add(MRef(m.path.doc ,pth, true))
-	        case _ => 
-	      }
-	      bodyChanges.map(applyDeclarationChange(_, cold, controller))
-	    case DeleteModule(path, tp) => None
-	    case RenameModule(path, tp, name) =>  
-	      (tp,cold.get(path)) match {
-	        case ("DeclaredTheory",d : DeclaredTheory) => 
-	        	val nd = new DeclaredTheory(d.parent, name, d.meta)
-	        	controller.add(nd)
-	        	controller.add(MRef(nd.path.parent ,nd.path, true))
-	        	_declarations(d).map(x => x match {
-	        	  case c : Constant => 
-	        	    val nc = new Constant(OMMOD(c.home.toMPath.doc ? name), c.name, c.tp, c.df, c.rl, c.not)
-	        	    controller.add(nc)
-	        	  case i : Include => 
-	        	    val in = new Include(OMMOD(i.home.toMPath.doc ? name), i.from)
-	        	    controller.add(in)
-	        	})
-	      }
-	      
-	    case IdenticalModule(path, tp) => 
-	      controller.add(cold.get(path))
-	  }
+	def compareConstants(o : Constant, n : Constant) : Diff = {
+    var changes : List[ContentElementChange] = Nil
+		
+    if(!areEqual(o.tp,o.df)) {
+       changes = UpdateComponent(o.path, "type", o.tp, n.tp) :: changes
+		}
+		
+		if (!areEqual(o.df, n.df))  {
+		  changes = UpdateComponent(o.path, "def", o .df, n.df) :: changes
+		}
+		
+		new Diff(changes)
 	}
 	
-	def applyDeclarationChange(cd : ChangeDeclaration, cold : Controller, controller : Controller) = {
-	  cd match {
-	    case AddDeclaration(d, tp) => controller.add(d) 
-	    case UpdateDeclaration(path, tp, changes) => {
-	      val dcl = applyComponentChanges(cold.get(path),tp, changes)
-	      controller.add(dcl)
-	    }
-	    case DeleteDeclaration(path, tp) => None
-	    case RenameDeclaration(path, tp, name) => (tp, cold.get(path)) match {
-	      case ("Constant", c : Constant) => 
-	        val nd = new Constant(c.home, name, c.tp, c.df, c.rl, c.not)
-	        controller.add(nd)
-	    }
-	    case IdenticalDeclaration(path, tp) => controller.add(cold.get(path))
-	  }
-	}
 	
-	def applyComponentChanges(s : StructuralElement, tp : String, componentChanges : List[ChangeComponent]) : StructuralElement = {
-	  (tp,s) match {
-	    case ("Constant", c : Constant) => 
-	      val home = c.home
-	      val name = c.name
-	      var tp = c.tp
-	      var df = c.df
-	      var rl = c.rl
-	      componentChanges.map(x => x match {
-	        case AddComponent(name, comp) => (name, comp) match {
-	          case ("type", Obj2Component(t : Term)) => tp = Some(t)
-	          case ("definition", Obj2Component(t : Term)) => df = Some(t)
-	          case _ => throw ImplementationError("match error in Constant components")
-	        }   
-	        case DeleteComponent(ctp,name) => (name) match {
-	          case "type" => tp = None
-	          case "definition" => df = None
-	          case _ => throw ImplementationError("match error in Constant components")
-	        }
-	        case UpdateComponent(name,comp) => (name,comp) match {
-	          case ("type", Obj2Component(t : Term)) => tp = Some(t)
-	          case ("definition", Obj2Component(t : Term)) => df = Some(t)
-	          case _ => throw ImplementationError("match error in Constant components")
+	def compareIncludes(o : Include, n : Include) : Diff = {
+	  var changes : List[ContentElementChange] = Nil
 
-	        }
-	        case IdenticalComponent(ctp,name) => None //already set above
-	      })
-	      val cn = new Constant(home, name, tp, df, rl, c.not) //TODO notation change
-	      cn
-	    case ("DeclaredTheory", d : DeclaredTheory) => 
-	      val doc = d.parent
-	      val name = d.name
-	      var meta = d.meta
-	      componentChanges.map(x => x match {
-	        case AddComponent(name, comp) => (name, comp) match {
-	          case ("meta", Path2Component(p : MPath)) => meta = Some(p)
-	          case _ => throw ImplementationError("match error in Declared Theory components")
-
-	        }   
-	        case DeleteComponent(ctp,name) => (name) match {
-	          case "meta" => meta = None
-	          case _ => throw ImplementationError("match error in Declared Theory components")
-	        }
-	        case UpdateComponent(name,comp) => (name,comp) match {
-	          case ("meta", Path2Component(p : MPath)) => meta = Some(p)
-	          case _ => throw ImplementationError("match error in Declared Theory components")
-
-	        }
-	        case IdenticalComponent(ctp,name) => None //already set above
-	      })
-	      
-	      val dn = new DeclaredTheory(doc, name, meta)
-	      dn
+    if (o.from != n.from) {
+	    changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
 	  }
+
+    new Diff(changes)
+	}
+	
+	def comparePatterns(old : Pattern, nw : Pattern) : Diff = {
+    var changes : List[ContentElementChange] = Nil
+
+    if (old.params != nw.params){
+      changes = UpdateComponent(old.path, "params", Some(old.params), Some(nw.params)) :: changes
+    }
+
+    if (old.con != nw.con) {
+      changes = UpdateComponent(old.path, "con", Some(old.con), Some(nw.con)) :: changes
+    }
+
+	  new Diff(changes)
+	}
+	
+	def compareInstances(old : Instance, nw : Instance) : Diff = {
+    var changes : List[ContentElementChange] = Nil
+
+	  if (old.pattern != nw.pattern) {
+	    changes = UpdateComponent(old.path, "pattern", Some(OMID(old.pattern)), Some(OMID(nw.pattern))) :: changes
+	  }
+
+	  if (old.matches != nw.matches) {
+      changes = UpdateComponent(old.path, "matches", Some(old.matches), Some(nw.matches)) :: changes
+    }
+
+    new Diff(changes)
 	}
 	
 	
-	
-	
-	
-	def _getType(s : StructuralElement) : String = s match {
-	  case t : DeclaredTheory => "DeclaredTheory"
-	  case t : DefinedTheory => "DefinedTheory"
-	  case c : Constant => "Constant"
-	  case a : Assignment => "Assignment"
-	  case i : Include => "Include"
+	def compareConstantAssignments(old : ConstantAssignment, nw : ConstantAssignment) : Diff = {
+    var changes : List[ContentElementChange] = Nil
+
+    if (old.target != nw.target) {
+      changes = UpdateComponent(old.path, "target", Some(old.target), Some(nw.target)) :: changes
+    }
+	  
+	  new Diff(changes)
 	}
 	
-	def compareDeclarations(old : Declaration, nw : Declaration) : ChangeDeclaration = {
+	def compareDefLinkAssignments(old : DefLinkAssignment, nw : DefLinkAssignment) : Diff = {
+    var changes : List[ContentElementChange] = Nil
+
+    if (old.target != nw.target) {
+      changes = UpdateComponent(old.path, "target", Some(old.target), Some(nw.target)) :: changes
+    }
+
+	  new Diff(changes)
+	}
+	
+	def compareAliases(old : Alias, nw : Alias) : Diff = {
+    var changes : List[ContentElementChange] = Nil
+
+    if (old.forpath != nw.forpath) {
+      changes = UpdateComponent(old.path, "forpath", Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
+    }
+
+	  new Diff(changes)
+	}
+	
+	def compareDeclarations(old : Declaration, nw : Declaration) : Diff = {
 	  (old,nw) match {
 	    case (o : Constant, n : Constant) => 
-	      var changed = false
-	      val tp = (o.tp,n.tp) match {
-	        case (None,None) => IdenticalComponent("Term","type")
-	        case (Some(s),None) => 
-	          changed = true
-	          DeleteComponent("Term","type")
-	        case (None,Some(s)) => 
-	          changed = true
-	          AddComponent("type", Obj2Component(s))
-	        case (Some(oc),Some(nc)) => 
-	          if (oc == nc)
-	            IdenticalComponent("Term","type")
-	          else {
-	            changed = true
-	            UpdateComponent("type", Obj2Component(nc))
-	          }
-	      }
-	      
-	      val df = (o.df,n.df) match {
-	        case (None,None) => IdenticalComponent("Term", "definition")
-	        case (Some(s),None) => 
-	          changed = true
-	          DeleteComponent("Term", "definition")
-	        case (None,Some(s)) =>
-	          changed = true
-	          AddComponent("definition", Obj2Component(s))
-	        case (Some(oc),Some(nc)) => 
-	          if (oc == nc)
-	            IdenticalComponent("Term", "definition")
-	          else {
-	            changed = true
-	            UpdateComponent("definition", Obj2Component(nc))
-	          }
-	      }
-	      changed match {
-	        case true => UpdateDeclaration(n.path, "Constant", List(tp,df))
-	        case false => IdenticalDeclaration(n.path, "Constant")
-	      }
+	      compareConstants(o,n)
 	    case (o : Include, n : Include) =>
-	      var changed = false
-	      val from = if (o.from == n.from)
-	            IdenticalComponent("TheoryObj", "from")
-	          else {
-	            changed = true
-	            UpdateComponent("from", TheoryObj2Component(n.from))
-	          }
-	      changed  match {
-	        case true => UpdateDeclaration(n.path, "Include", List(from))	      
-	        case false => IdenticalDeclaration(n.path, "Include")
-	      }
+	      compareIncludes(o,n)
+	    case (o : Pattern, n : Pattern) => 
+	      comparePatterns(o,n)
+	    case (o : Instance, n : Instance) => 
+	      compareInstances(o,n)
+	    case (o : ConstantAssignment, n : ConstantAssignment) => 
+	      compareConstantAssignments(o,n)
+	    case (o : DefLinkAssignment, n : DefLinkAssignment) => 
+	      compareDefLinkAssignments(o,n)
+	    case (o : Alias, n : Alias) => 
+	      compareAliases(o,n)
 	  }
 	}
-	
-	
-	def _getDeclFields(d : Declaration, fields : List[String]) : List[Node] = {
-		d match {
-		  case c : Constant => fields.map(s => s match {
-		    case "type" => 
-		      <constant-tp-update>
-		    	{c.tp match {case Some(t) => t.toNode case None => }}
-		      </constant-tp-update>
-		    case "definition" => 
-		       <constant-df-update>
-		    	{c.df match {case Some(t) => t.toNode case None => }}
-		      </constant-df-update>
-		  })
-		  case i : Include => Nil
-		}
-	  
-	}
-	
-	
+		
 	def _declarations(m : Module) : List[Declaration] = {
 	  m.components.flatMap(x => x match {
 	    case d : Declaration => List(d)
 	    case _ => Nil
 	  })
 	}
-	
-	def _checkDocumentRenames(nw : Document, options : List[(XRef,Document)]) : (Document, Option[(XRef,Document)]) = {
-	   val matches = options.flatMap(old => {
-	     (old._2.getItems == nw.getItems)  match {
-	          case true => List(old)
-	          case false => Nil
-	        }
-	    })
-	  
-	  matches.length match {
-	    case 1 => (nw,Some(matches(0)))
-	    case _ => (nw,None)
-	  }
-	}
-	
-	
-	def _checkModuleRenames(nw : Module, options : List[(XRef,Module)]) : (Module, Option[(XRef,Module)]) = {
-	   val matches = options.flatMap(old => {
-	    (old._2,nw) match {
-	      case (o : DeclaredTheory, n : DeclaredTheory) =>
-	        val od = _declarations(o)
-	        val nd = _declarations(n)
-	        val decl = od.zip(nd).map(p => compareDeclarations(p._1, p._2)).foldRight(true)((x,r) => x match {
-	          case d : IdenticalDeclaration => r && true
-	          case _ => false
-	        })
-	        (o.meta == n.meta) && (decl) match {
-	          case true => List((old._1,o))
-	          case false => {
-	            Nil
-	          }
-	        }
-	      case _ => Nil
-	    }
-	  })
-
-	  matches.length match {
-	    case 1 => (nw,Some(matches(0)))
-	    case _ => (nw,None)
-	  }
-	}
-	
-	
-	def _checkDeclarationRenames(nw : Declaration, options : List[Declaration]) : (Declaration,Option[Declaration]) = {
-	  val matches = options.flatMap(old => {
-	    (old,nw) match {
-	      case (o : Constant, n : Constant) => 
-	        (o.df == n.df) && (o.tp == n.tp) match {
-	          case true => List(o)
-	          case false => Nil
-	        }
-	      case _ => Nil
-	    }
-	  })
-	  
-	  matches.length match {
-	    case 1 => (nw,Some(matches(0)))
-	    case _ => (nw,None)
-	  }
-	  
-	}
+		
 	
 	def _max(a : Int, b : Int) : Int = {
-	  if (a > b){
-	    a
-	  }
-	  else { 	 
-		b
-	  }
+	  if (a > b) a else b
 	}
 	
-	def _rank(changes : List[Change]) : Int = {
-		changes.foldRight(0)((c,r) => c match {
-		  case x : Add => _max(r,1)
-		  case x : Update => _max(r,1)
-		  case x : Rename => _max(r,2)
-		  case x : Delete => _max(r,2)
-		  case x : Identical => _max(r,0)
-		})
-	}
-	
-	
-	def compareModules(old : Module, nw : Module) : ChangeModule = {
+	def compareModules(old : Module, nw : Module) : Diff = {
+      //getting all declarations stored in each library
+
+	  val od = _declarations(old)
+	  val nd = _declarations(nw)
+	  
+	  // checking for declarations pairs having the same name aka same declaration with two versions
+	  // due to name uniqueness max size of each filtered list is 0 or 1
+	  // making the final result contain all declaration names that exist in both library versions
+	  val matched = nd.flatMap(n => od.filter(o => n.name.toString == o.name.toString).map((_,n)))
+	  
+	  //filtering away matched paths
+	  val unmatchedold = od.filterNot(x => matched.exists(y => x.name.toString == y._1.name.toString))
+	  val unmatchednew = nd.filterNot(x => matched.exists(y => x.name.toString == y._1.name.toString))
+	  
+	  //checking whether unmatched old declarations are truly removed or just renamed.
+	  val oldch : List[ContentElementChange]= unmatchedold.map(x =>
+	    unmatchednew.filter(y => compareDeclarations(x,y).changes == Nil) match {
+	      case y :: Nil => RenameDeclaration(x.path, y.name) // _exactly one_ match must exist for the rename pair to be valid
+	      case _ => DeleteDeclaration(x) // if no matches or 2+ matches (ambiguous pairing) then we count the module as deleted
+	  })
+	  
+	  //new declarations which are still unmatched after the renames search are marked as adds 
+	  val newch : List[ContentElementChange] = unmatchednew.filter(y => oldch.exists({case RenameDeclaration(x,p) => p.toString == y.name.toString case _ => false})).map(y => AddDeclaration(y))
+	  
+	  //comparing declaration pairs to see how (if at all) they were updated over the two versions
+	  val updates : List[ContentElementChange] = matched.flatMap(x => compareDeclarations(x._1,x._2).changes)
+	  val innerChanges = new Diff(updates ++ oldch ++ newch)
+	  
 	  (old,nw) match {
 	    case (o : DeclaredTheory, n : DeclaredTheory) =>
-	    	val od = _declarations(o)
-	    	val nd = _declarations(n)
-	    	val r = nd.flatMap(x => od.filter(y => x.name == y.name))
-	    
-	    	var pairs = new scala.collection.mutable.ListMap[Declaration,Int]
-	    	var vals = new scala.collection.mutable.LinkedList[Option[ChangeDeclaration]]
-	    	nd.map(x => {
-	         pairs(x) = vals.length
-	    	 vals = vals :+ None
+        var changes : List[ContentElementChange] = Nil
 
-	    	})
-	    	
-	    	var used = new scala.collection.mutable.HashMap[Declaration,Boolean]
-	    	od.map(x => used(x) = false)
-	    	
-	    	//checking for old-new pairs by name
-	    	pairs.map(p => od.find(y => p._1.name == y.name) match {
-	    	  case Some(r) =>
-	    	    used(r) = true
-	    	    vals(p._2) = Some(compareDeclarations(r,p._1))
-	    	  case None => None    	  
-	    	})
-	    
-	    	//checking for renames by searching through adds and deletes for matches
-	    	val tmpadds = pairs.filter(p => vals(p._2) match {
-	    		case None => true
-	    		case Some(d) => false
-	    	})
-	      
-	    	val tmpdels = used.filterNot(_._2).map(_._1).toList 
-	    	tmpadds.map(x => _checkDeclarationRenames(x._1,tmpdels)).map(p => {
-	    		p._2 match {
-	    		case Some(x) =>
-	    		  	used(x) = true
-	    			vals(pairs(p._1)) = Some(RenameDeclaration(x.path, _getType(p._1), p._1.name))
-	    		case None => None
-	    		}
-	    	})
-	      
-	       
-
-	      val deletes = used.filterNot(_._2).map(_._1).map(d => DeleteDeclaration(d.path, _getType(d)))
-	      pairs.map(p => vals(p._2) match {case Some(s) => None case None => vals(p._2) = Some(AddDeclaration(p._1, _getType(p._1)))})
-	      
-	      val changes = (vals.flatMap(v => v match {case Some(s) => List(s) case None => Nil}) ++ deletes).toList
-	     
-	      
-	      val meta = (o.meta,n.meta) match {
-	    	  case (None,None) => IdenticalComponent("Path","meta")
-	    	  case (None,Some(p)) => AddComponent("meta",Path2Component(p))
-	    	  case (Some(p),None) => DeleteComponent("Path","meta")
-	    	  case (Some(op),Some(np)) => 
-	    	    if (op == np) 
-	    	      IdenticalComponent("Path", "meta") 
-	    	    else 
-	    	      UpdateComponent("meta", Path2Component(np))
-	      }
-	    
-	      _rank(meta :: changes) match {
-	        case 0 => IdenticalModule(n.path, _getType(n))
-	        case _ => UpdateModule(n.path, _getType(n), changes, List(meta))
-	      }
-	  }
-	}
-	
-	def compareDocuments(old : Document, nw : Document, cold : Controller, cnew : Controller) : ChangeDocument = {
-	  val od = old.getItems
-	  val nd = nw.getItems
-	  
-	  var pairs = new scala.collection.mutable.ListMap[XRef,Int]
-	  var vals  = new scala.collection.mutable.LinkedList[Option[Change]] 
-	  
-	  nd.map(x => {
-		  pairs(x) = vals.length
-		  vals = vals :+ None
-	  })
-	  
-	  var used = new scala.collection.mutable.HashMap[XRef,Boolean]
-	  od.map(x => used(x) = false)
-	  
-	  //checking for old-new pairs by name
-	  pairs.map(p => od.find(y => p._1.target == y.target) match {
-	  	case Some(r) =>
-	  		used(r) = true
-	  		(cold.get(r.target),cnew.get(p._1.target)) match {
-	  		  case (omd : Module, nmd : Module) => vals(pairs(p._1)) = Some(compareModules(omd,nmd))
-	  		  case (odc : Document, ndc : Document)  => vals(pairs(p._1)) = Some(compareDocuments(odc,ndc, cold, cnew))
-	  		}
-	  	case None => None    	  
-	  })
-	   
-	  
-	  //checking for renames by searching through adds and deletes for matches
-	  val tmpadds = pairs.filter(p => vals(p._2) match {
-	  case None => true
-	  case Some(d) => false
-	  })
-
-	  var tmpModDels = new scala.collection.mutable.LinkedList[(XRef,Module)]
-	  var tmpDocDels = new scala.collection.mutable.LinkedList[(XRef,Document)]
-	  
-	  used.filterNot(_._2).map(x => cold.get(x._1.target) match {
-	    case m : Module => tmpModDels = tmpModDels :+ (x._1,m)
-	    case d : Document => tmpDocDels = tmpDocDels :+ (x._1,d)
-	  })
-	  
-	  
-	  
-	  tmpadds.map(x => cnew.get(x._1.target) match {
-	    case mdl : Module => _checkModuleRenames(mdl, tmpModDels.toList) match {
-	      case (nwm,Some(odm)) => 
-	        vals(pairs(x._1)) = Some(RenameModule(odm._2.path, _getType(odm._2), nwm.name))
-	        used(odm._1) = true
-	      case _ => None
-	    }
-	    
-	    case dcm : Document => _checkDocumentRenames(dcm, tmpDocDels.toList) match {
-	      case (nwd,Some(odd)) => 
-	        vals(pairs(x._1)) = Some(RenameDocument(odd._2.path, nwd.path.toPath))
-	        used(odd._1) = true
-	      case _ => None
-	    }
-	  })
-	      
-	  val deletes =  used.filterNot(_._2).map(_._1).map(x => cold.get(x.target) match {
-	    case mdl : Module => DeleteModule(mdl.path, _getType(mdl))
-	    case doc : Document => DeleteDocument(doc.path)
-	  })
-	  
-	  
-	  pairs.map(p => vals(p._2) match {case Some(s) => None case None => vals(p._2) = cnew.get(p._1.target) match {
-	    case dcm : Document => Some(AddDocument(dcm))
-	    case mdl : Module => Some(AddModule(mdl, _getType(mdl)))
-	    }})
-	      
-	  val changes = (vals.flatMap(v => v match {case Some(s) => List(s) case None => Nil}) ++ deletes).toList
-
-	  	      
-	  _rank(changes) match {
-	  	case 0 => IdenticalDocument(nw.path)
-	  	case _ => UpdateDocument(nw.path, changes)
-	  }
-	}
-	
-
-}
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-class Differ {
-  
-  def applyChange(c : Change, controller : Controller)  = {
-    c match {
-      case Add(e) => controller.add(e)
-      case Update(e) => {
-        controller.get(e.parent) match {
-          case t : DeclaredTheory => 
-            (controller.get(e.path),e) match {
-              case (s : Symbol, nw : Symbol) => t.replace(s,nw)
-              case _ => //this should not happen since parent(e) is a declared theory
+        (o.meta, n.meta) match {
+	    	  case (None,None) => None
+	    	  case (None,Some(p)) => changes = UpdateComponent(o.path, "meta", None, Some(OMMOD(p))) :: changes
+	    	  case (Some(p),None) => changes = UpdateComponent(o.path, "meta", Some(OMMOD(p)), None) :: changes
+	    	  case (Some(op),Some(np)) =>
+            if (op != np) {
+	    	      changes = UpdateComponent(o.path, "meta", Some(OMMOD(op)), Some(OMMOD(np))) :: changes
             }
-          case _ => 
         }
-      }
-      
-      case Delete(p) => {
-        controller.library.delete(p)
-      }
-      case Rename(p, nw_name) => {
-        val s = controller.get(p)
-        controller.library.delete(p)
-        s match {
-          case c : Constant => 
-            val nw_c = new Constant(c.home, nw_name, c.tp, c.df, c.uv)
-            controller.add(nw_c)
-          case _ => println("Warning in Diff-> applyChange -> Rename : Symbol type not supported")
+
+	      new Diff(changes) ++ innerChanges
+
+	    case (o : DefinedTheory, n : DefinedTheory) =>
+        var changes : List[ContentElementChange] = Nil
+
+	      if (o.df != n.df) {
+	        changes = UpdateComponent(o.path, "df", Some(o.df), Some(n.df)) :: changes
         }
-      }
-    }
-  }
- 
-  
-  
-  def applyDiff(diff : Diff, controller : Controller) : Document = {
-	val doc = diff.old.getDocument(diff.path)
-	
-	controller.add(doc)
-	doc.getModulesResolved(diff.old.library).map(x => { 
-	  x match {
-	    case t : DeclaredTheory =>
-	      val nw_t = 
-	        new DeclaredTheory(t.parent, t.name, t.meta)
-	      	controller.add(nw_t)
-	      	t.innerComponents.map(e => controller.add(e))
-	    case _ =>  None
+
+	      new Diff(changes) ++ innerChanges
+	      
+	    case (o : DeclaredView, n : DeclaredView) =>
+        var changes : List[ContentElementChange] = Nil
+
+        if (o.from != n.from) {
+          changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
+        }
+
+        if (o.to != n.to) {
+          changes = UpdateComponent(o.path, "to", Some(o.to), Some(n.to)) :: changes
+        }
+
+        new Diff(changes)  ++ innerChanges
+
+	    case (o : DefinedView, n : DefinedView) =>
+        var changes : List[ContentElementChange] = Nil
+
+        if (o.from != n.from) {
+          changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
+        }
+
+        if (o.to != n.to) {
+          changes = UpdateComponent(o.path, "to", Some(o.to), Some(n.to)) :: changes
+        }
+
+        if (o.df != n.df) {
+          changes = UpdateComponent(o.path, "df", Some(o.df), Some(n.df)) :: changes
+        }
+
+	      new Diff(changes)  ++ innerChanges
 	  }
-	}
-	  )
+	}	
 	
-	diff.changes.map(c => applyChange(c : Change, controller : Controller))
-	doc
-  }
-  
-  
-  def components(s : StructuralElement) : List[StructuralElement] = {
-    val l = s.components.flatMap(x => x match {
-      case se : StructuralElement => List(se)
-      case _ => Nil
-    })
-    l
-  }
-  
-   def diff(cold : Controller, cnew : Controller, p : DPath) : Diff = {
-  
-     val dold = cold.getDocument(p)
-     val dnew = cnew.getDocument(p)
-     
-     val status = dnew.getModulesResolved(cnew.library).flatMap(x => dold.getModulesResolved(cold.library).map(y => compare(y, x)))
-     
-     Diff(cold, cnew,p, status.flatMap(x => x.toChange).toSeq : _*)
-   }
-      
-   def compare(old : StructuralElement, nw : StructuralElement) : Status = {
-     //println(old.toString)
-     //println(nw.toString)
-     
-     (old,nw) match {
-       case (so : Symbol,sn : Symbol) =>
-         compareSymbols(so, sn)
-       case (mo : Module, mn : Module) => 
-         compareModules(mo,mn)
-       case _ => new Distinct(nw)
-     }
-     
-   }
-   	
-   def compareModules(old : Module, nw : Module) : Status = {
-     //println("old")
-     //components(old).map(println)
-     //println("new")
-     //components(nw).map(println)
-     val r = components(nw).map(x => components(old).foldLeft[Status](new Distinct(nw))((res,y) => 
-       { res match {
-         case Distinct(_) => compare(y,x)
-         case _ => res
-       }
-       }))
-       
-       val used = r.flatMap( x => x match {
-         case Identical(p) => List(p)
-         case Modified(_,p) => List(p)
-         case Distinct(c) => Nil 
-       })      
-       
-       val unused = components(old).filter(x => !used.contains(x.path))
-       val deletes = unused.map(x => Delete(x.path))
-       val changes : List[Change] = r.flatMap(x => x.toChange) ::: deletes
-       Modified(changes, old.path)
-   }
-   
-   def compareSymbols(old : Symbol, nw : Symbol) : Status = {
-     (old, nw) match {
-       case (oc : Constant, nc : Constant) => {
-        compareConstants(oc, nc)
-       }
-       case (oc : Include, nc : Include) => {
-         compareIncludes(oc,nc)
-       }
-       case _ => 
-         //println("old: " + old.toString)
-         //println("new: " + nw.toString)
-         new Distinct(nw)
-     }
-   }
-   
-   
-   
-   def compareConstants(old : Constant, nw : Constant) : Status = {
-      
-    val name = (old.name == nw.name)
-    val tp = (old.tp == nw.tp)
-    val df = (old.df == nw.df)
-    
-    (name,tp,df) match {
-      case (true,true,true) => new Identical(old.path)
-      case (false,true,true) => new Modified(List( Rename(old.path, nw.name)),old.path)
-      case (true,_,_) => new Modified( List( Update(nw)),old.path)
-      case _ => new Distinct(nw)
-    }
-   
-   }
-   
-   def compareIncludes(old : Include, nw : Include) : Status = {
-     val from  = old.from == nw.from
-     val to = old.from == nw.from
-     (from,to) match {
-       case (true, _) => new Identical(old.path)
-       case (false,_) => new Distinct(nw)
-     }
-   }
-   
-   /*
-   def compareTerm(old : Term, nw : Term) : Status = {
-     (old -> nw) match {
-       case (OMA(of,ol), OMA(nf,nl)) => 
-         if (of == nf && ol == nl) {
-        	 new Identical(old) //TODO
-         } else {
-           new Distinct() //TODO
-         }
-       case (OMID(ogn), OMID(ngn)) => {
-         if (ogn == ngn) {
-           new Identical(ogn)
-         } else {
-           new Modified(Diff(new Update(nw)), ogn)
-         }
-       }
-     }
-     new Distinct()
-   }
-   */
-   
+	
+	def compareFlatLibraries(old : Library, nw : Library) : Diff = {
+	  
+	  //getting all module URI's (paths) stored in each library
+	  val ops = old.getAllPaths
+	  val nps = nw.getAllPaths
+	  
+	  // checking for module pairs having the same URI aka same file with two versions
+	  // due to path uniqueness max size of each filtered list is 0 or 1
+	  // making the final result contain all paths that exist in both library versions
+	  val matched = nps.flatMap(n => ops.filter(o => n.toPath == o.toPath))
+	  
+	  //filtering away matched paths
+	  val unmatchedold = ops.filterNot(x => matched.exists(y => x.toPath == y.toPath))
+	  val unmatchednew = nps.filterNot(x => matched.exists(y => x.toPath == y.toPath))
+	  
+	  //checking whether unmatched old modules are truly removed or just renamed.
+	  val oldch = unmatchedold.map(x => 
+	    unmatchednew.filter(y => compareModules(nw.getModule(x),old.getModule(y)).changes == Nil) match {
+	      case y :: Nil => RenameModule(x, y) // _exactly one_ match must exist for the rename pair to be valid
+	      case _ => DeleteModule(old.getModule(x)) // if no matches or 2+ matches (ambiguous pairing) then we count the module as deleted
+	  })
+	  
+	  //new modules which are still unmatched after the renames search are marked as adds 
+	  val newch = unmatchednew.filter(y => oldch.exists({case RenameModule(x,p) => p == y case _ => false})).map(y => AddModule(nw.getModule(y)))
+	  
+	  //comparing module pairs to see how (if at all) they were updated over the two versions
+	  //since the match criterion was identical paths, we can reuse the path for both library versions
+	  val updates = matched.map(x => compareModules(old.getModule(x), nw.getModule(x)))
+	  updates.foldLeft(new Diff(Nil))((r,x) => r ++ x) ++ new Diff(oldch.toList) ++ new Diff(newch.toList)
+	}
+	
 }
-*/

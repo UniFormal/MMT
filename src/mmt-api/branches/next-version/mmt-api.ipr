@@ -98,11 +98,12 @@
         <root url="jar://$PROJECT_DIR$/../../../../deploy/mmt/MMTPlugin.jar!/" />
         <root url="jar://$PROJECT_DIR$/../../../../deploy/mmt/mmt-tptp.jar!/" />
         <root url="jar://$PROJECT_DIR$/../../../../deploy/mmt/mmt-mizar.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../../deploy/lib/tiscaf.jar!/" />
         <root url="jar://$PROJECT_DIR$/../../../../deploy/lib/scala-library.jar!/" />
         <root url="jar://$PROJECT_DIR$/../../../../deploy/lib/scala-compiler.jar!/" />
         <root url="jar://$PROJECT_DIR$/../../../../deploy/lfcatalog/lfcatalog.jar!/" />
         <root url="jar://$PROJECT_DIR$/lib/tntbase-plugin-api.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/svnkit.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/tiscaf.jar!/" />
       </CLASSES>
       <JAVADOC>
         <root url="http://www.scala-lang.org/api/current/index.html" />

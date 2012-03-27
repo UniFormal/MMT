@@ -150,8 +150,16 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
       else
          URI(toJava.resolve(u.toJava))
    }
+   
    /** returns the whole path as a string (/-separated, possibly with a leading /) */
-   def pathAsString : String = path.mkString(if (absolute) "/" else "", "/", "")
+   def pathAsString : String = {
+     val tmp = path.mkString(if (absolute) "/" else "", "/", "")
+     tmp.indexOf(";") match {
+       case -1 => tmp
+       case i => tmp.substring(0,i)
+     }
+   }
+   
    /** convenience: the scheme or null */
    def schemeNull : String = scheme.getOrElse(null)
    /** convenience: the authority or null */

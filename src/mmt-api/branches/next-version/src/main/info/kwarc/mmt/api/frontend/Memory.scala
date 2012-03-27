@@ -22,5 +22,11 @@ class Memory(val report : Report) extends ROMemory {
    val presentation = new NotationStore(this, report)
    /** maintains all narrative elements */
    val narration = new DocStore(this, report)
- 
+   /** forgets everything */
+   def clear {
+      ontology.clear 
+      content.clear
+      presentation.clear
+      narration.clear
+   }
 }

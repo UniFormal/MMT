@@ -66,7 +66,7 @@ class TheoryGraph(rs: RelStore) {
       rs.query(from, + HasMeta) {
          i => eds ::= EdgeTo(i, MetaEdge, true)
       }
-      val filtered = eds filter {
+      val filtered = eds filterNot {
         case EdgeTo(t,_,_) => from <= t
       }
       filtered.quotient(_.to)

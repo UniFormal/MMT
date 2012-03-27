@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
 <head>
-  <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> -->
+   <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/>
   <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
   <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
   <link rel="stylesheet" type="text/css" href="/css/jobad/jobad.css"/>
@@ -19,6 +19,7 @@
   <script type="text/javascript" src="/script/jobad/latin.js"></script>
   <script type="text/javascript" src="/script/jobad/mathml.js"></script>
   <script type="text/javascript" src="/script/jobad/folding.js"></script>
+  </script>
   
   <script type="text/javascript">
     $(function () {
@@ -46,10 +47,10 @@
 
    <div style="width:100%">
      
-    <div id="title">
-      <div>The MMT Web Server</div>
-      <div>
-        <span class="pagelink"><a href="/browse.html">Browser</a></span>
+    <div id="top">
+      <div id="title">The MMT Web Server</div>
+      <div id="menu_bar">
+        <span class="pagelink"><a href="">Browser</a></span>
         <span class="pagelink"><a href="/search.html">Search</a></span>
         <span class="pagelink"><a href="javascript:openGraph('')">Graph View</a></span>
         <span class="pagelink"><a href="/uom.html">Universal Machine</a></span>
@@ -59,7 +60,7 @@
    
     <div id="styleselector">
       Style: <span id="currentstyle"/><br/>
-      <input type="text" size="20" id="inputstyle"/><button onclick="javascript:setStyle($('#inputstyle').val())">set</button>
+      <!--<input type="text" size="20" id="inputstyle"></input><button onclick="javascript:setStyle($('#inputstyle').val())">set</button> -->
     </div>
     
     <div id="breadcrumbs">
@@ -67,12 +68,14 @@
     </div>
 
     <div id="sidebar">
-       <div id="pathtree"/>
+       <div id="pathtree"></div>
     </div>
-   
+    
+    
     <div id="main">
-       <div/>
+       <div></div>
     </div>
+
    </div>
 
 </body>

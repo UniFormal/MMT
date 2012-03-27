@@ -4,18 +4,19 @@ import modules._
 import symbols._
 import patterns._
 
-/** Hepler object for ontologies */
+/** Helper object for ontologies */
 object Extract {
    /** apply a function to every relational element in the given module */
-   def apply(mod : Module, f: RelationalElement => Unit) {
-      val path = mod.path
-      mod match {
+   def apply(e: StructuralElement, f: RelationalElement => Unit) {
+      val path = e.path
+      e match {
          case t: Theory =>
             f(IsTheory(path))
             t match {case t: DeclaredTheory => t.meta map {p => f(HasMeta(path, p))}}
          case v: View => f(HasDomain(path, v.from.toMPath)); f(HasCodomain(path, v.to.toMPath)); f(IsView(path))
+         case _ => 
       }
-      mod match {
+      e match {
          case t: DeclaredModule[_] =>
             t.valueList foreach {d => {
                val dec = Declares(path,d.path)

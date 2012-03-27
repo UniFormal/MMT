@@ -24,6 +24,9 @@ case class Delete(path : Path) extends ContentMessage
  *
  * @param mem the memory
  * @param report Parameter for logging.
+ * 
+ * Invariance: This class guarantees structural well-formedness in the sense that libraries conform to the MMT grammar and all declarations have canonical URIs
+ * The well-formedness of the objects in the declarations is not guaranteed.
  */
 class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    private val modules = new scala.collection.mutable.HashMap[MPath,Module]
@@ -33,6 +36,13 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                        else     throw frontend.NotFound(p)
             }
    def log(s : => String) = report("library", s)
+   
+   /**
+    * returns all module paths indexed by this library
+    */
+   def getAllPaths = modules.keys
+   
+   def getModule(p : MPath) : Module = modulesGetNF(p)
    
    /**
     * Dereferences a path and returns the found ContentElement.
@@ -291,7 +301,10 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
       case _ => error("not a theory, view, or structure: " + m)
    }
 
-   // error checks of this method could be moved to Checker
+   /**
+    * adds a declaration
+    * @param e the added declaration
+    */
   def add(e : ContentElement) = (e.path, e) match {
       case doc : DPath => throw ImplementationError("addtion of document to library impossible")
       case (doc ? mod, m : Module) =>

@@ -365,7 +365,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
                   "nodeFrom" -> f.toPath,
                   "data" -> JSONObject(Map(
                     "$type" -> "multiple_arrow",
-//                    "$color" -> kindToColor(Util.edgeKind(e)),
+//                    "$color" -> kindToColor(Util.edgeKind(edges(0).edge)),
                     "$direction" -> JSONArray(
                         edges map {
                           case EdgeTo(_, e, backwards) =>
@@ -376,7 +376,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
                         				"kind" -> Util.edgeKind(e),
                         				"uri" -> Util.edgeUri(e),
                         				"name" -> Util.edgeName(e),
-                        				"inref" -> tg.nodes.toList.contains(t).toString() 
+                        				"inref" -> tg.nodes.toList.contains(t).toString()
                         		))})
                         )))
 

@@ -77,7 +77,9 @@ class UOMServer(report: frontend.Report) {
 object Test {
   def main (args : Array[String]) {
     
-    val uom = new UOMServer(new frontend.FileReport(new java.io.File("uom.log")))
+    val report = new frontend.Report
+    report.addHandler(new frontend.FileHandler(utils.File("uom.log")))    
+    val uom = new UOMServer(report)
     args.map(uom.register)
     
     // Do some tests

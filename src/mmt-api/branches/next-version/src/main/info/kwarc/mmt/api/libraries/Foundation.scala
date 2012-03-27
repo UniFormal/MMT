@@ -6,10 +6,12 @@ import frontend._
 /** MMT Foundation: provides oracles for typing and equality. Concrete foundations are registered as plugins and maintained by @frontend.ExtensionManager
  * Concrete foundations must have a constructor that takes no arguments, which will be called after plugin registration */
 abstract class Foundation {
-   protected var report : Report = NullReport
+   protected var report : Report = null
    /** called after registration of the plugin
     *  @param params user parameters (passed on the shell) */
-   def init(r: Report, params: List[String] = Nil) : Foundation = {report = r; this}
+   def init(r: Report, params: List[String] = Nil) {
+      report = r
+   }
    val foundTheory : MPath
    /** typing judgement */
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean

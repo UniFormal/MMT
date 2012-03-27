@@ -39,11 +39,14 @@ abstract class ROController {
 /** A Controller is the central class maintaining all MMT knowledge items.
   * It stores all stateful entities and executes Action commands.
   */  
-class Controller(val checker : Checker, val report : Report) extends ROController {
-   protected def log(s : => String) = report("controller", s)
-   /** maintains all customizations for specific languages */
-   val extman = new ExtensionManager(report)
-
+class Controller extends ROController {
+   def this(r: Report) {
+      this()
+      report_ = r
+   }
+   /** handles all output and log messages */
+   private var report_ : Report = new Report 
+   def report = report_
    /** maintains all knowledge */
    val memory = new Memory(report)
    val depstore = memory.ontology
@@ -51,21 +54,34 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    val notstore = memory.presentation
    val docstore = memory.narration
 
-   /** the MMT rendering engine */
-   val presenter = new presentation.Presenter(this, report)
+   /** maintains all customizations for specific languages */
+   val extman = new ExtensionManager(report)  
+   /** the http server */
+   var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(this, report)
    /** the MMT parser (text/Twelf syntax) */
    val textReader = new TextReader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(xmlReader, extman, report)
+   /** the MMT rendering engine */
+   val presenter = new presentation.Presenter(this, report)
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
-   val uom = {val u = new UOMServer(report); u.init; u}
-   /** the http server */
-   var server : Option[Server] = None
+   val uom : UOMServer = {val u = new UOMServer(report); u.init; u}
 
+   protected def log(s : => String) = report("controller", s)
+
+   /** the checker is used to validate content elements */
+   private var checker : Checker = NullChecker
+   def setCheckNone {checker = NullChecker}
+   def setCheckStructural {checker = new StructuralChecker(report)}
+   def setCheckFoundational(foundation: Foundation) {checker = new FoundChecker(foundation, report)}
+
+   def setFileReport(file: File) {report.addHandler(new FileHandler(file))}
+   def setConsoleReport {report.addHandler(ConsoleHandler)}
+   
    /** a lookup that uses only the current memory data structures */
    val localLookup = library
    /** a lookup that load missing modules dynamically */
@@ -112,7 +128,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
    }
    /** selects a notation
     *  @param nset the style from which to select
-    *  @param the notation key identifying the knowledge item to be presented
+    *  @param key the notation key identifying the knowledge item to be presented
     */
    def get(nset : MPath, key : NotationKey) : Notation = {
       iterate (notstore.get(nset,key))
@@ -124,31 +140,34 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
       })
+      Extract(e, memory.ontology += _) //this should return all declaration-level relations
    }
-  /**
-  * Validates and, if successful, adds a ContentElement to the theory graph.
-  * Note that the element already points to the intended parent element
-  * so that no target path is needed as an argument.
-  * @param e the element to be added
-  */
-  def addContent(e : ContentElement) {
-    log("adding: " + e.toString)
-    try {checker.check(e)(memory) match {
-       case Fail(msg) => throw AddError(msg)
-       case Success(deps) =>
-          memory.content.add(e)
-          deps.map(memory.ontology += _)
-       case Reconstructed(rs, deps) =>
-          rs.foreach(memory.content.add)
-          deps.map(memory.ontology += _)
-    }} catch {
-       case e @ NotFound(_) => throw e
-    }
-  }
+
+   /**
+    * Validates and, if successful, adds a ContentElement to the theory graph.
+    * Note that the element already points to the intended parent element
+    * so that no target path is needed as an argument.
+    * @param e the element to be added
+    */
+   def addContent(e : ContentElement) {
+      log("adding: " + e.toString)
+      try {checker.check(e)(memory) match {
+         case ContentFail(msg) => throw AddError(msg)
+         case ContentSuccess(deps) =>
+            memory.content.add(e)
+            deps.map(memory.ontology += _)  //this should return only object level relations
+         case ContentReconstructed(rs, deps) =>
+            rs.foreach(memory.content.add)
+            deps.map(memory.ontology += _)
+      }} catch {
+         case e @ NotFound(_) => throw e
+      }
+   }
 
    /**
     * deletes a document or module
-    * no change management except that the deletion of a document also deletes its subdocuments and modules 
+    * no change management except that the deletions of scoped declarations are recursive
+    *   in particular, the deletion of a document also deletes its subdocuments and modules 
     */
    def delete(p: Path) {p match {
       case d: DPath =>
@@ -157,18 +176,17 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
       case m: MPath =>
          library.delete(m)
          notstore.delete(m)
-      case s: GlobalName => throw DeleteError("deleting symbols not possible")
+      case s: GlobalName => library.delete(s)
    }}
    /** clears the state */
    def clear {
-      docstore.clear
-      library.clear
-      notstore.clear
-      depstore.clear
+      memory.clear
    }
    /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
    def cleanup {
       extman.cleanup
+      //closes all open svn sessions from storages in backend
+      backend.cleanup
    }
    /** reads a file and returns the Path of the document found in it */
    def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
@@ -218,7 +236,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
     }
   }
 
-   protected def handleExc[A](a: => A) {
+   def reportException[A](a: => A) {
        try {a}
        catch {
     	   case e : info.kwarc.mmt.api.Error => report(e)
@@ -252,11 +270,13 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
 	         backend.openArchive(f)
-         case ArchiveBuild(id, dim, in) =>
+          case ArchiveBuild(id, dim, in, params) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             dim match {
-               case "compile" => arch.compile(in)
+               case "compile" => arch.produceCompiled(in)
+               case "compile*" => arch.updateCompiled(in)
                case "content" => arch.produceNarrCont(in)
+               case "content*" => arch.updateNarrCont(in)
                case "check" => arch.check(in, this)
                case "delete" => arch.deleteNarrCont(in)
                case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
@@ -271,6 +291,7 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
                case "extract" => arch.extractScala(in, "source")
                case "integrate" => arch.integrateScala(in, "source")
+               case "present" => params.foreach(p => arch.producePres(Nil,p, this))
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
@@ -297,7 +318,8 @@ class Controller(val checker : Checker, val report : Report) extends ROControlle
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)
-	      case Exit =>
+        case Compare(p,r) => //TODO
+        case Exit =>
 	         cleanup 
 	         sys.exit
       })

@@ -1,6 +1,8 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import utils._
+import info.kwarc.mmt.api.moc._
+
 
 /**
  * An object of type Unary represents a unary predicate on MMT paths in the MMT ontology.
@@ -100,4 +102,50 @@ case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalEle
    def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
    override def toString = subj.toString + " " + dep.toString + " " + obj.toString
    def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
+}
+
+/**
+ * Same as relation only with more specific paths, should extend Relation eventually, but currently under development
+ * //TODO
+ */
+case class FineGrainedRelation(dep : Binary, subj : Path, subjComponent : String, obj :Path, objComponent : String) extends RelationalElement {
+   //TODO
+   val path = subj
+   def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
+   override def toString = subj.toString + " " + dep.toString + " " + obj.toString
+   def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
+  
+}
+
+/** 
+ * classes for changes to the relstore
+ * will be returned by the checker when checking a change
+ * and then applied by the controller to the relstore to mantain its adequacy
+ */
+
+abstract class RelationsChange extends Change
+
+/** adds a list of relations to the relstore */
+case class AddRelations(rels : List[RelationalElement]) extends RelationsChange {
+  def toNode = <addrel>{rels.map(_.toNode)}</addrel>
+}
+
+/** removes from the relstore all relations for which p is subject */ 
+case class DeleteRelations(p : Path) extends RelationsChange {
+  def toNode = <delrel path={p.toPath}></delrel>
+}
+
+/** removes from the relstore all relations for which p is subject, then adds rels */
+case class UpdateRelations(rels : List[RelationalElement], p : Path) extends RelationsChange {
+  def toNode = <uprel path={p.toPath}>{rels.map(_.toNode)}</uprel>
+}
+
+/** replaces in the relstore, in all relations for which old is subject, old with nw */
+case class RenameRelations(old : Path, nw : Path) extends RelationsChange {
+  def toNode = <rerel old={old.toPath} new={nw.toPath}/>
+}
+
+/** does nothing */
+case class IdenticalRelations() extends RelationsChange {
+  def toNode = <idrel/>
 }

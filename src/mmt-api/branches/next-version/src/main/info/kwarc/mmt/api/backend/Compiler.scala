@@ -1,12 +1,16 @@
 package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
+import frontend._
 import utils.File
 
 trait Importer {
+   protected var report : Report = null
    /** true if this compiler can compile a certain kind of source files */
    def isApplicable(src : String): Boolean
    /** initialization (empty by default) */
-   def init(report: frontend.Report, args: List[String]) {}
+   def init(report: Report, args: List[String]) {
+      this.report = report
+   }
    /** termination (empty by default)
     * Importers may create persistent data structures and processes,
     * but they must clean up after themselves in this method
@@ -18,17 +22,17 @@ trait Importer {
  * A Compiler transforms source files into OMDoc files
  */
 trait Compiler extends Importer {
-   /** source files that the compiler is able to process */
+   /** source file names that the compiler is able to process */
    def includeFile(n: String) : Boolean = true
 
    /** the compilation method
      * @param in the input file 
-     * @param the folder in which to put the output file(s)
+     * @param out the output file without extension
      */
    def compile(in: File, out: File) : List[CompilerError]
 
    /** registers an archive with this compiler */
-   def register(arch: Archive) {}
+   def register(arch: Archive, dim: String) {}
 
 }
 

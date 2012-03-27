@@ -27,14 +27,21 @@ object Action extends RegexParsers {
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
-   private def archive = archopen | archdim | archmar
+   private def archive = archopen | archdim | archmar | archpres
    private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
    private def archdim = "archive" ~> str ~ dimension ~ (str ?) ^^ {
       case id ~ dim ~ s =>
          val segs = MyList.fromString(s.getOrElse(""), "/")
          ArchiveBuild(id, dim, segs)
    }
-   private def dimension = "compile" | "content" | "check" | "mws-flat" | "mws" | "flat" | "relational" | "notation" | "delete" | "clean" | "extract" | "integrate"
+   private def archpres = "archive" ~> str ~ ("present" ~> mpath) ~ (str ?) ^^ { 
+      case id ~ p ~ s =>
+        val segs = MyList.fromString(s.getOrElse(""), "/")
+        ArchiveBuild(id, "present", segs, List(p))
+   }
+   private def dimension = "compile" | "compile*" | "content" | "content*" | "check" | "mws-flat" | "mws" | "flat" |
+         "relational" | "notation" | "delete" | "clean" | "extract" | "integrate"
+
    private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
@@ -51,7 +58,7 @@ object Action extends RegexParsers {
    private def printallxml = "printXML" ^^ {case _ => PrintAllXML}
    private def clear = "clear" ^^ {case _ => Clear}
    private def exit = "exit" ^^ {case _ => Exit}
-   private def getaction = tofile | respond | print | defaultget
+   private def getaction = diff | tofile | respond | print | defaultget
    private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
    private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
    private def defaultget = presentation ^^ {p => DefaultGet(p)}
@@ -59,6 +66,7 @@ object Action extends RegexParsers {
    private def presentation = present | tonode | deps | tostring
    private def tonode = content <~ "xml" ^^ {c => ToNode(c)}
    private def present = content ~ ("present" ~> mpath) ^^ {case c ~ p => Present(c,p)}
+   private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
    private def deps = path <~ "deps" ^^ {case p => Deps(p)}
    private def tostring = content ^^ {c => ToString(c)}
    private def content = closure | elaboration | component | get
@@ -88,6 +96,7 @@ object Action extends RegexParsers {
 /** Objects of type Action represent commands that can be executed by a Controller. */
 sealed abstract class Action
 
+case class Compare(p : Path, r : Int) extends Action{override def toString = "diff " + p.toPath + ":" + r.toString}
 /** switch on logging for a certain group */
 case class LoggingOn(s : String) extends Action {override def toString = "log+ " + s}
 /** switch off logging for a certain group */
@@ -115,7 +124,7 @@ case class AddFoundation(cls: String, args: List[String]) extends Action {overri
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
 /** builds a dimension in a previously opened archive */
-case class ArchiveBuild(id: String, dim: String, in : List[String]) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
+case class ArchiveBuild(id: String, dim: String, in : List[String], params: List[MPath] = Nil) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
 /** builds a dimension in a previously opened archive */
 case class ArchiveMar(id: String, file: java.io.File) extends Action {override def toString = "archive " + id + " mar " + file}
 /** add MathWebSearch as a web service */
@@ -159,7 +168,9 @@ abstract class MakeAbstract {
 }
 /** retrieves a knowledge item */
 case class Get(p : Path) extends MakeAbstract {
-   def make(controller : Controller) : StructuralElement = controller.get(p)
+   def make(controller : Controller) : StructuralElement = {
+     controller.get(p)
+   }
    override def toString = p.toString
 }
 /** retrieves a component of a knowledge item */
@@ -219,6 +230,8 @@ case class Present(c : MakeAbstract, nset : MPath) extends MakeConcrete {
    }
    override def toString = c + " present " + nset
 }
+
+
 /** retrieves all relational elements about a certain path and renders them as XML */
 case class Deps(path : Path) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {
@@ -242,7 +255,6 @@ abstract class Output {
 case class Print(pres : MakeConcrete) extends Output {
    def make(controller : Controller) {
       pres.make(controller, ConsoleWriter)
-      println
    }
    override def toString = pres.toString
 }

@@ -1,12 +1,13 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
+import utils._
 
 /** Instances of Report handle all output to the user */
-abstract class Report {
+class Report {
    /** output is categorized, the elements of group determine which categories are considered
     *  the categories "user" (for user input) and "error" are output by default */
    val groups = scala.collection.mutable.Set[String]("user", "error")
-   /** outputs a message */
+   /** logs a message if logging is switched on for the group */
    def apply(group : => String, msg : => String) : Unit =
 	   if (groups.contains(group) || groups.contains("*")) log(group, msg)
    /** outputs an error (catgory "error") */
@@ -14,18 +15,24 @@ abstract class Report {
 	   apply("error", e.msg)
 	   apply("error", "\n" + e.stackTrace)
 	}
-   /** implementation specific logging hook, returns the formatted message that was logged */
-   def log(group : => String, msg : => String) {
-	   val m = handle(group, msg)
-	   if (rec) mem ::= m
-	   m
+   /** definitely logs a message */
+   private def log(group : => String, msg : => String) {
+	   if (rec) mem ::= ind + group + ": " + msg  
+	   handlers.foreach(_.apply(ind, group, msg))
 	}
-   def handle(group : => String, msg : => String) : String
+
+   private var handlers : List[ReportHandler] = Nil
+   /** adds a ReportHandler */
+   def addHandler(h: ReportHandler) {handlers ::= h}
+   /** removes all ReportHandlers with a certain id */
+   def removeHandler(id: String) {handlers = handlers.filter(_.id != id)}
+
    protected var ind : String = ""
    /** increase indentation */
    def indent {ind = ind + "  "}
    /** decrease indentation */
    def unindent {ind = ind.substring(2)}
+
    private var mem : List[String] = Nil
    private var rec = false
    def record {rec = true}
@@ -33,39 +40,26 @@ abstract class Report {
    def clear {mem = Nil; rec = false}
 }
 
-/** outputs nothing, throws exceptions */
-object NullReport extends Report {
-   def handle(group : => String, msg : => String) = ""
-   override def apply(e: Error) {throw e}
+abstract class ReportHandler(val id: String) {
+   def apply(ind: String, group: String, msg: String)
 }
 
 /** outputs to standard output */
-class ConsoleReport extends Report {
-   def handle(group : => String, msg : => String) = {
+object ConsoleHandler extends ReportHandler("console") {
+   def apply(ind: String, group: String, msg: String) = {
       val m = ind + group + ": " + msg
       println(m)
-      m
    }
 }
 
 /** outputs to a file */
-class FileReport(val filename : java.io.File) extends Report with utils.FileWriter {
+class FileHandler(val filename : File) extends ReportHandler(filename.toString) {
+   private val file = utils.File.Writer(filename)
    private val df = new java.text.SimpleDateFormat("HH:mm:ss.S")
    def time = df.format(new java.util.Date())
-   def handle(group : => String, msg : => String) = {
+   def apply(ind: String, group : String, msg : String) = {
          val m = time + "\t" + ind + group + ": " + msg
          file.println(m)
          file.flush
-         m
    }
-}
-
-/** joins a list of reports (an output category is reported if this report and the component report it) */
-class MultipleReports(reports : Report*) extends Report {
-	def handle(group : => String, msg : => String) = {
-		reports.toList.map(_.apply(group, msg))
-		"sent " + group + ": " + msg + " to multiple reports"
-	}
-	override def indent {reports.toList.map(_.indent)}
-	override def unindent {reports.toList.map(_.unindent)}
 }
