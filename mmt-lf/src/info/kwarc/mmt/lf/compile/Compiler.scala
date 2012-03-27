@@ -9,7 +9,7 @@ class Compiler(fl: FuncLang) {
       def qapp(i: String, f: String, args: List[EXP]) = APPLY("lf.qapp", i, f, ALIST(args))
       def variable(name: String) = APPLY("lf.var", name)
       def decl(name: String, tp: EXP) = APPLY("lf.decl", name, tp)
-      def instance(name: String, pattern: String, args: List[EXP]) = APPLY("lf.instance", name, pattern, ALIST(args))
+      def instance(name: String, pattern: String, args: List[EXP]) = APPLY("lf.instance", name, STRING(pattern), ALIST(args))
    }
    def argsToEXP(args: List[CatRef]) : List[EXP] = args.map((x: CatRef) => ID(x.target))
    def argsToStringWithID(args: List[CatRef]) = args.foldLeft(" of id")(_ + " * " + _)
@@ -18,20 +18,21 @@ class Compiler(fl: FuncLang) {
       //auxiliary types for ids for better readability
       decl (TYPEDEF("id", ID("string")))
       decl (TYPEDEF("var", ID("int")))
-      println()
       
       // the categories
       val cats = log.cats map {case Category(c, cons) =>
          val cases = cons map {
             case Connective(n, args) => CONS(n, argsToEXP(args))
-            case Binder(n, args, (bound,_), scope) => CONS(n, argsToEXP(args) ::: List(ID("var"), ID(scope.target)))
+            case Binder(n, argOpt, bound, scope) =>
+               val arg : List[EXP] = argOpt match {case Some(a) => List(a) case None => Nil}
+               CONS(n, arg ::: List(ID("var"), (scope:EXP)))
             case ConstantSymbol(p, n, args) => CONS(p + "_" + n, ID("id") :: argsToEXP(args))
             case VariableSymbol => CONS(c + "_var", List(ID("var")))
          }
          ADT(c, cases)
       }
       // all categories as datatype ... and ... and 
-      decl(ADTRec(cats))
+      cats foreach decl
       
       // the declarations
       val decls = log.decls map {case Declaration(p, args) =>
@@ -42,7 +43,7 @@ class Compiler(fl: FuncLang) {
       decls foreach {d => decl(d); println()}
       // the labeled union type of all declaration types
       val ofdecls = log.decls map {case Declaration(p, _) =>
-         CONS(p + "_decl", List("p"))
+         CONS(p + "_decl", List(p))
       }
       decl(ADT("decl", ofdecls))
 
@@ -50,49 +51,114 @@ class Compiler(fl: FuncLang) {
       decl(TYPEDEF("sign", LIST("decl")))
       // the type of theories
       decl(TYPEDEF("theo", PROD(List("sign", LIST(log.form)))))
-      println()
       
       decl(EXCEPTION("error"))
       // the functions that map parse trees to expressions
+      
+      def parse(c: CatRef, a: EXP) = APPLY(c.target + "_from_pt", a)
+      def qualIDFirst(e: EXP) = PROJ(APPLY("parse.qualIDSplit", e), 1)   //parse.qualIDSplit("instance_name") = ("instance","name")
+      def qualIDSecond(e: EXP) = PROJ(APPLY("parse.qualIDSplit", e), 2)
       val frompt = log.cats map {case Category(c, cons) =>
          val appcase = CASE(APPLY("parse.app", "n", "args"),
-           cons.foldLeft[EXP](ERROR("error", "unknown identifier: n")) {
+           cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
               case (rest, Connective(con,cats)) =>
-                 IF("n" === con,
-                   IF(LENGTH("args") === cats.length,
-                       APPLY(con, cats.zipWithIndex map {case (CatRef(a), i) =>
-                          APPLY(c + "_from_pt", AT("args", i))
+                 IF("n" === STRING(con),
+                   IF(LENGTH("args") === INT(cats.length),
+                       APPLY(con, cats.zipWithIndex map {case (r, i) =>
+                          parse(r, AT("args", i))
                        } : _*),
-                       ERROR("error", "bad number of arguments, expected " + cats.length)
+                       ERROR("error", STRING("bad number of arguments, expected " + cats.length))
                      ),
                    rest
                  )
+              //NOTE: The following case assumes that non-logical constructors for the same category have different names, even though they this is not necessarily the case if they are declared in different patterns
+              //This is typical in practice though.
+              case (rest, ConstantSymbol(pat, con,cats)) =>
+                 IF(qualIDSecond("n") === STRING(con),
+                   IF(LENGTH("args") === INT(cats.length),
+                       APPLY(pat + "_" + con, qualIDFirst("n") :: (cats.zipWithIndex map {case (r, i) =>
+                          parse(r, AT("args", i))
+                       }) : _*),
+                       ERROR("error", STRING("bad number of arguments, expected " + cats.length))
+                     ),
+                   rest
+                 )
+                 
               case (rest, _) => rest
-           })
-         val varcase = if (cons.exists(_ == VariableSymbol))
-            List(CASE(APPLY("parse.var", "n"), APPLY(c + "_var", "n")))
-         else Nil
-         val cases = MATCH("x", appcase :: varcase)
+           }
+         )
+         val bindcase = CASE(APPLY("parse.bind", "n", "v", "s"),
+            cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
+               case (rest, Binder(name, None, bound, scope)) =>
+                  IF("n" === STRING(name),
+                     APPLY(name, "v", parse(scope, "s")),
+                     rest
+                  )
+               case (rest, _) => rest
+           }
+         )
+         val tbindcase = CASE(APPLY("parse.tbind", "n", "a", "v", "s"),
+            cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
+               case (rest, Binder(name, Some(a), bound, scope)) =>
+                  IF("n" === STRING(name),
+                     APPLY(name, parse(a, "a"), "v", parse(scope, "s")),
+                     rest
+                  )
+               case (rest, _) => rest
+           }
+         )
+         val varcase = CASE(APPLY("parse.var", "n"),
+             if (cons.exists(_ == VariableSymbol)) APPLY(c + "_var", "n")
+             else ERROR("error", STRING("variables not allowed here"))
+         )
+         val cases = MATCH("x", List(appcase, bindcase, tbindcase, varcase))
          FUNCTION(c + "_from_pt", List(ARG("x", "parse.tree")), c, cases)
       }
       decl(FUNCTIONRec(frompt))
       
+      // a function that parses declarations
+      val declfrompt = log.decls.foldLeft[EXP](ERROR("error", STRING("illegal pattern"))) {
+         case (rest, Declaration(p, args)) =>
+            IF("p" === STRING(p),
+              IF(LENGTH("args") === INT(args.length),
+                 APPLY(p + "_decl", ID("i") :: (args.zipWithIndex map {case (r, i) =>
+                          parse(r, AT("args", i))
+                       }) : _*),
+                 ERROR("error", STRING("bad number of arguments, expected " + args.length))
+              ),
+              rest
+           )
+      }
+      decl(FUNCTION("decl_from_pt", List(ARG("d", "parse.decl")), "decl",
+              MATCH("d", List(CASE(APPLY("instance", ID("i"), ID("p"), ID("args")), declfrompt)))))
+      // functions that parse signatures and theories
+      decl(FUNCTION("sign_from_pt", List(ARG("sg", "parse.sign")), "sign", MAP("sg", "decl_from_pt")))
+      decl(FUNCTION("axiom_from_pt", List(ARG("ax", "parse.tree")), log.form, parse(log.form, "ax")))
+      decl(FUNCTION("theo_from_pt", List(ARG("th", "parse.theo")), "theo", 
+          TUPLE(List(APPLY("sign_from_pt", PROJ("th", 1)), MAP(PROJ("th", 2), "axiom_to_lf")))
+      ))
+
+      def tolf(c: CatRef, e: EXP) = APPLY(c.target + "_to_lf", e)
       def varlist(args: List[CatRef]) : List[EXP] = (args.zipWithIndex map {case (c,i) => ID("x" + i)})
-      def recvarlist(args: List[CatRef]) : List[EXP] = (args.zipWithIndex map {case (c,i) => APPLY(c + "_to_lf", "x" + i)})
-      def bracket(l: List[String]) = l.mkString("(", ", ", ")")
+      def recvarlist(args: List[CatRef]) : List[EXP] = args.zipWithIndex map {case (c,i) => tolf(c, "x" + i)}
       // the functions that map expressions to LF
-      val tolf = log.cats map {case Category(c, cons) =>
+      val tolffuncs = log.cats map {case Category(c, cons) =>
          val cases = cons map {
             case Connective(n, args) => CASE(APPLY(n, varlist(args) : _*), lf.app(n,recvarlist(args)))
-            case Binder(n, args, (bound, inds), scope) =>
-               val lambda = lf.lam("v", lf.app(bound.target, inds.map(i => lf.variable("x" + i))), APPLY(scope + "_to_lf", "s"))
-               CASE(APPLY(n, varlist(args) ::: List(ID("v"), ID("s")) : _*), lf.app(n, recvarlist(args) ::: List(lambda)))
+            case Binder(n, Some(a), bound, scope) =>
+               val lambda = lf.lam("v", lf.app(bound.target, List(tolf(a, "a"))), tolf(scope, "s"))
+               CASE(APPLY(n, ID("a"), ID("v"), ID("s")),
+                    lf.app(n, List(tolf(a,"a"), lambda)))
+            case Binder(n, None, bound, scope) =>
+               val lambda = lf.lam("v", bound.target, tolf(scope, "s"))
+               CASE(APPLY(n, ID("v"), ID("s")),
+                    lf.app(n, List(lambda)))
             case ConstantSymbol(p, n, args) => CASE(APPLY(p + "_" + n, ID("i") :: varlist(args) : _*), lf.qapp("i", n, recvarlist(args)))
             case VariableSymbol => CASE(APPLY(c + "_var", "n"), lf.variable("n"))
          }
          FUNCTION(c + "_to_lf", List(ARG("x", c)), "lf.exp", MATCH("x", cases))
       }
-      decl(FUNCTIONRec(tolf))
+      decl(FUNCTIONRec(tolffuncs))
       
       // a function that maps declarations to LF instance declarations
       val decltolfcases = log.decls map {case Declaration(p, args) =>
@@ -102,7 +168,7 @@ class Compiler(fl: FuncLang) {
 
       // functions that map signatures and theories to LF signatures
       decl(FUNCTION("sign_to_lf", List(ARG("sg", "sign")), "lf.sign", MAP("sg", "decl_to_lf"))) 
-      decl(FUNCTION("axiom_to_lf", List(ARG("ax", log.form)), "lf.decl", lf.decl("_", APPLY(log.form + "_to_lf", "ax"))))
+      decl(FUNCTION("axiom_to_lf", List(ARG("ax", log.form)), "lf.decl", lf.decl("_", tolf(log.form, "ax"))))
       decl(FUNCTION("theo_to_lf", List(ARG("th", "theo")), "lf.sign", 
           CONCAT(APPLY("sign_to_lf", PROJ("th", 1)), MAP(PROJ("th", 2), "axiom_to_lf"))
       ))

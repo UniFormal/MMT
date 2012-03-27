@@ -12,6 +12,8 @@ case class EQUAL(left: EXP, right: EXP) extends EXP
 case class INT(value: Int) extends EXP
 /** string literals */
 case class STRING(value: String) extends EXP
+/** concatenation of strings */
+case class STRINGCONCAT(left: EXP, right: EXP) extends EXP
 /** identifiers */
 case class ID(name: String) extends EXP
 /** function application */
@@ -21,7 +23,7 @@ case class IF(cond: EXP, thn: EXP, els: EXP) extends EXP
 /** pattern matching */
 case class MATCH(arg: EXP, cases: List[CASE]) extends EXP
 /** throwing of an exception */
-case class ERROR(name: String, msg: String) extends EXP
+case class ERROR(name: String, msg: EXP) extends EXP
 /** type of lists */
 case class LIST(tp: EXP) extends EXP
 /** a list */
@@ -36,6 +38,8 @@ case class CONCAT(left: EXP, right: EXP) extends EXP
 case class MAP(list: EXP, fun: ID) extends EXP
 /** product type */
 case class PROD(tps: List[EXP]) extends EXP
+/** tuple */
+case class TUPLE(tps: List[EXP]) extends EXP
 /** projection out of a product */
 case class PROJ(exp: EXP, proj: Int) extends EXP
 
@@ -80,19 +84,21 @@ object SML extends FuncLang {
      case EQUAL(left,right) => "(" + exp(left) + " = " + exp(right) + ")"
      case INT(value) => value.toString
      case STRING(value) => "\"" + value + "\""
+     case STRINGCONCAT(left, right) => "(" + exp(left) + " ^ " + exp(right) + ")"
      case ID(name) => name
-     case APPLY(fun, args @ _*) => fun + " " + args.map(exp).mkString("(", ",", ")")
-     case IF(cond, thn, els) => "if " + exp(cond) + " then " + exp(thn) + " else " + exp(els)
-     case MATCH(arg, cases) => "case " + exp(arg) + "\n" + "  of " + cases.map(cas).mkString("  of ", "\n   | ", "\n")
-     case ERROR(e, msg) => "raise (" + e + " "  + msg + ")"
-     case LIST(tp) => "(" + exp(tp) + ") list"
+     case APPLY(fun, args @ _*) => fun + args.map(exp).mkString("(", ",", ")")
+     case IF(cond, thn, els) => "(if " + exp(cond) + " then " + exp(thn) + " else " + exp(els) + ")"  
+     case MATCH(arg, cases) => "case " + exp(arg) + "\n" + cases.map(cas).mkString("  of ", "\n   | ", "\n")
+     case ERROR(e, msg) => "raise (" + e + " " + exp(msg) + ")"
+     case LIST(tp) => "(" + exp(tp) + " list)"
      case ALIST(elems) => elems.map(exp).mkString("[", ",", "]")
      case LENGTH(list) => "List.length(" + exp(list) + ")"
      case AT(list, index) => "List.nth(" + exp(list) + "," + exp(index) + ")"
      case CONCAT(left, right) => "(" + exp(left) + " @ " + exp(right) + ")"
      case MAP(list, fun) => "(List.map " + exp(list) + " " + exp(fun) + ")"
      case PROD(tps) => tps.map(exp).mkString("(", " * ", ")")
-     case PROJ(e, i) => "(#" + i.toString + " " + exp(e) + ")"
+     case TUPLE(es) => es.map(exp).mkString("(", ", ", ")")
+     case PROJ(e, i) => "(#" + i.toString + " (" + exp(e) + "))"
    }
    def cons(c: CONS) = c.name + " of " + c.args.map(exp).mkString("", " * ", "")
    def arg(a: ARG) = a.name + ": " + exp(a.tp) 
@@ -100,10 +106,10 @@ object SML extends FuncLang {
    private def FUNCTIONaux(f: FUNCTION) = f.name + f.args.map(arg).mkString("(",",",")") + " : " + exp(f.ret) + " = " + exp(f.body) + "\n"
    def decl(d: DECL) = d match {
      case a : ADT => "datatype " + ADTaux(a)
-     case ADTRec(adts) => adts.map(ADTaux).mkString("datatype ", "     and", "\n")
+     case ADTRec(adts) => adts.map(ADTaux).mkString("datatype ", "     and ", "\n")
      case TYPEDEF(name, df) => "type " + name + " = " + exp(df) + "\n"
      case f: FUNCTION => "fun " + FUNCTIONaux(f)
-     case FUNCTIONRec(fs) => fs.map(FUNCTIONaux).mkString("fun ", "and", "\n")
+     case FUNCTIONRec(fs) => fs.map(FUNCTIONaux).mkString("fun ", "and ", "\n")
      case EXCEPTION(e) => "exn " + e + " of string\n"
    }
    def cas(c: CASE) : String = exp(c.pattern) + " => " + exp(c.body)

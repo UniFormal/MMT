@@ -14,9 +14,9 @@ abstract class Constructor
  */
 case class Connective(name: String, arguments: List[CatRef]) extends Constructor
 /** a binder with some argument types and a typed bound variable
- * we assume that the LF types of all binders are of the form a1 -> ... an -> (b -> s) -> c where ai, b, s, c are atomic
+ * we assume that the LF types of all binders are of the form {x:a} (b x -> s) -> c or (b -> s) -> c where a, b, s, c are atomic
  */
-case class Binder(name: String, arguments: List[CatRef], bound: (CatRef, List[Int]), scope: CatRef) extends Constructor
+case class Binder(name: String, argument: Option[CatRef], bound: CatRef, scope: CatRef) extends Constructor
 /** a (Connective-like) constructor declared in a pattern body with some argument types */
 case class ConstantSymbol(pattern: String, name: String, arguments: List[CatRef]) extends Constructor
 /** a bound variable */
