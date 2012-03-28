@@ -560,7 +560,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
    * or a top-level morphism in a particular namespace, since both the entire namespace and
    * the codomain might not have been read yet into the library
    */
-  private def crawlMorphismObject(start: Int, theory: Option[TheoryObj]) : Pair[Morph, Int] =
+  private def crawlMorphismObject(start: Int, theory: Option[Term]) : Pair[Term, Int] =
   {
     def resolveModuleReference(name: String) : MPath = theory match {
       case Some(th) =>
@@ -576,7 +576,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       if (linkRefs.size == 1)   // a single reference
         OMMOD(theory.path)
       else                      // a sequence of references
-        OMCOMP(linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base))).toSeq: _*)
+        OMCOMP(linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base))) : _*)
     addSourceRef(morphism, start, positionAfter - 1)
     Pair(morphism, positionAfter)
   }
@@ -588,15 +588,15 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
    * @return Pair[TheoryObj, position after]
    * @throws ParseError for syntactical errors
    */
-  private def crawlTheoryObject(start: Int, base: Path) : Pair[TheoryObj, Int] =
+  private def crawlTheoryObject(start: Int, base: Path) : Pair[Term, Int] =
   {
     val (linkRefs, positionAfter) = crawlModuleReferences(start)
-    val theories : LinkedHashSet[TheoryObj] = linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base)))
-    val theoryObject : TheoryObj = {
+    val theories : LinkedHashSet[Term] = linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base)))
+    val theoryObject : Term = {
       if (theories.size == 1)
         theories.head
       else
-        theories.tail.foldLeft(theories.head)(TUnion.apply)
+        TUnion(theories)
     }
     addSourceRef(theoryObject, start, positionAfter - 1)
     Pair(theoryObject, positionAfter)
