@@ -23,7 +23,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @return a LinkedList of errors that occurred during parsing
     * @throws ParseError for non-recoverable errors that occurred during parsing
     * note that line and column numbers start from 0 */
-  def crawlDocument(source : scala.io.BufferedSource, dpath_ : DPath) : Pair[Document, LinkedList[_ <: Error]] =
+  def readDocument(source : scala.io.BufferedSource, dpath_ : DPath) : Pair[Document, LinkedList[Error]] =
   {
     // initialization
     lines = source.getLines.toArray                          // get all lines from the file
