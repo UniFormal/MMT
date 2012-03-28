@@ -34,7 +34,9 @@ class MMTPlugin extends EditPlugin {
    }
    
    def read(view : View) {
-      view.splitHorizontally()
+      val src = scala.io.Source.fromString(view.getTextArea.getText)
+      controller.clear
+      controller.textReader.read(src)
    }
 
 }

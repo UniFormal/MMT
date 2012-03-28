@@ -33,25 +33,27 @@ class MMTSideKick extends SideKickParser("mmt") {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
    val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
-      val path = buffer.getPath()
+      val path = buffer.getPath
+      val src = scala.io.Source.fromString(buffer.getText)
+      controller.clear
+      val (doc,errors) = controller.textReader.readDocument(src, DPath(path.toURI))
       val tree = new SideKickParsedData(path)
       val root = tree.root
-      // build a tree with some random data for testing 
-      val child1 = MyNode("child1", 0, 0, 9)
-      root.add(child1)
-      val child2 = MyNode("child2", 0, 10, 20)
-      root.add(child2)
-      val child21 = MyNode("child21", 1, 21, 30)
-      child2.add(child21)
-      val child22 = MyNode("child22", 2, 31, 40)
-      child2.add(child22)
+      doc.getItems foreach {
+        case d: DRef =>
+           val child = MyNode(d.target.last, 0, 0, 0)
+           root.add(child)
+        case m: MRef =>
+           val child = MyNode(d.target.last, 0, 0, 0)
+           root.add(child)
+      }
       
       // register some errors
-      val error1 = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.WARNING, path, 3,0,0,"a full line warning")
-      val error2 = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path, 4,4,15,"a partial line error")
-      errorSource.addError(error1)
-      errorSource.addError(error2)
-      
+      errors foreach {e =>
+         //val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.WARNING, path, 3,0,0,"a full line warning")
+         val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path, 4,4,15, e.msg)
+         errorSource.addError(error)
+      }      
       tree
    }
    // override def stop() 
