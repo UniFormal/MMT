@@ -71,6 +71,7 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/mmt-api.iml" filepath="$PROJECT_DIR$/mmt-api.iml" />
     </modules>
   </component>
   <component name="ProjectResources">
