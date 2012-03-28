@@ -253,6 +253,8 @@ class Controller extends ROController {
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
 	         backend.openArchive(f)
+         case AddSVNArchive(url, rev) =>
+           backend.openArchive(url, rev)
           case ArchiveBuild(id, dim, in, params) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             dim match {
