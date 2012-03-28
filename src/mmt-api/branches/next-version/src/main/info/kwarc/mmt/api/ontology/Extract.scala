@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
-import patterns._
+//import patterns._
 
 /** Helper object for ontologies */
 object Extract {
@@ -31,13 +31,13 @@ object Extract {
                      f(IsStructure(s.path))
                   case i: Include =>
                      f(Includes(t.path, i.from.toMPath)) 
-                  case p: Pattern =>
+/*                  case p: Pattern =>
                      f(dec)
-                     f(IsPattern(p.path))
+                     f(IsPattern(p.path)) PATTERNS
                   case i: Instance => 
                      f(dec)
                      f(IsInstanceOf(i.path, i.pattern))
-                  case a: Alias =>
+*/                  case a: Alias =>
                      f(IsAliasFor(a.path, a.forpath))
                      f(dec)
                   case _: Assignment =>

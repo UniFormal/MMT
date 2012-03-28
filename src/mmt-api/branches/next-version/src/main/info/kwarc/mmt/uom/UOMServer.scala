@@ -62,7 +62,7 @@ class UOMServer(report: frontend.Report) {
   }
   
   def simplify(term : Term) : Term = term match {
-     case OMA(OMID(p), FlatSequence(args)) =>
+     case OMA(OMID(p: GlobalName), args) =>
         log("simplifying " + term.toString)
         val recargs = args.map(simplify)
         impls.get(p) match {

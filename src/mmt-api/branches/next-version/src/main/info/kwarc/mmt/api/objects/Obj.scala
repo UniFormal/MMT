@@ -46,7 +46,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData {
 trait MMTObject {
    def args : List[Obj]
    def components = OMID(path) :: args
-   var path : GlobalName
+   val path : GlobalName
    def head = Some(path)
    def role = if (args.isEmpty) Role_ConstantRef else Role_application(None)
    def toNodeID(pos : Position) =
@@ -62,11 +62,9 @@ trait MMTObject {
 /**
  * A Term represents an MMT term.
  */
-sealed abstract class Term extends SeqItem {
+sealed abstract class Term extends Obj {
    def strip : Term = this
    def ^(sub : Substitution) : Term
-   /** the syntactically computed Path of the term */
-   var path : ContentPath
    def ^?(sub : Substitution) : Term = if (sub.isIdentity) this else this ^ sub
    /** morphism application (written postfix), maps OMHID to OMHID */
    def *(that : Term) : Term = OMM(this, that)
@@ -74,9 +72,9 @@ sealed abstract class Term extends SeqItem {
    def apply(args : Term*) = OMA(this, args.toList)
    /** the syntactically computed MPath of the term.
      * If the term is module level, this is guaranteed to be correct. */
-   def toMPath : MPath = path match {
-     case m : MPath => m
-     case n : GlobalName => n.mod.toMPath
+   def toMPath : MPath = this match {
+     case OMMOD(p) => p
+     case _ => mmt.mmtbase ? toString
    }
    /** This permits the syntax term % sym for path composition */
    def %(n: LocalName) : GlobalName = GlobalName(this,n)
@@ -87,16 +85,16 @@ sealed abstract class Term extends SeqItem {
  * OMHID represents the hidden term.
  */
 case object OMHID extends Term with MMTObject {
+   val path = mmt.mmtsymbol("hidden")
+   def args = Nil
    def ^(sub : Substitution) = this
    override def *(that: Term) = this
-   var path = mmt.mmtsymbol("hidden")
-   def args = Nil
 }
 
 /**
  * An OMID represents an MMT reference
  */
-case class OMID(var path: ContentPath) extends Term {
+case class OMID(path: ContentPath) extends Term {
    def head = Some(path)
    def ^(sub : Substitution) = this
    def role = path match {
@@ -123,6 +121,14 @@ case class OMID(var path: ContentPath) extends Term {
    def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
 }
 
+object OMS {
+   def apply(p: GlobalName) = OMID(p)
+   def unapply(t: Term) : Option[GlobalName] = t match {
+     case OMID(p : GlobalName) => Some(p)
+     case _ => None
+   }
+}
+
 /**
  * An OMBINDC represents a binding with condition
  * @param binder the binder
@@ -131,7 +137,6 @@ case class OMID(var path: ContentPath) extends Term {
  * @param body the scope/body/matrix of the binder
  */
 case class OMBINDC(binder : Term, context : Context, condition : Option[Term], body : Term) extends Term  {
-   var path = mmt.ombind
    def head = binder.head
    val numVars = context.variables.length
    def components = binder :: context.toList ::: List(body) //condition.getOrElse(Omitted)
@@ -172,7 +177,7 @@ object OMBIND {
  * @param via the applied morphism
  */
 case class OMM(arg : Term, via : Term) extends Term with MMTObject {
-   var path = mmt.morphismapplication
+   val path = mmt.morphismapplication
    def args = List(arg,via)
    def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
    
@@ -183,7 +188,6 @@ case class OMM(arg : Term, via : Term) extends Term with MMTObject {
  * G |- OMSub(arg,via) iff G, via |- arg  
  */
 case class OMSub(arg: Term, via: Context) extends Term {
-   var path = mmt.substitutionapplication
    def head = Some(mmt.substitutionapplication)
    def role = Role_binding
    def ^ (sub : Substitution) = OMSub(arg ^ sub ++ via.id, via ^ sub)
@@ -198,8 +202,7 @@ case class OMSub(arg: Term, via: Context) extends Term {
  * @param fun the function term
  * @param args the list of argument terms
  */
-case class OMA(fun : Term, args : List[SeqItem]) extends Term {
-   var path = mmt.oma
+case class OMA(fun : Term, args : List[Term]) extends Term {
    def head = fun.head
    def role = Role_application(None)
    def components = fun :: args
@@ -208,8 +211,8 @@ case class OMA(fun : Term, args : List[SeqItem]) extends Term {
       <om:OMA>{fun.toNodeID(pos + 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub).flatMap(_.items))
-  def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
+   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)) //.flatMap(_.items))
+   def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
 
 }
 
@@ -218,7 +221,6 @@ case class OMA(fun : Term, args : List[SeqItem]) extends Term {
  * @param name the name of the referenced variable
  */
 case class OMV(name : String) extends Term {
-   var path = mmt.omv
    def head = None
    def role = Role_VariableRef
    def components = Nil 
@@ -245,7 +247,6 @@ case class OMV(name : String) extends Term {
  * @param args the list of argument terms
  */
 case class OME(error : Term, args : List[Term]) extends Term {
-   var path = mmt.ome
    def head = error.head
    def role = Role_application(None)
    def components = error :: args
@@ -265,7 +266,6 @@ case class OME(error : Term, args : List[Term]) extends Term {
  * @param value the value
  */
 case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
-   var path = mmt.omattr
    def head = key.head
    def role = Role_attribution
    def components = List(key, arg, value)
@@ -285,7 +285,6 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
  * @param node the XML element holding the foreign object
  */
 case class OMFOREIGN(node : Node) extends Term {
-   var path = mmt.omforeign
    def head = None
    def role = Role_foreign
    def components = List(XMLLiteral(node))
@@ -298,7 +297,6 @@ case class OMFOREIGN(node : Node) extends Term {
  * 
  */
 abstract class OMLiteral extends Term {
-   var path = mmt.mmtsymbol(tag)
    def head = None
    def role = Role_value
    def components = List(StringLiteral(value.toString))
@@ -329,7 +327,6 @@ case class OMURI(value: URI) extends OMLiteral {
 }
 
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
-   var path = mmt.omsemiformal
    def head = None
    def role = Role_value
    def components = tokens
@@ -349,7 +346,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
 object OMSemiFormal {
   def apply(tokens: SemiFormalObject*) : OMSemiFormal = OMSemiFormal(tokens.toList)
 }
-
+/*
 case class Index(seq : Sequence, term : Term) extends Term {
   var path = mmt.index
 	def head = term.head //TODO Sequence does not have head
@@ -453,7 +450,7 @@ case class SeqItemList(items: List[SeqItem]) extends Sequence {
    def head = None
    def role = Role_seqitemlist
 }
-
+*/
 /**
  * A ModuleObj is a composed module level expression.
  */     /*
@@ -507,7 +504,7 @@ sealed trait AtomicMorph extends Morph      */
 object OMMOD {
    def apply(path : MPath) : OMID = OMID(path)
    def unapply(term : Term) : Option[MPath] = term match {
-     case OMID(parent ? name) => Some(parent ? name)
+     case OMID(m: MPath) => Some(m)
      case _ => None
    }
 }
@@ -531,15 +528,12 @@ case class OMMOD(path : MPath) extends TheoryObj with AtomicMorph {
    def path = mmt.tempty
 } */
 object TEmpty {
-   def apply(meta: Option[Term]) : Term = OMA(OMID(mmt.tempty), meta.toList)
-   def unapply(t : Term) : Option[Option[Term]] = t match {
-     case OMA(OMID(mmt.tempty), list) =>
-        if (list.length == 1)
-          list.head match {
-            case tt: Term => Some(Some(tt))
-            case _ => None
-          }
-        else Some(None)
+   def apply(meta: Option[MPath]) : Term = meta match {
+     case None => OMID(mmt.tempty)
+     case Some(m) => OMA(OMID(mmt.tempty), List(OMMOD(m)))
+   }
+   def unapply(t : Term) : Option[MPath] = t match {
+     case OMA(OMID(mmt.tempty), List(OMMOD(m))) => Some(m)
      case _ => None
    }
 }
@@ -724,7 +718,7 @@ object Obj {
             if (child.length <= 1)
                throw ParseError("No arguments given: " + N.toString)
             val fun = parseTerm(child.head, base)
-            val args = child.tail.toList.map(parseSeqItem(_, nbase))
+            val args = child.tail.toList.map(parseTerm(_, nbase))
             OMA(fun, args)
          case <OME>{child @ _*}</OME> =>
             val ch = child.toList.map(parseTerm(_, nbase))
@@ -748,12 +742,12 @@ object Obj {
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s @ _*}</OMSTR> => OMSTR(s.text)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding
-         case <OMNTH>{s}{i}</OMNTH> => Index(parseSequence(s, base), parseTerm(i,base))
+         //case <OMNTH>{s}{i}</OMNTH> => Index(parseSequence(s, base), parseTerm(i,base))
          case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
    }
-   def parseSeqItem(N: Node, base: Path) : SeqItem = N match {
+/*   def parseSeqItem(N: Node, base: Path) : SeqItem = N match {
       case <seqsubst>{e}{s}</seqsubst> =>
          SeqSubst(parseTerm(e, base), xml.attr(N, "var"), parseSequence(s, base))
       case <OMSV>{c @ _*}</OMSV> => SeqVar(xml.attr(N, "name"))
@@ -767,7 +761,7 @@ object Obj {
          SeqItemList(items.toList)
       case i : scala.xml.Elem => parseSeqItem(i,base) //throw ParseError("not a well-formed sequence: " + N.toString)
    }
-   
+*/   
    /** parses a morphism relative to a base address */
    /*def parseMorphism(N : Node, base : Path) : Morph = {
       //N can set local cdbase attribute; if not, it is copied from the parent
@@ -834,10 +828,9 @@ object Morph {
   /** pre: m is a well-structured morphism */
 	def domain(m : Term)(implicit lib : Lookup) : Term = m match {
       case OMIDENT(t) => t
-      case OMCOMP(m :: _) => domain(m)
-      case OMCOMP(Nil) => throw ImplementationError("cannot infer domain of empty composition")
+      case OMCOMP(n :: _) => domain(n)
       case MEmpty(f,_) => f
-      case MUnion(l,r) => TUnion(domain(l), domain(r))
+      case MUnion(ms) => TUnion(ms map domain)
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.from}
       } catch {
@@ -855,14 +848,12 @@ object Morph {
   /** pre: m is a well-structured morphism */
    def codomain(m : Term)(implicit lib : Lookup) : Term = m match {
       case OMIDENT(t) => t
-      case OMCOMP(Nil) => throw ImplementationError("cannot infer codomain of empty composition")
       case OMCOMP(l) => codomain(l.last)
       case MEmpty(_,t) => t
-      case MUnion(l,r) =>
-         val lc = codomain(l)
-         val rc = codomain(r)
-         if (lc == rc) lc
-         else TUnion(lc, rc)
+      case MUnion(ms) =>
+         val cs = ms map codomain
+         if (cs.forall(_ == cs.head)) cs.head
+         else TUnion(cs)
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.to}
       } catch {

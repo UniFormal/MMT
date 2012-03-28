@@ -14,7 +14,6 @@ abstract class Traverser[State] {
    /** the main method to call the traverser, context defaults to empty */
    def apply(t: Term, init : State, con : Context = Context()) : Term = doTerm(t)(con, init)
    def doTerm(t: Term)(implicit con : Context , init : State) : Term
-   def doSeq(s: Sequence)(implicit con : Context , init : State) : Sequence = null //TODO
 }
 
 object Traverser {
@@ -23,7 +22,6 @@ object Traverser {
     */
    def doTerm[State](trav : Traverser[State], t : Term)(implicit con : Context, state : State) : Term = {
       def rec(t: Term)(implicit con : Context, state : State) = trav.doTerm(t)(con, state)
-      def recSeq(s : Sequence)(implicit con : Context, state : State) = trav.doSeq(s)(con, state)
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
          c.zipWithIndex map {
             case (TermVarDecl(n, t, d, attv @ _*), i) =>
@@ -31,15 +29,15 @@ object Traverser {
                val newt = t.map(rec( _)(conci, state))
                val newd = d.map(rec( _)(conci, state))
                TermVarDecl(n, newt, newd, attv :_*)  //TODO traversal into attributions
-            case (SeqVarDecl(n, t, d), i) =>
+/*            case (SeqVarDecl(n, t, d), i) =>
                val conci = con ++ c.take(i+1)
                val newt = t.map(recSeq( _)(conci, state))
                val newd = d.map(recSeq( _)(conci, state))
                SeqVarDecl(n, newt, newd)
-         }
+*/         }
 	   t match {
-		   case OMA(fun,args) => OMA(rec(fun), args.map(doSeq(trav, _)))
-		   case OME(err,args) => OMA(rec(err), args.map(rec))
+		   case OMA(fun,args) => OMA(rec(fun), args.map(rec))
+		   case OME(err,args) => OME(rec(err), args.map(rec))
 		   case OMM(arg,via) => OMM(rec(arg), via)
 		   case OMSub(arg, via) => OMSub(rec(arg)(con ++ via, state), recCon(via))
 		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)) //TODO traversal into key
@@ -60,15 +58,12 @@ object Traverser {
 		   
        }
    }
-   def doSeq[State](trav : Traverser[State], s : SeqItem)(implicit con : Context, state: State) : SeqItem = {
-	   null
-   }
 }
 
 /** A Traverser that moves all morphisms to the inside of a term. */
-object PushMorphs extends Traverser[Morph] {
+object PushMorphs extends Traverser[Term] {
    // morph is the composition of all morphisms encountered so far 
-	def doTerm(t: Term)(implicit con : Context, morph : Morph) : Term = t match {
+	def doTerm(t: Term)(implicit con : Context, morph : Term) : Term = t match {
 	   // change state: via is added to the morphisms
 		case OMM(arg, via) => doTerm(arg)(con, morph * via)
 		// apply the morphism to symbols

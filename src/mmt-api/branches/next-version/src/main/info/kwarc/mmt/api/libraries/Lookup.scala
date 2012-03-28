@@ -17,11 +17,11 @@ abstract class Lookup(val report : frontend.Report) {
    def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case GetError(_) => None}
    //typed access methods
    private def defmsg(path : Path) : String = "no element of required type found at " + path
-   def getModule(path : ContentPath, msg : Path => String = defmsg) : Term =
-     get(path) match {case OMMOD(p) => OMMOD(p) case TEmpty(metaOpt) => TEmpty(metaOpt) case TUnion(theories) => TUnion(theories) case _ => throw GetError(msg(path))}
-   def getTheory(path : ContentPath, msg : Path => String = defmsg) : Term =
-     get(path) match {case OMMOD(p) => OMMOD(p) case TEmpty(metaOpt) => TEmpty(metaOpt) case TUnion(theories) => TUnion(theories) case _ => throw GetError(msg(path))}
-   def getLink(path : ContentPath, msg : Path => String = defmsg) : Term =
+   def getModule(path : ContentPath, msg : Path => String = defmsg) : Module =
+     get(path) match {case m: Module => m case _ => throw GetError(msg(path))}
+   def getTheory(path : ContentPath, msg : Path => String = defmsg) : Theory =
+     get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
+   def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
      get(path) match {case e : Link => e case _ => throw GetError(msg(path))}
    def getSymbol(path : GlobalName, msg : Path => String = defmsg) : Symbol =
      get(path) match {case e : Symbol => e case _ => throw GetError(msg(path))} 
@@ -77,7 +77,7 @@ abstract class Lookup(val report : frontend.Report) {
     */
    object ExpandDefinitions extends Traverser[ContentPath => Boolean] {
       def doTerm(t: Term)(implicit con: Context, expand: ContentPath => Boolean) = t match {
-         case OMID(p) if expand(p) => getConstant(p).df match {
+         case OMID(p: GlobalName) if expand(p) => getConstant(p).df match {
             case Some(t) => doTerm(t)
             case None => OMID(p)
          }

@@ -36,6 +36,7 @@ class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, 
      "Instance " + name.flat + " of pattern " + pattern.toString  
 }
 
+/*
 object Instance {
   /**
    * returns the elaboration of an instance
@@ -72,6 +73,7 @@ object Instance {
   }
   
 }
+*/
 
 case object NoMatch extends java.lang.Throwable 
 

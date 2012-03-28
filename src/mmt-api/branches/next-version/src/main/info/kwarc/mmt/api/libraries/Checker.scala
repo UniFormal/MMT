@@ -143,7 +143,7 @@ abstract class ModuleChecker extends Checker {
       val fromdep = checkTheo(l.to, HasDomain(path, _), DependsOn(path, _))
       todep ::: fromdep
    }
-   protected def checkAtomic(m: ModuleObj) : MPath = m match {
+   protected def checkAtomic(m: Term) : MPath = m match {
       case OMMOD(p) => p
       case _ => throw Invalid("adding constants to composed theories not allowed")
    }
@@ -158,27 +158,24 @@ abstract class ModuleChecker extends Checker {
     *  @param mem the memory
     *  @return the list of return values
     */
-   def checkTheo[A](t : TheoryObj, atomic: Path => A, nonatomic: Path => A)(implicit mem: ROMemory) : List[A] = t match {
+   def checkTheo[A](t : Term, atomic: Path => A, nonatomic: Path => A)(implicit mem: ROMemory) : List[A] = t match {
      case OMMOD(p) =>
        checkTheoRef(p)
        List(atomic(p))
-     case TEmpty(mt) => mt match {
-        case None => Nil
-        case Some(mt) =>
-           checkTheo(OMMOD(mt), _ => null, _ => null)
-           List(atomic(mt))
-     }
-     case TUnion(l,r) =>
+     case OMS(mmt.tempty) => Nil
+     case TEmpty(mt) => checkTheo(OMMOD(mt), atomic, nonatomic)
+     case TUnion(ts) =>
         //TODO check same meta-theory?
-        val lr = checkTheo(l, atomic, nonatomic) ::: checkTheo(r, atomic, nonatomic)
+        val lr = ts flatMap {t => checkTheo(t, atomic, nonatomic)}
         lr.distinct
+     case _ => throw Invalid("not a valid theory " + t)
    }
   /** checks whether a morphism object is well-formed relative to a library and infers its type
     *  @param mem the memory
     *  @param m the theory
     *  @return the list of named objects occurring in m, the domain and codomain of m
     */
-   def inferMorphism(m : Morph)(implicit mem: ROMemory) : (List[Path], TheoryObj, TheoryObj) = m match {
+   def inferMorphism(m : Term)(implicit mem: ROMemory) : (List[Path], Term, Term) = m match {
      case OMMOD(m : MPath) =>
         val l = checkLinkRef(m)
         (List(m), l.from, l.to)
@@ -205,17 +202,17 @@ abstract class ModuleChecker extends Checker {
      case MEmpty(f,t) =>
         val occs = checkTheo(f, p => p, p => p) ::: checkTheo(t, p => p, p => p)
         (occs, f,t)
-     case MUnion(l,r) =>
-        val (loccs, ld, lc) = inferMorphism(l)
-        val (roccs, rd, rc) = inferMorphism(r)
-        // TODO l === r on (intersection ld rd)
-        val dom = TUnion(ld, rd)
-        val cod = if (mem.content.imports(lc, rc)) rc
-           else if (mem.content.imports(rc, lc)) lc
-           else TUnion(rc, lc)
-        (loccs ::: roccs, dom ,cod)
+     case MUnion(ms) =>
+        val infs = ms map {m => inferMorphism(m)}
+        val occs = infs flatMap {i => i._1}
+        val doms = infs map {i => i._2}
+        val cods = infs map {i => i._3}
+        // TODO l and r agree on all joint domains
+        val dom = TUnion(doms)
+        val cod = TUnion(cods) //TODO: simplify by removing redundant theories in cods using mem.content.imports(_,_)
+        (occs, dom ,cod)
    }
-   def checkInclude(from: TheoryObj, to: TheoryObj)(implicit mem: ROMemory) : Option[List[Path]] = {
+   def checkInclude(from: Term, to: Term)(implicit mem: ROMemory) : Option[List[Path]] = {
         if (from == to) Some(Nil)
         else if (mem.content.imports(from,to)) Some(List(to % LocalName(IncludeStep(from))))
         else None
@@ -227,7 +224,7 @@ abstract class ModuleChecker extends Checker {
     *  @param cod the codomain
     *  @return the list of identifiers occurring in m
     */
-   def checkMorphism(m : Morph, dom : TheoryObj, cod : TheoryObj)(implicit mem: ROMemory) : List[Path] = {
+   def checkMorphism(m : Term, dom : Term, cod : Term)(implicit mem: ROMemory) : List[Path] = {
       val (l, d,c) = inferMorphism(m)
       (checkInclude(dom, d), checkInclude(c, cod)) match {
          case (Some(l0), Some(l1)) => l0 ::: l ::: l1
@@ -248,7 +245,7 @@ object SimpleChecker extends ModuleChecker {
  * A Checker that implements MMT-well-formedness relative to a foundation.
  */
 class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecker {
-     def checkModuleChange(c : ChangeModule)(implicit mem: ROMemory) : CheckChangeResult = c match {
+   def checkModuleChange(c : ChangeModule)(implicit mem: ROMemory) : CheckChangeResult = c match {
      case AddModule(m) => check(m) match {
        case ContentSuccess(l) => ChangeSuccess(Nil,AddRelations(l) :: Nil)
        case ContentReconstructed(r,l) => ChangeSuccess(r, AddRelations(l) :: Nil)
@@ -299,21 +296,24 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
        }
 
      case RenameDeclaration(pold,pnew) =>
-       try {
-         mem.content.get(pold)
-    	 try {
-    	   mem.content.get(pold.mod ? pnew)
-           ChangeFail("trying to rename declaration to already existent path " + pnew)
-    	 } catch {
-    	   case e : Error => ChangeSuccess(Nil, RenameRelations(pold, pold.mod ? pnew) :: Nil)
-         }
-       } catch {
-         case e : Error => ChangeFail("trying to rename non-existent declaration path " + e.msg)
+       pold.mod match {
+          case OMMOD(m) =>
+             try {
+               mem.content.get(pold)
+          	 try {
+          	   mem.content.get(m ? pnew)
+                 ChangeFail("trying to rename declaration to already existent path " + pnew)
+          	 } catch {
+          	   case e : Error => ChangeSuccess(Nil, RenameRelations(pold, m ? pnew) :: Nil)
+               }
+             } catch {
+               case e : Error => ChangeFail("trying to rename non-existent declaration path " + e.msg)
+             }
+          case _ => ChangeFail("trying to rename declaration in complex theory")
        }
    }
    
-   def checkComponentChange(home : TheoryObj, path : Path, ch : UpdateComponent)(implicit mem : ROMemory) : CheckChangeResult = ch match {
-
+   def checkComponentChange(home : Term, path : Path, ch : UpdateComponent)(implicit mem : ROMemory) : CheckChangeResult = ch match {
      case UpdateComponent(name,old, nw, chs) => {
        val dec = mem.content.get(path)
        val compNames = dec.compNames.toMap
@@ -395,7 +395,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             val paths = checkContext(p.home, p.params ++ p.con)  
             val deps = IsPattern(p.path) :: paths.map(HasOccurrenceOfInDefinition(p.path, _))
             ContentSuccess(deps)
-         case i : Instance => 
+/*         case i : Instance => 
             val pt : Pattern = mem.content.getPattern(i.pattern)
             val paths : List[Path] = Nil //checkSubstitution(i.home, i.matches, pt.params, Context())
             // Mihnea's instances already refer to the elaborated constants stemming from the same instance
@@ -403,6 +403,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             val elab = Instance.elaborate(i, true)(mem.content, report)
             i.setOrigin(Elaborated)
             ContentReconstructed(i :: elab, deps)
+*/
          case _ => ContentSuccess(Nil)
    }
 /*       case a : Alias =>
@@ -476,7 +477,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             Nil
          case OMA(fun, args) =>
             val occf = checkTerm(home, context, fun) //TODO level of application cannot be inferred
-            val occa = checkSeq(home, context, SeqItemList(args))
+            val occa = args flatMap {a => checkTerm(home, context, a)} //checkSeq(home, context, SeqItemList(args))
             occf ::: occa
          case OMBINDC(binder, bound, condition, scope) =>
             val newcontext = context ++ bound // every variable can occur in every variable declaration
@@ -485,9 +486,9 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
                // not checking the attributions
                case TermVarDecl(_, tp, df, attrs @ _*) => 
                  List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkTerm(home, newcontext, _))                     
-               case SeqVarDecl(_, tp, df) => 
+/*               case SeqVarDecl(_, tp, df) => 
                  List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkSeq(home, newcontext, _))
-            }
+*/            }
             val occc = if (condition.isDefined) checkTerm(home, newcontext, condition.get)
                else Nil
             val occs = checkTerm(home, newcontext, scope)
@@ -508,9 +509,9 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             val occvia = via.variables.toList flatMap {
                case TermVarDecl(n, t, d, atts @ _*) =>
                   t.map(checkTerm(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _)).getOrElse(Nil)
-               case SeqVarDecl(n, t, d) =>
+/*               case SeqVarDecl(n, t, d) =>
                   t.map(checkSeq(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkSeq(home, bigcon, _)).getOrElse(Nil)
-               }
+*/               }
             val occarg = checkTerm(home, bigcon, arg)
             occvia ::: occarg
          case OMHID => Nil//TODO roles
@@ -523,10 +524,10 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
          case OMSTR(s) => Nil //TODO check if strings are permitted
          case OMF(d) => Nil //TODO check if floats are permitted
          case OMSemiFormal(t) => Nil //TODO
-         case Index(seq,ind) => checkSeq(home,context,seq) ::: checkTerm(home,context,ind)
+         //case Index(seq,ind) => checkSeq(home,context,seq) ::: checkTerm(home,context,ind)
       }
    }
-   def checkSeq(home : Term, context : Context, s : objects.Sequence)(implicit mem: ROMemory) : List[Path] = s match {
+/*   def checkSeq(home : Term, context : Context, s : objects.Sequence)(implicit mem: ROMemory) : List[Path] = s match {
    	  case t: Term => checkTerm(home, context, t)
    	  case SeqVar(n) =>
           try {
@@ -541,24 +542,24 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
       case SeqSubst(sq1,n,sq2) => checkSeq(home,context ++ TermVarDecl(n,None,None),sq1) ::: checkSeq(home,context,sq2)
    	  case SeqUpTo(t) => checkTerm(home,context,t)
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
-   }
+   }*/
    def checkContext(home: Term, con: Context)(implicit mem: ROMemory) : List[Path] = {
       con.flatMap {
     	  case TermVarDecl(name, tp, df, attrs @_*) => 
     	   val tpl = tp.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
     	   val dfl = df.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
     	   tpl ::: dfl //TODO not checking attributes
-    	  case SeqVarDecl(name, tp, df, attrs @_*) => 
+/*    	  case SeqVarDecl(name, tp, df, attrs @_*) => 
     	   val tpl = tp.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
     	   val dfl = df.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
     	   tpl ::: dfl //TODO not checking attributes
-    	  }
+*/    }
    }
    def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit mem: ROMemory) : List[Path] = {
       if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
       (from zip subs).flatMap {       
     	  case (TermVarDecl(n,tp,df,attrs @ _*), TermSub(m,t)) if n == m => checkTerm(home,to,t) 
-    	  case (SeqVarDecl(n,tp,df,attrs @ _*),SeqSub(m,s)) if n == m => checkSeq(home,to,s)
+    	//  case (SeqVarDecl(n,tp,df,attrs @ _*),SeqSub(m,s)) if n == m => checkSeq(home,to,s)
     	  case (v,s) => throw Invalid("illegal case " + s + " for declaration " + v)
       }
    }

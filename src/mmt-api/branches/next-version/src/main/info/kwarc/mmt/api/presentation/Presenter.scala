@@ -96,7 +96,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
             o match {
                //for binders, change newlpar to remember VarData for rendering the bound variables later 
                case OMBINDC(binder,context,_,_) =>
-                  val pOpt = binder match {case OMID(b) => Some(b) case _ => None}
+                  val pOpt = binder match {case OMS(b) => Some(b) case _ => None}
                   val vds = context.zipWithIndex.map {
                       case (v, i) => VarData(v, pOpt, newlpar.pos + (i+1))
                   }
@@ -111,10 +111,10 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
                        comps = List(StringLiteral(name), Omitted, Omitted) // free variable
                   }
                // one more binder
-               case SeqSubst(_, name, _) =>
+/*               case SeqSubst(_, name, _) =>
                   val vd = VarData(TermVarDecl(name, None, None), Some(utils.mmt.ellipsis), lpar.pos + 1)
                   newlpar = newlpar.copy(context = newlpar.context ::: List(vd))
-               case _ =>
+*/               case _ =>
             }
             val notation = controller.get(gpar.nset, key)
             //log("looked up notation: " + notation)

@@ -203,8 +203,7 @@ class Controller extends ROController {
         log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
       source.close
       dpath
-   }
-   /** MMT base URI */
+   }   /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
    /** base URL In the local system */
@@ -313,13 +312,13 @@ class Controller extends ROController {
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
 	      case Read(f) => read(f)
-        case ReadText(f) => readText(f)
+	      case ReadText(f) => readText(f)
 	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)
-        case Compare(p,r) => //TODO
-        case Exit =>
+         case Compare(p,r) => //TODO
+         case Exit =>
 	         cleanup 
 	         sys.exit
       })

@@ -3,7 +3,6 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.presentation._
 
 /**
@@ -15,8 +14,8 @@ trait DefinitionalLink extends Symbol with Link {
    def applyTo(sym : Symbol) : Symbol = sym match {
       case c : Constant => new Constant(to, name / c.name, c.tp.map(_ * toMorph), c.df.map(_ * toMorph), c.rl, c.not)
       case s : Structure => new DefinedStructure(to, name / s.name, s.from, s.toMorph * toMorph)
-      case p : Pattern => null //TODO translate pattern
-      case i : Instance => null //TODO translate instance
+      //case p : Pattern => null //TODO translate pattern
+      //case i : Instance => null //TODO translate instance
    }
 }
 

@@ -1,6 +1,5 @@
 package info.kwarc.mmt.api.moc
 
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.symbols._

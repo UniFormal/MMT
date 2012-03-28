@@ -77,7 +77,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
 		         val tpath = base ? name
 		         val (t, body) = seq match {
 		        	 case <definition>{d}</definition> =>
-		        	   val df = Obj.parseTheory(d, tpath)
+		        	   val df = Obj.parseTerm(d, tpath)
 		        	   (new DefinedTheory(modParent, name, df), None)
 		        	 case symbols => 
 				         val meta = xml.attr(m, "meta") match {
@@ -102,7 +102,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
 	            val (m3, to) = XMLReader.getTheoryFromAttributeOrChild(m2, "to", base)
 	            val (v, body) = m3.child match {
                   case <definition>{d}</definition> =>
-		            val df = Obj.parseMorphism(d, vpath)
+		            val df = Obj.parseTerm(d, vpath)
 		            (new DefinedView(modParent, name, from, to, df), None)
 	              case assignments =>
 	 		        (new DeclaredView(base, name, from, to), Some(assignments))
@@ -174,7 +174,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
             val from = OMMOD(Path.parseM(xml.attr(s, "from"), base))
             seq match {
                case <definition>{d}</definition> =>
-                  val df = Obj.parseMorphism(d, base)
+                  val df = Obj.parseTerm(d, base)
                   val i = new DefinedStructure(thy, name, from, df)
                   add(i,md)
                case assignments =>
@@ -208,7 +208,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
          }
       }
    }
-   def readAssignments(link : Morph, base : Path, assignments : NodeSeq) {
+   def readAssignments(link : Term, base : Path, assignments : NodeSeq) {
       for (amd <- assignments) {
          val (a, md) = MetaData.parseMetaDataChild(amd, base) 
          val name = Path.parseLocal(xml.attr(a, "name")).toLocalName
@@ -220,11 +220,11 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
                add(m, md)
             case <strass>{t}</strass> =>
                log("assignment for " + name + " found")
-               val tg = Obj.parseMorphism(t, base)
+               val tg = Obj.parseTerm(t, base)
                val m = new DefLinkAssignment(link, name, tg)
                add(m, md)
             case <include>{mor}</include> =>
-               val of = Obj.parseMorphism(mor, base)
+               val of = Obj.parseTerm(mor, base)
                log("include of " + of + " found")
                val f = xml.attr(a, "from")
                val from = if (f == "")
@@ -291,15 +291,15 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
 }
 
 object XMLReader {
-   /** parses a theory using the attribute or child "component" of "n", returns the remaining node and the TheoryObj */
-   private def getTheoryFromAttributeOrChild(n: Node, component: String, base: Path) : (Node, TheoryObj) = {
+   /** parses a theory using the attribute or child "component" of "n", returns the remaining node and the theory */
+   private def getTheoryFromAttributeOrChild(n: Node, component: String, base: Path) : (Node, Term) = {
       if (n.attribute(component).isDefined) {
          (n, OMMOD(Path.parseM(xml.attr(n, component), base)))
       } else {
           val (newnode, tOpt) = splitOffChild(n, component)
           tOpt match {
              case Some(t) =>
-                if (t.child.length == 1) (newnode, Obj.parseTheory(t.child(0), base))
+                if (t.child.length == 1) (newnode, Obj.parseTerm(t.child(0), base))
                 else throw ParseError("ill-formed theory: " + t)
              case _ => throw ParseError("no component " + component + " found: " + n)
          }

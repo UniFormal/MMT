@@ -33,7 +33,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    private def modulesGetNF(p : MPath) : Module =
       try {modules(p)}
       catch {case _ => if (false) throw GetError("module does not exist: " + p)
-                       else     throw frontend.NotFound(p)
+                       else     throw new frontend.NotFound(p)
             }
    def log(s : => String) = report("library", s)
    
@@ -90,15 +90,16 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
             }
          case v : View => getInLink(v, name, error) 
       }
-      case TEmpty(mtO) % name => name match {
+      case OMS(mmt.tempty) => throw GetError("empty theory has no declarations")
+      case TEmpty(mt) % name => name match {
          case IncludeStep(f) / tl =>
-            if (mtO.isDefined && imports(f, mtO.get)) get(f % tl)
+            if (imports(f, OMMOD(mt))) get(f % tl)
             else throw GetError("empty theory has no declarations")
          case _ => throw GetError("empty theory has no declarations")
       }
-      case TUnion(l,r) % name => name match {
+      case TUnion(ts) % name => name match {
          case IncludeStep(f) / tl =>
-            if (imports(f, TUnion(l,r))) get(f % tl)
+            if (imports(f, TUnion(ts))) get(f % tl)
             else throw GetError("union of theories has no declarations except includes")
          case _ => throw GetError("union of theories has no declarations except includes")
       }
@@ -124,11 +125,12 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          case c: Constant => new ConstantAssignment(m, name, OMHID)
          case l: DefinitionalLink => new DefLinkAssignment(m, name, MEmpty(l.from, t))
       }
-      case MUnion(l,r) % name => name match {
+      case MUnion(ms) % name => name match {
          case IncludeStep(f) / tl =>
-            if (imports(f, Morph.domain(l)(this))) get(l % tl)
-            else if (imports(f, Morph.domain(r)(this))) get(r % tl)
-            else throw GetError("union of morphisms has no assignments except includes")
+            ms find {m => imports(f, Morph.domain(m)(this))} match {
+               case Some(m) => get(m % tl)
+               case None => throw GetError("union of morphisms has no assignments except includes")
+            }
          case _ => throw GetError("union of morphisms has no assignments except includes")
       }
    }
@@ -153,7 +155,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                  // return default assignment
                  case (l: Structure, c:Constant) => new ConstantAssignment(l.toMorph, name, OMID(l.to % (l.name / name)))
                  case (l: View, c:Constant) => new ConstantAssignment(l.toMorph, name, OMHID)
-                 case (l: Structure, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, OMCOMP(d.toMorph, l.toMorph))
+                 case (l: Structure, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, OMCOMP(List(d.toMorph, l.toMorph)))
                  case (l: View, d:DefinitionalLink) => new DefLinkAssignment(l.toMorph, name, MEmpty(d.from, l.to))
               }
          }
@@ -203,11 +205,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                   def hasNext = n.isDefined
                }*/
          }
-      case TEmpty(mt) => mt match {
-         case None => Iterator.empty
-         case Some(t) => Iterator.single(OMMOD(t)) ++ importsTo(OMMOD(t))
-      }
-      case TUnion(l,r) => importsTo(l) ++ importsTo(r) //TODO remove duplicates
+      case OMS(mmt.tempty) => Iterator.empty
+      case TEmpty(mt) => Iterator.single(OMMOD(mt)) ++ importsTo(OMMOD(mt))
+      case TUnion(ts) => (ts flatMap importsTo).iterator //TODO remove duplicates
    }
 
    /** Checks whether a theory ("from") is included into another ("to"), transitive, reflexive */
@@ -216,29 +216,28 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          case (OMMOD(f), OMMOD(t)) => importsTo(to) contains from
          case (TEmpty(_), _ ) => true
          case (_, TEmpty(_)) => false
-         case (_, TUnion(l,r)) => imports(from, l) || imports(from, r)
-         case (TUnion(l,r), _) => imports(l, from) && imports(r, from)
+         case (_, TUnion(ts)) => ts exists {t => imports(from, t)}
+         case (TUnion(ts), _) => ts forall {t => imports(t, from)}
       })
    }
 
    // TODO add it to the library (i.e. cache results), and check at the beginning if it's cached
    /** Elaborate a theory expression ("exp") into a module */
    def materialize(exp: Term) : Module = {
-      val path = exp.toMPath
       exp match {
-         case OMMOD(p) => getTheory(p)            // exists already
-         case texp : TheoryObj =>                 // create a new theory and return it
-            val meta = Theory.meta(texp)(this)
-            val t = new DeclaredTheory(path.parent, path.name, meta)
-            texp match {
-               case TEmpty(mt) => t 
-               case TUnion(l,r) =>
-                  t.add(new Include(texp, l))
-                  t.add(new Include(texp, r))
-                  t
+         case OMMOD(p: MPath) => getTheory(p)            // exists already
+         case exp =>                 // create a new theory and return it
+            val path = exp.toMPath
+            val meta = Theory.meta(exp)(this)
+            val thy = new DeclaredTheory(path.parent, path.name, meta)
+            exp match {
+               case TEmpty(mt) => thy 
+               case TUnion(ts) =>
+                  ts foreach {t => thy.add(new Include(exp, t))}
+                  thy
                case OMMOD(_) => throw ImplementationError("impossible case")
+               case _ => throw ImplementationError("cannot materialize; (note that materializing morphisms not implemented yet)")
             }
-         case mexp: Morph => throw ImplementationError("materializing morphisms not implemented yet")
       }
    }
 	 /*  
@@ -285,7 +284,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    def preImage(p : GlobalName) : Option[GlobalName] = p.name match {
          case hd / tl =>
             try {
-               get(p.parent % !(hd)) match {
+               get(p.mod % !(hd)) match {
                   case s : Structure => Some(s.from % tl)
                }
             } catch {case _ => None}

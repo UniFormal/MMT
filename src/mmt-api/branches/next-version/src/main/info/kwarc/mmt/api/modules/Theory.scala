@@ -52,11 +52,10 @@ object Theory {
          case t: DeclaredTheory => t.meta
          case t: DefinedTheory => meta(t.df)
       }
-      case TEmpty(mt) => mt
-      case TUnion(l,r) =>
-         val lm = meta(l)
-         val rm = meta(r)
-         if (lm == rm) lm
+      case TEmpty(mt) => Some(mt)
+      case TUnion(ts) =>
+         val ms = ts map {t => meta(t)}
+         if (ms forall {m => m == ms.head}) ms.head
          else None
    }
 }

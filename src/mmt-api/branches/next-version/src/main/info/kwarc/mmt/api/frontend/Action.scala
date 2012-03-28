@@ -199,7 +199,7 @@ case class Closure(p : Path) extends MakeAbstract {
 case class Elaboration(p : Path) extends MakeAbstract {
    def make(controller : Controller) : TGroup = {
 	   controller.get(p) match {
-	  	   case i : Instance => new TGroup(i.parent,p,Instance.elaborate(i,true)(controller.globalLookup,controller.report))
+	  	   //case i : Instance => new TGroup(i.parent,p,Instance.elaborate(i,true)(controller.globalLookup,controller.report)) PATTERNS
 	  	   case _ => throw ImplementationError("Non-instance element at " + p)  
        }
    }

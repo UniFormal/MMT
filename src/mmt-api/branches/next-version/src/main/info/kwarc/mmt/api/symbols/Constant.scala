@@ -1,9 +1,8 @@
 package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.moc._
+import objects._
+import modules._
+import moc._
 import presentation.{NotationProperties, StringLiteral, Omitted}
 
 /**

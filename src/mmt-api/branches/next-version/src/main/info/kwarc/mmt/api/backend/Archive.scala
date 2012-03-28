@@ -4,7 +4,6 @@ import libraries._
 import frontend._
 import modules._
 import symbols._
-import patterns._
 import objects._
 import utils._
 import FileConversion._
@@ -328,7 +327,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
               val mod = controller.globalLookup.getModule(mpath)
               val flatNode = mod match {
                  case thy: DeclaredTheory =>
-                    Instance.elaborate(thy)(controller.globalLookup, report)
+                    //Instance.elaborate(thy)(controller.globalLookup, report) PATTERNS
                     thy.toNodeElab
                  case _ => mod.toNode
               }
@@ -467,7 +466,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
           val node = try { get(mod) }
           catch {case e: java.io.FileNotFoundException => throw NotApplicable}
           reader.readModules(mod.doc, None, get(mod))
-       case sym : GlobalName => get(sym.mod, reader)
+       case OMMOD(m) % _ => get(m, reader)
     }}
 }
 

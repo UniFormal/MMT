@@ -63,14 +63,14 @@ class ObjectChecker(report: Report) {
    def equal (tm1 : Term, tm2 : Term, G : Context)(implicit lib : Lookup, cd: ConstraintDelay) {
       (tm1, tm2) match { 
          case (OMV(x), OMV(y)) => x == y //TODO: variables with definients
-         case (OMID(c), OMID(d)) => if (c == d) true else {
+         case (OMS(c), OMS(d)) => if (c == d) true else {
             //TODO: smart strategy for definition expansion
             lookupdef(c) match {
                case None => lookupdef(d) match {
                   case None => false
-                  case Some(t) => equal(OMID(c), t, G)
+                  case Some(t) => equal(OMS(c), t, G)
                }
-               case Some(t) => equal(OMID(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
+               case Some(t) => equal(OMS(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
             }
          }
 /*         case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => 

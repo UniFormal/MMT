@@ -234,8 +234,8 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
 case class SVNRepo(scheme : String, authority : String, prefix : String, repository : SVNRepository, defaultRev : Int = -1) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
    
-   def get(path : Path, reader : Reader) = get(path, reader, defaultRev)
-   def get(path : Path, reader : Reader, rev : Int) {
+   def get(path : Path, reader : XMLReader) {get(path, reader, defaultRev)}
+   def get(path : Path, reader : XMLReader, rev : Int) {
       val uri = path.doc.uri
       val target = Storage.getSuffix(localBase, uri)
       
