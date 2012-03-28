@@ -13,7 +13,6 @@ import utils.FileConversion._
 import org.tmatesoft.svn.core._
 import org.tmatesoft.svn.core.io._
 import org.tmatesoft.svn.core.auth._
-//import org.tmatesoft.svn.core.wc.SVNWCUtil
 import org.tmatesoft.svn.core.wc.SVNWCUtil
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
@@ -311,6 +310,42 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
        case _ => s
      })
    }
+
+  
+   def openArchive(url : String, rev : Int) : SVNArchive = {
+     println(url, rev)
+     val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
+     val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager()
+     repository.setAuthenticationManager(authManager)
+     repository.checkPath(".", rev) match {
+       case SVNNodeKind.DIR =>
+         val properties = new scala.collection.mutable.ListMap[String, String]
+         val manifest = "META-INF/MANIFEST.MF"
+         repository.checkPath(manifest, rev) match {
+           case SVNNodeKind.FILE =>
+             val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
+             repository.getFile(manifest, rev, null, baos)
+             val lines = baos.toString().split("\n").map(_.trim).filterNot(line => line.startsWith("//") || line.isEmpty)
+             lines map { line =>
+               val p = line.indexOf(":")
+               val key = line.substring(0,p).trim
+               val value = line.substring(p+1).trim
+               properties(key) = value
+               //TODO handle catalog key
+             }
+             val arch = new SVNArchive(repository, properties, report, rev)
+             addStore(arch)
+             arch
+
+           case _ => throw NotApplicable
+         }
+       case SVNNodeKind.FILE => throw NotApplicable //TODO
+       case _ => throw NotApplicable
+
+     }
+
+   }
+  
    
    /** @throws NotFound if the root file cannot be read
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */

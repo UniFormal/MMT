@@ -27,8 +27,9 @@ object Action extends RegexParsers {
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
-   private def archive = archopen | archdim | archmar | archpres
+   private def archive = archopen | archdim | archmar | archpres | svnarchopen
    private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
+   private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
    private def archdim = "archive" ~> str ~ dimension ~ (str ?) ^^ {
       case id ~ dim ~ s =>
          val segs = MyList.fromString(s.getOrElse(""), "/")
@@ -120,6 +121,8 @@ case class AddImporter(cls: String, args: List[String]) extends Action {override
 case class AddFoundation(cls: String, args: List[String]) extends Action {override def toString = "foundation " + cls + args.mkString(" ", " ", "")}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
+/** add a SVN Archive */
+case class AddSVNArchive(url : String,  rev : Int) extends Action {override def toString = "SVN archive add " + url + "@" + rev}
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(id: String, dim: String, in : List[String], params: List[MPath] = Nil) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
 /** builds a dimension in a previously opened archive */
