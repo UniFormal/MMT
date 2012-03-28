@@ -32,6 +32,29 @@ class MyCompletion(view : View, text: String, items: List[String])
 class MMTSideKick extends SideKickParser("mmt") {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
    val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
+   def buildTree(node: DefaultMutableTreeNode, doc: Document) {
+      doc.getItems foreach {
+        case d: DRef =>
+           val child = MyNode(d.target.last, 0, 0, 0)
+           root.add(child)
+           buildTree(child, controller.getDocument(d.target))
+        case m: MRef =>
+           val child = MyNode(m.target.last, 0, 0, 0)
+           root.add(child)
+           buildTree(child, controller.getModule(m.target))
+      }
+   }
+   def buildTree(node: DefaultMutableTreeNode, mod: Module) {
+      mod match {
+         case m: DeclaredModule =>
+            m.valueListNG foreach {
+               case s: Symbol =>
+                  val child = MyNode(s.name, 0, 0, 0)
+                  node.add(child)
+            }
+         case m: DefinedModule =>
+      }
+   }
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = buffer.getPath
       val src = scala.io.Source.fromString(buffer.getText)
@@ -39,15 +62,9 @@ class MMTSideKick extends SideKickParser("mmt") {
       val (doc,errors) = controller.textReader.readDocument(src, DPath(path.toURI))
       val tree = new SideKickParsedData(path)
       val root = tree.root
-      doc.getItems foreach {
-        case d: DRef =>
-           val child = MyNode(d.target.last, 0, 0, 0)
-           root.add(child)
-        case m: MRef =>
-           val child = MyNode(d.target.last, 0, 0, 0)
-           root.add(child)
-      }
-      
+      val child = MyNode(doc.path, 0, 0, 0)
+      node.add(child)
+      buildTree(child, doc)
       // register some errors
       errors foreach {e =>
          //val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.WARNING, path, 3,0,0,"a full line warning")
