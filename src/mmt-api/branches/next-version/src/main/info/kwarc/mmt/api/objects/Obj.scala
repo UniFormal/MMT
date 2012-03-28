@@ -576,6 +576,7 @@ object OMDL {
    def apply(cod: Term, name: LocalName) : Term = OMID(cod % name)
    def unapply(t: Term) : Option[(Term, LocalName)] = t match {
      case OMID(cod % name) => Some((cod, name))
+     case _ => None
    }
 }
 /*
@@ -659,6 +660,7 @@ object MUnion {
    }
    def unapply(t : Term) : Option[List[Term]] = t match {
      case OMA(OMID(mmt.munion), morphs) if (morphs.forall(_.isInstanceOf[Term])) => Some(morphs.asInstanceOf[List[Term]])
+     case _ => None
    }
 }
 
