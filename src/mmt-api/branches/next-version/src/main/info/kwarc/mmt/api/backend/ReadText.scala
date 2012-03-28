@@ -30,7 +30,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
-    errors = LinkedList[ParseError] ()
+    errors = LinkedList[Error] ()
     keepComment = None
     dpath = dpath_
     currentNS = None
@@ -99,7 +99,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
 
   /** list of parsing errors in the file */
-  private var errors = LinkedList[ParseError] ()
+  private var errors = LinkedList[Error] ()
 
   /** temporary variable used during parsing: saves the last SemanticCommentBlock */
   private var keepComment : Option[MetaData] = None
@@ -530,7 +530,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the first character in the sequence
     * @return Pair(the set modules URIs in the sequence, position after the sequence)
     * @throws ParseError for syntactical errors */
-  private def crawlModuleReferences(start: Int) : Pair[LinkedHashSet[URI], Int] =
+  private def crawlModuleReferences(start: Int) : Pair[LinkedList[URI], Int] =
   {
     var moduleRefs = LinkedHashSet[URI] ()
     var i = start
@@ -553,30 +553,21 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /**reads a morphism object
    * @param start the start position of the morphism object
    * @param theory the theory in which the module references might be in (they might also be top-level views)
-   * @return Pair[Morph, position after]
+   * @return Pair[Term, position after]. For now, the Term is just an informal object, see note below
    * @throws ParseError for syntactical errors
-   * note: this will always return the correct Morph in structures and complex theory objects.
-   * In views, it has no way to know whether a morphism reference is a structure in the codomain
+   * Note: The reason why this returns an informal object is that in views, it has no way
+   * to know whether a morphism reference is a structure in the codomain
    * or a top-level morphism in a particular namespace, since both the entire namespace and
    * the codomain might not have been read yet into the library
    */
   private def crawlMorphismObject(start: Int, theory: Option[Term]) : Pair[Term, Int] =
   {
-    def resolveModuleReference(name: String) : MPath = theory match {
-      case Some(th) =>
-        // check if it's in the theory
-        controller.library.getO(th.toMPath ? name) match {
-          case Some(path) => th.toMPath ? name
-          case None =>
-        }
-    }
-
     val (linkRefs, positionAfter) = crawlModuleReferences(start)
-    val morphism =
-      if (linkRefs.size == 1)   // a single reference
+    val morphism = OMSemiFormal((objects.Text("Twelf", getSlice(start, positionAfter - 1))))
+      /*if (linkRefs.size == 1)   // a single reference
         OMMOD(theory.path)
       else                      // a sequence of references
-        OMCOMP(linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base))) : _*)
+        OMCOMP(linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base))) : _*)    */
     addSourceRef(morphism, start, positionAfter - 1)
     Pair(morphism, positionAfter)
   }
@@ -591,7 +582,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private def crawlTheoryObject(start: Int, base: Path) : Pair[Term, Int] =
   {
     val (linkRefs, positionAfter) = crawlModuleReferences(start)
-    val theories : LinkedHashSet[Term] = linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base)))
+    val theories : LinkedList[Term] = linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base)))
     val theoryObject : Term = {
       if (theories.size == 1)
         theories.head
