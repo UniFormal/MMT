@@ -198,7 +198,7 @@ class Controller extends ROController {
    def readText(f: java.io.File) : DPath = {
       val dpath = DPath(URI.fromJava(f.toURI))
       val source = scala.io.Source.fromFile(f, "UTF-8")
-      val (doc, errorList) = textReader.crawlDocument(source, dpath)
+      val (doc, errorList) = textReader.readDocument(source, dpath)
       if (!errorList.isEmpty)
         log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
       source.close
