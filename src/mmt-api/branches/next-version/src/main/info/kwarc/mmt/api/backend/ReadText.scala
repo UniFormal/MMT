@@ -532,7 +532,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @throws ParseError for syntactical errors */
   private def crawlModuleReferences(start: Int) : Pair[LinkedList[URI], Int] =
   {
-    var moduleRefs = LinkedHashSet[URI] ()
+    var moduleRefs = LinkedList[URI] ()
     var i = start
     var break = false
     while (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i)) && !break) {
@@ -540,7 +540,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       if (moduleRef == "->" || moduleRef == "=")          // the sequence has ended, stop here
         break = true
       if (!break) {
-        moduleRefs += moduleToAbsoluteURI(i, moduleRef)    // add its URI to the returned LinkedHashSet
+        moduleRefs :+ moduleToAbsoluteURI(i, moduleRef)    // add its URI to the returned LinkedHashSet
         i = positionAfter  // go to the space after the identifier
         i = skipws(i)      // don't allow comments between two module references
       }
@@ -587,7 +587,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       if (theories.size == 1)
         theories.head
       else
-        TUnion(theories)
+        TUnion(theories.toList)
     }
     addSourceRef(theoryObject, start, positionAfter - 1)
     Pair(theoryObject, positionAfter)
@@ -827,7 +827,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         throw ParseError(toPair(i) + ": error: morphism or assignment list expected after '='")
       else {
         // It's a DefinedStructure
-        val (morphism, positionAfter) = crawlMorphismObject(i, parent.path)
+        val (morphism, positionAfter) = crawlMorphismObject(i, Some(OMMOD(parent.path)))
         i = positionAfter
         domain match {
           case Some(dom) => structure = new DefinedStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism)
@@ -918,7 +918,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // get the morphism
-    val (morphism, positionAfter2) = crawlMorphismObject(i, parent.to.asPath.getOrElse(Path.parse("")))
+    val (morphism, positionAfter2) = crawlMorphismObject(i, Some(OMMOD(parent.toMorph.toMPath)))
 
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
@@ -945,7 +945,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val i = skipws(crawlKeyword(start, "%include"))
 
     // get the morphism
-    val (morphism, positionAfter) = crawlMorphismObject(i, parent.to.asPath.getOrElse(Path.parse("")))
+    val (morphism, positionAfter) = crawlMorphismObject(i, Some(OMMOD(parent.toMorph.toMPath)))
 
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
@@ -1132,7 +1132,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     }
     else if (isIdentifierPartCharacter(flat.codePointAt(i))) {
       // It's a DefinedView
-      val (morphism, positionAfter) = crawlMorphismObject(i, Path.parse(""))
+      val (morphism, positionAfter) = crawlMorphismObject(i, None)
       i = positionAfter
       view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism)
       add(view)
