@@ -6,6 +6,9 @@ import sidekick._
 import info.kwarc.mmt.api._
 import frontend._
 import libraries._
+import modules._
+import symbols._
+import documents._
 
 import javax.swing.tree.DefaultMutableTreeNode
 import scala.collection.JavaConversions.seqAsJavaList
@@ -14,17 +17,25 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
    def getOffset = offset
 }
 
-object MyNode {
-   // not sure if line is ever used for anything interesting
-   def apply(name: String, line: Int, startOffset: Int, endOffset: Int) : DefaultMutableTreeNode = {
-      val asset = new enhanced.SourceAsset(name, line, MyPosition(startOffset))
-      asset.setEnd(MyPosition(endOffset))
-      new DefaultMutableTreeNode(asset)
+class MMTAsset(elem : StructuralElement, name: String, reg: SourceRegion) extends enhanced.SourceAsset(name, reg.start.line, MyPosition(reg.start.offset)) {
+   setEnd(MyPosition(reg.end.offset))
+   setLongDescription(path.toPath)
+   //setIcon
+   def path = elem.path
+   def getScope : Option[objects.Term] = elem match {
+      case _ : NarrativeElement => None
+      case _ : PresentationElement => None
+      case c : ContentElement => c match {
+        case t: DeclaredTheory => Some(objects.OMMOD(t.path))
+        case v: modules.View => None //would have to be parsed to be available
+        case d: Declaration => Some(d.home)
+        case _ => None
+      }
    }
 }
 
 // text is the string that is to be completed, items is the list of completions
-class MyCompletion(view : View, text: String, items: List[String])
+class MyCompletion(view : org.gjt.sp.jedit.View, text: String, items: List[String])
   extends SideKickCompletion(view, text, items) {
    // override def insert(index: Int) // this methods modifies the textArea after the user selected a completion
 }
@@ -32,58 +43,95 @@ class MyCompletion(view : View, text: String, items: List[String])
 class MMTSideKick extends SideKickParser("mmt") {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
    val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
-   def buildTree(node: DefaultMutableTreeNode, doc: Document) {
+   val controller = mmt.controller
+   private def log(msg: => String) {
+      controller.report("jedit-parse", msg)
+   }
+   private def getRegion(e: metadata.HasMetaData) : SourceRegion = e.metadata.getLink(SourceRef.metaDataKey) match {
+         case u :: _ => SourceRef.fromURI(u).region
+         case Nil => SourceRegion(SourcePosition(0,0,0), SourcePosition(0,0,0))
+   }
+   private def buildTree(node: DefaultMutableTreeNode, doc: Document) {
+      val child = new DefaultMutableTreeNode(new MMTAsset(doc, doc.path.last, getRegion(doc)))
+      node.add(child)
       doc.getItems foreach {
         case d: DRef =>
-           val child = MyNode(d.target.last, 0, 0, 0)
-           root.add(child)
            buildTree(child, controller.getDocument(d.target))
         case m: MRef =>
-           val child = MyNode(m.target.last, 0, 0, 0)
-           root.add(child)
-           buildTree(child, controller.getModule(m.target))
+           buildTree(child, controller.localLookup.getModule(m.target))
       }
    }
-   def buildTree(node: DefaultMutableTreeNode, mod: Module) {
+   private def buildTree(node: DefaultMutableTreeNode, mod: Module) {
+      val keyword = mod match {case _ : Theory => "theory"; case _: modules.View => "view"}
+      val child = new DefaultMutableTreeNode(new MMTAsset(mod, keyword + " " + mod.path.last, getRegion(mod)))
+      node.add(child)
       mod match {
-         case m: DeclaredModule =>
-            m.valueListNG foreach {
-               case s: Symbol =>
-                  val child = MyNode(s.name, 0, 0, 0)
-                  node.add(child)
+         case m: DeclaredModule[_] =>
+            m.valueListNG foreach {case d =>
+               val label = d match {  
+                  case PlainInclude(from,_) => "include " + from.last
+                  case i: Include => "include"
+                  case s: Structure => "structure " + s.name.flat + " "
+                  case d: Declaration => d.name.flat
+               }
+               val grandchild = new DefaultMutableTreeNode(new MMTAsset(d, label, getRegion(d)))
+               child.add(grandchild)
             }
          case m: DefinedModule =>
       }
    }
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
-      val path = buffer.getPath
+      val path = utils.File(buffer.getPath)
       val src = scala.io.Source.fromString(buffer.getText)
       controller.clear
-      val (doc,errors) = controller.textReader.readDocument(src, DPath(path.toURI))
-      val tree = new SideKickParsedData(path)
+      val tree = new SideKickParsedData(path.toJava.getName)
       val root = tree.root
-      val child = MyNode(doc.path, 0, 0, 0)
-      node.add(child)
-      buildTree(child, doc)
-      // register some errors
-      errors foreach {e =>
-         //val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.WARNING, path, 3,0,0,"a full line warning")
-         val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path, 4,4,15, e.msg)
-         errorSource.addError(error)
+      try {
+         val (doc,errors) = controller.textReader.readDocument(src, DPath(path.toJava.toURI))
+         // add narrative structure of doc to outline tree
+         buildTree(root, doc)
+         // register errors with ErrorList plugin
+         errors foreach {e =>
+            //DefaultError(errorSource, ErrorSource.WARNING | ERROR, path, line, startColumn, endColumn, message)
+            //currently no position information
+            val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, e.pos.line,e.pos.column,e.pos.column+1, e.msg)
+            errorSource.addError(error)
       }      
       tree
+      } catch {case e =>
+         val error = e match {
+            case TextParseError(pos, msg) => //parse error thrown by TextReader
+               new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, pos.line, pos.column, pos.column + 1, msg)
+            case e => // other error, e.g., by the get methods in buildTree
+               new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, e.getMessage)
+         }
+         errorSource.addError(error)
+         log(e.getMessage);
+         tree
+      }
    }
    // override def stop() 
    // override def getParseTriggers : String = ""
 
    override def supportsCompletion = true
-   // override def canCompleteAnywhere = true
+   override def canCompleteAnywhere = true
    // override def getInstantCompletionTriggers : String = ""
+   private def isIDChar(c: Char) = (! Character.isWhitespace(c)) && "()[]{}:.".forall(_ != c)
    override def complete(editPane: EditPane, caret : Int) : SideKickCompletion = {
+      val textArea = editPane.getTextArea
       val view = editPane.getView
-      val pd = SideKickParsedData.getParsedData(view) // we have access to the result of the parser
-      val asset = pd.getAssetAtOffset(caret)
-      // return a dummy completion popup
-      new MyCompletion(view, "test", List("compl1", "compl2", asset.getName))
+      val pd = SideKickParsedData.getParsedData(view)
+      val asset = pd.getAssetAtOffset(caret).asInstanceOf[MMTAsset]
+      asset.getScope match {
+        case Some(a) =>
+           val p = textArea.getCaretPosition
+           var l = 0 // number of character to the left of the caret that are id characters
+           while (l < p && isIDChar(textArea.getText(p - l - 1,1)(0))) {l = l + 1}
+           val partialName = textArea.getText(p - l, l)
+           val compls = Names.resolve(a, Nil, partialName)(controller.localLookup)
+           new MyCompletion(view, partialName, compls.map(_.completion.flat))
+        case None => new MyCompletion(view, "", Nil)
+      }
+      
    }
 }

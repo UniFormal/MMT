@@ -15,6 +15,7 @@
         <mkdir dir="build"/>
         <path id="compile.classpath">
           <pathelement location="${scala.dir}/scala-library.jar"/>
+          <pathelement location="${scala.dir}/tiscaf.jar"/>
           <pathelement location="${deploy}/mmt-api.jar"/>
         	 <fileset dir="lib" includes="*.jar"/>
           <pathelement location="build"/>
