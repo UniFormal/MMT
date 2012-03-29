@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
@@ -164,4 +165,4 @@ object SeqNormalize {
   }	 
 }  
 
- 
+*/

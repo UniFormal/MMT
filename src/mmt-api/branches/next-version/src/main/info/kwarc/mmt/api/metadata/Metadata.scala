@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.metadata
 import info.kwarc.mmt.api._
 import objects._
 import utils._
+import utils.MyList._
 
 import scala.xml._
 
@@ -25,6 +26,10 @@ class MetaData {
    def getAll : List[MetaDatum] = data
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
+   def getLink(key: GlobalName) : List[URI] = data.mapPartial {
+      case Link(k, u) if k == key => Some(u)
+      case _ => None
+   }
    def toNode = <metadata>{data.map(_.toNode)}</metadata>
    // def toString
 }

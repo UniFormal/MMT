@@ -62,7 +62,6 @@ case class DPath(uri : URI) extends Path {
    def ^! = DPath(uri ^)
    def ?(n : String) : MPath = this ? new LocalPath(n)
    def ?(n : LocalPath) = MPath(this, n)
-   def ##(pos : String) = DPath(uri ## pos)
    def version : Option[String] = uri.path match {
        case Nil => None
        case l => l.last.indexOf(";") match {
@@ -346,19 +345,4 @@ object \ {
 object ! {
    def unapply(l : LocalPath) : Option[String] = if (l.isNative) Some(l.head) else None
    def unapply(l : LocalName) : Option[LNStep] = if (l.length == 1) Some(l.head) else None
-}
-
-/** Start and end two-dimensional coordinates of a block
-  * @param a start line
-  * @param b start column
-  * @param c end line
-  * @param d end column */
-case class SourcePosition(a: Int, b: Int, c: Int, d: Int) extends Pair(Pair(a,b), Pair(c,d)) {
-
-  /** @param x start position (line and column)
-      @param y end position (line and column) */
-  def this(x: Pair[Int,Int], y: Pair[Int,Int]) = this(x._1, x._2, y._1, y._2)
-
-  /** Format: startline.startcol-endline.endcol */
-  override def toString = a + "." + b + "-" + c + "." + d
 }

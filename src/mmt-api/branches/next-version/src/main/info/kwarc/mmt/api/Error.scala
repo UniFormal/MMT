@@ -13,6 +13,8 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
 
 /** errors that occur during parsing */
 case class ParseError(s : String) extends Error("parse error: " + s)
+/** errors that occur during text parsing, with position informatin */
+case class TextParseError(pos: SourcePosition, s : String) extends Error("parse error at " + pos.twoDimString + ": " + s)
 /** errors that occur when adding a knowledge item */
 case class AddError(s : String) extends Error("add error: " + s)
 /** errors that occur when updating a knowledge item */

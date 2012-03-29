@@ -31,7 +31,7 @@
     </target>
 
     <target name="build" depends="compile">
-        <jar destfile="${build}/${jar}">
+        <jar destfile="${build}/mmt-api.jar">
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
             	 <attribute name="Class-Path" value="."/>
@@ -60,7 +60,7 @@
 
     <target name="deploy">
         <copy todir="${deploy}/mmt">
-            <fileset file="${build}/${jar}"/>
+            <fileset file="${build}/mmt-api.jar"/>
         </copy>
     </target>
 

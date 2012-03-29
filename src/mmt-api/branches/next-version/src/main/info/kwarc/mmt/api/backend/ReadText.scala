@@ -23,14 +23,14 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @return a LinkedList of errors that occurred during parsing
     * @throws ParseError for non-recoverable errors that occurred during parsing
     * note that line and column numbers start from 0 */
-  def readDocument(source : scala.io.BufferedSource, dpath_ : DPath) : Pair[Document, LinkedList[Error]] =
+  def readDocument(source : scala.io.Source, dpath_ : DPath) : Pair[Document, LinkedList[TextParseError]] =
   {
     // initialization
     lines = source.getLines.toArray                          // get all lines from the file
-    source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
+    source.close       // does this really close the underlying file, which will be a BufferedSource?
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
-    errors = LinkedList[Error] ()
+    errors = LinkedList[TextParseError] ()
     keepComment = None
     dpath = dpath_
     currentNS = None
@@ -57,7 +57,6 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       addSemanticComment(doc, Some(comment))
       i = positionAfter
     }
-    doc.metadata.add(new MetaDatum(TextReader.sourceRefKey, OMURI(dpath.uri)))
 
     // reset the last semantic comment stored and check whether there is a new semantic comment
     keepComment = None
@@ -77,12 +76,13 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       else if (isIdentifierPartCharacter(flat.codePointAt(i)))   // top-level constant declaration => ignore it
         i = skipAfterDot(i)
       else
-        throw ParseError(toPair(i) + ": error: unknown entity. Module, comment or namespace declaration expected")
+        throw TextParseError(toPos(i), "unknown entity. Module, comment or namespace declaration expected")
 
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
     }
 
+    addSourceRef(doc, 0, i)
     return Pair(doc, errors)
   }
 
@@ -99,7 +99,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
 
   /** list of parsing errors in the file */
-  private var errors = LinkedList[Error] ()
+  private var errors = LinkedList[TextParseError] ()
 
   /** temporary variable used during parsing: saves the last SemanticCommentBlock */
   private var keepComment : Option[MetaData] = None
@@ -188,7 +188,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   {
     val openingBracket = flat.codePointAt(start) // either (, [ or {
     if (!(openingBracket == '(' || openingBracket == '[' || openingBracket == '{'))
-      throw ParseError(toPair(start) + ": error: left bracket expected")
+      throw TextParseError(toPos(start), "error: left bracket expected")
     val closingBracket = openingBracket match {
       case '(' => ')'
       case '[' => ']'
@@ -213,7 +213,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         if (c == closingBracket)      // found the matching right bracket
           return i + 1
         else
-          throw ParseError(toPair(i) + ": error: unmatched right bracket " + c)
+          throw TextParseError(toPos(i), "unmatched right bracket " + c)
       else if (c == ':') // type of an expression
         i += 1
       else if (c == '.') // end of a local declaration (not in the language yet; just in case)
@@ -221,7 +221,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
         i = skipws(i)
       else
-        throw ParseError(toPair(i) + ": illegal character " + c + " at this point")
+        throw TextParseError(toPos(i), "illegal character " + c + " at this point")
     }
     i
   }
@@ -249,7 +249,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       else if (c == '(' || c == '[' || c == '{') // bracketed block
         i = closeAnyBracket(i)
       else if (c == ')' || c == ']' || c == '}')
-        throw ParseError(toPair(i) + ": error: unmatched right bracket " + c)
+        throw TextParseError(toPos(i), "unmatched right bracket " + c)
       else if (c == ':' || c == '.') // this ends the term
         return computeReturnValue
       else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
@@ -261,7 +261,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         i = posAfter
       }
       else
-        throw ParseError(toPair(i) + ": error: illegal character " + c + " at this point")
+        throw TextParseError(toPos(i), "illegal character " + c + " at this point")
     }
 
     // computes the return value. i is assumed to be the position after the end of the term
@@ -271,7 +271,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       Pair(obj, i)
     }
 
-    throw ParseError(toPair(i) + ": error: end of file reached while reading term")
+    throw TextParseError(toPos(i), "end of file reached while reading term")
   }
 
 
@@ -316,7 +316,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   {
     val endsAt = flat.indexOf('"', start + 1)    // position of the final quotes
     if (endsAt == -1)
-      throw ParseError(toPair(start) + ": error: the string does not close")
+      throw TextParseError(toPos(start), "the string does not close")
     return Pair(flat.substring(start + 1, endsAt), endsAt + 1)
   }
 
@@ -341,7 +341,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
     val myId = flat.substring(start, i)
     if (myId.isEmpty)
-      throw ParseError(toPair(start) + ": error: identifier expected")
+      throw TextParseError(toPos(start), "identifier expected")
     return Pair(myId, i)
   }
 
@@ -353,9 +353,9 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private def crawlKeyword(startsAt : Int, keyword : String) : Int = {
     val positionAfter = startsAt + keyword.length
     if (positionAfter + 2 >= flat.length)
-      throw ParseError(toPair(startsAt) + ": error: " + keyword + " block does not end")
+      throw TextParseError(toPos(startsAt), keyword + " block does not end")
     else if (!flat.startsWith(keyword, startsAt))
-      throw ParseError(toPair(startsAt) + ": error: " + keyword + " expected")
+      throw TextParseError(toPos(startsAt), keyword + " expected")
     positionAfter
   }
 
@@ -378,7 +378,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     else
       i = skipws(start)
     if (i == flat.length || !flat.startsWith(whatToExpect, i))
-      throw ParseError(toPair(start) + ": error: " + whatToExpect + " expected")
+      throw TextParseError(toPos(start), whatToExpect + " expected")
     return i
   }
 
@@ -414,7 +414,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       try {
         uri = URI(string.trim)
       } catch {
-        case exc: java.net.URISyntaxException => throw ParseError(toPair(i) + ": error: " + exc.getMessage)
+        case exc: java.net.URISyntaxException => throw TextParseError(toPos(i), "" + exc.getMessage)
       }
       endsAt = expectNext(positionAfterString, ".", false)
       if (currentNS.isEmpty)
@@ -434,11 +434,11 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       try {
         uri = URI(string.trim)
       } catch {
-        case exc: java.net.URISyntaxException => throw ParseError(toPair(i) + ": error: " + exc.getMessage)
+        case exc: java.net.URISyntaxException => throw TextParseError(toPos(i), "" + exc.getMessage)
       }
       endsAt = expectNext(positionAfterString, ".", false)
       if (currentNS == None)
-        throw ParseError(toPair(i) + ": error: current namespace must be defined before the namespace alias declaration")
+        throw TextParseError(toPos(i), "current namespace must be defined before the namespace alias declaration")
       else {
         val absoluteRemoteURI = currentNS.get.resolve(uri).normalize
         prefixes += Pair(alias, absoluteRemoteURI)
@@ -460,7 +460,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     var i = start + "%{".length
     i = flat.indexOf("}%", i)
     if (i == -1)
-      throw ParseError(toPair(start) + ": error: comment does not close")
+      throw TextParseError(toPos(start), "comment does not close")
       return i + "}%".length
   }
 
@@ -474,7 +474,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   {
     var endsAt : Int = flat.indexOf("*%", start)    // position of the final *
     if (endsAt == -1)
-      throw ParseError(toPair(start) + ": error: comment does not close")
+      throw TextParseError(toPos(start), "comment does not close")
     endsAt += 1                                     // position of the final %
     val properties = LinkedHashMap[String, String] ()
 
@@ -501,10 +501,10 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     try {
         for (line <- commentLines.drop(firstPropertyLine).map(_.trim)) {
             if (!line.startsWith("@"))
-                throw ParseError(toPair(start) + ": error: key-value properties (starting with '@') must be grouped at the end of the comment")
+                throw TextParseError(toPos(start), "key-value properties (starting with '@') must be grouped at the end of the comment")
             val keyValue = line.drop(1).trim
             if (keyValue.isEmpty)
-                throw ParseError(toPair(start) + ": error: empty key in @-starting property")
+                throw TextParseError(toPos(start), "empty key in @-starting property")
             var i = 0
             var c = keyValue.codePointAt(i)
             while (!Character.isWhitespace(c) && i < keyValue.length) {
@@ -514,7 +514,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
             properties += Pair(keyValue.take(i).trim, keyValue.drop(i).trim)
         }
     } catch {
-        case e : ParseError => errors = (errors :+ e)   // add to the list of errors returned
+        case e : TextParseError => errors = (errors :+ e)   // add to the list of errors returned
     }
 
     return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, TextReader.metadataBase), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
@@ -816,7 +816,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       if (flat.codePointAt(i) == '{') {
         // It's a DeclaredStructure
         domain match {
-          case None => throw ParseError(toPair(start) + ": error: structure is defined via a list of assignments, but its domain is not specified")
+          case None => throw TextParseError(toPos(start), "structure is defined via a list of assignments, but its domain is not specified")
           case Some(dom)  =>
             structure = new DeclaredStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)))
             add(structure)
@@ -824,7 +824,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         }
       }
       else if (!isIdentifierPartCharacter(flat.codePointAt(i)))
-        throw ParseError(toPair(i) + ": error: morphism or assignment list expected after '='")
+        throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
       else {
         // It's a DefinedStructure
         val (morphism, positionAfter) = crawlMorphismObject(i, Some(OMMOD(parent.path)))
@@ -838,7 +838,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       }
     }
     else domain match {
-      case None => throw ParseError(toPair(start) + ": error: structure has no definiens and its domain is not specified")
+      case None => throw TextParseError(toPos(start), "structure has no definiens and its domain is not specified")
       case Some(dom) =>
         // It's a DeclaredStructure with empty body
         structure = new DeclaredStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)))
@@ -988,7 +988,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       }
       else if (flat.startsWith("%meta", i)) {
         // ensure the meta declaration is unique
-        if (foundMeta == true) throw ParseError(toPair(i) + ": error: second %meta statement in theory " + parent.name)
+        if (foundMeta == true) throw TextParseError(toPos(i), "second %meta statement in theory " + parent.name)
         else foundMeta = true
         i = crawlMetaDeclaration(i, parent)
       }
@@ -1006,7 +1006,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       else if (flat.codePointAt(i) == '}')    // end of signature body
         return i + 1
       else
-        throw ParseError(toPair(i) + ": error: unknown declaration in signature body")
+        throw TextParseError(toPos(i), "unknown declaration in signature body")
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
     }
@@ -1071,7 +1071,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       else if (flat.codePointAt(i) == '}')
         return i + 1
       else
-        throw ParseError(toPair(i) + ": error: unknown declaration in link body")
+        throw TextParseError(toPos(i), "unknown declaration in link body")
 
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
@@ -1138,7 +1138,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       add(view)
     }
     else
-      throw ParseError(toPair(i) + ": error: morphism or assignment list expected after '='")
+      throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
 
     val endsAt = expectNext(i, ".")
 
@@ -1179,13 +1179,13 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     // If it has no prefix, it belongs to the current namespace, so simply prepend the current namespace URI
     if (j == -1) {
       if (currentNS == None)
-        throw ParseError(toPair(start) + ": error: cannot compute an absolute URI for this module " + moduleName + " since no current namespace is defined")
+        throw TextParseError(toPos(start), "cannot compute an absolute URI for this module " + moduleName + " since no current namespace is defined")
       return currentNS.get ? relativeURI
     }
     // If it has a prefix, it belongs to a different namespace, which must have been declared before in the document
     val prefix : String = relativeURI.substring(0, j)
     if (!prefixes.contains(prefix))                      // check if the alias is known
-      throw ParseError(toPair(start) + ": error: " + prefix + " is not a valid namespace alias")
+      throw TextParseError(toPos(start), prefix + " is not a valid namespace alias")
     val realURI = prefixes.get(prefix).get
     return URI(realURI.toString() + relativeURI.substring(j))
   }
@@ -1194,21 +1194,20 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** computes the (line, column) that represents the same position as the given one-dimensional coordinate
   * @param index the one-dimensional coordinate to be transformed into two-dimensional
   * @return Pair(line, column) */
-  private def toPair(index: Int) : Pair[Int,Int] =
-  {
+  private def toPos(index: Int) : SourcePosition = {
     val pair  = lineStarts.filter(p => (p._1 <= index)).last
-    Pair(pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
+    SourcePosition(index, pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
   }
 
   /** returns the fragment between startsAt and endsAt (inclusive), as a String */
   private def getSlice(startsAt : Int, endsAt : Int) : String = flat.substring(startsAt, endsAt+1)
 
   /** returns dpath#startline.startcol-endline.endcol */
-  private def getSourceRef(startsAt : Int, endsAt : Int) : URI = (dpath ## (new SourcePosition(toPair(startsAt), toPair(endsAt))).toString).uri
+  private def getSourceRef(startsAt : Int, endsAt : Int) = SourceRef(dpath.uri, SourceRegion(toPos(startsAt), toPos(endsAt)))
 
   /** adds sourceRef to the metadata of the first argument */
   private def addSourceRef(target : HasMetaData, startsAt : Int, endsAt : Int) {
-    target.metadata.add(new MetaDatum(TextReader.sourceRefKey, OMURI(getSourceRef(startsAt, endsAt))))
+    target.metadata.add(metadata.Link(SourceRef.metaDataKey, getSourceRef(startsAt, endsAt).toURI))
   }
 
   /** adds metadata from the optional semantic comment to the target */

@@ -136,9 +136,7 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
    /** drop query, fragment, append query */
    def ?(q: String) = URI(scheme, authority, path, absolute, Some(q), None)
    /** drop fragment, append fragment */
-   def addFragment(f: String) = URI(scheme, authority, path, absolute, query, Some(f))
-   /** append fragment to existing fragment TODO useful? */
-   def ##(f: String) = URI(scheme, authority, path, absolute, query, Some(fragment match {case Some(frag) => frag + f; case None => f}))
+   def ##(f: String) = URI(scheme, authority, path, absolute, query, Some(f))
    
    /** parses a URI and resolves it against this */
    def resolve(s : String) : URI = resolve(URI(s))

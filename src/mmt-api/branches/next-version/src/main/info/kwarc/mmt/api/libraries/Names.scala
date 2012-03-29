@@ -3,44 +3,52 @@ import info.kwarc.mmt.api._
 import symbols._
 import modules._
 import objects._
+import utils.MyList._
 
-case class Completion(parent: Path, completions: scala.collection.Set[LocalName])
+/** a possible completion
+ * @parent theory from which the resolved symbol is imported
+ * @completion name of the completed symbol 
+ */
+case class Completion(parent: Path, completion: LocalName)
 
 /** Auxiliary methods for name lookup */
 object Names {
-   def get(t: Term)(implicit lib: Lookup) : DeclaredTheory = t match {
+   private def get(t: Term)(implicit lib: Lookup) : Option[DeclaredTheory] = t match {
       case OMMOD(p) => lib.get(p) match {
-         case th: DeclaredTheory => th
-         case _ => throw GetError("name resolution only implemented for declared theories")
+         case th: DeclaredTheory => Some(th)
+         case _ => None
       }
-      case _ => throw GetError("name resolution only implemented for atomic theories")
-   }                                 // TODO home was TheoryObj
-   def lookIn(home: Term, n: List[String])(implicit lib: Lookup) : List[Completion] = {
-      val t = get(home)
-      if (n.isEmpty)
-         return List(Completion(t.path, t.domain))
-      val name = LocalName(n map NamedStep)
-      lib.getO(home % name) match {
+      case _ => None
+   }
+   private def lookIn(home: Term, partialName: String)(implicit lib: Lookup) : List[Completion] = {
+      get(home) match {
          case None => Nil
-         case Some(c : Constant) => List(Completion(c.path, Set.empty))
-         case Some(a : Alias) => List(Completion(a.path, Set.empty))
-         case Some(l : DefinitionalLink) => List(Completion(l.path, get(l.from).domain))
+         case Some(t) =>
+            val names = t.valueList flatMap {
+               case i: Include => Nil
+               case d => List(d.name)
+            }
+            names.filter(_.flat.startsWith(partialName)).map(n => Completion(t.path, n))
       }
-   }                                  // TODO home was TheoryObj
-   def resolve(home: Term, n: List[String])(implicit lib: Lookup) : List[Completion] = {
-      val r = lookIn(home, n)
-      if (! r.isEmpty) return r
-      val hd :: tl = n
+   }
+   /** returns the list of possible completions of partialName imported from the theory/via the structure given by qualifiers */
+   def resolve(home: Term, qualifiers: List[String], partialName: String)(implicit lib: Lookup) : List[Completion] = {
       val incls = lib.importsTo(home).toList
-      val inclsP = incls filter {
-         case OMMOD(p) => p.last == hd
-         case _ => false
+      if (qualifiers.isEmpty) {
+         incls flatMap {i => lookIn(i, partialName)}
+      } else {
+         val name = LocalName(qualifiers map NamedStep)
+         lib.getO(home % name) match {
+            case Some(l : Structure) => resolve(l.from, Nil, partialName)
+            case Some(_) => Nil
+            case None =>
+               val hd :: tl = qualifiers
+               val inclsP = incls filter {
+                  case OMMOD(p) => p.last == hd
+                  case _ => false
+               }
+               inclsP flatMap {i => resolve(i, tl, partialName)}
+         }
       }
-      if (! inclsP.isEmpty) {
-         val rs = inclsP.flatMap(lookIn(_, tl))
-         if (! rs.isEmpty) return rs
-      }
-      val rs = incls.flatMap(lookIn(_, n))
-      rs
    }
 }
