@@ -5,4 +5,7 @@
    <SERVICE CLASS="console.Shell" NAME="mmt">
       new info.kwarc.mmt.jedit.MMTConsole();
    </SERVICE>
+   <SERVICE CLASS="gatchan.jedit.hyperlinks.HyperlinkSource" NAME="mmt">
+      new info.kwarc.mmt.jedit.MMTHyperlinkSource;
+   </SERVICE>
 </SERVICES>
