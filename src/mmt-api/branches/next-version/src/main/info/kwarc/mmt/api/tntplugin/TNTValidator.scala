@@ -25,7 +25,7 @@ case class TNTLookup(lookup : TntPluginDocumentResolver[String]) extends Storage
    val base = utils.URI("http", "cds.omdoc.org", Nil)
    def get(path : Path, reader : XMLReader) {
 	   val content = lookup.resolveDocument("/" + Storage.getSuffix(base, path.doc.uri), null)
-       if (content == null) throw backend.NotFound(path)
+       if (content == null) throw BackendError(path)
 	   val src = scala.io.Source.fromString(content)
 	   val node = scala.xml.parsing.ConstructingParser.fromSource(src, false).document();
 	   reader.readDocuments(path.doc, node);

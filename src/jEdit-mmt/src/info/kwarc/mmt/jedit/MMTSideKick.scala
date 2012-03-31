@@ -82,12 +82,13 @@ class MMTSideKick extends SideKickParser("mmt") {
    }
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = utils.File(buffer.getPath)
+      val dpath = DPath(path.toJava.toURI)
       val src = scala.io.Source.fromString(buffer.getText)
-      controller.clear
+      controller.delete(dpath)
       val tree = new SideKickParsedData(path.toJava.getName)
       val root = tree.root
       try {
-         val (doc,errors) = controller.textReader.readDocument(src, DPath(path.toJava.toURI))
+         val (doc,errors) = controller.textReader.readDocument(src, dpath)
          // add narrative structure of doc to outline tree
          buildTree(root, doc)
          // register errors with ErrorList plugin

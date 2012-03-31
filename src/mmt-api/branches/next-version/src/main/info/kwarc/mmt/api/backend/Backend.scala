@@ -19,7 +19,6 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
 case object NotApplicable extends java.lang.Throwable
-case class NotFound(p : Path) extends info.kwarc.mmt.api.Error("Cannot find resource " + p.toString)
 
 /** Storage is an abstraction over backends that can provide MMT content
  * A storage declares a URI u and must answer to all URIs that start with u.
@@ -225,7 +224,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
           val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern
           val prefix = if (target != base) target.getName + "/" else ""
           Storage.virtDoc(entries, prefix)
-      } else throw NotFound(path)
+      } else throw BackendError(path)
       reader.readDocuments(DPath(uri), N)   
    }
 }
@@ -263,7 +262,7 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
             }
           }
           Storage.virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
-        case SVNNodeKind.NONE => throw NotFound(path)
+        case SVNNodeKind.NONE => throw BackendError(path)
       }
       reader.readDocuments(DPath(uri), N)
    }
@@ -312,7 +311,7 @@ class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.
      })
    }
    
-   /** @throws NotFound if the root file cannot be read
+   /** @throws BackendError if the root file cannot be read
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
    def openArchive(root: java.io.File) : Archive = {
       //TODO: check if "root" is meta-inf file, branch accordingly
@@ -399,7 +398,7 @@ class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.
    /** look up a path in the first Storage that is applicable and send the content to the reader */
    def get(p : Path) = {
       def getInList(l : List[Storage], p : Path) {l match {
-         case Nil => throw NotFound(p)
+         case Nil => throw BackendError(p)
          case hd :: tl =>
             log("trying " + hd)
       	    try {hd.get(p, reader)}

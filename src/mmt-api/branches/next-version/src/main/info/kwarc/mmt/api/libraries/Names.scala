@@ -12,6 +12,7 @@ import utils.MyList._
 case class Completion(parent: Path, completion: LocalName)
 
 /** Auxiliary methods for name lookup */
+// we assume includes have been flattened
 object Names {
    private def get(t: Term)(implicit lib: Lookup) : Option[DeclaredTheory] = t match {
       case OMMOD(p) => lib.get(p) match {
@@ -49,6 +50,21 @@ object Names {
                }
                inclsP flatMap {i => resolve(i, tl, partialName)}
          }
+      }
+   }
+   /** resolves the unqualified identifier name in the theory home */
+   def resolve(home: Term, name: String)(implicit lib: Lookup) : Option[ContentElement] = {
+      { 
+         lib.getO(home % name)  // symbol in the current theory
+      } orElse {
+         home match {
+            case OMMOD(p) => lib.getO(p.parent ? name) // module in the namespace of the current theory
+            case _ => None
+         }
+      } orElse {
+         val incls = lib.importsTo(home).toList
+         val es = incls mapPartial {i => lib.getO(i % name)}
+         if (es.length == 1) Some(es(0)) else None  // uniquely resolvable symbol in an included theory
       }
    }
 }

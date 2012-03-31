@@ -187,6 +187,7 @@ class Controller extends ROController {
       extman.cleanup
       //closes all open svn sessions from storages in backend
       backend.cleanup
+      if (server.isDefined) stopServer
    }
    /** reads a file and returns the Path of the document found in it */
    def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {

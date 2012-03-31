@@ -14,7 +14,7 @@ abstract class Lookup(val report : frontend.Report) {
    /** Same as get, but returns an option
     * @return Some(content) if get succeeds, None if get throws an error
     */
-   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case GetError(_) => None}
+   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case GetError(_) | BackendError(_) => None}
    //typed access methods
    private def defmsg(path : Path) : String = "no element of required type found at " + path
    def getModule(path : ContentPath, msg : Path => String = defmsg) : Module =

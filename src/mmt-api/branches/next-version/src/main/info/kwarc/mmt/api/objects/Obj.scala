@@ -707,12 +707,12 @@ object Obj {
       N match {
          case <OMS/> =>
             parseOMS(N, base) match {
-               case p : GlobalName => OMID(p)
+               case p : ContentPath => OMID(p)
                case p => throw new ParseError("Not a term: " + p + N.toString)
             }
          case <OMV/> =>
             OMV(xml.attr(N,"name"))
-         case <OMA>{child @ _*}</OMA> if child.length == 3 && parseOMS(child.head, base) == mmt.morphismapplication =>
+         case <OMA>{child @ _*}</OMA> if child.length == 3 && child.head.label == "OMS" && parseOMS(child.head, base) == mmt.morphismapplication =>
             val arg = parseTerm(child(1), nbase)
             val morph = parseTerm(child(2), nbase)
             OMM(arg, morph)
