@@ -44,22 +44,22 @@ object MMTPlugin {
          case u :: _ => Some(SourceRef.fromURI(u))
          case Nil => None
    }
-   def getCurrentID(buffer: Buffer, caretPosition: Int) : Option[(Int,Int,Int,String)] = {
-      val line = buffer.getLineOfOffset(caretPosition)
+   def getCurrentID(buffer: Buffer, index: Int) : Option[(Int,Int,Int,String)] = {
+      val line = buffer.getLineOfOffset(index)
       val lineStart = buffer.getLineStartOffset(line)
       val lineLength = buffer.getLineLength(line)
       if (lineLength == 0)
          return None
-      var offset = caretPosition - lineStart
+      var offset = index - lineStart
       val lineText = buffer.getLineText(line)
       if (offset == lineLength)
          offset = offset - 1
-      var left = 0 // number of character to the left of the caret that are id characters
-      while (left < offset && isIDChar(lineText(offset - left - 1))) {left = left + 1}
-      var right = 0 // number of character to the right of the caret that are id characters
-      val rMax = lineText.length - offset
-      while (right < rMax && isIDChar(lineText(offset + right))) {right = right + 1}
-      if (left + right == 0) None
-      else Some((line, caretPosition - left, caretPosition + right, lineText.substring(offset - left, left + right)))
+      if (! isIDChar(lineText(offset)))
+         return None
+      var left = offset // first character of id
+      while (left > 0 && isIDChar(lineText(left - 1))) {left = left - 1}
+      var right = offset // last character of id
+      while (right < lineLength - 1 && isIDChar(lineText(right + 1))) {right = right + 1}
+      Some((line, lineStart + left, lineStart + right + 1, lineText.substring(left, right + 1)))
    }
 }
