@@ -47,9 +47,9 @@ class MMTSideKick extends SideKickParser("mmt") {
    private def log(msg: => String) {
       controller.report("jedit-parse", msg)
    }
-   private def getRegion(e: metadata.HasMetaData) : SourceRegion = e.metadata.getLink(SourceRef.metaDataKey) match {
-         case u :: _ => SourceRef.fromURI(u).region
-         case Nil => SourceRegion(SourcePosition(0,0,0), SourcePosition(0,0,0))
+   private def getRegion(e: metadata.HasMetaData) : SourceRegion = MMTPlugin.getSourceRef(e) match {
+      case None => SourceRegion(SourcePosition(0,0,0), SourcePosition(0,0,0))
+      case Some(r) => r.region
    }
    private def buildTree(node: DefaultMutableTreeNode, doc: Document) {
       val child = new DefaultMutableTreeNode(new MMTAsset(doc, doc.path.last, getRegion(doc)))
@@ -116,7 +116,6 @@ class MMTSideKick extends SideKickParser("mmt") {
    override def supportsCompletion = true
    override def canCompleteAnywhere = true
    // override def getInstantCompletionTriggers : String = ""
-   private def isIDChar(c: Char) = (! Character.isWhitespace(c)) && "()[]{}:.".forall(_ != c)
    override def complete(editPane: EditPane, caret : Int) : SideKickCompletion = {
       val textArea = editPane.getTextArea
       val view = editPane.getView
@@ -126,7 +125,7 @@ class MMTSideKick extends SideKickParser("mmt") {
         case Some(a) =>
            val p = textArea.getCaretPosition
            var l = 0 // number of character to the left of the caret that are id characters
-           while (l < p && isIDChar(textArea.getText(p - l - 1,1)(0))) {l = l + 1}
+           while (l < p && MMTPlugin.isIDChar(textArea.getText(p - l - 1,1)(0))) {l = l + 1}
            val partialName = textArea.getText(p - l, l)
            val compls = Names.resolve(a, Nil, partialName)(controller.localLookup)
            new MyCompletion(view, partialName, compls.map(_.completion.flat))
