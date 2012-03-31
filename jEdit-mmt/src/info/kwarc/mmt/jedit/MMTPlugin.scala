@@ -1,5 +1,6 @@
 package info.kwarc.mmt.jedit
 import org.gjt.sp.jedit._
+import org.gjt.sp.jedit.textarea._
 
 import info.kwarc.mmt.api._
 import frontend._
@@ -35,5 +36,30 @@ class MMTPlugin extends EditPlugin {
    
    def read(view : View) {
    }
+}
 
+object MMTPlugin {
+   def isIDChar(c: Char) = (! Character.isWhitespace(c)) && "()[]{}:.".forall(_ != c)
+   def getSourceRef(e: metadata.HasMetaData) : Option[SourceRef] = e.metadata.getLink(SourceRef.metaDataKey) match {
+         case u :: _ => Some(SourceRef.fromURI(u))
+         case Nil => None
+   }
+   def getCurrentID(buffer: Buffer, caretPosition: Int) : Option[(Int,Int,Int,String)] = {
+      val line = buffer.getLineOfOffset(caretPosition)
+      val lineStart = buffer.getLineStartOffset(line)
+      val lineLength = buffer.getLineLength(line)
+      if (lineLength == 0)
+         return None
+      var offset = caretPosition - lineStart
+      val lineText = buffer.getLineText(line)
+      if (offset == lineLength)
+         offset = offset - 1
+      var left = 0 // number of character to the left of the caret that are id characters
+      while (left < offset && isIDChar(lineText(offset - left - 1))) {left = left + 1}
+      var right = 0 // number of character to the right of the caret that are id characters
+      val rMax = lineText.length - offset
+      while (right < rMax && isIDChar(lineText(offset + right))) {right = right + 1}
+      if (left + right == 0) None
+      else Some((line, caretPosition - left, caretPosition + right, lineText.substring(offset - left, left + right)))
+   }
 }
