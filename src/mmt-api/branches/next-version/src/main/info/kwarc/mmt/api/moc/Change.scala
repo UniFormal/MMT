@@ -41,11 +41,11 @@ trait ChangeModule extends ContentElementChange {
 }
 
 case class AddModule(m : Module) extends Add with ChangeModule {
-  def toNode = 
+  def toNode =
     <module change="add">
-	  {m.toNode}
-	</module>
-	  
+      {m.toNode}
+    </module>
+
   def toNodeFlat = <change type="add" path={m.path.toPath}> {m.toNode} </change> :: Nil
 
 }

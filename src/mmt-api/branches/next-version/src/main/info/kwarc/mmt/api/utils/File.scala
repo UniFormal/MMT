@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.utils
 import java.io._
 
+
 /** File wraps around java.io.File to extend it with convenience methods */
 case class File(toJava: java.io.File) {
    /** resolves an absolute or relative path string against this */
