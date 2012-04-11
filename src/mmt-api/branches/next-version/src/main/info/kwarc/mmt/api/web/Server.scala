@@ -329,6 +329,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
                 </item>
             }
           }</root>
+        case _ => throw ImplementationError("only children of documents and modules can be taken")
       }
     }
   }

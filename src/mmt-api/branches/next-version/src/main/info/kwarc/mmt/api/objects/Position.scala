@@ -22,6 +22,7 @@ object Position {
 	val Init = Position(Nil)
 }
 
+
 /** A path in an object
  *  @param parent the knowledge item
  *  @param component an object that's part of the parent's declaration. Example: if component is "type", then it refers to the type of the parent

@@ -88,6 +88,17 @@ case class Bindfix(impl : Int, oPrec: Option[Precedence]) extends NotationProper
    def toNode = <notation fix="bind" />
    override def toString = "bind" + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
+
+object NotationProperties {
+   def apply(fix: Fixity, ass: Associativity, app: AppStyle, impl: Int, oPrec: Option[Precedence]) = fix match {
+      case Pre => Prefix(app, impl, oPrec) 
+      case Post => Postfix(app, impl, oPrec)
+      case In(i) => Infix(i, impl, oPrec)
+      case Inter => Interfix(ass, impl, oPrec)
+      case Bind => Bindfix(impl, oPrec)
+      case Tree => Treefix(impl, oPrec)
+   }
+}
 /**
  * Representation of a declarative notation where the presentation is computed from parameters 
  * @param nset the containing style
@@ -164,8 +175,7 @@ object Notation {
           val app = parseAppSt(ap)
           val ass = parseAss(as)
           val imp = parseImp(im)
-          //ComplexNotation(nset, key, NotationProperties(fix, ass, app, imp, oPrec))
-          null   // TODO
+          ComplexNotation(nset, key, NotationProperties(fix, ass, app, imp, oPrec))
       }
    }
    /** parses the output of ComplexNotation.toString */
@@ -178,8 +188,7 @@ object Notation {
       val app = parseAppSt(tokens.next)
       val imp = parseImp(tokens.next) 
       val prec = Precedence.parseOpt(tokens.next)                          // call parseInlineNotation?
-      //ComplexNotation(nset, NotationKey(Some(path), role), NotationProperties(fix, ass, app, imp, prec))
-      null      // TODO
+      ComplexNotation(nset, NotationKey(Some(path), role), NotationProperties(fix, ass, app, imp, prec))
    }
    def parseInlineNotation(s: String) : NotationProperties = {
       val tokens = s.split("\\s+").iterator
@@ -189,8 +198,7 @@ object Notation {
       val app = parseAppSt(tokens.next)
       val imp = parseImp(tokens.next)
       val prec = Precedence.parseOpt(tokens.next)
-      //ComplexNotation(nset, NotationKey(Some(path), role), NotationProperties(fix, ass, app, imp, prec))
-      null      // TODO
+      NotationProperties(fix, ass, app, imp, prec)
    }
    def parseFix(s: String) = s match { 
        case "" | "pre" => Pre

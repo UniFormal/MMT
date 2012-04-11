@@ -41,15 +41,60 @@ case class ContentFail(msg : String) extends CheckContentResult
  */
 case class ChangeFail(msg : String) extends CheckChangeResult 
 
+class ComponentChecker(extman: ExtensionManager, mem: ROMemory) {
+   private implicit val con = mem.content
+   private val ont = mem.ontology 
+   def check(mod: MPath) {
+      con.getModule(mod) match {
+        case d: DeclaredModule[_] => d.domain foreach {n => check(mod ? n)}
+        case _ => 
+      }
+   }
+   def check(p: GlobalName) {
+      check(CPath(p, "type"))
+      check(CPath(p, "definition"))
+   }
+   def check(cp: CPath) {
+      con.getO(cp.parent) match {
+        case None => throw Invalid("non-existing item: " + cp.parent)
+        case Some(e) => e match {
+           case c: Constant =>
+              val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
+              cp.component match {
+                 case "type" => 
+                    val trace = foundation.tracedTyping(None, c.tp)
+                    trace foreach {t => ont += DependsOn(cp, t)}
+                 case "definition" =>
+                    val trace = foundation.tracedTyping(c.df, c.tp)
+                    trace foreach {t => ont += DependsOn(cp, t)}
+                 case c => throw Invalid("illegal component: " + c)
+              }
+           case a: ConstantAssignment =>
+              val link = con.getLink(a.parent) 
+              val foundation = extman.getFoundation(link.to.toMPath).getOrElse(throw Invalid("no foundation found for " + link.to)) //TODO: non-atomic codomain
+              cp.component match {
+                 case "type" => 
+                 case "definition" =>
+                    //if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home))(mem.content))
+                    //return ContentFail("assignment does not type-check")
+                    //val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)(mem.content)
+                    //if (! defleq) return ContentFail("assignment violates definedness ordering")
+                    //val exp = //TODO compute expected type
+                    //foundation.typing(a.target, exp)
+                 case c => throw Invalid("illegal component: " + c)
+              }
+           case _ =>
+        }
+      }
+   }
+}
 
 /** Objects of type Checker can be used by a Library to check added ContentElements.
   *  They may return reconstructed declarations and can infer the relational representation. */
 abstract class Checker {
-   
    def check(s : ContentElement)(implicit mem: ROMemory) : CheckContentResult
-   
-   def get(p : Path, component : String, callerPath : Path, callerComponent : String)(implicit mem: ROMemory) : ContentElement = {
-     mem.ontology += FineGrainedRelation(DependsOn, callerPath, callerComponent, p, component) 
+   def get(p : ContentPath, component : String, callerPath : ContentPath, callerComponent : String)(implicit mem: ROMemory) : ContentElement = {
+     mem.ontology += DependsOn(callerPath $ callerComponent, p $ component) 
      mem.content.get(p)
    }
    
@@ -158,7 +203,7 @@ abstract class ModuleChecker extends Checker {
     *  @param mem the memory
     *  @return the list of return values
     */
-   def checkTheo[A](t : Term, atomic: Path => A, nonatomic: Path => A)(implicit mem: ROMemory) : List[A] = t match {
+   def checkTheo[A](t : Term, atomic: ContentPath => A, nonatomic: ContentPath => A)(implicit mem: ROMemory) : List[A] = t match {
      case OMMOD(p) =>
        checkTheoRef(p)
        List(atomic(p))
@@ -175,7 +220,7 @@ abstract class ModuleChecker extends Checker {
     *  @param m the theory
     *  @return the list of named objects occurring in m, the domain and codomain of m
     */
-   def inferMorphism(m : Term)(implicit mem: ROMemory) : (List[Path], Term, Term) = m match {
+   def inferMorphism(m : Term)(implicit mem: ROMemory) : (List[ContentPath], Term, Term) = m match {
      case OMMOD(m : MPath) =>
         val l = checkLinkRef(m)
         (List(m), l.from, l.to)
@@ -212,7 +257,7 @@ abstract class ModuleChecker extends Checker {
         val cod = TUnion(cods) //TODO: simplify by removing redundant theories in cods using mem.content.imports(_,_)
         (occs, dom ,cod)
    }
-   def checkInclude(from: Term, to: Term)(implicit mem: ROMemory) : Option[List[Path]] = {
+   def checkInclude(from: Term, to: Term)(implicit mem: ROMemory) : Option[List[ContentPath]] = {
         if (from == to) Some(Nil)
         else if (mem.content.imports(from,to)) Some(List(to % LocalName(IncludeStep(from))))
         else None
@@ -313,7 +358,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
        }
    }
    
-   def checkComponentChange(home : Term, path : Path, ch : UpdateComponent)(implicit mem : ROMemory) : CheckChangeResult = ch match {
+   def checkComponentChange(home : Term, path : ContentPath, ch : UpdateComponent)(implicit mem : ROMemory) : CheckChangeResult = ch match {
      case UpdateComponent(name,old, nw, chs) => {
        val dec = mem.content.get(path)
        val compNames = dec.compNames.toMap
@@ -322,7 +367,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
          nw match {
            case t : Term => 
            	 try {
-           	   val s = checkTerm(home, Context(), t).map(p => FineGrainedRelation(DependsOn,path, name.toPath, p, "TODO")) //TODO component, either add here or remove in FineGrainedRelation class
+           	   val s = checkTerm(home, Context(), t).map(p => DependsOn(path $ "TODO", p $ "TODO")) //TODO component, either add here or remove in FineGrainedRelation class
            	   ChangeSuccess(Nil, AddRelations(s) :: Nil)  
              } catch {
                case e : Error => ChangeFail(e.msg)
@@ -354,7 +399,6 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             //checkHomeTheory(c)
             val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get) else Nil
             val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get) else Nil
-            if (! foundation.typing(c.df, c.tp)(mem.content)) return ContentFail("constant declaration does not type-check")
             val deps = IsConstant(c.rl).apply(c.path) ::  
               occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
             ContentSuccess(deps)
@@ -365,10 +409,6 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
                 case _ => return ContentFail("constant-assignment to non-constant")
             }
             val occas = checkTerm(l.to, a.target)
-            if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home))(mem.content))
-               return ContentFail("assignment does not type-check")
-            val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)(mem.content)
-            if (! defleq) return ContentFail("assignment violates definedness ordering")
             val deps = IsConAss(a.path) :: occas.map(HasOccurrenceOfInTarget(a.path, _))
             ContentSuccess(deps)
          case a : DefLinkAssignment =>
@@ -443,12 +483,12 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
     * @param mem  the memory
     * @return the list of identifiers occurring in s (no duplicates, random order)
     */
-   def checkTerm(home: Term, s : Term)(implicit mem: ROMemory) : List[Path] = {
+   def checkTerm(home: Term, s : Term)(implicit mem: ROMemory) : List[ContentPath] = {
       checkTheo(home, p => p, p => p)
       checkTerm(home, Context(), s).distinct
    }
    //TODO redesign role checking, currently not done
-   private def checkTerm(home : Term, context : Context, s : Term)(implicit mem: ROMemory) : List[Path] = {
+   private def checkTerm(home : Term, context : Context, s : Term)(implicit mem: ROMemory) : List[ContentPath] = {
       s match {
          case OMID((h: Term) % (IncludeStep(from) / ln)) =>
             if (! mem.content.imports(from, h))
@@ -543,7 +583,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
    	  case SeqUpTo(t) => checkTerm(home,context,t)
    	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
    }*/
-   def checkContext(home: Term, con: Context)(implicit mem: ROMemory) : List[Path] = {
+   def checkContext(home: Term, con: Context)(implicit mem: ROMemory) : List[ContentPath] = {
       con.flatMap {
     	  case TermVarDecl(name, tp, df, attrs @_*) => 
     	   val tpl = tp.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
@@ -555,7 +595,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
     	   tpl ::: dfl //TODO not checking attributes
 */    }
    }
-   def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit mem: ROMemory) : List[Path] = {
+   def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit mem: ROMemory) : List[ContentPath] = {
       if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
       (from zip subs).flatMap {       
     	  case (TermVarDecl(n,tp,df,attrs @ _*), TermSub(m,t)) if n == m => checkTerm(home,to,t) 

@@ -11,7 +11,7 @@ import scala.collection.mutable.Map
  * An MMT path refers to a document (doc), a module (doc?mod), or a symbol (M % sym).
  * Use the objects ?, %, /, \, and ! for pattern matching paths.
  */
-abstract class Path extends ontology.BaseType {
+sealed abstract class Path extends ontology.BaseType {
    /** the document part of the path */
    def doc : DPath
    /** goes one step up, identity if URI-path already empty */
@@ -28,6 +28,7 @@ abstract class Path extends ontology.BaseType {
       case DPath(uri) => uri.toString + (if (long) "??" else "")
       case doc ? name => doc.toPath + "?" + name.toPath + (if (long) "?" else "")
       case mod % name => mod.toMPath.toPath + "?" + name.toPath
+      case CPath(p, c) => p.toPathLong + "?" + c
    }
    /** as toPath(false) */
    def toPath : String = toPath(false)
@@ -44,6 +45,7 @@ abstract class Path extends ontology.BaseType {
          (Some(mp.parent), Some(mp.name), Some(name))
       case doc ? mod => (Some(doc), Some(mod), None)
       case doc : DPath => (Some(doc), None, None)
+      case c: CPath => c.parent.toTriple
    }
    /** currently same as toPath, only toPath guarantees official string representation */
    override def toString = toPath
@@ -77,6 +79,7 @@ case class DPath(uri : URI) extends Path {
 trait ContentPath extends Path {
    /** checks if the path is a generic MMT path */
    def isGeneric : Boolean
+   def $(comp: String) = CPath(this, comp)
 }
 
 /**
@@ -183,6 +186,12 @@ case class IncludeStep(from: Term) extends LNStep {
    def isSimple : Boolean = from.isInstanceOf[OMID]
 }
 
+case class CPath(parent: ContentPath, component: String) extends Path {
+   def doc = parent.doc
+   def ^! = parent
+   def last = component
+}
+
 /*
 object LNEmpty {
    def apply() = LocalName(Nil)
@@ -214,8 +223,8 @@ object Path {
    def parse(s : String) : Path = parse(s, utils.mmt.mmtbase)
    /** parses an MMT-URI reference into a triple and then makes it absolute */
    def parse(s : String, base : Path) : Path = {
-      val (d,m,n) = toTriple(s)
-      parse(d,m,n,base)
+      val (d,m,n,c) = split(s)
+      parse(d,m,n,c,base)
    }
    // merge(x,y) merges the URI or LocalPath x with the relative or absolute reference y
    private def mergeD(bd : Option[DPath], d : DPath) : DPath = if (bd.isEmpty) d else DPath(bd.get.uri.resolve(d.uri)) 
@@ -230,7 +239,7 @@ object Path {
       else
          bl.get / l.toLocalName
    /** turns an MMT-URI reference (d,m,n) into an MMT-URI relative to base (omitting a component is possible by making it empty) */
-   def parse(d : URI, m : String, n : String, base : Path) : Path = {
+   def parse(d : URI, m : String, n : String, comp: String, base : Path) : Path = {
       //to make the case distinctions simpler, all omitted (= empty) components become None
       val doc = if (d.scheme == None && d.authority == None && d.path == Nil) None else Some(DPath(d))
       def wrap(l : LocalRef) = if (l.segments.isEmpty) None else Some(l)
@@ -239,7 +248,7 @@ object Path {
       //get the base as a triple of three Options (first component will never be None)
       val (bdoc, bmod, bname) = base.toTriple
       //now explicit case distinctions to be sure that all cases are covered
-      (bdoc, bmod, bname, doc, mod, name) match {
+      val path = (bdoc, bmod, bname, doc, mod, name) match {
          case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeS(bname, n)
          case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? mergeM(bmod, m)
          case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeM(bmod, m) ? n.toLocalName
@@ -249,18 +258,23 @@ object Path {
          case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalPath ? n.toLocalName
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
+      if (comp == "") path else path match {
+         case cp: ContentPath => CPath(cp, comp)
+         case p => throw ParseError("cannot take component " + comp + " of path " + p)
+      }
    }
-   /** splits uri?mod?name into (uri, mod, name) */
-   def toTriple(s : String) : (URI, String, String) = {
+   /** splits uri?mod?name?component into (uri, mod, name, component) */
+   private def split(s : String) : (URI, String, String, String) = {
       if (s.indexOf("#") != -1)
          throw new ParseError("MMT-URI may not have fragment")
       val comps = s.split("\\?",-1)
       val doc = URI(comps(0))  //note: split returns at least List(""), never Nil
       comps.length match {
-         case 1 => (doc, "", "")
-         case 2 => (doc, comps(1), "")
-         case 3 => (doc, comps(1), comps(2))
-         case _ => throw ParseError("MMT-URI may have at most two ?s: " + s)
+         case 1 => (doc, "", "", "")
+         case 2 => (doc, comps(1), "", "")
+         case 3 => (doc, comps(1), comps(2), "")
+         case 4 => (doc, comps(1), comps(2), comps(3))
+         case _ => throw ParseError("MMT-URI may have at most three ?s: " + s)
       }
    }
    /** as parse but fails if the result is not a symbol level URI */

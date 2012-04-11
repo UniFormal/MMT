@@ -817,7 +817,7 @@ object Obj {
         val doc = URI(xml.attr(N,"base"))
         val mod = xml.attr(N,"module")
         val name = xml.attr(N,"name")
-        Path.parse(doc, mod, name, base)
+        Path.parse(doc, mod, name, "", base)
       case <OMS>{n}</OMS> =>
         val mod = parseTerm(n, base)
         val name = xml.attr(N,"name")

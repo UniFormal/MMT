@@ -225,7 +225,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
        log("[  -> REL ]     " + relFile.getPath)
        relFile.getParentFile.mkdirs
        val relFileHandle = File.Writer(relFile)
-       ontology.Extract(mod, r => relFileHandle.write(r.toPath + "\n")) 
+       ontology.Extract(mod, r => relFileHandle.write(r.toPath + "\n"))
        relFileHandle.close
     }
     private def writeToNot(mod: Module, nots : Iterator[presentation.Notation]) {
@@ -387,16 +387,14 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
       
     }
     
-    
-
     def check(in: List[String] = Nil, controller: Controller) {
       traverse("content", in, extensionIs("omdoc")) {case inPath =>
          controller.read(root / "content" / inPath, Some(DPath(narrationBase / in)))
-         //val mpath = Archive.ContentPathToMMTPath(inPath)
+         val mpath = Archive.ContentPathToMMTPath(inPath)
+         controller.compChecker.check(mpath)
          //controller.globalLookup.getModule(mpath)
       }
     }
-
     
     def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in

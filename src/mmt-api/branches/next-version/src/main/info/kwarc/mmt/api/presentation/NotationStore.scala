@@ -51,6 +51,7 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
          log("looking in defaults for key " + key)
          val not = key.path flatMap {
 	         case _ : DPath => None
+	         case _ : CPath => None
 	         case p : MPath => try {sets(p).get(key)} catch {case _ => None}
 	         case p : GlobalName =>
 	            //get default notation, ...

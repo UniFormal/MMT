@@ -73,6 +73,7 @@ class Controller extends ROController {
 
    protected def log(s : => String) = report("controller", s)
 
+   val compChecker = new ComponentChecker(extman, memory)
    /** the checker is used to validate content elements */
    private var checker : Checker = NullChecker
    def setCheckNone {checker = NullChecker}
@@ -124,6 +125,7 @@ class Controller extends ROController {
          case p : DPath => iterate (docstore.get(p))
          case p : MPath => iterate (try {library.get(p)} catch {case _ => notstore.get(p)})
          case p : GlobalName => iterate (library.get(p))
+         case _ : CPath => throw ImplementationError("cannot retrieve component paths")
       }
    }
    /** selects a notation
@@ -177,6 +179,7 @@ class Controller extends ROController {
          library.delete(m)
          notstore.delete(m)
       case s: GlobalName => library.delete(s)
+      case _ : CPath => throw ImplementationError("cannot delete component paths") //TODO delete component
    }}
    /** clears the state */
    def clear {

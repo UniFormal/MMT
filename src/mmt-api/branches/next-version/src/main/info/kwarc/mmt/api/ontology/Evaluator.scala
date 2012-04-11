@@ -93,8 +93,8 @@ class Evaluator(controller: Controller) {
          evaluateESet(of) foreach {
             case List(o) => o match { 
                case OMBINDC(`free`, cont, _, obj) =>
-                 res += List(found.infer(obj, cont)(lup))
-               case t: Term => res += List(found.infer(t, Context())(lup))
+                 res += List(found.inference(obj, cont)(lup))
+               case t: Term => res += List(found.inference(t, Context())(lup))
                case o => throw GetError("object exists but is not a term: " + o)
             }
             case _ => throw ImplementationError("ill-typed query")

@@ -289,7 +289,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
 		              case _ => throw PresentationError("no foundation found")
 		           }
 		           val found = controller.extman.getFoundation(meta).getOrElse(throw PresentationError("no foundation found"))
-		           val tp = try {found.infer(o, lpar.asContext)(controller.globalLookup)}
+		           val tp = try {found.inference(o, lpar.asContext)(controller.globalLookup)}
 		                  catch {case _ => OMID(utils.mmt.mmtbase ? "dummy" ? "error")}
 		           present(tp, gpar, lpar)
 		        case c => throw PresentationError("cannot infer type of " + c)
