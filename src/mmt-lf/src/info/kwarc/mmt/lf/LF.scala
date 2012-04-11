@@ -50,14 +50,14 @@ object Lambda {
 
 object Pi { 
    def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("Pi"), OMV(name) % tp, body)
-   def apply(name : String, tp : Sequence, body : Term) = OMBIND(LF.constant("Pi"), SeqVarDecl(name, Some(tp),None), body)
+   //def apply(name : String, tp : Sequence, body : Term) = OMBIND(LF.constant("Pi"), SeqVarDecl(name, Some(tp),None), body)
    
    def apply(con: Context, body : Term) = OMBIND(LF.constant("Pi"), con, body) //(?)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
 	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.constant("Pi") || b == LF.constant("implicit_Pi") =>
 	      if (rest.isEmpty) Some((n,t,s))
 	      else Some((n,t, Pi(rest.toList,s)))
-	   case OMA(LF.arrow,FlatSequence(args)) =>
+	   case OMA(LF.arrow,args) =>
 	      val name = "" //TODO: invent fresh name here
 	      if (args.length > 2)
 	     	 Some((name, args(0), OMA(LF.arrow, args.tail)))
@@ -91,7 +91,7 @@ object Apply {
 object ApplySpine {
 	def apply(f: Term, a: Term*) = OMA(f, a.toList)
 	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
-		case OMA(f, FlatSequence(args)) if f != LF.arrow =>
+		case OMA(f, args) if f != LF.arrow =>
 		  unapply(f) match {
 		 	 case None => Some((f, args))
 		 	 case Some((c, args0)) => Some((c, args0 ::: args))
@@ -106,12 +106,20 @@ object Univ {
 	   if (t == LF.kind) Some(2) else if (t == LF.ktype) Some(1) else None
 }
 
+object Const {
+   def apply(path: GlobalName) = OMID(path)
+   def unapply(t: Term) : Option[GlobalName] = t match {
+      case OMID(p: GlobalName) => Some(p)
+      case _ => None
+   }
+}
+
 //TODO: variable capture is not avoided anywhere
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {
    private def log(msg : => String) = report("lf", msg)
    val foundTheory = LF.lftheory
-   def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean = {
+   def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit fl : FoundationLookup) : Boolean = {
       log("typing\n" + tm.toString + "\n" + tp.toString)
       (tm, tp) match {
          case (Some(s), Some(a)) => check(s, a, G)
@@ -120,35 +128,28 @@ class LFF extends Foundation {
          case (None, None) => false
       }
    }
-   def equality(tm1 : Term, tm2 : Term)(implicit lib : Lookup) : Boolean = {
-      lib.report("LF: ", "equal\n" + tm1.toString + "\n" + tm2.toString)
+   def equality(tm1 : Term, tm2 : Term)(implicit fl : FoundationLookup) : Boolean = {
+      log("equal\n" + tm1.toString + "\n" + tm2.toString)
       equal(tm1, tm2, Context())
    }
+   def inference(tm: Term, context: Context)(implicit lup: Lookup) : Term = infer(tm, context)(new PlainLookup(lup))
  
 /**
  * @param path the URI of a constant
  * @param lib  Lookup library
  * @return type of the constant
  * */  
- def lookuptype(path : GlobalName)(implicit lib : Lookup) : Term = {
-    val con = lib.getConstant(path)
-    con.tp match {
-       case Some(t) => t
-       case None =>
-          if (con.df.isEmpty) throw LFError("no type exists for " + path)
-          infer(con.df.get, Context())
-    }
- }
-  def lookupdef(path : GlobalName)(implicit lib : Lookup) : Option[Term] = lib.getConstant(path).df
+  def lookuptype(path : GlobalName)(implicit fl : FoundationLookup) : Term = fl.getType(path).getOrElse(throw LFError("no type exists for " + path))
+  def lookupdef(path : GlobalName)(implicit fl : FoundationLookup) : Option[Term] = fl.getDefiniens(path)
 
    /**
     * check(s,T,G) iff G |- s : T : U for some U \in {type,kind}
     * checks whether a term s has type T  
     */
-   def check(s : Term, T : Term, G : Context)(implicit lib : Lookup) : Boolean = {
+   def check(s : Term, T : Term, G : Context)(implicit fl : FoundationLookup) : Boolean = {
 	   s match {
 	   	case Univ(1) => T == Univ(2)
-	   	case OMID(path) => equal(lookuptype(path), T, G)
+	   	case Const(path) => equal(lookuptype(path), T, G)
 	   	case OMV(name) =>  equal(T, G(name).asInstanceOf[TermVarDecl].tp.get, G) //TODO; why not equal(T, G(name), G)?; what does G(name) return?  
 	   	case Lambda(x, a, t) =>
 	   		val G2 = G ++ OMV(x) % a
@@ -180,16 +181,16 @@ class LFF extends Foundation {
   /**
    * if G |- tm1 : A and G |- tm2 : A, then equal(tm1,tm2,G) iff G |- tm1 = tm2 : A
    */
-   def equal (tm1 : Term, tm2 : Term, G : Context)(implicit lib : Lookup) : Boolean = {
+   def equal (tm1 : Term, tm2 : Term, G : Context)(implicit fl : FoundationLookup) : Boolean = {
 	   (tm1, tm2) match { 
  	 		case (OMV(x), OMV(y)) => x == y
- 	 		case (OMID(c), OMID(d)) => if (c == d) true else {
+ 	 		case (Const(c), Const(d)) => if (c == d) true else {
  	 			lookupdef(c) match {
  	 				case None => lookupdef(d) match {
  	 					case None => false
- 	 					case Some(t) => equal(OMID(c), t, G)
+ 	 					case Some(t) => equal(Const(c), t, G)
  	 				}
- 	 				case Some(t) => equal(OMID(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
+ 	 				case Some(t) => equal(Const(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
  	 			}
  	 		}
  	 		case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => 
@@ -220,7 +221,7 @@ class LFF extends Foundation {
   * if t well-formed, then |- reduce(t,G) = t
   * if |- t = Pi x:A. B for some A,B, then reduce(t) of the form Pi x:A.B (?)
   */
-   def reduce(t : Term, G : Context)(implicit lib : Lookup) : Term = t match {
+   def reduce(t : Term, G : Context)(implicit fl : FoundationLookup) : Term = t match {
 	 // t can also be an arbitrary application
    		case Apply(Lambda(x,a,t), s) => if (check(s,a,G)) reduce(t ^ (G.id ++ OMV(x)/s), G) else throw LFError("ill-formed")
    		case Apply(tm1, tm2) =>
@@ -229,12 +230,12 @@ class LFF extends Foundation {
    				case Lambda(x,a,t) => reduce(Apply(tm1r, tm2), G)
    				case _ => Apply(tm1r, tm2)
    			}	 	
-   		case ApplySpine(OMID(p), args) => lookupdef(p) match {
+   		case ApplySpine(Const(p), args) => lookupdef(p) match {
    			case None => t
    			case Some(d) => reduce(ApplySpine(d, args :_*), G)
    		}
    		case ApplySpine(_,_) => t
-   		case OMID(p) => lookupdef(p) match {
+   		case Const(p) => lookupdef(p) match {
    		   case Some(d) => reduce(d, G)
    		   case None => t
    		}
@@ -244,10 +245,10 @@ class LFF extends Foundation {
  /**
   * if exists A such that G |- s : A, then G |- infer(s,G) = A
   */
-   def infer(s : Term, G : Context)(implicit lib : Lookup) : Term = {
+   def infer(s : Term, G : Context)(implicit fl : FoundationLookup) : Term = {
 	   s match {
 	   		case Univ(1) => Univ(2)
-	   		case OMID(path) => lookuptype(path)
+	   		case Const(path) => lookuptype(path)
 	   		case OMV(name) => G(name).asInstanceOf[TermVarDecl].tp.get // modify it as in check
 	   		case Lambda(name, tp, body) =>
 	   			val G2 = G ++ OMV(name) % tp
