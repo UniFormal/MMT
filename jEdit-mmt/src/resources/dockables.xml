@@ -1,0 +1,5 @@
+<DOCKABLES>
+	<DOCKABLE NAME="mmt-dockable">
+		new info.kwarc.mmt.jedit.MMTDockable(view, position);
+	</DOCKABLE>
+</DOCKABLES>

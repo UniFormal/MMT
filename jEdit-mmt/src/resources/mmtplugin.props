@@ -29,8 +29,10 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.read=Read content
 
 # menu items for the actions
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
-plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt.read
-mmt.read.label=Read
+plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-showinfo
+mmt-dockable.label=Dockable
+mmt-dockable.title=The MMT Dockable
+mmt-showinfo.label=Show
 
 # toolbar buttons
 # mmt.read.icon=read.png

@@ -34,16 +34,29 @@ class MMTPlugin extends EditPlugin {
       controller.cleanup
    }
    
-   def read(view : View) {
+   def showinfo(view : View) {
+      val wm = view.getDockableWindowManager
+      wm.addDockableWindow("mmt-dockable")
+      val d = wm.getDockableWindow("mmt-dockable").asInstanceOf[MMTDockable]
+      val ta = view.getTextArea
+      MMTPlugin.getCurrentID(view.getBuffer, ta.getCaretPosition) match {
+         case None =>
+         case Some((_,_,_,id)) => d.setText(id)
+      }
    }
 }
 
 object MMTPlugin {
    def isIDChar(c: Char) = (! Character.isWhitespace(c)) && "()[]{}:.".forall(_ != c)
    def getSourceRef(e: metadata.HasMetaData) : Option[SourceRef] = e.metadata.getLink(SourceRef.metaDataKey) match {
-         case u :: _ => Some(SourceRef.fromURI(u))
-         case Nil => None
+      case u :: _ => Some(SourceRef.fromURI(u))
+      case Nil => None
    }
+   /** finds the id at a certain offset in a buffer
+    * @param buffer a buffer
+    * @parem index offset in the buffer
+    * @return the id at the offset, if any, as (line,beginOffsetInBuffer,endOffsetInBuffer,id)
+    */ 
    def getCurrentID(buffer: Buffer, index: Int) : Option[(Int,Int,Int,String)] = {
       val line = buffer.getLineOfOffset(index)
       val lineStart = buffer.getLineStartOffset(line)
