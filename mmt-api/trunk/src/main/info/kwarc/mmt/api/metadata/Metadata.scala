@@ -66,7 +66,7 @@ object MetaData {
 class MetaDatum(val key: GlobalName, val value: Obj) {
    def toNode = this match {
       case Link(key, uri) => <link rel={key.toPath} resource={uri.toString}/> 
-      case _ => <meta property={key.toPath}>{value.toNode}</meta> 
+      case _ => <meta property={key.toPath}>{value.toOBJNode}</meta> 
    }
    // def toString
 }
