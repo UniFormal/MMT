@@ -1,0 +1,51 @@
+<omdoc-diff 
+old="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/compiled/Identifiers/identifiers.omdoc" new="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/compiled/Identifiers/identifiersChanged.omdoc">
+   <doc path="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/compiled/Identifiers/identifiersChanged.omdoc" change="update">
+      <changes>
+         <module type="DeclaredTheory" path="http://example.com/owl/families?_" change="update">
+            <component name="meta" type="Path" change="identical"></component>
+            <bodyChanges>
+               <declaration type="Constant" path="http://example.com/owl/families?_?Max" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?Father" change="identical"></declaration>
+               <declaration name="Liza" type="Constant" path="http://example.com/owl/families?_?Liz" change="rename"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?hasWife" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?Mother" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?Parent" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?hasAge" change="identical"></declaration>
+               <declaration type="Constant" change="add">
+                  <constant name="ax1453937263" >
+                     <type>
+                        <OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+                           <om:OMA>
+                              <om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+                              <om:OMS module="_" name="Mother" base="http://example.com/owl/families" position="1"></om:OMS>
+                              <om:OMS module="_" name="Liza" base="http://example.com/owl/families" position="2"></om:OMS>
+                           </om:OMA>
+                        </OMOBJ>
+                     </type>
+                  </constant>
+               </declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?id2" change="update">
+                  <component name="type" type="Term" change="update">
+                     <OMOBJ xmlns:om="om">
+                        <om:OMA>
+                           <om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+                           <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
+                           <om:OMS module="_" name="Max" base="http://example.com/owl/families" position="2"></om:OMS>
+                           <om:OMS module="_" name="Liza" base="http://example.com/owl/families" position="3"></om:OMS>
+                        </om:OMA>
+                     </OMOBJ>
+                  </component>
+                  <component name="definition" type="Term" change="identical"></component>
+               </declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?id1" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax-821918780" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax-1447892707" change="identical"></declaration>
+               <declaration type="Constant" path="http://example.com/owl/families?_?ax-1536846860" change="delete"></declaration>
+            </bodyChanges>
+         </module>
+      </changes>
+   </doc>
+</omdoc-diff>
+
+
