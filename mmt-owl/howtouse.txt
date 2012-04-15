@@ -1,5 +1,8 @@
 How to use:
 
+check out http://alpha.tntbase.mathweb.org/repos/cds/
+change the path "archive add E:\Fall10\CompSem\Project\cds" in the startup.mmt file  and in the build-test.mmt file according to your computer
+
 run "run.bat" file in https://svn.kwarc.info/repos/MMT/src/mmt-owl
 then, type "file build-test.mmt"
 
