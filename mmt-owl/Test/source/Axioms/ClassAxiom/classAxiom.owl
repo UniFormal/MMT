@@ -32,15 +32,22 @@
   <Class IRI="Man"/>
  </Declaration>
 
- <SubClassOf>
-  <Class IRI="Woman"/>
-  <Class IRI="Person"/>
- </SubClassOf>
-   
  <EquivalentClasses>
   <Class IRI="Person"/>
   <Class IRI="Human"/>
  </EquivalentClasses>
+ 
+ <EquivalentClasses>
+  <Class IRI="Person"/>
+  <Class IRI="Human"/>
+ </EquivalentClasses>
+ 
+ <SubClassOf>
+  <Class IRI="Woman"/>
+  <Class IRI="Person"/>
+ </SubClassOf>
+  
+
     
  <DisjointClasses>
   <Class IRI="Woman"/>
