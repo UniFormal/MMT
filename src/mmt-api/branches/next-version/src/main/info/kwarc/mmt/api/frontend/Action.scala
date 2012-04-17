@@ -21,8 +21,11 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = logon | logoff | local | catalog | archive | tntbase | importer | foundation | mws | server | execfile
+   private def controller = log | logon | logoff | local | catalog | archive | tntbase | importer | foundation | mws | server | execfile
    private def shell = setbase | readText | read | printall | printallxml | clear | exit
+   private def log = logfile | logconsole
+   private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
+   private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
    private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
    private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
@@ -98,6 +101,10 @@ object Action extends RegexParsers {
 sealed abstract class Action
 
 case class Compare(p : Path, r : Int) extends Action{override def toString = "diff " + p.toPath + ":" + r.toString}
+/** add a log handler */
+case class AddReportHandler(h : ReportHandler) extends Action {
+   override def toString = "log " + h.toString
+ }
 /** switch on logging for a certain group */
 case class LoggingOn(s : String) extends Action {override def toString = "log+ " + s}
 /** switch off logging for a certain group */

@@ -314,6 +314,7 @@ class Controller extends ROController {
 	         home = f.getParentFile
             File.ReadLineWise(f)(handleLine)
 	         home = oldHome
+	      case AddReportHandler(h) => report.addHandler(h)
 	      case LoggingOn(g) => report.groups += g
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
