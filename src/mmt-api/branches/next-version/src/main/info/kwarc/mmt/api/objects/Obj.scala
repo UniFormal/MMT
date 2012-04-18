@@ -294,7 +294,7 @@ case class OMFOREIGN(node : Node) extends Term {
 }
 /*
  * OpenMath values are integers, floats, and strings (we omit byte arrays); we add URIs
- * 
+ *
  */
 abstract class OMLiteral extends Term {
    def head = None
@@ -346,111 +346,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
 object OMSemiFormal {
   def apply(tokens: SemiFormalObject*) : OMSemiFormal = OMSemiFormal(tokens.toList)
 }
-/*
-case class Index(seq : Sequence, term : Term) extends Term {
-  var path = mmt.index
-	def head = term.head //TODO Sequence does not have head
-	def role = Role_index
-	def components = List(seq,term)
-	def toNodeID(pos : Position) = <om:OMNTH>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</om:OMNTH> //TODO Change order of index and sequence 
-	//<index>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</index>
-	def toCML(pos : Position) = <m:nth>{seq.toNodeID(pos + 0)}{term.toNodeID(pos + 1)}</m:nth> //TODO Change order of index and sequence
-	def toCML = null
-	def ^(sub : Substitution) = Index(seq ^ sub, term ^ sub)
-}
 
-/*
- def toNodeID(pos : Position) : scala.xml.Node
-   /** applies a substitution to an object (computed immediately) */
-   def ^ (sub : Substitution) : Obj
-   def head : Option[Path]
-   def role : Role
-   def components : List[Content]
- */
-
-sealed abstract class Sequence extends Obj {
-	def ^(sub : Substitution) : Sequence
-	def items : List[SeqItem]
-   def flatMap(f: SeqItem => Sequence) : Sequence = SeqItemList((items map {i => f(i).items}).flatten) 
-   def toOpenMath : Term = OMA(OMID(mmt.seq), items)
-}
-
-sealed abstract class SeqItem extends Sequence {
-   def items = List(this)
-}
-
-/*
-case class SeqSubst(expr : Term, name : String, seq : Sequence) extends SeqItem {
-	def toNodeID(pos : Position)= 		
-	    <seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
-	def toCML(pos : Position) = 
-	    <m:seqsubst var ={name}>{expr.toNodeID(pos + 0)}{seq.toNodeID(pos + 2)}</m:seqsubst> % pos.toIDAttr
-	def ^ (sub : Substitution) = {
-	    	val subn = sub ++ (name / OMV(name)) 
-	    	SeqSubst(expr ^ subn,name,seq ^ sub)  //TODO Variable capture
-	    }
-	def toCML = null
-	def head = expr.head
-	def role = Role_seqsubst
-	def components = List(expr,StringLiteral(name),seq)
-	
-}
-*/
-
-case class SeqSubst(seq1 : Sequence, name : String, seq2 : Sequence) extends SeqItem {
-	def toNodeID(pos : Position)= 		
-	    <seqsubst var ={name}>{seq1.toNodeID(pos + 0)}{seq2.toNodeID(pos + 2)}</seqsubst> % pos.toIDAttr
-	def toCML = 
-	    <m:seqsubst var={name}>{seq1.toCML}{seq2.toCML}</m:seqsubst>
-	def ^(sub : Substitution) = {
-	    	val subn = sub ++ (name / OMV(name)) 
-	    	SeqSubst(seq1 ^ subn,name,seq2 ^ sub)  //TODO Variable capture
-	    }
-	def head = seq1.head
-	def role = Role_seqsubst
-	def components = List(seq1,StringLiteral(name),seq2)
-}
-
-case class SeqVar(name : String) extends SeqItem {
-	def toNodeID(pos : Position) =
-		<om:OMSV name ={name}/> % pos.toIDAttr
-	def toCML =
-		<m:si>{name}</m:si> 
-	def /(s : Sequence) = SeqSub(name, s)
-	def ^(sub : Substitution) =
-	   sub(name) match {
-	  	   case Some(t : Sequence) => t
-	  	   case Some(_) => throw SubstitutionUndefined(name, "substitution is applicable but does not provide a sequence")
-	  	   case None => this
-       }
-	def head = None
-	def role = Role_SeqVariableRef
-	def components : List[Content] = List(StringLiteral(name))
-}
-
-case class SeqUpTo(num : Term) extends SeqItem {
-	def toNodeID(pos : Position) =
-		<om:OMNATS>{num.toNodeID(pos + 0)}</om:OMNATS> % pos.toIDAttr
-   def toCML =
-		<m:nats>{num.toCML}</m:nats>
-	def ^(sub : Substitution) = SeqUpTo(num ^ sub)
-	def head = num.head
-	def role = Role_sequpto
-	def components : List[Content] = List(num)
-}
-
-case class SeqItemList(items: List[SeqItem]) extends Sequence {
-   def toNodeID(pos : Position) =
-	   <sequence>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</sequence> % pos.toIDAttr
-   def toCMLdeID(pos : Position) =
-	   <m:seq>{items.zipWithIndex map {x => x._1.toNodeID(pos + x._2)}}</m:seq> % pos.toIDAttr
-   def toCML = <m:seq>{items.map(_.toCML)}</m:seq>
-   def ^(sub : Substitution) : Sequence = SeqItemList(items.map(_ ^ sub).flatMap(_.items))
-   def components :List[Content] = items
-   def head = None
-   def role = Role_seqitemlist
-}
-*/
 /**
  * A ModuleObj is a composed module level expression.
  */     /*

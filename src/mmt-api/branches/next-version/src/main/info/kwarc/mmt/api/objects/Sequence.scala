@@ -1,4 +1,3 @@
-/*
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
@@ -10,41 +9,59 @@ import Conversions._
 
 import scala.xml.{Node}
 
-object FlatSequence {
-	def unapply(s: Sequence) : Option[List[Term]] = s.items match {
-		case Nil => Some(Nil)
-		case hd :: tl => hd match {
-			case t: Term => unapply(SeqItemList(tl)).map(t :: _)
-			case _ => None
-		}
-	}
-   def unapply(s: List[SeqItem]) : Option[List[Term]] = s match {
-      case Nil => Some(Nil)
-      case hd :: tl => hd match {
-         case t: Term => unapply(tl).map(t :: _)
-         case _ => None
-      }
+object Index {
+   def apply(seq : Term, term : Term) : Term = OMA(OMS(mmt.index),List(seq,term))
+   def unapply(t: Term) : Option[(Term,Term)] = t match {
+	   case OMA(OMS(mmt.index), List(seq,i)) => Some((seq,i))
+	   case _ => None
    }
 }
 
-object Ind {
-	def apply(seq : String, i : String) : Term = Index(SeqVar(seq),OMV(i))
+object SeqMap {
+	def apply (seq : Term, i : String, to : Term) : Term = 
+	  OMBIND(OMA(OMS(mmt.seqmap),List(to)),Context(TermVarDecl(i,None,None)),seq)
+	def unapply(t : Term) : Option[(Term,String,Term)] = t match {
+		case OMBIND(OMA(OMS(mmt.seqmap),List(to)),Context(TermVarDecl(i,_,_,_*)),seq) => Some((seq,i,to))
+		case _ => None
+	}
 }
 
 object Rep {
-	def apply(tp : Term, n : Term): SeqItem = SeqSubst(tp, "i", SeqUpTo(n)) 
+	def apply (seq : Term, to : Term) : Term = 
+	  SeqMap(seq,"",to)
+	def unapply(t : Term) : Option[(Term,Term)] = t match {
+		case SeqMap(seq,"",to) => Some((seq,to))
+		case _ => None
+	}
 }
 
-object RepInt {
-	def apply(fn : Term, n : Int): SeqItem = Rep(fn, OMI(n))
+object Sequence {
+  def apply (seq : Term*) : Term = 
+    OMA(OMS(mmt.seq),seq.toList)
+  def unapply(t : Term) : Option[List[Term]] = t match {
+    case OMA(OMS(mmt.seq),args) => Some(args)
+    case _ => None
+  }
 }
 
+object FlatSequence {
+  def apply (seq : Term*) : Term = Sequence(seq :_*) 
+  def toList(t : Term) : List[Term] = t match {
+    case Sequence(args) => args flatMap toList
+    case t => List(t)
+  }
+  def unapply (t : Term) : Option[List[Term]] = Some(toList(t))
+}
+
+/*
 object SeqNormalize {
   //def normalizeSeq(seq : List[SeqItem]) : List[SeqItem] = seq.flatMap(normalizeSeqItem)      
-  def normalizeSeq(seq : Sequence) : Sequence = SeqItemList(seq.items.flatMap(normalizeSeqItem))	  
-  def normalizeSeqItem(sit : SeqItem) : List[SeqItem] = {
-	  sit match {	
-      case e : Term => List(normalizeTerm(e))
+  def normalizeSeq(seq : Term) : List[Term] = {
+	  seq match {
+	    case Index(s,i) => Nil
+//	    case SeqMap(s,i,n) => Substitution(Sub(i,))
+	  } 
+      /*
 	 	case SeqSubst(s1,n,s2) => 
 	 		val ns2 = normalizeSeq(s2)
 	 		ns2.items.flatMap {
@@ -58,8 +75,12 @@ object SeqNormalize {
 	 		}
     	case SeqVar(n) => List(sit)
 	  }
+	  */
   }
+}
+*/
 
+ /*
   def normalizeTerm(tm : Term) : Term = {
 	  tm match {
 	 	 /* 
@@ -163,6 +184,4 @@ object SeqNormalize {
 	 	  case _ => None
 	  }
   }	 
-}  
-
 */
