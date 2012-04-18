@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ant jar
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+env JAVA_OPTS="-Xmx2576M" scala -cp build/mmt-tptp.jar:lib/mmt/mmt-api.jar:lib/antlr-3.2.jar:lib/antlr-runtime-3.2.jar:lib/tptp-parser.jar info.kwarc.mmt.api.frontend.Run file compile-tptp.mmt
