@@ -25,7 +25,7 @@ case class ElemResult(l: List[BaseType]) extends QueryResult {
 /** result of a set query */
 case class ESetResult(h : HashSet[List[BaseType]]) extends QueryResult {
    def toNode : scala.xml.Node =
-      <results>{h map {x => ElemResult(x).toNode}}</results>
+      <results size={h.size.toString}>{h map {x => ElemResult(x).toNode}}</results>
 }
 
 /** evaluates a query expression to a query result */
@@ -127,7 +127,9 @@ class Evaluator(controller: Controller) {
       case Unifies(wth) => empty //TODO empty for now
       case Related(to, by) =>
          val res = empty
-         rs.query(evaluateElemPath(to), by)(res += _)
+         evaluateESet(to) foreach {p =>
+           rs.query(p.head.asInstanceOf[Path], by)(res += _)  // p has type List(Path) by precondition
+         }
          res
       case Closure(of) =>
          evaluateESet(of) match { 

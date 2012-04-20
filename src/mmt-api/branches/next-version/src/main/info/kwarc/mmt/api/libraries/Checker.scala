@@ -413,15 +413,15 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             ContentSuccess(deps)
          case a : DefLinkAssignment =>
             val (l,d) = getSource(a)
-            val s = d match {
-                case s : Structure => s
-                case _ => return ContentFail("structure-assignment to non-structure")
+            val dl = d match {
+                case dl : DefinitionalLink => dl
+                case _ => return ContentFail("defllink-assignment to non-deflink")
             }
-            val domain = s.from
+            val domain = dl.from
             val occs = checkMorphism(a.target, domain, l.to)
             val deps = IsStrAss(a.path) :: occs.map(DependsOn(a.path, _))
             // flattening of includes: this assignment also applies to every theory t included into s.from 
-            val flat = mem.content.importsTo(s.from).toList.mapPartial {t =>
+            val flat = mem.content.importsTo(dl.from).toList.mapPartial {t =>
                val name = a.name.thenInclude(t)
                if (l.declares(name)) None //here, the compatibility check can be added
                else {

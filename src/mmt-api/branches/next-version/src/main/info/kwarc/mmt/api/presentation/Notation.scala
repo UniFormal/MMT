@@ -62,31 +62,31 @@ sealed abstract class NotationProperties extends metadata.HasMetaData {
 }
 case class Infix(pos: Int, impl : Int, oPrec: Option[Precedence]) extends NotationProperties {
    def toNode = <notation fix={pos.toString} />
-   override def toString = pos.toString + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
+   override def toString = pos.toString + " " + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
 case class Prefix(appstyle : AppStyle, impl : Int, oPrec: Option[Precedence]) extends NotationProperties {
    def toNode = <notation fix="pre" />
-   override def toString = "pre" + appstyle.toString + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
+   override def toString = "pre " + appstyle.toString + " " + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
 case class Postfix(appstyle : AppStyle, impl : Int, oPrec: Option[Precedence]) extends NotationProperties {
    def toNode = <notation fix="post" />
-   override def toString = "post" + appstyle.toString + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
+   override def toString = "post " + appstyle.toString + " " + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
 case class Mixfix(format : List[Token], impl : Int, oPrec: Option[Precedence]) extends NotationProperties {
    def toNode = <notation fix="mix" />
-   override def toString = "mix" + format.mkString("", " ", "") + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
+   override def toString = "mix " + format.mkString("", " ", "") + " " + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
 case class Interfix(assoc : Associativity, impl : Int, oPrec: Option[Precedence]) extends NotationProperties {
    def toNode = <notation fix="inter" />
-   override def toString = "inter" + assoc.toString + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
+   override def toString = "inter " + assoc.toString + " " + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
 case class Treefix(impl : Int, oPrec: Option[Precedence]) extends NotationProperties {
    def toNode = <notation fix="tree" />
-   override def toString = "tree" + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
+   override def toString = "tree " + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
 case class Bindfix(impl : Int, oPrec: Option[Precedence]) extends NotationProperties {
    def toNode = <notation fix="bind" />
-   override def toString = "bind" + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
+   override def toString = "bind " + impl.toString + " " + oPrec.map(_.toString).getOrElse("none")
 }
 
 object NotationProperties {

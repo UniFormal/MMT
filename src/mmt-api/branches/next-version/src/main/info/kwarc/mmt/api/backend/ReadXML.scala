@@ -171,8 +171,8 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
             doCon(name,None,None,xml.attr(s,"role"), md)
          case <structure>{seq @ _*}</structure> =>
             log("structure " + name + " found")
-            val from = OMMOD(Path.parseM(xml.attr(s, "from"), base))
-            seq match {
+            val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
+            rest.child match {
                case <definition>{d}</definition> =>
                   val df = Obj.parseTerm(d, base)
                   val i = new DefinedStructure(thy, name, from, df)
@@ -187,7 +187,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
             log("found alias " + name + " for " + forpath)
             add(new Alias(thy, name, forpath), md)
          case <include>{_*}</include> =>
-            val (_, from) = XMLReader.getTheoryFromAttributeOrChild(s, "from", base)
+            val (_, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
             log("include from " + from + " found")
             add(Include(OMMOD(tpath), from), md)
          case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols

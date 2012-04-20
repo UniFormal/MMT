@@ -37,25 +37,13 @@ abstract class Structure extends DefinitionalLink {
     */
    protected def outerComponents = List(StringLiteral(name.flat), from)
    protected def outerString = path + " : " + from.toString
-   def toNode = /*from.asPath match {
-	    case Some(p) =>
-         <structure name={name.flat} from={p}>
-           {getMetaDataNode}
-           {innerNodes}
-         </structure>
-	    case _ =>
-         <structure name={name.flat}>
-           {getMetaDataNode}
-           <from>{from.toOBJNode}</from>
-           {innerNodes}
-         </structure>
-     }   */ {
-        if (from.toMPath.isGeneric)
-          <structure name={name.flat} from={from.toMPath.toPath}>
+   def toNode = from match {
+     case OMMOD(p) => 
+          <structure name={name.flat} from={p.toPath}>
             {getMetaDataNode}
             {innerNodes}
           </structure>
-        else
+     case _ => 
           <structure name={name.flat}>
             {getMetaDataNode}
             <from>{from.toOBJNode}</from>
