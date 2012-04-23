@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import documents._
 import metadata._
 import modules._
+import parser.TextNotation
 import symbols._
 import objects._
 import patterns._
@@ -138,14 +139,16 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
    }
    def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq) {
       val thy = OMMOD(tpath)
-      def doCon(name : LocalName, t : Option[Node], d : Option[Node], r : String, md: Option[MetaData]) {
+      def doCon(name : LocalName, t : Option[Node], d : Option[Node], xmlNotation : Option[Node], r : String, md: Option[MetaData]) {
          log("constant " + name.flat + " found")
          val tp = t.map(Obj.parseTerm(_, base))
          val df = d.map(Obj.parseTerm(_, base))
+         val notation = xmlNotation.map(TextNotation.parse(_))
          val rl = if (r == "") None else Some(r)
-         val c = new Constant(thy, name, tp, df, rl, None)  //TODO parse <notation>
+         val c = new Constant(thy, name, tp, df, rl, notation)  //TODO parse <notation>
          add(c,md)
       }
+
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
     	  log("pattern " + name.flat + " found")
     	  val pr = parOpt match {
@@ -159,16 +162,22 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
       for (s <- symbols; name = Path.parseName(xml.attr(s,"name")).toLocalName) {
          val (s2, md) = MetaData.parseMetaDataChild(s, base) 
          s2 match {
+         case <constant><type>{t}</type><definition>{d}</definition><notation>{n}</notation></constant> =>
+             doCon(name,Some(t),Some(d), Some(n), xml.attr(s,"role"), md)
          case <constant><type>{t}</type><definition>{d}</definition></constant> =>
-            doCon(name,Some(t),Some(d),xml.attr(s,"role"), md)
+            doCon(name,Some(t),Some(d), None, xml.attr(s,"role"), md)
          case <constant><definition>{d}</definition><type>{t}</type></constant> =>
-            doCon(name,Some(t),Some(d),xml.attr(s,"role"), md)
+            doCon(name,Some(t),Some(d), None, xml.attr(s,"role"), md)
          case <constant><type>{t}</type></constant> =>
-            doCon(name,Some(t),None,xml.attr(s,"role"), md)
+            doCon(name,Some(t),None, None, xml.attr(s,"role"), md)
+         case <constant><type>{t}</type><notation>{n}</notation></constant> =>
+           doCon(name,Some(t),None, Some(n), xml.attr(s,"role"), md)
          case <constant><definition>{d}</definition></constant> =>
-            doCon(name,None,Some(d), xml.attr(s,"role"), md)
+            doCon(name,None,Some(d), None, xml.attr(s,"role"), md)
+         case <constant><definition>{d}</definition><notation>{n}</notation></constant> =>
+            doCon(name,None,Some(d), Some(n), xml.attr(s,"role"), md)
          case <constant/> =>
-            doCon(name,None,None,xml.attr(s,"role"), md)
+            doCon(name,None,None,None,xml.attr(s,"role"), md)
          case <structure>{seq @ _*}</structure> =>
             log("structure " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)

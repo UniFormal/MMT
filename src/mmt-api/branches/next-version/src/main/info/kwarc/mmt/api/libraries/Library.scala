@@ -177,6 +177,15 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
         }
         imported ++ local
    }*/
+
+   def getDeclarationsInScope(th : MPath) : List[Content] = {
+     val components = (importsTo(OMMOD(th))) flatMap {
+       case OMMOD(p) => getModule(p).components
+     }
+
+     (components ++ getModule(th).components).toList
+   }
+
    /** iterator over all includes into a theory
     * a new iterator is needed once this has been traversed 
     */                                     // TODO term

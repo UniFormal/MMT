@@ -47,9 +47,12 @@ abstract class Foundation {
    
    def tracedTyping(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : HashSet[CPath] = {
       val fl = new TracedLookup(lib)
-      typing(tm, tp, G)(fl)
-      fl.getTrace
+      typing(tm, tp, G)(fl) match {
+        case false => throw Invalid("Type checking failed")
+        case true => fl.getTrace
+      }
    }
+
    def tracedEquality(tm1 : Term, tm2 : Term)(implicit lib : Lookup) : HashSet[CPath] = {
       val fl = new TracedLookup(lib)
       equality(tm1, tm2)(fl)

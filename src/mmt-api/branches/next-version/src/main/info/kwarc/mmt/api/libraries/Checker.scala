@@ -44,16 +44,49 @@ case class ChangeFail(msg : String) extends CheckChangeResult
 class ComponentChecker(extman: ExtensionManager, mem: ROMemory) {
    private implicit val con = mem.content
    private val ont = mem.ontology 
-   def check(mod: MPath) {
-      con.getModule(mod) match {
+
+   /*
+   //tmvars for statistic gathering
+   private var constantsNr : Int = 0
+   private var failedDefChecksNr : Int = 0
+   private var succDefChecksNr : Int = 0
+   private var failedTpChecksNr : Int = 0
+   private var succTpChecksNr  : Int = 0
+   private var failedAssChecksNr : Int = 0
+   private var succAssChecksNr  : Int = 0
+   private def typeChecksNr : Int = succTpChecksNr + failedTpChecksNr
+   private def defChecksNr  : Int = succDefChecksNr + failedDefChecksNr
+   private def assChecksNr : Int = succAssChecksNr + failedAssChecksNr
+   def printStatistics() = {
+     println("constants: " + constantsNr)
+     println("types: " + typeChecksNr)
+     println("defs: " + defChecksNr)
+     println("ass: " + assChecksNr)
+
+     println("ftp: " + failedTpChecksNr)
+     println("stp: " + succTpChecksNr)
+     println("fdf: " + failedDefChecksNr)
+     println("sdf: " + succDefChecksNr)
+     println("fda: " + failedAssChecksNr)
+     println("sda: " + succAssChecksNr)
+   }
+   */
+  def check(mod: MPath) {
+     try {
+     con.getModule(mod) match {
         case d: DeclaredModule[_] => d.domain foreach {n => check(mod ? n)}
         case _ => 
       }
+     } catch {
+       case e : java.lang.Throwable => throw e
+     }
    }
+
    def check(p: GlobalName) {
       check(CPath(p, "type"))
       check(CPath(p, "definition"))
    }
+
    def check(cp: CPath) {
       con.getO(cp.parent) match {
         case None => throw Invalid("non-existing item: " + cp.parent)
@@ -62,11 +95,15 @@ class ComponentChecker(extman: ExtensionManager, mem: ROMemory) {
               val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
               cp.component match {
                  case "type" => 
-                    val trace = foundation.tracedTyping(None, c.tp)
-                    trace foreach {t => ont += DependsOn(cp, t)}
-                 case "definition" =>
-                    val trace = foundation.tracedTyping(c.df, c.tp)
-                    trace foreach {t => ont += DependsOn(cp, t)}
+                     val trace = foundation.tracedTyping(None, c.tp)
+                     trace foreach {t => ont += DependsOn(cp, t)}
+                  case "definition" =>
+                   try {
+                     val trace = foundation.tracedTyping(c.df, c.tp)
+                     if (c.df != None) {
+                       trace foreach {t => ont += DependsOn(cp, t)}
+                     }
+                   }
                  case c => throw Invalid("illegal component: " + c)
               }
            case a: ConstantAssignment =>
@@ -75,12 +112,22 @@ class ComponentChecker(extman: ExtensionManager, mem: ROMemory) {
               cp.component match {
                  case "type" => 
                  case "definition" =>
+                     //println(link.from.toNode)
+                     //println(link.to.toNode)
+                     //println("t" + a.toString)
                     //if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home))(mem.content))
                     //return ContentFail("assignment does not type-check")
                     //val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)(mem.content)
                     //if (! defleq) return ContentFail("assignment violates definedness ordering")
-                    //val exp = //TODO compute expected type
-                    //foundation.typing(a.target, exp)
+                    try {
+                      val ctp = con.getO(link.from.%(a.name)) match {
+                        case Some(c : Constant) => c.tp.getOrElse(throw Invalid("Untyped Constant as base for morphism"))
+                        case x => throw Invalid("link defined from non-constant")
+                      }
+                      val expTp = ctp * link.toMorph
+                      val trace = foundation.tracedTyping(Some(a.target), Some(expTp))
+                      trace foreach {t => ont += DependsOn(cp, t)}
+                    }
                  case c => throw Invalid("illegal component: " + c)
               }
            case _ =>

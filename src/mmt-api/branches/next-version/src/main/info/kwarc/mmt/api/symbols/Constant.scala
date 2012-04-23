@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import objects._
 import modules._
 import moc._
+import parser.Notation
 import presentation.{NotationProperties, StringLiteral, Omitted}
 
 /**
@@ -15,7 +16,7 @@ import presentation.{NotationProperties, StringLiteral, Omitted}
  * @param rl the role of the constant
  */
 class Constant(val home : Term, val name : LocalName,
-               val tp : Option[Term], val df : Option[Term], val rl : Option[String], val not: Option[NotationProperties]) extends Symbol {
+               val tp : Option[Term], val df : Option[Term], val rl : Option[String], val not: Option[Notation]) extends Symbol {
   def toTerm = OMID(path)
 
   def role = Role_Constant(rl)

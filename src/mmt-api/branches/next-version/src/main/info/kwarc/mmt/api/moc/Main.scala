@@ -15,11 +15,17 @@ object Main {
     val cold = new Controller
     cold.setFileReport(File("moc.log"))
     val cnew = new Controller
-    
+                                                                                                2
     
     cold.handle(ExecFile(new java.io.File("moc1-startup.mmt")))
     cnew.handle(ExecFile(new java.io.File("moc2-startup.mmt")))
-     
+
+    /*
+    cold.backend.getArchives map {archive =>
+      archive.generateSVNArchive(cnew.backend)
+    }
+    */
+
     println("--- Computing Diff ---")
     
     val diff = Differ.diff(cold, cnew, p, p)

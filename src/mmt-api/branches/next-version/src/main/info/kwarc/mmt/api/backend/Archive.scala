@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import libraries._
 import frontend._
 import modules._
+import ontology.{Transitive, ToObject, ToSubject, DependsOn}
 import symbols._
 import objects._
 import utils._
@@ -128,7 +129,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
      * @param backend the backend
      * @return a new SVNArchive
      */
-    def generateSVNArchive(rev : Int, backend : Backend) : SVNArchive = {
+    def generateSVNArchive(backend : Backend, rev : Int = -1) : SVNArchive = {
       if (hasSVNArchive) {
         backend.openArchive(properties("svnrepo"), rev)
       } else {
@@ -390,10 +391,39 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     def check(in: List[String] = Nil, controller: Controller) {
       traverse("content", in, extensionIs("omdoc")) {case inPath =>
          controller.read(root / "content" / inPath, Some(DPath(narrationBase / in)))
-         val mpath = Archive.ContentPathToMMTPath(inPath)
-         controller.compChecker.check(mpath)
-         //controller.globalLookup.getModule(mpath)
+           //controller.globalLookup.getModule(mpath)
       }
+      traverse("content", in, extensionIs("omdoc")) {case inPath =>
+        val mpath = Archive.ContentPathToMMTPath(inPath)
+        controller.compChecker.check(mpath)
+        //controller.globalLookup.getModule(mpath)
+      }
+      /*
+      controller.compChecker.printStatistics()
+      //println(controller.memory.ontology.getObjects(DependsOn))
+      val ont = controller.memory.ontology
+
+      val objects = ont.getObjects(DependsOn)
+      val subjects = ont.getSubjects(DependsOn)
+      val tpObj = objects.filter(x => x.last == "type")
+      val dfObj = objects.filter(x => x.last == "definition")
+
+      val transImps = objects.toList.map(x => ont.queryList(x, Transitive(ToSubject(DependsOn))).size).sortWith((x,y) => x < y)
+      val imps = objects.toList.map(x => ont.queryList(x, ToSubject(DependsOn)).size).sortWith((x,y) => x < y)
+      val impsTp = tpObj.toList.map(x => ont.queryList(x, ToSubject(DependsOn)).size).sortWith((x,y) => x < y)
+      val impsDf = dfObj.toList.map(x => ont.queryList(x, ToSubject(DependsOn)).size).sortWith((x,y) => x < y)
+
+      val deps = subjects.toList.map(x => ont.queryList(x, ToObject(DependsOn)).size).sortWith((x,y) => x < y)
+      println(tpObj.size)
+      println(dfObj.size)
+      println("impsTp" + impsTp)
+      println("impsDf" + impsDf)
+      println("imps" + imps)
+      println("transImps" + transImps)
+      println("deps" + deps)
+      println("obj" + objects.size)
+      println("subj" + subjects.size)
+      */
     }
     
     def produceFlat(in: List[String], controller: Controller) {

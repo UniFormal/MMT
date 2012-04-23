@@ -6,6 +6,7 @@ import libraries._
 import objects._
 import documents._
 import ontology._
+import symbols.Constant
 import web._
 import utils._
 import utils.FileConversion._
@@ -91,6 +92,7 @@ class Controller extends ROController {
       def imports(from: Term, to: Term) = library.imports(from, to)
       def importsTo(to: Term) = library.importsTo(to)
       def preImage(p : GlobalName) = library.preImage(p)
+      def getDeclarationsInScope(th : MPath) = library.getDeclarationsInScope(th)
    }
    /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {
@@ -203,6 +205,10 @@ class Controller extends ROController {
       val dpath = DPath(URI.fromJava(f.toURI))
       val source = scala.io.Source.fromFile(f, "UTF-8")
       val (doc, errorList) = textReader.readDocument(source, dpath)
+      //TODO remove
+      val mod = memory.content.get(MPath(DPath(URI("http://cds.omdoc.org/parser-test")), LocalPath("FOL" :: Nil)))
+      println(mod)
+      println(mod.toNode)
       if (!errorList.isEmpty)
         log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
       source.close

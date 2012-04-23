@@ -60,6 +60,8 @@ abstract class Lookup(val report : frontend.Report) {
    
    def imports(from: Term, to: Term) : Boolean
    def importsTo(to: Term) : Iterator[Term]
+
+   def getDeclarationsInScope(th : MPath) : List[Content]
    //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
    //def structureModToSym(p : MPath) : SPath
    //def resolveAlias(s : Symbol) : Symbol

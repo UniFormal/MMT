@@ -25,7 +25,11 @@ class RelStore(report : frontend.Report) {
    def getType(p: Path) : Option[Unary] = types.get(p)
    /** retrieves all Relation declarations */
    def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
-   
+
+   def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
+   def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
+
+
    /** adds a declaration */
    def +=(d : RelationalElement) {
       log(d.toString)

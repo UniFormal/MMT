@@ -12,6 +12,7 @@ function setStyle(style) {
    notstyle = style;
     $('#currentstyle').text(style.split("?").pop());
 }
+
 /**
  * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
  * act: String: action to call on MMTURI
@@ -40,21 +41,76 @@ function load(elem) {
 }
 
 
-function diff() {
+function edit() {
     
-    var url = adaptMMTURI(currentElement, '_diff_720', false);
-    var res = null;
-    function cont(data) {res = data;}
-    proxyAjax('get', url, '', cont, false, 'text/xml');
-    console.log(res.firstChild);
+    //var url = adaptMMTURI(currentElement, 'text', false);
     
-    //$('mo').filter(function() {return $(this).attr('jobad:href') == currentElement;}).each(function() {$(this).attr('style', 'color:red !important');});
+    arr = currentElement.split("?");
+    var mod = "";
+    var url = "";
+    if (arr.length >= 2) {
+	url = "/:mmt?" + arr[0] + "?" + arr[1] + "??text";    
+	mod = arr[0] + "?" + arr[1];
+        var res = null;
+	function cont(data) {
+	    res = data;
+	}
+
+	$.ajax({
+	    'type' : 'get',
+	    'url' : url,
+	    'dataType' : 'text',
+	    'success' : cont,
+	    'async' : false
+	});
+	
+	//proxyAjax('get', url, '', cont, false, 'text');
+	console.log(res);
+	
+	//$('mo').filter(function() {return $(this).attr('jobad:href') == currentElement;}).each(function() {$(this).attr('style', 'color:red !important');});
+	
+
+	//return true;
+    }
     
-    console.log(currentElement);
-    console.log(currentComponent);
-    console.log(currentPosition);
-    //return true;
-    return res.firstChild;
+    
+    var id = "div#" + RegExp.escape(mod);
+    
+    var a = $(id);
+        
+    var spres = res.split("\n"); 
+    var rows = spres.length;
+    var columns = 20;
+    var i;
+    for (i = 0; i < spres.length; ++i) {
+	if (spres[i].length > columns)
+	    columns = spres[i].length
+    }
+
+    a.html("<textarea rows=\"" + rows +"\" cols=\"" + columns + "\">" + res + "</textarea><br/>" + "<button onClick=compileText(\"" + mod + "\") class=\"ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only\" role=\"button\" aria-disabled=\"false\">Compile</button><div class=\"parser-response\"></div>");
+    return res;
+}
+
+function compileText(mod) {
+    var id = "div#" + RegExp.escape(mod);   
+    var text = $(id + " textarea").val()//.replace(/[#]/g, "\\$&");
+    console.log(text);
+    var cont = function(data) {
+	console.log(data);
+	$(id + " div.parser-response").html("<table id=\"generated_78\" class=\"decllist foldee\" cellpadding=\"5px\" title=\"false\">" + data + "</table>");
+    }
+    $.ajax({
+	'type' : 'post',
+	'url' : "/:parse?" + mod,
+	'dataType' : 'text',
+	'data' : {'text' : text}, 
+	'success' : cont
+    });
+
+}
+
+RegExp.escape = function(text) {
+    return text.replace(/[!\"#$%&'()*+,.\/:;<=>?@[\]^`{|}~]/g, "\\$&");
 }
 
 
@@ -199,7 +255,7 @@ function cond_parse(str, arr){
 // for initialization: wrap all jobad:conditional elements in mactions
 function createMactions(root) {
    $(root).find('[jobad:conditional]').filter(function(){
-      return (getTagName(this.parent) !== 'maction');
+      return (geTagName(this.parent) !== 'maction');
    }).each(function(){
       createMactionElement(null, 'conditional', this);
    });
@@ -379,7 +435,7 @@ var visibMenu = [
    ["implicit arguments", '', visibSubmenu('implicit-arg')],
    ["implicit binders", '', visibSubmenu('implicit-binder')],
    ["redundant brackets", '', visibSubmenu('brackets')],
-   ["diff", "diff()"],
+   ["edit", "edit()"],
 
 ];
 latin.contextMenuEntries = function(target){
@@ -435,7 +491,7 @@ function XMLElem(tag, content) {return XMLElem1(tag, null, null, content);}
 function XMLElem1(tag, key, value, content) {
   var atts = (key == null) ? "" : XMLAttr(key,value);
   var begin = '<' + tag + atts;
-  if (content == null) {
+    if (content == null) {
     return begin + '/>';
   } else {
     return begin + '>' + content + '</' + tag + '>';

@@ -183,10 +183,11 @@ $.fn.filterMAttr = function(attr, value) {
 //bind all document events to the respective functions
 function keyPress(key){
     for (x in loadedModules) {
-        loadedModules[x][2].keyPressed(key);
+	console.log(loadedModules[x])
+        //loadedModules[x][2].keyPressed(key);
     }
 }
-document.onkeypress = keyPress;
+//document.onkeypress = keyPress;
 
 /**
  * cmClear() - clears the context Menu

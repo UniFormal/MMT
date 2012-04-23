@@ -1,5 +1,8 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
+import modules.DeclaredTheory
+import objects._
+import parser._
 import presentation._
 import documents._
 import patterns._
@@ -67,12 +70,14 @@ object Action extends RegexParsers {
    private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
    private def defaultget = presentation ^^ {p => DefaultGet(p)}
    private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
-   private def presentation = present | tonode | deps | tostring
+   private def presentation = present | tonode | totext | deps | tostring
    private def tonode = content <~ "xml" ^^ {c => ToNode(c)}
    private def present = content ~ ("present" ~> mpath) ^^ {case c ~ p => Present(c,p)}
    private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
    private def deps = path <~ "deps" ^^ {case p => Deps(p)}
+   private def totext = content <~ "text" ^^ {c => ToText(c)}
    private def tostring = content ^^ {c => ToString(c)}
+
    private def content = closure | elaboration | component | get
    private def closure = path <~ "closure" ^^ {p => Closure(p)}
    private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
@@ -233,6 +238,34 @@ case class ToString(c : MakeAbstract) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toString)}
    override def toString = c.toString
 }
+
+case class ToText(c : MakeAbstract) extends MakeConcrete {
+
+  def make(controller : Controller, rb : RenderingHandler) {
+    val con = c.make(controller)
+    println("Action -> ToText # content : " + con.toString)
+    con match {
+      case d : DeclaredTheory =>
+        val decs = controller.memory.content.getDeclarationsInScope(d.path) collect {
+          case c : Constant => c.not match {
+            case None => new Operator(c.path, parser.Notation(List(StrMk(c.path.last)), parser.NotationProperties(parser.Precedence(0), parser.AssocNone())))
+            case Some(not) => new Operator(c.path, not)
+          }
+        }
+        d.path.last match {
+          case "test2" => rb(TextNotation.present(d, decs ::: LFGrammar.latexGrammar(Nil).operators))
+          case _ => rb(TextNotation.present(d, decs ::: LFGrammar.grammar.operators))
+        }
+      case _ =>
+        println("TODO")
+        rb(c.make(controller).toString)
+    }
+
+  }
+  override def toString = c.toString + " text"
+
+}
+
 /** takes a content element and renders it using notations */
 case class Present(c : MakeAbstract, nset : MPath) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {

@@ -3,7 +3,9 @@ import info.kwarc.mmt.api._
 import metadata._
 import documents._
 import modules._
-import presentation._
+import parser.{TextNotation, Parser, Notation, LFGrammar}
+
+//import presentation._
 import objects._
 import symbols._
 import utils._
@@ -15,24 +17,11 @@ import scala.collection.mutable._
 /** A TextReader parses Twelf (for now) and calls controller.add(e) on every found content element e */
 class TextReader(controller : frontend.Controller, report : frontend.Report) extends Reader(controller, report) {
 
-
-  // ------------------------------- document level -------------------------------
-
-
-  /** crawls a file.
-    * @return a LinkedList of errors that occurred during parsing
-    * @throws TextParseError for non-recoverable errors that occurred during parsing
-    * note that line and column numbers start from 0 */
-  def readDocument(source : scala.io.Source, dpath_ : DPath) : Pair[Document, LinkedList[TextParseError]] =
-  {
-    // initialization
-    lines = source.getLines.toArray                          // get all lines from the file
-    source.close       // does this really close the underlying file, which will be a BufferedSource?
+  private def init() {
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
     errors = LinkedList[TextParseError] ()
     keepComment = None
-    dpath = dpath_
     currentNS = None
     prefixes = new LinkedHashMap[String,URI] ()
 
@@ -44,6 +33,37 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       lineNumber += 1
     }
 
+  }
+
+  // ------------------------------- document level -------------------------------
+
+
+  /** crawls a file.
+    * @return a LinkedList of errors that occurred during parsing
+    * @throws TextParseError for non-recoverable errors that occurred during parsing
+    * note that line and column numbers start from 0 */
+  def readDocument(source : scala.io.Source, dpath_ : DPath) : Pair[Document, LinkedList[TextParseError]] =
+  {
+    // initialization
+    lines = source.getLines.toArray
+    source.close
+    dpath = dpath_
+    init()
+
+    readDocument()
+  }
+
+  def readDocument(source : String, dpath_ : DPath) : Pair[Document, LinkedList[TextParseError]] = {
+    //initialization
+    lines = source.split("\n").toArray
+    dpath = dpath_
+    init()
+
+    readDocument()
+  }
+
+
+  private def readDocument() : Pair[Document, LinkedList[TextParseError]] = {
     var i = 0  // position in the flattened file
 
     // add (empty, for now) narrative document to the controller
@@ -63,10 +83,12 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
        i = skipwscomments(i)
    
        while (i < flat.length) {
-         if (flat.startsWith("%namespace", i))
+         if (flat.startsWith("%namespace", i)){
            i = crawlNamespaceBlock(i)
-         else if (flat.startsWith("%sig", i))
+         }
+         else if (flat.startsWith("%sig", i)){
            i = crawlTheory(i)
+         }
          else if (flat.startsWith("%view", i))
            i = crawlView(i)
          else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) // unknown top-level %-declaration => ignore it
@@ -273,6 +295,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     def computeReturnValue = {
       val obj = OMSemiFormal((objects.Text("Twelf", getSlice(start, i - 1))))
       addSourceRef(obj, start, i - 1)
+      //val t : Term = MMTParser.parse(obj)(mem : Memory)
       Pair(obj, i)
     }
 
@@ -378,12 +401,15 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private def expectNext(start: Int, whatToExpect: String, acceptComments: Boolean = true) : Int =
   {
     var i = 0
-    if (acceptComments)
+    if (acceptComments) {
       i = skipwscomments(start)
-    else
+    }
+    else {
       i = skipws(start)
-    if (i == flat.length || !flat.startsWith(whatToExpect, i))
+    }
+    if (i == flat.length || !flat.startsWith(whatToExpect, i)) {
       throw TextParseError(toPos(start), whatToExpect + " expected")
+    }
     return i
   }
 
@@ -410,7 +436,6 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   {
     var i = skipws(start + "%namespace".length)    // jump over %namespace
 
-
     var endsAt : Int = 0
     if (flat.charAt(i) == '"') {
       // An absolute URI which becomes the current namespace URI
@@ -426,6 +451,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         currentNS = Some(uri)
       else
         currentNS = Some(currentNS.get.resolve(uri).normalize)
+
     }
     else {
       // A namespace alias declaration
@@ -441,6 +467,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       } catch {
         case exc: java.net.URISyntaxException => throw TextParseError(toPos(i), "" + exc.getMessage)
       }
+
       endsAt = expectNext(positionAfterString, ".", false)
       if (currentNS == None)
         throw TextParseError(toPos(i), "current namespace must be defined before the namespace alias declaration")
@@ -448,6 +475,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         val absoluteRemoteURI = currentNS.get.resolve(uri).normalize
         prefixes += Pair(alias, absoluteRemoteURI)
       }
+
     }
     return 1 + endsAt
   }
@@ -621,38 +649,57 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = positionAfter
     i = skipwscomments(i)
 
+    //initializing term parser
+    val constants = controller.memory.content.getDeclarationsInScope(parent.path) collect {
+      case c : Constant => c
+    }
+
+    val grammar = if (parent.path.last == "test2") {
+      println("USING THE RIGHT GRAMMAR")
+      LFGrammar.latexGrammar(constants)
+    } else {
+      LFGrammar.grammar(constants)
+    }
+    val parser = new Parser(grammar, lineStarts.toList)
+    parser.init()
+
+
     // read the optional type
-    var constantType : Option[OMSemiFormal] = None
+    var constantType : Option[Term] = None
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i)
-      constantType = Some(term)
+      constantType = Some(parser.parse(term, i))
       i = posAfter
       i = skipwscomments(i)
     }
 
     // read the optional definition
-    var constantDef : Option[OMSemiFormal] = None
+    var constantDef : Option[Term] = None
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i)
-      constantDef = Some(term)
+      constantDef = Some(parser.parse(term, i))
       i = posAfter
       i = skipwscomments(i)
     }
 
+
+
     // read the optional notation
-    var constantNotation : Option[NotationProperties] = None
+    //TODO Notation
+    var constantNotation : Option[Notation] = None
     if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '='
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i)
 
-      val notationProperties = Notation.parseInlineNotation(term.toString)
-      addSourceRef(notationProperties, i, posAfter - 1)
-      constantNotation = Some(notationProperties)
+      //val notationProperties = Notation.parseInlineNotation(term.toString)
+      val notation = TextNotation.parse(term.toString)
+      addSourceRef(notation, i, posAfter - 1)
+      constantNotation = Some(notation)
 
       i = posAfter
       i = skipwscomments(i)
@@ -661,7 +708,8 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = new Constant(parent.toTheoryObj, LocalName(cstName), constantType, constantDef, None, constantNotation)
+
+    val constant = new Constant(parent.toTheoryObj, LocalName(cstName), constantType, constantDef, None, constantNotation)//TODO notation
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)

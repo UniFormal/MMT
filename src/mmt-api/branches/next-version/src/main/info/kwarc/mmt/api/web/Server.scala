@@ -5,6 +5,7 @@ import frontend._
 import backend._
 import ontology._
 import modules._
+import utils.URI
 import zgs.httpd._
 import zgs.httpd.let._
 import scala.util.parsing.json.{ JSONType, JSONArray, JSONObject }
@@ -35,6 +36,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
     new String(bodyArray, "UTF-8")
   }
+
   private def bodyAsXML(tk: HTalk): Node = {
     val bodyString = bodyAsString(tk)
     val bodyXML = try {
@@ -78,6 +80,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           }
         case ":uom" :: _ => Some(UomResponse)
         case ":search" :: _ => Some(MwsResponse)
+        case ":parse" ::_ => Some(ParserResponse)
         case ":mmt" :: _ => Some(MmtResponse)
         // empty path 
         case List("") | Nil => Some(resourceResponse("browse.html"))
@@ -172,6 +175,39 @@ class Server(val port: Int, controller: Controller) extends HServer {
       XmlResponse(resp).act(tk)
     }
   }
+
+  private def ParserResponse : HLet = new HLet {
+    def act(tk : HTalk) {
+      val text = tk.req.param("text").getOrElse(throw ServerError(<error><message>found no text to parse</message></error>))
+      tk.req.query.split("\\?").toList match {
+        case strDPath :: strThy :: Nil =>
+          val dpath = DPath(URI(strDPath))
+          val mpath = dpath ? LocalPath(strThy :: Nil)
+          val ctrl = new Controller()
+          val reader = new TextReader(ctrl, new Report)
+          val res = reader.readDocument(text, dpath)
+          println(res)
+          println("param : " + text)
+          println("theory : " + ctrl.get(mpath).toNode)
+          res._2.toList match {
+            case Nil =>
+              controller.memory.content.update(ctrl.memory.content.getModule(mpath))
+              try {
+                controller.compChecker.check(mpath)
+                val nset = DPath(URI("http://cds.omdoc.org/foundations/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
+                val rb = new presentation.XMLBuilder()
+                controller.presenter(controller.get(mpath), presentation.GlobalParams(rb, nset))
+                XmlResponse(rb.get()).act(tk)
+              }  catch {
+                case e : Throwable => TextResponse(e.toString).act(tk)
+              }
+            case l => TextResponse(l.mkString("\n")).act(tk)
+          }
+        case _ => throw ServerError(<error><message> invalid theory name in query : {tk.req.query}</message></error>)
+      }
+    }
+  }
+
 
   /** Response when the first path component is :mmt */
   private def MmtResponse: HLet = new HLet {
