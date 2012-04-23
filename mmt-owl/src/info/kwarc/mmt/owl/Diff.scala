@@ -12,10 +12,8 @@ import scala.xml._
 object Diff{
   def main(args: Array[String]) {
     
-    val report = new FileReport(new java.io.File("controller.log"))
-	val checker = new FoundChecker(new DefaultFoundation, report)
-	val firstController = new Controller(checker, report)
-    val secondController = new Controller(checker, report)
+	val firstController = new Controller
+    val secondController = new Controller
 	firstController.handle(ExecFile(new java.io.File("startup.mmt")))
 	secondController.handle(ExecFile(new java.io.File("startup.mmt")))
 	 
@@ -31,7 +29,7 @@ object Diff{
 //    println(diff.toNode.toString())
     val pretty = new PrettyPrinter (150, 3) 
     println(pretty.format(diff.toNode))
-   
+       
   }
   
   

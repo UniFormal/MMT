@@ -119,7 +119,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	        }
 	      } else
 	    	n
-		val constant = new Constant( OMMOD(currThy), name, Some(tp), None, None)
+		val constant = new Constant(OMMOD(currThy), name, Some(tp), None, None, None)
 		//theory name: ex, class name:woman, type, none for definition
 		constant.metadata = md
 		controller.add(constant)
@@ -597,9 +597,7 @@ class OWLCompiler extends Compiler {
        val source : File = in
        val target : File = out.setExtension("omdoc")
       
-       val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
-	   val checker = new FoundChecker(new DefaultFoundation, report)
-	   val controller = new Controller(checker, report)
+	   val controller = new Controller
 	   controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
 	   val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 	   val importer = new Import (manager, controller)
