@@ -77,9 +77,9 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   ontoIRI
    }
    
-   def classToOWL (t: SeqItem) : OWLClassExpression = { // t: Term
+   def classToOWL (t: Term) : OWLClassExpression = { // t: Term
 	   t match {
-	  	 case OMID(p) => dataFactory.getOWLClass(globalNameToIRI(p))
+	  	 case OMS(p) => dataFactory.getOWLClass(globalNameToIRI(p))
 	  	 //case t : OMID => val p = t.gname
 	 
     	 case OMA(OWL2OMS("OWL2SUB","objectIntersectionOf"), args) =>
@@ -197,17 +197,17 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   }
    }
 
-   def individualToOWL(t: SeqItem) : OWLIndividual = {
+   def individualToOWL(t: Term) : OWLIndividual = {
 	   t match {
-	  	 case OMID(p) => dataFactory.getOWLNamedIndividual(globalNameToIRI(p))
+	  	 case OMS(p) => dataFactory.getOWLNamedIndividual(globalNameToIRI(p))
 	   //case getOWLAnonymousIndividual getIDI
 	  	 case _ => throw Exception("none of the individuals")
 	   }
    }
   
-   def propertyToOWL(t: SeqItem) : OWLObjectPropertyExpression = {
+   def propertyToOWL(t: Term) : OWLObjectPropertyExpression = {
    		 t match  {
-	  	   case OMID(p) => dataFactory.getOWLObjectProperty(globalNameToIRI(p))
+	  	   case OMS(p) => dataFactory.getOWLObjectProperty(globalNameToIRI(p))
 	  	   case OMA(OWL2OMS("OWL2QLRL", "objectInverseOf"), args) =>
 	  	        val inverse = propertyToOWL(args(0))
 	  	        dataFactory.getOWLObjectInverseOf(inverse)
@@ -215,16 +215,16 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	}
    }
    
-   def dataPropertyToOWL(t: SeqItem) : OWLDataPropertyExpression = {
+   def dataPropertyToOWL(t: Term) : OWLDataPropertyExpression = {
 	   t match {
-	     case OMID(p) => dataFactory.getOWLDataProperty(globalNameToIRI(p))
+	     case OMS(p) => dataFactory.getOWLDataProperty(globalNameToIRI(p))
 	     case _ => throw Exception("none of the data property expressions")
 	   }
    }
   
-   def dataRangeToOWL(t : SeqItem) : OWLDataRange = {
+   def dataRangeToOWL(t : Term) : OWLDataRange = {
    	   t match {
-		 case OMID(p) =>
+		 case OMS(p) =>
    		     val iri : IRI = t match {
    		    	 case OWLOMS("OWL1Datatype",d1) => IRI.create("http://www.w3.org/2001/XMLSchema#" + d1)
    		    	  		    	
@@ -268,7 +268,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
    	   }
    }
 
-   def literalToOWL(t : SeqItem) : OWLLiteral = {
+   def literalToOWL(t : Term) : OWLLiteral = {
 	    t match {
 		case OMF(lt) => dataFactory.getOWLLiteral(lt)
 		case OMI(lt) => dataFactory.getOWLLiteral(lt.toInt)
@@ -293,7 +293,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 		}
 	}
 
-   def facetToOWL(t : SeqItem) : OWLFacetRestriction = {
+   def facetToOWL(t : Term) : OWLFacetRestriction = {
 	   t match {
 	  	 case OMA(OWL2OMS("OWL2SUB", "facetRestriction"), args) =>
 	  	 val facet = args(0) match {
@@ -307,7 +307,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   }
    }
  
-   def termToInt (t: SeqItem) : Int = {
+   def termToInt (t: Term) : Int = {
 	   t match { 
 	  	 case OMI(i) => i.toInt 
 	  	 case _ => throw Exception("not an integer")
@@ -543,21 +543,15 @@ object Export {
 	def main(args: Array[String]) {
 		
 		val controller = new Controller
-		controller.setFileReport(utils.File("controller.log"))
-		controller.setCheckStructural
 		controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
 		val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 		val exporter = new Export (manager, controller)
-		/*	
-			val source : File = new File(arg(0))
-			val target : File = new File(arg(1))			
-		*/
+			
+		//val source : File = new File(arg(0))
+		//val target : File = new File(arg(1))			
+		
 		//val file : File = new File("examples\\ex2.owl");
-		
-		//val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literal.omdoc")		
-		//val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Literal\\literalToOWL.owl")
-		
-							
+								
 		val source : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc")		
 		val target : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2ToOWL.owl")
 		
