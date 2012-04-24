@@ -571,11 +571,9 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             val occb = checkTerm(home, context, binder)
             val occv = bound.variables.flatMap {
                // not checking the attributions
-               case TermVarDecl(_, tp, df, attrs @ _*) => 
+               case VarDecl(_, tp, df, attrs @ _*) => 
                  List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkTerm(home, newcontext, _))                     
-/*               case SeqVarDecl(_, tp, df) => 
-                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkSeq(home, newcontext, _))
-*/            }
+            }
             val occc = if (condition.isDefined) checkTerm(home, newcontext, condition.get)
                else Nil
             val occs = checkTerm(home, newcontext, scope)
@@ -594,11 +592,9 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
          case t @ OMSub(arg, via) =>
             val bigcon = context ++ via
             val occvia = via.variables.toList flatMap {
-               case TermVarDecl(n, t, d, atts @ _*) =>
+               case VarDecl(n, t, d, atts @ _*) =>
                   t.map(checkTerm(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _)).getOrElse(Nil)
-/*               case SeqVarDecl(n, t, d) =>
-                  t.map(checkSeq(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkSeq(home, bigcon, _)).getOrElse(Nil)
-*/               }
+              }
             val occarg = checkTerm(home, bigcon, arg)
             occvia ::: occarg
          case OMHID => Nil//TODO roles
@@ -611,42 +607,21 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
          case OMSTR(s) => Nil //TODO check if strings are permitted
          case OMF(d) => Nil //TODO check if floats are permitted
          case OMSemiFormal(t) => Nil //TODO
-         //case Index(seq,ind) => checkSeq(home,context,seq) ::: checkTerm(home,context,ind)
       }
    }
-/*   def checkSeq(home : Term, context : Context, s : objects.Sequence)(implicit mem: ROMemory) : List[Path] = s match {
-   	  case t: Term => checkTerm(home, context, t)
-   	  case SeqVar(n) =>
-          try {
-        	  context(n) match {
-   		  	    case SeqVarDecl(_,_,_) => Nil
-   		  	    case TermVarDecl(_,_,_,_*) => throw Invalid("sequence variable expected, found term variable: " + n)
-   	  	      }
-          } catch {
-        	  case LookupError(n) => throw Invalid("sequence variable is not declared: " + n) 
-          }
-   	  //case SeqSubst(ex,n,sq) => checkTerm(home,context ++ TermVarDecl(n,None,None),ex) ::: checkSeq(home,context,sq)
-      case SeqSubst(sq1,n,sq2) => checkSeq(home,context ++ TermVarDecl(n,None,None),sq1) ::: checkSeq(home,context,sq2)
-   	  case SeqUpTo(t) => checkTerm(home,context,t)
-   	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
-   }*/
+
    def checkContext(home: Term, con: Context)(implicit mem: ROMemory) : List[ContentPath] = {
       con.flatMap {
-    	  case TermVarDecl(name, tp, df, attrs @_*) => 
+    	  case VarDecl(name, tp, df, attrs @_*) => 
     	   val tpl = tp.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
     	   val dfl = df.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
     	   tpl ::: dfl //TODO not checking attributes
-/*    	  case SeqVarDecl(name, tp, df, attrs @_*) => 
-    	   val tpl = tp.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
-    	   val dfl = df.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
-    	   tpl ::: dfl //TODO not checking attributes
-*/    }
+     }
    }
    def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit mem: ROMemory) : List[ContentPath] = {
       if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
       (from zip subs).flatMap {       
-    	  case (TermVarDecl(n,tp,df,attrs @ _*), TermSub(m,t)) if n == m => checkTerm(home,to,t) 
-    	//  case (SeqVarDecl(n,tp,df,attrs @ _*),SeqSub(m,s)) if n == m => checkSeq(home,to,s)
+    	  case (VarDecl(n,tp,df,attrs @ _*), Sub(m,t)) if n == m => checkTerm(home,to,t) 
     	  case (v,s) => throw Invalid("illegal case " + s + " for declaration " + v)
       }
    }

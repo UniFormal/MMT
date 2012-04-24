@@ -163,7 +163,9 @@ case class LocalName(steps: List[LNStep]) {
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
-   def apply(step: String) : LocalName = LocalName(NamedStep(step)) 
+   def apply(step: String) : LocalName = LocalName(NamedStep(step))
+   def parse(s:String) = Path.parseLocal(s).toLocalName
+   val Anon = LocalName(List())
 }
 /** a step in a LocalName */
 abstract class LNStep {

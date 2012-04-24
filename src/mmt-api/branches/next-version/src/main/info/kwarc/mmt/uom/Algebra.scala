@@ -208,7 +208,7 @@ class Lambda(lambda: GlobalName, app: GlobalName) {
                vars.take(numargs).zip(after)
             else
                vars.zip(after.take(numvars))
-            val sub = reds map {case (v,a) => TermSub(v.name, a)}
+            val sub = reds map {case (v,a) => Sub(v.name, a)}
             val reduced = scope ^ sub
             if (numvars > numargs)
                GlobalChange(OMBIND(OMID(lambda), vars.drop(numargs), reduced))

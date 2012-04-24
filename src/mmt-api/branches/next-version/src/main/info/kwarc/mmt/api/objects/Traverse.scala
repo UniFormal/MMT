@@ -24,11 +24,11 @@ object Traverser {
       def rec(t: Term)(implicit con : Context, state : State) = trav.doTerm(t)(con, state)
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
          c.zipWithIndex map {
-            case (TermVarDecl(n, t, d, attv @ _*), i) =>
+            case (VarDecl(n, t, d, attv @ _*), i) =>
                val conci = con ++ c.take(i+1)
                val newt = t.map(rec( _)(conci, state))
                val newd = d.map(rec( _)(conci, state))
-               TermVarDecl(n, newt, newd, attv :_*)  //TODO traversal into attributions
+               VarDecl(n, newt, newd, attv :_*)  //TODO traversal into attributions
 /*            case (SeqVarDecl(n, t, d), i) =>
                val conci = con ++ c.take(i+1)
                val newt = t.map(recSeq( _)(conci, state))

@@ -220,16 +220,16 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
  * An OMV represents a reference to a variable.
  * @param name the name of the referenced variable
  */
-case class OMV(name : String) extends Term {
+case class OMV(name : LocalName) extends Term {
    def head = None
    def role = Role_VariableRef
-   def components = Nil 
+   def components = List(StringLiteral(name.flat)) 
    /** the substutition this/s */
-   def /(s : Term) = TermSub(name, s)
+   def /(s : Term) = Sub(name, s)
    /** the declaration this:tp */
-   def %(tp : Term) = TermVarDecl(name, Some(tp), None)
-   def toNodeID(pos : Position) = <om:OMV name={name}/> % pos.toIDAttr
-   override def toString = name
+   def %(tp : Term) = VarDecl(name, Some(tp), None)
+   def toNodeID(pos : Position) = <om:OMV name={name.flat}/> % pos.toIDAttr
+   override def toString = name.flat
    def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t: Term) => t
@@ -238,7 +238,11 @@ case class OMV(name : String) extends Term {
 	  	   case None => this
        }
    
-   def toCML = <m:ci>{name}</m:ci>
+   def toCML = <m:ci>{name.flat}</m:ci>
+}
+
+object OMV {
+   def apply(n: String) : OMV = OMV(LocalName(n))
 }
 
 /**
@@ -607,7 +611,7 @@ object Obj {
                case p => throw new ParseError("Not a term: " + p + N.toString)
             }
          case <OMV/> =>
-            OMV(xml.attr(N,"name"))
+            OMV(LocalName.parse(xml.attr(N,"name")))
          case <OMA>{child @ _*}</OMA> if child.length == 3 && child.head.label == "OMS" && parseOMS(child.head, base) == mmt.morphismapplication =>
             val arg = parseTerm(child(1), nbase)
             val morph = parseTerm(child(2), nbase)
