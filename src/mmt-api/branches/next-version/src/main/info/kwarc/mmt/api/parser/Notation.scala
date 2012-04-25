@@ -227,7 +227,7 @@ object TextNotation {
 
     case OMBINDC(OMID(p), context, None, body) =>
       val tmpargs = context.variables collect {
-        case TermVarDecl(s, Some(tp),_,_) => s :: presentTerm(tp, operators) :: Nil
+        case VarDecl(s, Some(tp),_,_) => s :: presentTerm(tp, operators) :: Nil
       }
       val args = tmpargs.flatten
       operators.find(op => op.name == p) match {
@@ -240,7 +240,7 @@ object TextNotation {
           l.mkString(" ")
       }
 
-    case OMV(s) => s
+    case OMV(s) => s.flat
 
     case OMID(p) =>
       println("got here with " + p.toString)

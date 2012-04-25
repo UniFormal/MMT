@@ -96,9 +96,9 @@ object LFGrammar {
   val thy = DPath(URI("http://cds.omdoc.org/foundations/lf/lf.omdoc")) ? "lf"
 
   private def context(l : List[Token]) : Context = l match {
-    case StrTk(name,_) :: TermTk(tp,_) :: TermTk(df,_) :: Nil => Context(TermVarDecl(name,Some(tp), Some(df)))
-    case StrTk(name,_) :: TermTk(tp,_) :: Nil => Context(TermVarDecl(name,Some(tp), None))
-    case StrTk(name,_) :: Nil => Context(TermVarDecl(name,None, None))
+    case StrTk(name,_) :: TermTk(tp,_) :: TermTk(df,_) :: Nil => Context(VarDecl(LocalName.parse(name),Some(tp), Some(df)))
+    case StrTk(name,_) :: TermTk(tp,_) :: Nil => Context(VarDecl(LocalName.parse(name),Some(tp), None)) //TODO: FR changed OMV; parse may fail - OK?
+    case StrTk(name,_) :: Nil => Context(VarDecl(LocalName.parse(name),None, None))
 
     case _ => throw ParseError("Invalid arguments for binder")
   }

@@ -199,18 +199,19 @@ class Parser(grammar : Grammar, var lineStarts : List[(Int,Int)]) {
     case TermTk(t,tkp) => TermTk(t, tkp)
     case ExpTk(s, tks, tkp) => rewrite(tks)
     case StrTk(s, tkp) =>
-      val matchedOps = grammar.operators.filter(p => p.name.name.flat == s)
-      val inContext = grammar.context.isDeclared(s)
+      val matchedOps = grammar.operators.filter(p => p.name.name.flat == s) //TODO: use Names.resolve to find all possible matches?
+      val ln = LocalName.parse(s)
+      val inContext = grammar.context.isDeclared(ln)
       matchedOps match {
         case Nil =>
           if (inContext) {
-            TermTk(OMV(s), tkp)
+            TermTk(OMV(ln), tkp)
           } else {
             throw ParsingError("Lookup failed for symbol " + s, toRegion(tkp.start, tkp.end))
           }
         case hd :: Nil =>
           if (inContext) {
-            TermTk(OMV(s), tkp) //context shadows signature
+            TermTk(OMV(ln), tkp) //context shadows signature
           } else {
             TermTk(OMID(hd.name), tkp)
           }

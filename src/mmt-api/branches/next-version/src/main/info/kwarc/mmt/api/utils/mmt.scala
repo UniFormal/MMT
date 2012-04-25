@@ -22,10 +22,13 @@ object mmt {
    val poim = mmtsymbol("morphism-with")
    val poiw = mmtsymbol("morphism-extend") */
    val jokerbinder = mmtsymbol("joker")
-   val index = mmtsymbol("index")
    val ellipsis = mmtsymbol("ellipsis")
-   val seqmap = mmtsymbol("seqmap")
-   val nat = mmtsymbol("nat")
+   val index = mmtsymbol("index")
+   val seqmap = mmtsymbol("seqmap")   
    val seq = mmtsymbol("seq")
+   val nat = mmtsymbol("nat")
+   val plus = mmtsymbol("plus")
+   val minus = mmtsymbol("minus")
+   val times = mmtsymbol("times")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }
