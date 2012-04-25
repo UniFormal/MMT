@@ -43,7 +43,7 @@ object LF {
 object Lambda {
    def apply(name : String, tp : Term, body : Term) = OMBIND(LF.constant("lambda"), OMV(name) % tp, body)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
-	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None,_*)), s) if b == LF.constant("lambda")  || b == LF.constant("implicit_lambda")=> Some(n,t,s)
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.constant("lambda")  || b == LF.constant("implicit_lambda")=> Some((n.flat,t,s))
 	   case _ => None
    }
 }
@@ -54,9 +54,9 @@ object Pi {
    
    def apply(con: Context, body : Term) = OMBIND(LF.constant("Pi"), con, body) //(?)
    def unapply(t : Term) : Option[(String,Term,Term)] = t match {
-	   case OMBIND(b, Context(TermVarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.constant("Pi") || b == LF.constant("implicit_Pi") =>
-	      if (rest.isEmpty) Some((n,t,s))
-	      else Some((n,t, Pi(rest.toList,s)))
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.constant("Pi") || b == LF.constant("implicit_Pi") =>
+	      if (rest.isEmpty) Some((n.flat,t,s))
+	      else Some((n.flat,t, Pi(rest.toList,s)))
 	   case OMA(LF.arrow,args) =>
 	      val name = "" //TODO: invent fresh name here
 	      if (args.length > 2)
@@ -150,7 +150,7 @@ class LFF extends Foundation {
 	   s match {
 	   	case Univ(1) => T == Univ(2)
 	   	case Const(path) => equal(lookuptype(path), T, G)
-	   	case OMV(name) =>  equal(T, G(name).asInstanceOf[TermVarDecl].tp.get, G) //TODO; why not equal(T, G(name), G)?; what does G(name) return?  
+	   	case OMV(name) =>  equal(T, G(name).asInstanceOf[VarDecl].tp.get, G) //TODO; why not equal(T, G(name), G)?; what does G(name) return?
 	   	case Lambda(x, a, t) =>
 	   		val G2 = G ++ OMV(x) % a
 	   		reduce(T,G) match { //we reduce the type -> dependent type gets instantiated
@@ -249,7 +249,7 @@ class LFF extends Foundation {
 	   s match {
 	   		case Univ(1) => Univ(2)
 	   		case Const(path) => lookuptype(path)
-	   		case OMV(name) => G(name).asInstanceOf[TermVarDecl].tp.get // modify it as in check
+	   		case OMV(name) => G(name).asInstanceOf[VarDecl].tp.get // modify it as in check
 	   		case Lambda(name, tp, body) =>
 	   			val G2 = G ++ OMV(name) % tp
 	   			Pi(name,tp,infer(body, G2))
