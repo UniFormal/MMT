@@ -23,8 +23,7 @@
  <Declaration>
   <DataProperty IRI="hasAge"/>
  </Declaration>
-   
- <Declaration>
+    <Declaration>
   <NamedIndividual IRI="Liz"/>
  </Declaration>
  
