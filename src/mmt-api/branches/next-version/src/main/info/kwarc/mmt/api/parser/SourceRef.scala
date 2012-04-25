@@ -1,7 +1,10 @@
-package info.kwarc.mmt.api
+package info.kwarc.mmt.api.parser
+import info.kwarc.mmt.api._
 import utils._
 
-/** Start and end coordinates of a block
+/** region in a source block
+ * @param start inclusive start position
+ * @param end inclusive end position
  */
 case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   /** inverse of SourceRegion.parse */
@@ -10,6 +13,7 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   def twoDimString = start.twoDimString + "-" + end.twoDimString
 }
 
+/** helper object */
 object SourceRegion {
   /** parses the format start-end */
   def parse(s: String) : SourceRegion = {
@@ -19,7 +23,11 @@ object SourceRegion {
    }
 }
 
-/** Start and end two-dimensional coordinates of a block
+/** position in a source block; both one and two-dimensional coordinates are maintained
+ * @param offset one-dimensional coordinate
+ * @param line vertical two-dimensional coordinate
+ * @param column horizontal two-dimensional coordinate
+ * all coordinates start from 0
  */
 case class SourcePosition(offset: Int, line: Int, column: Int) {
   /** inverse of SourcePosition.parse */
@@ -27,6 +35,7 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   def twoDimString = line + "." + column
 }
 
+/** helper object */
 object SourcePosition {
    /** parses the format offset.line.column */
    def parse(s: String) : SourcePosition = {
@@ -41,6 +50,10 @@ object SourcePosition {
    }
 }
 
+/** region in an identified source block
+ * @param container URI of the source document
+ * @param region in that document
+ */
 case class SourceRef(container: URI, region: SourceRegion) {
    def toURI = container ## region.toString
    override def toString = toURI.toString 
