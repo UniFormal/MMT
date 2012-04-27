@@ -21,6 +21,7 @@ case class NotFound(path : Path) extends java.lang.Throwable
 
 /** An interface to a controller containing read-only methods. */
 abstract class ROController {
+   val memory : ROMemory
    val localLookup : Lookup
    val globalLookup : Lookup
    def get(path : Path) : StructuralElement
@@ -65,6 +66,8 @@ class Controller extends ROController {
    val textReader = new TextReader(this, report)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(xmlReader, extman, report)
+   /** the checker for the validation of ContentElement's and objects */
+   val checker = new Checker(this)
    /** the MMT rendering engine */
    val presenter = new presentation.Presenter(this, report)
    /** the query engine */
@@ -74,16 +77,6 @@ class Controller extends ROController {
 
    protected def log(s : => String) = report("controller", s)
 
-   val compChecker = new ComponentChecker(extman, memory)
-   /** the checker is used to validate content elements */
-   private var checker : Checker = NullChecker
-   def setCheckNone {checker = NullChecker}
-   def setCheckStructural {checker = new StructuralChecker(report)}
-   def setCheckFoundational(foundation: Foundation) {checker = new FoundChecker(foundation, report)}
-
-   def setFileReport(file: File) {report.addHandler(new FileHandler(file))}
-   def setConsoleReport {report.addHandler(ConsoleHandler)}
-   
    /** a lookup that uses only the current memory data structures */
    val localLookup = library
    /** a lookup that load missing modules dynamically */
@@ -140,32 +133,10 @@ class Controller extends ROController {
    /** adds a knowledge item */
    def add(e : StructuralElement) {
       iterate (e match {
-         case c : ContentElement => addContent(c)
+         case c : ContentElement => memory.content.add(c)
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
       })
-      Extract(e, memory.ontology += _) //this should return all declaration-level relations
-   }
-
-   /**
-    * Validates and, if successful, adds a ContentElement to the theory graph.
-    * Note that the element already points to the intended parent element
-    * so that no target path is needed as an argument.
-    * @param e the element to be added
-    */
-   def addContent(e : ContentElement) {
-      log("adding: " + e.toString)
-      try {checker.check(e)(memory) match {
-         case ContentFail(msg) => throw AddError(msg)
-         case ContentSuccess(deps) =>
-            memory.content.add(e)
-            deps.map(memory.ontology += _)  //this should return only object level relations
-         case ContentReconstructed(rs, deps) =>
-            rs.foreach(memory.content.add)
-            deps.map(memory.ontology += _)
-      }} catch {
-         case e @ NotFound(_) => throw e
-      }
    }
 
    /**
@@ -326,6 +297,14 @@ class Controller extends ROController {
 	      case NoAction => ()
 	      case Read(f) => read(f)
 	      case ReadText(f) => readText(f)
+	      case Check(p) =>
+	         try {
+	            checker.check(p)(_ => ())
+	            log("check succeeded")
+	         } catch {
+	          case e: Error =>
+	            log("check failed\n" + e.getMessage)
+	         }
 	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)

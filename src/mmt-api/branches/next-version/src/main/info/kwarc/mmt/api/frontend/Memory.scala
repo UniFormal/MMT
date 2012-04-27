@@ -8,6 +8,7 @@ import ontology._
 /** A read-only abstraction of memory */
 abstract class ROMemory {
    val ontology : RelStore
+   val narration: RODocStore
    val content : Lookup
 }
 

@@ -2,11 +2,12 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
-//import patterns._
+import patterns._
 
-/** Helper object for ontologies */
-object Extract {
-   /** apply a function to every relational element in the given module */
+/** The Extractor produces the declaration-level relational representation of a SructuralElement
+ */
+object Extractor {
+   /** apply a continuation function to every relational element of a StructuralElement */
    def apply(e: StructuralElement, f: RelationalElement => Unit) {
       val path = e.path
       e match {
@@ -31,13 +32,13 @@ object Extract {
                      f(IsStructure(s.path))
                   case i: Include =>
                      f(Includes(t.path, i.from.toMPath)) 
-/*                  case p: Pattern =>
+                  case p: Pattern =>
                      f(dec)
-                     f(IsPattern(p.path)) PATTERNS
+                     f(IsPattern(p.path))
                   case i: Instance => 
                      f(dec)
                      f(IsInstanceOf(i.path, i.pattern))
-*/                  case a: Alias =>
+                  case a: Alias =>
                      f(IsAliasFor(a.path, a.forpath))
                      f(dec)
                   case _: Assignment =>

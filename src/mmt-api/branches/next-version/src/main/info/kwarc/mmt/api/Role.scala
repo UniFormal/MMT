@@ -43,6 +43,7 @@ case class  Role_application(role: Option[String]) extends Role(true,  "applicat
 case object Role_attribution         extends Role(true,  "attribution")
 case object Role_binding             extends Role(true,  "binding")
 case object Role_value               extends Role(false, "value")
+case object Role_reference           extends Role(false, "reference")
 case object Role_foreign             extends Role(false, "foreign")
 case object Role_index               extends Role(false, "index")
 case object Role_context             extends Role(false, "context")
@@ -89,6 +90,7 @@ object Role {
       case s if s.startsWith("application:") => Role_application(Some(s.substring(12)))
       case "attribution" => Role_attribution
       case "binding" => Role_binding
+      case "reference" => Role_reference
       case "substitution" => Role_substitution
       case "termsub" => Role_termsub
       case "context" => Role_context

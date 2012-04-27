@@ -63,10 +63,7 @@ case object HasCodomain extends Binary("S has codomain O")
 // constant - constant (not used yet)
 case object IsInstanceOf extends Binary("S is instance of O")
 
-// constant (assignment) - constant (deprecated)
-case object HasOccurrenceOfInType extends Binary("S refers to O in type")
-case object HasOccurrenceOfInDefinition extends Binary("S refers to O in definition")
-case object HasOccurrenceOfInTarget extends Binary("S refers to O")
+case object RefersTo extends Binary("S refers to O")
 
 //parent - child (many-many relation because a declaration may be referenced in other documents)
 case object Declares extends Binary("S contains declaration of O")
@@ -75,11 +72,10 @@ case object IsAliasFor extends Binary("S is alias for O")
 
 /** helper methods for Binary items */
 object Binary {
-   val all = List(HasOccurrenceOfInType,HasOccurrenceOfInDefinition,HasOccurrenceOfInTarget,
-                          DependsOn,Includes,IsAliasFor,HasMeta,HasDomain,HasCodomain,Declares)
+   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares)
    def parse(s: String) : Binary = all.find(_.toString == s) match {
       case Some(i) => i
-      case _ => HasOccurrenceOfInType // throw ParseError("binary predicate expected, found: " + s) //TODO temporary fix to parse obsolete data
+      case _ => throw ParseError("binary predicate expected, found: " + s)
    }
 }
 

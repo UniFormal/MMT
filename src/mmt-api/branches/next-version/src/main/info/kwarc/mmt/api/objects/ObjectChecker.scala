@@ -10,7 +10,37 @@ import objects.Conversions._
 case class UnresolvedConstraints() extends java.lang.Throwable
 
 abstract class Constraint
-case class EqualConstraint(t1: Term, t2: Term, context: Context)
+case class EqualConstraint(t1: Term, t2: Term, t: Term, context: Context)
+
+/*
+abstract class TypeConstructor {
+   def extensionalityRule(t: Term) : Term
+   def extensionalityRule(eq: EqualConstraint) : Option[List[EqualConstraint]]
+   def introSymbol: Path
+   def computationRule(t: Term): Option[Term]
+}
+
+class Unifier {
+   val typeCons : List[TypeConstructor]
+   def unify(con: Context, t1: Term, t2: Term, t: Term) {
+      normal MMT equality check
+      if t1 and t2 have the same shape and the same head, and the head is known to be an introSymbol (and thus injective) recurse into components
+      otherwise, try extend
+   }
+   def extend(con: Context, t1: Term, t2: Term, t: Term) {
+      (typeCons find {tc => (tc.typeSymbol == t.head)}) match {
+        case Some(tc) => unify (... tc.extensionalityRule(...) ...)
+        case None =>
+           compute(con, t1, t2)
+      }
+   }
+   def compute(con: Context, t1: Term, t2: Term) {
+      val t1C = typeCons findMap {tc => tc.computationRule(t1)}
+      val t2C = typeCons findMap {tc => tc.computationRule(t1)}
+      unify(..)
+   }
+}
+*/
 
 class ConstraintDelay(meta: Context) {
    var solution : Substitution = Substitution()
@@ -102,8 +132,6 @@ object Test {
    def log(msg : => String) = controller.report("user", msg)
 
    def main(args : Array[String]) : Unit = {
-      controller.setConsoleReport
-      controller.setFileReport(utils.File("test.log"))
       controller.handle(ExecFile(new java.io.File("test-init.mmt")))
       val oc = new ObjectChecker(controller.report)
       val t1 = OMV("x")

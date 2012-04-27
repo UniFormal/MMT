@@ -24,48 +24,52 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = controller | shell | getaction
-   private def controller = log | logon | logoff | local | catalog | archive | tntbase | importer | foundation | mws | server | execfile
-   private def shell = setbase | readText | read | printall | printallxml | clear | exit
-   private def log = logfile | logconsole
-   private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
-   private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
-   private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
-   private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
+
+   private def controller = log | local | catalog | archive | tntbase | importer | foundation | mws | server | execfile
+   private def log = logfile | logconsole | logon | logoff
+     private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
+     private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
+     private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
+     private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
    private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
    private def archive = archopen | archdim | archmar | archpres | svnarchopen
-   private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
-   private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
-   private def archdim = "archive" ~> str ~ dimension ~ (str ?) ^^ {
-      case id ~ dim ~ s =>
-         val segs = MyList.fromString(s.getOrElse(""), "/")
-         ArchiveBuild(id, dim, segs)
-   }
-   private def archpres = "archive" ~> str ~ ("present" ~> mpath) ~ (str ?) ^^ { 
-      case id ~ p ~ s =>
-        val segs = MyList.fromString(s.getOrElse(""), "/")
-        ArchiveBuild(id, "present", segs, List(p))
-   }
-   private def dimension = "compile" | "compile*" | "content" | "content*" | "check" | "mws-flat" | "mws" | "flat" |
-         "relational" | "notation" | "delete" | "clean" | "extract" | "integrate"
-
-   private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
+     private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
+     private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
+     private def archdim = "archive" ~> str ~ dimension ~ (str ?) ^^ {
+       case id ~ dim ~ s =>
+            val segs = MyList.fromString(s.getOrElse(""), "/")
+            ArchiveBuild(id, dim, segs)
+     }
+     private def archpres = "archive" ~> str ~ ("present" ~> mpath) ~ (str ?) ^^ { 
+        case id ~ p ~ s =>
+           val segs = MyList.fromString(s.getOrElse(""), "/")
+           ArchiveBuild(id, "present", segs, List(p))
+        }
+     private def dimension = "compile" | "compile*" | "content" | "content*" | "check" | "mws-flat" | "mws" | "flat" |
+           "relational" | "notation" | "delete" | "clean" | "extract" | "integrate"
+     private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
    private def foundation = "foundation" ~> str ~ (str *) ^^ {case f ~ args => AddFoundation(f, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def server = serveron | serveroff
-   private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
-   private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
+     private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
+     private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
+
+   private def shell = setbase | readText | read | check | printall | printallxml | clear | exit
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def readText = "readText" ~> file ^^ {f => ReadText(f)}
    private def read = "read" ~> file ^^ {f => Read(f)}
+   private def check = "check" ~> path ^^ {p => Check(p)}
    private def printall = "printAll" ^^ {case _ => PrintAll}
    private def printallxml = "printXML" ^^ {case _ => PrintAllXML}
    private def clear = "clear" ^^ {case _ => Clear}
    private def exit = "exit" ^^ {case _ => Exit}
+
    private def getaction = diff | tofile | respond | print | defaultget
+   private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
    private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
    private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
    private def defaultget = presentation ^^ {p => DefaultGet(p)}
@@ -73,11 +77,9 @@ object Action extends RegexParsers {
    private def presentation = present | tonode | totext | deps | tostring
    private def tonode = content <~ "xml" ^^ {c => ToNode(c)}
    private def present = content ~ ("present" ~> mpath) ^^ {case c ~ p => Present(c,p)}
-   private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
    private def deps = path <~ "deps" ^^ {case p => Deps(p)}
    private def totext = content <~ "text" ^^ {c => ToText(c)}
    private def tostring = content ^^ {c => ToString(c)}
-
    private def content = closure | elaboration | component | get
    private def closure = path <~ "closure" ^^ {p => Closure(p)}
    private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
@@ -122,6 +124,8 @@ case class ExecFile(file : java.io.File) extends Action {override def toString =
 case class Read(f : java.io.File) extends Action {override def toString = "read " + f}
 /** read a Twelf file */
 case class ReadText(f : java.io.File) extends Action {override def toString = "readText " + f}
+/** check a knowledge item */
+case class Check(p : Path) extends Action {override def toString = "check " + p}
 /** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */

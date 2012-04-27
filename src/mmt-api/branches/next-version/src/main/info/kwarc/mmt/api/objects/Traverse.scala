@@ -8,20 +8,25 @@ import Conversions._
  * A Traverser is a function on Term defined by context-sensitive induction.
  * 
  * The auxiliary methods in the companion object can be used to handle all cases that traverse the object without any change.
- * During the traversal, a value of type State is maintained that may be used to carry along state.  
+ * During the traversal, a value of type State may be used to carry along state.  
  */
 abstract class Traverser[State] {
    /** the main method to call the traverser, context defaults to empty */
-   def apply(t: Term, init : State, con : Context = Context()) : Term = doTerm(t)(con, init)
-   def doTerm(t: Term)(implicit con : Context , init : State) : Term
+   def apply(t: Term, init : State, con : Context = Context()) : Term = apply(t)(con, init)
+   def apply(t: Term)(implicit con : Context, init : State) : Term
 }
+
+/**
+ * A StatelessTraverser is like a Traverser but does not carry a state during the traversal.  
+ */
+abstract class StatelessTraverser extends Traverser[Unit]
 
 object Traverser {
    /**
     * This method traverses one level into a Term without changing anything and recursively calling a given Traverser.  
     */
-   def doTerm[State](trav : Traverser[State], t : Term)(implicit con : Context, state : State) : Term = {
-      def rec(t: Term)(implicit con : Context, state : State) = trav.doTerm(t)(con, state)
+   def apply[State](trav : Traverser[State], t : Term)(implicit con : Context, state : State) : Term = {
+      def rec(t: Term)(implicit con : Context, state : State) = trav.apply(t)(con, state)
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
          c.zipWithIndex map {
             case (VarDecl(n, t, d, attv @ _*), i) =>
@@ -29,12 +34,11 @@ object Traverser {
                val newt = t.map(rec( _)(conci, state))
                val newd = d.map(rec( _)(conci, state))
                VarDecl(n, newt, newd, attv :_*)  //TODO traversal into attributions
-/*            case (SeqVarDecl(n, t, d), i) =>
-               val conci = con ++ c.take(i+1)
-               val newt = t.map(recSeq( _)(conci, state))
-               val newd = d.map(recSeq( _)(conci, state))
-               SeqVarDecl(n, newt, newd)
-*/         }
+         }
+      def recSub(s: Substitution)(implicit con : Context, state : State) : Substitution =
+         s map {
+           case Sub(n,t) => Sub(n, rec(t))
+         }
 	   t match {
 		   case OMA(fun,args) => OMA(rec(fun), args.map(rec))
 		   case OME(err,args) => OME(rec(err), args.map(rec))
@@ -45,6 +49,7 @@ object Traverser {
 		   case OMID(_) => t
 		   case OMV(_) => t
 		   case OMHID => t
+		   case OMREF(uri, value, under) => OMREF(uri, value map rec, recSub(under))
 		   case OMFOREIGN(_) => t
 		   case OMI(_) => t
 		   case OMSTR(_) => t
@@ -63,20 +68,20 @@ object Traverser {
 /** A Traverser that moves all morphisms to the inside of a term. */
 object PushMorphs extends Traverser[Term] {
    // morph is the composition of all morphisms encountered so far 
-	def doTerm(t: Term)(implicit con : Context, morph : Term) : Term = t match {
+	def apply(t: Term)(implicit con : Context, morph : Term) : Term = t match {
 	   // change state: via is added to the morphisms
-		case OMM(arg, via) => doTerm(arg)(con, morph * via)
+		case OMM(arg, via) => apply(arg)(con, morph * via)
 		// apply the morphism to symbols
 		case OMID(path) => OMM(t, morph)
 		// in all other cases, traverse
-		case t => Traverser.doTerm(this,t)(con, morph)
+		case t => Traverser.apply(this,t)(con, morph)
 	}
 	def apply(t: Term, thy : info.kwarc.mmt.api.MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
 }
 
 /** A Traverser that applies a fixed substitution to a Term */
 object Substitute extends Traverser[Substitution] {
-	def doTerm(t: Term)(implicit con : Context, subs: Substitution) : Term = t match {
+	def apply(t: Term)(implicit con : Context, subs: Substitution) : Term = t match {
 		// substitute the free but not the bound variables
 	   case OMV(n) => if (con.isDeclared(n)) OMV(n) else subs(n) match {
 	  	   case Some(t: Term) => t
@@ -84,6 +89,14 @@ object Substitute extends Traverser[Substitution] {
 	  	   case Some(_) => throw SubstitutionUndefined(n, "substitution is applicable but does not provide a term")
 	   }
 	   // in all other cases, traverse
-		case t => Traverser.doTerm(this,t)(con, subs)
+		case t => Traverser.apply(this,t)(con, subs)
 	}
+}
+
+/** a Traverser that replaces all references with their resolution if available */
+object Flatten extends StatelessTraverser {
+   def apply(t: Term)(implicit con : Context, init: Unit) : Term = t match {
+      case r: OMREF if (r.isDefined) => apply(r.get.get)
+      case _ => Traverser(this,t)
+   }
 }

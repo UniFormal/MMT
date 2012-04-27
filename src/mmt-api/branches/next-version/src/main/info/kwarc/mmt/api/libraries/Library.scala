@@ -300,6 +300,24 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          case !(hd) => None
    }
                                         // TODO Term
+  /** gets the source of an Assignment declared in a DeclaredLink
+    * @param a the assignment
+    * @return the containing link and the source ContentElement
+    */
+   def getSource(a: Assignment) : (DeclaredLink, Symbol) = {
+      val p = a.home match {
+         case OMMOD(p) => p
+         case OMDL(OMMOD(p), name) => OMMOD(p) % name 
+         case _ => throw GetError("non-atomic link")
+      }
+      val l = get(p) match {
+         case l: DeclaredLink => l
+         case _ => throw GetError("non-declared link") 
+      }
+      val domain = l.from
+      val s = getSymbol(l.from % a.name)
+      (l, s)
+   }
    private def getContainer(m: Term, error: String => Nothing) : ContentElement = m match {
       case OMMOD(p) => get(p)
       case OMDL(OMMOD(p), !(n)) => get(OMMOD(p) % !(n), error) match {

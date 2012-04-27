@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.presentation._
+import objects._
+import modules._
+import presentation._
 
  /**
   * A ConstantAssignment represents an MMT assignment to a constant.<p>

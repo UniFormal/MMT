@@ -9,11 +9,9 @@ import info.kwarc.mmt.api.presentation._
 object Main {
 
   def main(args: Array[String]): Unit = {
-    val p = new DPath(mmt.baseURI / "set_theories" / "mizar" / "HIDDEN.omdoc")    
-    
-    val fc = new libraries.FoundChecker(new libraries.DefaultFoundation, new Report)
+    val p = new DPath(mmt.baseURI / "set_theories" / "mizar" / "HIDDEN.omdoc")
+    //TODO configure checking
     val cold = new Controller
-    cold.setFileReport(File("moc.log"))
     val cnew = new Controller
                                                                                                 2
     

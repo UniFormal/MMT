@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import libraries._
 import frontend._
 import modules._
-import ontology.{Transitive, ToObject, ToSubject, DependsOn}
+import ontology._
 import symbols._
 import objects._
 import utils._
@@ -226,7 +226,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
        log("[  -> REL ]     " + relFile.getPath)
        relFile.getParentFile.mkdirs
        val relFileHandle = File.Writer(relFile)
-       ontology.Extract(mod, r => relFileHandle.write(r.toPath + "\n"))
+       ontology.Extractor(mod, r => relFileHandle.write(r.toPath + "\n"))
        relFileHandle.close
     }
     private def writeToNot(mod: Module, nots : Iterator[presentation.Notation]) {
@@ -394,9 +394,8 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
            //controller.globalLookup.getModule(mpath)
       }
       traverse("content", in, extensionIs("omdoc")) {case inPath =>
-        val mpath = Archive.ContentPathToMMTPath(inPath)
-        controller.compChecker.check(mpath)
-        //controller.globalLookup.getModule(mpath)
+         val mpath = Archive.ContentPathToMMTPath(inPath)
+         controller.checker.check(mpath)(_ => ())
       }
       /*
       controller.compChecker.printStatistics()
@@ -469,7 +468,6 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
       log("done:  [CONT -> PRES]        -> " + inFile)
 
     }
-    
     
     def produceMWS(in : List[String] = Nil, dim: String) {
         val sourceDim = dim match {

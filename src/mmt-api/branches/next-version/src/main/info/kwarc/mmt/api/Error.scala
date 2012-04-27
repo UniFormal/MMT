@@ -40,4 +40,3 @@ case class SubstitutionUndefined(name: LocalName, m: String) extends Error("Subs
 // are these even used?
 case class ObjError(s : String) extends Error(s)
 case class LookupError(name : LocalName) extends Error("variable " + name.flat + " not declared in context")
-

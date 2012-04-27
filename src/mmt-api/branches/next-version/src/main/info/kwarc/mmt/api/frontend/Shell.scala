@@ -11,8 +11,6 @@ class Shell() extends {
    val controller = new Controller
 
    def main(args : Array[String]) : Unit = {
-      controller.setConsoleReport
-      controller.setFileReport(File("jomdoc.log"))
       val command = args.mkString("", " ", "")
       try {
          controller.handleLine(command)
@@ -29,6 +27,3 @@ class Shell() extends {
 
 /** A shell, the default way to run MMT as an application */
 object Run extends Shell()
-
-/** same as Run, obsolete */
-object RunNull extends Shell()

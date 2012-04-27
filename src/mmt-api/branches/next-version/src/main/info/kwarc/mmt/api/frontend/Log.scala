@@ -50,6 +50,7 @@ object ConsoleHandler extends ReportHandler("console") {
       val m = ind + group + ": " + msg
       println(m)
    }
+   override def toString = "console"
 }
 
 /** outputs to a file */
@@ -62,4 +63,5 @@ class FileHandler(val filename : File) extends ReportHandler(filename.toString) 
          file.println(m)
          file.flush
    }
+   override def toString = "file " + filename
 }

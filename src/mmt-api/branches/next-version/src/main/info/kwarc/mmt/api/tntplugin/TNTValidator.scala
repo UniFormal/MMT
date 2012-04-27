@@ -8,14 +8,13 @@ import info.kwarc.tntbase.pluginapi._
 /** TNT plugin that validates an MMT document using the default foundation */
 class TNTValidation extends Controller with TntIntegrationPlugin[String] {
    def init(lookup : TntPluginDocumentResolver[String]) {
-      setCheckStructural
       backend.addStore(TNTLookup(lookup))
    }
    def performAction(s : String, rev : Long, con : TntPluginContext) : String = {
       val p = Path.parse(s, base)
       val files = con.getValue("name").asInstanceOf[java.util.List[String]] // list of files in current transaction
       get(p)
-      val deps = Respond(Deps(p.doc), "").get(this)
+      val deps = Respond(Deps(p.doc), "").get(this) //TODO does not work anymore as dependencies are not stored by default
       deps.toString
    }
 }
