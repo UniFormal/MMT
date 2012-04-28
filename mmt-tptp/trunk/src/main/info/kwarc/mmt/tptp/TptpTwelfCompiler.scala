@@ -2,7 +2,7 @@ package info.kwarc.mmt.tptp
 
 import tptp._
 
-import info.kwarc.mmt.api._//{utils=>mmtutils}
+import info.kwarc.mmt.api._
 import documents._
 import utils._
 import frontend._
