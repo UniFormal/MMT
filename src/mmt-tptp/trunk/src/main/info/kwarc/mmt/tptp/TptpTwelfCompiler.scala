@@ -2,7 +2,7 @@ package info.kwarc.mmt.tptp
 
 import tptp._
 
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api._//{utils=>mmtutils}
 import documents._
 import utils._
 import frontend._
@@ -13,11 +13,11 @@ import modules._
 import objects._
 import presentation._
 
-import info.kwarc.mmt.lf.Twelf
+import info.kwarc.mmt.lf.Twelf // maybe don't need this
 
-/* ?	need this to execute shell commands	?
-*/
-import scala.sys.process._
+import scala.sys.process._ // need this to execute shell commands
+//import scala.io._ // to write to file
+//import java.io._ // *
 
 
 /**
@@ -47,34 +47,36 @@ class TptpTwelfCompiler extends Compiler {
     // output dir
     var outDir : String = out.toString().substring(0,out.toString().lastIndexOf("/")) 
     
-    out.setExtension("elf")
-     
-    
+    val fileout = out.setExtension("elf")
+         
     log("running tptp2X script on file " + fileName + " .....")
-    //log(tptp2Xpath.toString)
- //   log(in.toString())
-    log(out.toString())
-  //  log(outDir)
-    
-    val myEnv = new Env(tptp2Xpath.toString())
-    
+    log(fileout.toString())
+    log(in.toString)
+
     /* 
      * runs tptp2X script
      * 
      * with parameters:
      * 
-     *  -f+lf format twelf
-     *  -d output directory
-     */ 
-    //myEnv.run("tcsh","tptp2X", "-flf", "-d-", in.toString(), ">" , out.toString())
-
+     *  -flf format twelf
+     *  -d- output directory - stdout
+     */
     
-    Runtime.getRuntime().exec("tcsh /home/aivaras/tptp2X -flf -d- " + in.toString() + " > " + out.toString())
+    val tptp2xcomp = "tptp2X"
+    val flags : String = "-flf -d- -q2"
+    val cmd = "tcsh " + tptp2Xpath + tptp2xcomp + " " + flags + " " + in.toString()
     
-    log("compiled to " + out.toString())
+    log("about to run!!!")
+    
+    var outf : java.io.File = new java.io.File(outDir.toString())
+    if (! outf.exists()) {
+      outf.mkdirs()
+    }
+    
+    cmd #> new java.io.File(fileout.toString()) !        
     
     
-    
+    log("compiled to " + fileout.toString())
     
     
     errors
@@ -82,10 +84,10 @@ class TptpTwelfCompiler extends Compiler {
   
 }
 
-
-class Env(working : String) { 
-         private val workDir = new java.io.File(working) 
-         def run(cmd : String*) = if (Runtime.getRuntime(). 
-                 exec(cmd.toArray[String], null, workDir).waitFor() != 0) 
-             throw new Exception("Execution failed. Better luck next time!") 
-}
+//
+//class Env(working : String) { 
+//         private val workDir = new java.io.File(working) 
+//         def run(cmd : String*) = if (Runtime.getRuntime(). 
+//                 exec(cmd.toArray[String], null, workDir).waitFor() != 0) 
+//             throw new Exception("Execution failed. Better luck next time!") 
+//}
