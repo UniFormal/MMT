@@ -31,32 +31,33 @@
  <Declaration>
   <Class IRI="Man"/>
  </Declaration>
-
- <EquivalentClasses>
-  <Class IRI="Person"/>
-  <Class IRI="Human"/>
- </EquivalentClasses>
- 
- <EquivalentClasses>
-  <Class IRI="Person"/>
-  <Class IRI="Human"/>
- </EquivalentClasses>
  
  <SubClassOf>
   <Class IRI="Woman"/>
   <Class IRI="Person"/>
  </SubClassOf>
-      
- <DisjointClasses>
-  <Class IRI="Woman"/>
-  <Class IRI="Man"/>
- </DisjointClasses>
-  
- <DisjointUnion>
-  <Class IRI="Person"/>
-  <Class IRI="Man"/>
-  <Class IRI="Woman"/>
- </DisjointUnion>  
-
+ 
+ <EquivalentClasses>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">id1</Literal>
+  </Annotation>
+  <Class IRI="Parent"/>
+  <ObjectUnionOf>
+   <Class IRI="Mother"/>
+   <Class IRI="Father"/>
+  </ObjectUnionOf>
+ </EquivalentClasses>
  
 </Ontology>
+
+<!-- <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">id1</Literal>
+  </Annotation>
+  
+  <Annotation>
+   <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+   <Literal datatypeIRI="xsd:string">States that every woman is a person.</Literal>
+   </Annotation>
+-->  
