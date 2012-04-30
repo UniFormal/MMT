@@ -24,10 +24,7 @@ class MMTConsole extends console.Shell("mmt") {
    private var success : Option[Boolean] = Some(true) 
    
    //This method should block until the currently running command has completed, and return true if the command executed successfully, false otherwise. If no command is currently running, it should return the status of the most recently run command. 
-   override def waitFor(console: Console) : Boolean = {
-      do {} while (success.isEmpty)
-      success.get
-   }
+   override def waitFor(console: Console) : Boolean = true
 
    def execute(console: Console, input: String, output: Output, error: Output, command: String) {
       val han = new OutputAsReport(output)

@@ -4,4 +4,9 @@
 		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).showinfo(view);
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-compile">
+		<CODE>
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compile(view);
+		</CODE>
+	</ACTION>
 </ACTIONS>

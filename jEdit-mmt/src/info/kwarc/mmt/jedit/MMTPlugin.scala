@@ -5,8 +5,11 @@ import parser._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.textarea._
 
+import errorlist._
+
 import info.kwarc.mmt.api._
 import frontend._
+import utils._
 import libraries._
 import utils.FileConversion._
 
@@ -18,6 +21,7 @@ import utils.FileConversion._
  */
 class MMTPlugin extends EditPlugin {
    val controller : Controller = new Controller
+   val errorSource = new DefaultErrorSource("MMT")
    private def log(msg: String) {controller.report("jEdit", msg)}
    /** called by jEdit when plugin is loaded */
    override def start() {
@@ -26,13 +30,15 @@ class MMTPlugin extends EditPlugin {
       controller.setHome(home)
       val startup = new java.io.File(home, "startup.mmt")
       if (startup.isFile())
-         controller.handle(ExecFile(startup))
+         controller.reportException(controller.handle(ExecFile(startup)))
       //else
       //   controller.report("error", "could not find startup.mmt file")
+      errorlist.ErrorSource.registerErrorSource(errorSource)
    }
    /** called by jEdit when plugin is unloaded */
    override def stop() {
       controller.cleanup
+      errorlist.ErrorSource.unregisterErrorSource(errorSource)
    }
    
    def showinfo(view : View) {
@@ -43,6 +49,35 @@ class MMTPlugin extends EditPlugin {
       MMTPlugin.getCurrentID(view.getBuffer, ta.getCaretPosition) match {
          case None =>
          case Some((_,_,_,id)) => d.setText(id)
+      }
+   }
+   /** compiles a path (may be a directory) in an archive */
+   def compile(archive: String, path: List[String]) {
+      controller.report("jedit", "compile" + " " + archive + " " + path)
+      val arch = controller.backend.getArchive(archive).getOrElse(return)
+      // call build method on the respective archive
+      controller.handle(frontend.ArchiveBuild(archive, "compile", path))
+      // read out the errors
+      arch.traverse("source", path, _ => true, false) {case backend.Current(inFile, inPath) =>
+         errorSource.removeFileErrors(inFile.toJava.toString)
+         arch.getErrors(inPath) foreach {case e @ backend.CompilerError(reg, msg, isWarning) =>
+            val tp = if (isWarning) ErrorSource.WARNING else ErrorSource.ERROR
+            val error = new DefaultErrorSource.DefaultError(
+                errorSource, tp, inFile.toJava.toString, reg.start.line, reg.start.column, reg.end.column, msg.head
+            )
+            msg.tail foreach {m => error.addExtraMessage(m)}
+            errorSource.addError(error)
+         }
+      }
+   }
+   /** compiles the current buffer */
+   def compile(view: View) {
+      val file = view.getBuffer.getPath
+      controller.backend.getArchives find {a => file.startsWith((a.root / "source").toString)} match {
+         case None =>
+         case Some(a) =>
+           val path = File(file.substring(a.root.toString.length + 8)).segments
+           compile(a.id, path)
       }
    }
 }
