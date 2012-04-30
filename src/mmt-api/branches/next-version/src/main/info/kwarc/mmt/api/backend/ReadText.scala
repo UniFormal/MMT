@@ -662,7 +662,13 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     }
     val parser = new Parser(grammar, lineStarts.toList)
     parser.init()
-
+    def tryParse(o : OMSemiFormal, offset : Int) = try {
+         Some(parser.parse(o, offset))
+      } catch {
+         case e: TextParseError =>
+           errors = (errors :+ e)
+           Some(o)
+      }
 
     // read the optional type
     var constantType : Option[Term] = None
@@ -670,7 +676,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       i += 1  // jump over ':'
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i)
-      constantType = Some(parser.parse(term, i))
+      constantType = Some(term) //tryParse(term, i)
       i = posAfter
       i = skipwscomments(i)
     }
@@ -681,7 +687,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       i += 1  // jump over '='
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i)
-      constantDef = Some(parser.parse(term, i))
+      constantDef = Some(term) //tryParse(term, i)
       i = posAfter
       i = skipwscomments(i)
     }

@@ -37,13 +37,9 @@ trait Compiler extends Importer {
 }
 
 /** an error or warning returned by the compiler */
-case class CompilerError(region: Region, msg : List[String], warning: Boolean) {
-   override def toString = region.toString + msg.mkString("\n","\n","\n") 
-}
-
-/** represents the location of an error */
-case class Region(file: File, beginLine: Int, beginColumn: Int, endLine: Int, endColumn: Int) {
-   override def toString = file.toString + "#" + beginLine + "." + beginColumn + "-" + endLine + "." + endColumn
+case class CompilerError(region: parser.SourceRegion, msg : List[String], warning: Boolean) {
+   def getMessage = msg.mkString("\n","\n","\n") 
+   override def toString = region.toString + getMessage
 }
 
 trait QueryTransformer extends Importer {

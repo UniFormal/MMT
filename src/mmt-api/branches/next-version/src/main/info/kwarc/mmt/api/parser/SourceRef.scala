@@ -24,7 +24,7 @@ object SourceRegion {
 }
 
 /** position in a source block; both one and two-dimensional coordinates are maintained
- * @param offset one-dimensional coordinate
+ * @param offset one-dimensional coordinate, -1 if omitted
  * @param line vertical two-dimensional coordinate
  * @param column horizontal two-dimensional coordinate
  * all coordinates start from 0

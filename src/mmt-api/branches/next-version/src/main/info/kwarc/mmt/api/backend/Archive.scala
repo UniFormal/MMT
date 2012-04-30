@@ -19,9 +19,10 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil
 import scala.collection.mutable._
 import utils.FileConversion._
 
-case class CompilationError(s: String) extends Exception(s)
+//case class CompilationError(s: String) extends Exception(s)
 case class CompilationStep(from: String, to: String, compiler: Compiler)
-
+/** convenience class for traversing an Archive */
+case class Current(file: File, path: List[String])
                                                                        
 abstract class ROArchive(root : String, properties : Map[String,  String], report : Report) extends Storage {
   //def traverse(dim: String, in: List[String], filter: String => Boolean)(f: List[String] => Unit)
@@ -42,7 +43,7 @@ abstract class ROArchive(root : String, properties : Map[String,  String], repor
   //def get(path : Path, reader : Reader)
 }
 
-class  SVNArchive(repository : SVNRepository, properties : ListMap[String, String], report : Report, defRev : Int = -1) extends ROArchive(repository.getLocation.toString, Map(), report) {
+class SVNArchive(repository : SVNRepository, properties : ListMap[String, String], report : Report, defRev : Int = -1) extends ROArchive(repository.getLocation.toString, Map(), report) {
   val location  = URI(repository.getLocation.toString)
   val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
   private val scheme = URI(location).schemeNull
@@ -98,6 +99,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     
     /** compilation errors */
     private val compErrors = new LinkedHashMap[List[String], List[CompilerError]]
+    def getErrors(l: List[String]) = compErrors.getOrElse(l, Nil)
     
     val sourceDim = properties("source")
     val compiledDim = properties("compiled")
@@ -140,17 +142,17 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     /** returns a functions that filters by file name extension */
     def extensionIs(e: String) : String => Boolean = _.endsWith("." + e)  
     /** traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this */
-    def traverse(dim: String, in: List[String], filter: String => Boolean)(f: List[String] => Unit) {
+    def traverse(dim: String, in: List[String], filter: String => Boolean, sendLog: Boolean = true)(f: Current => Unit) {
         val inFile = root / dim / in
         if (inFile.isDirectory) {
-           log("entering " + inFile)
+           if (sendLog) log("entering " + inFile)
            inFile.list foreach {n =>
-              if (includeDir(n)) traverse(dim, in ::: List(n), filter)(f)
+              if (includeDir(n)) traverse(dim, in ::: List(n), filter, sendLog)(f)
            }
-           log("leaving  " + inFile)
+           if (sendLog) log("leaving  " + inFile)
         } else {
            try {
-              if (filter(inFile.getName)) f(in)
+              if (filter(inFile.getName)) f(Current(inFile, in))
            } catch {
               case e : Error => report(e)
               case e => throw e
@@ -165,14 +167,13 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
        //reset errors
        compsteps match {
           case Some(CompilationStep(from, _ , compiler) :: _) => 
-             traverse(from, in, compiler.includeFile) {case inPath => compErrors(inPath) = Nil}
+             traverse(from, in, compiler.includeFile, false) {case Current(_,inPath) => compErrors(inPath) = Nil}
           case _ => return
        }
        //execute every compilation step for each file
        compsteps.get map {case CompilationStep(from,to,compiler) =>
           val prefix = "[SRC -> COMP] "
-          traverse(from, in, compiler.includeFile) {case inPath =>
-            val inFile = root / from / inPath
+          traverse(from, in, compiler.includeFile) {case Current(inFile,inPath) =>
             val outFile = (root / to / inPath).setExtension("")
             log(prefix + inFile + " -> " + outFile)
             // only compile if the previous compilation step did not report errors
@@ -188,14 +189,14 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     /** deletes all files produced in the compilation chain */
     def deleteCompiled(in: List[String] = Nil) {
        compsteps.getOrElse(Nil) map {case CompilationStep(_,to,_) =>
-          traverse(to, in, _ => true) {case inPath =>
+          traverse(to, in, _ => true) {case Current(_, inPath) =>
              deleteFile(root / to / inPath) //TODO delete files with correct extension
           }
         }
     }
     /** partially reruns produceCompiled using the time stamps and the system's last-modified information */  
     def updateCompiled(in: List[String] = Nil) {
-       traverse(sourceDim, in, _ => true) {case inPath =>
+       traverse(sourceDim, in, _ => true) {case Current(inFile, inPath) =>
           compiledTimestamps.modified(inPath) match {
              case Deleted =>
                 deleteCompiled(inPath)
@@ -248,9 +249,8 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     private val narrContTimestamps = new Timestamps(root / compiledDim, root / "META-INF" / "timestamps" / compiledDim)
     /** Generate content, narration, notation, and relational from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
-        traverse(compiledDim, in, extensionIs("omdoc")) {case inPath =>
-          val inFile = root / compiledDim / inPath
-          val narrFile = narrationDir / inPath
+        traverse(compiledDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+           val narrFile = narrationDir / inPath
            log("[COMP ->  ]  " + inFile)
            log("[  -> NARR]     " + narrFile)
            val controller = new Controller(report)
@@ -272,8 +272,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     /** deletes content, narration, notation, and relational; argument is treated as paths in narration */
     def deleteNarrCont(in:List[String] = Nil) {
        val controller = new Controller(report)
-       traverse("narration", in, extensionIs("omdoc")) {case inPath =>
-          val inFile = root / "narration" / inPath
+       traverse("narration", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
           val dpath = controller.read(inFile, Some(DPath(narrationBase / inPath)))
           val doc = controller.getDocument(dpath)
           //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
@@ -290,7 +289,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     }
     /** partially reruns produceNarrCont using the time stamps and the system's last-modified information */  
     def updateNarrCont(in: List[String] = Nil) {
-       traverse(compiledDim, in, _ => true) {case inPath =>
+       traverse(compiledDim, in, _ => true) {case Current(_, inPath) =>
           narrContTimestamps.modified(inPath) match {
              case Deleted =>
                 deleteNarrCont(inPath)
@@ -305,8 +304,8 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     }
     
     def clean(in: List[String] = Nil, dim: String) {
-       traverse(dim, in, _ => true) {case inPath =>
-         deleteFile(root / dim / inPath)
+       traverse(dim, in, _ => true) {case Current(inFile, inPath) =>
+         deleteFile(inFile)
        }
     }
     /** Extract scala from a dimension */
@@ -354,17 +353,17 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     
     def readRelational(in: List[String] = Nil, controller: Controller) {
        if ((root / "relational").exists) {
-          traverse("relational", in, extensionIs("rel")) {case inPath =>
-             ontology.RelationalElementReader.read(root / "relational" / inPath, DPath(narrationBase), controller.depstore)
+          traverse("relational", in, extensionIs("rel")) {case Current(inFile, inPath) =>
+             ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
           }
        }
     }
 
     def readNotation(in: List[String] = Nil, controller: Controller) {
        if ((root / "notation").exists) {
-          traverse("notation", in, extensionIs("not")) {case inPath =>
+          traverse("notation", in, extensionIs("not")) {case Current(inFile, inPath) =>
              val thy = Archive.ContentPathToMMTPath(inPath)
-             File.ReadLineWise(root / "notation" / inPath) {line => controller.notstore.add(presentation.Notation.parseString(line, thy))}
+             File.ReadLineWise(inFile) {line => controller.notstore.add(presentation.Notation.parseString(line, thy))}
           }
        }
     }
@@ -389,11 +388,11 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     }
     
     def check(in: List[String] = Nil, controller: Controller) {
-      traverse("content", in, extensionIs("omdoc")) {case inPath =>
-         controller.read(root / "content" / inPath, Some(DPath(narrationBase / in)))
+      traverse("content", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+         controller.read(inFile, Some(DPath(narrationBase / in)))
            //controller.globalLookup.getModule(mpath)
       }
-      traverse("content", in, extensionIs("omdoc")) {case inPath =>
+      traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
          controller.checker.check(mpath)(_ => ())
       }
@@ -453,9 +452,8 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
       val inFile = contentDir / in
       log("to do: [CONT -> PRES]        -> " + inFile)
 
-      traverse("content", in, extensionIs("omdoc")) { case inPath =>
-        val inFile = root / "content" / inPath
-        val outFile = (root/ "presentation" / style.last / inPath).setExtension("xhtml")
+      traverse("content", in, extensionIs("omdoc")) { case Current(inFile, inPath) =>
+        val outFile = (root / "presentation" / style.last / inPath).setExtension("xhtml")
         controller.read(inFile,None)
         val mpath = Archive.ContentPathToMMTPath(inPath)
         val file = File(outFile)
@@ -464,9 +462,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
         frontend.Present(Get(mpath),style).make(controller, fs)
         fs.file.close()
       }
-      
       log("done:  [CONT -> PRES]        -> " + inFile)
-
     }
     
     def produceMWS(in : List[String] = Nil, dim: String) {
@@ -474,8 +470,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
           case "mws-flat" => "flat"
           case _ => "content"
         }
-        traverse(sourceDim, in, extensionIs("omdoc")) {case inPath =>
-           val inFile = root / sourceDim / inPath
+        traverse(sourceDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
            val outFile = (root / "mws" / dim / inPath).setExtension("mws")
            log("[  -> MWS]  " + inFile + " -> " + outFile)
            val controller = new Controller

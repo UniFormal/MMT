@@ -24,7 +24,7 @@ class ExtensionManager(report: Report) {
           val Imp = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Importer]]
           Imp.newInstance
        } catch {
-          case e : java.lang.ClassNotFoundException => throw ExtensionError("cannot instantiate class " + cls).setCausedBy(e) 
+          case e : java.lang.Throwable => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
        imp.init(report, args)
        if (imp.isInstanceOf[Compiler]) {
