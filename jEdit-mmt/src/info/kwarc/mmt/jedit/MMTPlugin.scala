@@ -1,4 +1,7 @@
 package info.kwarc.mmt.jedit
+import info.kwarc.mmt.api._
+import parser._
+
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.textarea._
 
@@ -20,14 +23,12 @@ class MMTPlugin extends EditPlugin {
    override def start() {
       val home = getPluginHome()
       home.mkdirs()
-      controller.setFileReport(home / "mmtplugin.log")
       controller.setHome(home)
-      controller.setCheckStructural
       val startup = new java.io.File(home, "startup.mmt")
       if (startup.isFile())
          controller.handle(ExecFile(startup))
-      else
-         controller.report("error", "could not find startup.mmt file")
+      //else
+      //   controller.report("error", "could not find startup.mmt file")
    }
    /** called by jEdit when plugin is unloaded */
    override def stop() {

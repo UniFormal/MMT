@@ -1,6 +1,8 @@
 package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api._
+import parser._
+
 import org.gjt.sp.jedit._
 import sidekick._
 import gatchan.jedit.hyperlinks._
