@@ -13,7 +13,7 @@ import modules._
 import objects._
 import presentation._
 
-import info.kwarc.mmt.lf.Twelf // maybe don't need this
+//import info.kwarc.mmt.lf.Twelf // maybe don't need this
 
 import scala.sys.process._ // need this to execute shell commands
 //import scala.io._ // to write to file
@@ -25,7 +25,7 @@ import scala.sys.process._ // need this to execute shell commands
  */
 class TptpTwelfCompiler extends Compiler {
   private var tptppath : String = null
-  private def log(msg: => String) {report("tptp", msg)}
+  private def log(msg: => String) {report("tptptwelf", msg)}
   def isApplicable(src : String) : Boolean = src == "tptp"
   override def init(rep: Report, args: List[String]) {
      tptppath = args(0)     
