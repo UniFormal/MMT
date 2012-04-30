@@ -16,24 +16,23 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.docs=doc.html
 
 plugin.info.kwarc.mmt.jedit.MMTPlugin.activate=startup
 plugin.info.kwarc.mmt.jedit.MMTPlugin.usePluginHome=true
-plugin.info.kwarc.mmt.jedit.MMTPlugin.jars=mmt-api.jar scala-library.jar tiscaf.jar
+plugin.info.kwarc.mmt.jedit.MMTPlugin.jars=mmt-api.jar mmt-lf.jar lfcatalog.jar scala-library.jar tiscaf.jar
 plugin.info.kwarc.mmt.jedit.MMTPlugin.version=1
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.0=jedit 04.05.00.00
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.1=plugin errorlist.ErrorListPlugin 1.9
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.1=plugin console.ConsolePlugin 4.2
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.2=plugin sidekick.SideKickPlugin 1.3
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.3=plugin gatchan.jedit.hyperlinks.HyperlinksPlugin 1.1
-plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.4=plugin projectviewer.ProjectPlugin 3.4.2
 
 # labels for actions defined in actions.xml
-plugin.info.kwarc.mmt.jedit.MMTPlugin.read=Read content
+mmt-showinfo.label=Show
+mmt-compile.label=Compile current buffer
 
 # menu items for the actions
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
-plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-showinfo
+plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-showinfo mmt-compile
 mmt-dockable.label=Dockable
 mmt-dockable.title=The MMT Dockable
-mmt-showinfo.label=Show
 
 # toolbar buttons
 # mmt.read.icon=read.png
@@ -43,6 +42,4 @@ sidekick.parser.mmt.label=MMT parser
 mode.mmt.sidekick.parser=mmt
 mode.lf.sidekick.parser=mmt
 
-# projectviewer
-plugin.projectviewer.mmt.context-menu-actions=MMTProjectViewerActionCompile MMTProjectViewerActionRead
-
+options.info.kwarc.mmt.jedit.MMTPlugin.project-options.label=MMT
