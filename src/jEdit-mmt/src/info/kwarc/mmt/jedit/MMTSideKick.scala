@@ -4,6 +4,7 @@ import errorlist._
 import sidekick._
 
 import info.kwarc.mmt.api._
+import parser._
 import frontend._
 import libraries._
 import modules._
