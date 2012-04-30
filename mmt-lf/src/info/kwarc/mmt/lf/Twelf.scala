@@ -14,7 +14,8 @@ object Twelf {
       val i = s.lastIndexOf(":")
       val file = File(s.substring(0,i))
       val numbers = s.substring(i+1).split("[-\\.]")
-      Region(file, numbers(0).toInt, numbers(1).toInt, numbers(2).toInt, numbers(3).toInt)
+      parser.SourceRegion(parser.SourcePosition(-1, numbers(0).toInt - 1, numbers(1).toInt - 1),
+                          parser.SourcePosition(-1, numbers(2).toInt - 1, numbers(3).toInt - 1))
    }
 }
 
