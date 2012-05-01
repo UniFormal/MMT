@@ -334,7 +334,7 @@ class TptpTranslator {
       case Some(x) =>
         var ctx: Context = Context()
         for (v <- item.getVariables) {
-          ctx = ctx ++ TermVarDecl(v, None, None)
+          ctx = ctx ++ VarDecl(v, None, None)
         }
         Some(OMBIND(constant(item.getQuantifier), ctx, x))
       case None => None
@@ -353,8 +353,8 @@ object TptpTranslator {
 	
   val controller = {
     val con = new Controller
-    con.setFileReport(File("tptp.log"))
-    con.setCheckNone
+//    con.setFileReport(File("tptp.log"))
+//    con.setCheckNone
     con.handleLine("catalog /home/dimitar/projects/mmt/src/mmt-tptp/trunk/locutor.xml")
     con.handleLine("archive add /home/dimitar/projects/cds/")
     con.handleLine("archive add /home/dimitar/projects/oaff/tptp")
