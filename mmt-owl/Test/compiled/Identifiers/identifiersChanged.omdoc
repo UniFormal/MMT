@@ -1,3 +1,4 @@
+
 <omdoc base="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/source/Identifiers/identifiersChanged.owl">
 	<theory base="http://example.com/owl/families" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
 
@@ -8,6 +9,7 @@
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Father">
@@ -17,6 +19,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Liza">
@@ -26,6 +29,7 @@
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="hasWife">
@@ -35,6 +39,7 @@
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Mother">
@@ -44,6 +49,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Parent">
@@ -53,6 +59,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="hasAge">
@@ -62,6 +69,7 @@
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="ax1453937263">
@@ -75,18 +83,17 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="id2">
 			<metadata>
 				<meta property="http://omdoc.org/id?_?http:2F2Fomdoc.org2Fid">
-					<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">id2</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</OMOBJ>
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMSTR position="1">id2</om:OMSTR>
+						<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+					</om:OMA>
 				</meta>
 			</metadata>
 			<type>
@@ -99,18 +106,17 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="id1">
 			<metadata>
 				<meta property="http://omdoc.org/id?_?http:2F2Fomdoc.org2Fid">
-					<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">id1</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</OMOBJ>
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMSTR position="1">id1</om:OMSTR>
+						<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+					</om:OMA>
 				</meta>
 			</metadata>
 			<type>
@@ -126,6 +132,7 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="ax-821918780">
@@ -139,6 +146,7 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="ax-1447892707">
@@ -153,6 +161,7 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 	</theory>
