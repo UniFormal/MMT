@@ -47,8 +47,6 @@
         <tstamp />
     </target>
 
-    <target name="build" depends="jar"/>
-
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
         <mkdir dir="${build.test}"/>
@@ -58,15 +56,13 @@
             classpathref="compile.classpath" deprecation="yes"/>
     </target>
 
-    <target name="jar" depends="compile">
+    <target name="build" depends="compile">
         <jar destfile="${build}/${jar}">
             <manifest>
             </manifest>
             <fileset dir="${build.main}"/>
         </jar>
     </target>
-
-    <target name="docs" depends="scaladoc"/>
 
     <target name="scaladoc" depends="init">
         <mkdir dir="${apidocs}"/>
@@ -81,7 +77,7 @@
         </scaladoc>
     </target>
 
-    <target name="deploy" depends="build">
+    <target name="deploy">
 <!--        <copy todir="${deploy}/${prj.name}/apidocs">
             <fileset dir="${apidocs}" includes="**/*"/>
         </copy> -->

@@ -32,8 +32,8 @@
         </jar>
     </target>
 
-   <target name="deploy" depends="build">
-      <copy todir="C:\frabe\Program_Data\jEdit\jars">
+   <target name="deploy">
+      <copy todir="e:\homedir\Program_Data\jEdit\jars"> <!--C:\frabe\Program_Data\jEdit\jars">-->
           <fileset file="MMTPlugin.jar"/>
       	  <fileset file="${deploy}/mmt-api.jar"/>
       </copy>

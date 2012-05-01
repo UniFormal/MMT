@@ -15,15 +15,16 @@ import tptp.TptpParserOutput.FormulaRole._
 
 import info.kwarc.mmt.tptp.TptpUtils._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.presentation._
+import documents._
+import utils._
+import frontend._
+import backend._
+import symbols._
+import libraries._
+import modules._
+import objects._
+import parser._
+import presentation._
 import info.kwarc.mmt.lf._
 
 /**
@@ -39,7 +40,7 @@ class TptpTranslator {
   private var translated: List[StructuralElement] = Nil
   
   /** errors encountered during translation */
-  private var errors: List[CompilerError] = Nil
+  private var errors: List[SourceError] = Nil
   
   private var file: File = null
   private var theoryDir: String = ""
@@ -158,7 +159,7 @@ class TptpTranslator {
     }
   }
 
-  def translate(item: TopLevelItem): List[CompilerError] = {
+  def translate(item: TopLevelItem): List[SourceError] = {
     log("Translating TopLevelItem " + item.toString)
     item.getKind match {
       case TptpInput.Kind.Formula =>
@@ -334,7 +335,7 @@ class TptpTranslator {
       case Some(x) =>
         var ctx: Context = Context()
         for (v <- item.getVariables) {
-          ctx = ctx ++ VarDecl(v, None, None)
+          ctx = ctx ++ VarDecl(LocalName(v), None, None)
         }
         Some(OMBIND(constant(item.getQuantifier), ctx, x))
       case None => None
@@ -342,7 +343,7 @@ class TptpTranslator {
   }
 
   def error(msg: String, item: Any): Option[StructuralElement] = {
-    errors = CompilerError(Region(file,-1,-1,-1,-1), msg + " " + item.toString::Nil, true)::errors
+    errors = CompilerError(SourcePosition(-1,-1,-1).toRegion, msg + " " + item.toString::Nil, true)::errors
     None
   }
   

@@ -93,20 +93,18 @@ class MMTSideKick extends SideKickParser("mmt") {
          // add narrative structure of doc to outline tree
          buildTree(root, doc)
          // register errors with ErrorList plugin
-         errors foreach {e =>
-            //DefaultError(errorSource, ErrorSource.WARNING | ERROR, path, line, startColumn, endColumn, message)
-            //currently no position information
-            val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, e.pos.line,e.pos.column,e.pos.column+1, e.msg)
-            errorSource.addError(error)
-      }      
+         errors foreach {
+            case s: SourceError =>
+               //parse error thrown by TextReader
+               val tp = if (s.warning || ! s.fatal) ErrorSource.WARNING else ErrorSource.ERROR
+               val pos = s.region.start
+               val error = new DefaultErrorSource.DefaultError(errorSource, tp, path.toString, pos.line, pos.column, pos.column + 1, s.mainMessage)
+               errorSource.addError(error)
+      }
       tree
       } catch {case e =>
-         val error = e match {
-            case TextParseError(pos, msg) => //parse error thrown by TextReader
-               new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, pos.line, pos.column, pos.column + 1, msg)
-            case e => // other error, e.g., by the get methods in buildTree
-               new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, e.getMessage)
-         }
+         // other error, e.g., by the get methods in buildTree
+         val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, e.getMessage)
          errorSource.addError(error)
          log(e.getMessage);
          tree
