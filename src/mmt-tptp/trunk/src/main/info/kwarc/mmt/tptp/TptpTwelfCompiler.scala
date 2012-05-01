@@ -32,8 +32,8 @@ class TptpTwelfCompiler extends Compiler {
      super.init(rep, Nil)
   }
 
-  override def compile(in : File, out : File) : List[CompilerError] = {
-    var errors: List[CompilerError] = Nil    
+  override def compile(in : File, out : File) : List[SourceError] = {
+    var errors: List[SourceError] = Nil    
    
    // should be  .../TPTP/TPTP2X  
     var tptp2Xpath : String = tptppath.substring(0, tptppath.indexOf("MMT")) + "TPTP2X/"

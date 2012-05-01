@@ -47,7 +47,7 @@ object Action extends RegexParsers {
            ArchiveBuild(id, "present", segs, List(p))
         }
      private def dimension = "compile" | "compile*" | "content" | "content*" | "check" | "mws-flat" | "mws" | "flat" |
-           "relational" | "notation" | "delete" | "clean" | "extract" | "integrate"
+           "relational" | "notation" | "source" | "delete" | "clean" | "extract" | "integrate"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}

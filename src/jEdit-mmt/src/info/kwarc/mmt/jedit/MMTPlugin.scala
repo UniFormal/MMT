@@ -60,12 +60,12 @@ class MMTPlugin extends EditPlugin {
       // read out the errors
       arch.traverse("source", path, _ => true, false) {case backend.Current(inFile, inPath) =>
          errorSource.removeFileErrors(inFile.toJava.toString)
-         arch.getErrors(inPath) foreach {case e @ backend.CompilerError(reg, msg, isWarning) =>
-            val tp = if (isWarning) ErrorSource.WARNING else ErrorSource.ERROR
+         arch.getErrors(inPath) foreach {case SourceError("compiler", reg, hd, tl, warn, fatal) =>
+            val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
             val error = new DefaultErrorSource.DefaultError(
-                errorSource, tp, inFile.toJava.toString, reg.start.line, reg.start.column, reg.end.column, msg.head
+                errorSource, tp, inFile.toJava.toString, reg.start.line, reg.start.column, reg.end.column, hd
             )
-            msg.tail foreach {m => error.addExtraMessage(m)}
+            tl foreach {m => error.addExtraMessage(m)}
             errorSource.addError(error)
          }
       }

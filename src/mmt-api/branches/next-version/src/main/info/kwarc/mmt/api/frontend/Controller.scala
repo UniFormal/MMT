@@ -172,19 +172,16 @@ class Controller extends ROController {
       xmlReader.readDocument(dpath, N)
    }
    /** reads a text/Twelf file and returns its Path */
-   def readText(f: java.io.File) : DPath = {
-      val dpath = DPath(URI.fromJava(f.toURI))
+   def readText(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
+      val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
       val source = scala.io.Source.fromFile(f, "UTF-8")
       val (doc, errorList) = textReader.readDocument(source, dpath)
-      //TODO remove
-      val mod = memory.content.get(MPath(DPath(URI("http://cds.omdoc.org/parser-test")), LocalPath("FOL" :: Nil)))
-      println(mod)
-      println(mod.toNode)
+      source.close
       if (!errorList.isEmpty)
         log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
-      source.close
       dpath
-   }   /** MMT base URI */
+   }
+   /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
    /** base URL In the local system */
@@ -263,9 +260,12 @@ class Controller extends ROController {
                case "delete" => arch.deleteNarrCont(in)
                case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
+               case "source" =>
+                  arch.readSource(in, this)
+                  log("done reading source")
                case "relational" =>
                   arch.readRelational(in, this)
-                  log(" done reading relational index")
+                  log("done reading relational index")
                case "notation" => 
                   arch.readNotation(in, this)
                   log("done reading notation index")

@@ -63,7 +63,7 @@ class Twelf extends Compiler {
      * @param in the input Twelf file 
      * @param out the file in which to put the generated OMDoc
      */
-   def compile(in: File, out: File) : List[CompilerError] = {
+   def compile(in: File, out: File) : List[SourceError] = {
       File(out.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
@@ -79,7 +79,7 @@ class Twelf extends Compiler {
       input.println("Print.OMDoc.printDoc " + in + " " + out.setExtension("omdoc"))
       input.println("OS.exit")
       var line : String = null
-      var errors : List[CompilerError] = Nil
+      var errors : List[SourceError] = Nil
       while ({line = output.readLine; line != null}) {
          line = line.trim
          val (treat, dropChars, warning) =

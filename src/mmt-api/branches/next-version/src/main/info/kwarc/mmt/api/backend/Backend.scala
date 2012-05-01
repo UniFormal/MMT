@@ -359,7 +359,7 @@ class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.
           if (manifest.isFile) {
              File.ReadLineWise(manifest) {case line =>
                 val tline = line.trim
-                if (! tline.startsWith("//") && ! tline.isEmpty) {
+                if (! tline.startsWith("//") && tline != "") {
                    val p = tline.indexOf(":")
                    val key = tline.substring(0,p).trim
                    val value = tline.substring(p+1).trim

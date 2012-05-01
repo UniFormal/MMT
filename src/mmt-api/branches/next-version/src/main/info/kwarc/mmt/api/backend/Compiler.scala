@@ -29,17 +29,10 @@ trait Compiler extends Importer {
      * @param in the input file 
      * @param out the output file without extension
      */
-   def compile(in: File, out: File) : List[CompilerError]
+   def compile(in: File, out: File) : List[SourceError]
 
    /** registers an archive with this compiler */
    def register(arch: Archive, dim: String) {}
-
-}
-
-/** an error or warning returned by the compiler */
-case class CompilerError(region: parser.SourceRegion, msg : List[String], warning: Boolean) {
-   def getMessage = msg.mkString("\n","\n","\n") 
-   override def toString = region.toString + getMessage
 }
 
 trait QueryTransformer extends Importer {

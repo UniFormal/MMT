@@ -98,7 +98,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
     }
     
     /** compilation errors */
-    private val compErrors = new LinkedHashMap[List[String], List[CompilerError]]
+    private val compErrors = new LinkedHashMap[List[String], List[SourceError]]
     def getErrors(l: List[String]) = compErrors.getOrElse(l, Nil)
     
     val sourceDim = properties("source")
@@ -355,6 +355,18 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
        if ((root / "relational").exists) {
           traverse("relational", in, extensionIs("rel")) {case Current(inFile, inPath) =>
              ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
+          }
+       }
+    }
+
+    def readSource(in: List[String] = Nil, controller: Controller) {
+       if ((root / "source").exists) {
+          traverse("source", in, extensionIs("elf")) {case Current(inFile, inPath) =>
+             val source = scala.io.Source.fromFile(inFile, "UTF-8")
+             val (doc, errorList) = controller.textReader.readDocument(source, DPath(narrationBase / inPath))
+             source.close
+             if (!errorList.isEmpty)
+                log(errorList.size + " errors in " + inFile.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
           }
        }
     }

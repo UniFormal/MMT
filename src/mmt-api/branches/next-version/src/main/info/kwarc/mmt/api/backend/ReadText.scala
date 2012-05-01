@@ -20,7 +20,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private def init() {
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
-    errors = LinkedList[TextParseError] ()
+    errors = LinkedList[SourceError] ()
     keepComment = None
     currentNS = None
     prefixes = new LinkedHashMap[String,URI] ()
@@ -40,9 +40,9 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
   /** crawls a file.
     * @return a LinkedList of errors that occurred during parsing
-    * @throws TextParseError for non-recoverable errors that occurred during parsing
+    * @throws SourceError for non-recoverable errors that occurred during parsing
     * note that line and column numbers start from 0 */
-  def readDocument(source : scala.io.Source, dpath_ : DPath) : Pair[Document, LinkedList[TextParseError]] =
+  def readDocument(source : scala.io.Source, dpath_ : DPath) : Pair[Document, LinkedList[SourceError]] =
   {
     // initialization
     lines = source.getLines.toArray
@@ -53,7 +53,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     readDocument()
   }
 
-  def readDocument(source : String, dpath_ : DPath) : Pair[Document, LinkedList[TextParseError]] = {
+  def readDocument(source : String, dpath_ : DPath) : Pair[Document, LinkedList[SourceError]] = {
     //initialization
     lines = source.split("\n").toArray
     dpath = dpath_
@@ -63,7 +63,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   }
 
 
-  private def readDocument() : Pair[Document, LinkedList[TextParseError]] = {
+  private def readDocument() : Pair[Document, LinkedList[SourceError]] = {
     var i = 0  // position in the flattened file
 
     // add (empty, for now) narrative document to the controller
@@ -106,9 +106,9 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
        addSourceRef(doc, 0, i)
        Pair(doc, errors)
     } catch {
-       case e: TextParseError =>
+       case e: SourceError =>
           // for fatal errors, return partially parsed document
-          errors = (errors :+ e)
+          errors = (errors :+ e.copy(fatal = true))
           Pair(doc, errors)
     }
   }
@@ -126,7 +126,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
 
   /** list of parsing errors in the file */
-  private var errors = LinkedList[TextParseError] ()
+  private var errors = LinkedList[SourceError] ()
 
   /** temporary variable used during parsing: saves the last SemanticCommentBlock */
   private var keepComment : Option[MetaData] = None
@@ -208,7 +208,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /**jumps over a (), [] or {} block
    * @param start position of the opening bracket, assumed to be either (, [ or {
    * @return position after the matching closing bracket
-   * @throw TextParseError if the character at the start position is not an opening bracket,
+   * @throw SourceError if the character at the start position is not an opening bracket,
    * or if the bracket doesn't close or one of the internal brackets doesn't close
    */
   private def closeAnyBracket(start: Int) : Int =
@@ -258,7 +258,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** puts a term into an OMSemiFormal object
    * @param start the position of the first character in the term
    * @return the semiformal object, position after the term
-   * @throws TextParseError if there are unmatched right brackets }
+   * @throws SourceError if there are unmatched right brackets }
    */
   private def crawlTerm(start: Int) : Pair[OMSemiFormal, Int] =
   {
@@ -308,7 +308,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * Skips over comments and quote-surrounded strings, so dots inside them do not count.
     * @param start the position where to start looking
     * @return the position after the first dot with the desired properties
-    * @throws TextParseError if end of file was encountered before finding a dot */
+    * @throws SourceError if end of file was encountered before finding a dot */
   private def skipAfterDot(start: Int) : Int =
   {
     var j = start
@@ -339,7 +339,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** reads a quote-surrounded string
     * @param start the position of the quotes at the beginning of the string
     * @return the string, position after the final quote
-    * @throws TextParseError if the string does not close */
+    * @throws SourceError if the string does not close */
   private def crawlString(start: Int) : Pair[String, Int] =
   {
     val endsAt = flat.indexOf('"', start + 1)    // position of the final quotes
@@ -352,7 +352,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** reads an identifier.
     * @param start the position of the first character of the identifier
     * @return Pair(identifier as a string, position after the last character of the identifier)
-    * @throws TextParseError if the current position does not start an identifier */
+    * @throws SourceError if the current position does not start an identifier */
   private def crawlIdentifier(start: Int) : Pair[String, Int] =
   {
     var i = start                     // the current position
@@ -377,7 +377,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** jumps over a specified keyword
     * @param startsAt the position of the first character in the keyword
     * @return the position after the keyword
-    * @throw TextParseError if there is something else instead of the keyword, or the file finishes too early */
+    * @throw SourceError if there is something else instead of the keyword, or the file finishes too early */
   private def crawlKeyword(startsAt : Int, keyword : String) : Int = {
     val positionAfter = startsAt + keyword.length
     if (positionAfter + 2 >= flat.length)
@@ -397,7 +397,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param error the error that will be sent along with the exception if the string after the white space is not whatToExpect
     * @param acceptComments if true, then all comments are ignored. If false, then only white space is allowed before whatToExpect.
     * @return the position of the first character in the whatToExpect string
-    * @throws TextParseError if the string after white space is not whatToExpect. */
+    * @throws SourceError if the string after white space is not whatToExpect. */
   private def expectNext(start: Int, whatToExpect: String, acceptComments: Boolean = true) : Int =
   {
     var i = 0
@@ -428,7 +428,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** reads a namespace block
     * @param start the position of the initial %
     * @return position after the declaration
-    * @throws TextParseError for syntactical errors
+    * @throws SourceError for syntactical errors
     * @note  If this is a namespace alias declaration, then URI is the relative URI that alias points to.
     * If this is an absolute namespace declaration, then the first return value is None and URI is the absolute URI that was read.
     * In all cases, position is the position after the closing dot*/
@@ -487,7 +487,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** jumps over a non-semantic %{ comment }%
     * @param start the position of the initial %
     * @return the position after the final %
-    * @throws TextParseError if the comment does not close */
+    * @throws SourceError if the comment does not close */
   private def crawlCommentThrowBlock(start: Int) : Int =
   {
     var i = start + "%{".length
@@ -501,7 +501,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** reads a semantic %* comment *%
     * @param start the position of the initial %
     * @return The first return value is the structured comment, saved as Metadata, whose end position is on the final %. The second return value is the position after the block.
-    * @throws TextParseError if the comment does not close. Syntactical errors are only printed
+    * @throws SourceError if the comment does not close. Syntactical errors are only printed
     */
   private def crawlSemanticCommentBlock(start: Int) : Pair[MetaData, Int] =
   {
@@ -547,7 +547,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
             properties += Pair(keyValue.take(i).trim, keyValue.drop(i).trim)
         }
     } catch {
-        case e : TextParseError => errors = (errors :+ e)   // add to the list of errors returned
+        case e : SourceError => errors = (errors :+ e)   // add to the list of errors returned
     }
 
     return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, TextReader.metadataBase), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
@@ -562,7 +562,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** Reads a sequence of linespace-separated module references, ended by either =, -> or a non-identifier-part-character
     * @param start the position of the first character in the sequence
     * @return Pair(the set modules URIs in the sequence, position after the sequence)
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlModuleReferences(start: Int) : Pair[LinkedList[URI], Int] =
   {
     var moduleRefs = LinkedList[URI] ()
@@ -587,7 +587,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
    * @param start the start position of the morphism object
    * @param theory the theory in which the module references might be in (they might also be top-level views)
    * @return Pair[Term, position after]. For now, the Term is just an informal object, see note below
-   * @throws TextParseError for syntactical errors
+   * @throws SourceError for syntactical errors
    * Note: The reason why this returns an informal object is that in views, it has no way
    * to know whether a morphism reference is a structure in the codomain
    * or a top-level morphism in a particular namespace, since both the entire namespace and
@@ -610,7 +610,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
    * @param start the start position of the theory object
    * @param base the path of the content element in which the object resides
    * @return Pair[TheoryObj, position after]
-   * @throws TextParseError for syntactical errors
+   * @throws SourceError for syntactical errors
    */
   private def crawlTheoryObject(start: Int, base: Path) : Pair[Term, Int] =
   {
@@ -635,7 +635,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the first character in the constant identifier
     * @param parent the parent theory
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlConstantDeclaration(start: Int, parent: Theory) : Int =
   {
     val oldComment = keepComment
@@ -649,11 +649,10 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = positionAfter
     i = skipwscomments(i)
 
-    //initializing term parser
+    /*//initializing term parser
     val constants = controller.memory.content.getDeclarationsInScope(parent.path) collect {
       case c : Constant => c
     }
-
     val grammar = if (parent.path.last == "test2") {
       println("USING THE RIGHT GRAMMAR")
       LFGrammar.latexGrammar(constants)
@@ -665,10 +664,11 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     def tryParse(o : OMSemiFormal, offset : Int) = try {
          Some(parser.parse(o, offset))
       } catch {
-         case e: TextParseError =>
+         case e: SourceError =>
            errors = (errors :+ e)
            Some(o)
       }
+    */
 
     // read the optional type
     var constantType : Option[Term] = None
@@ -697,8 +697,8 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     // read the optional notation
     //TODO Notation
     var constantNotation : Option[Notation] = None
-    if (flat.codePointAt(i) == '#') {
-      i += 1  // jump over '='
+/*    if (flat.codePointAt(i) == '#') {
+      i += 1  // jump over '#'
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i)
 
@@ -710,7 +710,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       i = posAfter
       i = skipwscomments(i)
     }
-
+*/
     val endsAt = expectNext(i, ".")
 
     // create the constant object
@@ -727,7 +727,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the initial % from %open
     * @param link the structure declaration before the %open statement
     * @return position after the block, i.e. ideally on the '.'
-    * @throws TextParseError for syntactical errors
+    * @throws SourceError for syntactical errors
     * note: if link's domain is not yet known (link.from == null), the alias points to link.toMorph ? name */
   private def crawlOpen(start: Int, link: Link) : Int =
   {
@@ -787,7 +787,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the initial % from %include
     * @param parent the parent theory
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlIncludeDeclaration(start: Int, parent: Theory) : Int =
   {
     val oldComment = keepComment
@@ -820,7 +820,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the initial % from %meta
     * @param parent the parent theory
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlMetaDeclaration(start: Int, parent: DeclaredTheory) : Int =
   {
     var i = skipws(crawlKeyword(start, "%meta"))
@@ -836,7 +836,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the initial % from %struct
     * @param parent the parent theory
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlStructureDeclaration(start: Int, parent: Theory) : Int =
   {
     var domain : Option[URI] = None
@@ -923,7 +923,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the first character in the constant identifier
     * @param parent the parent link
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlConstantAssignment(start: Int, parent: Link) : Int =
   {
     val oldComment = keepComment
@@ -961,7 +961,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the initial %
     * @param parent the parent link
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlStructureAssignment(start: Int, parent: Link) : Int =
   {
     val oldComment = keepComment
@@ -997,7 +997,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the initial % from %include
     * @param parent the parent link
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlIncludeAssignment(start: Int, parent: Link) : Int =
   {
     val oldComment = keepComment
@@ -1009,7 +1009,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
     // compute the name of the include
-    val localName = LocalName("")                         // TODO have an "update" method in controller for setting the name of an include, since it can't be determined now
+    val localName = LocalName(IncludeStep(morphism)) //TODO wrong name, to force uniqueness
 
     // add the include assignment to the controller
     val defLinkAssignment = new DefLinkAssignment(parent.toMorph, localName, morphism)
@@ -1031,7 +1031,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the opening {
     * @param parent the enclosing DeclaredTheory
     * @return the position after the closing }
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlTheoryBody(start: Int, parent: DeclaredTheory) : Int =
   {
     var i = start + 1       // jump over '{'
@@ -1076,7 +1076,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** Reads a theory.
     * @param start the position of the initial '%'
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlTheory(start: Int) : Int =
   {
     val oldComment = keepComment
@@ -1112,7 +1112,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start the position of the opening {
     * @param parent the parent DeclaredLink
     * @return the position after the closing }
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlLinkBody(start: Int, parent: DeclaredLink) : Int =
   {
     var i = start + 1       // jump over '{'
@@ -1142,7 +1142,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   /** Reads a view.
     * @param start the position of the initial '%'
     * @return position after the block
-    * @throws TextParseError for syntactical errors */
+    * @throws SourceError for syntactical errors */
   private def crawlView(start: Int) : Int =
   {
     val oldComment = keepComment
@@ -1229,7 +1229,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param start position of the first character of the module name (for error reporting)
     * @param moduleName the module name as a string
     * @return the absolute URI of the module
-    * @throws TextParseError if the module name has a prefix and the prefix is not a valid namespace alias, or if the module name has no prefix and the current namespace is not defined */
+    * @throws SourceError if the module name has a prefix and the prefix is not a valid namespace alias, or if the module name has no prefix and the current namespace is not defined */
   private def moduleToAbsoluteURI(start: Int, moduleName: String) : URI = {
     // the URI of the module is *not* used to compute the absolute URI of its dependencies
     // Replace dots with question marks
@@ -1250,18 +1250,24 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   }
 
 
-  /** computes the (line, column) that represents the same position as the given one-dimensional coordinate
-  * @param index the one-dimensional coordinate to be transformed into two-dimensional
-  * @return Pair(line, column) */
+  /** computes two- from one-dimensional coordinate 
+  * @param index the one-dimensional coordinate
+  * @return the the two-dimensional coordinate
+  */
   private def toPos(index: Int) : SourcePosition = {
-    val pair  = lineStarts.filter(p => (p._1 <= index)).last
+    val pair = try {
+      lineStarts.filter(p => (p._1 <= index)).last
+    } catch {
+      // this catches the degenerate case where .last fails; this happens iff the input file is empty 
+      case _ : java.util.NoSuchElementException => Pair(0,0)
+    } 
     SourcePosition(index, pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
   }
 
   /** returns the fragment between startsAt and endsAt (inclusive), as a String */
   private def getSlice(startsAt : Int, endsAt : Int) : String = flat.substring(startsAt, endsAt+1)
 
-  /** returns dpath#startline.startcol-endline.endcol */
+  /** as getSlice but additionally  carrying the current file */
   private def getSourceRef(startsAt : Int, endsAt : Int) = SourceRef(dpath.uri, SourceRegion(toPos(startsAt), toPos(endsAt)))
 
   /** adds sourceRef to the metadata of the first argument */
