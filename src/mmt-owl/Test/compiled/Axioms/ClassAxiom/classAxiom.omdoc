@@ -9,6 +9,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Person">
@@ -18,6 +19,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Man">
@@ -27,6 +29,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Mother">
@@ -36,6 +39,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Human">
@@ -45,6 +49,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Parent">
@@ -54,6 +59,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="Woman">
@@ -63,6 +69,7 @@
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 		<constant name="ax857976625">
@@ -76,19 +83,7 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
-
-		</constant>
-		<constant name="ax1949323543">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="_" name="Person" base="http://example.com/owl/families" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+       
 
 		</constant>
 		<constant name="ax-1574568108">
@@ -103,6 +98,21 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
+       
+
+		</constant>
+		<constant name="ax1949323543">
+
+			<type>
+				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS>
+						<om:OMS module="_" name="Person" base="http://example.com/owl/families" position="2"></om:OMS>
+					</om:OMA>
+				</OMOBJ>
+			</type>
+       
 
 		</constant>
 		<constant name="ax1684941625">
@@ -116,6 +126,7 @@
 					</om:OMA>
 				</OMOBJ>
 			</type>
+       
 
 		</constant>
 	</theory>
