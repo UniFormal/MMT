@@ -30,9 +30,14 @@ mmt-compile.label=Compile current buffer
 
 # menu items for the actions
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
-plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-showinfo mmt-compile
+plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-compile mmt-showinfo
 mmt-dockable.label=Dockable
 mmt-dockable.title=The MMT Dockable
+
+# options pane
+plugin.info.kwarc.mmt.jedit.MMTPlugin.option-pane=info.kwarc.mmt.jedit.MMTPlugin
+options.info.kwarc.mmt.jedit.MMTPlugin.label=MMT
+options.info.kwarc.mmt.jedit.MMTPlugin.code=new info.kwarc.mmt.jedit.MMTOptions();
 
 # toolbar buttons
 # mmt.read.icon=read.png
@@ -42,4 +47,9 @@ sidekick.parser.mmt.label=MMT parser
 mode.mmt.sidekick.parser=mmt
 mode.lf.sidekick.parser=mmt
 
+# projectviewer
 options.info.kwarc.mmt.jedit.MMTPlugin.project-options.label=MMT
+
+# hyperlink
+mode.mmt.hyperlink.source=mmt
+mode.lf.hyperlink.source=mmt

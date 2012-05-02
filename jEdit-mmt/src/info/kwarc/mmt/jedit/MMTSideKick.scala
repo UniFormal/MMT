@@ -8,8 +8,11 @@ import parser._
 import frontend._
 import libraries._
 import modules._
+import objects._
 import symbols._
 import documents._
+import utils.File
+import utils.MyList.fromList
 
 import javax.swing.tree.DefaultMutableTreeNode
 import scala.collection.JavaConversions.seqAsJavaList
@@ -18,8 +21,13 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
    def getOffset = offset
 }
 
-class MMTAsset(elem : StructuralElement, name: String, reg: SourceRegion) extends enhanced.SourceAsset(name, reg.start.line, MyPosition(reg.start.offset)) {
-   setEnd(MyPosition(reg.end.offset))
+abstract class MMTAsset(name: String, val region: SourceRegion)
+  extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
+  setEnd(MyPosition(region.end.offset))
+  def getScope : Option[Term]
+}
+
+class MMTDeclAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
    setLongDescription(path.toPath)
    //setIcon
    def path = elem.path
@@ -33,6 +41,11 @@ class MMTAsset(elem : StructuralElement, name: String, reg: SourceRegion) extend
         case _ => None
       }
    }
+}
+
+class MMTTermAsset(val parent: ContentPath, val path: Option[Path], name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
+  path.map(p => setLongDescription(p.toPath))
+  def getScope = Some(OMID(parent))
 }
 
 // text is the string that is to be completed, items is the list of completions
@@ -53,7 +66,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       case Some(r) => r.region
    }
    private def buildTree(node: DefaultMutableTreeNode, doc: Document) {
-      val child = new DefaultMutableTreeNode(new MMTAsset(doc, doc.path.last, getRegion(doc)))
+      val child = new DefaultMutableTreeNode(new MMTDeclAsset(doc, doc.path.last, getRegion(doc)))
       node.add(child)
       doc.getItems foreach {
         case d: DRef =>
@@ -64,31 +77,51 @@ class MMTSideKick extends SideKickParser("mmt") {
    }
    private def buildTree(node: DefaultMutableTreeNode, mod: Module) {
       val keyword = mod match {case _ : Theory => "theory"; case _: modules.View => "view"}
-      val child = new DefaultMutableTreeNode(new MMTAsset(mod, keyword + " " + mod.path.last, getRegion(mod)))
+      val child = new DefaultMutableTreeNode(new MMTDeclAsset(mod, keyword + " " + mod.path.last, getRegion(mod)))
       node.add(child)
       mod match {
          case m: DeclaredModule[_] =>
-            m.valueListNG foreach {case d =>
-               val label = d match {  
-                  case PlainInclude(from,_) => "include " + from.last
-                  case i: Include => "include"
-                  case s: Structure => "structure " + s.name.flat + " "
-                  case d: Declaration => d.name.flat
-               }
-               val grandchild = new DefaultMutableTreeNode(new MMTAsset(d, label, getRegion(d)))
-               child.add(grandchild)
-            }
+            m.valueListNG foreach {d => buildTree(child, d)}
          case m: DefinedModule =>
       }
    }
+   private def buildTree(node: DefaultMutableTreeNode, dec: Declaration) {
+      val label = dec match {
+         case PlainInclude(from,_) => "include " + from.last
+         case i: Include => "include"
+         case s: Structure => "structure " + s.name.flat + " "
+         case d: Declaration => d.name.flat
+      }
+      val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, getRegion(dec)))
+      node.add(child)
+      dec match {
+         case i: Include => buildTree(child, dec.path, i.from)
+         case _ => //TODO other cases, only reasonable once parser is better
+      }
+   }
+   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, t: objects.Term) {
+      val child = t match {
+        case OMID(p) => new DefaultMutableTreeNode(new MMTTermAsset(parent, Some(p), p.last, getRegion(t)))
+        case t => new DefaultMutableTreeNode(new MMTTermAsset(parent, None, t.role.toString, getRegion(t)))
+      }
+      node.add(child)
+      val termComponents : List[Term] = t.components mapPartial {case t: Term => Some(t); case _ => None} 
+      termComponents foreach {c => buildTree(child, parent, c)}
+   }
+   
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
-      val path = utils.File(buffer.getPath)
-      val dpath = DPath(path.toJava.toURI)
+      val path = File(buffer.getPath)
+      // if the buffer is part of an archive, use the logical document id given by the archive, otherwise construct a file:URI
+      val dpath = controller.backend.resolvePhysical(path) match {
+         case Some((arch, p)) => DPath(arch.narrationBase / p)
+         case None => DPath(path.toJava.toURI)
+      }
       val src = scala.io.Source.fromString(buffer.getText)
       controller.delete(dpath)
       val tree = new SideKickParsedData(path.toJava.getName)
       val root = tree.root
       try {
+         log("parsing " + path.toString + " as " + dpath.toPath)
          val (doc,errors) = controller.textReader.readDocument(src, dpath)
          // add narrative structure of doc to outline tree
          buildTree(root, doc)
