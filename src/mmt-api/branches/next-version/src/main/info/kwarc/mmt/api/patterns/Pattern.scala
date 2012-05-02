@@ -36,15 +36,46 @@ class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, 
      "Instance " + name.flat + " of pattern " + pattern.toString  
 }
 
-/*
 object Instance {
   /**
    * returns the elaboration of an instance
    */
   def elaborate(inst: Instance, normalize: Boolean)(implicit lup: Lookup, report: Report): List[Constant] = {  
+      val pt : Pattern = lup.getPattern(inst.pattern)
+      val lpair = pt.con.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
+      val names = lpair.unzip._1
+      val subs = lpair.unzip._2  
+      def auxSub(x : Term) = {
+         x ^ (inst.matches ++ Substitution(subs : _*))  
+         //TODO normalization
+      }
+      pt.con.map {
+        case VarDecl(n,tp,df,at @ _*) =>
+          val nname = inst.name / n
+          report("elaboration", "generating constant " + nname)
+          val c = new Constant(inst.home,nname,tp.map(auxSub),df.map(auxSub),None,None)
+          c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
+          c
+      }             
+  }
+  
+  /**
+   * elaborates all instances in a theory and inserts the elaborated constants after the respective instance
+   */
+  def elaborate(thy: DeclaredTheory, normalize: Boolean = false)(implicit lup: Lookup, report: Report) {
+     thy.valueList foreach {
+        case i : Instance =>
+           i.setOrigin(Elaborated)
+           thy.replace(i.name, i :: elaborate(i, true) : _*)
+        case c @ _ => c 
+     }
+  }
+}  
+  /*
+  def elaborate(inst: Instance, normalize: Boolean)(implicit lup: Lookup, report: Report): List[Constant] = {  
     	val pt : Pattern = lup.getPattern(inst.pattern)
       pt.con.map {
-    	  case TermVarDecl(n,tp,df,at @ _*) =>
+    	  case VarDecl(n,tp,df,at @ _*) =>
           def auxSub(x : Term) = {
      	        val names = pt.con.map(d => d.name)
      	        val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
