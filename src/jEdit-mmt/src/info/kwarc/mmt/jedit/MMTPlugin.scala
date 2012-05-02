@@ -22,15 +22,19 @@ import utils.FileConversion._
 class MMTPlugin extends EditPlugin {
    val controller : Controller = new Controller
    val errorSource = new DefaultErrorSource("MMT")
-   private def log(msg: String) {controller.report("jEdit", msg)}
+   private def log(msg: String) {controller.report("jedit", msg)}
    /** called by jEdit when plugin is loaded */
    override def start() {
+      controller.report.addHandler(StatusBarLogger)
       val home = getPluginHome()
       home.mkdirs()
       controller.setHome(home)
-      val startup = new java.io.File(home, "startup.mmt")
-      if (startup.isFile())
-         controller.reportException(controller.handle(ExecFile(startup)))
+      val startup = jEdit.getProperty(MMTProperty("startup"))
+      if (startup != null) {
+         val file = new java.io.File(home, startup)
+         if (file.isFile)
+            controller.reportException(controller.handle(ExecFile(file)))
+      }
       //else
       //   controller.report("error", "could not find startup.mmt file")
       errorlist.ErrorSource.registerErrorSource(errorSource)
@@ -53,17 +57,17 @@ class MMTPlugin extends EditPlugin {
    }
    /** compiles a path (may be a directory) in an archive */
    def compile(archive: String, path: List[String]) {
-      controller.report("jedit", "compile" + " " + archive + " " + path)
+      log("compile" + " " + archive + " " + path.mkString("","/",""))
       val arch = controller.backend.getArchive(archive).getOrElse(return)
       // call build method on the respective archive
       controller.handle(frontend.ArchiveBuild(archive, "compile", path))
       // read out the errors
       arch.traverse("source", path, _ => true, false) {case backend.Current(inFile, inPath) =>
-         errorSource.removeFileErrors(inFile.toJava.toString)
+         errorSource.removeFileErrors(inFile.toString)
          arch.getErrors(inPath) foreach {case SourceError("compiler", reg, hd, tl, warn, fatal) =>
             val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
             val error = new DefaultErrorSource.DefaultError(
-                errorSource, tp, inFile.toJava.toString, reg.start.line, reg.start.column, reg.end.column, hd
+                errorSource, tp, inFile.toString, reg.start.line, reg.start.column, reg.end.column, hd
             )
             tl foreach {m => error.addExtraMessage(m)}
             errorSource.addError(error)
@@ -72,10 +76,15 @@ class MMTPlugin extends EditPlugin {
    }
    /** compiles the current buffer */
    def compile(view: View) {
-      val file = view.getBuffer.getPath
+      val buffer = view.getBuffer
+      buffer.save(view, null)
+      io.VFSManager.waitForRequests // wait until buffer is saved
+      val file = buffer.getPath
       controller.backend.getArchives find {a => file.startsWith((a.root / "source").toString)} match {
          case None =>
+           log("not compiling current buffer " + file)
          case Some(a) =>
+           log("compiling current buffer " + file)
            val path = File(file.substring(a.root.toString.length + 8)).segments
            compile(a.id, path)
       }
@@ -90,7 +99,7 @@ object MMTPlugin {
    }
    /** finds the id at a certain offset in a buffer
     * @param buffer a buffer
-    * @parem index offset in the buffer
+    * @param index offset in the buffer
     * @return the id at the offset, if any, as (line,beginOffsetInBuffer,endOffsetInBuffer,id)
     */ 
    def getCurrentID(buffer: Buffer, index: Int) : Option[(Int,Int,Int,String)] = {
@@ -111,4 +120,10 @@ object MMTPlugin {
       while (right < lineLength - 1 && isIDChar(lineText(right + 1))) {right = right + 1}
       Some((line, lineStart + left, lineStart + right + 1, lineText.substring(left, right + 1)))
    }
+}
+
+object StatusBarLogger extends ReportHandler("jedit") {
+  def apply(ind: String, group: String, msg: String) {
+     jEdit.getActiveView.getStatus.setMessage("MMT " + group + ": " + msg)
+  }
 }

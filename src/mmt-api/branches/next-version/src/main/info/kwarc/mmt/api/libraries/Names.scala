@@ -62,7 +62,7 @@ object Names {
             case _ => None
          }
       } orElse {
-         val incls = lib.importsTo(home).toList
+         val incls = lib.importsToFlat(home).toList
          val es = incls mapPartial {i => lib.getO(i % name)}
          if (es.length == 1) Some(es(0)) else None  // uniquely resolvable symbol in an included theory
       }

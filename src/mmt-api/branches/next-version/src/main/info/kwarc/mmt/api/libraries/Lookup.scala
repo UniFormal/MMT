@@ -6,6 +6,8 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.utils._
 
+import scala.collection.mutable.HashSet
+
 /** A read-only abstraction of a library. A Library is a Lookup with write methods */
 abstract class Lookup(val report : frontend.Report) {
    def apply(path : Path) = get(path)
@@ -44,22 +46,18 @@ abstract class Lookup(val report : frontend.Report) {
       }
    *  But we cannot case-split over an abstract type parameter due to Scala's compilation-time type erasure.
    */
-   /*
-   def localDomain(th : ModuleObj) : Iterator[LocalPath]
-
-   def globalDomain(th : ModuleObj) : Iterator[LocalPath]
-   
-   def localImports(th : TheoryObj) : List[TheoryObj]
-   
-   def localImports(m : Morph) : List[Morph]
-   
-   def globalImports(th : TheoryObj) : Iterator[TheoryObj]
-   
-   def globalImports(m : Morph) : Iterator[Morph]
-    */
-   
    def imports(from: Term, to: Term) : Boolean
    def importsTo(to: Term) : Iterator[Term]
+   def importsToFlat(to: Term, found: HashSet[Term] = new HashSet[Term]) : HashSet[Term] = {
+      val imps = importsTo(to)
+      imps foreach {i =>
+         if (! (found contains i)) {
+            found += i
+            importsToFlat(i, found)
+         }
+      }
+      found
+   }
 
    def getDeclarationsInScope(th : MPath) : List[Content]
    //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 

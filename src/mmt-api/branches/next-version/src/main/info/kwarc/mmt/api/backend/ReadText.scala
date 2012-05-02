@@ -48,6 +48,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     lines = source.getLines.toArray
     source.close
     dpath = dpath_
+    currentNS = Some(dpath.uri)
     init()
 
     readDocument()
@@ -283,7 +284,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         i += 1
       else if (isIdentifierPartCharacter(c)) { // identifier
         val (id, posAfter) = crawlIdentifier(i)
-        if (id == "=" || id == "#") // this ends the term
+        if (id == "=") // this ends the term, use || id == "#" for notation parser
           return computeReturnValue
         i = posAfter
       }
@@ -451,7 +452,6 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         currentNS = Some(uri)
       else
         currentNS = Some(currentNS.get.resolve(uri).normalize)
-
     }
     else {
       // A namespace alias declaration
@@ -467,7 +467,6 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       } catch {
         case exc: java.net.URISyntaxException => throw TextParseError(toPos(i), "" + exc.getMessage)
       }
-
       endsAt = expectNext(positionAfterString, ".", false)
       if (currentNS == None)
         throw TextParseError(toPos(i), "current namespace must be defined before the namespace alias declaration")
@@ -475,7 +474,6 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         val absoluteRemoteURI = currentNS.get.resolve(uri).normalize
         prefixes += Pair(alias, absoluteRemoteURI)
       }
-
     }
     return 1 + endsAt
   }
@@ -552,81 +550,6 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
     return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, TextReader.metadataBase), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
   }
-
-
-
-  // ------------------------------- object level -------------------------------
-
-
-
-  /** Reads a sequence of linespace-separated module references, ended by either =, -> or a non-identifier-part-character
-    * @param start the position of the first character in the sequence
-    * @return Pair(the set modules URIs in the sequence, position after the sequence)
-    * @throws SourceError for syntactical errors */
-  private def crawlModuleReferences(start: Int) : Pair[LinkedList[URI], Int] =
-  {
-    var moduleRefs = LinkedList[URI] ()
-    var i = start
-    var break = false
-    while (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i)) && !break) {
-      val (moduleRef, positionAfter) = crawlIdentifier(i)    // read module reference
-      if (moduleRef == "->" || moduleRef == "=")          // the sequence has ended, stop here
-        break = true
-      if (!break) {
-        moduleRefs :+ moduleToAbsoluteURI(i, moduleRef)    // add its URI to the returned LinkedHashSet
-        i = positionAfter  // go to the space after the identifier
-        i = skipws(i)      // don't allow comments between two module references
-      }
-    }
-    val endsAt = i
-    return Pair(moduleRefs, endsAt)
-  }
-
-
-  /**reads a morphism object
-   * @param start the start position of the morphism object
-   * @param theory the theory in which the module references might be in (they might also be top-level views)
-   * @return Pair[Term, position after]. For now, the Term is just an informal object, see note below
-   * @throws SourceError for syntactical errors
-   * Note: The reason why this returns an informal object is that in views, it has no way
-   * to know whether a morphism reference is a structure in the codomain
-   * or a top-level morphism in a particular namespace, since both the entire namespace and
-   * the codomain might not have been read yet into the library
-   */
-  private def crawlMorphismObject(start: Int, theory: Option[Term]) : Pair[Term, Int] =
-  {
-    val (linkRefs, positionAfter) = crawlModuleReferences(start)
-    val morphism = OMSemiFormal((objects.Text("Twelf", getSlice(start, positionAfter - 1))))
-      /*if (linkRefs.size == 1)   // a single reference
-        OMMOD(theory.path)
-      else                      // a sequence of references
-        OMCOMP(linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base))) : _*)    */
-    addSourceRef(morphism, start, positionAfter - 1)
-    Pair(morphism, positionAfter)
-  }
-
-
-  /**reads a theory object
-   * @param start the start position of the theory object
-   * @param base the path of the content element in which the object resides
-   * @return Pair[TheoryObj, position after]
-   * @throws SourceError for syntactical errors
-   */
-  private def crawlTheoryObject(start: Int, base: Path) : Pair[Term, Int] =
-  {
-    val (linkRefs, positionAfter) = crawlModuleReferences(start)
-    val theories : LinkedList[Term] = linkRefs.map(uri => OMMOD(Path.parseM(uri.toString, base)))
-    val theoryObject : Term = {
-      if (theories.size == 1)
-        theories.head
-      else
-        TUnion(theories.toList)
-    }
-    addSourceRef(theoryObject, start, positionAfter - 1)
-    Pair(theoryObject, positionAfter)
-  }
-
-
 
   // ------------------------------- symbol level -------------------------------
 
@@ -794,11 +717,11 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     var i = crawlKeyword(start, "%include")
     i = skipws(i)
     val (importName, positionAfter) = crawlIdentifier(i)    // read import name
-    val from : URI = moduleToAbsoluteURI(i, importName)
+    val from = moduleToAbsoluteURI(i, importName)
     i = positionAfter
 
     // create the Include object
-    val include = Include(parent.toTheoryObj, OMMOD(Path.parseM(from.toString, parent.path)))
+    val include = Include(parent.toTheoryObj, from)
 
     // read the optional %open statement
     i = skipwscomments(i)
@@ -839,7 +762,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @throws SourceError for syntactical errors */
   private def crawlStructureDeclaration(start: Int, parent: Theory) : Int =
   {
-    var domain : Option[URI] = None
+    var domain : Option[Term] = None
     var isImplicit : Boolean = false
 
     val oldComment = keepComment
@@ -877,7 +800,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         domain match {
           case None => throw TextParseError(toPos(start), "structure is defined via a list of assignments, but its domain is not specified")
           case Some(dom)  =>
-            structure = new DeclaredStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)))
+            structure = new DeclaredStructure(parent.toTheoryObj, LocalName(name), dom)
             add(structure)
             i = crawlLinkBody(i, structure.asInstanceOf[DeclaredStructure])
         }
@@ -886,7 +809,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
       else {
         // It's a DefinedStructure
-        val (morphism, positionAfter) = crawlMorphismObject(i, Some(OMMOD(parent.path)))
+        val (morphism, positionAfter) = crawlTerm(i)
         i = positionAfter
         domain match {
           case Some(dom) => structure = new DefinedStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism)
@@ -977,7 +900,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // get the morphism
-    val (morphism, positionAfter2) = crawlMorphismObject(i, Some(OMMOD(parent.toMorph.toMPath)))
+    val (morphism, positionAfter2) = crawlTerm(i)
 
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
@@ -1004,7 +927,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val i = skipws(crawlKeyword(start, "%include"))
 
     // get the morphism
-    val (morphism, positionAfter) = crawlMorphismObject(i, Some(OMMOD(parent.toMorph.toMPath)))
+    val (morphism, positionAfter) = crawlTerm(i)
 
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
@@ -1166,7 +1089,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the domain
-    val (domain, positionAfterDomain) = crawlTheoryObject(i, Path.parse(""))
+    val (domain, positionAfterDomain) = crawlTerm(i)  //TODO this falsely eats the "->" and the codomain
     i = positionAfterDomain   // jump over domain
 
     i = expectNext(i, "->")
@@ -1174,7 +1097,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the codomain
-    val (codomain, positionAfterCodomain) = crawlTheoryObject(i, Path.parse(""))
+    val (codomain, positionAfterCodomain) = crawlTerm(i)
     i = positionAfterCodomain     // jump over codomain
 
     i = expectNext(i, "=")
@@ -1191,7 +1114,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     }
     else if (isIdentifierPartCharacter(flat.codePointAt(i))) {
       // It's a DefinedView
-      val (morphism, positionAfter) = crawlMorphismObject(i, None)
+      val (morphism, positionAfter) = crawlTerm(i)
       i = positionAfter
       view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism)
       add(view)
@@ -1230,23 +1153,36 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @param moduleName the module name as a string
     * @return the absolute URI of the module
     * @throws SourceError if the module name has a prefix and the prefix is not a valid namespace alias, or if the module name has no prefix and the current namespace is not defined */
-  private def moduleToAbsoluteURI(start: Int, moduleName: String) : URI = {
+  private def moduleToAbsoluteURI(start: Int, moduleName: String) : Term = {
     // the URI of the module is *not* used to compute the absolute URI of its dependencies
     // Replace dots with question marks
     val relativeURI : String = moduleName.trim().replaceAll("\\056", "?")
     val j = relativeURI.indexOf("?")
     // If it has no prefix, it belongs to the current namespace, so simply prepend the current namespace URI
     if (j == -1) {
-      if (currentNS == None)
-        throw TextParseError(toPos(start), "cannot compute an absolute URI for this module " + moduleName + " since no current namespace is defined")
-      return currentNS.get ? relativeURI
+       currentNS match {
+          case None =>
+             errors :+ TextParseError(toPos(start), "no current namespace defined").copy(warning = true)
+             TextReader.makeSemiFormal(moduleName)
+          case Some(ns) => 
+             val t = OMMOD(DPath(ns) ? relativeURI)
+             addSourceRef(t, start, start + moduleName.length)
+             t
+       }
+    } else {
+       // If it has a prefix, it belongs to a different namespace, which must have been declared before in the document
+       val prefix : String = relativeURI.substring(0, j)
+       prefixes.get(prefix) match {
+          // unknown prefix
+          case None =>
+             errors :+ TextParseError(toPos(start), "unknown namespace prefix").copy(warning = true)
+             TextReader.makeSemiFormal(moduleName)
+          case Some(ns) =>
+             val t = OMMOD(DPath(ns) ? relativeURI.substring(j+1))
+             addSourceRef(t, start, start + moduleName.length)
+             t
+       }
     }
-    // If it has a prefix, it belongs to a different namespace, which must have been declared before in the document
-    val prefix : String = relativeURI.substring(0, j)
-    if (!prefixes.contains(prefix))                      // check if the alias is known
-      throw TextParseError(toPos(start), prefix + " is not a valid namespace alias")
-    val realURI = prefixes.get(prefix).get
-    return URI(realURI.toString() + relativeURI.substring(j))
   }
 
 
@@ -1291,7 +1227,8 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 object TextReader {
    /** the theory in which the parsed metadata keys reside */
    def metadataBase : MPath = MetaDatum.keyBase
-
+   /** turns a string into a semiformal term */
+   def makeSemiFormal(s: String) = OMSemiFormal(objects.Text("Twelf", s)) 
    /** the "sourceRef" metadata key */
    def sourceRefKey : GlobalName = Path.parseS(xml.namespace("omdoc") + "?metadata?sourceRef", Path.empty)
 }

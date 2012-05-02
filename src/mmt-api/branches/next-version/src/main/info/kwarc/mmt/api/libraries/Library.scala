@@ -188,31 +188,12 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
 
    /** iterator over all includes into a theory
     * a new iterator is needed once this has been traversed 
-    */                                     // TODO term
+    */
    def importsTo(to: Term) : Iterator[Term] = to match {
       case OMMOD(p) =>
          getTheory(p) match {
             case t: DefinedTheory => importsTo(t.df)
             case t: DeclaredTheory => t.iterator filter {case i: Include => true case _ => false} map {case i: Include => i.from}
-/*               new Iterator[TheoryObj] {
-                  private val i = t.iterator
-                  private def takeNext : Option[TheoryObj] = {
-                     if (i.hasNext)
-                        i.next match {
-                           case i:Include => Some(i.from)
-                           case _ => takeNext
-                        }
-                     else
-                        None
-                  }
-                  private var n = takeNext
-                  def next = {
-                     val f = n.get
-                     n = takeNext
-                     f
-                  }
-                  def hasNext = n.isDefined
-               }*/
          }
       case OMS(mmt.tempty) => Iterator.empty
       case TEmpty(mt) => Iterator.single(OMMOD(mt)) ++ importsTo(OMMOD(mt))

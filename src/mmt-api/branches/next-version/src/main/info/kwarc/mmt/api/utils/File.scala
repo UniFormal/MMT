@@ -22,7 +22,7 @@ case class File(toJava: java.io.File) {
       val name = toJava.getName
       val par = toJava.getParentFile
       if (par == null)
-        List(name)
+        if (name == "") List(toString.init) else List(name) // name == "" iff this File is a root
       else
         File(par).segments ::: List(name)
    }
@@ -36,6 +36,15 @@ case class File(toJava: java.io.File) {
        case None => File(toString + "." + ext)
        case Some(s) => File(toString.substring(0, toString.length - s.length) + ext)
    }
+}
+
+/** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
+object FileURI {
+   def apply(f: File) = URI(Some("file"), None, f.segments, true)
+   def unapply(u: URI) : Option[File] =
+     if (u.scheme == Some("file") && (u.authority == None || u.authority == Some("")))
+       Some(File(new java.io.File(u)))
+     else None
 }
 
 /** Auxiliary methods to manage files */

@@ -181,7 +181,7 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
               val errors = compiler.compile(inFile, outFile)
               compErrors(inPath) = errors
               if (!errors.isEmpty)
-                log(errors.mkString(prefix, prefix + " ", ""))
+                log(errors.mkString("errors follow\n", "\n", "\n"))
             }
           }
         }

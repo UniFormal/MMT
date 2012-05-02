@@ -342,12 +342,9 @@ class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.
          }
        case SVNNodeKind.FILE => throw NotApplicable //TODO
        case _ => throw NotApplicable
-
      }
-
    }
   
-   
    /** @throws BackendError if the root file cannot be read
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
    def openArchive(root: java.io.File) : Archive = {
@@ -444,7 +441,6 @@ class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.
                getInList(tl, p)
             }
       }}
-      
       getInList(stores, p)
    }
    
@@ -457,6 +453,18 @@ class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.
    def getArchives : List[Archive] = stores mapPartial {
       case a: Archive => Some(a)
       case _ => None
+   }
+   /** splits a logical document URI into the Archive holding it and the relative path in that archive leading to it */
+   def resolveLogical(uri: URI) : Option[(Archive, List[String])] = {
+      getArchives find {a => 
+        a.narrationBase.^! == uri.^! && uri.path.startsWith(a.narrationBase.path)
+      } map {a => (a, uri.path.drop(a.narrationBase.path.length))}
+   }
+   /** splits a physcial document URI into the Archive holding it and the relative path in that archive leading to it */
+   def resolvePhysical(file: File) : Option[(Archive, List[String])] = {
+      getArchives find {a => file.toString.startsWith(a.root.toString)} map {
+        a => (a, File(file.toString.substring(a.root.toString.length + 1)).segments.tail)
+      }
    }
    /** closes all svn sessions */
    def cleanup = {
