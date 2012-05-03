@@ -13,18 +13,18 @@ import scala.xml.{Node}
 
 
 object Index {
-   def apply(seq : Term, index : Term) : Term = OMA(OMS(mmt.index),List(seq,index))
+   def apply(seq : Term, index : Term) : Term = OMA(OMS(LFS.index),List(seq,index))
    def unapply(t: Term) : Option[(Term,Term)] = t match {
-	   case OMA(OMS(mmt.index), List(seq,i)) => Some((seq,i))
+	   case OMA(OMS(LFS.index), List(seq,i)) => Some((seq,i))
 	   case _ => None
    }
 }
 
 object SeqMap {
 	def apply (seq : Term, index : LocalName, to : Term) : Term = 
-	  OMBIND(OMA(OMS(mmt.seqmap),List(to)),Context(VarDecl(index,None,None)),seq)
+	  OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,None,None)),seq)
 	def unapply(t : Term) : Option[(Term,LocalName,Term)] = t match {
-		case OMBIND(OMA(OMS(mmt.seqmap),List(to)),Context(VarDecl(index,_,_,_*)),seq) => Some((seq,index,to))
+		case OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,_,_,_*)),seq) => Some((seq,index,to))
 		case _ => None
 	}
 }
@@ -40,9 +40,9 @@ object Rep {
 
 object Sequence {
   def apply (seq : Term*) : Term = 
-    OMA(OMS(mmt.seq),seq.toList)
+    OMA(OMS(LFS.seq),seq.toList)
   def unapply(t : Term) : Option[List[Term]] = t match {
-    case OMA(OMS(mmt.seq),args) => Some(args)
+    case OMA(OMS(LFS.seq),args) => Some(args)
     case _ => None
   }
 }

@@ -8,8 +8,8 @@ object LFS {
    val lfsbase = DPath(baseURI / "omdoc" / "seq.omdoc")
    val lfscd = lfsbase ? "mmt"
    def lfssymbol(name : String) = lfscd ? name
-   val jokerbinder = lfssymbol("joker")
-   val ellipsis = lfssymbol("ellipsis")
+   //val jokerbinder = lfssymbol("joker")
+   //val ellipsis = lfssymbol("ellipsis")
    val index = lfssymbol("index")
    val seqmap = lfssymbol("seqmap")   
    val seq = lfssymbol("seq")
