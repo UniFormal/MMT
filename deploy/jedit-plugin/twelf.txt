@@ -1,0 +1,15 @@
+This provides instructions for installing Twelf.
+
+ 1) Install SMLNJ http://www.smlnj.org/
+ 2) Check out Twelf via SVN from https://cvs.concert.cs.cmu.edu/twelf/branches/twelf-mod.
+ 3) Compile Twelf: Switch to the top directory of the twelf-mod working copy and
+     a) On unix systems, run "make smlnj"
+        Alternatively, compile manually using "sml build\twelf-server-smlnj.sml".
+     b) Compilation now requires a file "src/frontend/buildid.sml" whose automatic generation does not work on Windows.
+        You can create a dummy file with "copy src\frontend\buildid.sml.example src\frontend\buildid.sml".
+ 4) Check by running twelf-server.bat or twelf-server (depending on your OS). This should show a Twelf prompt.
+
+ 5) If you want to use Twelf files with %namespace declarations (e.g., everything in the LATIN atlas), you have to run a catalog server. This step is not necessary if you use the MMT plugin for jEdit, which includes the catalog server and runs it automatically.
+   a) Check out https://svn.kwarc.info/repos/MMT/deploy/lfcatalog
+   b) Run it in the background while working with Twelf.
+   c) In Twelf, set the URL of the catalog server by something like "set catalog http://localhost/getText".

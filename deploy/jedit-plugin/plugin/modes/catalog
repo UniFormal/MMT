@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<!DOCTYPE MODES SYSTEM "catalog.dtd">
+
+<MODES>
+<MODE NAME="mmt" FILE="mmt.xml" FILE_NAME_GLOB="*.elf" />
+</MODES>

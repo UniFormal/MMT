@@ -1,0 +1,16 @@
+// set up logging, the log file is relative to <jEdit settings directory>/plugins/info.kwarc.mmt.jedit.MMTPlugin
+log file mmtplugin.log
+log+ archive
+log+ twelf
+log+ extman
+//log+ jedit-parse
+log+ jedit
+
+// register Twelf as an external compiler, the second argument should be an absolute path to your Twelf server executable
+importer info.kwarc.mmt.lf.Twelf C:\twelf-mod\bin\twelf-server.bat
+
+// register an MMT archive, e.g., a working copy of the LATIN archive
+archive add C:\cds
+
+// force parsing of the whole LATIN archive so that hyperlinking works
+archive latin source

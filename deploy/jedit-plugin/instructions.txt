@@ -1,0 +1,100 @@
+This folder contains the MMT plugin for jEdit.
+This file contains instructions how to setup the plugin.
+
+-----------------------------------------
+Installation
+
+1) Install jEdit from http://www.jedit.org/
+
+2) a) If you have just installed jEdit:
+   Extract the contents of plugin.zip into your jEdit settings folder.
+   
+   b) Otherwise, do the same but with the following caveats:
+   - plugin.zip contains all plugins that the MMT plugin depends on.
+     If you have installed any of them already, simply skip it when extracting.
+   - plugin.zip contains a mode for mmt and a catalog file with an entry for that mode.
+     But if you have installed other modes already, you have a catalog file with other entries already.
+     In that case, do not overwrite the existing file.
+     Instead, open plugin.zip/modes/catalog and copy-paste the entry into your existing modes/catalog file.
+   - plugin.zip contains a file abbrevs defining useful abbreviations to input Unicode characters.
+     But if you have defined your own abbreviations already, you have such a file already.
+     In that case, do not overwrite the existing file.
+     Instead open abbrevs and copy-paste the abbrevations into your existing abbrevs file.
+
+3) Go to the jEdit plugin manager dialog and select the check box of the MMT plugin to load the plugin.
+   After doing that once, the plugin will be loaded automatically when jEdit is started.
+
+-----------------------------------------
+Updating
+
+To update the plugin, simply repeat the installation (or overwrite the individual jar files if you know which ones changed).
+Then restart jEdit or reload all changed jars via jEdit's plugin manager dialog.
+
+-----------------------------------------
+jEdit tips
+
+It is advisable to make the following general jEdit configurations
+
+Plugins: Browse the plugin manager and install all additional plugins you fancy, e.g., BufferTabs, CandyFolds, DirtyGutter, SuperAbbrevs, WhiteSpace, and XML.
+
+Unicode: Install a Unicode font on your system (e.g., GNU unifont http://unifoundry.com/unifont.html) and switch to that font in Options/Textarea. (Otherwise, unicode identifiers will not display correctly.)
+
+Encoding: Set UTF-8 as your default encoding in the Options/Encodings.
+
+-----------------------------------------
+Functionality
+
+The mode "mmt" is added for MMT files, which includes syntax highlighting.
+Mode-specific options including the appearance of the syntax highlighting can be configured via the generic jEdit options dialog.
+
+
+The files abbrevs contains a number of useful abbreviations to produce Unicode characters using Latex-like commands.
+For example, "öPi" expands like "\Pi". The details can be configured in jEdit's Options/Abbreviations dialog.
+If you do not use a German keyboard, you want to do a global replace of ö with some other letter in the abbrevs file before running jEdit.
+
+
+The MMT plugin integrates with jEdit core components and a number of other plugins.
+Many of these provided "dockable windows". These are subwindows of the jEdit window, which you open separately via the respective plugin.
+
+- File System Browser: The plugin provides actions specific to jEdit file system browser.
+  These are available in the browser's plugin menu.
+  This includes in particular actions for compiling files.
+  Files do not have to be opened for this, and all errors will appear in the ErrorList.
+
+- Sidekick: The plugin provides a Sidekick parser (called "mmt").
+  Thus, the dockable window of the sidekick plugin provides an outline view and autocompletion for MMT files,
+  both of which are synchronized with the current caret position.
+  Parsing errors appear in the dockable window of the ErrorList plugin.
+
+- ErrorList: The plugin provides an ErrorList error source (called "mmt"), which maintains compilation errors.
+  These errors appear in the same dockable window of the ErrorList plugin.
+
+- Hyperlinks: The plugin provides a Hyperlink source (called "mmt").
+  This displays the MMT URI of the identifier under the cursor and permits jumping to its declaration.
+  Jumping only works if the parser has read the file already.
+  you can enforce the latter by parsing the respective files in your MMT startup script (see below).
+
+- Console: The plugin provides a Console (named "mmt") for the Console plugin.
+  This permits direct access to the MMT shell in the dockable Console window.
+  See the MMT manual for the documentation of the MMT shell.
+
+
+The plugin provides a number of jEdit actions.
+These can be bound to any key, menu item, or toolbar button via the generic jEdit options dialog.
+By default, they are available in the MMT plugin menu.
+
+- Compile current buffer: compiles the current buffer
+
+
+To configure the MMT plugin, you use the MMT pane of the jEdit plugin options dialog.
+
+- startup file: This is the path to a MMT script, a text file with MMT shell commands.
+  This commands are executed when the MMT plugin is loaded (usually when jEdit is started).
+  A commented example is provided by the file startup.mmt in this directory.
+
+-----------------------------------------
+Working with Twelf
+
+1) Follow the instructions for Twelf to download and compile Twelf.
+
+2) Register Twelf as an external compiler in your startup file (or interactively via the MMT Console).
