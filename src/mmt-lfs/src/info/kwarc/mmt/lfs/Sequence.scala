@@ -11,6 +11,7 @@ import Conversions._
 import info.kwarc.mmt.lf._
 import scala.xml.{Node}
 
+
 object Index {
    def apply(seq : Term, index : Term) : Term = OMA(OMS(mmt.index),List(seq,index))
    def unapply(t: Term) : Option[(Term,Term)] = t match {
@@ -47,9 +48,12 @@ object Sequence {
 }
 
 object FlatSequence {
-  def apply (seq : Term*) : Term = (seq flatMap toList) match {
-     case List(t) => t
-     case l => Sequence(l:_*)
+  def apply (seq : Term*) : Term = {
+    val l : List[Term] = seq.toList flatMap toList
+    l match {
+      case List(t) => t
+      case l => Sequence(l:_*)
+    }
   }
   def toList(t : Term) : List[Term] = t match {
     case Sequence(args) => args flatMap toList
