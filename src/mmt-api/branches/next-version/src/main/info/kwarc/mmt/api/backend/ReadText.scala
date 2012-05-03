@@ -258,10 +258,11 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
   /** puts a term into an OMSemiFormal object
    * @param start the position of the first character in the term
+   * @param delimiters identifiers that terminate the term if they occur outside brackets (e.g., = in c:A=t)
    * @return the semiformal object, position after the term
    * @throws SourceError if there are unmatched right brackets }
    */
-  private def crawlTerm(start: Int) : Pair[OMSemiFormal, Int] =
+  private def crawlTerm(start: Int, delimiters: List[String]) : Pair[OMSemiFormal, Int] =
   {
     var i = start
     while (i < flat.length) {
@@ -284,7 +285,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         i += 1
       else if (isIdentifierPartCharacter(c)) { // identifier
         val (id, posAfter) = crawlIdentifier(i)
-        if (id == "=") // this ends the term, use || id == "#" for notation parser
+        if (delimiters contains id) // this ends the term
           return computeReturnValue
         i = posAfter
       }
@@ -598,7 +599,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i)
+      val (term, posAfter) = crawlTerm(i, List("="))
       constantType = Some(term) //tryParse(term, i)
       i = posAfter
       i = skipwscomments(i)
@@ -609,7 +610,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i)
+      val (term, posAfter) = crawlTerm(i, Nil)
       constantDef = Some(term) //tryParse(term, i)
       i = posAfter
       i = skipwscomments(i)
@@ -809,7 +810,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
       else {
         // It's a DefinedStructure
-        val (morphism, positionAfter) = crawlTerm(i)
+        val (morphism, positionAfter) = crawlTerm(i, Nil)
         i = positionAfter
         domain match {
           case Some(dom) => structure = new DefinedStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism)
@@ -862,7 +863,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the assigned term
-    val (term, posAfter) = crawlTerm(i)
+    val (term, posAfter) = crawlTerm(i, Nil)
     i = posAfter
     i = skipwscomments(i)
 
@@ -900,7 +901,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // get the morphism
-    val (morphism, positionAfter2) = crawlTerm(i)
+    val (morphism, positionAfter2) = crawlTerm(i, Nil)
 
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
@@ -927,7 +928,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val i = skipws(crawlKeyword(start, "%include"))
 
     // get the morphism
-    val (morphism, positionAfter) = crawlTerm(i)
+    val (morphism, positionAfter) = crawlTerm(i, Nil)
 
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
@@ -1089,7 +1090,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the domain
-    val (domain, positionAfterDomain) = crawlTerm(i)  //TODO this falsely eats the "->" and the codomain
+    val (domain, positionAfterDomain) = crawlTerm(i, List("->"))
     i = positionAfterDomain   // jump over domain
 
     i = expectNext(i, "->")
@@ -1097,7 +1098,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the codomain
-    val (codomain, positionAfterCodomain) = crawlTerm(i)
+    val (codomain, positionAfterCodomain) = crawlTerm(i, List("="))
     i = positionAfterCodomain     // jump over codomain
 
     i = expectNext(i, "=")
@@ -1114,7 +1115,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     }
     else if (isIdentifierPartCharacter(flat.codePointAt(i))) {
       // It's a DefinedView
-      val (morphism, positionAfter) = crawlTerm(i)
+      val (morphism, positionAfter) = crawlTerm(i, Nil)
       i = positionAfter
       view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism)
       add(view)
