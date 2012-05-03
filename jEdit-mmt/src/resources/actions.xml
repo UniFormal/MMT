@@ -6,7 +6,7 @@
 	</ACTION>
 	<ACTION NAME="mmt-compile">
 		<CODE>
-		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compile(view);
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compileCurrent(view);
 		</CODE>
 	</ACTION>
 </ACTIONS>

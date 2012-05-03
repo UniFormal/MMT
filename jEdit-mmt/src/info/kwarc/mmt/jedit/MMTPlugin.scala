@@ -67,7 +67,8 @@ class MMTPlugin extends EditPlugin {
          arch.getErrors(inPath) foreach {case SourceError("compiler", reg, hd, tl, warn, fatal) =>
             val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
             val error = new DefaultErrorSource.DefaultError(
-                errorSource, tp, inFile.toString, reg.start.line, reg.start.column, reg.end.column, hd
+                // 0 to avoid giving an end position; errorlist adds the end-column to the lineStart to compute an offset; so we could trick it into displaying multi-line errors
+                errorSource, tp, inFile.toString, reg.start.line, reg.start.column, 0, hd
             )
             tl foreach {m => error.addExtraMessage(m)}
             errorSource.addError(error)
@@ -75,18 +76,35 @@ class MMTPlugin extends EditPlugin {
       }
    }
    /** compiles the current buffer */
-   def compile(view: View) {
+   def compile(file: String) {
+      controller.backend.getArchives find {a => file.startsWith((a.root / "source").toString)} match {
+         case None =>
+           log("not compiling buffer " + file)
+         case Some(a) =>
+           log("compiling buffer " + file)
+           val path = File(file.substring(a.root.toString.length + 8)).segments
+           compile(a.id, path)
+      }
+   }
+   def compileCurrent(view: View) {
+      log("compile current")
       val buffer = view.getBuffer
       buffer.save(view, null)
       io.VFSManager.waitForRequests // wait until buffer is saved
-      val file = buffer.getPath
-      controller.backend.getArchives find {a => file.startsWith((a.root / "source").toString)} match {
-         case None =>
-           log("not compiling current buffer " + file)
-         case Some(a) =>
-           log("compiling current buffer " + file)
-           val path = File(file.substring(a.root.toString.length + 8)).segments
-           compile(a.id, path)
+      compile(buffer.getPath)
+   }
+   def compileSelected(view: View, brw: browser.VFSBrowser) {
+      log("compile seected")
+      val files = brw.getSelectedFiles
+      files foreach {vfsfile =>
+         val file = vfsfile.getPath
+         val buffer = jEdit.getBuffer(file)
+         // save if the file is open
+         if (buffer != null) {
+           buffer.save(view, null)
+           io.VFSManager.waitForRequests // wait until buffer is saved
+         }
+         compile(file)
       }
    }
 }
