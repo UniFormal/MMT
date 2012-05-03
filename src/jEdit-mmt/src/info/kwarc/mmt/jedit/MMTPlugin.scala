@@ -25,7 +25,6 @@ class MMTPlugin extends EditPlugin {
    private def log(msg: String) {controller.report("jedit", msg)}
    /** called by jEdit when plugin is loaded */
    override def start() {
-      controller.report.addHandler(StatusBarLogger)
       val home = getPluginHome()
       home.mkdirs()
       controller.setHome(home)
@@ -38,6 +37,8 @@ class MMTPlugin extends EditPlugin {
       //else
       //   controller.report("error", "could not find startup.mmt file")
       errorlist.ErrorSource.registerErrorSource(errorSource)
+      // add this only after executing the startup file because the status bar is not available yet
+      controller.report.addHandler(StatusBarLogger)
    }
    /** called by jEdit when plugin is unloaded */
    override def stop() {
