@@ -79,22 +79,20 @@ class MMTPlugin extends EditPlugin {
    def compile(file: String) {
       controller.backend.getArchives find {a => file.startsWith((a.root / "source").toString)} match {
          case None =>
-           log("not compiling buffer " + file)
+           log("not compiling buffer/directory " + file)
          case Some(a) =>
-           log("compiling buffer " + file)
+           log("compiling buffer/directory " + file)
            val path = File(file.substring(a.root.toString.length + 8)).segments
            compile(a.id, path)
       }
    }
    def compileCurrent(view: View) {
-      log("compile current")
       val buffer = view.getBuffer
       buffer.save(view, null)
       io.VFSManager.waitForRequests // wait until buffer is saved
       compile(buffer.getPath)
    }
    def compileSelected(view: View, brw: browser.VFSBrowser) {
-      log("compile seected")
       val files = brw.getSelectedFiles
       files foreach {vfsfile =>
          val file = vfsfile.getPath
