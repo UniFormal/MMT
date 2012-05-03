@@ -28,9 +28,17 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.3=plugin gatchan.jedit.hyperlinks.H
 mmt-showinfo.label=Show
 mmt-compile.label=Compile current buffer
 
-# menu items for the actions
+# labels for actions defined in browser.actions.xml
+mmt-browser-compile.label=Compile
+
+# menu items for jEdit views
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-compile mmt-showinfo
+
+# menu items for file system browsers
+plugin.info.kwarc.mmt.jedit.MMTPlugin.browser-menu=mmt-browser-compile
+
+# MMT dockable 
 mmt-dockable.label=Dockable
 mmt-dockable.title=The MMT Dockable
 
@@ -46,9 +54,6 @@ options.info.kwarc.mmt.jedit.MMTPlugin.code=new info.kwarc.mmt.jedit.MMTOptions(
 sidekick.parser.mmt.label=MMT parser
 mode.mmt.sidekick.parser=mmt
 mode.lf.sidekick.parser=mmt
-
-# projectviewer
-options.info.kwarc.mmt.jedit.MMTPlugin.project-options.label=MMT
 
 # hyperlink
 mode.mmt.hyperlink.source=mmt

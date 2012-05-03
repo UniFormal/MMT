@@ -8,12 +8,4 @@
    <SERVICE CLASS="gatchan.jedit.hyperlinks.HyperlinkSource" NAME="mmt">
       new info.kwarc.mmt.jedit.MMTHyperlinkSource();
    </SERVICE>
-
-   <SERVICE CLASS="projectviewer.action.Action" NAME="Compile">
-      new info.kwarc.mmt.jedit.MMTProjectViewerAction("compile");
-   </SERVICE> 
-   <SERVICE CLASS="projectviewer.config.OptionsService" NAME="MMT Project Option">
-      new info.kwarc.mmt.jedit.MMTProjectViewerOptions();
-   </SERVICE> 
-   
 </SERVICES>
