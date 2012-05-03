@@ -13,7 +13,7 @@ import scala.io.Source
 /** elaborates Instance declarations
  * this is also called the pragmatic-to-strict translation
  */
-class PatternSpotter(controller: Controller) extends Elaborator {
+class PatternChecker(controller: Controller) extends Elaborator {
    def apply(e: ContentElement) : Unit = e match {
      case c: Constant =>
      case _ =>
