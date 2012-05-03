@@ -11,7 +11,7 @@
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
     <taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
 
-    <target name="compile" depends="clean">
+    <target name="compile">
         <mkdir dir="build"/>
         <path id="compile.classpath">
           <pathelement location="${scala.dir}/scala-library.jar"/>
@@ -33,9 +33,10 @@
     </target>
 
    <target name="deploy">
-      <copy todir="e:\homedir\Program_Data\jEdit\jars"> <!--C:\frabe\Program_Data\jEdit\jars">-->
+      <copy todir="C:\frabe\Program_Data\jEdit\jars">
           <fileset file="MMTPlugin.jar"/>
       	  <fileset file="${deploy}/mmt-api.jar"/>
+      	  <fileset file="${deploy}/mmt-lf.jar"/>
       </copy>
       <copy todir="${deploy}">
         <fileset file="MMTPlugin.jar"/>
