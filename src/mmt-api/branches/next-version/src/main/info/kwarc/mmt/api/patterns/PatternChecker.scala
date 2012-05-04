@@ -52,7 +52,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
           sub ++ Sub(con.name,decl.name)
           mat(con.tp,dtype,Context()) && mat(con.df,ddef,Context())          
       }
-      mat.metaContext.toSubstitution //TODO: Check for substituting the variables in the following declarations
+      mat.metaContext.toSubstitution 
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  
   def apply(e: ContentElement) : Unit = e match {
