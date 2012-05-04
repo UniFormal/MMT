@@ -61,5 +61,37 @@ class PatternChecker(controller: Controller) extends Elaborator {
 
 class Matcher(controller : Controller, var metaContext : Context) {
   def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = true //TODO
-  def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = true //TODO
+  def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
+    (dterm,pterm) match {
+      case (Some(d),Some(p)) => apply(d,p,con)
+      case (None,None) => true
+      case (_,_) => false
+    }
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
