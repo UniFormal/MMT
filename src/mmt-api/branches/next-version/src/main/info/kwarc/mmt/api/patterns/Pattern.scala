@@ -9,7 +9,14 @@ import frontend._
 import utils._
 import scala.io.Source
 
-              // TODO term
+/*
+ * A Pattern represents a declaration pattern.
+ * 
+ * @param home   the link
+ * @param name   the name of the declaration pattern
+ * @param params the parameters of the declaration patterns
+ * @param body   the body of the declaration pattern that consists of declarations             
+ */
 class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context) extends Symbol {
    def toNode =
      <pattern name={name.flat}>

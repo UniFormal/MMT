@@ -41,12 +41,16 @@ class PatternChecker(controller: Controller) extends Elaborator {
         case _ => Nil //TODO
      }
   }
-  def patternCheck(constants : List[Constant], pattern : Pattern) : Option[Substitution] = {    
-    val bodyList = pattern.body.toList    
-    if (constants.length == bodyList.length) {
+  def patternCheck(constants : List[Constant], pattern : Pattern) : Option[Substitution] = {        
+    if (constants.length == pattern.body.length) {
       val mat = new Matcher(controller,pattern.body)
-      constants.zip(bodyList).forall {
-        case (con,decl) => mat(con.tp,decl.tp,Context()) && mat(con.df,decl.df,Context())                      
+      var sub = Substitution()
+      constants.zip(pattern.body).forall {
+        case (con,decl) =>
+          val dtype = decl.tp.map(t => t ^ sub)
+          val ddef = decl.df.map(d => d ^ sub)
+          sub ++ Sub(con.name,decl.name)
+          mat(con.tp,dtype,Context()) && mat(con.df,ddef,Context())          
       }
       mat.metaContext.toSubstitution //TODO: Check for substituting the variables in the following declarations
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
