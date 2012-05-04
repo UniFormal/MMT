@@ -48,7 +48,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
       constants.zip(bodyList).forall {
         case (con,decl) => mat(con.tp,decl.tp,Context()) && mat(con.df,decl.df,Context())                      
       }
-      mat.metaContext.toSubstitution
+      mat.metaContext.toSubstitution //TODO: Check for substituting the variables in the following declarations
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  
   def apply(e: ContentElement) : Unit = e match {
@@ -60,7 +60,17 @@ class PatternChecker(controller: Controller) extends Elaborator {
 }
 
 class Matcher(controller : Controller, var metaContext : Context) {
-  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = true //TODO
+  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {
+    /* 
+     * @Aivaras: Do cases for OpenMath terms.
+     *     
+    (dterm,pterm) match {
+      
+    }
+    */
+  true //TODO  
+  }
+    
   def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
     (dterm,pterm) match {
       case (Some(d),Some(p)) => apply(d,p,con)
