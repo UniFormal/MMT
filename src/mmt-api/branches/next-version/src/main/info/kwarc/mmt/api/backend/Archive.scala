@@ -4,6 +4,7 @@ import libraries._
 import frontend._
 import modules._
 import ontology._
+import patterns._
 import symbols._
 import objects._
 import utils._
@@ -446,9 +447,10 @@ class Archive(val root: File, val properties: Map[String,String], compsteps: Opt
        } else if (inFile.getExtension == Some("omdoc")) {
               val mpath = Archive.ContentPathToMMTPath(in)
               val mod = controller.globalLookup.getModule(mpath)
+              val ie = new InstanceElaborator(controller)
               val flatNode = mod match {
                  case thy: DeclaredTheory =>
-                    //Instance.elaborate(thy)(controller.globalLookup, report) PATTERNS
+                    ie.elaborate(thy)
                     thy.toNodeElab
                  case _ => mod.toNode
               }

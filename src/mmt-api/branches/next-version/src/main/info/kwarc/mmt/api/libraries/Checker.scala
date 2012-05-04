@@ -102,7 +102,7 @@ class Checker(controller: Controller) {
             checkMorphism(a.target, domain, l.to)
          case p : Pattern =>
             checkContext(p.home, Context(), p.params)
-            checkContext(p.home, p.params, p.con)  
+            checkContext(p.home, p.params, p.body)  
 /*       case i : Instance => 
             val pt : Pattern = mem.content.getPattern(i.pattern)
             val paths : List[Path] = Nil //checkSubstitution(i.home, i.matches, pt.params, Context())

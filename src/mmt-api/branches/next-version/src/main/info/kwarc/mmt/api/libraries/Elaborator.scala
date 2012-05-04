@@ -17,7 +17,7 @@ abstract class Elaborator {
  *  if this is used, all includes are guaranteed to be direct
  *  this retrieves all included theories recursively
  */
-class ElaborateIncludes(controller: Controller) extends Elaborator {
+class IncludeElaborator(controller: Controller) extends Elaborator {
    private val content = controller.memory.content
    private def add(c: ContentElement) {content.add(c)}
    def apply(e: ContentElement) : Unit = e match {
@@ -64,12 +64,3 @@ class ElaborateIncludes(controller: Controller) extends Elaborator {
    }
 }
 
-/** elaborates Instance declarations
- * this is also called the pragmatic-to-strict translation
- */
-class ElaborateInstances extends Elaborator {
-   def apply(e: ContentElement) : Unit = e match {
-     case i: Instance =>
-     case _ =>
-   }
-}

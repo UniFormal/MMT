@@ -21,13 +21,13 @@ class InstanceElaborator(controller: Controller) extends Elaborator {
    def apply(e: ContentElement) {e match {
      case inst : Instance => 
      	val pt : Pattern = controller.globalLookup.getPattern(inst.pattern)
-     	val lpair = pt.con.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
+     	val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
      	val names = lpair.unzip._1
      	val subs = lpair.unzip._2  
         def auxSub(x : Term) = {
      		x ^ (inst.matches ++ Substitution(subs : _*))  
      	}
-     	pt.con.map {
+     	pt.body.map {
      		case VarDecl(n,tp,df,at @ _*) =>
      			val nname = inst.name / n
      			report("elaboration", "generating constant " + nname)

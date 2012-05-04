@@ -196,8 +196,8 @@ object Differ {
       changes = UpdateComponent(old.path, "params", Some(old.params), Some(nw.params)) :: changes
     }
 
-    if (old.con != nw.con) {
-      changes = UpdateComponent(old.path, "con", Some(old.con), Some(nw.con)) :: changes
+    if (old.body != nw.body) {
+      changes = UpdateComponent(old.path, "body", Some(old.body), Some(nw.body)) :: changes
     }
 
 	  new Diff(changes)

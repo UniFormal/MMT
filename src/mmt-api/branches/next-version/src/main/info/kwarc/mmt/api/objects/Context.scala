@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import utils._
+import utils.MyList._
 import presentation._
 import Conversions._
 
@@ -65,6 +66,16 @@ case class Context(variables : VarDecl*) extends Obj {
       // sub ++ id.take(i) represents sub, x_1/x_1, ..., x_{i-1}/x_{i-1} 
       val newvars = variables.zipWithIndex map {case (vd, i) => vd ^ (sub ++ id.take(i))}
       Context(newvars :_*)
+   }
+   
+   /** returns this as a substitutions if all variables have a definiens */
+   def toSubstitution : Option[Substitution] = {
+     var isSubs = true
+     val subs = variables.toList mapPartial {
+        case VarDecl(n,_,Some(df), _*) => Some(Sub(n,df))
+        case _ => isSubs = false; None
+     }
+     if (isSubs) Some(subs) else None
    }
 
    override def toString = this.map(_.toString).mkString("",", ","")

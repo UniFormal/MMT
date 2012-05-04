@@ -61,8 +61,8 @@ object Patcher {
     case (i : Include,  "from", Some(from : Term)) => new Include(i.home, from)
 
     /** Patterns */
-    case(p : Pattern,  "params", Some(params : Context)) => new Pattern(p.home, p.name, params, p.con)
-    case(p : Pattern,  "con", Some(con : Context)) => new Pattern(p.home, p.name, p.params, con)
+    case(p : Pattern,  "params", Some(params : Context)) => new Pattern(p.home, p.name, params, p.body)
+    case(p : Pattern,  "body", Some(body : Context)) => new Pattern(p.home, p.name, p.params, body)
 
     /** Instances */
     case(i : Instance, "pattern", Some(OMID(pattern : GlobalName))) => new Instance(i.home,i.name, pattern, i.matches)
