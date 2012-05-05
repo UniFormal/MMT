@@ -64,7 +64,7 @@ class TptpTwelfCompiler extends Compiler {
     
     val tptp2xcomp = "tptp2X"
     val flags : String = "-flf -d- -q2"
-    val cmd = "tcsh " + tptp2Xpath + tptp2xcomp + " " + flags + " " + in.toString()
+    val cmd : String = "tcsh " + tptp2Xpath + tptp2xcomp + " " + flags + " " + in.toString()
     
     log("about to run!!!")
     
