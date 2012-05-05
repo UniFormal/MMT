@@ -68,6 +68,10 @@ class TptpTwelfCompiler extends Compiler {
     
     log("about to run!!!")
     
+    // check if file already exists, overwrite!
+    
+    
+    // check if output target dir exists, if not, create dirs
     var outf : java.io.File = new java.io.File(outDir.toString())
     if (! outf.exists()) {
       outf.mkdirs()
@@ -79,15 +83,12 @@ class TptpTwelfCompiler extends Compiler {
     log("compiled to " + fileout.toString())
     
     
+//    a nice way of dealing with concrete files should be found
+//    right now the compiler is called with the same inFile as during the first compilation
+//    i.e. .elf is sought even after 
+    outFile
     errors
   }
   
 }
 
-//
-//class Env(working : String) { 
-//         private val workDir = new java.io.File(working) 
-//         def run(cmd : String*) = if (Runtime.getRuntime(). 
-//                 exec(cmd.toArray[String], null, workDir).waitFor() != 0) 
-//             throw new Exception("Execution failed. Better luck next time!") 
-//}
