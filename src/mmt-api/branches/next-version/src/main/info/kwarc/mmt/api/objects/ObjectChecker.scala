@@ -1,16 +1,42 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
+
 import libraries._
 import modules._
 import symbols._
 //import utils._
 import frontend._
 import objects.Conversions._
+import scala.collection.mutable.HashSet
 
-case class UnresolvedConstraints() extends java.lang.Throwable
+abstract class Constraint {
+  def freeVars : HashSet[LocalName]
+}
+case class EqualityConstraint(context: Context, t1: Term, t2: Term, t: Option[Term]) extends Constraint {
+  def freeVars = {
+    val ret = new HashSet
+    val fvs = context.freeVars_ ::: t1.freeVars_ ::: t2.freeVars_ ::: (t.map(_.freeVars_).getOrElse(Nil))
+    fvs foreach {fvs += _}
+    fvs
+  }
+}
+case class TypingConstraint(context: Context, tm: Term, tp: Term) extends Constraint {
+  def freeVars = {
+    val ret = new HashSet
+    val fvs = context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
+    fvs foreach {fvs += _}
+    fvs
+  }
+}
 
-abstract class Constraint
-case class EqualConstraint(t1: Term, t2: Term, t: Term, context: Context)
+class DelayedConstraint(val constraint: Constraint) {
+  private val freeVars = constraint.freeVars
+  private var activatable = false
+  def solved(name: LocalName) {
+     if (! activatable && (freeVars contains name)) activatable = true
+  }
+  def isActivatable: Boolean = activatable
+}
 
 /*
 abstract class TypeConstructor {
@@ -42,41 +68,59 @@ class Unifier {
 }
 */
 
-class ConstraintDelay(meta: Context) {
-   var solution : Substitution = Substitution()
-   private var delayed : List[Constraint] = Nil
-   def delay(c: Constraint) {delayed = c :: delayed}
-   def solved : Boolean = delayed.isEmpty //TODO: substitution must be total for meta
-}
-
-class ObjectChecker(report: Report) {
-   private def log(msg : => String) = report("checker", msg)
-   //val foundTheory = LF.lftheory
-/*   def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : Boolean = {
-      log("typing\n" + tm.toString + "\n" + tp.toString)
-      (tm, tp) match {
-         case (Some(s), Some(a)) => check(s, a, G)
-         case (Some(s), None) => infer(s, G) != Univ(2)
-         case (None, Some(a)) => check(a, Univ(1), G) || check(a, Univ(2), G)
-         case (None, None) => false
+class Solver(controller: Controller, unknowns: Context) {
+   private var solution : Context = unknowns
+   private var delayed : List[DelayedConstraint] = Nil
+   def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
+   def hasUnsolvedVariables : Boolean = solution.toSubstitution.isEmpty
+   def getSolution : Option[Substitution] = if (delayed.isEmpty) solution.toSubstitution else None
+   private def delay(c: Constraint) {
+      val dc = new DelayedConstraint(c)
+      delayed = dc :: delayed
+   }
+   def activate: Boolean = {
+      delayed find {_.isActivatable} match {
+         case None => true
+         case Some(dc) => apply(dc.constraint)
       }
    }
-*/   def equality(tm1 : Term, tm2 : Term, meta: Context)(implicit lib : Lookup) : Substitution = {
-      lib.report("LF: ", "equal\n" + tm1.toString + "\n" + tm2.toString)
-      implicit val cd = new ConstraintDelay(meta)
-      equal(tm1, tm2, Context())
-      if (cd.solved)
-        cd.solution
-      else
-        throw UnresolvedConstraints()
+   private def solve(name: LocalName, value: Term): Boolean = {
+      val (left, solved :: right) = solution.span(_.name != name)
+      if (solved.df.isDefined)
+         checkEquality(value, solved.df.get, solved.tp)(Context())
+      else {
+         solution = left ::: solved.copy(df = Some(value)) :: right
+         delayed foreach {_.solved(name)}
+         true
+      }
    }
- 
+   def apply(c: Constraint, mayHaveSolvedVars: Boolean = true): Boolean = {
+     val subs = solution.toPartialSubstitution
+     def prepareTerm(t: Term): Term = if (mayHaveSolvedVars) t ^ subs else t
+     def prepareCon(c: Context): Context = if (mayHaveSolvedVars) c ^ subs else c
+     val result = c match {
+        case TypingConstraint(con, tm, tp) =>
+           checkTyping(prepareTerm(tm), prepareTerm(tp))(prepareCon(con))
+        case EqualityConstraint(con, tm1, tm2, tp) =>
+           checkEquality(prepareTerm(tm1), prepareTerm(tm2), tp map prepareTerm)(prepareCon(con))
+     }
+     activate
+   }
+   def checkTyping(tm: Term, tp: Term)(implicit con: Context): Boolean = {
+      true
+   }
+   def checkEquality(tm1: Term, tm2: Term, tp: Option[Term])(implicit con: Context): Boolean = {
+      true
+   }   
+}
+
+/*
 /**
  * @param path the URI of a constant
  * @param lib  Lookup library
  * @return type of the constant
- * */  
-/* def lookuptype(path : GlobalName)(implicit lib : Lookup) : Term = {
+ */  
+  def lookuptype(path : GlobalName)(implicit lib : Lookup) : Term = {
     val con = lib.getConstant(path)
     con.tp match {
        case Some(t) => t
@@ -85,8 +129,7 @@ class ObjectChecker(report: Report) {
           infer(con.df.get, Context())
     }
  }
-*/  def lookupdef(path : GlobalName)(implicit lib : Lookup) : Option[Term] = lib.getConstant(path).df
-
+  def lookupdef(path : GlobalName)(implicit lib : Lookup) : Option[Term] = lib.getConstant(path).df
   /**
    * if G |- tm1 : A and G |- tm2 : A, then equal(tm1,tm2,G) iff G |- tm1 = tm2 : A
    */
@@ -103,7 +146,7 @@ class ObjectChecker(report: Report) {
                case Some(t) => equal(OMS(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
             }
          }
-/*         case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => 
+         case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => 
             val G2 = G ++ OMV(x1) % a1
             equal(a1, a2, G) && equal(t1, t2^(OMV(x2)/OMV(x1)), G2)
          case (Pi(x1,a1,t1), Pi(x2,a2,t2)) => 
@@ -120,7 +163,7 @@ class ObjectChecker(report: Report) {
                } else false
             }
          }
-*/         case _ => tm1 == tm2
+         case _ => tm1 == tm2
       }
    }
 
@@ -143,11 +186,11 @@ object Test {
 
 }
 
-/*class LFF extends Foundation {
-   *//**
+class LFF extends Foundation {
+   /**
     * check(s,T,G) iff G |- s : T : U for some U \in {type,kind}
     * checks whether a term s has type T  
-    *//*
+    */
    def check(s : Term, T : Term, G : Context)(implicit lib : Lookup) : Boolean = {
       s match {
          case Univ(1) => T == Univ(2)
@@ -180,13 +223,13 @@ object Test {
    }
 
   
- *//**
+ /**
   * if t is a constant or an application of a defined constant, it replaces the constant with its definition.
   * if t is a lambda expression application, it is beta-reduced 
   * removes top-level redex, application of defined constant
   * if t well-formed, then |- reduce(t,G) = t
   * if |- t = Pi x:A. B for some A,B, then reduce(t) of the form Pi x:A.B (?)
-  *//*
+  */
    def reduce(t : Term, G : Context)(implicit lib : Lookup) : Term = t match {
     // t can also be an arbitrary application
          case Apply(Lambda(x,a,t), s) => if (check(s,a,G)) reduce(t ^ (G.id ++ OMV(x)/s), G) else throw LFError("ill-formed")
@@ -208,9 +251,9 @@ object Test {
          case t => t
    }
  
- *//**
+ /**
   * if exists A such that G |- s : A, then G |- infer(s,G) = A
-  *//*
+  */
    def infer(s : Term, G : Context)(implicit lib : Lookup) : Term = {
       s match {
             case Univ(1) => Univ(2)

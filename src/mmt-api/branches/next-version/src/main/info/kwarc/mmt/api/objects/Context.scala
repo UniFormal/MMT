@@ -16,6 +16,10 @@ import scala.xml.Node
  */
 case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: (GlobalName,Term)*) extends Obj {
    val attrs = ats.toList
+   /** self-written copy method that does not allow changing attributions
+    * (because sequence arguments and copy do not work together) */
+   def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) =
+      VarDecl(name, tp, df, ats:_*)
    def ^(sub : Substitution) = VarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
@@ -68,14 +72,17 @@ case class Context(variables : VarDecl*) extends Obj {
       Context(newvars :_*)
    }
    
-   /** returns this as a substitutions if all variables have a definiens */
-   def toSubstitution : Option[Substitution] = {
-     var isSubs = true
-     val subs = variables.toList mapPartial {
+   /** returns this as a substitutions using those variables that have a definiens */
+   def toPartialSubstitution : Substitution = {
+     variables.toList mapPartial {
         case VarDecl(n,_,Some(df), _*) => Some(Sub(n,df))
-        case _ => isSubs = false; None
+        case _ => None
      }
-     if (isSubs) Some(subs) else None
+   }
+   /** returns this as a substitution if all variables have a definiens */
+   def toSubstitution : Option[Substitution] = {
+     val subs = toPartialSubstitution
+     if (subs.length == this.length) Some(subs) else None
    }
 
    override def toString = this.map(_.toString).mkString("",", ","")

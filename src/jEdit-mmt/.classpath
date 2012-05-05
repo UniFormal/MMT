@@ -9,6 +9,5 @@
 	<classpathentry kind="lib" path="lib/Hyperlinks.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api-nv"/>
-	<classpathentry kind="lib" path="lib/ProjectViewer.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
