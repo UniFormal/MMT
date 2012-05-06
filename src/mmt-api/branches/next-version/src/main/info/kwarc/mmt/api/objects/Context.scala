@@ -43,6 +43,8 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    private def attrsN(pos : Position) = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
 }
 
+//TODO Context.freeVars_ is faulty
+
 /** represents an MMT context as a list of variable declarations */
 case class Context(variables : VarDecl*) extends Obj {
    /** add variable at the end */
