@@ -21,6 +21,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) =
       VarDecl(name, tp, df, ats:_*)
    def ^(sub : Substitution) = VarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
+   private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil) 
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
 	   val varToOMATTR = attrs.foldLeft[Term](OMV(name)) {(v,a) => OMATTR(v, OMID(a._1), a._2)}
@@ -43,8 +44,6 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    private def attrsN(pos : Position) = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
 }
 
-//TODO Context.freeVars_ is faulty
-
 /** represents an MMT context as a list of variable declarations */
 case class Context(variables : VarDecl*) extends Obj {
    /** add variable at the end */
@@ -61,6 +60,7 @@ case class Context(variables : VarDecl*) extends Obj {
 	   case -1 => throw LookupError(name)
 	   case i => variables.length - i - 1 
    }
+   /** the identity substitution of this context */
    def id : Substitution = this map {
 	   case VarDecl(n, _, _, _*) => Sub(n,OMV(n))
    }
@@ -73,7 +73,14 @@ case class Context(variables : VarDecl*) extends Obj {
       val newvars = variables.zipWithIndex map {case (vd, i) => vd ^ (sub ++ id.take(i))}
       Context(newvars :_*)
    }
-   
+   private[objects] def freeVars_ = {
+      var except: List[LocalName] = Nil
+      this flatMap {vd =>
+        val fv = vd.freeVars_.filterNot(except contains _) //remove those variables that are declared previously in this context
+        except ::= vd.name
+        fv
+      }
+   }
    /** returns this as a substitutions using those variables that have a definiens */
    def toPartialSubstitution : Substitution = {
      variables.toList mapPartial {
@@ -86,7 +93,6 @@ case class Context(variables : VarDecl*) extends Obj {
      val subs = toPartialSubstitution
      if (subs.length == this.length) Some(subs) else None
    }
-
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNodeID(pos : Position) =
      <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + i)})}</om:OMBVAR>
@@ -100,6 +106,7 @@ case class Context(variables : VarDecl*) extends Obj {
 /** a case in a substitution */		
 case class Sub(name : LocalName, target : Term) extends Obj {
    def ^(sub : Substitution) = Sub(name, target ^ sub)
+   private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
    def toNodeID(pos: Position): Node = <om:OMV name={name.flat}>{target.toNodeID(pos + 1)}</om:OMV>
    def toCML : Node = <m:mi name={name.flat}>{target.toCML}</m:mi>
@@ -117,6 +124,8 @@ case class Substitution(subs : Sub*) extends Obj {
    def ^(sub : Substitution) = this map {
 	   case Sub(v,t) => Sub(v, t ^ sub)
    }
+   private[objects] def freeVars_ = (this flatMap {_.freeVars_})
+   def maps(n: LocalName): Boolean = this exists {_.name == n}
    def apply(v : LocalName) : Option[Obj] = subs.reverse.find(_.name == v).map(_.target)
    def isIdentity : Boolean = subs forall {
       case Sub(n, OMV(m)) => m == n
@@ -149,17 +158,24 @@ object Context {
 	}
 	//crude renaming to kind of avoid variable capture
 	private def rename(s: LocalName) = s / "_"
-	def makeFresh(con: Context) : (Context,Substitution) = con match {
-	   case Context() => (Context(), Substitution())
-	   case Context(VarDecl(x,tp,df,ats @ _*), tail @ _*) =>
-	      val xn = rename(x)
-	      val tailn = Context(tail : _*) ^ OMV(x) / OMV(xn)
-	      val (newTail, tailSub) = makeFresh(tailn)
-	      val newCon = VarDecl(xn, tp, df, ats : _*) ++ newTail
-	      val sub = OMV(x) / OMV(xn) ++ tailSub
-	      (newCon, sub)
+	/** returns an alpha-renamed version of con that contains no variable from forbidden, and a substitution that performs the alpha-renaming */
+	def makeFresh(con: Context, forbidden: List[LocalName]) : (Context,Substitution) = {
+	   var sub = Substitution()
+	   val conN = con map {case vd @ VarDecl(x,tp,df,ats @ _*) =>
+	      if (forbidden contains x) {
+   	      val xn = rename(x)
+            val vdn = VarDecl(xn, tp map {_ ^ sub}, df map {_ ^ sub}, ats : _*)
+   	      sub = sub ++ OMV(x) / OMV(xn)
+   	      vdn
+	      } else {
+	         sub = sub ++ OMV(x) / OMV(x)
+	         vd
+	      }
+	   }
+	   (conN, sub)
 	}
 }
+
 /** helper object */
 object VarDecl {
    def parseAttrs[T <: Obj, D <: Obj](N: Seq[Node], base: Path, parseType: Node => T, parseDef : Node => D, parseOther : Node => Term) :

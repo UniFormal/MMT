@@ -23,22 +23,22 @@ abstract class Constraint {
  * context |- t1 = t2       if t = None
  */
 case class EqualityConstraint(context: Context, t1: Term, t2: Term, t: Option[Term]) extends Constraint {
-  lazy val freeVars = {
-    val ret = new HashSet
-    val fvs = context.freeVars_ ::: t1.freeVars_ ::: t2.freeVars_ ::: (t.map(_.freeVars_).getOrElse(Nil))
-    fvs foreach {n => if (! context.declares(n)) fvs += n}
-    fvs
-  }
+   lazy val freeVars = {
+     val ret = new HashSet[LocalName]
+     val fvs = context.freeVars_ ::: t1.freeVars_ ::: t2.freeVars_ ::: (t.map(_.freeVars_).getOrElse(Nil))
+     fvs foreach {n => if (! context.isDeclared(n)) ret += n}
+     ret
+   }
 }
 /** represents a typing judgment
  * context |- tm : tp
  */
 case class TypingConstraint(context: Context, tm: Term, tp: Term) extends Constraint {
   lazy val freeVars = {
-    val ret = new HashSet
+    val ret = new HashSet[LocalName]
     val fvs = context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
-    fvs foreach {n => if (! context.declares(n)) fvs += n}
-    fvs
+    fvs foreach {n => if (! context.isDeclared(n)) ret += n}
+    ret
   }
 }
 
@@ -111,9 +111,10 @@ class Solver(controller: Controller, unknowns: Context) {
    def getSolution : Option[Substitution] = if (delayed.isEmpty) solution.toSubstitution else None
 
    /** delays a constraint for future processing */
-   private def delay(c: Constraint) {
+   private def delay(c: Constraint): Boolean = {
       val dc = new DelayedConstraint(c)
       delayed = dc :: delayed
+      true
    }
    /** activates a previously delayed constraint if one of its free variables has been solved since */
    private def activate: Boolean = {
@@ -155,7 +156,7 @@ class Solver(controller: Controller, unknowns: Context) {
     *  @return false only if the judgment does not hold; true if it holds or constraint have been delayed
     */
    private def checkTyping(tm: Term, tp: Term)(implicit con: Context): Boolean = {
-      tcs.lookupif (tp.head)
+      true
    }
    /** handles an EqualityConstraint by recursively applying rules and solving variables where applicable,
     *  delays a constraint if unsolved variables preclude further processing
@@ -180,9 +181,16 @@ class Solver(controller: Controller, unknowns: Context) {
       (tm1, tm2) match {
          // |- x = t: solve x as t
          case (OMV(x), t) =>
-            if (unknowns.isDeclared(x) && ! (t.freeVars.isEmpty)) {
-               solve(x, t)
-               //check x.tp=tp? or t:x.tp?
+            if (unknowns.isDeclared(x)) {
+               if (! t.freeVars.isEmpty) {
+                  solve(x, t)
+                  //check x.tp=tp? or t:x.tp?
+               } else {
+                 delay(EqualityConstraint(con, tm1, tm2, tpOpt))
+               }
+            } else {
+               delay(EqualityConstraint(con, tm1, tm2, tpOpt))
+            }
          case _ =>
             // if no case applied, ...
             if (firstTime)

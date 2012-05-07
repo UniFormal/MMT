@@ -9,8 +9,6 @@ import Conversions._
 
 import scala.xml.{Node}
 
-//import info.kwarc.mmt.api.utils.{log}
-
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
@@ -22,8 +20,15 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData {
       val om = xml.namespace("om") // inlining this into XML literal does not work
       <OMOBJ xmlns:om={om}>{toNode}</OMOBJ>
    }
-   /** applies a substitution to an object (computed immediately) */
+   /** applies a substitution to an object (computed immediately)
+    *  capture is avoided by renaming bound variables that are free in sub */
+   // TODO use an internal auxiliary method for subsitution that carries along a precomputed list of free variables in sub to avoid recomputing it at every binder
+   // alternatively, make freeVars a lazy val in Substitution
    def ^ (sub : Substitution) : Obj
+   /** the free variables of this object in any order */ 
+   def freeVars : List[LocalName] = freeVars_.distinct
+   /** helper function for freeVars that computes the free variables without eliminating repetitions */ 
+   private[objects] def freeVars_ : List[LocalName]
    /** returns the subobject at a given position and its context; first index of pos is always 0 and is ignored */
    def subobject(pos: Position) : (Context, Obj) =
      pos.indices.tail.foldLeft((Context(),this)) {
@@ -88,6 +93,7 @@ case object OMHID extends Term with MMTObject {
    val path = mmt.mmtsymbol("hidden")
    def args = Nil
    def ^(sub : Substitution) = this
+   private[objects] def freeVars_ = Nil
    override def *(that: Term) = this
 }
 
@@ -97,6 +103,7 @@ case object OMHID extends Term with MMTObject {
 case class OMID(path: ContentPath) extends Term {
    def head = Some(path)
    def ^(sub : Substitution) = this
+   private[objects] def freeVars_ = Nil
    def role = path match {
       case m: MPath => Role_ModRef
       case OMMOD(p) % _ => Role_ConstantRef
@@ -149,11 +156,11 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
       </om:OMBIND> % pos.toIDAttr
    override def toString = "(" + binder + " [" + context + "] " + body + ")"  
    def ^(sub : Substitution) = {
-      val (newCon, id) = Context.makeFresh(context)
-      val subid = sub ++ id
-      OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subid), body ^ subid)
+      val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
+      val subN = sub ++ alpha
+      OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subN), body ^ subN)
    }
-      
+   private[objects] def freeVars_ = (body.freeVars ::: condition.map(_.freeVars_).getOrElse(Nil)).filter(x => context.isDeclared(x))      
    def toCML = condition match {
      case Some(cond) => <m:apply>{binder.toCML}{context.toCML}<m:condition>{cond.toCML}</m:condition>{body.toCML}</m:apply>
      case None => <m:apply>{binder.toCML}{context.toCML}{body.toCML}</m:apply>
@@ -180,21 +187,7 @@ case class OMM(arg : Term, via : Term) extends Term with MMTObject {
    val path = mmt.morphismapplication
    def args = List(arg,via)
    def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
-   
-}
-
-/** an explicit substitution behaves like a let-binder
- * consequently, the substitution must be given as Context to introduce information about the bound variables
- * G |- OMSub(arg,via) iff G, via |- arg  
- */
-case class OMSub(arg: Term, via: Context) extends Term {
-   def head = Some(mmt.substitutionapplication)
-   def role = Role_binding
-   def ^ (sub : Substitution) = OMSub(arg ^ sub ++ via.id, via ^ sub)
-   private def asBinder = OMBIND(OMID(mmt.substitutionapplication), via, arg)
-   def toNodeID(pos: Position) = asBinder.toNodeID(pos)
-   def components = asBinder.components
-   def toCML = <m:apply><csymbol>OMSub</csymbol>{arg.toCML}</m:apply>
+   private[objects] def freeVars_ = arg.freeVars_ ::: via.freeVars_
 }
 
 /**
@@ -212,6 +205,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
    def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)) //.flatMap(_.items))
+   private[objects] def freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
 
 }
@@ -237,7 +231,7 @@ case class OMV(name : LocalName) extends Term {
 	  	     throw SubstitutionUndefined(name, "substitution is applicable but does not provide a term")
 	  	   case None => this
        }
-   
+   private[objects] def freeVars_ = List(name)
    def toCML = <m:ci>{name.flat}</m:ci>
 }
 
@@ -259,7 +253,7 @@ case class OME(error : Term, args : List[Term]) extends Term {
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
    def ^ (sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub))
-   
+   private[objects] def freeVars_ = error.freeVars_ ::: args.flatMap(_.freeVars_)   
    def toCML = <m:apply>{error.toCML}{args.map(_.toCML)}</m:apply>
 }
 
@@ -280,12 +274,14 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
                  {arg.toNodeID(pos+1)}
       </om:OMATTR> % pos.toIDAttr
    def ^ (sub : Substitution) = OMATTR(arg ^ sub, key ^ sub, value ^ sub)
+   private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
 
 }
 
 case class OMREF(uri: URI, var value: Option[Term] = None, var under: Substitution = Substitution()) extends Term {
    def ^(sub: Substitution) = OMREF(uri, value, under ^ sub)
+   private[objects] def freeVars_ = value.map(_.freeVars_).getOrElse(Nil).filter(x => under.maps(x))
    def isDefined = value.isDefined
    def set(t: Term) {value = Some(t)}
    def get : Option[Term] = value map (_ ^ under)
@@ -307,6 +303,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def components = List(XMLLiteral(node))
    def toNodeID(pos : Position) = <om:OMFOREIGN>{node}</om:OMFOREIGN> % pos.toIDAttr
    def ^(sub : Substitution) = this
+   private[objects] def freeVars_ = Nil
    def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{Node}</m:apply>
 }
 /*
@@ -321,7 +318,8 @@ abstract class OMLiteral extends Term {
    def tag: String
    override def toString = value.toString
    def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, scala.xml.Text(value.toString)) 
-   def ^(sub : Substitution) = this   
+   def ^(sub : Substitution) = this
+   private[objects] def freeVars_ = Nil
 }
 case class OMI(value : BigInt) extends OMLiteral {
    def tag = "OMI"
@@ -356,6 +354,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
       }
       OMSemiFormal(newtokens)
    }
+   private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
    def toCML = <m:apply><csymbol>OMSemiFormal</csymbol>tokens.map(_.toCML)</m:apply>
 
 }

@@ -43,7 +43,6 @@ object Traverser {
 		   case OMA(fun,args) => OMA(rec(fun), args.map(rec))
 		   case OME(err,args) => OME(rec(err), args.map(rec))
 		   case OMM(arg,via) => OMM(rec(arg), via)
-		   case OMSub(arg, via) => OMSub(rec(arg)(con ++ via, state), recCon(via))
 		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)) //TODO traversal into key
 		   case OMBINDC(b,vars,cond,body) => OMBINDC(rec(b), recCon(vars), cond.map(x => rec(x)(con ++ vars, state)), rec(body)(con ++ vars, state))
 		   case OMID(_) => t
