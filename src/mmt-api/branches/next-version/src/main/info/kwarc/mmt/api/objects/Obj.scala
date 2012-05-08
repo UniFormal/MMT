@@ -18,7 +18,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData {
    def toNode : scala.xml.Node = toNodeID(Position.Init)
    def toOBJNode = {
       val om = xml.namespace("om") // inlining this into XML literal does not work
-      <OMOBJ xmlns:om={om}>{toNode}</OMOBJ>
+      <om:OMOBJ xmlns:om={om}>{toNode}</om:OMOBJ>
    }
    /** applies a substitution to an object (computed immediately)
     *  capture is avoided by renaming bound variables that are free in sub */
