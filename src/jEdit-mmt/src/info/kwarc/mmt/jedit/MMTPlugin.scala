@@ -3,7 +3,8 @@ import info.kwarc.mmt.api._
 import parser._
 
 import org.gjt.sp.jedit._
-import org.gjt.sp.jedit.textarea._
+import textarea._
+import msg._
 
 import errorlist._
 
@@ -19,7 +20,7 @@ import utils.FileConversion._
  * logging information is sent to home/mmtplugin.log
  * the home directory is obtained from jEdit, e.g., settings/plugins/info.kwarc.mmt.jedit.MMTPlugin
  */
-class MMTPlugin extends EditPlugin {
+class MMTPlugin extends EBPlugin {
    val controller : Controller = new Controller
    val errorSource = new DefaultErrorSource("MMT")
    private def log(msg: String) {controller.report("jedit", msg)}
@@ -44,6 +45,33 @@ class MMTPlugin extends EditPlugin {
    override def stop() {
       controller.cleanup
       errorlist.ErrorSource.unregisterErrorSource(errorSource)
+   }
+   
+   private val taKey = "info.kwarc.mmt.jedit.MMTTextAreaExtension"
+   override def handleMessage(message: EBMessage) {
+      message match {
+        //add MMTTextAreaExtension to every newly-created TextArea, remove it when the TextArea is destroyed
+        case epu: EditPaneUpdate =>
+           val editPane = epu.getSource.asInstanceOf[EditPane]
+           val ta = editPane.getTextArea
+           val painter = ta.getPainter
+           epu.getWhat match {
+             case EditPaneUpdate.CREATED =>
+                log("handling " + epu.paramString)
+                val taExt = new MMTTextAreaExtension(controller, editPane)
+                painter.addExtension(TextAreaPainter.BACKGROUND_LAYER, taExt)
+                painter.putClientProperty(taKey, taExt)
+             case EditPaneUpdate.DESTROYED =>
+                log("handling " + epu.paramString)
+                val taExt = painter.getClientProperty(taKey).asInstanceOf[TextAreaExtension]
+                if (taExt != null) {
+                   painter.removeExtension(taExt)
+                   painter.putClientProperty(taKey, null)
+                }
+             case _ =>
+            }
+        case _ => 
+      }
    }
    
    def showinfo(view : View) {
