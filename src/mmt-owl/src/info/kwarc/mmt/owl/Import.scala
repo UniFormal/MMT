@@ -11,7 +11,7 @@ import scala.collection.JavaConversions._ //
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.backend.{Compiler,CompilerError}
+import info.kwarc.mmt.api.backend.{Compiler}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.libraries._
@@ -593,7 +593,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 class OWLCompiler extends Compiler {
    def isApplicable(src : String): Boolean = { src == "owl" }
    override def includeFile(f:  String) = f.endsWith("owl")
-   def compile(in: utils.File, out: utils.File) : List[CompilerError] = {
+   def compile(in: utils.File, out: utils.File) : List[SourceError] = {
        val source : File = in
        val target : File = out.setExtension("omdoc")
       
