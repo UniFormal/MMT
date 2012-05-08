@@ -68,8 +68,8 @@ object AddIdentifiers {
 	 val managerID: OWLOntologyManager = OWLManager.createOWLOntologyManager()
      val addIdentifiers = new AddIdentifiers (managerID)
      
-     val source : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\addIdentifiers.owl")		
-	 val target: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\addIdentifiersIDs.owl")
+     val source : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\ChangeImpacts\\changeImpacts.owl")		
+	 val target: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\ChangeImpacts\\changeImpactsIDs.owl")
      
      val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
      println("Loaded Ontology: " + ontology)
