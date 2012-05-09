@@ -184,8 +184,13 @@ object Notation {
       val path = Path.parse(tokens.next, nset)
       val role = Role.parse(tokens.next)
       val fix = parseFix(tokens.next)
-      val ass = parseAss(tokens.next)
-      val app = parseAppSt(tokens.next)
+      var ass: Associativity = null
+      var app: AppStyle = null
+      fix match {
+        case Pre | Post => app = parseAppSt(tokens.next)
+        case Inter => ass = parseAss(tokens.next)
+        case _ =>
+      }
       val imp = parseImp(tokens.next) 
       val prec = Precedence.parseOpt(tokens.next)                          // call parseInlineNotation?
       ComplexNotation(nset, NotationKey(Some(path), role), NotationProperties(fix, ass, app, imp, prec))
