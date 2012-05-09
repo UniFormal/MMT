@@ -65,7 +65,7 @@ class Controller extends ROController {
    /** the MMT parser (text/Twelf syntax) */
    val textReader = new TextReader(this, report)
    /** the catalog maintaining all registered physical storage units */
-   val backend = new Backend(xmlReader, extman, report)
+   val backend = new Backend(extman, report)
    /** the checker for the validation of ContentElement's and objects */
    val checker = new Checker(this)
    /** the MMT rendering engine */
@@ -97,7 +97,14 @@ class Controller extends ROController {
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       report.indent
-      backend.get(path)
+      // get, ...
+      backend.get(path) {
+        // read, ...
+        case (u,n) => xmlReader.readDocuments(DPath(u), n) {
+           // and add the content with URI path
+           e => add(e)
+        }
+      }
       report.unindent
       log("retrieved " + path)
    }
@@ -171,11 +178,18 @@ class Controller extends ROController {
       backend.cleanup
       if (server.isDefined) stopServer
    }
-   /** reads a file and returns the Path of the document found in it */
+   /** reads a file containing a document and returns the Path of the document found in it */
    def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
       val N = utils.xml.readFile(f)
       val dpath = docBase.getOrElse(DPath(URI.fromJava(f.toURI)))
-      xmlReader.readDocument(dpath, N)
+      var p: DPath = null
+      xmlReader.readDocument(dpath, N) {
+         case d: Document =>
+            add(d)
+            p = d.path
+         case e => add(e)
+      }
+      p
    }
    /** reads a text/Twelf file and returns its Path */
    def readText(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
@@ -305,7 +319,7 @@ class Controller extends ROController {
 	      case ReadText(f) => readText(f)
 	      case Check(p) =>
 	         try {
-	            checker.check(p)(_ => ())
+	            checker.check(p)(_ => (), _ => ())
 	            log("check succeeded")
 	         } catch {
 	          case e: Error =>

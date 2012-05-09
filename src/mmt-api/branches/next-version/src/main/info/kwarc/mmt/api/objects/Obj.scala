@@ -429,8 +429,10 @@ object Obj {
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s @ _*}</OMSTR> => OMSTR(s.text)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding
-         //case <OMNTH>{s}{i}</OMNTH> => Index(parseSequence(s, base), parseTerm(i,base))
          case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
+         case <OMMOR>{o}</OMMOR> => parseTerm(o, nbase) //TODO this should be deprecated
+         case <OMTHY>{o}</OMTHY> => parseTerm(o, nbase) //TODO this should be deprecated
+         case <OMREL>{o}</OMREL> => parseTerm(o, nbase) //TODO this should be deprecated
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
    }

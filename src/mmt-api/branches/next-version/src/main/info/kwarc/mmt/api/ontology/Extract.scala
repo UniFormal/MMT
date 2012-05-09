@@ -8,7 +8,7 @@ import patterns._
  */
 object Extractor {
    /** apply a continuation function to every relational element of a StructuralElement */
-   def apply(e: StructuralElement, f: RelationalElement => Unit) {
+   def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path
       e match {
          case t: Theory =>
@@ -37,6 +37,7 @@ object Extractor {
                      f(IsPattern(p.path))
                   case i: Instance => 
                      f(dec)
+                     f(IsInstance(i.path))
                      f(IsInstanceOf(i.path, i.pattern))
                   case a: Alias =>
                      f(IsAliasFor(a.path, a.forpath))

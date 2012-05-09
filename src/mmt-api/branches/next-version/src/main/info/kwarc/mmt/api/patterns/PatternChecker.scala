@@ -55,7 +55,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
       mat.metaContext.toSubstitution 
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  
-  def apply(e: ContentElement) : Unit = e match {
+  def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit = e match {
      case c: Constant =>
        val patts = getPatterns(c.home)(1)
        patts.mapPartial(p => patternCheck(List(c),p))

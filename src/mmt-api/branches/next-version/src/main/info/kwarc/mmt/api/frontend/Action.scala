@@ -46,7 +46,7 @@ object Action extends RegexParsers {
            val segs = MyList.fromString(s.getOrElse(""), "/")
            ArchiveBuild(id, "present", segs, List(p))
         }
-     private def dimension = "compile" | "compile*" | "content" | "content*" | "check" | "mws-flat" | "mws" | "flat" |
+     private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "mws-flat" | "mws" | "flat" |
            "relational" | "notation" | "source" | "delete" | "clean" | "extract" | "integrate"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}

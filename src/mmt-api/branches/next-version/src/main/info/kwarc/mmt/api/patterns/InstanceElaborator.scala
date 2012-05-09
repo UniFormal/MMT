@@ -18,7 +18,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator {
    /**
    * returns the elaboration of an instance
    */
-   def apply(e: ContentElement) {e match {
+   def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) {e match {
      case inst : Instance => 
      	val pt : Pattern = controller.globalLookup.getPattern(inst.pattern)
      	val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
@@ -33,21 +33,23 @@ class InstanceElaborator(controller: Controller) extends Elaborator {
      			report("elaboration", "generating constant " + nname)
      			val c = new Constant(inst.home,nname,tp.map(auxSub),df.map(auxSub),None,None)
      			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
-     			controller.add(c)
+     			cont(c)
      	} 
      case _ => ()
    }
   }
   
   /**
-   * elaborates all instances in a theory and inserts the elaborated constants after the respective instance
+   * elaborates all instances in a theory and inserts the elaborated constants into the containing theory
    */
   def elaborate(thy: DeclaredTheory) {
      thy.valueList foreach {
         case i : Instance =>
            i.setOrigin(Elaborated)
-           thy.replace(i.name, i)
-           apply(i)
+           apply(i) {
+              case s: Symbol => thy.add(s)
+              case _ => //does not occur
+           }
         case c @ _ => c 
      }
   }

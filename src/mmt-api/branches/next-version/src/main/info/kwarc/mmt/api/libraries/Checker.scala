@@ -25,7 +25,6 @@ import objects.Conversions._
 class Checker(controller: Controller) {
    private val extman = controller.extman
    private val content = controller.memory.content
-   private def add(c: ContentElement) {content.add(c)}
    private def log(msg: => String) {controller.report("checker", msg)}
 
    private def tryForeach[A](args: Iterable[A])(fun: A => Unit) {
@@ -35,7 +34,7 @@ class Checker(controller: Controller) {
       }
    }
    //TODO: this should return a reconstructed StructuralElement
-   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit) {
+   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, seCont: StructuralElement => Unit) {
       val path = e.path
       implicit val rel = (p: Path) => {reCont(RefersTo(path, p))}
       implicit val lib = controller.globalLookup
@@ -127,9 +126,10 @@ class Checker(controller: Controller) {
  */
          case _ => //succeed for everything else
       }
+      seCont(e)
    }
    
-   def check(p: Path)(implicit reCont : RelationalElement => Unit) {
+   def check(p: Path)(implicit reCont : RelationalElement => Unit, seCont: StructuralElement => Unit) {
       check(controller.get(p))
    }
 

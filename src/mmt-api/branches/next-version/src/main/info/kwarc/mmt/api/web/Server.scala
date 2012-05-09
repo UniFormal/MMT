@@ -194,7 +194,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
               val mod = ctrl.memory.content.getModule(mpath)
               controller.memory.content.update(mod)
               try {
-                controller.checker.check(mod)(r => ())
+                controller.checker.check(mod)(_ => (), _ => ())
                 val nset = DPath(URI("http://cds.omdoc.org/foundations/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
                 val rb = new presentation.XMLBuilder()
                 controller.presenter(controller.get(mpath), presentation.GlobalParams(rb, nset))

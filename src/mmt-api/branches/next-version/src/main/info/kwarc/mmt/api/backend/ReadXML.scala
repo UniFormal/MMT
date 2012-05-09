@@ -17,26 +17,26 @@ import scala.xml.{Node,NodeSeq}
 class XMLReader(controller : frontend.Controller, report : frontend.Report) extends Reader(controller, report) {
    private def log(s : String) = report("reader", s)
    /** tells the controller given as class parameter to add the StructuralElement */
-   private def add(e : StructuralElement) {
-      controller.add(e)
+   private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
+      cont(e)
    }
    /** tells the controller given as class parameter to add the StructuralElement, with the MetaData (if present) */
-   private def add(e : StructuralElement, md: Option[MetaData]) {
+   private def add(e : StructuralElement, md: Option[MetaData])(implicit cont: StructuralElement => Unit) {
       md map {e.metadata = _}
-      controller.add(e)
+      cont(e)
    }
    
-   def read(p : DPath, node : Node, eager : Boolean) = node.label match {
+   def read(p : DPath, node : Node, eager : Boolean)(implicit cont: StructuralElement => Unit) = node.label match {
       case "omdoc" => readDocuments(p, node)
       case "assertions" => readAssertions(node)
       case l => throw ParseError("unexpected label: " + l)
    }
    /** parses a sequence of documents (xml.Node) into the controller */
-   def readDocuments(location : DPath, documents : NodeSeq) {
+   def readDocuments(location : DPath, documents : NodeSeq)(implicit cont: StructuralElement => Unit) {
       documents foreach {readDocument(location, _)}
    }
    /** parses a document (xml.Node) into the controller */
-   def readDocument(location : DPath, D : Node) : DPath = {
+   def readDocument(location : DPath, D : Node)(implicit cont: StructuralElement => Unit) {
       D match {
         case <omdoc>{modules @ _*}</omdoc> =>
            val path = Path.parseD(xml.attr(D, "base"), location)
@@ -53,7 +53,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
    }
    
    /** calls docParent.get if on document elements */
-   def readModules(modParent : DPath, docParent : Option[DPath], modules : NodeSeq) {
+   def readModules(modParent : DPath, docParent : Option[DPath], modules : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (modmd <- modules) {
          val (m, md) = MetaData.parseMetaDataChild(modmd, modParent)
          m match {
@@ -102,11 +102,11 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
 	            val (m2, from) = XMLReader.getTheoryFromAttributeOrChild(m, "from", base)
 	            val (m3, to) = XMLReader.getTheoryFromAttributeOrChild(m2, "to", base)
 	            val (v, body) = m3.child match {
-                  case <definition>{d}</definition> =>
-		            val df = Obj.parseTerm(d, vpath)
-		            (new DefinedView(modParent, name, from, to, df), None)
-	              case assignments =>
-	 		        (new DeclaredView(base, name, from, to), Some(assignments))
+                  case List(<definition>{d}</definition>) =>
+		               val df = Obj.parseTerm(d, vpath)
+		               (new DefinedView(modParent, name, from, to, df), None)
+                  case assignments =>
+	 		            (new DeclaredView(base, name, from, to), Some(assignments))
                 }
 	            add(v, md)
 	            docParent map (dp => add(MRef(dp, vpath, true)))
@@ -115,7 +115,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
 	               readAssignments(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
 	               report.unindent
 	            }
-	         case (_, <rel>{_*}</rel>) => () //ignoring logical relations, produced by Twelf, but not implemented yet
+	         case (_, <rel>{_*}</rel>) => Unit //ignoring logical relations, produced by Twelf, but not implemented yet
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			     val npath = base ? name
@@ -137,7 +137,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
          }}
       }
    }
-   def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq) {
+   def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
       val thy = OMMOD(tpath)
       def doCon(name : LocalName, t : Option[Node], d : Option[Node], xmlNotation : Option[Node], r : String, md: Option[MetaData]) {
          log("constant " + name.flat + " found")
@@ -182,7 +182,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
             log("structure " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
             rest.child match {
-               case <definition>{d}</definition> =>
+               case List(<definition>{d}</definition>) =>
                   val df = Obj.parseTerm(d, base)
                   val i = new DefinedStructure(thy, name, from, df)
                   add(i,md)
@@ -217,7 +217,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
          }
       }
    }
-   def readAssignments(link : Term, base : Path, assignments : NodeSeq) {
+   def readAssignments(link : Term, base : Path, assignments : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (amd <- assignments) {
          val (a, md) = MetaData.parseMetaDataChild(amd, base) 
          val name = Path.parseLocal(xml.attr(a, "name")).toLocalName
@@ -254,7 +254,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
          }
       }
    }
-   def readNotations(nset : MPath, base : Path, notations : NodeSeq) {
+   def readNotations(nset : MPath, base : Path, notations : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (N <- notations) {
          N match {
 	        case <notation>{_*}</notation> =>
@@ -279,7 +279,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
 	     }
 	  }
    }
-   def readAssertions(assertions : NodeSeq) {
+   def readAssertions(assertions : NodeSeq)(implicit cont: StructuralElement => Unit) {
       val deps = controller.depstore
       for (ass <- assertions) {
          log("assertion found: " + ass.toString)

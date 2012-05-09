@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
 import utils._
 import frontend._
+import archives._
 
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
@@ -23,12 +24,10 @@ case object NotApplicable extends java.lang.Throwable
  * A storage declares a URI u and must answer to all URIs that start with u.
  */
 abstract class Storage {
-   /** called automatically when added; a storage may send arbitrary content to the reader during initialization */
-   def init(reader : XMLReader) {}
    /** dereferences a path and sends the content to a reader
     * a storage may send more content than the path references, e.g., the whole file or a dependency closure
     */
-   def get(path : Path, reader : XMLReader)
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit)
 }
 
 /** convenience methods for backends */
@@ -121,7 +120,6 @@ object OMQuery {
       n match {
          case <documents/> => Some(Doc(xml.attr(n, "base"),p, q))
          case <modules/> => Some(Mod(p, q))
-         case <assertions/> => Some(Ass(p, q))
          case scala.xml.Comment(_) => None
          case _ => throw ParseError("illegal query type: " + n)
       }
@@ -139,7 +137,6 @@ object OMQuery {
 sealed abstract class OMQuery(val path : String, val query : String)
 case class Doc(base : String, p : String, q : String) extends OMQuery(p, q)
 case class Mod(p : String, q : String) extends OMQuery(p, q)
-case class Ass(p : String, q : String) extends OMQuery(p, q)
 
 /** a trait for URL-addressed Storages that can serve MMT document fragments */
 abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : URI,
@@ -168,19 +165,7 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
         }
      }
      def handleResponse(msg : => String, N : NodeSeq) : NodeSeq
-     override def init(reader : XMLReader) {
-    	ipats.foreach {q => 
-           val N = handleResponse("path " + q.path + " and body " + q.query, sendRequest(q.path,q.query))
-           q match {
-              case Doc(b, _, _) =>
-                 val base = DPath(URI(b))
-                 reader.readDocuments(base, N)
-              case Mod(_, _) => reader.readModules(mmt.mmtbase, None, N)
-              case Ass(_, _) => reader.readAssertions(N)
-           }
-    	}
-     }
-     def get(path : Path, reader : XMLReader) {
+     def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
         val qs = path match {
            case p : DPath => dpats
            case p : MPath => mpats
@@ -193,10 +178,9 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
            val N = handleResponse("path " + qpath + " and body " + qbody, sendRequest(qpath,qbody))
            q match {
               case Doc(b, _, _) =>
-                 val base = DPath(URI(OMQuery.replace(b, path)))
-                 reader.readDocuments(base, N)
-              case Mod(_, _) => reader.readModules(path.doc, None, N)
-              case Ass(_, _) => reader.readAssertions(N)
+                 val base = URI(OMQuery.replace(b, path))
+                 cont(base, N)
+              case Mod(_, _) => cont(path.doc.uri, N)
            }
         }
      }
@@ -205,19 +189,19 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
 /** a Storage that retrieves file URIs from the local system */
 case class LocalSystem(base : URI) extends Storage {
    val localBase = URI(Some("file"), None, Nil, true, None, None)
-   def get(path : Path, reader : XMLReader) {
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = base.resolve(path.doc.uri)
       val test = Storage.getSuffix(localBase, uri)
       val file = new java.io.File(uri.toJava)
       val N = utils.xml.readFile(file)
-      reader.readDocuments(DPath(uri), N)
+      cont(uri, N)
    }
 }
 
 /** a Storage that retrieves repository URIs from the local working copy */
 case class LocalCopy(scheme : String, authority : String, prefix : String, base : java.io.File) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
-   def get(path : Path, reader : XMLReader) {
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
       val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
       val N = if (target.isFile) utils.xml.readFile(target)
@@ -226,7 +210,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
           val prefix = if (target != base) target.getName + "/" else ""
           Storage.virtDoc(entries, prefix)
       } else throw BackendError(path)
-      reader.readDocuments(DPath(uri), N)   
+      cont(uri, N)   
    }
 }
 
@@ -234,8 +218,8 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
 case class SVNRepo(scheme : String, authority : String, prefix : String, repository : SVNRepository, defaultRev : Int = -1) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
    
-   def get(path : Path, reader : XMLReader) {get(path, reader, defaultRev)}
-   def get(path : Path, reader : XMLReader, rev : Int) {
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {get(path, defaultRev)}
+   def get(path : Path, rev: Int)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
       val target = Storage.getSuffix(localBase, uri)
       
@@ -265,7 +249,7 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
           Storage.virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
         case SVNNodeKind.NONE => throw BackendError(path)
       }
-      reader.readDocuments(DPath(uri), N)
+      cont(uri, N)
    }
 }
 
@@ -293,14 +277,13 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
 
 
 /** a Backend holds a list of Storages and uses them to dereference Paths */
-class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Report) {
+class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
    private def log(msg : => String) = report("backend", msg)
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
       s.foreach {d =>
          log("adding storage " + d.toString)
-         d.init(reader)
       }
    }
    
@@ -430,12 +413,12 @@ class Backend(reader : XMLReader, extman: ExtensionManager, report : info.kwarc.
        }
    }
    /** look up a path in the first Storage that is applicable and send the content to the reader */
-   def get(p : Path) = {
+   def get(p : Path)(implicit cont: (URI,NodeSeq) => Unit) = {
       def getInList(l : List[Storage], p : Path) {l match {
          case Nil => throw BackendError(p)
          case hd :: tl =>
             log("trying " + hd)
-      	    try {hd.get(p, reader)}
+      	    try {hd.get(p)}
             catch {case NotApplicable =>
                log(hd.toString + " not applicable to " + p)
                getInList(tl, p)

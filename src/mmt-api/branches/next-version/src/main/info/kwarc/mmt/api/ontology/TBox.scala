@@ -62,9 +62,8 @@ case object HasDomain extends Binary("S has domain O")
 case object HasCodomain extends Binary("S has codomain O")
 // constant - constant (not used yet)
 case object IsInstanceOf extends Binary("S is instance of O")
-
+//path - path
 case object RefersTo extends Binary("S refers to O")
-
 //parent - child (many-many relation because a declaration may be referenced in other documents)
 case object Declares extends Binary("S contains declaration of O")
 // symbol - symbol, module - module
