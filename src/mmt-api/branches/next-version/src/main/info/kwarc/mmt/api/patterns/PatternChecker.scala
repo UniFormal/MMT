@@ -65,34 +65,40 @@ class PatternChecker(controller: Controller) extends Elaborator {
 
 class Matcher(controller : Controller, var metaContext : Context) {
   def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {
-    /* 
-     * @Aivaras: Do cases for OpenMath terms.
-     *     
-    (dterm,pterm) match {
-      
-    }
-    */
     
     /* list of OM terms to check:
-     * 		OMV vars
-     * 		OMA application
-     *     	OMBIND binding (w/out condition) 
-     *     	OMI integers
-     *     	
+     * 		+ OMV vars
+     * 		+ OMA application
+     *     	+ OMBIND binding (w/out condition) 
+     *     	+ OMI integers
+     *     OMS symbols
+     *     
     */
     
     (dterm,pterm) match {
       
       case (OMI(i),OMI(j)) => i == j                   
       case (OMV(v),OMV(w)) => con.isDeclared(v) && con.isDeclared(w) && v == w
-      case (OMA(f, argsf), OMA(h, argsh)) => 
-        apply(f, h, con) && ((argsf zip argsh) forall {
-            case (x,y) => apply (x ,y , con)
-        })
-      case _ => false
+ 
+      
+      case (OMA(f, argsf : List[Term]),OMA(h, argsh : List[Term])) => 
+        apply(f, h, con) && 
+        argsf.zip(argsh).forall{ 
+            case (x,y) => apply(x ,y , con) 
+        }
+        
+      case (OMBIND(b1, ctx1, bod1), OMBIND(b2, ctx2, bod2)) => 
+         apply(b1,b2,con) && apply(bod1,bod2, con ++ ctx1 ++ ctx2)
+         
+      case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b),con)
+            
+      case (OMID(a), OMID(b)) => a.toString() == b.toString()
+         
+      case (_,_) => false      
     }
     
   true //TODO  
+  
   }
     
   def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
@@ -104,7 +110,49 @@ class Matcher(controller : Controller, var metaContext : Context) {
   }
 }
 
+object Test  {
+  
+  // just a random test file with THF theory
+  val testfile = "/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT031^2.omdoc"
+    
+    
+    
+  
+    //TODO 
+    /* parse omdoc file
+     * should get a list of constants
+     * check constants one by one - thf can only have one declaration anyway
+     * 
+     * check a parsed constant immediatelly against all patterns OR get list of constants and then check
+     *  
+     */
+    
+  var reader = new java.io.
+    
+    
 
+  val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
+  val baseType = new Pattern(OMID(tptpbase ? "thf"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
+  val typedCon = new Pattern(OMID(tptpbase ? "thf"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
+  val axiom = new Pattern(OMID(tptpbase ? "thf"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
+  val controller = new Controller
+  controller.handleLine("file pattern-test.mmt")
+  controller.add(baseType)
+  controller.add(typedCon)
+  controller.add(axiom)
+  
+  def main(args : Array[String]) {
+    
+    val thrName : String = args.first
+    
+    val pc = new PatternChecker(controller)
+    pc.patternCheck()
+    
+//    log("works!")
+    
+  }
+    
+}
 
 
 
