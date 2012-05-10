@@ -72,10 +72,30 @@ class Matcher(controller : Controller, var metaContext : Context) {
       
     }
     */
+    
+    /* list of OM terms to check:
+     * 		OMV vars
+     * 		OMA application
+     *     	OMBIND binding (w/out condition) 
+     *     	OMI integers
+     *     	
+    */
+    
+    (dterm,pterm) match {
+      
+      case (OMI(i),OMI(j)) => i == j                   
+      case (OMV(v),OMV(w)) => con.isDeclared(v) && con.isDeclared(w) && v == w
+      case (OMA(f, argsf : List[Term]),OMA(h, argsh : List[Term])) => 
+        apply(f, h, con) && val argsf.zip(argsh) forall (
+            case (x,y) => apply (x ,y , con)
+            )
+//      case ()
+    }
+    
   true //TODO  
   }
     
-  def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
+  def applyOpt(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
     (dterm,pterm) match {
       case (Some(d),Some(p)) => apply(d,p,con)
       case (None,None) => true
