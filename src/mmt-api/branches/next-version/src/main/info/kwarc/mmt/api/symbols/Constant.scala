@@ -25,12 +25,12 @@ class Constant(val home : Term, val name : LocalName,
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))
   
   def toNode =
-     <constant name={name.flat} role={rl.getOrElse(null)}>
+     <constant name={name.toPath} role={rl.getOrElse(null)}>
        {getMetaDataNode}
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
        {if (not.isDefined) <notation>{not.get.toNode}</notation> else Nil}
      </constant>
-  override def toString = name + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
+  override def toString = name.toString + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
   
 }

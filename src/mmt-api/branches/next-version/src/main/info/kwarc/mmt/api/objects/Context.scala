@@ -33,12 +33,12 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
-   def toNodeID(pos : Position) = <om:OMV name={name.flat}>{tpN(pos)}{dfN(pos)}{attrsN(pos)}</om:OMV> % pos.toIDAttr 
+   def toNodeID(pos : Position) = <om:OMV name={name.toPath}>{tpN(pos)}{dfN(pos)}{attrsN(pos)}</om:OMV> % pos.toIDAttr 
    def toCML = toOpenMath.toCML
    def role = Role_Variable
    def head = None
-   def components = List(StringLiteral(name.flat), tp.getOrElse(Omitted), df.getOrElse(Omitted))
-   override def toString = name.flat + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
+   def components = List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted))
+   override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
    private def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
    private def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
    private def attrsN(pos : Position) = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
@@ -108,9 +108,9 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    def ^(sub : Substitution) = Sub(name, target ^ sub)
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
-   def toNodeID(pos: Position): Node = <om:OMV name={name.flat}>{target.toNodeID(pos + 1)}</om:OMV>
-   def toCML : Node = <m:mi name={name.flat}>{target.toCML}</m:mi>
-   def components = List(StringLiteral(name.flat), target)
+   def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos + 1)}</om:OMV>
+   def toCML : Node = <m:mi name={name.toPath}>{target.toCML}</m:mi>
+   def components = List(StringLiteral(name.toString), target)
    override def toString = name + "/" + target.toString
    def head = None
 }

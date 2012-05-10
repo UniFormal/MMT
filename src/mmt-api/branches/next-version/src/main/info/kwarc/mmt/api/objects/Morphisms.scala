@@ -102,7 +102,7 @@ object OMDL {
 object OMCOMP {
    def apply(morphs: List[Term]) : Term = morphs match {
      case Nil => throw ImplementationError("composition of 0 morphisms")
-     case hd :: Nil => throw ImplementationError("composition of 1 morphism")
+     case hd :: Nil => hd
      case _ => OMA(OMID(mmt.composition), morphs)
    }
    def apply(morphs: Term*) : Term = apply(morphs.toList)

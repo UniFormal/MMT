@@ -240,7 +240,7 @@ object TextNotation {
           l.mkString(" ")
       }
 
-    case OMV(s) => s.flat
+    case OMV(s) => s.toString //encode special characters by using toPath instead?
 
     case OMID(p) =>
       println("got here with " + p.toString)

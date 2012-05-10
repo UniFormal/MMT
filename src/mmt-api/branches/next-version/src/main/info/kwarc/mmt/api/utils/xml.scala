@@ -61,7 +61,7 @@ object xml {
          val c = in(0)
          val enc = c match {
             case '?' => "%3F"
-            case '/' => "2F"
+            case '/' => "%2F"
             case '%' => "%25"
             case '#' => "%23"
             case c => c

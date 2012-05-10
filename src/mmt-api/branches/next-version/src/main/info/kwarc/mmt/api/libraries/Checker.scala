@@ -24,19 +24,19 @@ import objects.Conversions._
   //  When retrieving, more specific entries overrule the more general ones.
 class Checker(controller: Controller) {
    private val extman = controller.extman
-   private val content = controller.memory.content
+   private lazy val content = controller.globalLookup
    private def log(msg: => String) {controller.report("checker", msg)}
 
    private def tryForeach[A](args: Iterable[A])(fun: A => Unit) {
       args foreach {a =>
         try {fun(a)}
-        catch {case Invalid(msg) => log(msg)}
+        catch {case e @ Invalid(msg) => controller.report(e)}
       }
    }
    //TODO: this should return a reconstructed StructuralElement
    def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, seCont: StructuralElement => Unit) {
       val path = e.path
-      implicit val rel = (p: Path) => {reCont(RefersTo(path, p))}
+      implicit val rel = (p: Path) => reCont(RefersTo(path, p))
       implicit val lib = controller.globalLookup
       e match {
          case d: Document => tryForeach(d.getLocalItems) {
@@ -66,6 +66,7 @@ class Checker(controller: Controller) {
          case c : Constant =>
             c.tp map {t => checkTerm(c.home, t)}
             c.df map {t => checkTerm(c.home, t)}
+            /*
             val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
             c.tp map {t =>
                val trace = foundation.tracedTyping(None, Some(t))
@@ -75,6 +76,7 @@ class Checker(controller: Controller) {
                val trace = foundation.tracedTyping(c.df, c.tp)
                trace foreach {t => reCont(DependsOn(c.path $ "definition", t))}
             }
+            */
          //TODO: compatibility of multiple assignments to the same knowledge item
          case a : ConstantAssignment =>
             val (l,d) = try {
@@ -101,16 +103,16 @@ class Checker(controller: Controller) {
             checkMorphism(a.target, domain, l.to)
          case p : Pattern =>
             checkContext(p.home, Context(), p.params)
-            checkContext(p.home, p.params, p.body)  
-/*       case i : Instance => 
-            val pt : Pattern = mem.content.getPattern(i.pattern)
-            val paths : List[Path] = Nil //checkSubstitution(i.home, i.matches, pt.params, Context())
-            // Mihnea's instances already refer to the elaborated constants stemming from the same instance
-            val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
-            val elab = Instance.elaborate(i, true)(mem.content, report)
-            i.setOrigin(Elaborated)
-            ContentReconstructed(i :: elab, deps)
-         case a : Alias =>
+            checkContext(p.home, p.params, p.body)
+         case i : Instance => 
+            val pt = try {
+               content.getPattern(i.pattern)
+            } catch {
+               case e: GetError => throw Invalid("invalid pattern: " + i.pattern).setCausedBy(e)
+            }
+            //TODO mihnea's instances already refer to their elaboration in their matches
+            checkSubstitution(i.home, i.matches, pt.params, Context())
+/*        case a : Alias =>
             mem.content.get(a.forpath)
             if (mem.content.imports(a.forpath.parent, a.parent))
                Success(List(IsAlias(a.path), IsAliasFor(a.path, a.forpath)))
@@ -123,7 +125,7 @@ class Checker(controller: Controller) {
             val name = a.as.map(LocalName(_)).getOrElse(a.name)
             val al = new Alias(str.to, name, str.to ? str.name / source.name)
             Reconstructed(List(a, al), List(IsOpen(a.path)))
- */
+*/
          case _ => //succeed for everything else
       }
       seCont(e)
@@ -286,29 +288,30 @@ class Checker(controller: Controller) {
     */
    private def checkTerm(home : Term, context : Context, s : Term)(implicit pCont: Path => Unit) : Term = {
       s match {
-         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>
-            if (! content.imports(from, h))
-               throw Invalid(from + " is not imported into " + h + " in " + s)
-            checkTerm(home, context, OMID(from % ln))
-         case OMS(path) =>
-            val s = try {content.get(path)}
+//         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>
+//            if (! content.imports(from, h))
+//               throw Invalid(from + " is not imported into " + h + " in " + s)
+//            checkTerm(home, context, OMID(from % ln))
+         case OMS(GlobalName(t,n)) =>
+            val path = t % n
+            val ce = try {content.get(t % n)}
                     catch {case e: GetError =>
                                 throw Invalid("ill-formed constant reference").setCausedBy(e)
                     }
-            s match {
+            ce match {
                case a : Alias =>
-                  if (! content.imports(a.home, home))
-                     throw Invalid("constant " + s.path + " is not imported into home theory " + home)
+                  if (! content.imports(a.home, home)){}
+                     //throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
                case c : Constant =>
-                  if (! content.imports(c.home, home))
-                     throw Invalid("constant " + s.path + " is not imported into home theory " + home)
+                  if (! content.imports(c.home, home)){}
+                     //throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
                case _ => throw Invalid(path + " does not refer to constant")
             }
             pCont(path)
-            OMS(path)
+            s
          case OMV(name) =>
             if (! context.isDeclared(name)) throw Invalid("variable is not declared: " + name)
-            OMV(name)
+            s
          case OMA(fun, args) =>
             val funR = checkTerm(home, context, fun)
             val argsR = args map {a => checkTerm(home, context, a)}
@@ -340,6 +343,7 @@ class Checker(controller: Controller) {
          case OMSTR(str) => s //TODO check if strings are permitted
          case OMF(d) => s //TODO check if floats are permitted
          case OMSemiFormal(t) => s //TODO
+         //case _ => s
       }
    }
 

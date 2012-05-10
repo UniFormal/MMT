@@ -85,17 +85,17 @@ class Matcher(controller : Controller, var metaContext : Context) {
       
       case (OMI(i),OMI(j)) => i == j                   
       case (OMV(v),OMV(w)) => con.isDeclared(v) && con.isDeclared(w) && v == w
-      case (OMA(f, argsf : List[Term]),OMA(h, argsh : List[Term])) => 
-        apply(f, h, con) && val argsf.zip(argsh) forall (
+      case (OMA(f, argsf), OMA(h, argsh)) => 
+        apply(f, h, con) && ((argsf zip argsh) forall {
             case (x,y) => apply (x ,y , con)
-            )
-//      case ()
+        })
+      case _ => false
     }
     
   true //TODO  
   }
     
-  def applyOpt(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
+  def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
     (dterm,pterm) match {
       case (Some(d),Some(p)) => apply(d,p,con)
       case (None,None) => true

@@ -70,6 +70,24 @@ abstract class Lookup(val report : frontend.Report) {
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
    
+  /** gets the source of an Assignment declared in a DeclaredLink
+    * @param a the assignment
+    * @return the containing link and the source ContentElement
+    */
+   def getSource(a: Assignment) : (DeclaredLink, Symbol) = {
+      val p = a.home match {
+         case OMMOD(p) => p
+         case OMDL(OMMOD(p), name) => OMMOD(p) % name 
+         case _ => throw GetError("non-atomic link")
+      }
+      val l = get(p) match {
+         case l: DeclaredLink => l
+         case _ => throw GetError("non-declared link") 
+      }
+      val domain = l.from
+      val s = getSymbol(l.from % a.name)
+      (l, s)
+   }
    
    /**
     * A Traverser that recursively expands definitions of Constants.

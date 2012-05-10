@@ -140,7 +140,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
    def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
       val thy = OMMOD(tpath)
       def doCon(name : LocalName, t : Option[Node], d : Option[Node], xmlNotation : Option[Node], r : String, md: Option[MetaData]) {
-         log("constant " + name.flat + " found")
+         log("constant " + name.toString + " found")
          val tp = t.map(Obj.parseTerm(_, base))
          val df = d.map(Obj.parseTerm(_, base))
          val notation = xmlNotation.map(TextNotation.parse(_))
@@ -150,7 +150,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
       }
 
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
-    	  log("pattern " + name.flat + " found")
+    	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
     	 	  case Some(par) => Context.parse(par, base)
     	 	  case None      => Context()
@@ -209,7 +209,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
             doPat(name, None, decls, md)         
          case <instance>{sb}</instance> =>
             val p = xml.attr(s2,"pattern")
-         	log("instance " + name.flat + " of pattern " + p + " found")
+         	log("instance " + name.toString + " of pattern " + p + " found")
             val inst = new Instance(thy,name,Path.parseS(p,base),Substitution.parse(sb,base))
             add(inst, md)
          case scala.xml.Comment(_) =>

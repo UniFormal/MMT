@@ -29,7 +29,7 @@ object Names {
                case i: Include => Nil
                case d => List(d.name)
             }
-            names.filter(_.flat.startsWith(partialName)).map(n => Completion(t.path, n))
+            names.filter(_.toString.startsWith(partialName)).map(n => Completion(t.path, n))
       }
    }
    /** returns the list of possible completions of partialName imported from the theory/via the structure given by qualifiers */

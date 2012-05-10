@@ -12,9 +12,9 @@ import presentation._
   * @param target the term assigned to the symbol 
   */                                            // TODO term
 class ConstantAssignment(val home : Term, val name : LocalName, val target : Term) extends Assignment {
-   def toNode = <conass name={name.flat}>{getMetaDataNode}{target.toOBJNode}</conass>
+   def toNode = <conass name={name.toPath}>{getMetaDataNode}{target.toOBJNode}</conass>
    override def toString = name + " |-> " + target.toString 
-   def components = List(StringLiteral(name.flat), target)
+   def components = List(StringLiteral(name.toPath), target)
    def role = info.kwarc.mmt.api.Role_ConAss
 }
 
@@ -29,17 +29,17 @@ class DefLinkAssignment(val home : Term, val name : LocalName, val target : Term
    def toNode = name match {
       case !(IncludeStep(OMMOD(p))) => <include from={p.toPath}>{getMetaDataNode}{target.toOBJNode}</include>
       case !(IncludeStep(t)) =>        <include>{getMetaDataNode}<from>{t.toOBJNode}</from>{target.toOBJNode}</include>
-      case _ =>                     <strass name={name.flat}>{getMetaDataNode}{target.toOBJNode}</strass>
+      case _ =>                     <strass name={name.toPath}>{getMetaDataNode}{target.toOBJNode}</strass>
    }
    override def toString = name + " |-> " + target.toString 
-   def components = List(StringLiteral(name.flat), target)
+   def components = List(StringLiteral(name.toPath), target)
    def role = info.kwarc.mmt.api.Role_StrAss
 }
                               // TODO term
 class Open(val home : Term, val name : LocalName, val as : Option[String]) extends Assignment {
-   def toNode = <open name={name.flat} as={as.getOrElse(null)}>{getMetaDataNode}</open>
-   override def toString = "open " + name.flat + as.map(" " + _).getOrElse("")
-   def components = List(StringLiteral(name.flat), as.map(StringLiteral(_)).getOrElse(Omitted))
+   def toNode = <open name={name.toPath} as={as.getOrElse(null)}>{getMetaDataNode}</open>
+   override def toString = "open " + name.toPath + as.map(" " + _).getOrElse("")
+   def components = List(StringLiteral(name.toPath), as.map(StringLiteral(_)).getOrElse(Omitted))
    def role = info.kwarc.mmt.api.Role_Open
 }
 

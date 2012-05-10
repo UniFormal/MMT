@@ -112,18 +112,18 @@ case class OMID(path: ContentPath) extends Term {
    def components = path match {
       case m: MPath => m.components
       case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.flat),
-                                 StringLiteral(ln.flat), StringLiteral(path.toPathEscaped))
-      case thy % name => List(thy, StringLiteral(name.flat))
+                                 StringLiteral(ln.toString), StringLiteral(path.toPathEscaped))
+      case thy % name => List(thy, StringLiteral(name.toString))
    }
    override def toString = path match {
       case doc ? mod => doc + "?" + mod.flat
-      case OMMOD(mod) % name => mod.name.flat + "?" + name.flat
-      case thy % name => "[" + thy.toString + "]?" + name.flat
+      case OMMOD(mod) % name => mod.name.flat + "?" + name.toString
+      case thy % name => "[" + thy.toString + "]?" + name.toString
    }
    def toNodeID(pos : Position) = path match {
-      case doc ? mod => <om:OMS base={doc.toPath} cd={mod.flat}/> % pos.toIDAttr
-      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.flat}/> % pos.toIDAttr
-      case thy % name => <om:OMS name={name.flat}>{thy.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
+      case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}/> % pos.toIDAttr
+      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.toPath}/> % pos.toIDAttr
+      case thy % name => <om:OMS name={name.toPath}>{thy.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
    }
    def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
 }
@@ -217,13 +217,13 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
 case class OMV(name : LocalName) extends Term {
    def head = None
    def role = Role_VariableRef
-   def components = List(StringLiteral(name.flat)) 
+   def components = List(StringLiteral(name.toString)) 
    /** the substutition this/s */
    def /(s : Term) = Sub(name, s)
    /** the declaration this:tp */
    def %(tp : Term) = VarDecl(name, Some(tp), None)
-   def toNodeID(pos : Position) = <om:OMV name={name.flat}/> % pos.toIDAttr
-   override def toString = name.flat
+   def toNodeID(pos : Position) = <om:OMV name={name.toPath}/> % pos.toIDAttr
+   override def toString = name.toString
    def ^(sub : Substitution) =
 	   sub(name) match {
 	  	   case Some(t: Term) => t
@@ -232,7 +232,7 @@ case class OMV(name : LocalName) extends Term {
 	  	   case None => this
        }
    private[objects] def freeVars_ = List(name)
-   def toCML = <m:ci>{name.flat}</m:ci>
+   def toCML = <m:ci>{name.toPath}</m:ci>
 }
 
 object OMV {
@@ -393,7 +393,7 @@ object Obj {
          case <OMS/> =>
             parseOMS(N, base) match {
                case p : ContentPath => OMID(p)
-               case p => throw new ParseError("Not a term: " + p + N.toString)
+               case p => throw new ParseError("Not a term: " + p + " " + N.toString)
             }
          case <OMV/> =>
             OMV(LocalName.parse(xml.attr(N,"name")))

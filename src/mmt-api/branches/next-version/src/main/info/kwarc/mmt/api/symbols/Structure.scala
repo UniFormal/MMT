@@ -35,16 +35,16 @@ abstract class Structure extends DefinitionalLink {
     * @param sym a symbol of the domain theory of the structure
     * @return the induced symbol
     */
-   protected def outerComponents = List(StringLiteral(name.flat), from)
+   protected def outerComponents = List(StringLiteral(name.toString), from)
    protected def outerString = path + " : " + from.toString
    def toNode = from match {
      case OMMOD(p) => 
-          <structure name={name.flat} from={p.toPath}>
+          <structure name={name.toPath} from={p.toPath}>
             {getMetaDataNode}
             {innerNodes}
           </structure>
      case _ => 
-          <structure name={name.flat}>
+          <structure name={name.toPath}>
             {getMetaDataNode}
             <from>{from.toOBJNode}</from>
             {innerNodes}

@@ -22,7 +22,7 @@ class PragConst(val home : Term, val name : LocalName,
   def components = List(OMID(path))//
  
   def toNode =
-     <pragConst name={name.flat}>
+     <pragConst name={name.toPath}>
        <by>{by.map(x => x.toNode)}</by>
        <means>{means.map(x => x.toNode)}</means>
      </pragConst>

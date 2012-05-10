@@ -157,9 +157,10 @@ case class LocalName(steps: List[LNStep]) {
    def head = steps.head
    def last = steps.last
    def length = steps.length
+   /** machine-oriented string representation of this name, parsable and official */
    def toPath : String = steps.map(s => xml.encodeURI(s.toString)).mkString("", "/", "")
-   def flat : String = steps.map(_.toPath).mkString("", "/", "")
-   override def toString = flat
+   /** human-oriented string representation of this name, no encoding, possibly shortened */
+   override def toString : String = steps.map(_.toPath).mkString("", "/", "")
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))

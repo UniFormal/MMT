@@ -11,10 +11,10 @@ import info.kwarc.mmt.api.presentation.{StringLiteral}
  */
 class Alias(val home: Term, val name : LocalName, val forpath : GlobalName) extends Symbol {
   def role = info.kwarc.mmt.api.Role_Alias
-  def components = List(StringLiteral(name.flat), OMID(forpath))
+  def components = List(StringLiteral(name.toPath), OMID(forpath))
   
   def toNode =
-    <alias name={name.flat} for={forpath.toPath}>
+    <alias name={name.toPath} for={forpath.toPath}>
         {getMetaDataNode}
     </alias> 
   override def toString = name + " => " + forpath.toPath

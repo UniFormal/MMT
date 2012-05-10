@@ -19,7 +19,7 @@ abstract class Elaborator {
  *  @param controller a controller for lookups, no changes are made to the controller
  */
 class IncludeElaborator(controller: Controller) extends Elaborator {
-   private val content = controller.memory.content
+   private val content = controller.globalLookup
    /** 
     * @param e the ContentElement to elaborate
     * @param cont a continuation function to call on every generated StructuralElement (e.g., Controller.add)

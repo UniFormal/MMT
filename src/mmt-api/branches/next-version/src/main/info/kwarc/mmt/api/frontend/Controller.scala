@@ -88,10 +88,10 @@ class Controller extends ROController {
    /** a lookup that load missing modules dynamically */
    val globalLookup = new Lookup(report) {
       def get(path : Path) = iterate {library.get(path)}
-      def imports(from: Term, to: Term) = library.imports(from, to)
-      def importsTo(to: Term) = library.importsTo(to)
-      def preImage(p : GlobalName) = library.preImage(p)
-      def getDeclarationsInScope(th : MPath) = library.getDeclarationsInScope(th)
+      def imports(from: Term, to: Term) = iterate {library.imports(from, to)}
+      def importsTo(to: Term) = iterate {library.importsTo(to)}
+      def preImage(p : GlobalName) = iterate {library.preImage(p)}
+      def getDeclarationsInScope(th : MPath) = iterate {library.getDeclarationsInScope(th)}
    }
    /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {

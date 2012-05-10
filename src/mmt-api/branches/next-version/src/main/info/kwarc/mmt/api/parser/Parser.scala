@@ -199,7 +199,7 @@ class Parser(grammar : Grammar, var lineStarts : List[(Int,Int)]) {
     case TermTk(t,tkp) => TermTk(t, tkp)
     case ExpTk(s, tks, tkp) => rewrite(tks)
     case StrTk(s, tkp) =>
-      val matchedOps = grammar.operators.filter(p => p.name.name.flat == s) //TODO: use Names.resolve to find all possible matches?
+      val matchedOps = grammar.operators.filter(p => p.name.name.toString == s) //TODO: use Names.resolve to find all possible matches?
       val ln = LocalName.parse(s)
       val inContext = grammar.context.isDeclared(ln)
       matchedOps match {

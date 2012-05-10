@@ -19,7 +19,7 @@ import scala.io.Source
  */
 class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context) extends Symbol {
    def toNode =
-     <pattern name={name.flat}>
+     <pattern name={name.toPath}>
    		{if (! params.isEmpty)
    		   <parameters>{params.toNode}</parameters>
    		else Nil}
@@ -29,18 +29,18 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
    override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("conBegin",params.length + 1)) 
    def components = OMID(path) :: params ::: body
    override def toString = 
-     "Pattern for " + name.flat + " " + params.toString + " " + body.toString
+     "Pattern for " + name.toString + " " + params.toString + " " + body.toString
 }
-                     // TODO term
+
 class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, val matches : Substitution) extends Symbol {
    def toNode = 
-     <instance name={name.flat} pattern={pattern.toPath}>
+     <instance name={name.toPath} pattern={pattern.toPath}>
      {matches.toNode}
      </instance>
    def role = info.kwarc.mmt.api.Role_Instance
    def components = List(OMID(path), OMID(pattern)) ::: matches
    override def toString = 
-     "Instance " + name.flat + " of pattern " + pattern.toString  
+     "Instance " + name.toString + " of pattern " + pattern.toString  
 }
  
 /*

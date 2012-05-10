@@ -28,7 +28,7 @@ abstract class ROArchive extends Storage {
   
   val narrationBackend : Storage
 
-  /** Get a module from content folder */
+  /** Get a module from content folder (wrapped in <omdoc>) */
   def get(m: MPath) : scala.xml.Node
 
   def get(p: Path)(implicit cont: (URI,NodeSeq) => Unit) {p match {
@@ -58,7 +58,7 @@ abstract class WritableArchive extends ROArchive {
 
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, narrationDir)
     /** Get a module from content folder */ 
-    def get(m: MPath) : scala.xml.Node = utils.xml.readFile(MMTPathToContentPath(m)).child(0)
+    def get(m: MPath) : scala.xml.Node = utils.xml.readFile(MMTPathToContentPath(m))
 
     protected val custom : ArchiveCustomization = {
        properties.get("customization") match {
@@ -138,18 +138,20 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
     }
 
     def check(in: List[String] = Nil, controller: Controller) {
-      traverse("content", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
-         controller.read(inFile, Some(DPath(narrationBase / in)))
-           //controller.globalLookup.getModule(mpath)
-      }
       val elaborator = new IncludeElaborator(controller) 
       traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
-         controller.checker.check(mpath)(_ => (), {
+         val rels = new HashSet[RelationalElement]
+         controller.checker.check(mpath)(rels += _, {
            elem => elaborator(elem) {
               elab => controller.add(elab)
            }
          })
+         val relFile = (relDir / inPath).setExtension("occ")
+         relFile.getParentFile.mkdirs
+         val relFileHandle = File.Writer(relFile)
+         rels foreach {r => relFileHandle.write(r.toPath + "\n")}
+         relFileHandle.close
       }
       /*
       controller.compChecker.printStatistics()
@@ -187,18 +189,18 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
               if (includeDir(n)) produceFlat(in ::: List(n), controller)
            }
        } else if (inFile.getExtension == Some("omdoc")) {
-              val mpath = Archive.ContentPathToMMTPath(in)
-              val mod = controller.globalLookup.getModule(mpath)
-              val ie = new InstanceElaborator(controller)
-              val flatNode = mod match {
-                 case thy: DeclaredTheory =>
-                    ie.elaborate(thy)
-                    thy.toNodeElab
-                 case _ => mod.toNode
-              }
-              val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
-              xml.writeFile(flatNodeOMDoc, flatDir / in)
-              controller.delete(mpath)
+           val mpath = Archive.ContentPathToMMTPath(in)
+           val mod = controller.globalLookup.getModule(mpath)
+           val ie = new InstanceElaborator(controller)
+           val flatNode = mod match {
+              case thy: DeclaredTheory =>
+                 ie.elaborate(thy)
+                 thy.toNodeElab
+              case _ => mod.toNode
+           }
+           val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
+           xml.writeFile(flatNodeOMDoc, flatDir / in)
+           controller.delete(mpath)
         }
        log("done:  [CONT -> FLAT]        -> " + inFile)
     }
