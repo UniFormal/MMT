@@ -1,22 +1,14 @@
 <?xml version="1.0"?>
 <Ontology xmlns="http://www.w3.org/2002/07/owl#"
      xml:base="http://example.com/owl/families/"
-     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-     xmlns:xml="http://www.w3.org/XML/1998/namespace"
      ontologyIRI="http://example.com/owl/families/">
-    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
-    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
-    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
-    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
-    
+        
     <Declaration>
         <NamedIndividual IRI="John"/>
     </Declaration>
-    <Declaration>
+    <Declaration>	
         <NamedIndividual IRI="Mary"/>
-    </Declaration>
+    </Declaration> 
     <Declaration>
         <NamedIndividual IRI="Liz"/>
     </Declaration>
@@ -32,16 +24,19 @@
     <Declaration>
         <NamedIndividual IRI="Max"/>
     </Declaration>
+<!-- NamedIndividual Alice is deleted     
     <Declaration>
         <NamedIndividual IRI="Alice"/>
     </Declaration>
-    
+-->    
     <Declaration>
         <Class IRI="Person"/>
     </Declaration>
+   
     <Declaration>
         <Class IRI="Man"/>
     </Declaration>
+    
     <Declaration>
         <Class IRI="Woman"/>
     </Declaration>
@@ -57,19 +52,22 @@
     <Declaration>
         <Class IRI="Teenager"/>
     </Declaration>
-        <Declaration>
+<!-- Class ChildlessPerson is deleted      
+    <Declaration>
         <Class IRI="ChildlessPerson"/>
     </Declaration>
-     <Declaration>
+-->    
+    <Declaration>
         <Class IRI="NarcisticPerson"/>
     </Declaration>
     <Declaration>
         <Class IRI="JohnsChildren"/>
     </Declaration>
-    
+<!-- ObjectProperty hasAncestor is deleted       
     <Declaration>
         <ObjectProperty IRI="hasAncestor"/>
     </Declaration>
+-->      
     <Declaration>
         <ObjectProperty IRI="hasParent"/>
     </Declaration>
@@ -122,9 +120,11 @@
     <Declaration>
         <DataProperty IRI="hasAge"/>
     </Declaration>
+<!--  DataProperty age is deleted 
     <Declaration>
         <DataProperty IRI="age"/>
     </Declaration>
+-->    
     
     <Declaration>
         <Datatype IRI="personAge"/>
@@ -135,9 +135,11 @@
     <Declaration>
         <Datatype IRI="majorAge"/>
     </Declaration>
+<!-- Datatype toodlerAge is deleted    
     <Declaration>
         <Datatype IRI="toddlerAge"/>
     </Declaration>
+-->    
     
     <DatatypeDefinition>
         <Datatype IRI="minorAge"/>
@@ -184,6 +186,10 @@
     </DatatypeDefinition>
     
     <DatatypeDefinition>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Datatype toddlerAge</Literal>
+        </Annotation>
         <Datatype IRI="toddlerAge"/>
         <DataOneOf>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">1</Literal>
@@ -201,7 +207,7 @@
     </SubClassOf>
     
     <SubClassOf>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1652800332</Literal>
         </Annotation>
@@ -210,7 +216,7 @@
     </SubClassOf>
     
     <DisjointClasses>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1299199849</Literal>
         </Annotation>
@@ -219,7 +225,7 @@
     </DisjointClasses>
     
     <DisjointUnion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-344833659</Literal>
         </Annotation>
@@ -261,6 +267,10 @@
     </SubClassOf>
         
     <EquivalentClasses>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1039132749</Literal>
@@ -291,7 +301,7 @@
     
     
     <EquivalentClasses>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-959512380</Literal>
         </Annotation>
@@ -318,7 +328,7 @@
     </EquivalentClasses>
     
     <ObjectPropertyDomain>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax873308696</Literal>
         </Annotation>
@@ -383,7 +393,7 @@
     </DisjointObjectProperties>
     
     <InverseObjectProperties>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1423657695</Literal>
         </Annotation>
@@ -440,6 +450,10 @@
     </AsymmetricObjectProperty>
     
     <TransitiveObjectProperty>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1444772685</Literal>
@@ -457,7 +471,7 @@
     </SubDataPropertyOf>
     
     <DisjointDataProperties>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-493086223</Literal>
         </Annotation>
@@ -466,6 +480,10 @@
     </DisjointDataProperties>
     
     <EquivalentDataProperties>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting DataProperty age</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax140678089</Literal>
@@ -475,7 +493,7 @@
     </EquivalentDataProperties>
     
     <DataPropertyDomain>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1284912199</Literal>
         </Annotation>
@@ -484,7 +502,7 @@
     </DataPropertyDomain>
     
     <DataPropertyRange>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1495705204</Literal>
         </Annotation>
@@ -493,7 +511,7 @@
     </DataPropertyRange>
     
     <FunctionalDataProperty>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1109111715</Literal>
         </Annotation>
@@ -511,7 +529,7 @@
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1975222262</Literal>
         </Annotation>
@@ -561,6 +579,10 @@
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1679798240</Literal>
@@ -601,7 +623,7 @@
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1590753066</Literal>
         </Annotation>
@@ -611,7 +633,7 @@
     </DataPropertyAssertion>
     
     <NegativeDataPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1429575109</Literal>
         </Annotation>
@@ -651,6 +673,14 @@
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
+        </Annotation>
+        <Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Datatype toddlerAge</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1116048551</Literal>
@@ -659,7 +689,7 @@
         <NamedIndividual IRI="Alice"/>
         <Literal datatypeIRI="http://example.com/owl/families/toddlerAge">2</Literal>
     </DataPropertyAssertion>
-    
+<!-- SameIndividual axiom is deleted    
     <SameIndividual>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -668,6 +698,7 @@
         <NamedIndividual IRI="Liz"/>
         <NamedIndividual IRI="Liza"/>
     </SameIndividual>
+-->    
     
     <DifferentIndividuals>
         <Annotation>
@@ -679,7 +710,7 @@
     </DifferentIndividuals>
     
     <ObjectPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-834974511</Literal>
         </Annotation>
@@ -725,7 +756,7 @@
     </ClassAssertion>
     
     <EquivalentClasses>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax163847801</Literal>
         </Annotation>
@@ -750,6 +781,10 @@
     </EquivalentClasses>
     
     <ObjectPropertyAssertion>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1498503059</Literal>
@@ -760,7 +795,7 @@
     </ObjectPropertyAssertion>
     
     <ClassAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1318609487</Literal>
         </Annotation>
@@ -769,7 +804,7 @@
     </ClassAssertion>
     
     <ObjectPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax193958378</Literal>
         </Annotation>
@@ -779,7 +814,7 @@
     </ObjectPropertyAssertion>
     
     <ObjectPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax961310361</Literal>
         </Annotation>
@@ -789,7 +824,7 @@
     </ObjectPropertyAssertion>
     
     <ObjectPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax285040634</Literal>
         </Annotation>
@@ -799,7 +834,15 @@
     </ObjectPropertyAssertion>
     
     <ObjectPropertyAssertion>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
+        </Annotation>
         <Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
+        </Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-556159636</Literal>
         </Annotation>
@@ -851,6 +894,10 @@
     </ObjectPropertyAssertion>
     
     <ObjectPropertyAssertion>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-246865350</Literal>
@@ -902,6 +949,10 @@
     </ObjectPropertyAssertion>
     
     <ClassAssertion>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-694856842</Literal>
@@ -922,7 +973,7 @@
     </ClassAssertion>
     
     <NegativeObjectPropertyAssertion>
-        <Annotation>
+    	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1793612164</Literal>
         </Annotation>
@@ -941,6 +992,10 @@
     </ClassAssertion>
   
     <ObjectPropertyAssertion>
+    	<Annotation>
+         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
+        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1397113822</Literal>
