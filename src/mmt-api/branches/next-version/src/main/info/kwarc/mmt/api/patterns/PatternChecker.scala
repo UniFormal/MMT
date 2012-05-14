@@ -81,6 +81,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
             case (_,_) => false      
         }
     }
+  }
     
   def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
     (dterm,pterm) match {
