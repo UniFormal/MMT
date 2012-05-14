@@ -64,42 +64,23 @@ class PatternChecker(controller: Controller) extends Elaborator {
 }
 
 class Matcher(controller : Controller, var metaContext : Context) {
-  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {
-    
-    /* list of OM terms to check:
-     * 		+ OMV vars
-     * 		+ OMA application
-     *     	+ OMBIND binding (w/out condition) 
-     *     	+ OMI integers
-     *     OMS symbols
-     *     
-    */
-    
-    (dterm,pterm) match {
-      
-      case (OMI(i),OMI(j)) => i == j                   
-      case (OMV(v),OMV(w)) => con.isDeclared(v) && con.isDeclared(w) && v == w
- 
-      
-      case (OMA(f, argsf : List[Term]),OMA(h, argsh : List[Term])) => 
-        apply(f, h, con) && 
-        argsf.zip(argsh).forall{ 
-            case (x,y) => apply(x ,y , con) 
+  def apply(dterm : Term, pterm : Term) : Boolean = {
+    //val dtermN = normalize(dterm)
+    //val ptermN = normalize(pterm)
+    if (lengthChecker(dterm,pterm)) {
+        (dterm,pterm) match {
+            case (OMI(i),OMI(j)) => i == j                   
+            case (OMV(v),OMV(w)) => con.isDeclared(v) && con.isDeclared(w) && v == w
+            case (OMA(f, argsf : List[Term]),OMA(h, argsh : List[Term])) => 
+               apply(f, h, con) && argsf.zip(argsh).forall{ 
+                  case (x,y) => apply(x ,y , con) 
+               }
+            case (OMBIND(b1, ctx1, bod1), OMBIND(b2, ctx2, bod2)) => apply(b1,b2,con) && apply(bod1,bod2, con ++ ctx1 ++ ctx2)
+            case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b),con)
+            case (OMID(a), OMID(b)) => a.toString() == b.toString()
+            case (_,_) => false      
         }
-        
-      case (OMBIND(b1, ctx1, bod1), OMBIND(b2, ctx2, bod2)) => 
-         apply(b1,b2,con) && apply(bod1,bod2, con ++ ctx1 ++ ctx2)
-         
-      case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b),con)
-            
-      case (OMID(a), OMID(b)) => a.toString() == b.toString()
-         
-      case (_,_) => false      
     }
-    
-  true //TODO  
-  
-  }
     
   def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
     (dterm,pterm) match {
@@ -108,29 +89,35 @@ class Matcher(controller : Controller, var metaContext : Context) {
       case (_,_) => false
     }
   }
+  
+  def lengthChecker(term1 : Term, term2 : Term) : Boolean = {
+    true
+     //val len1N = normalize(length(term1))
+     //val len2N = normalize(length(term2))
+    /*
+     (term1,len2N) match {
+       case (OMI(m),OMI(n)) if (m == n) => true
+       case (_,_) => 
+         freeVars(len1N)
+         freeVars(len1N)
+         lengthSolver()
+     }
+     */
+  }
 }
 
+/*
 object Test  {
-  
   // just a random test file with THF theory
   val testfile = "/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT031^2.omdoc"
-    
-    
-    
-  
-    //TODO 
-    /* parse omdoc file
-     * should get a list of constants
-     * check constants one by one - thf can only have one declaration anyway
-     * 
-     * check a parsed constant immediatelly against all patterns OR get list of constants and then check
-     *  
-     */
+  //TODO 
+     // read omdoc version of a thf file   
+     // should get a list of constants
+     //check constants one by one - thf can only have one declaration anyway     
+     //check a parsed constant immediatelly against all patterns OR get list of constants and then check      
+     
     
   var reader = new java.io.
-    
-    
-
   val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
   val baseType = new Pattern(OMID(tptpbase ? "thf"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
   val typedCon = new Pattern(OMID(tptpbase ? "thf"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
@@ -141,19 +128,14 @@ object Test  {
   controller.add(typedCon)
   controller.add(axiom)
   
-  def main(args : Array[String]) {
-    
-    val thrName : String = args.first
-    
-    val pc = new PatternChecker(controller)
-    pc.patternCheck()
-    
-//    log("works!")
-    
+  def main(args : Array[String]) {  
+      val thrName : String = args.first
+      val pc = new PatternChecker(controller)
+      pc.patternCheck() 
   }
     
 }
-
+*/
 
 
 
