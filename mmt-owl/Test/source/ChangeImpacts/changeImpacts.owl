@@ -499,7 +499,7 @@
 <DataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="Alice"/>
- <Literal datatypeIRI="toddlarAge">2</Literal>
+ <Literal datatypeIRI="toddlerAge">2</Literal>
 </DataPropertyAssertion>
 
 <SameIndividual>

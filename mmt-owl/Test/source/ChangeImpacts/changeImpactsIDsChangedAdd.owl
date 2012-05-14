@@ -1,16 +1,8 @@
 <?xml version="1.0"?>
 <Ontology xmlns="http://www.w3.org/2002/07/owl#"
      xml:base="http://example.com/owl/families/"
-     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-     xmlns:xml="http://www.w3.org/XML/1998/namespace"
      ontologyIRI="http://example.com/owl/families/">
-    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
-    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
-    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
-    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
-    
+        
     <Declaration>
         <NamedIndividual IRI="John"/>
     </Declaration>
@@ -34,6 +26,9 @@
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="Alice"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="Bob"/> <!-- NamedIndividual Bob is added -->
     </Declaration>
     
     <Declaration>
@@ -65,6 +60,9 @@
     </Declaration>
     <Declaration>
         <Class IRI="JohnsChildren"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="Student"/> <!-- Class Student is added --> 
     </Declaration>
     
     <Declaration>
@@ -109,6 +107,9 @@
     <Declaration>
         <ObjectProperty IRI="loves"/>
     </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="hasBoyfriend"/> <!-- ObjectProperty hasBoyfriend is added --> 
+    </Declaration>
     
     <Declaration>
         <DataProperty IRI="hasID"/>
@@ -124,6 +125,9 @@
     </Declaration>
     <Declaration>
         <DataProperty IRI="age"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="hasBirthname"/> <!-- DataProperty hasBirthname is added --> 
     </Declaration>
     
     <Declaration>
@@ -950,6 +954,40 @@
         <NamedIndividual IRI="Alice"/>
     </ObjectPropertyAssertion>
      
+    <DataPropertyAssertion>	<!-- DataPropertyAssertion axiom is added -->	
+        <DataProperty IRI="hasID"/>
+        <NamedIndividual IRI="Bob"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">123400008</Literal>
+    </DataPropertyAssertion>
+    
+    <DataPropertyAssertion>	<!-- DataPropertyAssertion axiom is added -->	
+        <DataProperty IRI="hasAge"/>
+        <NamedIndividual IRI="Bob"/>
+        <Literal datatypeIRI="http://example.com/owl/families/majorAge">21</Literal>
+    </DataPropertyAssertion>
+    
+    <ClassAssertion>	<!-- ClassAssertion axiom is added -->
+       <Class IRI="ChildlessPerson"/>
+       <NamedIndividual IRI="Bob"/>
+    </ClassAssertion>
+    
+    <ClassAssertion>	<!-- ClassAssertion axiom is added -->
+       <Class IRI="Student"/>
+       <NamedIndividual IRI="Bob"/>
+    </ClassAssertion>
+    
+    <ObjectPropertyAssertion>	<!-- ObjectPropertyAssertion is added -->
+        <ObjectProperty IRI="hasBoyfriend"/>
+        <NamedIndividual IRI="Amy"/>
+        <NamedIndividual IRI="Bob"/>
+    </ObjectPropertyAssertion>
+    
+    <DataPropertyAssertion>	<!-- DataPropertyAssertion is added -->
+        <DataProperty IRI="hasBirthname"/>
+        <NamedIndividual IRI="Liz"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Parker</Literal>
+    </DataPropertyAssertion>
+
 </Ontology>
 
 
