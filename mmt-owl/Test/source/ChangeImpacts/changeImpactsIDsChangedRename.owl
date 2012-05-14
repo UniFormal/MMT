@@ -5,7 +5,7 @@
      ontologyIRI="http://example.com/owl/families/">
    
     <Declaration>
-      <NamedIndividual IRI="James"/> <!-- John is renamed to James -->
+      <NamedIndividual IRI="James"/> <!-- NamedIndividual John is renamed to James -->
     </Declaration>
            
     <Declaration>
@@ -31,7 +31,7 @@
     </Declaration>
     
     <Declaration>
-        <Class IRI="Human"/> <!-- Person is renamed to Human -->
+        <Class IRI="Human"/> <!-- Class Person is renamed to Human -->
     </Declaration>
     <Declaration>
         <Class IRI="Man"/>
@@ -135,7 +135,7 @@
     
     <DatatypeDefinition>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge in DR DataIntersectionOf to humanAge</Literal>
         </Annotation>
         <Datatype IRI="minorAge"/>
@@ -162,7 +162,7 @@
     
     <DatatypeDefinition>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge to humanAge</Literal>
         </Annotation>
         <Datatype IRI="personAge"/>
@@ -179,7 +179,7 @@
     
     <DatatypeDefinition>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge to humanAge</Literal>
         </Annotation>
         <Datatype IRI="personAge"/>
@@ -199,7 +199,7 @@
     
     <SubClassOf>
        <Annotation>
-        <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+        <AnnotationProperty IRI="http://omdoc.org/impact"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
@@ -212,7 +212,7 @@
     
     <SubClassOf>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
@@ -234,7 +234,7 @@
     
     <DisjointUnion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
@@ -248,7 +248,7 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
@@ -284,7 +284,7 @@
         
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person in Class Expression ObjectIntersectionOf to Human</Literal>
         </Annotation>
         <Annotation>
@@ -302,7 +302,7 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person in CE ObjectSomeValuesFrom in CE ObjectIntersectionOf to Human</Literal>
         </Annotation>
         <Annotation>
@@ -322,7 +322,7 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person in CE ObjectSomeValuesFrom in CE ObjectIntersectionOf to Human</Literal>
         </Annotation>
         <Annotation>
@@ -483,7 +483,7 @@
     
     <SubDataPropertyOf>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasLastName to hasSurname</Literal>
         </Annotation>
         <Annotation>
@@ -514,7 +514,7 @@
     
     <DataPropertyDomain>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
@@ -527,7 +527,7 @@
     
     <DataPropertyRange>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge to humanAge</Literal>
         </Annotation>
         <Annotation>
@@ -549,7 +549,7 @@
   <!--family info-->  
     <DataPropertyAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -623,11 +623,11 @@
     
     <DataPropertyAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasLastName to hasSurname</Literal>
         </Annotation>
         <Annotation>
@@ -641,7 +641,7 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasLastName to hasSurname</Literal>
         </Annotation>
         <Annotation>
@@ -655,7 +655,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -738,7 +738,7 @@
     
     <DifferentIndividuals>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -751,7 +751,7 @@
     
     <ObjectPropertyAssertion>
        <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -765,7 +765,7 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -781,7 +781,7 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -797,7 +797,7 @@
     
     <ClassAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -813,7 +813,7 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John in the class expression ObjectHasValue to James</Literal>
         </Annotation>
         <Annotation>
@@ -842,7 +842,7 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
@@ -966,7 +966,7 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming object property hasSibling in CE ObjectAllValuesFrom to hasCommonParentWith</Literal>
        </Annotation>
         <Annotation>
@@ -982,7 +982,7 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming object property hasSibling to hasCommonParentWith</Literal>
         </Annotation>
         <Annotation>

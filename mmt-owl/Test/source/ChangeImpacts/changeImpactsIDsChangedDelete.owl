@@ -187,7 +187,7 @@
     
     <DatatypeDefinition>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Datatype toddlerAge</Literal>
         </Annotation>
         <Datatype IRI="toddlerAge"/>
@@ -265,10 +265,10 @@
             </DatatypeRestriction>
         </DataSomeValuesFrom>
     </SubClassOf>
-        
+<!-- renaming is skipped, just deleting? -->         
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
@@ -451,7 +451,7 @@
     
     <TransitiveObjectProperty>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
         <Annotation>
@@ -481,7 +481,7 @@
     
     <EquivalentDataProperties>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting DataProperty age</Literal>
         </Annotation>
         <Annotation>
@@ -580,7 +580,7 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -674,11 +674,11 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Datatype toddlerAge</Literal>
         </Annotation>
         <Annotation>
@@ -689,6 +689,7 @@
         <NamedIndividual IRI="Alice"/>
         <Literal datatypeIRI="http://example.com/owl/families/toddlerAge">2</Literal>
     </DataPropertyAssertion>
+<!-- annotate the NamedIndividuals? -->     
 <!-- SameIndividual axiom is deleted    
     <SameIndividual>
         <Annotation>
@@ -782,7 +783,7 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -835,11 +836,11 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
     	<Annotation>
@@ -895,7 +896,7 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -950,7 +951,7 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
@@ -993,7 +994,7 @@
   
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#comment"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
