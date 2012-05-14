@@ -843,7 +843,7 @@
         <NamedIndividual IRI="Liz"/>
         <NamedIndividual IRI="Tom"/>
     </ObjectPropertyAssertion>
-    
+
     <ObjectPropertyAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -853,7 +853,18 @@
         <NamedIndividual IRI="Liz"/>
         <NamedIndividual IRI="Max"/>
     </ObjectPropertyAssertion>
-    
+
+<!-- inconsistency?   
+    <ObjectPropertyAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-x</Literal>
+        </Annotation>
+        <ObjectProperty IRI="hasHusband"/>
+        <NamedIndividual IRI="Liz"/>
+        <NamedIndividual IRI="Bob"/>
+    </ObjectPropertyAssertion>
+-->        
     <ObjectPropertyAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -953,7 +964,7 @@
         <NamedIndividual IRI="Max"/>
         <NamedIndividual IRI="Alice"/>
     </ObjectPropertyAssertion>
-     
+<!-- Axioms which are added have no identifiers -->     
     <DataPropertyAssertion>	<!-- DataPropertyAssertion axiom is added -->	
         <DataProperty IRI="hasID"/>
         <NamedIndividual IRI="Bob"/>
