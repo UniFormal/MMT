@@ -42,7 +42,13 @@ case class PROD(tps: List[EXP]) extends EXP
 case class TUPLE(tps: List[EXP]) extends EXP
 /** projection out of a product */
 case class PROJ(exp: EXP, proj: Int) extends EXP
+/** record value */
+case class ARECORD(tp: String, fields: List[FIELD]) extends EXP
+/** selection from a record */
+case class SELECT(record: EXP, field: String) extends EXP
 
+/** auxiliary class for records types and values */
+case class FIELD(name: String, value: EXP)
 /** auxiliary class for cases in a MATCH */
 case class CASE(pattern: EXP, body: EXP)
 /** auxiliary class for arguments of a FUNCTION */
@@ -58,10 +64,12 @@ case class ADT(name: String, constructors: List[CONS]) extends DECL
 case class ADTRec(adts: List[ADT]) extends DECL
 /** type definition */
 case class TYPEDEF(name: String, df: EXP) extends DECL
-/** funtion */
+/** function definition */
 case class FUNCTION(name: String, args: List[ARG], ret: EXP, body: EXP) extends DECL
 /** a group of mutually recursive functions */
 case class FUNCTIONRec(funs: List[FUNCTION]) extends DECL
+/** record type declaration (only named record types are permitted) */
+case class RECORD(name: String, fields: List[FIELD]) extends DECL
 /** exception declaration; all exception take a single string argument */
 case class EXCEPTION(name: String) extends DECL
 
