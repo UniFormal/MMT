@@ -987,6 +987,11 @@
        <NamedIndividual IRI="Bob"/>
     </ClassAssertion>
     
+    <ClassAssertion>	<!-- ClassAssertion axiom is added -->
+       <Class IRI="Student"/>
+       <NamedIndividual IRI="Amy"/>
+    </ClassAssertion>
+    
     <ObjectPropertyAssertion>	<!-- ObjectPropertyAssertion is added -->
         <ObjectProperty IRI="hasBoyfriend"/>
         <NamedIndividual IRI="Amy"/>
