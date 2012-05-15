@@ -62,7 +62,9 @@ object FlatSequence {
   def unapply (t : Term) : Option[List[Term]] = Some(toList(t))
 }
 
-
+/*
+ * normalizes an sequence expression/symbol in OMDoc/MMT to the corresponding sequence of OMDoc/MMT  
+ */
 object SeqNormalize {   
   def length(tm : Term)(implicit lookup : Lookup, context : Context) : Term = {
     tm match {
