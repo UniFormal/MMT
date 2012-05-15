@@ -64,23 +64,21 @@ class PatternChecker(controller: Controller) extends Elaborator {
 }
 
 class Matcher(controller : Controller, var metaContext : Context) {
-  def apply(dterm : Term, pterm : Term) : Boolean = {
-    //val dtermN = normalize(dterm)
-    //val ptermN = normalize(pterm)
-    if (lengthChecker(dterm,pterm)) {
+  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {    
+    //if (lengthChecker(dterm,pterm)) {      
         (dterm,pterm) match {
             case (OMI(i),OMI(j)) => i == j                   
-            case (OMV(v),OMV(w)) => con.isDeclared(v) && con.isDeclared(w) && v == w
-            case (OMA(f, argsf : List[Term]),OMA(h, argsh : List[Term])) => 
-               apply(f, h, con) && argsf.zip(argsh).forall{ 
-                  case (x,y) => apply(x ,y , con) 
+            case (OMV(v),OMV(w)) if (v == w) => con.isDeclared(v) && con.isDeclared(w) 
+            case (OMA(f1,args1),OMA(f2,args2)) => 
+               apply(f1 : Term,f2,con) && args1.zip(args2).forall { 
+                  case (x,y) => apply(x,y,con) 
                }
-            case (OMBIND(b1, ctx1, bod1), OMBIND(b2, ctx2, bod2)) => apply(b1,b2,con) && apply(bod1,bod2, con ++ ctx1 ++ ctx2)
+            case (OMBIND(b1, ctx1, bod1), OMBIND(b2,ctx2,bod2)) => apply(b1,b2,con) && apply(bod1,bod2,con ++ ctx1 ++ ctx2)
             case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b),con)
             case (OMID(a), OMID(b)) => a.toString() == b.toString()
             case (_,_) => false      
         }
-    }
+    //}
   }
     
   def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
