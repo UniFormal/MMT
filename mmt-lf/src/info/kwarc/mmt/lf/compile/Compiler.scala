@@ -50,14 +50,14 @@ class Compiler(fl: FuncLang) {
       // the type of signatures
       decl(TYPEDEF("sign", LIST("decl")))
       // the type of theories
-      decl(TYPEDEF("theo", PROD(List("sign", LIST(log.form)))))
+      decl(RECORD("theo", List(FIELD("sign", "sign"), FIELD("axioms", LIST(log.form)))))
       
       decl(EXCEPTION("error"))
       // the functions that map parse trees to expressions
       
       def parse(c: CatRef, a: EXP) = APPLY(c.target + "_from_pt", a)
-      def qualIDFirst(e: EXP) = PROJ(APPLY("parse.qualIDSplit", e), 1)   //parse.qualIDSplit("instance_name") = ("instance","name")
-      def qualIDSecond(e: EXP) = PROJ(APPLY("parse.qualIDSplit", e), 2)
+      def qualIDFirst(e: EXP) = APPLY("parse.qualIDSplitFirst", e)   //parse.qualIDSplit("instance_name") = ("instance","name")
+      def qualIDSecond(e: EXP) = APPLY("parse.qualIDSplitSecond", e)
       val frompt = log.cats map {case Category(c, cons) =>
          val appcase = CASE(APPLY("parse.app", "n", "args"),
            cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
@@ -135,7 +135,7 @@ class Compiler(fl: FuncLang) {
       decl(FUNCTION("sign_from_pt", List(ARG("sg", "parse.sign")), "sign", MAP("sg", "decl_from_pt")))
       decl(FUNCTION("axiom_from_pt", List(ARG("ax", "parse.tree")), log.form, parse(log.form, "ax")))
       decl(FUNCTION("theo_from_pt", List(ARG("th", "parse.theo")), "theo", 
-          TUPLE(List(APPLY("sign_from_pt", PROJ("th", 1)), MAP(PROJ("th", 2), "axiom_to_lf")))
+          ARECORD("theo", List(FIELD("sign", APPLY("sign_from_pt", SELECT("th", "sign"))), FIELD("axioms", MAP(SELECT("th", "axioms"), "axiom_to_lf"))))
       ))
 
       def tolf(c: CatRef, e: EXP) = APPLY(c.target + "_to_lf", e)
@@ -170,7 +170,7 @@ class Compiler(fl: FuncLang) {
       decl(FUNCTION("sign_to_lf", List(ARG("sg", "sign")), "lf.sign", MAP("sg", "decl_to_lf"))) 
       decl(FUNCTION("axiom_to_lf", List(ARG("ax", log.form)), "lf.decl", lf.decl("_", tolf(log.form, "ax"))))
       decl(FUNCTION("theo_to_lf", List(ARG("th", "theo")), "lf.sign", 
-          CONCAT(APPLY("sign_to_lf", PROJ("th", 1)), MAP(PROJ("th", 2), "axiom_to_lf"))
+          CONCAT(APPLY("sign_to_lf", SELECT("th", "sign")), MAP(SELECT("th", "axioms"), "axiom_to_lf"))
       ))
    }
 }
