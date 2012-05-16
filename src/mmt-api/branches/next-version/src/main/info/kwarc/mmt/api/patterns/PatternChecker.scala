@@ -107,6 +107,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
 
 /*
 object Test  {
+  
   // just a random test file with THF theory
   val testfile = "/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT031^2.omdoc"
   //TODO 
@@ -116,8 +117,28 @@ object Test  {
      //check a parsed constant immediatelly against all patterns OR get list of constants and then check      
      
     
-  var reader = new java.io.
+    
+    
+  
+    //TODO 
+    /* parse omdoc file
+     * should get a list of constants
+     * check constants one by one - thf can only have one declaration anyway
+     * 
+     * check a parsed constant immediatelly against all patterns OR get list of constants and then check
+     *  
+     */
+    
+//  var reader = new java.io.
+    
+  val src = Source.fromFile(testfile)
+  
+  
+    
+
   val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
+  val axbase = DPath(URI("http://latin.omdoc.org/Problems"))
+
   val baseType = new Pattern(OMID(tptpbase ? "thf"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
   val typedCon = new Pattern(OMID(tptpbase ? "thf"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
   val axiom = new Pattern(OMID(tptpbase ? "thf"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
@@ -127,11 +148,33 @@ object Test  {
   controller.add(typedCon)
   controller.add(axiom)
   
-  def main(args : Array[String]) {  
-      val thrName : String = args.first
-      val pc = new PatternChecker(controller)
-      pc.patternCheck() 
+  
+  
+  def main(args : Array[String]) {
+    
+//    val thrName : String = args.first
+    
+    val pc = new PatternChecker(controller)
+    
+    val ccon = controller.globalLookup.getConstant((axbase / "AGT" / "AGT038^1.omdoc") ? "..." ? "mu")
+    
+    
+//    var tmp1 = pc.patternCheck(List(ccon), baseType)
+//    tmp1 match {
+//      case None => 
+//      case Some(a) => tmp1 =
+//    }
+    log(pc.patternCheck(List(ccon), baseType))
+    log(pc.patternCheck(List(ccon), typedCon))
+    log(pc.patternCheck(List(ccon), axiom))
+    
+//    pc.patternCheck()
+    
+//    log("works!")
+    
   }
+  
+  src.close()
     
 }
 */
