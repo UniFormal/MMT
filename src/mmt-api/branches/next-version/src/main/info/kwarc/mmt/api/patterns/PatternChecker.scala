@@ -67,6 +67,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
   def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {    
     //if (lengthChecker(dterm,pterm)) {      
         (dterm,pterm) match {
+        	case (OMID(a), OMID(b)) => a.toString() == b.toString()
             case (OMI(i),OMI(j)) => i == j                   
             case (OMV(v),OMV(w)) if (v == w) => con.isDeclared(v) && con.isDeclared(w) 
             case (OMA(f1,args1),OMA(f2,args2)) => 
@@ -74,8 +75,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
                   case (x,y) => apply(x,y,con) 
                }
             case (OMBIND(b1, ctx1, bod1), OMBIND(b2,ctx2,bod2)) => apply(b1,b2,con) && apply(bod1,bod2,con ++ ctx1 ++ ctx2)
-            case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b),con)
-            case (OMID(a), OMID(b)) => a.toString() == b.toString()
+            case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b),con)            
             case (_,_) => false      
         }
     //}
@@ -105,7 +105,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
   }
 }
 
-/*
+
 object Test  {
   
   // just a random test file with THF theory
@@ -115,33 +115,20 @@ object Test  {
      // should get a list of constants
      //check constants one by one - thf can only have one declaration anyway     
      //check a parsed constant immediatelly against all patterns OR get list of constants and then check      
-     
-    
-    
-    
-  
-    //TODO 
-    /* parse omdoc file
-     * should get a list of constants
-     * check constants one by one - thf can only have one declaration anyway
-     * 
-     * check a parsed constant immediatelly against all patterns OR get list of constants and then check
-     *  
-     */
     
 //  var reader = new java.io.
     
-  val src = Source.fromFile(testfile)
+//  val src = Source.fromFile(testfile)
   
   
     
 
   val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
-  val axbase = DPath(URI("http://latin.omdoc.org/Problems"))
+  val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))
 
-  val baseType = new Pattern(OMID(tptpbase ? "thf"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
-  val typedCon = new Pattern(OMID(tptpbase ? "thf"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
-  val axiom = new Pattern(OMID(tptpbase ? "thf"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
+  val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
+  val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
+  val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
   val controller = new Controller
   controller.handleLine("file pattern-test.mmt")
   controller.add(baseType)
@@ -151,12 +138,14 @@ object Test  {
   
   
   def main(args : Array[String]) {
-    
-//    val thrName : String = args.first
-    
+  
     val pc = new PatternChecker(controller)
-    
-    val ccon = controller.globalLookup.getConstant((axbase / "AGT" / "AGT038^1.omdoc") ? "..." ? "mu")
+        														
+//    val testget = controller.globalLookup.getStructure(pbbase / "SomeProblem.omdoc" ? "SomeProblem")
+    println("OK up till here")
+    														// file name ? theory name ? constant name 
+//    controller.get(pbbase)
+    val ccon = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "mu")
     
     
 //    var tmp1 = pc.patternCheck(List(ccon), baseType)
@@ -164,9 +153,9 @@ object Test  {
 //      case None => 
 //      case Some(a) => tmp1 =
 //    }
-    log(pc.patternCheck(List(ccon), baseType))
-    log(pc.patternCheck(List(ccon), typedCon))
-    log(pc.patternCheck(List(ccon), axiom))
+    println(pc.patternCheck(List(ccon), baseType).toString())
+    println(pc.patternCheck(List(ccon), typedCon).toString())
+    println(pc.patternCheck(List(ccon), axiom).toString())
     
 //    pc.patternCheck()
     
@@ -174,10 +163,10 @@ object Test  {
     
   }
   
-  src.close()
+//  src.close()
     
 }
-*/
+
 
 
 
