@@ -24,7 +24,17 @@ Installation
 3) Go to the jEdit plugin manager dialog and select the check box of the MMT plugin to load the plugin.
    After doing that once, the plugin will be loaded automatically when jEdit is started.
 
+   
 -----------------------------------------
+Configuration
+
+To configure the MMT plugin, you use the MMT pane of the jEdit plugin options dialog.
+
+- startup file: This is the path to a MMT script, a text file with MMT shell commands.
+  This commands are executed when the MMT plugin is loaded (usually when jEdit is started).
+  A commented example is provided by the file startup.mmt in this directory.
+
+----------------------------------------
 Updating
 
 To update the plugin, simply repeat the installation (or overwrite the individual jar files if you know which ones changed).
@@ -86,15 +96,10 @@ By default, they are available in the MMT plugin menu.
 - Compile current buffer: compiles the current buffer
 
 
-To configure the MMT plugin, you use the MMT pane of the jEdit plugin options dialog.
-
-- startup file: This is the path to a MMT script, a text file with MMT shell commands.
-  This commands are executed when the MMT plugin is loaded (usually when jEdit is started).
-  A commented example is provided by the file startup.mmt in this directory.
-
 -----------------------------------------
 Working with Twelf
 
-1) Follow the instructions for Twelf to download and compile Twelf.
+1) Follow the instructions for Twelf to download and compile Twelf:
+   https://svn.kwarc.info/repos/MMT/deploy/jedit-plugin/twelf.txt
 
 2) Register Twelf as an external compiler in your startup file (or interactively via the MMT Console).
