@@ -45,11 +45,18 @@ class PatternChecker(controller: Controller) extends Elaborator {
     if (constants.length == pattern.body.length) {
       val mat = new Matcher(controller,pattern.body)
       var sub = Substitution()
+//      val cons = constants// this is List
+//      val ptr = pattern.body// this is not a List
+//      val whatisit = constants.zip(pattern.body)
       constants.zip(pattern.body).forall {
         case (con,decl) =>
           val dtype = decl.tp.map(t => t ^ sub)
           val ddef = decl.df.map(d => d ^ sub)
           sub ++ Sub(con.name,decl.name)
+          val aa = con.tp.toString()
+          val bb = dtype.toString()
+          val a = mat(con.tp,dtype,Context()) // does not match!!!
+          val b = mat(con.df,ddef,Context()) // mat(con.df,ddef,..) should match and it does!
           mat(con.tp,dtype,Context()) && mat(con.df,ddef,Context())          
       }
       mat.metaContext.toSubstitution 
@@ -67,15 +74,18 @@ class Matcher(controller : Controller, var metaContext : Context) {
   def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {    
     //if (lengthChecker(dterm,pterm)) {      
         (dterm,pterm) match {
-        	case (OMID(a), OMID(b)) => a.toString() == b.toString()
-            case (OMI(i),OMI(j)) => i == j                   
+        	case (OMID(a), OMID(b)) => a == b
+        	case (OMI(i),OMI(j)) => i == j                   
             case (OMV(v),OMV(w)) if (v == w) => con.isDeclared(v) && con.isDeclared(w) 
             case (OMA(f1,args1),OMA(f2,args2)) => 
-               apply(f1 : Term,f2,con) && args1.zip(args2).forall { 
+               apply(f1,f2,con) && args1.zip(args2).forall { 
                   case (x,y) => apply(x,y,con) 
                }
-            case (OMBIND(b1, ctx1, bod1), OMBIND(b2,ctx2,bod2)) => apply(b1,b2,con) && apply(bod1,bod2,con ++ ctx1 ++ ctx2)
-            case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b),con)            
+            case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => apply(b1,b2,con) && apply(cond1,cond2,con ++ ctx1) && apply(bod1,bod2,con ++ ctx1)
+// a missing case:
+            //            case (OMV(v), anyT) => if metaContext.isDeclared(v)
+//            							metaContext.++() // add v = anyT as definient to the metaContext, also true
+//            						else false
             case (_,_) => false      
         }
     //}
@@ -145,7 +155,9 @@ object Test  {
     println("OK up till here")
     														// file name ? theory name ? constant name 
 //    controller.get(pbbase)
-    val ccon = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "mu")
+    val conMu = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "mu")
+    
+//    val conMeq_ind = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "meq_ind")
     
     
 //    var tmp1 = pc.patternCheck(List(ccon), baseType)
@@ -153,9 +165,12 @@ object Test  {
 //      case None => 
 //      case Some(a) => tmp1 =
 //    }
-    println(pc.patternCheck(List(ccon), baseType).toString())
-    println(pc.patternCheck(List(ccon), typedCon).toString())
-    println(pc.patternCheck(List(ccon), axiom).toString())
+    val testtest = pc.patternCheck(List(conMu), baseType)
+    
+    println(testtest.toString())
+//    println(pc.patternCheck(List(conMeq_ind), baseType).toString())
+//    println(pc.patternCheck(List(conMu), typedCon).toString())
+//    println(pc.patternCheck(List(conMu), axiom).toString())
     
 //    pc.patternCheck()
     
