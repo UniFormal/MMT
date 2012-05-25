@@ -32,7 +32,7 @@
     </target>
 
     <target name="build" depends="compile">
-        <jar destfile="mmt-lf.jar">
+        <jar destfile="mmt-reflection.jar">
             <fileset dir="build"/>
         </jar>
     </target>
@@ -53,7 +53,7 @@
 -->
     <target name="deploy">
         <copy todir="${deploy}/mmt">
-            <fileset file="mmt-lf.jar"/>
+            <fileset file="mmt-reflection.jar"/>
         </copy>
     </target>
 
