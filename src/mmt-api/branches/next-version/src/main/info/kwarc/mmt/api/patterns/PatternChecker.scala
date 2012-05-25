@@ -43,7 +43,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
   }
   def patternCheck(constants : List[Constant], pattern : Pattern) : Option[Substitution] = {        
     if (constants.length == pattern.body.length) {
-      val mat = new Matcher(controller,pattern.body)
+      val mat = new Matcher(controller,pattern.params)
       var sub = Substitution()
       constants.zip(pattern.body).forall {
         case (con,decl) =>
@@ -51,9 +51,10 @@ class PatternChecker(controller: Controller) extends Elaborator {
           val ddef = decl.df.map(d => d ^ sub)
           sub ++ Sub(con.name,decl.name)      
 //          println("matching " + con.tp.toString + con.df.toString +  " with " + dtype.toString + ddef.toString)
-          val res = mat(con.tp,dtype,Context()) && mat(con.df,ddef,Context())
-//          log(res)
-          println(res)// just to get a prompt in the shell          
+          val res1 = mat(con.tp,dtype,Context())
+          val res2 = mat(con.df,ddef,Context())
+          val res = res1 && res2
+          println(res1.toString + "  " + res2.toString)// just to get a prompt in the shell          
           res
         
       }
@@ -69,10 +70,9 @@ class PatternChecker(controller: Controller) extends Elaborator {
 }
 
 
-class Matcher(controller : Controller, var metaContext : Context) {
+class Matcher(controller : Controller, var metaContext : Context) {  
   def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {// why do we bother with context here?    
-    //if (lengthChecker(dterm,pterm)) {      
-    // printout for tracking
+    //if (lengthChecker(dterm,pterm)) {          
 //    println("matching " + dterm.toString() + " with " + pterm.toString())    
         (dterm,pterm) match {
         	case (OMID(a), OMID(b)) => a.toString == b.toString
@@ -85,11 +85,11 @@ class Matcher(controller : Controller, var metaContext : Context) {
             case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b), con)                  
             // OMBIND case gone, due Florian??
             case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => apply(b1,b2,con) && apply(cond1,cond2,con ++ ctx1) && apply(bod1,bod2,con ++ ctx1)
-// a missing case:
+// a missing case:  ??
             case (OMV(v), _) => metaContext.isDeclared(v)
-//            							metaContext.++() // add v = anyT as definient to the metaContext, also true
+//            							metaContext.++() // add v = anyT as definien to the metaContext, also true
 //            						else false
-            // check if constant and variable types are the same
+            // check if constant and variable types are the same                        
             case (OMS(s),OMV(v)) => {
               val const = controller.globalLookup.getConstant(s)
               val vardecs = metaContext.components
@@ -103,7 +103,10 @@ class Matcher(controller : Controller, var metaContext : Context) {
                 case _ => false
               }              
             }
-            
+            // missing:  OMA, OMBIND, OMI ...   to OMV
+            case (t, OMV(v)) => {                
+              metaContext.isDeclared(v)
+            }
             case (_,_) => false      
         }
     //}
@@ -158,7 +161,7 @@ object Test  {
   controller.add(typedConDef)
   controller.add(theorem)
     
-  case class Error(msg : String) extends java.lang.Throwable(msg)
+  case class Error(msg : String) extends java.lang.Throwable(msg)  
   
   def main(args : Array[String]) {  
     val pc = new PatternChecker(controller)        														
@@ -200,15 +203,18 @@ object Test  {
     //     <------------------------ pattern checking happens here  ------------------------------->
     // for each constant declaration check with each pattern declaration
     val matches = constList.foreach {
-        a => pattList.foreach {
+        a => println(a.name.toString) 
+          pattList.foreach {
           p => pc.patternCheck(List(a),p) 
         }
       }
     
-        
-//      pc.patternCheck(List(conMu), pp)
-//      pc.patternCheck(List(conMu), typedCon) 
-//      pc.patternCheck(List(conMu), axiom) 
+//      val testCon = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "meq_ind")
+//    
+//      pc.patternCheck(List(testCon), typedConDef)
+//      pc.patternCheck(List(testCon), theorem)
+//      pc.patternCheck(List(testCon), typedCon) 
+//      pc.patternCheck(List(testCon), axiom) 
     
   }
   
