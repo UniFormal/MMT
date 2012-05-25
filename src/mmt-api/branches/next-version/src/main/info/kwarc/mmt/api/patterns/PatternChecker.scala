@@ -49,15 +49,11 @@ class PatternChecker(controller: Controller) extends Elaborator {
         case (con,decl) =>
           val dtype = decl.tp.map(t => t ^ sub)
           val ddef = decl.df.map(d => d ^ sub)
-          sub ++ Sub(con.name,decl.name)
-          val aa = con.tp.toString()
-          val bb = dtype.toString()
-          val a = mat(con.tp,dtype,Context())
-          val b = mat(con.df,ddef,Context())
+          sub ++ Sub(con.name,decl.name)      
 //          println("matching " + con.tp.toString + con.df.toString +  " with " + dtype.toString + ddef.toString)
           val res = mat(con.tp,dtype,Context()) && mat(con.df,ddef,Context())
-          log(res)
-//          println(res)// just to get a prompt in the shell          
+//          log(res)
+          println(res)// just to get a prompt in the shell          
           res
         
       }
@@ -72,25 +68,42 @@ class PatternChecker(controller: Controller) extends Elaborator {
    }
 }
 
+
 class Matcher(controller : Controller, var metaContext : Context) {
   def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {// why do we bother with context here?    
     //if (lengthChecker(dterm,pterm)) {      
     // printout for tracking
 //    println("matching " + dterm.toString() + " with " + pterm.toString())    
         (dterm,pterm) match {
-        	case (OMID(a), OMID(b)) => a == b
+        	case (OMID(a), OMID(b)) => a.toString == b.toString
         	case (OMI(i),OMI(j)) => i == j                   
             case (OMV(v),OMV(w)) if (v == w) => con.isDeclared(v) && con.isDeclared(w) 
             case (OMA(f1,args1),OMA(f2,args2)) => 
                apply(f1,f2,con) && args1.zip(args2).forall { 
                   case (x,y) => apply(x,y,con) 
                }
-//               case OMS OMS not needed according to Florian ??
+            case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b), con)                  
+            // OMBIND case gone, due Florian??
             case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => apply(b1,b2,con) && apply(cond1,cond2,con ++ ctx1) && apply(bod1,bod2,con ++ ctx1)
 // a missing case:
-            case (OMV(v), anyT) => metaContext.isDeclared(v)
+            case (OMV(v), _) => metaContext.isDeclared(v)
 //            							metaContext.++() // add v = anyT as definient to the metaContext, also true
 //            						else false
+            // check if constant and variable types are the same
+            case (OMS(s),OMV(v)) => {
+              val const = controller.globalLookup.getConstant(s)
+              val vardecs = metaContext.components
+              val vardec = vardecs.find(x => x.name == v)
+              vardec match {                
+                case Some(v) => (v.tp,const.tp) match {
+                  	case (None,None) => true 
+                  	case (Some(a),Some(b)) => a == b
+                  	case (_,_) => false
+                }
+                case _ => false
+              }              
+            }
+            
             case (_,_) => false      
         }
     //}
@@ -134,12 +147,16 @@ object Test  {
 
   val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
   val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
-  val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
+  val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F"))) )
+  val typedConDef = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedConDef"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMV("A")))),Some(OMV("D"))))
+  val theorem = new Pattern(OMID(tptpbase ? "THF0"), LocalName("theorem"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F")))),Some(OMV("D"))))
   val controller = new Controller
   controller.handleLine("file pattern-test.mmt")// run what's written in this file first - add logs, archives etc.
   controller.add(baseType)
   controller.add(typedCon)
   controller.add(axiom)
+  controller.add(typedConDef)
+  controller.add(theorem)
     
   case class Error(msg : String) extends java.lang.Throwable(msg)
   
