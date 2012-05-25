@@ -45,9 +45,6 @@ class PatternChecker(controller: Controller) extends Elaborator {
     if (constants.length == pattern.body.length) {
       val mat = new Matcher(controller,pattern.body)
       var sub = Substitution()
-//      val cons = constants// this is List
-//      val ptr = pattern.body// this is not a List
-//      val whatisit = constants.zip(pattern.body)
       constants.zip(pattern.body).forall {
         case (con,decl) =>
           val dtype = decl.tp.map(t => t ^ sub)
@@ -55,9 +52,14 @@ class PatternChecker(controller: Controller) extends Elaborator {
           sub ++ Sub(con.name,decl.name)
           val aa = con.tp.toString()
           val bb = dtype.toString()
-          val a = mat(con.tp,dtype,Context()) // does not match!!!
-          val b = mat(con.df,ddef,Context()) // mat(con.df,ddef,..) should match and it does!
-          mat(con.tp,dtype,Context()) && mat(con.df,ddef,Context())          
+          val a = mat(con.tp,dtype,Context())
+          val b = mat(con.df,ddef,Context())
+//          println("matching " + con.tp.toString + con.df.toString +  " with " + dtype.toString + ddef.toString)
+          val res = mat(con.tp,dtype,Context()) && mat(con.df,ddef,Context())
+          log(res)
+//          println(res)// just to get a prompt in the shell          
+          res
+        
       }
       mat.metaContext.toSubstitution 
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
@@ -71,8 +73,10 @@ class PatternChecker(controller: Controller) extends Elaborator {
 }
 
 class Matcher(controller : Controller, var metaContext : Context) {
-  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {    
+  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {// why do we bother with context here?    
     //if (lengthChecker(dterm,pterm)) {      
+    // printout for tracking
+//    println("matching " + dterm.toString() + " with " + pterm.toString())    
         (dterm,pterm) match {
         	case (OMID(a), OMID(b)) => a == b
         	case (OMI(i),OMI(j)) => i == j                   
@@ -81,9 +85,10 @@ class Matcher(controller : Controller, var metaContext : Context) {
                apply(f1,f2,con) && args1.zip(args2).forall { 
                   case (x,y) => apply(x,y,con) 
                }
+//               case OMS OMS not needed according to Florian ??
             case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => apply(b1,b2,con) && apply(cond1,cond2,con ++ ctx1) && apply(bod1,bod2,con ++ ctx1)
 // a missing case:
-            //            case (OMV(v), anyT) => if metaContext.isDeclared(v)
+            case (OMV(v), anyT) => metaContext.isDeclared(v)
 //            							metaContext.++() // add v = anyT as definient to the metaContext, also true
 //            						else false
             case (_,_) => false      
@@ -116,69 +121,80 @@ class Matcher(controller : Controller, var metaContext : Context) {
 }
 
 
-object Test  {
-  
-  // just a random test file with THF theory
-  val testfile = "/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT031^2.omdoc"
+// a test run with THF (THF0) patterns
+object Test  {  
   //TODO 
-     // read omdoc version of a thf file   
+     // read omdoc file content --> register archive and call content command    
      // should get a list of constants
-     //check constants one by one - thf can only have one declaration anyway     
-     //check a parsed constant immediatelly against all patterns OR get list of constants and then check      
-    
-//  var reader = new java.io.
-    
-//  val src = Source.fromFile(testfile)
-  
-  
-    
-
+     // check constants one by one - thf can only have one declaration anyway     
+     // check a parsed constant immediatelly against all patterns OR get list of constants and then check      
+     
   val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
-  val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))
+  val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))// problem base
 
   val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
   val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
   val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
   val controller = new Controller
-  controller.handleLine("file pattern-test.mmt")
+  controller.handleLine("file pattern-test.mmt")// run what's written in this file first - add logs, archives etc.
   controller.add(baseType)
   controller.add(typedCon)
   controller.add(axiom)
+    
+  case class Error(msg : String) extends java.lang.Throwable(msg)
   
-  
-  
-  def main(args : Array[String]) {
-  
-    val pc = new PatternChecker(controller)
-        														
+  def main(args : Array[String]) {  
+    val pc = new PatternChecker(controller)        														
 //    val testget = controller.globalLookup.getStructure(pbbase / "SomeProblem.omdoc" ? "SomeProblem")
-    println("OK up till here")
     														// file name ? theory name ? constant name 
-//    controller.get(pbbase)
-    val conMu = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "mu")
     
-//    val conMeq_ind = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "meq_ind")
+    // get list of constant declarations
+    val conMu = try { 
+      controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "mu")
+    } catch {
+      case GetError(m) => GetError//TODO : deal with the error      
+    }
+    val constTheory = controller.globalLookup.getTheory(pbbase  ? "SomeProblem") match {
+      case c : DeclaredTheory => c
+      case _ => throw Error("no constants in " + pbbase + "?" + "SomeProblem")
+    }
+    val constList : List[Constant] = constTheory.valueListNG mapPartial {
+      case p : Constant => Some(p)
+      case _ => None
+    }
+  
     
+    //     get list of patterns from controller
+    val pp = try {
+      controller.globalLookup.getPattern(tptpbase ? "THF0" ? "baseType")
+    } catch {
+      case GetError(m) => throw GetError(m)
+    }
+    val pattTheory = controller.globalLookup.getTheory(tptpbase ? "THF0") match {
+      case t : DeclaredTheory => t
+      case _ => throw Error("no patterns in " + tptpbase + "?" + "THF0")      
+    }        
+    val pattList : List[Pattern] = pattTheory.valueListNG mapPartial {
+      case p : Pattern => Some(p)
+      case _ => None
+    }
+        
     
-//    var tmp1 = pc.patternCheck(List(ccon), baseType)
-//    tmp1 match {
-//      case None => 
-//      case Some(a) => tmp1 =
-//    }
-    val testtest = pc.patternCheck(List(conMu), baseType)
+    //     <------------------------ pattern checking happens here  ------------------------------->
+    // for each constant declaration check with each pattern declaration
+    val matches = constList.foreach {
+        a => pattList.foreach {
+          p => pc.patternCheck(List(a),p) 
+        }
+      }
     
-    println(testtest.toString())
-//    println(pc.patternCheck(List(conMeq_ind), baseType).toString())
-//    println(pc.patternCheck(List(conMu), typedCon).toString())
-//    println(pc.patternCheck(List(conMu), axiom).toString())
-    
-//    pc.patternCheck()
-    
-//    log("works!")
+        
+//      pc.patternCheck(List(conMu), pp)
+//      pc.patternCheck(List(conMu), typedCon) 
+//      pc.patternCheck(List(conMu), axiom) 
     
   }
   
-//  src.close()
     
 }
 
