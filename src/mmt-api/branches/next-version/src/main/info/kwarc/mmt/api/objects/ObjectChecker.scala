@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
-
+//import info.kwarc.mmt.api.objects._
 import libraries._
 import modules._
 import symbols._
@@ -9,7 +9,298 @@ import frontend._
 import objects.Conversions._
 import scala.collection.mutable.HashSet
 
+
+abstract class Feature {
+	val typeConstructor: Path 
+	val introSymbol: Path 
+	val introIsInjective: Boolean 
+
+	def getConstructor() : Path = {
+		return typeConstructor
+	}
+	
+	// don't repeat vars in the context when doing extensionality; can I enforce this at this stage?
+	def extensionalityRule(t: TypingJudgement): Term
+	
+	def computationRules(tm: Term): Term
+	
+	def introRule(t: TypingJudgement): List[TypingJudgement] 
+}
+	
+class UnificationProblem(report: Report) {
+	
+	def log(msg : => String) = report("generic unification", msg)
+	
+	var equation: EqualityJudgement = _
+	var metaContext: Context = Context()
+	var solution: Substitution = Substitution()
+	
+	// if true, it doesn't mean necessarily that equation has sols; look at metavars
+	def unifyMMT(equation: EqualityJudgement) : Boolean = {
+		
+		println()
+		println("Unification step in MMT")
+		equation.toTerms() match {
+		  	case (OMV(name),tm) => 
+		  	  	if ( metaContext.isDeclared(name) && UnificationOperations.occurCheck(OMV(name), tm) ) {
+		  	  		val sub = Sub(name, tm)
+		  	  		var newEquation = UnificationOperations.replace(equation, sub)
+		  	  		solution = solution  ++ sub
+		  	  		unifyMMT(newEquation)
+		  	  	}
+		  	  	else {
+		  	  		// if name is not in the metaContext, we are not interested in it. Also, it is a bound var, so we
+		  	  		// cannot substitute it
+		  	  		// if name is in the term, again the problem doesn't have solutions
+		  	  		return false
+		  	  	}
+		  	
+		  	// treated exactly the same as the previous case
+		  	case (tm, OMV(name)) => 
+		  	  	if ( metaContext.isDeclared(name) && UnificationOperations.occurCheck(OMV(name), tm) ) {
+		  	  		val sub = Sub(name, tm)
+		  	  		var newEquation = UnificationOperations.replace(equation, sub)
+		  	  		solution = solution  ++ sub
+		  	  		unifyMMT(newEquation)
+		  	  	}
+		  	  	else {
+		  	  		// if name is not in the metaContext, then it is a bound variable so it cannot be substituted
+		  	  		// if name is in the term, again the problem doesn't have solutions
+		  	  		return false
+		  	  	}
+		  	  	
+		  	case (OMID(name1), OMID(name2)) =>
+		  	  	println("equality of constants")
+		  	  	println()
+		  	  	// smart definition expansion
+		  	  	if (name1 == name2)
+		  	  		return true
+		  	  	else
+		  	  		return false
+		  	  	
+		  	case (OMID(name), tm) => return true
+		  		/*	
+		  	  	UnificationOperations.lookupDef(name) match {
+		  	  	  	case Some(definiens) => unifyMMT(new EqualityJudgement(context, definiens, term, T))
+		  	  	  	case None => return false
+		  	  	}
+		  	  	*/
+		  	
+		  	case (tm, OMID(name)) => return true
+		  	    // the same as above
+		  	
+		  	case (OMA(x, listx), OMA(y, listy)) =>
+		  	  	println("OMA")
+		  	  	var equations = UnificationOperations.decApp(equation)
+		  	  	equations match {
+		  	  	  	case Some(listEquations) =>	return (listEquations.map(unifyMMT)).foldLeft(true)((b,a) => b && a)
+		  	  	  	case None => return false // think more about this case
+		  	  	}
+		  	     
+		  	case (OMBIND(b1, context1, tm1), OMBIND(b2, context2, tm2)) =>  
+		  	  	if ( b1 != b2)
+		  	  		return false
+		  	  	else {
+		  	  		UnificationOperations.decBinder(context1, context2) match {
+		  	  			case Some((subst,listEquations)) => return (listEquations.map(unifyMMT)).foldLeft(true)((b,a) => b && a) &&
+		  	  												unifyMMT(new EqualityJudgement(context1,tm1,tm2^subst,None))
+		  	  			// for the unification problem related to tm1, tm2, the context is relevant only for the variable names
+		  		  		// context1 = context2 after substitution, so it doesn't matter which one we put
+		  	  			case None => return false
+		  		  				
+		  	  		}
+		  	  	}
+		  		
+		  	case _ => return true 	
+		}
+	}
+	
+	def getSolution() : Option[Substitution]= {
+		// check if we have found two values for the same variable - is this possible?
+		// check if we have found values for all metavariables
+	
+		var listVarsSubst = List[Content]()
+		for( s <- solution.components)
+			 listVarsSubst = (s.components).head :: listVarsSubst
+		/*
+		for (metavar <- metaContext)
+			listVarSubst.contains(metavar)
+		*/
+		return Some(solution)
+	}
+}
+
+
+class UnificationProblemTT(report: Report) extends UnificationProblem(report) {
+  
+	override def log(msg : => String) = report("tt unification", msg)
+	
+	var typeTheory: List[Feature] = Nil
+	
+	def unifyTT(equation: EqualityJudgement)(implicit lib: Lookup) : Boolean = {
+	
+		println()
+		println("Unification step in TT")
+		/*
+		var T  = equation.typeAtEquality
+		var tm1 = equation.term1
+		var tm2 = equation.term2
+		var context = equation.context
+		println(tm1)
+		println(tm2)
+		println(T)
+		*/
+	  
+		equation.headOfType() match {
+		  	case Some(h) => 
+		  	  	println("head of type: " + h)
+		  	  	
+		  	  	// check to see if type is simple or composed
+		  	  	var sw = false
+		  	  	
+		  	  	for(f <- typeTheory) {
+		  	  		if( h == f.getConstructor()) {
+		  	  			// we are at a composed type
+		  	  			sw = true
+		  	  		  
+						var t1 = equation.toTypingFirst()
+						var t2 = equation.toTypingSecond()
+						var tm1Eta = f.extensionalityRule(t1)
+						var tm2Eta = f.extensionalityRule(t2)
+						
+						println("extensionality application; context and type don't change")
+						println(tm1Eta.toString())
+						println(tm2Eta.toString())
+						
+						// tm1Eta should always be different from t1 and the same for tm2Eta
+						//(tm1Eta == tm1 && tm2Eta == tm2 && f.introIsInjective)	
+						// how can I enforce that in extensionality rule, in the implementation
+						
+						if (f.introIsInjective) {
+						  
+							var listOfComp1 = f.introRule(t1.replaceTerm(tm1Eta))
+							var listOfComp2 = f.introRule(t2.replaceTerm(tm2Eta))
+								
+							if (listOfComp1.length != listOfComp2.length)
+								// think better, you are in a type theory
+								return false	
+							else {
+								println("introduction rule")
+								for ((ta,tb) <- listOfComp1.zip(listOfComp2)) {
+									println("first term")
+									println("-context " + ta.getContext().toString())
+									println("-term " + ta.getTerm().toString())
+									println("-type " + ta.getType().toString())
+									println("second term")
+									println("-context " + tb.getContext().toString())
+									println("-term" + tb.getTerm().toString())
+									println("-type" + tb.getType().toString())
+									println()
+									//unifyTT(new EqualityJudgement(a.getContext(),a.getTerm(),b.getTerm(),a.getType()))
+									
+									
+									UnificationOperations.decBinder(ta.getContext(),tb.getContext()) match {
+									  	case Some((substContext,listEquations)) =>
+									  	  /*
+									  	  	var h = listEquations.head
+											println((h.getContext()).toString())
+											println((h.getFirstTerm()).toString())
+											println((h.getSecondTerm()).toString())
+											println((h.getType()).toString())
+											println(substContext.toString())
+									  	  	*/
+									  	  	(ta.getType(),tb.getType()) match {
+									  	  	  	case (None, Some(tbType)) => return false
+									  	  	  	case (Some(taType), None) => return false
+									  	  	  	case (Some(taType), Some(tbType)) =>
+									  	  	  	  	// formulate a new unification problem for types
+									  	  	  	  	/*
+									  	  	  	  	println()
+									  	  	  	  	println(taType.toString())
+									  	  	  	  	println(tbType.toString())
+									  	  	  	  	println()
+									  	  	  	  	println()
+									  	  	  	  	*/
+									  	  	  	  	println("unify contexts")
+									  	  	  	  	println()
+									  	  	  	  	var v = (listEquations.map(unifyMMT)).foldLeft(true)((b,a) => b && a)
+									  	  	  	  	if (v) {
+										  	  	  	  	var problem = new UnificationProblem(report)
+										  	  	  	  	println("unify types")
+										  	  	  	  	problem.unifyMMT(new EqualityJudgement(ta.getContext(), taType,
+										  	  										tbType^substContext, None))
+										  	  			problem.getSolution() match {
+									  	  					case None => return false
+									  	  					case Some(substType) =>
+									  	  					  	println("unify terms")
+									  	  				  		v = v && unifyTT( new EqualityJudgement( ta.getContext(),
+														  	  	  			  						 ta.getTerm(),
+														  	  	  			  						 tb.getTerm()^substContext, 
+														  	  	  			  						 Some(tbType^substType)))
+														  	  	return v
+										  	  	  	  	}
+									  	  	  	  	}
+									  	  	  	  	else
+									  	  	  	  		return false
+									  	  	  	case (None, None) =>
+									  	  	  	  	println("unify contexts")
+									  	  	  	  	var v = (listEquations.map(unifyMMT)).foldLeft(true)((b,a) => b && a)
+									  	  	  	  	println("no type for equation")
+									  	  	  	  	println("unify terms")
+									  	  	  	  	v = v && unifyMMT(new EqualityJudgement(ta.getContext(),
+									  	  	  	  											ta.getTerm(),
+									  	  	  	  											tb.getTerm()^substContext, 
+									  	  	  	  											None))
+									  	  	}
+									  	  	
+									  	  	
+									  	case None => return false
+									}
+									
+								}
+							}
+						}
+						else {
+							//var newEquation = equation.replaceTerms(tm1Eta,tm2Eta)
+							//return unifyTT(newEquation)
+							return unifyMMT(equation) // since symbol is not injective, we cannot really do but MMT unification
+						}
+		  	  		}
+		  	  	}
+		  	  	
+		  	  	if (!sw) {
+		  	  		// we are at a base type
+		  	  		println("beta")
+		  	  		for (f <- typeTheory)  {
+		  	  			var tm1 = equation.getFirstTerm()
+		  	  			var tm2 = equation.getSecondTerm()
+		  	  			var tm1Beta = f.computationRules(tm1)
+		  	  			var tm2Beta = f.computationRules(tm2)
+		  	  			println(tm1Beta.toString())
+		  	  			println(tm2Beta.toString())
+		  	  			if (tm1 != tm1Beta || tm2 != tm2Beta)
+		  	  				return unifyTT(equation.replaceTerms(tm1Beta,tm2Beta))	
+		  	  			else 
+		  	  				return unifyMMT(equation)	
+		  	  		}
+		  	  	}
+
+				return true	
+			
+			// should it throw an error b/c we are in the type theory case?
+			case None => return unifyMMT(equation) // if the head doesn't exist, then we don't have a type => MMT unif
+		
+		}	
+	}
+}
+
+
+
+
+//=========================DECLARATIONS=============================
+/*
 /** the type of object level judgments as used for typing and equality of terms */
+-what is the purpose of free vars?
 abstract class Constraint {
   /** @return the set of names of the meta-variables occurring in this judgment
    *    Constraints must come with a Context binding all object variables occurring freely in any expressions;
@@ -56,7 +347,7 @@ class DelayedConstraint(val constraint: Constraint) {
   def isActivatable: Boolean = activatable
 }
 
-/*
+
 abstract class TypeConstructor {
    def extensionalityRule(t: Term) : Term
    def extensionalityRule(eq: EqualConstraint) : Option[List[EqualConstraint]]
@@ -86,6 +377,12 @@ class Unifier {
 }
 */
 
+
+
+
+
+//=================================SOLVER==================================
+/*
 /**
  * A Solver is used to solve a system of judgments about Term's, given by Constraint's,
  * by applying typing rules to validate the judgment.
@@ -202,172 +499,5 @@ class Solver(controller: Controller, unknowns: Context) {
       }
    }
 }
-
-/*
-/**
- * @param path the URI of a constant
- * @param lib  Lookup library
- * @return type of the constant
- */  
-  def lookuptype(path : GlobalName)(implicit lib : Lookup) : Term = {
-    val con = lib.getConstant(path)
-    con.tp match {
-       case Some(t) => t
-       case None =>
-          if (con.df.isEmpty) throw LFError("no type exists for " + path)
-          infer(con.df.get, Context())
-    }
- }
-  def lookupdef(path : GlobalName)(implicit lib : Lookup) : Option[Term] = lib.getConstant(path).df
-  /**
-   * if G |- tm1 : A and G |- tm2 : A, then equal(tm1,tm2,G) iff G |- tm1 = tm2 : A
-   */
-   def equal (tm1 : Term, tm2 : Term, G : Context)(implicit lib : Lookup, cd: ConstraintDelay) {
-      (tm1, tm2) match { 
-         case (OMV(x), OMV(y)) => x == y //TODO: variables with definients
-         case (OMS(c), OMS(d)) => if (c == d) true else {
-            //TODO: smart strategy for definition expansion
-            lookupdef(c) match {
-               case None => lookupdef(d) match {
-                  case None => false
-                  case Some(t) => equal(OMS(c), t, G)
-               }
-               case Some(t) => equal(OMS(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
-            }
-         }
-         case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => 
-            val G2 = G ++ OMV(x1) % a1
-            equal(a1, a2, G) && equal(t1, t2^(OMV(x2)/OMV(x1)), G2)
-         case (Pi(x1,a1,t1), Pi(x2,a2,t2)) => 
-            val G2 = G ++ OMV(x1) % a1
-            equal(a1, a2, G) && equal(t1, t2^(OMV(x2)/OMV(x1)), G2)
-         case (Apply(f1,arg1), Apply(f2,arg2)) => {
-            if (equal(f1, f2, G) && equal(arg1, arg2, G)) true else {
-            //val tm1r = reduce(tm1, Context())  // why empty context?
-            //val tm2r = reduce(tm2, Context())
-               val tm1r = reduce(tm1, G)
-               val tm2r = reduce(tm2, G)
-               if (tm1r != tm1 || tm2r != tm2) {
-                  equal(tm1r, tm2r, G)
-               } else false
-            }
-         }
-         case _ => tm1 == tm2
-      }
-   }
-
-}
-
-
-object Test {
-   val controller = new Controller
-   def log(msg : => String) = controller.report("user", msg)
-
-   def main(args : Array[String]) : Unit = {
-      controller.handle(ExecFile(new java.io.File("test-init.mmt")))
-      val oc = new ObjectChecker(controller.report)
-      val t1 = OMV("x")
-      val t2 = OMV("x")
-      log("solving " + t1 + " = " + t2)
-      val sol = oc.equality(t1,t2,Context())(controller.globalLookup)
-      log("solution: " + sol.toString)
-   }
-
-}
-
-class LFF extends Foundation {
-   /**
-    * check(s,T,G) iff G |- s : T : U for some U \in {type,kind}
-    * checks whether a term s has type T  
-    */
-   def check(s : Term, T : Term, G : Context)(implicit lib : Lookup) : Boolean = {
-      s match {
-         case Univ(1) => T == Univ(2)
-         case OMID(path) => equal(lookuptype(path), T, G)
-         case OMV(name) =>  equal(T, G(name).asInstanceOf[TermVarDecl].tp.get, G) //TODO; why not equal(T, G(name), G)?; what does G(name) return?  
-         case Lambda(x, a, t) =>
-            val G2 = G ++ OMV(x) % a
-            reduce(T,G) match { //we reduce the type -> dependent type gets instantiated
-               case Pi(y, av, by) =>
-                  val bx = by ^ G.id ++ OMV(y)/OMV(x)
-                  equal(a, av, G) && check(a, Univ(1), G) && check(t, bx, G2) 
-               case _ => false
-            }   
-         case Pi(x, a, b) =>
-            val G2 = G ++ OMV(x) % a
-            (T == Univ(1) || T == Univ(2)) &&
-            check(a, Univ(1), G) && check(b, T, G2)
-         case Apply(f,arg) =>
-            val funtype = infer(f, G)
-            val argtype = infer(arg, G)
-            //check(f, funtype, G) && check(arg, argtype, G) && {
-            reduce(funtype, G) match {
-               case Pi(x,a,b) =>
-                  equal(argtype, a, G) && equal(T, b ^ (G.id ++ OMV(x)/arg), G)
-               case _ => false
-            }
-            //}
-         case _ => false
-      }
-   }
-
-  
- /**
-  * if t is a constant or an application of a defined constant, it replaces the constant with its definition.
-  * if t is a lambda expression application, it is beta-reduced 
-  * removes top-level redex, application of defined constant
-  * if t well-formed, then |- reduce(t,G) = t
-  * if |- t = Pi x:A. B for some A,B, then reduce(t) of the form Pi x:A.B (?)
-  */
-   def reduce(t : Term, G : Context)(implicit lib : Lookup) : Term = t match {
-    // t can also be an arbitrary application
-         case Apply(Lambda(x,a,t), s) => if (check(s,a,G)) reduce(t ^ (G.id ++ OMV(x)/s), G) else throw LFError("ill-formed")
-         case Apply(tm1, tm2) =>
-            val tm1r = reduce(tm1, G)
-            tm1r match {
-               case Lambda(x,a,t) => reduce(Apply(tm1r, tm2), G)
-               case _ => Apply(tm1r, tm2)
-            }     
-         case ApplySpine(OMID(p), args) => lookupdef(p) match {
-            case None => t
-            case Some(d) => reduce(ApplySpine(d, args :_*), G)
-         }
-         case ApplySpine(_,_) => t
-         case OMID(p) => lookupdef(p) match {
-            case Some(d) => reduce(d, G)
-            case None => t
-         }
-         case t => t
-   }
- 
- /**
-  * if exists A such that G |- s : A, then G |- infer(s,G) = A
-  */
-   def infer(s : Term, G : Context)(implicit lib : Lookup) : Term = {
-      s match {
-            case Univ(1) => Univ(2)
-            case OMID(path) => lookuptype(path)
-            case OMV(name) => G(name).asInstanceOf[TermVarDecl].tp.get // modify it as in check
-            case Lambda(name, tp, body) =>
-               val G2 = G ++ OMV(name) % tp
-               Pi(name,tp,infer(body, G2))
-            case Pi(name, tp, body) =>
-               val G2 = G ++ OMV(name) % tp
-               infer(body, G2)
-            case Apply(f, arg) =>
-               // need to ensure that type of argument matches with type of functions 
-               val funtype = infer(f, G)
-               val argtype = infer(arg, G)
-               val r = reduce(funtype, G)
-               r match {
-                  case Pi(x,a,b) =>
-                     if (equal(argtype, a, G))  
-                        b ^ G.id ++ OMV(x)/arg
-                     else throw LFError("ill-formed")   
-                  case _ => throw LFError("ill-formed")
-               }
-            case _ => throw LFError("ill-formed")
-      }
-   }
-}
 */
+

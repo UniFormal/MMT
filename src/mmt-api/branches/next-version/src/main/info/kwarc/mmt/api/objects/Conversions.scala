@@ -16,6 +16,7 @@ object Conversions {
    /** wraps OMV around a variable name, works well with the methods % and / of the OMV */ 
    implicit def string2OMV(s: String) : OMV = OMV(s)
    implicit def localName2OMV(s: LocalName) : OMV = OMV(s) 
+   implicit def string2LocalName(s: String) : LocalName = LocalName(s)
 
    /*implicit def sequence2list(s : Sequence) : List[Term] = s.items.toList.map    
    */
