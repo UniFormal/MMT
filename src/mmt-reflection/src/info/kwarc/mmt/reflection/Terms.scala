@@ -7,6 +7,7 @@ import objects._
 import utils._
 import frontend._
 import objects.Conversions._
+import info.kwarc.mmt.lf._
 
 /* Meta-variable names
    s, t: Terms
@@ -25,13 +26,14 @@ import objects.Conversions._
 
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
-object LF {
-   val lfbase = new DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
-   val lftheory = lfbase ? "lf"
+object Reflection {
+   val base = new DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "reflection" / "terms.omdoc")
+   val theory = lfbase ? "Terms"
    def constant(name : String) = OMID(lftheory ? name)
-   val ktype = constant("type")
-   val kind = constant("kind")
-   val arrow = constant("arrow")
+   val intro = constant("introduction")
+   val elim = constant("elimination")
+   val rtype = constant("refltype")
+   val rapply = constant("reflapp")
 }
 
 /* apply methods and extractor methods for Scala
@@ -40,10 +42,10 @@ object LF {
    Univ(1), Univ(2) are type and kind
  */
 
-object Lambda {
-   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.constant("lambda"), OMV(name) % tp, body)
-   def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.constant("lambda")  || b == LF.constant("implicit_lambda") => Some(n,t,s)
+object TermRefl {
+   def apply(thy: MPath, term: Term) = OMA(Reflection.intro, List(OMID(thy), term))
+   def unapply(t : Term) : Option[(MPath,Term)] = t match {
+	   case OMA(Reflection.intro, List(thy, tm) = Some((thy, tm))
 	   case _ => None
    }
 }
@@ -116,7 +118,7 @@ object Const {
 
 //TODO: variable capture is not avoided anywhere
 /** The LF foundation. Implements type checking and equality */
-class LFF extends Foundation {
+class ReflectionFoundation extends Foundation {
    private def log(msg : => String) = report("lf", msg)
    val foundTheory = LF.lftheory
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit fl : FoundationLookup) : Boolean = {
