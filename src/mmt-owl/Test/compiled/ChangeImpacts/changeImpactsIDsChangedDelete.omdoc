@@ -1,16 +1,6 @@
-<omdoc base="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/source/ChangeImpacts/changeImpactsIDs.owl">
+<omdoc base="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/source/ChangeImpacts/changeImpactsIDsChangedDelete.owl">
 	<theory base="http://example.com/owl/families/" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
 
-		<constant name="age">
-
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
 		<constant name="Liza">
 
 			<type>
@@ -62,16 +52,6 @@
 
 		</constant>
 		<constant name="hasFemaleChild">
-
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="hasAncestor">
 
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -141,7 +121,7 @@
        
 
 		</constant>
-		<constant name="Person">
+		<constant name="JohnsChildren">
 
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -151,7 +131,7 @@
        
 
 		</constant>
-		<constant name="JohnsChildren">
+		<constant name="Person">
 
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -201,27 +181,7 @@
        
 
 		</constant>
-		<constant name="toddlerAge">
-
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
 		<constant name="Mother">
-
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ChildlessPerson">
 
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -331,16 +291,6 @@
        
 
 		</constant>
-		<constant name="Alice">
-
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
 		<constant name="hasDaughter">
 
 			<type>
@@ -429,13 +379,22 @@
        
 
 		</constant>
-		<constant name="ax140678089">
+		<constant name="ax-246865350">
 			<metadata>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting NamedIndividual Alice</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
 					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 						<om:OMA>
 							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax140678089</om:OMSTR>
+							<om:OMSTR position="1">ax-246865350</om:OMSTR>
 							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
 						</om:OMA>
 					</om:OMOBJ>
@@ -444,9 +403,42 @@
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentDataProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="age" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="ParentOf" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1444772685">
+			<metadata>
+				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">ax-1444772685</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting ObjectProperty hasAncestor</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+			</metadata>
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2ELRL" name="transitiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -470,6 +462,40 @@
 					<om:OMA>
 						<om:OMS module="OWL2ELQL" name="reflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families/" position="1"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1498503059">
+			<metadata>
+				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">ax-1498503059</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting NamedIndividual Alice</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+			</metadata>
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -528,31 +554,6 @@
 							<om:OMSTR position="3_1">Parker</om:OMSTR>
 							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
 						</om:OMA>
-					</om:OMA>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1397113822">
-			<metadata>
-				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
-					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax1397113822</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</om:OMOBJ>
-				</meta>
-			</metadata>
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -633,29 +634,6 @@
 							<om:OMSTR position="3_1">Evans</om:OMSTR>
 							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
 						</om:OMA>
-					</om:OMA>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1444772685">
-			<metadata>
-				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
-					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax-1444772685</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</om:OMOBJ>
-				</meta>
-			</metadata>
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="transitiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -756,31 +734,6 @@
 						<om:OMS module="OWL2SUB" name="subDataPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasLastName" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-556159636">
-			<metadata>
-				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
-					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax-556159636</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</om:OMOBJ>
-				</meta>
-			</metadata>
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -949,6 +902,39 @@
        
 
 		</constant>
+		<constant name="ax140678089">
+			<metadata>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting DataProperty age</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">ax140678089</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+			</metadata>
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentDataProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="age" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
 		<constant name="ax1440190575">
 			<metadata>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
@@ -1062,13 +1048,31 @@
        
 
 		</constant>
-		<constant name="ax-694856842">
+		<constant name="ax-556159636">
 			<metadata>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting NamedIndividual Alice</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
 					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 						<om:OMA>
 							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax-694856842</om:OMSTR>
+							<om:OMSTR position="1">ax-556159636</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting ObjectProperty hasAncestor</om:OMSTR>
 							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
 						</om:OMA>
 					</om:OMOBJ>
@@ -1077,9 +1081,44 @@
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="ChildlessPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1397113822">
+			<metadata>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting NamedIndividual Alice</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">ax1397113822</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+			</metadata>
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -1262,35 +1301,6 @@
        
 
 		</constant>
-		<constant name="ax1679798240">
-			<metadata>
-				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
-					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax1679798240</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</om:OMOBJ>
-				</meta>
-			</metadata>
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">123400007</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
 		<constant name="ax-1109111715">
 			<metadata>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
@@ -1308,6 +1318,44 @@
 					<om:OMA>
 						<om:OMS module="OWL2ELRL" name="functionalDataProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1679798240">
+			<metadata>
+				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">ax1679798240</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting NamedIndividual Alice</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+			</metadata>
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">123400007</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
+						</om:OMA>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -1627,13 +1675,22 @@
        
 
 		</constant>
-		<constant name="ax-1116048551">
+		<constant name="ax-694856842">
 			<metadata>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
 					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 						<om:OMA>
 							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax-1116048551</om:OMSTR>
+							<om:OMSTR position="1">ax-694856842</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting Class ChildlessPerson</om:OMSTR>
 							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
 						</om:OMA>
 					</om:OMOBJ>
@@ -1642,14 +1699,9 @@
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">2</om:OMSTR>
-							<om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
-						</om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="ChildlessPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -2065,30 +2117,6 @@
        
 
 		</constant>
-		<constant name="ax-1711766800">
-			<metadata>
-				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
-					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax-1711766800</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</om:OMOBJ>
-				</meta>
-			</metadata>
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="sameIndividual" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Liza" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
 		<constant name="ax-203523374">
 			<metadata>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
@@ -2147,7 +2175,17 @@
 
 		</constant>
 		<constant name="ax-1679259127">
-
+			<metadata>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting Datatype toddlerAge</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+			</metadata>
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -2207,31 +2245,6 @@
 						<om:OMS module="_" name="hasSon" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-246865350">
-			<metadata>
-				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
-					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-						<om:OMA>
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax-246865350</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-						</om:OMA>
-					</om:OMOBJ>
-				</meta>
-			</metadata>
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="ParentOf" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
@@ -2366,6 +2379,53 @@
        
 
 		</constant>
+		<constant name="ax-1116048551">
+			<metadata>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting Datatype toddlerAge</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">This axiom is impacted by deleting NamedIndividual Alice</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
+					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+						<om:OMA>
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+							<om:OMSTR position="1">ax-1116048551</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+						</om:OMA>
+					</om:OMOBJ>
+				</meta>
+			</metadata>
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">2</om:OMSTR>
+							<om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
 		<constant name="ax1915018245">
 			<metadata>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
@@ -2443,33 +2503,17 @@
        
 
 		</constant>
-		<constant name="ax-1498503059">
+		<constant name="ax-1039132749">
 			<metadata>
-				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
+				<meta property="http://omdoc.org/impact/deleting?_?http:%2F%2Fomdoc.org%2Fimpact%2Fdeleting">
 					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 						<om:OMA>
 							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-							<om:OMSTR position="1">ax-1498503059</om:OMSTR>
+							<om:OMSTR position="1">This axiom is impacted by deleting Class ChildlessPerson</om:OMSTR>
 							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
 						</om:OMA>
 					</om:OMOBJ>
 				</meta>
-			</metadata>
-			<type>
-				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</om:OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1039132749">
-			<metadata>
 				<meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid">
 					<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 						<om:OMA>
