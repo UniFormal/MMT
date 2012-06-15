@@ -38,6 +38,7 @@ class AddIdentifiers (managerID : OWLOntologyManager)  {
 	
 	val axioms : List[OWLAxiom] = ontology.getAxioms.toList
 	val (logicals,nonLogicals) = axioms.partition((a : OWLAxiom) => a.isLogicalAxiom)
+	
 	nonLogicals.foreach(axiom => managerID.addAxiom(ontologyIDs, axiom)) // declaration and annotataion axioms
 	logicals.foreach(axiom => managerID.addAxiom(ontologyIDs, axiomToAxiomID(axiom)))
 
@@ -49,7 +50,11 @@ class AddIdentifiers (managerID : OWLOntologyManager)  {
     ax.getAnnotations.find(annot => annot.getProperty.getIRI == omdocIRI) match {
 						case Some(annot) => 
 						case None => annotationsID.add(createAnnotationID(ax))
-						}
+     					}
+    /*//to check datatypeDefinition axiom
+      println(annotationsID)
+      println(ax.getAnnotatedAxiom(annotationsID))
+    */
     ax.getAnnotatedAxiom(annotationsID)
   }
 
@@ -57,9 +62,10 @@ class AddIdentifiers (managerID : OWLOntologyManager)  {
     val property : OWLAnnotationProperty = dataFactory.getOWLAnnotationProperty(omdocIRI)
     val value : OWLAnnotationValue = dataFactory.getOWLLiteral("ax" + ax.hashCode)
     dataFactory.getOWLAnnotation(property, value)
+    
   }
       
-} 
+}
 
 object AddIdentifiers {
    def main(args: Array[String]) {
@@ -68,8 +74,8 @@ object AddIdentifiers {
 	 val managerID: OWLOntologyManager = OWLManager.createOWLOntologyManager()
      val addIdentifiers = new AddIdentifiers (managerID)
      
-     val source : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\ChangeImpacts\\changeImpacts.owl")		
-	 val target: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\ChangeImpacts\\changeImpactsIDs.owl")
+     val source : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\figureoutDatatypeDefinition.owl")		
+	 val target: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\figureoutDatatypeDefinitionIDs.owl")
      
      val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
      println("Loaded Ontology: " + ontology)
