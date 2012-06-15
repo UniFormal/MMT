@@ -4,9 +4,9 @@
 		<constant name="age">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -14,9 +14,9 @@
 		<constant name="Liza">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -24,9 +24,9 @@
 		<constant name="hasSister">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -34,9 +34,9 @@
 		<constant name="hasSibling">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -44,9 +44,9 @@
 		<constant name="hasRelative">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -54,9 +54,9 @@
 		<constant name="Mary">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -64,9 +64,9 @@
 		<constant name="hasFemaleChild">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -74,9 +74,9 @@
 		<constant name="hasAncestor">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -84,9 +84,9 @@
 		<constant name="hasSon">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -94,9 +94,9 @@
 		<constant name="hasBrother">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -104,9 +104,9 @@
 		<constant name="Liz">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -114,9 +114,9 @@
 		<constant name="Max">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -124,9 +124,9 @@
 		<constant name="hasWife">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -134,9 +134,9 @@
 		<constant name="Woman">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -144,9 +144,9 @@
 		<constant name="Person">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -154,9 +154,9 @@
 		<constant name="JohnsChildren">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -164,9 +164,9 @@
 		<constant name="Parent">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -174,9 +174,9 @@
 		<constant name="Tom">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -184,9 +184,9 @@
 		<constant name="hasName">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -194,9 +194,9 @@
 		<constant name="hasID">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -204,9 +204,9 @@
 		<constant name="toddlerAge">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -214,9 +214,9 @@
 		<constant name="Mother">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -224,9 +224,9 @@
 		<constant name="ChildlessPerson">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -234,9 +234,9 @@
 		<constant name="hasChild">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -244,9 +244,9 @@
 		<constant name="personAge">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -254,9 +254,9 @@
 		<constant name="parentOf">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -264,9 +264,9 @@
 		<constant name="hasParent">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -274,9 +274,9 @@
 		<constant name="hasLastName">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -284,9 +284,9 @@
 		<constant name="NarcisticPerson">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -294,9 +294,9 @@
 		<constant name="minorAge">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -304,9 +304,9 @@
 		<constant name="John">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -314,9 +314,9 @@
 		<constant name="hasAge">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -324,9 +324,9 @@
 		<constant name="majorAge">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -334,9 +334,9 @@
 		<constant name="Alice">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -344,9 +344,9 @@
 		<constant name="hasDaughter">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -354,9 +354,9 @@
 		<constant name="Father">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -364,9 +364,9 @@
 		<constant name="Man">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -374,9 +374,9 @@
 		<constant name="loves">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -384,9 +384,9 @@
 		<constant name="Teenager">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -394,9 +394,9 @@
 		<constant name="hasHusband">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -404,9 +404,9 @@
 		<constant name="Amy">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -414,13 +414,13 @@
 		<constant name="ax-977411982">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2QLRL" name="inverseObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasParent" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -428,7 +428,7 @@
 		<constant name="ax-812950250">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -439,7 +439,7 @@
 							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -447,7 +447,7 @@
 		<constant name="ax1937229787">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -457,690 +457,7 @@
 							<om:OMS module="_" name="Mother" base="http://example.com/owl/families/" position="2_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-954262662">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="personAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2" name="dataUnionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="_" name="minorAge" base="http://example.com/owl/families/" position="2_1"></om:OMS>
-							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="2_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-744136764">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMA position="1">
-							<om:OMS module="OWL2RL" name="objectExactCardinalityQualified" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
-							<om:OMI position="1_1">2</om:OMI>
-							<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1_2"></om:OMS>
-							<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="1_3"></om:OMS>
-						</om:OMA>
-						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax310785258">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMA position="1">
-							<om:OMS module="OWL2RL" name="objectMinCardinalityQualified" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
-							<om:OMI position="1_1">1</om:OMI>
-							<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1_2"></om:OMS>
-							<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="1_3"></om:OMS>
-						</om:OMA>
-						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-897369206">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">123400007</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1892568094">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2RL" name="dataAllValuesFrom" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="2_1"></om:OMS>
-							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1068052659">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMA position="1">
-							<om:OMS module="OWL2RL" name="objectMaxCardinalityQualified" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
-							<om:OMI position="1_1">3</om:OMI>
-							<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1_2"></om:OMS>
-							<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="1_3"></om:OMS>
-						</om:OMA>
-						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax535062190">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2RL" name="functionalObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasHusband" base="http://example.com/owl/families/" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-2049989187">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">50</om:OMSTR>
-							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-285681639">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMA position="1">
-							<om:OMS module="OWL2RL" name="dataExactCardinality" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
-							<om:OMI position="1_1">1</om:OMI>
-							<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="1_2"></om:OMS>
-						</om:OMA>
-						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1111035831">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentDataProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="age" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-390742430">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="transitiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1364593771">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasBrother" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-562737388">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasSon" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1145882749">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="hasFemaleChild" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1747333177">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="personAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2SUB" name="dataTypeRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="OWL1Datatype" name="integer" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2_1"></om:OMS>
-							<om:OMA position="2_2">
-								<om:OMS module="OWL2SUB" name="facetRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
-								<om:OMS module="OWL2SUB" name="maxInclusive" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_1"></om:OMS>
-								<om:OMI position="2_2_2">150</om:OMI>
-							</om:OMA>
-							<om:OMA position="2_3">
-								<om:OMS module="OWL2SUB" name="facetRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_3_0"></om:OMS>
-								<om:OMS module="OWL2SUB" name="minInclusive" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_3_1"></om:OMS>
-								<om:OMI position="2_3_2">0</om:OMI>
-							</om:OMA>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1426093591">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1181071930">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="disjointClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax672275284">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1083103780">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="ChildlessPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2_1"></om:OMS>
-							<om:OMA position="2_2">
-								<om:OMS module="OWL2QLRL" name="objectComplementOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
-								<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="2_2_1"></om:OMS>
-							</om:OMA>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-34725914">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1024941804">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="ChildlessPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax500542054">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="ParentOf" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1141739089">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">123400001</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1411875278">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="disjointObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="hasSon" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax527830251">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="negativeObjectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax952886579">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1280332175">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="JohnsChildren" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2ELRL" name="objectOneOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2_1"></om:OMS>
-							<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2_2"></om:OMS>
-							<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2_3"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax389781861">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELQL" name="reflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families/" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax719656746">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">21</om:OMSTR>
-							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax809730516">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="subDataPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasLastName" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1384111109">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Mother" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="2_1"></om:OMS>
-							<om:OMA position="2_2">
-								<om:OMS module="OWL2SUB" name="objectSomeValuesFrom" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
-								<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="2_2_1"></om:OMS>
-								<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2_2_2"></om:OMS>
-							</om:OMA>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1877618297">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="asymmetricObjetProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-113115666">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">123400005</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1042138361">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax939882046">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">123400004</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax983508087">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2" name="disjointUnionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-665678718">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="minorAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2SUB" name="dataIntersectionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMA position="2_1">
-								<om:OMS module="OWL2" name="dataComplementOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_1_0"></om:OMS>
-								<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="2_1_1"></om:OMS>
-							</om:OMA>
-							<om:OMS module="_" name="personAge" base="http://example.com/owl/families/" position="2_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1412431377">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="functionalDataProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-205384896">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="negativeDataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">53</om:OMSTR>
-							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1514996538">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Father" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-201891874">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">123400002</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1148,7 +465,7 @@
 		<constant name="ax2132640196">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1167,182 +484,301 @@
 							</om:OMA>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
 		</constant>
-		<constant name="ax-2128670333">
+		<constant name="ax-954262662">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
-						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Teenager" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-465360298">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="NarcisticPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="personAge" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMA position="2">
-							<om:OMS module="OWL2EL" name="objectHasSelf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="_" name="loves" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+							<om:OMS module="OWL2" name="dataUnionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="_" name="minorAge" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="2_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
 		</constant>
-		<constant name="ax1114005060">
+		<constant name="ax-744136764">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyDomain" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1393015368">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="sameIndividual" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Liza" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1793541176">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="disjointDataProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1662249933">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMA position="1">
-							<om:OMS module="OWL2RL" name="dataMaxCardinality" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
+							<om:OMS module="OWL2RL" name="objectExactCardinalityQualified" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
 							<om:OMI position="1_1">2</om:OMI>
-							<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="1_2"></om:OMS>
+							<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1_2"></om:OMS>
+							<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="1_3"></om:OMS>
 						</om:OMA>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
 		</constant>
-		<constant name="ax-976429549">
+		<constant name="ax-897369206">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMA position="3">
 							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">2</om:OMSTR>
-							<om:OMS module="_" name="toddlarAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
+							<om:OMSTR position="3_1">123400007</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
 		</constant>
-		<constant name="ax-1101285639">
+		<constant name="ax310785258">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="differentIndividuals" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-1189579041">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="JohnsChildren" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMA position="2">
-							<om:OMS module="OWL2ELRL" name="objectHasValue" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
-							<om:OMS module="_" name="hasParent" base="http://example.com/owl/families/" position="2_1"></om:OMS>
-							<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax-460841938">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="3"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax996626303">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMA position="1">
-							<om:OMS module="OWL2RL" name="dataMinCardinality" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
+							<om:OMS module="OWL2RL" name="objectMinCardinalityQualified" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
+							<om:OMI position="1_1">1</om:OMI>
+							<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1_2"></om:OMS>
+							<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="1_3"></om:OMS>
+						</om:OMA>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1892568094">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2RL" name="dataAllValuesFrom" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1068052659">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMA position="1">
+							<om:OMS module="OWL2RL" name="objectMaxCardinalityQualified" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
+							<om:OMI position="1_1">3</om:OMI>
+							<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1_2"></om:OMS>
+							<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="1_3"></om:OMS>
+						</om:OMA>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax535062190">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2RL" name="functionalObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasHusband" base="http://example.com/owl/families/" position="1"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-2049989187">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">50</om:OMSTR>
+							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-285681639">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMA position="1">
+							<om:OMS module="OWL2RL" name="dataExactCardinality" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
 							<om:OMI position="1_1">1</om:OMI>
 							<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="1_2"></om:OMS>
 						</om:OMA>
-						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1111035831">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentDataProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="age" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-390742430">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2ELRL" name="transitiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1364593771">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasBrother" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-562737388">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasSon" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1145882749">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasFemaleChild" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-43899940">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasLastName" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">Evans</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1426093591">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1181071930">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="disjointClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax672275284">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1350,7 +786,7 @@
 		<constant name="ax223181402">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="Teenager" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1373,7 +809,563 @@
 							</om:OMA>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1083103780">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="ChildlessPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+							<om:OMA position="2_2">
+								<om:OMS module="OWL2QLRL" name="objectComplementOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
+								<om:OMS module="_" name="Parent" base="http://example.com/owl/families/" position="2_2_1"></om:OMS>
+							</om:OMA>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-34725914">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1024941804">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="ChildlessPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax500542054">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="ParentOf" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1141739089">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">123400001</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1411875278">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2QLRL" name="disjointObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasSon" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax527830251">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2ELRL" name="negativeObjectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax952886579">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax389781861">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2ELQL" name="reflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families/" position="1"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1280332175">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="JohnsChildren" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2ELRL" name="objectOneOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+							<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2_2"></om:OMS>
+							<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2_3"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax809730516">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="subDataPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasLastName" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax719656746">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">21</om:OMSTR>
+							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1384111109">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Mother" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2SUB" name="objectIntersectionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+							<om:OMA position="2_2">
+								<om:OMS module="OWL2SUB" name="objectSomeValuesFrom" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
+								<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="2_2_1"></om:OMS>
+								<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2_2_2"></om:OMS>
+							</om:OMA>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1877618297">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2QLRL" name="asymmetricObjetProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-113115666">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">123400005</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1042138361">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax939882046">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">123400004</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-665678718">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="minorAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2SUB" name="dataIntersectionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMA position="2_1">
+								<om:OMS module="OWL2" name="dataComplementOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_1_0"></om:OMS>
+								<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="2_1_1"></om:OMS>
+							</om:OMA>
+							<om:OMS module="_" name="personAge" base="http://example.com/owl/families/" position="2_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax983508087">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2" name="disjointUnionOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Man" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1412431377">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2ELRL" name="functionalDataProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-205384896">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2ELRL" name="negativeDataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">53</om:OMSTR>
+							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1514996538">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Father" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-201891874">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">123400002</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-2128670333">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Teenager" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-465360298">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="NarcisticPerson" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2EL" name="objectHasSelf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="_" name="loves" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1706383084">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasLastName" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">Parker</om:OMSTR>
+							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1393015368">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2ELRL" name="sameIndividual" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Liza" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1114005060">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyDomain" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1793541176">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2QLRL" name="disjointDataProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1662249933">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMA position="1">
+							<om:OMS module="OWL2RL" name="dataMaxCardinality" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
+							<om:OMI position="1_1">2</om:OMI>
+							<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="1_2"></om:OMS>
+						</om:OMA>
+						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1101285639">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="differentIndividuals" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1189579041">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="JohnsChildren" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2ELRL" name="objectHasValue" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="_" name="hasParent" base="http://example.com/owl/families/" position="2_1"></om:OMS>
+							<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-460841938">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="3"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax996626303">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMA position="1">
+							<om:OMS module="OWL2RL" name="dataMinCardinality" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
+							<om:OMI position="1_1">1</om:OMI>
+							<om:OMS module="_" name="hasName" base="http://example.com/owl/families/" position="1_2"></om:OMS>
+						</om:OMA>
+						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
+					</om:OMA>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1381,7 +1373,7 @@
 		<constant name="ax-1973504465">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="equivalentClasses" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="Father" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1395,26 +1387,7 @@
 							</om:OMA>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax1212724922">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasLastName" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">&quot;Evans&quot;</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1422,14 +1395,14 @@
 		<constant name="ax1567510278">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasSon" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1437,14 +1410,14 @@
 		<constant name="ax-1134076223">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasSibling" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1452,7 +1425,7 @@
 		<constant name="ax722335330">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1463,7 +1436,7 @@
 							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1471,13 +1444,13 @@
 		<constant name="ax-1821972190">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1485,13 +1458,13 @@
 		<constant name="ax-1836914149">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1499,12 +1472,31 @@
 		<constant name="ax-1298284593">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2QLRL" name="symmetricObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families/" position="1"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax-1306989724">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="2"></om:OMS>
+						<om:OMA position="3">
+							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+							<om:OMSTR position="3_1">2</om:OMSTR>
+							<om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1512,32 +1504,13 @@
 		<constant name="ax8677185">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="Mother" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
-			</type>
-       
-
-		</constant>
-		<constant name="ax693202120">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasLastName" base="http://example.com/owl/families/" position="1"></om:OMS>
-						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
-						<om:OMA position="3">
-							<om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-							<om:OMSTR position="3_1">&quot;Parker&quot;</om:OMSTR>
-							<om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
-						</om:OMA>
-					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1545,7 +1518,7 @@
 		<constant name="ax-1679259127">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1555,7 +1528,7 @@
 							<om:OMI position="2_2">2</om:OMI>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1563,7 +1536,7 @@
 		<constant name="ax-2051122486">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1574,7 +1547,7 @@
 							<om:OMS module="_" name="majorAge" base="http://example.com/owl/families/" position="3_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1582,7 +1555,7 @@
 		<constant name="ax-492643543">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1593,7 +1566,7 @@
 							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1601,14 +1574,14 @@
 		<constant name="ax79108590">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasSister" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMS module="_" name="Amy" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1616,13 +1589,40 @@
 		<constant name="ax1340360778">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Person" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
+			</type>
+       
+
+		</constant>
+		<constant name="ax1747333177">
+
+			<type>
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+					<om:OMA>
+						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+						<om:OMS module="_" name="personAge" base="http://example.com/owl/families/" position="1"></om:OMS>
+						<om:OMA position="2">
+							<om:OMS module="OWL2SUB" name="dataTypeRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_0"></om:OMS>
+							<om:OMS module="OWL1Datatype" name="integer" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2_1"></om:OMS>
+							<om:OMA position="2_2">
+								<om:OMS module="OWL2SUB" name="facetRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_0"></om:OMS>
+								<om:OMS module="OWL2SUB" name="maxInclusive" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_2_1"></om:OMS>
+								<om:OMI position="2_2_2">150</om:OMI>
+							</om:OMA>
+							<om:OMA position="2_3">
+								<om:OMS module="OWL2SUB" name="facetRestriction" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_3_0"></om:OMS>
+								<om:OMS module="OWL2SUB" name="minInclusive" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="2_3_1"></om:OMS>
+								<om:OMI position="2_3_2">0</om:OMI>
+							</om:OMA>
+						</om:OMA>
+					</om:OMA>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1630,14 +1630,14 @@
 		<constant name="ax1818916410">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasHusband" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="Liz" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMS module="_" name="Max" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1645,12 +1645,12 @@
 		<constant name="ax2099736411">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2QLRL" name="irreflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="parentOf" base="http://example.com/owl/families/" position="1"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1658,7 +1658,7 @@
 		<constant name="ax-231070578">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMA position="1">
@@ -1668,7 +1668,7 @@
 						</om:OMA>
 						<om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1676,12 +1676,12 @@
 		<constant name="ax1450658302">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2RL" name="inverseFunctionalObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasHusband" base="http://example.com/owl/families/" position="1"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1689,14 +1689,14 @@
 		<constant name="ax188759246">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMS module="_" name="Alice" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1704,7 +1704,7 @@
 		<constant name="ax658206309">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasID" base="http://example.com/owl/families/" position="1"></om:OMS>
@@ -1715,7 +1715,7 @@
 							<om:OMS module="OWL1Datatype" name="nonNegativeInteger" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
 						</om:OMA>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1723,13 +1723,13 @@
 		<constant name="ax1127976950">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="dataPropertyRange" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasAge" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="PersonAge" base="http://example.com/owl/families/" position="2"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
@@ -1737,14 +1737,14 @@
 		<constant name="ax-551778087">
 
 			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
 						<om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
 						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families/" position="1"></om:OMS>
 						<om:OMS module="_" name="John" base="http://example.com/owl/families/" position="2"></om:OMS>
 						<om:OMS module="_" name="Mary" base="http://example.com/owl/families/" position="3"></om:OMS>
 					</om:OMA>
-				</OMOBJ>
+				</om:OMOBJ>
 			</type>
        
 
