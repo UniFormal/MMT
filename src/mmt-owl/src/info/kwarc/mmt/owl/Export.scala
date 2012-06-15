@@ -34,7 +34,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
     def globalNameToIRI(gname : GlobalName) : IRI = {
     	println("globalname" + gname)
         gname match {
-	    	case OMMOD(doc ? !("_")) % name => IRI.create(doc.toPath + "/" + name.flat)
+	    	case OMMOD(doc ? !("_")) % name => IRI.create(doc.toPath + "/" + name.toPath) //flat
 	    	case _ => IRI.create(gname.toPath)
         }
     }
@@ -221,7 +221,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	     case _ => throw Exception("none of the data property expressions")
 	   }
    }
-  
+ 
    def dataRangeToOWL(t : Term) : OWLDataRange = {
    	   t match {
 		 case OMS(p) =>
