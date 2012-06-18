@@ -22,7 +22,7 @@ object Patcher {
    * @param ch the change to be applied
    * @param mem the memory representing the theory graph
    */
-  private def patchChange(ch : Change, mem : Memory) {
+  private def patchChange(ch : ContentChange, mem : Memory) {
     ch match {
         
       case AddModule(m) => mem.content.add(m)
@@ -33,6 +33,7 @@ object Patcher {
         val d = mem.content.get(path)
         val dnew = updateComponent(d, comp, old, nw)
         mem.content.update(dnew)
+      case PragmaticChange(name, diff, tp, mp) => patch(diff, mem)
     }
 
   }

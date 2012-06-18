@@ -102,7 +102,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
 	            val (m2, from) = XMLReader.getTheoryFromAttributeOrChild(m, "from", base)
 	            val (m3, to) = XMLReader.getTheoryFromAttributeOrChild(m2, "to", base)
 	            val (v, body) = m3.child match {
-                  case List(<definition>{d}</definition>) =>
+                  case <definition>{d}</definition> :: Nil =>
 		               val df = Obj.parseTerm(d, vpath)
 		               (new DefinedView(modParent, name, from, to, df), None)
                   case assignments =>
@@ -182,7 +182,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
             log("structure " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
             rest.child match {
-               case List(<definition>{d}</definition>) =>
+               case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
                   val i = new DefinedStructure(thy, name, from, df)
                   add(i,md)

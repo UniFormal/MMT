@@ -17,9 +17,9 @@ import org.tmatesoft.svn.core.wc._
 
 object Differ {
   
-    def diff(c : Controller, p : MPath, rev : Int) : Diff = {
+    def diff(c : Controller, p : MPath, rev : Int) : StrictDiff = {
       
-      println(p)
+      //println(p)
       val c2 = new Controller
       c2.backend.addStore(c.backend.copyStorages(rev) :_ *)
       
@@ -35,7 +35,7 @@ object Differ {
       compareModules(mold,mnew)
     }
     
-	def diff(cold : Controller, cnew : Controller, pold : DPath, pnew : DPath) : Diff = {
+	def diff(cold : Controller, cnew : Controller, pold : DPath, pnew : DPath) : StrictDiff = {
 
 	  val old = cold.getDocument(pold)
 
@@ -164,9 +164,9 @@ object Differ {
 	}
 	
 	
-	def compareConstants(o : Constant, n : Constant) : Diff = {
-    var changes : List[ContentElementChange] = Nil
-		
+	def compareConstants(o : Constant, n : Constant) : StrictDiff = {
+    var changes : List[StrictChange] = Nil
+
     if(!areEqual(o.tp,o.df)) {
        changes = UpdateComponent(o.path, "type", o.tp, n.tp) :: changes
 		}
@@ -175,22 +175,22 @@ object Differ {
 		  changes = UpdateComponent(o.path, "def", o .df, n.df) :: changes
 		}
 		
-		new Diff(changes)
+		new StrictDiff(changes)
 	}
 	
 	
-	def compareIncludes(o : Include, n : Include) : Diff = {
-	  var changes : List[ContentElementChange] = Nil
+	def compareIncludes(o : Include, n : Include) : StrictDiff = {
+	  var changes : List[StrictChange] = Nil
 
     if (o.from != n.from) {
 	    changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
 	  }
 
-    new Diff(changes)
+    new StrictDiff(changes)
 	}
 	
-	def comparePatterns(old : Pattern, nw : Pattern) : Diff = {
-    var changes : List[ContentElementChange] = Nil
+	def comparePatterns(old : Pattern, nw : Pattern) : StrictDiff = {
+    var changes : List[StrictChange] = Nil
 
     if (old.params != nw.params){
       changes = UpdateComponent(old.path, "params", Some(old.params), Some(nw.params)) :: changes
@@ -200,11 +200,11 @@ object Differ {
       changes = UpdateComponent(old.path, "body", Some(old.body), Some(nw.body)) :: changes
     }
 
-	  new Diff(changes)
+	  new StrictDiff(changes)
 	}
 	
-	def compareInstances(old : Instance, nw : Instance) : Diff = {
-    var changes : List[ContentElementChange] = Nil
+	def compareInstances(old : Instance, nw : Instance) : StrictDiff = {
+    var changes : List[StrictChange] = Nil
 
 	  if (old.pattern != nw.pattern) {
 	    changes = UpdateComponent(old.path, "pattern", Some(OMID(old.pattern)), Some(OMID(nw.pattern))) :: changes
@@ -214,41 +214,41 @@ object Differ {
       changes = UpdateComponent(old.path, "matches", Some(old.matches), Some(nw.matches)) :: changes
     }
 
-    new Diff(changes)
+    new StrictDiff(changes)
 	}
 	
 	
-	def compareConstantAssignments(old : ConstantAssignment, nw : ConstantAssignment) : Diff = {
-    var changes : List[ContentElementChange] = Nil
+	def compareConstantAssignments(old : ConstantAssignment, nw : ConstantAssignment) : StrictDiff = {
+    var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
       changes = UpdateComponent(old.path, "target", Some(old.target), Some(nw.target)) :: changes
     }
 	  
-	  new Diff(changes)
+	  new StrictDiff(changes)
 	}
 	
-	def compareDefLinkAssignments(old : DefLinkAssignment, nw : DefLinkAssignment) : Diff = {
-    var changes : List[ContentElementChange] = Nil
+	def compareDefLinkAssignments(old : DefLinkAssignment, nw : DefLinkAssignment) : StrictDiff = {
+    var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
       changes = UpdateComponent(old.path, "target", Some(old.target), Some(nw.target)) :: changes
     }
 
-	  new Diff(changes)
+	  new StrictDiff(changes)
 	}
 	
-	def compareAliases(old : Alias, nw : Alias) : Diff = {
-    var changes : List[ContentElementChange] = Nil
+	def compareAliases(old : Alias, nw : Alias) : StrictDiff = {
+    var changes : List[StrictChange] = Nil
 
     if (old.forpath != nw.forpath) {
       changes = UpdateComponent(old.path, "forpath", Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
     }
 
-	  new Diff(changes)
+	  new StrictDiff(changes)
 	}
 
-  def compareDeclarations(old : Declaration, nw : Declaration) : Diff = {
+  def compareDeclarations(old : Declaration, nw : Declaration) : StrictDiff = {
     (old,nw) match {
       case (o : Constant, n : Constant) =>
         compareConstants(o,n)
@@ -279,7 +279,7 @@ object Differ {
 	  if (a > b) a else b
 	}
 	
-	def compareModules(old : Module, nw : Module) : Diff = {
+	def compareModules(old : Module, nw : Module) : StrictDiff = {
       //getting all declarations stored in each library
 
 	  val od = _declarations(old)
@@ -293,24 +293,18 @@ object Differ {
 	  //filtering away matched paths
 	  val unmatchedold = od.filterNot(x => matched.exists(y => x.name.toString == y._1.name.toString))
 	  val unmatchednew = nd.filterNot(x => matched.exists(y => x.name.toString == y._1.name.toString))
-	  
-	  //checking whether unmatched old declarations are truly removed or just renamed.
-	  val oldch : List[ContentElementChange]= unmatchedold.map(x =>
-	    unmatchednew.filter(y => compareDeclarations(x,y).changes == Nil) match {
-	      case y :: Nil => RenameDeclaration(x.path, y.name) // _exactly one_ match must exist for the rename pair to be valid
-	      case _ => DeleteDeclaration(x) // if no matches or 2+ matches (ambiguous pairing) then we count the module as deleted
-	  })
-	  
-	  //new declarations which are still unmatched after the renames search are marked as adds 
-	  val newch : List[ContentElementChange] = unmatchednew.filter(y => oldch.exists({case RenameDeclaration(x,p) => p.toString == y.name.toString case _ => false})).map(y => AddDeclaration(y))
-	  
+
+    //generating adds & deletes
+    val oldch : List[StrictChange] = unmatchedold.map(x => DeleteDeclaration(x))
+    val newch : List[StrictChange] = unmatchednew.map(x => AddDeclaration(x))
+
 	  //comparing declaration pairs to see how (if at all) they were updated over the two versions
-	  val updates : List[ContentElementChange] = matched.flatMap(x => compareDeclarations(x._1,x._2).changes)
-	  val innerChanges = new Diff(updates ++ oldch ++ newch)
+	  val updates : List[StrictChange] = matched.flatMap(x => compareDeclarations(x._1,x._2).changes)
+	  val innerChanges = new StrictDiff(updates ++ oldch ++ newch)
 	  
 	  (old,nw) match {
 	    case (o : DeclaredTheory, n : DeclaredTheory) =>
-        var changes : List[ContentElementChange] = Nil
+        var changes : List[StrictChange] = Nil
 
         (o.meta, n.meta) match {
 	    	  case (None,None) => None
@@ -322,19 +316,19 @@ object Differ {
             }
         }
 
-	      new Diff(changes) ++ innerChanges
+	      new StrictDiff(changes) ++ innerChanges
 
 	    case (o : DefinedTheory, n : DefinedTheory) =>
-        var changes : List[ContentElementChange] = Nil
+        var changes : List[StrictChange] = Nil
 
 	      if (o.df != n.df) {
 	        changes = UpdateComponent(o.path, "df", Some(o.df), Some(n.df)) :: changes
         }
 
-	      new Diff(changes) ++ innerChanges
+	      new StrictDiff(changes) ++ innerChanges
 	      
 	    case (o : DeclaredView, n : DeclaredView) =>
-        var changes : List[ContentElementChange] = Nil
+        var changes : List[StrictChange] = Nil
 
         if (o.from != n.from) {
           changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
@@ -344,10 +338,10 @@ object Differ {
           changes = UpdateComponent(o.path, "to", Some(o.to), Some(n.to)) :: changes
         }
 
-        new Diff(changes)  ++ innerChanges
+        new StrictDiff(changes)  ++ innerChanges
 
 	    case (o : DefinedView, n : DefinedView) =>
-        var changes : List[ContentElementChange] = Nil
+        var changes : List[StrictChange] = Nil
 
         if (o.from != n.from) {
           changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
@@ -361,12 +355,12 @@ object Differ {
           changes = UpdateComponent(o.path, "df", Some(o.df), Some(n.df)) :: changes
         }
 
-	      new Diff(changes)  ++ innerChanges
+	      new StrictDiff(changes)  ++ innerChanges
 	  }
 	}	
 	
 	
-	def compareFlatLibraries(old : Library, nw : Library) : Diff = {
+	def compareFlatLibraries(old : Library, nw : Library) : StrictDiff = {
 	  
 	  //getting all module URI's (paths) stored in each library
 	  val ops = old.getAllPaths
@@ -381,20 +375,16 @@ object Differ {
 	  val unmatchedold = ops.filterNot(x => matched.exists(y => x.toPath == y.toPath))
 	  val unmatchednew = nps.filterNot(x => matched.exists(y => x.toPath == y.toPath))
 	  
-	  //checking whether unmatched old modules are truly removed or just renamed.
-	  val oldch = unmatchedold.map(x => 
-	    unmatchednew.filter(y => compareModules(nw.getModule(x),old.getModule(y)).changes == Nil) match {
-	      case y :: Nil => RenameModule(x, y) // _exactly one_ match must exist for the rename pair to be valid
-	      case _ => DeleteModule(old.getModule(x)) // if no matches or 2+ matches (ambiguous pairing) then we count the module as deleted
-	  })
+	  //old module declarations become deletes
+	  val oldch = unmatchedold.map(x => DeleteModule(old.getModule(x)))
 	  
-	  //new modules which are still unmatched after the renames search are marked as adds 
-	  val newch = unmatchednew.filter(y => oldch.exists({case RenameModule(x,p) => p == y case _ => false})).map(y => AddModule(nw.getModule(y)))
+	  //new module declarations become adds
+	  val newch = unmatchednew.map(y => AddModule(nw.getModule(y)))
 	  
 	  //comparing module pairs to see how (if at all) they were updated over the two versions
 	  //since the match criterion was identical paths, we can reuse the path for both library versions
 	  val updates = matched.map(x => compareModules(old.getModule(x), nw.getModule(x)))
-	  updates.foldLeft(new Diff(Nil))((r,x) => r ++ x) ++ new Diff(oldch.toList) ++ new Diff(newch.toList)
+	  updates.foldLeft(new StrictDiff(Nil))((r,x) => r ++ x) ++ new StrictDiff(oldch.toList) ++ new StrictDiff(newch.toList)
 	}
 	
 }

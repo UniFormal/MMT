@@ -88,10 +88,15 @@ function edit() {
     }
 
     a.html("<textarea rows=\"" + rows +"\" cols=\"" + columns + "\">" + res + "</textarea><br/>" + "<button onClick=compileText(\"" + mod + "\") class=\"ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only\" role=\"button\" aria-disabled=\"false\">Compile</button><div class=\"parser-response\"></div>");
+    var textarea = $(id + " textarea")[0];
+    mycm = CodeMirror.fromTextArea(textarea);
     return res;
 }
 
+var mycm;
+
 function compileText(mod) {
+    mycm.save();
     var id = "div#" + RegExp.escape(mod);   
     var text = $(id + " textarea").val()//.replace(/[#]/g, "\\$&");
     console.log(text);

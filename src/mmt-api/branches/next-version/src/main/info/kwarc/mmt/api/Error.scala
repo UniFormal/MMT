@@ -17,6 +17,7 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
       shortMsg + "\n" + stackTrace + causedByMsg
    }
    def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
+   override def toString = shortMsg
 }
 
 /** syntax errors in source files */

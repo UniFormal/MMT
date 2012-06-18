@@ -143,15 +143,21 @@ class Checker(controller: Controller) {
            case c: Constant =>
               val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
               cp.component match {
-                 case "type" => 
-                     val trace = foundation.tracedTyping(None, c.tp)
-                     trace foreach {t => ont += DependsOn(cp, t)}
+                 case "type" =>
+                     try {
+                       val trace = foundation.tracedTyping(None, c.tp)
+                       trace foreach {t => ont += DependsOn(cp, t)}
+                     } catch {
+                       case e : Invalid => throw Invalid("Typing failed: invalid type for constant \"" + c.name + "\"")
+                     }
                   case "definition" =>
                    try {
                      val trace = foundation.tracedTyping(c.df, c.tp)
                      if (c.df != None) {
                        trace foreach {t => ont += DependsOn(cp, t)}
                      }
+                   } catch {
+                     case e : Invalid => throw Invalid("Typing failed: invalid definition for constant \"" + c.name + "\"")
                    }
                  case c => throw Invalid("illegal component: " + c)
               }

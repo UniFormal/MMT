@@ -46,7 +46,7 @@ class RelStore(report : frontend.Report) {
    
    /** deletes a path from the relation library */
    def deleteSubj(subj : Path) {
-     // currently implementation is quite ugly, restructuring might me useful
+     // currently implementation is quite ugly, restructuring might be useful
      val sd = subjects.flatMap(x => x._2.flatMap(y => if (y == subj) List((x._1,y)) else Nil))
      sd.map(p => subjects -= (p._1,p._2))
      val od = objects.flatMap(x => x._2.flatMap(y => if (x._1._1 == subj) List((x._1,y)) else Nil))
@@ -59,7 +59,10 @@ class RelStore(report : frontend.Report) {
      val id = individuals.flatMap(x => x._2.flatMap(y => if (y == subj) List((x._1,y)) else Nil))
      id.map(p => individuals -= (p._1,p._2))     
    }
-   
+
+
+  /*
+
    /** renames a path from the relation library */
    def renameSubj(old : Path, nw : Path) {
 	 // currently implementation is quite ugly, restructuring might me useful
@@ -81,8 +84,9 @@ class RelStore(report : frontend.Report) {
      id.map(p => individuals += (p._1,nw))     
      
    }
-   
-   
+
+   */
+
    
    def queryList(start : Path, q : RelationExp) : List[Path] = {
       var ps : List[Path] = Nil
