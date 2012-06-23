@@ -91,20 +91,20 @@ class MMTPlugin extends EBPlugin {
       // call build method on the respective archive
       controller.handle(frontend.ArchiveBuild(archive, "compile", path))
       // read out the errors
-      arch.traverse("source", path, _ => true, false) {case backend.Current(inFile, inPath) =>
+      arch.traverse("source", path, _ => true, false) {case archives.Current(inFile, inPath) =>
          errorSource.removeFileErrors(inFile.toString)
-         arch.getErrors(inPath) foreach {case SourceError("compiler", reg, hd, tl, warn, fatal) =>
+         arch.getErrors(inPath) foreach {case SourceError("compiler", ref, hd, tl, warn, fatal) =>
             val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
             val error = new DefaultErrorSource.DefaultError(
                 // 0 to avoid giving an end position; errorlist adds the end-column to the lineStart to compute an offset; so we could trick it into displaying multi-line errors
-                errorSource, tp, inFile.toString, reg.start.line, reg.start.column, 0, hd
+                errorSource, tp, inFile.toString, ref.region.start.line, ref.region.start.column, 0, hd
             )
             tl foreach {m => error.addExtraMessage(m)}
             errorSource.addError(error)
          }
       }
    }
-   /** compiles the current buffer */
+   /** compiles a buffer or directory */
    def compile(file: String) {
       controller.backend.getArchives find {a => file.startsWith((a.root / "source").toString)} match {
          case None =>
@@ -125,11 +125,13 @@ class MMTPlugin extends EBPlugin {
       val files = brw.getSelectedFiles
       files foreach {vfsfile =>
          val file = vfsfile.getPath
-         val buffer = jEdit.getBuffer(file)
          // save if the file is open
-         if (buffer != null) {
-           buffer.save(view, null)
-           io.VFSManager.waitForRequests // wait until buffer is saved
+         if (vfsfile.getType == io.VFSFile.DIRECTORY) {
+            val buffer = jEdit.getBuffer(file)
+            if (buffer != null) {
+               buffer.save(view, null)
+               io.VFSManager.waitForRequests // wait until buffer is saved
+            }
          }
          compile(file)
       }

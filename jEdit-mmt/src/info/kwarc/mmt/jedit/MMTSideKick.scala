@@ -88,14 +88,14 @@ class MMTSideKick extends SideKickParser("mmt") {
    private def buildTree(node: DefaultMutableTreeNode, dec: Declaration) {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
-         case i: Include => "include"
-         case s: Structure => "structure " + s.name.flat + " "
-         case d: Declaration => d.name.flat
+         case s: Structure => "structure " + s.name.toString + " "
+         case a: DefLinkAssignment => "import " + a.name.toString
+         case d: Declaration => d.name.toString
       }
       val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, getRegion(dec)))
       node.add(child)
       dec match {
-         case i: Include => buildTree(child, dec.path, i.from)
+         case PlainInclude(from, _) => buildTree(child, dec.path, OMMOD(from))
          case _ => //TODO other cases, only reasonable once parser is better
       }
    }
@@ -130,8 +130,8 @@ class MMTSideKick extends SideKickParser("mmt") {
             case s: SourceError =>
                //parse error thrown by TextReader
                val tp = if (s.warning || ! s.fatal) ErrorSource.WARNING else ErrorSource.ERROR
-               val pos = s.region.start
-               val error = new DefaultErrorSource.DefaultError(errorSource, tp, path.toString, pos.line, pos.column, pos.column + 1, s.mainMessage)
+               val pos = s.ref.region.start
+               val error = new DefaultErrorSource.DefaultError(errorSource, tp, s.ref.container.pathAsString, pos.line, pos.column, pos.column + 1, s.mainMessage)
                errorSource.addError(error)
       }
       tree
@@ -139,7 +139,7 @@ class MMTSideKick extends SideKickParser("mmt") {
          // other error, e.g., by the get methods in buildTree
          val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, e.getMessage)
          errorSource.addError(error)
-         log(e.getMessage);
+         log(e.getMessage)
          tree
       }
    }
@@ -161,7 +161,7 @@ class MMTSideKick extends SideKickParser("mmt") {
            while (l < p && MMTPlugin.isIDChar(textArea.getText(p - l - 1,1)(0))) {l = l + 1}
            val partialName = textArea.getText(p - l, l)
            val compls = Names.resolve(a, Nil, partialName)(controller.localLookup)
-           new MyCompletion(view, partialName, compls.map(_.completion.flat))
+           new MyCompletion(view, partialName, compls.map(_.completion.toPath))
         case None => new MyCompletion(view, "", Nil)
       }
       

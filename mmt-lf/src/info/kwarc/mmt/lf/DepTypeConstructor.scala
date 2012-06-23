@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import objects._
@@ -248,4 +249,4 @@ object Test {
 
 	}
 }
- 
+*/

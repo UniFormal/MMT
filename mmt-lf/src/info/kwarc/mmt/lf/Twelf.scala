@@ -11,12 +11,14 @@ import scala.collection.mutable.HashSet
 /** helper methods for Twelf */
 object Twelf {
    /** parses filename:col.line-col.line */
-   def parseRegion(s: String) = {
+   def parseRef(s: String) = {
       val i = s.lastIndexOf(":")
       val file = File(s.substring(0,i))
       val numbers = s.substring(i+1).split("[-\\.]")
-      parser.SourceRegion(parser.SourcePosition(-1, numbers(0).toInt - 1, numbers(1).toInt - 1),
-                          parser.SourcePosition(-1, numbers(2).toInt - 1, numbers(3).toInt - 1))
+      val reg = parser.SourceRegion(parser.SourcePosition(-1, numbers(0).toInt - 1, numbers(1).toInt - 1),
+                                    parser.SourcePosition(-1, numbers(2).toInt - 1, numbers(3).toInt - 1))
+      parser.SourceRef(utils.FileURI(file), reg)
+                          
    }
 }
 
@@ -88,7 +90,7 @@ class Twelf extends Compiler {
             else if (line.endsWith("Error:")) (true, 7, false)
             else (false, 0, false)
          if (treat) {
-            val r = Twelf.parseRegion(line.substring(0, line.length - dropChars))
+            val r = Twelf.parseRef(line.substring(0, line.length - dropChars))
             var msg : List[String] = Nil
             do {
                msg ::= output.readLine
