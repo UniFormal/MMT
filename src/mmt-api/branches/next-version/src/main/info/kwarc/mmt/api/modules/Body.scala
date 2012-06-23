@@ -10,22 +10,25 @@ import scala.xml.Node
 /**
  * Body represents the content of modules, i.e., a set of declarations.
  * 
- * It provides a name-indexed hash map of symbol level Declarations, and a list of Imports.
- * It is mixed into theories and links to hold the symbols/imports and assignments/imports, respectively.
+ * It is mixed into theories and links to hold the symbols and assignments, respectively.
+ * It provides a name-indexed hash map named declarations, and a set of unnamed declarations.
+ * For named declarations, the name must be unique; for unnamed declarations, the field implictKey must be non-empty and unique. 
  * 
- * @param S symbols.Symbol for theories and symbols.Assignment for links
+ * @param S Symbol for theories and Assignment for links
  */
 trait Body[S <: Declaration] {
-   //invariant: order contains the keys for which statements is defined in the order of addition
+   /** the set of named statements, indexed by name */
    protected val statements = new scala.collection.mutable.HashMap[LocalName,S]
-   // all declarations in reverse order of addition
+   /** the set of unnamed statement */
+   protected val implicits  = new scala.collection.mutable.HashSet[S]
+   /** all declarations in reverse order of addition */
    protected var order : List[S] = Nil
    //invariant: "prefixes" stores all prefixes for all LocalPaths in the domain of "statements", together with a counter how often they occur
    //protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
    /** true iff a declaration for a name is present */ 
    def declares(name: LocalName) = statements.isDefinedAt(name)
    def domain = statements.keySet
-   /** retrieve a declaration, may throw exception if not present */ 
+   /** retrieve a named declaration, may throw exception if not present */ 
    def get(name : LocalName) : S = statements(name)
    /** retrieve a declaration, None if not present */ 
    def getO(name : LocalName) : Option[S] =
@@ -35,22 +38,18 @@ trait Body[S <: Declaration] {
    def get(name : String) : S = get(LocalName(name))
    /** retrieves the most specific applicable declaration
     * @param name the name of the declaration
-    * @param error error continuation if none found
-    * @return the most specific (longest LocalName) declaration for name, the remaining suffix
+    * @param rest the suffix that has been split off so far; this argument should be omitted in calls from outside this class 
+    * @return the most specific (longest prefix of name) known declaration (if any) and the remaining suffix
     */
-   def getFirst(name: LocalName, error: String => Nothing) : (S, Option[LocalName]) =
-      getFirst(name, None, error(" no prefix of " + name + " is declared"))
-   private def getFirst(name: LocalName, rest : Option[LocalName], error: => Nothing) : (S, Option[LocalName]) =
+   def getMostSpecific(name: LocalName, rest : LocalName = LocalName(Nil)) : Option[(S, LocalName)] =
       statements.get(name) match {
-         case Some(d) => (d, rest)
+         case Some(d) => Some((d, rest))
          case None => name match {
-            case !(n) => error
-            case ln \ n =>
-              val r = rest match {case None => !(n) case Some(l) => n / l}
-              getFirst(ln, Some(r), error)
+            case !(n) => None
+            case ln \ n => getMostSpecific(ln, n / rest)
          }
       }
-   /** adds a declaration, throws exception if name already declared */ 
+   /** adds a named or unnamed declaration, throws exception if name already declared */ 
    def add(s : S) {
 	      val name = s.name
 	 /*     val pr = name.prefixes
@@ -60,22 +59,24 @@ trait Body[S <: Declaration] {
 	         throw AddError("a statement name for a prefix of " + name + " already exists")
 	      //increase counters for all prefixes of the added statement
 	      pr.foreach(p => prefixes(p) = prefixes.getOrElse(p,0) + 1) */
-	      if (statements.isDefinedAt(name)) {
-	    	  //statements.toList.map(x => println(x._2))
-	         throw AddError("a declaration for the name " + name + " already exists")
+	      if (name.isAnonymous) {
+	         s.implicitKey match {
+	           case None => throw AddError("an unnamed declaration must have a key")
+	           case Some(key) => get(key) match {
+	              case Some(_) => throw AddError("an unnamed declaration with the same key already exists: " +  s.toString)
+	              case None => implicits += s
+	           }
+	         }
+	      } else {
+            if (statements.isDefinedAt(name)) {
+              //statements.toList.map(x => println(x._2))
+               throw AddError("a declaration for the name " + name + " already exists")
+            }
+	         statements(name) = s
 	      }
-	      statements(name) = s
 	      order = s :: order
    }
-   
-   def replace(old : S, nw : S) {
-     statements -= old.name
-     statements(nw.name) = nw
-     order = order.foldRight[List[S]](Nil)((x,o) => if (x.path == old.path) {nw :: o} else {x :: o})
-     
-   }
-   
-   /** delete a declaration (does not have to exist) */
+   /** delete a named declaration (does not have to exist) */
    def delete(name : LocalName) {
       if (statements.isDefinedAt(name)) {
          //decrease counters for all prefixes of the deleted statement
@@ -88,12 +89,20 @@ trait Body[S <: Declaration] {
          order = order.filter(_.name != name)
       }
    }
-   /** updates a declaration (preserving the order) */
+   /** replace an named declaration with another one (preserving the order) */
+   /* this is deprecated, call replace below instead
+     def replace(old : S, nw : S) {
+     statements -= old.name
+     statements(nw.name) = nw
+     order = order.foldRight[List[S]](Nil)((x,o) => if (x.path == old.path) {nw :: o} else {x :: o})
+   }*/ 
+   /** updates a named declaration (preserving the order) */
    def update(s : S) = {
 	   replace(s.name, s)
    }
-   /** replaces a declaration with others (preserving the order) */
+   /** replaces a named declaration with others (preserving the order) */
    def replace(name: LocalName, decs: S*) {
+      if (name.isAnonymous) return
       var seen : List[S] = Nil
       var tosee : List[S] = order
       var continue = true
@@ -115,8 +124,21 @@ trait Body[S <: Declaration] {
         statements(d.name) = d
       }
    }
+   /** gets the unnamed declaration with a certain key */
+   def get(key: Term) : Option[S] = {
+      implicits find {d => d.implicitKey == Some(key)}
+   }
+   /** deletes the unnamed declaration with a certain key */
+   def delete(key: Term) {
+      get(key) match {
+         case Some(d) =>  
+            implicits -= d
+            order = order filterNot(_ == d)
+         case None =>
+      }
+   }
    /** true iff no declarations present */
-   def isEmpty = statements.isEmpty
+   def isEmpty = statements.isEmpty && implicits.isEmpty
    /** the list of declarations in the order of addition, includes declarations generated by MMT */
    def valueList = order.reverse.toList
    /** the list of declarations in the order of addition, excludes declarations generated by MMT */

@@ -6,20 +6,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation._
 
 /**
- * An Import: either Structure or Include
- */
-trait DefinitionalLink extends Symbol with Link {
-   val to = home
-   def toMorph = OMDL(home, name)
-   def applyTo(sym : Symbol) : Symbol = sym match {
-      case c : Constant => new Constant(to, name / c.name, c.tp.map(_ * toMorph), c.df.map(_ * toMorph), c.rl, c.not)
-      case s : Structure => new DefinedStructure(to, name / s.name, s.from, s.toMorph * toMorph)
-      //case p : Pattern => null //TODO translate pattern
-      //case i : Instance => null //TODO translate instance
-   }
-}
-
-/**
  * A Structure represents an MMT structure.<p>
  * 
  * Structures be declared (given by a list of assignments) or defined (given by an existing morphism).
@@ -29,7 +15,9 @@ trait DefinitionalLink extends Symbol with Link {
  * @param name the name of the view
  * @param from the domain theory
  */
-abstract class Structure extends DefinitionalLink {
+abstract class Structure extends Symbol with Link {
+   val to = home
+   def toTerm = OMDL(home, name)
    /**
     * computes induced symbols, compare the corresponding method in {@link info.kwarc.mmt.api.symbols.StructureAssignment}
     * @param sym a symbol of the domain theory of the structure
@@ -39,16 +27,16 @@ abstract class Structure extends DefinitionalLink {
    protected def outerString = path + " : " + from.toString
    def toNode = from match {
      case OMMOD(p) => 
-          <structure name={name.toPath} from={p.toPath}>
+          <import name={if (name.isAnonymous) null else name.toPath} from={p.toPath}>
             {getMetaDataNode}
             {innerNodes}
-          </structure>
+          </import>
      case _ => 
-          <structure name={name.toPath}>
+          <import name={if (name.isAnonymous) null else name.toPath}>
             {getMetaDataNode}
             <from>{from.toOBJNode}</from>
             {innerNodes}
-          </structure>
+          </import>
    }
 }
 
@@ -63,6 +51,8 @@ abstract class Structure extends DefinitionalLink {
 class DeclaredStructure(val home : Term, val name : LocalName, val from : Term)
       extends Structure with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_Structure
+   /** override in order to permit implicit structures (identified by their domain) */
+   override def implicitKey = Some(from)
 }
 
  /**
@@ -78,30 +68,11 @@ class DefinedStructure(val home : Term, val name : LocalName, val from : Term, v
    def role = info.kwarc.mmt.api.Role_DefinedStructure
 }
 
-/**
- * An Include represents an MMT inclusion into a theory.<p>
- *
- * @param home the codomain of the inclusion
- * @param from the included theory
- */                                // TODO term
-case class Include(val home: Term, val from: Term) extends DefinitionalLink with IncludeLink {
-   val name = LocalName(IncludeStep(from))
-   val role = Role_Include
-   protected def outerComponents : List[Content] = from match {
-      case OMMOD(p) => List(from, StringLiteral(p.toPath))
-      case _ => List(from)
-   }
-   protected def outerString : String = "include " + from  
-   def toNode = from match {
-      case OMMOD(p) => 
-        <include from={p.toPath}>
-            {getMetaDataNode}
-        </include>
-      case _ => 
-        <include>
-            {getMetaDataNode}
-            {from.toOBJNode}
-        </include>
+object Include {
+   def apply(home: Term, from: Term) = new DeclaredStructure(home, LocalName.Anon, from)
+   def unapply(t: ContentElement) : Option[(Term,Term)] = t match {
+      case s: Structure if s.name.isAnonymous => Some((s.home, s.from))
+      case _ => None
    }
 }
 
@@ -110,11 +81,14 @@ case class Include(val home: Term, val from: Term) extends DefinitionalLink with
  *
  * @param from the domain of the inclusion
  * @param to the codomain of the inclusion
- */                        // TODO change MPath to Term?
+ */
 object PlainInclude {
-   def apply(from : MPath, to : MPath) = Include(OMMOD(to), OMMOD(from))
-   def unapply(t: Include) : Option[(MPath,MPath)] = t match {
-      case Include(OMMOD(to), OMMOD(from)) => Some((from, to))
+   def apply(from : MPath, to : MPath) = new DeclaredStructure(OMMOD(to), LocalName.Anon, OMMOD(from))
+   def unapply(t: ContentElement) : Option[(MPath,MPath)] = t match {
+      case d: DeclaredStructure if d.name.isAnonymous => (d.from,d.to) match {
+         case (OMMOD(from), OMMOD(to)) => Some((from, to))
+         case _ => None
+      }
       case _ => None
    }
 }

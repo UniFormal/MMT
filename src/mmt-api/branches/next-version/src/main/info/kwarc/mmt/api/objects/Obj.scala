@@ -79,7 +79,7 @@ sealed abstract class Term extends Obj {
      * If the term is module level, this is guaranteed to be correct. */
    def toMPath : MPath = this match {
      case OMMOD(p) => p
-     case _ => mmt.mmtbase ? toString
+     case _ => mmt.mmtbase ? ("[" + toString + "]").replace(" ", "_")
    }
    /** This permits the syntax term % sym for path composition */
    def %(n: LocalName) : GlobalName = GlobalName(this,n)

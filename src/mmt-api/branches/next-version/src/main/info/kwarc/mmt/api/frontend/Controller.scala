@@ -82,6 +82,7 @@ class Controller extends ROController {
       def get(path : Path) =  try {library.get(path)} catch {case NotFound(p) => throw GetError(p.toPath + "not known")}
       def imports(from: Term, to: Term) = library.imports(from, to)
       def importsTo(to: Term) = library.importsTo(to)
+      def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = library.preImage(p)
       def getDeclarationsInScope(th : MPath) = library.getDeclarationsInScope(th)
    }
@@ -90,6 +91,7 @@ class Controller extends ROController {
       def get(path : Path) = iterate {library.get(path)}
       def imports(from: Term, to: Term) = iterate {library.imports(from, to)}
       def importsTo(to: Term) = iterate {library.importsTo(to)}
+      def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = iterate {library.preImage(p)}
       def getDeclarationsInScope(th : MPath) = iterate {library.getDeclarationsInScope(th)}
    }
@@ -254,7 +256,7 @@ class Controller extends ROController {
    /** executes an Action */
    def handle(act : Action) : Unit = {
 	  if (act != NoAction) report("user", act.toString)
-	   (act match {
+	  act match {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
 	      case AddImporter(c, args) => extman.addImporter(c, args)
@@ -333,6 +335,7 @@ class Controller extends ROController {
          case Exit =>
 	         cleanup 
 	         sys.exit
-      })
+     }
+     if (act != NoAction) report("user", act.toString + " finished")
    }
 }

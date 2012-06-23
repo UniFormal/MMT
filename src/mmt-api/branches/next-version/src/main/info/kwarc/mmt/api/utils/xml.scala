@@ -114,8 +114,11 @@ object xml {
    }
 }
 
-/** Custom implementation of the URI RFC that's better than java.net.URI */
-case class URI(scheme: Option[String], authority: Option[String], path: List[String] = Nil, absolute: Boolean = false, query: Option[String] = None, fragment: Option[String] = None) {
+/** Custom implementation of the URI RFC that's better than java.net.URI
+ * @param abs true if the path is absolute (ignored if scheme or authority are present) */
+case class URI(scheme: Option[String], authority: Option[String], path: List[String] = Nil, private val abs: Boolean = false, query: Option[String] = None, fragment: Option[String] = None) {
+   /** true if the path is absolute; automatically set to true if scheme or authority are present */ 
+   val absolute = abs || scheme.isDefined || authority.isDefined
    /** drop path, query, fragment, append (absolute) path of length 1 */
    def !/(n : String) : URI = this !/ List(n)
    /** drop path, query, fragment, append (absolute) path */
@@ -128,8 +131,7 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
     *  path stays relative/absolute; but URI(_, Some(_), Nil, false, _, _) / _ turns path absolute
     */   
    def /(p : List[String]) : URI = {
-      val abs = absolute || (authority != None && path == Nil) 
-      URI(scheme, authority, path ::: p, abs)
+      URI(scheme, authority, path ::: p, absolute)
    }
    /** drops query and fragment, drop last path segment (if any) */
    def ^ : URI = URI(scheme, authority, if (path.isEmpty) Nil else path.init, absolute)

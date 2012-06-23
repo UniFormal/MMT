@@ -138,15 +138,10 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
     }
 
     def check(in: List[String] = Nil, controller: Controller) {
-      val elaborator = new IncludeElaborator(controller) 
       traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
          val rels = new HashSet[RelationalElement]
-         controller.checker.check(mpath)(rels += _, {
-           elem => elaborator(elem) {
-              elab => controller.add(elab)
-           }
-         })
+         controller.checker.check(mpath)(rels += _, _ => ())
          val relFile = (relDir / inPath).setExtension("occ")
          relFile.getParentFile.mkdirs
          val relFileHandle = File.Writer(relFile)

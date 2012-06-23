@@ -58,9 +58,6 @@ object Patcher {
     case (c : Constant, "type", Some(s : Term)) => new Constant(c.home, c.name, Some(s), c.df, c.rl, c.not)
     case (c : Constant, "type", None) => new Constant(c.home, c.name, None, c.df, c.rl, c.not)
 
-    /** Includes */
-    case (i : Include,  "from", Some(from : Term)) => new Include(i.home, from)
-
     /** Patterns */
     case(p : Pattern,  "params", Some(params : Context)) => new Pattern(p.home, p.name, params, p.body)
     case(p : Pattern,  "body", Some(body : Context)) => new Pattern(p.home, p.name, p.params, body)
@@ -73,7 +70,7 @@ object Patcher {
     case(c : ConstantAssignment, "target", Some(target : Term)) => new ConstantAssignment(c.home, c.name, target)
 
     /** DefLinkAssignments */
-    case(d : DefLinkAssignment, "target", Some(target : Term)) => new DefLinkAssignment(d.home, d.name, target)
+    case(d : DefLinkAssignment, "target", Some(target : Term)) => new DefLinkAssignment(d.home, d.name, d.from, target)
 
     /** Aliases */
     case(a : Alias, "pattern", Some(OMID(forpath : GlobalName))) => new Alias(a.home, a.name, forpath)

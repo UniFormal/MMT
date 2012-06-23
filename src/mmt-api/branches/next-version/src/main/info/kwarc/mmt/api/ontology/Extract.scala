@@ -14,7 +14,10 @@ object Extractor {
          case t: Theory =>
             f(IsTheory(path))
             t match {case t: DeclaredTheory => t.meta map {p => f(HasMeta(path, p))}}
-         case v: View => f(HasDomain(path, v.from.toMPath)); f(HasCodomain(path, v.to.toMPath)); f(IsView(path))
+         case v: View =>
+            f(HasDomain(path, v.from.toMPath))
+            f(HasCodomain(path, v.to.toMPath))
+            f(IsView(path))
          case _ => 
       }
       e match {
@@ -26,12 +29,14 @@ object Extractor {
                      f(dec)
                      f(IsConstant(c.rl).apply(c.path))
                   case s: Structure =>
-                     f(dec)
-                     f(HasDomain(s.path, s.from.toMPath))
-                     f(HasCodomain(s.path, s.to.toMPath))
-                     f(IsStructure(s.path))
-                  case i: Include =>
-                     f(Includes(t.path, i.from.toMPath)) 
+                     if (s.name.isAnonymous) {
+                        f(Includes(t.path, s.from.toMPath))
+                     } else {
+                        f(dec)
+                        f(HasDomain(s.path, s.from.toMPath))
+                        f(HasCodomain(s.path, s.to.toMPath))
+                        f(IsStructure(s.path))
+                     }
                   case p: Pattern =>
                      f(dec)
                      f(IsPattern(p.path))

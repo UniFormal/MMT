@@ -10,34 +10,18 @@ trait CompilableArchive extends WritableArchive {
     // stores for each file the time of the last call of produceCompiled
     private val compiledTimestamps = new Timestamps(root / sourceDim, root / "META-INF" / "timestamps" / sourceDim)
     /** apply all compilation steps, e.g., from "source" into "compiled" */
-    def produceCompiled(in : List[String] = Nil) {        
-       //reset errors      
+    def produceCompiled(in : List[String] = Nil) {
+       //reset errors
        compsteps match {
           case Some(CompilationStep(from, _ , compiler) :: _) => 
              traverse(from, in, compiler.includeFile, false) {case Current(_,inPath) => compErrors(inPath) = Nil}
-          case _ => { 
-            println("compilation sequence done")// a prompt that the compilation is finished would be nice
-            return
-          }
+          case _ => return
        }
        //execute every compilation step for each file
        compsteps.get map {case CompilationStep(from,to,compiler) =>
-//          val prefix = "[SRC -> COMP] "
-          val prefix = "[" + from + " -> " + to + "]"// this prefix is more informative
-          // to add some consistency to the compilation message; could have a source -> extension list somewhere
-          val extTo = to match {
-              case "twelf" => "elf"
-              case "compiled" => "omdoc"
-              case _ => ""// don't know this case
-          }
-          // turn in: List[String] to a file path inIn: File
-          var inIn = in.foldLeft(new File(new java.io.File("")))((a,b) => a / b)
-          // check if 'inIn' is a file or a directory(.isDirectory does not work): if a file, set a corresponding extension                   
-          if (inIn.getExtension != None && from == "twelf") {
-            inIn = inIn.setExtension("elf")// very specific, could use match 'from' to extension if needed            
-          }
-          traverse(from, inIn.segments, compiler.includeFile) {case Current(inFile,inPath) =>            
-            val outFile = (root / to / inPath).setExtension(extTo)
+          val prefix = "[" + from + " -> " + to + "] "
+          traverse(from, in, compiler.includeFile) {case Current(inFile,inPath) =>
+            val outFile = (root / to / inPath).setExtension("???")
             log(prefix + inFile + " -> " + outFile)
             // only compile if the previous compilation step did not report errors
             if (compErrors.getOrElse(inPath, Nil) == Nil) {

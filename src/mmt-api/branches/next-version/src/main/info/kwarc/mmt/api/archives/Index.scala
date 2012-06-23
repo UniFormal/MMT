@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import frontend._
 import backend._
 import modules._
+import objects._
+import ontology._
 import utils._
 import utils.FileConversion._
 
@@ -100,6 +102,11 @@ trait IndexedArchive extends WritableArchive {
        if ((root / "relational").exists) {
           traverse("relational", in, extensionIs("rel")) {case Current(inFile, inPath) =>
              ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
+          }
+          controller.depstore.getDeps foreach {
+             case Relation(Includes, to: MPath, from: MPath) => controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
+             case Relation(HasMeta, thy: MPath, meta: MPath) => controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
+             case _ => 
           }
        }
     }

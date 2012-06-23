@@ -33,9 +33,15 @@ class Checker(controller: Controller) {
         catch {case e @ Invalid(msg) => controller.report(e)}
       }
    }
-   //TODO: this should return a reconstructed StructuralElement
+   /** checks a StructuralElement
+    * @param e the element to check
+    * @param reCont a continuation called on all RelationalElement's produced while checking objects
+    * @param seCont a continuation called on the reconstructed element (possibly the same as e)
+    */ 
+   //TODO: currently the reconstructed element is always e
    def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, seCont: StructuralElement => Unit) {
       val path = e.path
+      log("checking " + path)
       implicit val rel = (p: Path) => reCont(RefersTo(path, p))
       implicit val lib = controller.globalLookup
       e match {
@@ -61,8 +67,14 @@ class Checker(controller: Controller) {
             checkTheory(v.from)
             checkTheory(v.to)
             checkMorphism(v.df, v.from, v.to)
-         case l: DefinitionalLink =>
-            checkTheory(l.from)
+         case s: DeclaredStructure =>
+            checkTheory(s.from)
+            tryForeach(s.valueListNG) {
+               d => check(d)
+            }
+         case s: DefinedStructure =>
+            checkTheory(s.from)
+            checkMorphism(s.df, s.from, s.home)
          case c : Constant =>
             c.tp map {t => checkTerm(c.home, t)}
             c.df map {t => checkTerm(c.home, t)}
@@ -79,28 +91,26 @@ class Checker(controller: Controller) {
             */
          //TODO: compatibility of multiple assignments to the same knowledge item
          case a : ConstantAssignment =>
-            val (l,d) = try {
-               content.getSource(a)
+            val (t,l) = try {
+               content.getDomain(a)
             } catch { 
               case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
             }
-            val c = d match {
-                case c : Constant => c
-                case _ => throw Invalid("constant-assignment to non-constant")
-            }
+            val c = content.getConstant(t.path ? a.name)
             checkTerm(l.to, a.target)
          case a : DefLinkAssignment =>
-            val (l,d) = try {
-               content.getSource(a)
+            val (t,l) = try {
+               content.getDomain(a)
             } catch { 
               case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
             }
-            val dl = d match {
-                case dl : DefinitionalLink => dl
-                case _ =>  throw Invalid("defllink-assignment to non-deflink")
+            if (a.name.isAnonymous) {
+               checkMorphism(a.target, a.from, l.to)
+            } else {
+               val s = content.getStructure(t.path ? a.name)
+               if (s.from != a.from) throw Invalid("import-assignment has bad domain: found " + a.from + " expected " + s.from) 
+               checkMorphism(a.target, s.from, l.to)
             }
-            val domain = dl.from
-            checkMorphism(a.target, domain, l.to)
          case p : Pattern =>
             checkContext(p.home, Context(), p.params)
             checkContext(p.home, p.params, p.body)
@@ -200,8 +210,7 @@ class Checker(controller: Controller) {
           pCont(p)
           t
         case OMS(mmt.tempty) => t
-        case TEmpty(mt) =>
-           checkTheory(OMMOD(mt))
+        case TheoryExp.Empty =>
            t
         case TUnion(ts) =>
            //TODO check same meta-theory?
@@ -223,7 +232,7 @@ class Checker(controller: Controller) {
      case OMDL(to, name) =>
         checkTheory(to)
         val from = content.get(to % name) match {
-           case l: DefinitionalLink => l.from
+           case l: Structure => l.from
            case _ => throw Invalid("invalid morphism " + m)
         }
         // TODO pCont ??
@@ -236,15 +245,12 @@ class Checker(controller: Controller) {
      case OMCOMP(hd :: tl) =>
         val (hdR, r, s1) = inferMorphism(hd)
         val (tlR, s2, t) = inferMorphism(OMCOMP(tl))
-        val l = checkInclude(s1,s2) match { 
+        val l = content.getImplicit(s1,s2) match { 
            case Some(l) => l
            case None => throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
         }
         (OMCOMP(hdR, l, tlR), r, t)
-     case MEmpty(f,t) =>
-        checkTheory(f)
-        checkTheory(t)
-        (m, f,t)
+     case Morph.Empty => throw Invalid("cannot infer type of empty morphism")
      case MUnion(ms) =>
         val infs = ms map {m => inferMorphism(m)}
         val rms  = infs map {i => i._1}
@@ -260,25 +266,16 @@ class Checker(controller: Controller) {
     *  @param m the morphism
     *  @param dom the domain
     *  @param cod the codomain
-    *  @return the reconstructed morphism
+    *  @return the reconstructed morphism (with necessary implicit morphisms inserted)
     */
    def checkMorphism(m : Term, dom : Term, cod : Term)(implicit pCont: Path => Unit) : Term = {
       val (l,d,c) = inferMorphism(m)
-      (checkInclude(dom, d), checkInclude(c, cod)) match {
-         case (Some(l0), Some(l1)) => l0 * l * l1
-         case _ => throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + c + " -> " + d)
+      (content.getImplicit(dom, d), content.getImplicit(c, cod)) match {
+         case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
+         case _ => throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c)
       }
    }
 
-   /** checks an inclusion between two theories
-    * @return the connecting morphism (possibly MEmpty(from,to))
-    */
-   def checkInclude(from: Term, to: Term)(implicit pCont: Path => Unit) : Option[Term] = {
-       if (from == to) Some(MEmpty(from,to))
-       else if (content.imports(from,to)) Some(MEmpty(from,to))
-       else None
-   }
-   
    /**
     * Checks structural well-formedness of a closed term relative to a home theory.
     * @param home the home theory
@@ -306,11 +303,11 @@ class Checker(controller: Controller) {
                     }
             ce match {
                case a : Alias =>
-                  if (! content.imports(a.home, home)){}
-                     //throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
+                  if (! content.hasImplicit(a.home, home))
+                     throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
                case c : Constant =>
-                  if (! content.imports(c.home, home)){}
-                     //throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
+                  if (! content.hasImplicit(c.home, home))
+                     throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
                case _ => throw Invalid(path + " does not refer to constant")
             }
             pCont(path)

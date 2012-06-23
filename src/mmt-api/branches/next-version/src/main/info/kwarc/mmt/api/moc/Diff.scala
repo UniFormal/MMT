@@ -178,14 +178,13 @@ object Differ {
 		new StrictDiff(changes)
 	}
 	
-	
-	def compareIncludes(o : Include, n : Include) : StrictDiff = {
+  def compareStructures(o : Structure, n : Structure) : StrictDiff = {
 	  var changes : List[StrictChange] = Nil
 
     if (o.from != n.from) {
 	    changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
 	  }
-
+    //TODO changes to body of DeclaredStructure, definiens of DefinedStructure
     new StrictDiff(changes)
 	}
 	
@@ -252,8 +251,8 @@ object Differ {
     (old,nw) match {
       case (o : Constant, n : Constant) =>
         compareConstants(o,n)
-      case (o : Include, n : Include) =>
-        compareIncludes(o,n)
+      case (o : Structure, n : Structure) =>
+        compareStructures(o,n)
       case (o : Pattern, n : Pattern) =>
         comparePatterns(o,n)
       case (o : Instance, n : Instance) =>

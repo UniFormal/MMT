@@ -114,7 +114,7 @@ case class GlobalName(mod: Term, name: LocalName) extends ContentPath {
    def apply(args: List[Term]) : Term = OMA(OMID(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
    /** true iff the parent is a named module and each include step is a named module or structure */
-   def isSimple : Boolean = mod.isInstanceOf[OMID] && name.steps.filter(_.isInstanceOf[IncludeStep]).forall(_.isInstanceOf[OMID])
+   def isSimple : Boolean = mod.isInstanceOf[OMID] && name.steps.forall(_.isSimple)
    def isGeneric = (mod.toMPath == mmt.mmtcd)
 }
 
@@ -147,11 +147,6 @@ case class LocalName(steps: List[LNStep]) {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
    def /(n: LNStep) : LocalName = this / LocalName(List(n))
    def /(n: String) : LocalName = this / LocalName(n)
-   /** append an IncludeStep, drop the last step if it is already an IncludeStep */ 
-   def thenInclude(from: Term) = this match {
-      case s \ IncludeStep(_) => s / IncludeStep(from)
-      case _ => this / IncludeStep(from) 
-   }
    def init = LocalName(steps.init)
    def tail = LocalName(steps.tail)
    def head = steps.head
@@ -161,11 +156,18 @@ case class LocalName(steps: List[LNStep]) {
    def toPath : String = steps.map(s => xml.encodeURI(s.toString)).mkString("", "/", "")
    /** human-oriented string representation of this name, no encoding, possibly shortened */
    override def toString : String = steps.map(_.toPath).mkString("", "/", "")
+   def isAnonymous = this == LocalName.Anon
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
    def apply(step: String) : LocalName = LocalName(NamedStep(step))
-   def parse(s:String) = Path.parseLocal(s).toLocalName
+   /** parses a LocalName that has no []-wrapped segments */
+   def parse(s:String) = {
+      val ref = Path.parseLocal(s)
+      LocalName(ref.segments.map(NamedStep(_)))
+   }
+   /** parses a LocalName, complex segments are parsed relative to base */
+   def parse(base: Path, s: String) = Path.parseLocal(s).toLocalName(base)
    val Anon = LocalName(List())
 }
 /** a step in a LocalName */
@@ -183,8 +185,15 @@ case class NamedStep(name: String) extends LNStep {
    def isSimple = true
 }
 /** an include declaration; these are unnamed and identified by the imported theory */
-case class IncludeStep(from: Term) extends LNStep {
-   def toPath = "[" + from.toString + "]"
+case class MorphismStep(from: Term) extends LNStep {
+   def toPath = {
+      val s = from match {
+         case OMID(p) => p.toPath
+         case OMIDENT(OMMOD(p)) => p.toPath
+         case t => t.toString.replace(" ", "_") 
+      }
+      "[" + s + "]"
+   }
    /** true iff the IncludeStep is a named module */
    def isSimple : Boolean = from.isInstanceOf[OMID]
 }
@@ -205,16 +214,19 @@ object LNEmpty {
 }
 */
 
-
-
 /**
- * A LocalRef represents a qualified local possibly relative reference to an MMT module or symbol.
+ * A LocalRef represents a possibly relative LocalName or LocalPath
  * @param segments the list of (in MMT: slash-separated) components
  * @param absolute a flag whether the reference is absolute (in MMT: starts with a slash)
  */
 case class LocalRef(segments : List[String], absolute : Boolean) {
+   def toLocalName(base: Path) = {
+      val steps = segments map {s => if (s.startsWith("[")) MorphismStep(OMIDENT(OMMOD(Path.parseM(s.substring(1,s.length - 1), base))))
+                                     else NamedStep(s)
+                               }
+      LocalName(steps)
+   }
    def toLocalPath = LocalPath(segments)
-   def toLocalName = LocalName(segments.map(NamedStep(_))) //TODO: IncludeSteps
    override def toString = segments.mkString(if (absolute) "/" else "","/","")
 }
 
@@ -236,11 +248,11 @@ object Path {
          l.toLocalPath
       else
          bl.get / l.toLocalPath
-   private def mergeS(bl : Option[LocalName], l : LocalRef) : LocalName =
+   private def mergeS(base: Path, bl : Option[LocalName], l : LocalRef) : LocalName =
       if (bl.isEmpty || l.absolute)
-         l.toLocalName
+         l.toLocalName(base)
       else
-         bl.get / l.toLocalName
+         bl.get / l.toLocalName(base)
    /** turns an MMT-URI reference (d,m,n) into an MMT-URI relative to base (omitting a component is possible by making it empty) */
    def parse(d : URI, m : String, n : String, comp: String, base : Path) : Path = {
       //to make the case distinctions simpler, all omitted (= empty) components become None
@@ -252,13 +264,13 @@ object Path {
       val (bdoc, bmod, bname) = base.toTriple
       //now explicit case distinctions to be sure that all cases are covered
       val path = (bdoc, bmod, bname, doc, mod, name) match {
-         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeS(bname, n)
+         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeS(base, bname, n)
          case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? mergeM(bmod, m)
-         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeM(bmod, m) ? n.toLocalName
+         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeM(bmod, m) ? n.toLocalName(base)
          case (_       , _       , _, None,    None,    None   ) => base
          case (_       , _       , _, Some(d), None,    None   ) => mergeD(bdoc, d)
          case (_       , _       , _, Some(d), Some(m), None   ) => mergeD(bdoc, d) ? m.toLocalPath
-         case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalPath ? n.toLocalName
+         case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalPath ? n.toLocalName(base)
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
       if (comp == "") path else path match {
@@ -295,12 +307,40 @@ object Path {
       case p : DPath => p
       case p => throw ParseError("document path expected: " + p) 
    }
+   
+   /** splits /-separated sequence of (String | "[" String "]") into its components
+    * []-wrappers are preserved
+    * []-wrapped components may contain /
+    * components may be empty
+    */
+   private def splitName(s: String): List[String] = {
+      var left : String = s            //string that is left to parse
+      var seen : List[String] = Nil    //segments that have been parsed
+      var current : String = ""        //the part of the current segment that has been parsed
+      //called when the end of the current segment has been detected
+      def segmentDone {seen ::= current; current = ""}
+      //called when the next character is appended to the current segment
+      def charDone {current = current + left(0); left = left.substring(1)}
+      //parses s segment-wise; if a segment starts with [, pass control to complex
+      def start {   if (left == "")            {if (current != "") segmentDone}
+               else if (left.startsWith("/[")) {segmentDone; left = left.substring(1); complex}
+               else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}
+               else                            {charDone; start}
+      } //TODO accept only balanced pairs of []?
+      //parses a complex segment of the form [URI] (assumes [ has been parsed already)
+      def complex {if (left.isEmpty)           {throw ParseError("unclosed '[' in " + s)}
+               else if (left == "]")           {segmentDone}
+               else if (left.startsWith("]/")) {charDone; segmentDone; left = left.substring(1); start}
+               else                            {charDone; complex}
+      }
+      start
+      return seen.reverse
+   }
+   
    /** parses a possibly relative LocalPath or LocalName */
    def parseLocal(n : String) : LocalRef = {
       val relative = n.startsWith("/")
-      var l = n.split("/",-1).toList
-      if (l == List(""))  //note: split returns at least List(""), never Nil
-         l = Nil
+      var l = splitName(n)
       if (relative)
          l = l.drop(1)
       if (l.exists(_ == ""))

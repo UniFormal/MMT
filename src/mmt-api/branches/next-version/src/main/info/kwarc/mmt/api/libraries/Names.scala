@@ -25,10 +25,7 @@ object Names {
       get(home) match {
          case None => Nil
          case Some(t) =>
-            val names = t.valueList flatMap {
-               case i: Include => Nil
-               case d => List(d.name)
-            }
+            val names = t.valueList mapPartial {d => if (d.name.isAnonymous) None else Some(d.name)}
             names.filter(_.toString.startsWith(partialName)).map(n => Completion(t.path, n))
       }
    }

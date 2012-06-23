@@ -22,19 +22,15 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
 
 /** syntax errors in source files */
 case class SourceError(
-    origin: String, region: SourceRegion, mainMessage: String, extraMessages: List[String] = Nil,
+    origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil,
     warning: Boolean = false, fatal: Boolean = false
- ) extends Error("source error at " + region.start.twoDimString + ": " + mainMessage) {
+ ) extends Error("source error at " + ref.region.start.twoDimString + ": " + mainMessage) {
     override def getMessage = mainMessage + extraMessages.mkString("\n","\n","\n")
-}
-/** errors that occur during parsing */
-object TextParseError {
-  def apply(pos: SourcePosition, s : String) = SourceError("parser", pos.toRegion, s)
 }
 /** errors that occur during compiling */
 object CompilerError {
-  def apply(reg: SourceRegion, messageList : List[String], warning: Boolean) =
-      SourceError("compiler", reg, messageList.head, messageList.tail, warning)
+  def apply(ref: SourceRef, messageList : List[String], warning: Boolean) =
+      SourceError("compiler", ref, messageList.head, messageList.tail, warning)
 }
 /** errors that occur during parsing */
 case class ParseError(s : String) extends Error("parse error: " + s)

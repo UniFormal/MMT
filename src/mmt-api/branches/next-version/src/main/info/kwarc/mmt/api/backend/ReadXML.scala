@@ -16,11 +16,11 @@ import scala.xml.{Node,NodeSeq}
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
 class XMLReader(controller : frontend.Controller, report : frontend.Report) extends Reader(controller, report) {
    private def log(s : String) = report("reader", s)
-   /** tells the controller given as class parameter to add the StructuralElement */
+   /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
       cont(e)
    }
-   /** tells the controller given as class parameter to add the StructuralElement, with the MetaData (if present) */
+   /** adds metadata and calls the continuation functions */
    private def add(e : StructuralElement, md: Option[MetaData])(implicit cont: StructuralElement => Unit) {
       md map {e.metadata = _}
       cont(e)
@@ -35,7 +35,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
    def readDocuments(location : DPath, documents : NodeSeq)(implicit cont: StructuralElement => Unit) {
       documents foreach {readDocument(location, _)}
    }
-   /** parses a document (xml.Node) into the controller */
+   /** parses a document (xml.Node) and forwards its declarations into the continuation function */
    def readDocument(location : DPath, D : Node)(implicit cont: StructuralElement => Unit) {
       D match {
         case <omdoc>{modules @ _*}</omdoc> =>
@@ -159,7 +159,7 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
     	  val p = new Pattern(thy, name, pr, cn)
     	  add(p, md)
       }
-      for (s <- symbols; name = Path.parseName(xml.attr(s,"name")).toLocalName) {
+      for (s <- symbols; name = LocalName.parse(xml.attr(s,"name"))) {
          val (s2, md) = MetaData.parseMetaDataChild(s, base) 
          s2 match {
          case <constant><type>{t}</type><definition>{d}</definition><notation>{n}</notation></constant> =>
@@ -178,27 +178,23 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
             doCon(name,None,Some(d), Some(n), xml.attr(s,"role"), md)
          case <constant/> =>
             doCon(name,None,None,None,xml.attr(s,"role"), md)
-         case <structure>{seq @ _*}</structure> =>
-            log("structure " + name + " found")
+         case <import>{seq @ _*}</import> =>
+            log("import " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val i = new DefinedStructure(thy, name, from, df)
-                  add(i,md)
+                  val s = new DefinedStructure(thy, name, from, df)
+                  add(s,md)
                case assignments =>
-                  val i = new DeclaredStructure(thy, name, from)
-                  add(i,md)
+                  val s = new DeclaredStructure(thy, name, from)
+                  add(s,md)
                   readAssignments(OMDL(thy, name), base, assignments)
             }
          case <alias/> =>
             val forpath = Path.parseS(xml.attr(s, "for"), base)
             log("found alias " + name + " for " + forpath)
             add(new Alias(thy, name, forpath), md)
-         case <include>{_*}</include> =>
-            val (_, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
-            log("include from " + from + " found")
-            add(Include(OMMOD(tpath), from), md)
          case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols
             readNotations(tpath, base, s)
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
@@ -220,30 +216,23 @@ class XMLReader(controller : frontend.Controller, report : frontend.Report) exte
    def readAssignments(link : Term, base : Path, assignments : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (amd <- assignments) {
          val (a, md) = MetaData.parseMetaDataChild(amd, base) 
-         val name = Path.parseLocal(xml.attr(a, "name")).toLocalName
+         val name = LocalName.parse(base, xml.attr(a, "name"))
          a match {
-            case <conass>{t}</conass> =>
+            case <constant>{t}</constant> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseTerm(t, base)
                val m = new ConstantAssignment(link, name, tg)
                add(m, md)
-            case <strass>{t}</strass> =>
+            case <import>{_*}</import> =>
                log("assignment for " + name + " found")
-               val tg = Obj.parseTerm(t, base)
-               val m = new DefLinkAssignment(link, name, tg)
-               add(m, md)
-            case <include>{mor}</include> =>
-               val of = Obj.parseTerm(mor, base)
-               log("include of " + of + " found")
-               val f = xml.attr(a, "from")
-               val from = if (f == "")
-                  // this throws Invalid if the domain cannot be inferred
-                  // the domain should only be omitted if its domain can be inferred locally, i.e., from the current document
-                  // even then, it might be a bug to allow omitting it 
-                  Morph.domain(of)(controller.library)
-               else
-                  OMMOD(Path.parseM(f, base))
-               add(new DefLinkAssignment(link, LocalName(IncludeStep(from)), of), md)
+               val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(a, "domain", base)
+               rest.child match {
+                  case List(<value>{t}</value>) =>
+                     val tg = Obj.parseTerm(t, base)
+                     val m = new DefLinkAssignment(link, name, from, tg)
+                     add(m, md)
+                  case c => throw ParseError("value expected: " + c)
+               }
             case <open/> =>
                log("open for " + name + " found")
                val as = xml.attr(a, "as") match {case "" => None case a => Some(a)}

@@ -19,10 +19,12 @@ abstract class Lookup(val report : frontend.Report) {
    def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case GetError(_) | BackendError(_) => None}
    //typed access methods
    private def defmsg(path : Path) : String = "no element of required type found at " + path
-   def getModule(path : ContentPath, msg : Path => String = defmsg) : Module =
+   def getModule(path : MPath, msg : Path => String = defmsg) : Module =
      get(path) match {case m: Module => m case _ => throw GetError(msg(path))}
-   def getTheory(path : ContentPath, msg : Path => String = defmsg) : Theory =
+   def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
      get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
+   def getView(path : MPath, msg : Path => String = defmsg) : View =
+     get(path) match {case v: View => v case _ => throw GetError(msg(path))}
    def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
      get(path) match {case e : Link => e case _ => throw GetError(msg(path))}
    def getSymbol(path : GlobalName, msg : Path => String = defmsg) : Symbol =
@@ -58,6 +60,8 @@ abstract class Lookup(val report : frontend.Report) {
       }
       found
    }
+   def getImplicit(from: Term, to: Term) : Option[Term]
+   def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
    def getDeclarationsInScope(th : MPath) : List[Content]
    //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
@@ -72,9 +76,9 @@ abstract class Lookup(val report : frontend.Report) {
    
   /** gets the source of an Assignment declared in a DeclaredLink
     * @param a the assignment
-    * @return the containing link and the source ContentElement
+    * @return the containing link and the source theory
     */
-   def getSource(a: Assignment) : (DeclaredLink, Symbol) = {
+   def getDomain(a: Assignment) : (DeclaredTheory,DeclaredLink) = {
       val p = a.home match {
          case OMMOD(p) => p
          case OMDL(OMMOD(p), name) => OMMOD(p) % name 
@@ -84,9 +88,14 @@ abstract class Lookup(val report : frontend.Report) {
          case l: DeclaredLink => l
          case _ => throw GetError("non-declared link") 
       }
-      val domain = l.from
-      val s = getSymbol(l.from % a.name)
-      (l, s)
+      val dom = l.from match {
+         case OMMOD(t) => getTheory(t) match {
+           case t: DeclaredTheory => t
+           case _ => throw GetError("domain of declared link is not a declared theory")
+         }
+         case _ => throw GetError("domain of declared link is not a declared theory")
+      }
+      (dom,l)
    }
    
    /**
@@ -109,7 +118,7 @@ abstract class Lookup(val report : frontend.Report) {
     */                                     // TODO term
    object ApplyMorphs extends Traverser[Term] {
       def apply(t: Term)(implicit con: Context, morph: Term) = t match {
-         case OMM(arg, via) => apply(arg)(con, morph * via)
+         case OMM(arg, via) => apply(arg)(con, OMCOMP(morph, via))
          case OMID(theo % ln) =>
            val t = getConstantAssignment(morph % ln).target
            apply(t)

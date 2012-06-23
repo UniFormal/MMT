@@ -15,4 +15,6 @@ abstract class Declaration extends ContentElement {
    val home : Term
    val name : LocalName
    def path = GlobalName(home, name)
+   /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */ 
+   def implicitKey : Option[Term] = None
 }

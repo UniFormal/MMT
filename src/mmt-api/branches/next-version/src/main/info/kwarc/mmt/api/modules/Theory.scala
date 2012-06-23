@@ -6,9 +6,7 @@ import objects._
 import utils._
 import presentation.{StringLiteral,Omitted}
 
-abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name) {
-   def toTheoryObj : Term = OMMOD(path)
-}
+abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
 /**
  * A Theory represents an MMT theory.<p>
  * 
@@ -44,18 +42,4 @@ class DefinedTheory(doc : DPath, name : LocalPath, val df : Term) extends Theory
         {getMetaDataNode}
         {innerNodes}
     </theory>
-}
-
-object Theory {
-   def meta(thy: Term)(implicit lib: Lookup) : Option[MPath] = thy match {
-      case OMMOD(p) => lib.getTheory(p) match {
-         case t: DeclaredTheory => t.meta
-         case t: DefinedTheory => meta(t.df)
-      }
-      case TEmpty(mt) => Some(mt)
-      case TUnion(ts) =>
-         val ms = ts map {t => meta(t)}
-         if (ms forall {m => m == ms.head}) ms.head
-         else None
-   }
 }

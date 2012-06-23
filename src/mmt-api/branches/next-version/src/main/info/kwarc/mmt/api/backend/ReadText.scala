@@ -34,6 +34,11 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     }
 
   }
+  
+  /** errors that occur during parsing */
+   object TextParseError {
+     def apply(pos: SourcePosition, s : String) = SourceError("parser", SourceRef(dpath.uri, pos.toRegion), s)
+   }
 
   // ------------------------------- document level -------------------------------
 
@@ -639,7 +644,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
     // create the constant object
 
-    val constant = new Constant(parent.toTheoryObj, LocalName(cstName), constantType, constantDef, None, constantNotation)//TODO notation
+    val constant = new Constant(parent.toTerm, LocalName(cstName), constantType, constantDef, None, constantNotation)//TODO notation
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
@@ -669,7 +674,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       val startOfAlias = i
       val (ref, positionAfterRef) = crawlIdentifier(i)
       var endOfAlias = positionAfterRef - 1 // in case there is no %as statement
-      val refGlobalName = GlobalName(if (link.from != null) link.from else link.toMorph, LocalName(ref))
+      val refGlobalName = GlobalName(if (link.from != null) link.from else link.toTerm, LocalName(ref))
 
       // reset comment and check for new comments, in case there is no %as statement
       keepComment = None
@@ -722,7 +727,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = positionAfter
 
     // create the Include object
-    val include = Include(parent.toTheoryObj, from)
+    val include = Include(parent.toTerm, from)
 
     // read the optional %open statement
     i = skipwscomments(i)
@@ -801,7 +806,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         domain match {
           case None => throw TextParseError(toPos(start), "structure is defined via a list of assignments, but its domain is not specified")
           case Some(dom)  =>
-            structure = new DeclaredStructure(parent.toTheoryObj, LocalName(name), dom)
+            structure = new DeclaredStructure(parent.toTerm, LocalName(name), dom)
             add(structure)
             i = crawlLinkBody(i, structure.asInstanceOf[DeclaredStructure])
         }
@@ -813,8 +818,8 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         val (morphism, positionAfter) = crawlTerm(i, Nil)
         i = positionAfter
         domain match {
-          case Some(dom) => structure = new DefinedStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism)
-          case None => structure = new DefinedStructure(parent.toTheoryObj, LocalName(name), null, morphism)
+          case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism)
+          case None => structure = new DefinedStructure(parent.toTerm, LocalName(name), null, morphism)
         }
 
         add(structure)
@@ -824,7 +829,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       case None => throw TextParseError(toPos(start), "structure has no definiens and its domain is not specified")
       case Some(dom) =>
         // It's a DeclaredStructure with empty body
-        structure = new DeclaredStructure(parent.toTheoryObj, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)))
+        structure = new DeclaredStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)))
         add(structure)
     }
 
@@ -870,7 +875,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val endsAt = expectNext(i, ".")
 
     // add the constant assignment to the controller
-    val constantAssignment = new ConstantAssignment(parent.toMorph, LocalName(constantName), term)
+    val constantAssignment = new ConstantAssignment(parent.toTerm, LocalName(constantName), term)
     add(constantAssignment)
 
     // add semantic comment and source references
@@ -906,7 +911,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
     // add the structure assignment to the controller
-    val defLinkAssignment = new DefLinkAssignment(parent.toMorph, LocalName(strName), morphism)
+    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName(strName), OMSemiFormal(Text("nl", "domain of"), Formal(morphism)), morphism) //TODO using informal description of unknown domain
     add(defLinkAssignment)
 
     // add semantic comment and source references
@@ -932,11 +937,8 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
-    // compute the name of the include
-    val localName = LocalName(IncludeStep(morphism)) //TODO wrong name, to force uniqueness
-
     // add the include assignment to the controller
-    val defLinkAssignment = new DefLinkAssignment(parent.toMorph, localName, morphism)
+    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName.Anon, OMSemiFormal(Text("nl", "domain of"), Formal(morphism)), morphism) //TODO using informal description of unknown domain
     add(defLinkAssignment)
 
     // add semantic comment and source references

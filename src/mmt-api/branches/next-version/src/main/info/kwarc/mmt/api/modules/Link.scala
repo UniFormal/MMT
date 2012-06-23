@@ -12,7 +12,8 @@ trait Link {
    val from : Term
    /** the codomain of the link */
    val to : Term
-   def toMorph : Term
+   def toTerm : Term
+   def path : ContentPath
    protected def innerNodes : Seq[scala.xml.Node]
    /** name, from, to, etc */
    protected def outerComponents : List[Content]
@@ -37,9 +38,3 @@ trait DeclaredLink extends Link with Body[Assignment]
    * A DeclaredLink represents an MMT link given by an existing morphism.
    */
 trait DefinedLink extends Link with ModuleDefiniens
-
-trait IncludeLink extends Link {
-   protected def innerNodes : Seq[scala.xml.Node] = Nil
-   protected def innerComponents : List[Content] = Nil
-   protected def innerString : String = ""
-}

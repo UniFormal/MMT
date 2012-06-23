@@ -15,11 +15,11 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    private val textArea = editPane.getTextArea
    private val painter = textArea.getPainter
    override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
-     gfx.setColor(java.awt.Color.RED)
-     val height = painter.getLineHeight()
+     //gfx.setColor(java.awt.Color.RED)
+     //val height = painter.getLineHeight()
      //val startPoint = textArea.offsetToXY(startOffset)
      //val endPoint = textArea.offsetToXY(endOffset)
-     gfx.fillRect(0, y, 500, height)
+     //gfx.fillRect(0, y, 500, height)
    }
    //def getToolTipText(xCoord: Int, yCoord: Int) {} 
 }

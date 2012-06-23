@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.objects._
  */
 abstract class Module(val parent : DPath, val name : LocalPath) extends ContentElement {
    def path = parent ? name
+   def toTerm = OMMOD(path)
 }
 
 /**
