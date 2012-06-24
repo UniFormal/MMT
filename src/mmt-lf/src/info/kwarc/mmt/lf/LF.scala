@@ -28,10 +28,12 @@ case class LFError(msg : String) extends java.lang.Throwable(msg)
 object LF {
    val lfbase = new DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
    val lftheory = lfbase ? "lf"
-   def constant(name : String) = OMID(lftheory ? name)
+   def constant(name : String) = OMS(lftheory ? name)
    val ktype = constant("type")
    val kind = constant("kind")
    val arrow = constant("arrow")
+   val Pi = constant("Pi")
+   val lambda = constant("lambda")
 }
 
 /* apply methods and extractor methods for Scala
@@ -41,7 +43,7 @@ object LF {
  */
 
 object Lambda {
-   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.constant("lambda"), OMV(name) % tp, body)
+   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.lambda, OMV(name) % tp, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
 	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.constant("lambda")  || b == LF.constant("implicit_lambda") => Some(n,t,s)
 	   case _ => None
@@ -49,10 +51,10 @@ object Lambda {
 }
 
 object Pi { 
-   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.constant("Pi"), OMV(name) % tp, body)
+   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.Pi, OMV(name) % tp, body)
    //def apply(name : String, tp : Sequence, body : Term) = OMBIND(LF.constant("Pi"), SeqVarDecl(name, Some(tp),None), body)
    
-   def apply(con: Context, body : Term) = OMBIND(LF.constant("Pi"), con, body) //(?)
+   def apply(con: Context, body : Term) = OMBIND(LF.Pi, con, body) //(?)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
 	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.constant("Pi") || b == LF.constant("implicit_Pi") =>
 	      if (rest.isEmpty) Some((n,t,s))
