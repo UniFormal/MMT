@@ -4,10 +4,9 @@ import info.kwarc.mmt.api._
 import libraries._
 import modules._
 import symbols._
-//import utils._
 import frontend._
 import objects.Conversions._
-import scala.collection.mutable.HashSet
+import scala.collection.mutable.{HashSet,HashMap}
 
 /** the type of object level judgments as used for typing and equality of terms */
 abstract class Judgement {
@@ -18,7 +17,7 @@ abstract class Judgement {
   def freeVars : HashSet[LocalName]
 }
 
-/** represents an equality judegment, optionally at a type
+/** represents an equality judgement, optionally at a type
  * context |- t1 = t2 : tp  if t = Some(tp)
  * or
  * context |- t1 = t2       if t = None
@@ -58,48 +57,21 @@ class DelayedConstraint(val constraint: Judgement) {
   def isActivatable: Boolean = activatable
 }
 
-/*
-abstract class TypeConstructor {
-   def extensionalityRule(t: Term) : Term
-   def extensionalityRule(eq: EqualConstraint) : Option[List[EqualConstraint]]
-   def introSymbol: Path
-   def computationRule(t: Term): Option[Term]
-}
-
-class Unifier {
-   val typeCons : List[TypeConstructor]
-   def unify(con: Context, t1: Term, t2: Term, t: Term) {
-      normal MMT equality check
-      if t1 and t2 have the same shape and the same head, and the head is known to be an introSymbol (and thus injective) recurse into components
-      otherwise, try extend
-   }
-   def extend(con: Context, t1: Term, t2: Term, t: Term) {
-      (typeCons find {tc => (tc.typeSymbol == t.head)}) match {
-        case Some(tc) => unify (... tc.extensionalityRule(...) ...)
-        case None =>
-           compute(con, t1, t2)
-      }
-   }
-   def compute(con: Context, t1: Term, t2: Term) {
-      val t1C = typeCons findMap {tc => tc.computationRule(t1)}
-      val t2C = typeCons findMap {tc => tc.computationRule(t1)}
-      unify(..)
-   }
-}
-*/
-
 /**
- * A Solver is used to solve a system of judgments about Term's, given by Constraint's,
- * by applying typing rules to validate the judgment.
+ * A Solver is used to solve a system of constraints given as judgments about Term's
+ * by applying typing rules to validate the judgments.
  * The judgments may contain unknown variables (also called meta-variables or logic variables);
+ * variables may represent any MMT term, i.e., object language terms, types, etc.;
  * the solution is a Substitution that provides a closed Term for every unknown variable.
- * A new instance must be created for every system of judgments. 
+ * (Higher-order abstract syntax should be used for problem where the solutions are not closed.) 
+ * Unsolvable constraints are delayed and reactivated if solving other constraints provides further information.
  * @param controller used for looking up Foundation's and Constant's. No changes are made to controller.
  * @param unknowns the list of all unknown variables with their types in dependency order;
- *   variables may represent any MMT term, i.e., object language terms, types, etc.
- *   unknown variables may occur in the types of later unknowns
+ *   unknown variables may occur in the types of later unknowns.
+ * Use: create a new instance for every problem, call apply on all constraints, then call getSolution  
  */
 class Solver(controller: Controller, unknowns: Context) {
+   val foundStore = new FoundationStore
    /** tracks the solution, like unknowns but a definiens is added for every solved variable */ 
    private var solution : Context = unknowns
    /** tracks the delayed constraints, in any order */ 
@@ -113,6 +85,8 @@ class Solver(controller: Controller, unknowns: Context) {
     */
    def getSolution : Option[Substitution] = if (delayed.isEmpty) solution.toSubstitution else None
 
+   /** the content that stores all constants */
+   private val content = controller.globalLookup
    /** retrieve the Foundation providing the semantics of a symbol, if any */
    private def getFoundation(p: MPath): Option[Foundation] = controller.extman.getFoundation(p)
    
@@ -161,25 +135,86 @@ class Solver(controller: Controller, unknowns: Context) {
     *  checkTyping(tm, tp)(con) solves the judgment con |- tm : tp
     *  @return false only if the judgment does not hold; true if it holds or constraint have been delayed
     */
-   private def checkTyping(tm: Term, tp: Term)(implicit con: Context): Boolean = {
-      true
+   def checkTyping(tm: Term, tp: Term)(implicit context: Context): Boolean = {
+      tm match {
+         // the foundation-independent cases
+         case OMV(x) => (unknowns ++ context)(x).tp match {
+            case None => false //untyped variable type-checks against nothing
+            case Some(t) => checkEquality(t, tp, None)
+         }
+         case OMS(p) =>
+            val c = content.getConstant(p)
+            c.tp match {
+               case None => c.df match {
+                  case None => false //untyped, undefined constant type-checks against nothing
+                  case Some(d) => checkTyping(d, tp) // expand defined constant 
+               }
+               case Some(t) => checkEquality(t, tp, None)
+            }
+         // the foundation-dependent cases
+         case tm =>
+            val h = tp.head.get.asInstanceOf[GlobalName] //TODO what if there is no head?
+            foundStore.typingRules.get(h) match {
+               case Some(rule) => rule(this)(tm, tp)
+               case None =>
+                  // no typing rule registered for this type, try to simplify the type
+                  foundStore.computationRules.get(h) match {
+                     case Some(rule) => rule(this)(tp) match {
+                        case Some(tpS) => checkTyping(tm, tpS)
+                        case None =>
+                          // assume this is an atomic type
+                          inferType(tm) match {
+                             case Some(itp) => checkEquality(itp, tp, None)
+                             case None => delay(Typing(context, tm, tp))
+                          }
+                     }
+                     case None => delay(Typing(context, tm, tp))
+                  }
+            }
+      }
    }
+   
+   /** infers the type of a term
+    * @return the inferred type, if inference succeeded
+    */
+   def inferType(tm: Term)(implicit context: Context): Option[Term] = {
+      tm match {
+         //foundation-independent cases
+         case OMV(x) => (unknowns ++ context)(x).tp
+         case OMS(p) =>
+            val c = content.getConstant(p)
+            c.tp match {
+               case None => c.df match {
+                  case None => None
+                  case Some(d) => inferType(d) // expand defined constant 
+               }
+            }
+         //foundation-dependent cases
+         case tm =>
+            val hd = tm.head.get.asInstanceOf[GlobalName] //TODO
+            foundStore.inferenceRules.get(hd) match {
+               case Some(rule) => rule(this)(tm)
+               case None => None
+            }
+      }
+   }
+   
    /** handles an EqualityConstraint by recursively applying rules and solving variables where applicable,
     *  delays a constraint if unsolved variables preclude further processing
     *  @param tpOpt if empty, tm1 and tm2 may be ill-typed; if non-empty, they must also type-check at that type
     *  @return false only if the judgment does not hold; true if it holds or constraint have been delayed
     */
-   private def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit con: Context): Boolean = {
+   def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit con: Context): Boolean = {
       // the common case of identical terms
       if (tm1 == tm2) tpOpt match {
          case None => true
          case Some(tp) => checkTyping(tm1, tp)
       } else (tm1, tm2) match {
-         // if no case applied, try the remaining cases
+         // if no case of this method applied, try the remaining cases
          case _ => checkEquality2(tm1, tm2, tpOpt, true)
       }
    }
-   /** like checkEquality, but contains all those cases that are tried twice:
+   /** like checkEquality, but contains all the pairs of symmetric cases that are tried twice:
     *  if no case applies, we flip tm1 and tm2 and try again; if still no case applies, we delay
     * @param firstTime true if called for the first time, false if called for the second time
     */
@@ -207,4 +242,22 @@ class Solver(controller: Controller, unknowns: Context) {
                delay(Equality(con, tm2, tm1, tpOpt))
       }
    }
+}
+
+abstract class InferenceRule(head: GlobalName) {
+   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term]
+}
+
+abstract class ComputationRule(head: GlobalName) {
+   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term]
+}
+
+abstract class TypingRule(operator: GlobalName) {
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context): Boolean
+}
+
+class FoundationStore {
+  val typingRules = new HashMap[GlobalName,TypingRule]
+  val inferenceRules = new HashMap[GlobalName, InferenceRule]
+  val computationRules = new HashMap[GlobalName, ComputationRule]
 }
