@@ -1,56 +1,31 @@
-
 <omdoc base="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/source/Axioms/DeclarationAxiom/declarationAxiom.owl">
-	<theory base="http://example.com/owl/families" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
-
-		<constant name="SSN">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+        <theory base="http://example.com/owl/families" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
+        
+        <constant name="SSN" >
        
-
-		</constant>
-		<constant name="Person">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="John">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="hasAge">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+     </constant><constant name="Person" >
        
-
-		</constant>
-		<constant name="hasChild">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-	</theory>
-</omdoc>
+       
+     </constant><constant name="John" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="hasAge" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="hasChild" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant>
+      </theory>
+     </omdoc>

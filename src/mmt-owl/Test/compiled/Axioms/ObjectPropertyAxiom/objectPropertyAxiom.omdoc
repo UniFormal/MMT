@@ -1,301 +1,157 @@
-
 <omdoc base="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/source/Axioms/ObjectPropertyAxiom/objectPropertyAxiom.owl">
-	<theory base="http://example.com/owl/families" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
-
-		<constant name="hasParent">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+        <theory base="http://example.com/owl/families" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
+        
+        <constant name="hasParent" >
        
-
-		</constant>
-		<constant name="hasWife">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="hasRelative">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="hasDaughter">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+     </constant><constant name="hasWife" >
        
-
-		</constant>
-		<constant name="hasChild">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="Woman">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="Man">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+     </constant><constant name="hasRelative" >
        
-
-		</constant>
-		<constant name="child">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="hasAncestor">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="hasSon">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+     </constant><constant name="hasDaughter" >
        
-
-		</constant>
-		<constant name="parentOf">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="hasSpouse">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="ax92655793">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="inverseObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasParent" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+     </constant><constant name="hasChild" >
        
-
-		</constant>
-		<constant name="ax-1020248811">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2RL" name="functionalObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="ax-2017858074">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2RL" name="inverseFunctionalObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="ax354704316">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="disjointObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="_" name="hasSon" base="http://example.com/owl/families" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+     </constant><constant name="Woman" >
        
-
-		</constant>
-		<constant name="ax-790102358">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="_" name="Man" base="http://example.com/owl/families" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="ax-1210601752">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELQL" name="reflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasRelative" base="http://example.com/owl/families" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="ax-1712208574">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="asymmetricObjetProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+     </constant><constant name="Man" >
        
-
-		</constant>
-		<constant name="ax1498823122">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2ELRL" name="transitiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="ax-124873819">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="_" name="hasSpouse" base="http://example.com/owl/families" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="ax-809893096">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="irreflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="parentOf" base="http://example.com/owl/families" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+     </constant><constant name="child" >
        
-
-		</constant>
-		<constant name="ax388537638">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="equivalentObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="child" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-		<constant name="ax850311705">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
        
-
-		</constant>
-		<constant name="ax1337769741">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2QLRL" name="symmetricObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="hasSpouse" base="http://example.com/owl/families" position="1"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+     </constant><constant name="hasAncestor" >
        
-
-		</constant>
-	</theory>
-</omdoc>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="hasSon" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="parentOf" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="hasSpouse" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax92655793" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QLRL" name="inverseObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasParent" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax-1020248811" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2RL" name="functionalObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax-2017858074" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2RL" name="inverseFunctionalObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax354704316" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QLRL" name="disjointObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasDaughter" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="hasSon" base="http://example.com/owl/families" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax-790102358" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyDomain" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Man" base="http://example.com/owl/families" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax-1210601752" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2ELQL" name="reflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasRelative" base="http://example.com/owl/families" position="1"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax-1712208574" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QLRL" name="asymmetricObjetProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="1"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax1498823122" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2ELRL" name="transitiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasAncestor" base="http://example.com/owl/families" position="1"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax-124873819" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subObjectPropertyOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="hasSpouse" base="http://example.com/owl/families" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax-809893096" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QLRL" name="irreflexiveObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="parentOf" base="http://example.com/owl/families" position="1"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax388537638" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="equivalentObjectProperties" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="child" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="hasChild" base="http://example.com/owl/families" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax850311705" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="objectPropertyRange" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax1337769741" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2QLRL" name="symmetricObjectProperty" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasSpouse" base="http://example.com/owl/families" position="1"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant>
+      </theory>
+     </omdoc>
