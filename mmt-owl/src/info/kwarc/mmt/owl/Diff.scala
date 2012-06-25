@@ -19,9 +19,11 @@ object Diff{
 	 
     //val firstSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DatatypeDefinitionAxiom\\datatypeDefinitionAxiom.omdoc")
     //val secondSource : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\DatatypeDefinitionAxiom\\datatypeDefinitionAxiomChanged.omdoc")
-	val firstSource : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\Identifiers\\identifiers.omdoc")
-    val secondSource : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\Identifiers\\identifiersChanged.omdoc")
-        
+	//val firstSource : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\Identifiers\\identifiers.omdoc")
+    //val secondSource : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\Identifiers\\identifiersChanged.omdoc")
+	val firstSource : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDs.omdoc")
+    val secondSource : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDsChanged.omdoc")
+                
     val firstDoc : DPath  = firstController.read(firstSource)
     val secondDoc : DPath = secondController.read(secondSource)
         
