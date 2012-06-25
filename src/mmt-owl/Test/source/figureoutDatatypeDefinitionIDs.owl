@@ -19,7 +19,6 @@
     <Declaration>
         <Datatype IRI="woman"/>
     </Declaration>
-    
     <DisjointClasses>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -28,7 +27,6 @@
         <Class IRI="man"/>
         <Class IRI="woman"/>
     </DisjointClasses>
-    
     <DatatypeDefinition>
         <Datatype IRI="majorAge"/>
         <DatatypeRestriction>
