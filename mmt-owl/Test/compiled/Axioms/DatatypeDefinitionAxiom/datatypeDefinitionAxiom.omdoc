@@ -1,30 +1,18 @@
-
 <omdoc base="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/source/Axioms/DatatypeDefinitionAxiom/datatypeDefinitionAxiom.owl">
-	<theory base="http://example.com/owl/families" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
-
-		<constant name="SSN">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
-				</OMOBJ>
-			</type>
+        <theory base="http://example.com/owl/families" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
+        
+        <constant name="SSN" >
        
-
-		</constant>
-		<constant name="ax1294730936">
-
-			<type>
-				<OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-					<om:OMA>
-						<om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-						<om:OMS module="_" name="SSN" base="http://example.com/owl/families" position="1"></om:OMS>
-						<om:OMS module="OWL1Datatype" name="integer" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-					</om:OMA>
-				</OMOBJ>
-			</type>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
-
-		</constant>
-	</theory>
-</omdoc>
+       
+     </constant><constant name="ax1294730936" >
+       
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataTypeDefinition" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="SSN" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="OWL1Datatype" name="integer" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant>
+      </theory>
+     </omdoc>
