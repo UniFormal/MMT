@@ -98,7 +98,7 @@ case class Context(variables : VarDecl*) extends Obj {
      <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + i)})}</om:OMBVAR>
    def toCML = 
      <m:bvar>{this.map(v => v.toCML)}</m:bvar>
-   def head : Option[Path] = None
+   def head = None
    def role : Role = Role_context
    def components = variables.toList 
 }
@@ -144,7 +144,7 @@ case class Substitution(subs : Sub*) extends Obj {
    def toNodeID(pos : Position) =
       <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos + x._2))}</om:OMBVAR>
    def toCML = asContext.toCML
-   def head : Option[Path] = None
+   def head = None
    def role : Role = Role_substitution
    def components = subs.toList
 }

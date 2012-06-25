@@ -44,6 +44,7 @@ object LF {
 
 object Lambda {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.lambda, OMV(name) % tp, body)
+   def apply(con: Context, body : Term) = OMBIND(LF.lambda, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
 	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.constant("lambda")  || b == LF.constant("implicit_lambda") => Some(n,t,s)
 	   case _ => None

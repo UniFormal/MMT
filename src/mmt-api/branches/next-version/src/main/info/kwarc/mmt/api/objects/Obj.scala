@@ -42,7 +42,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData {
                case _ => throw GetError("position " + pos + " not valid in " + this)
             }
       }
-   def head : Option[Path]
+   def head : Option[ContentPath]
    def role : Role
    def components : List[Content]
    def toCML: Node

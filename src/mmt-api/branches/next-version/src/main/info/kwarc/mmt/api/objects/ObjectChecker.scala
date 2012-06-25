@@ -153,23 +153,14 @@ class Solver(controller: Controller, unknowns: Context) {
             }
          // the foundation-dependent cases
          case tm =>
-            val h = tp.head.get.asInstanceOf[GlobalName] //TODO what if there is no head?
-            foundStore.typingRules.get(h) match {
-               case Some(rule) => rule(this)(tm, tp)
-               case None =>
-                  // no typing rule registered for this type, try to simplify the type
-                  foundStore.computationRules.get(h) match {
-                     case Some(rule) => rule(this)(tp) match {
-                        case Some(tpS) => checkTyping(tm, tpS)
-                        case None =>
-                          // assume this is an atomic type
-                          inferType(tm) match {
-                             case Some(itp) => checkEquality(itp, tp, None)
-                             case None => delay(Typing(context, tm, tp))
-                          }
-                     }
-                     case None => delay(Typing(context, tm, tp))
-                  }
+            limitedSimplify(tp) {t => t.head flatMap {h => foundStore.typingRules.get(h)}} match {
+               case (tpS, Some(rule)) => rule(this)(tm, tpS)
+               case (tpS, None) =>
+                   // assume this is an atomic type
+                   inferType(tm) match {
+                      case Some(itp) => checkEquality(itp, tpS, None)
+                      case None => delay(Typing(context, tm, tpS))
+                   }
             }
       }
    }
@@ -191,7 +182,7 @@ class Solver(controller: Controller, unknowns: Context) {
             }
          //foundation-dependent cases
          case tm =>
-            val hd = tm.head.get.asInstanceOf[GlobalName] //TODO
+            val hd = tm.head.get //TODO
             foundStore.inferenceRules.get(hd) match {
                case Some(rule) => rule(this)(tm)
                case None => None
@@ -205,43 +196,86 @@ class Solver(controller: Controller, unknowns: Context) {
     *  @return false only if the judgment does not hold; true if it holds or constraint have been delayed
     */
    def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit con: Context): Boolean = {
-      // the common case of identical terms
-      if (tm1 == tm2) tpOpt match {
-         case None => true
-         case Some(tp) => checkTyping(tm1, tp)
-      } else (tm1, tm2) match {
-         // if no case of this method applied, try the remaining cases
-         case _ => checkEquality2(tm1, tm2, tpOpt, true)
-      }
-   }
-   /** like checkEquality, but contains all the pairs of symmetric cases that are tried twice:
-    *  if no case applies, we flip tm1 and tm2 and try again; if still no case applies, we delay
-    * @param firstTime true if called for the first time, false if called for the second time
-    */
-   private def checkEquality2(tm1: Term, tm2: Term, tpOpt: Option[Term], firstTime: Boolean)(implicit con: Context): Boolean = {
+      // first, we check for some common cases where it's redundant to do induction on the type
+      // identical terms
+      if (tm1 == tm2) return true
+      // solve an unknown foundation-independently
       (tm1, tm2) match {
-         // |- x = t: solve x as t
-         case (OMV(x), t) =>
-            if (unknowns.isDeclared(x)) {
-               if (! t.freeVars.isEmpty) {
-                  solve(x, t)
-                  //check x.tp=tp? or t:x.tp?
-               } else {
-                 delay(Equality(con, tm1, tm2, tpOpt))
-               }
-            } else {
-               delay(Equality(con, tm1, tm2, tpOpt))
-            }
+         case (OMV(x), t) if unknowns.isDeclared(x) && t.freeVars.isEmpty => return solve(x, t)
+         case (t, OMV(x)) if unknowns.isDeclared(x) && t.freeVars.isEmpty => return solve(x, t)
          case _ =>
-            // if no case applied, ...
-            if (firstTime)
-               // flip the arguments and try again, or ...
-               checkEquality2(tm2, tm1, tpOpt, false)
-            else
-               // delay if we've tried that already
-               delay(Equality(con, tm2, tm1, tpOpt))
+      }
+      // solve an unknown by applying a foundation-specific solving rule
+      val solved = tryToSolve(tm1, tm2) || tryToSolve(tm2, tm1)
+      if (solved) return true
+
+      // use the type for foundation-specific equality reasoning
+      
+      // first infer the type if it has not been given in tpOpt
+      val tp = tpOpt match {
+        case Some(tp) => tp
+        case None =>
+           val itp = inferType(tm1) orElse inferType(tm2)
+           itp.getOrElse(return false)
+      }
+      // try to simplify the type until an equality rule is applicable 
+      limitedSimplify(tp) {t => t.head flatMap {h => foundStore.equalityRules.get(h)}} match {
+         case (tpS, Some(rule)) => return rule(this)(tm1, tm2, tpS)
+         case (tpS, None) =>
+      }
+      // no equality rule applicable, i.e., we are at a base type
+      val tm1S = simplify(tm1)
+      val tm2S = simplify(tm2)
+      if (tm1S == tm2S) return true
+      delay(Equality(con, tm1, tm2, Some(tp)))
+      //TODO: incomplete; check for same head, expand definitions if necessary to make heads equal
+      // if injective recurse into components
+      // if head is unknown, delay; else false?
+   }
+   //auxiliary function of checkEquality; called twice to handle the two dual cases
+   private def tryToSolve(tm1: Term, tm2: Term)(implicit context: Context): Boolean = {
+      tm1 match {
+         case OMA(OMS(h), OMV(m) :: args) if unknowns.isDeclared(m) && ! (tm2 :: args).exists(_.freeVars contains m) =>
+            foundStore.solutionRules.get(h) match {
+               case None => false
+               case Some(rule) => rule(this)(m, args, tm2)
+            }
+         case _ => false
       }
    }
+
+   private def limitedSimplify[A](tm: Term)(simple: Term => Option[A])(implicit context: Context): (Term,Option[A]) = {
+      simple(tm) match {
+         case Some(a) => (tm,Some(a))
+         case None => tm.head match {
+            case None => (tm, None)
+            case Some(h) =>
+               foundStore.computationRules.get(h) match {
+                  case None => (tm, None) //TODO test for definition expansion
+                  case Some(rule) =>
+                     rule(this)(tm) match {
+                        case Some(tmS) => limitedSimplify(tmS)(simple)
+                        case None => (tm, None) 
+                     }
+               }
+         }
+      }
+   }
+   private def simplify(tm: Term)(implicit context: Context): Term = tm.head match {
+      case None => tm
+      case Some(h) => foundStore.computationRules.get(h) match {
+         case None => tm
+         case Some(rule) =>
+            rule(this)(tm) match {
+               case Some(tmS) => simplify(tmS)
+               case None => tm
+            }
+      }
+   }
+}
+
+abstract class TypingRule(operator: GlobalName) {
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context): Boolean
 }
 
 abstract class InferenceRule(head: GlobalName) {
@@ -252,12 +286,18 @@ abstract class ComputationRule(head: GlobalName) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term]
 }
 
-abstract class TypingRule(operator: GlobalName) {
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context): Boolean
+abstract class EqualityRule(head: GlobalName) {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean
+}
+
+abstract class SolutionRule(head: GlobalName) {
+   def apply(solver: Solver)(unknown: LocalName, args: List[Term], tm2: Term)(implicit context: Context): Boolean
 }
 
 class FoundationStore {
-  val typingRules = new HashMap[GlobalName,TypingRule]
-  val inferenceRules = new HashMap[GlobalName, InferenceRule]
-  val computationRules = new HashMap[GlobalName, ComputationRule]
+   val typingRules = new HashMap[ContentPath,TypingRule]
+   val inferenceRules = new HashMap[ContentPath, InferenceRule]
+   val computationRules = new HashMap[ContentPath, ComputationRule]
+   val equalityRules = new HashMap[ContentPath, EqualityRule]
+   val solutionRules = new HashMap[ContentPath, SolutionRule]
 }
