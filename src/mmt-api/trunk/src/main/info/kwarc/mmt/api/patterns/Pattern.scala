@@ -42,11 +42,11 @@ object Instance {
    */
   def elaborate(inst: Instance, normalize: Boolean)(implicit lup: Lookup, report: Report): List[Constant] = {  
     	val pt : Pattern = lup.getPattern(inst.pattern)
-      pt.con.map {
+      pt.body.map {
     	  case TermVarDecl(n,tp,df,at @ _*) =>
           def auxSub(x : Term) = {
-     	        val names = pt.con.map(d => d.name)
-     	        val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
+     	        val names = pt.body.map(d => d.name)
+     	        val subs = pt.body map {d => d.name / OMID(inst.home % (inst.name / d.name))}
       	     val xsub = x ^ (inst.matches ++ Substitution(subs : _*))
       	     if (normalize) SeqNormalize.normalizeTerm(xsub) else xsub
           }
