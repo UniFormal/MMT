@@ -166,12 +166,13 @@ case class UpdateComponent(path : ContentPath, name : String, old : Option[Obj],
   def getReferencedURI : CPath = CPath(path,name)
 
   def toNode =
-  	<component name={name} change="update">
-  	</component>
+    <component path={path.toPath} name={name} change="update">
+      {nw.map(_.toNode)}
+    </component>
 //  	  {o.toNode(changes)}
   
   def toNodeFlat =
-    <change type="update" path={path.toString} component={name}> //TODO </change> :: Nil
+    <change type="update" path={path.toString} component={name}>  {nw.map(_.toNode)}  </change> :: Nil
 }
 
 
