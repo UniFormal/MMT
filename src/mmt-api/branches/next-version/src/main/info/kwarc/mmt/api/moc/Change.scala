@@ -167,12 +167,12 @@ case class UpdateComponent(path : ContentPath, name : String, old : Option[Obj],
 
   def toNode =
     <component path={path.toPath} name={name} change="update">
-      {nw.map(_.toNode)}
+      {nw.map(x => x.toNode).toSeq}
     </component>
 //  	  {o.toNode(changes)}
   
   def toNodeFlat =
-    <change type="update" path={path.toString} component={name}>  {nw.map(_.toNode)}  </change> :: Nil
+    <change type="update" path={path.toString} component={name}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
 }
 
 
