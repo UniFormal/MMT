@@ -16,7 +16,8 @@ class ExtensionManager(report: Report) {
    private var mws : Option[URI] = None
 
    private def log(msg : => String) = report("extman", msg)
-   
+
+   val ruleStore = new objects.RuleStore
    /** adds a compiler, must be initialized already */
    def addImporter(cls: String, args: List[String]) {
        log("adding importer " + cls)

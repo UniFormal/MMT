@@ -64,9 +64,21 @@ case class Context(variables : VarDecl*) extends Obj {
    def id : Substitution = this map {
 	   case VarDecl(n, _, _, _*) => Sub(n,OMV(n))
    }
+ 
+   /** applies a function to the type/definiens of all variables (in the respective context)
+    * @return the resulting context
+    */
+   def mapTerms(f: (Context,Term) => Term): Context = {
+      val newvars = variables.zipWithIndex map {case (VarDecl(n,tp,df,attrs @ _*), i) =>
+         val con = Context(variables.take(i) : _*)
+         VarDecl(n, tp map {f(con,_)}, tp map {f(con,_)}, attrs : _*) 
+      }
+      Context(newvars : _*)
+   }
+   
    /** substitutes in all variable declarations except for the previously declared variables
     *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
-    */  
+    */
    def ^(sub : Substitution) : Context = {
       val id = this.id // precompute value
       // sub ++ id.take(i) represents sub, x_1/x_1, ..., x_{i-1}/x_{i-1} 

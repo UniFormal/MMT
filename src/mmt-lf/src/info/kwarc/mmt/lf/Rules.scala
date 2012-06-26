@@ -4,7 +4,14 @@ import objects._
 import objects.Conversions._
 import utils.MyList.fromList
 
-class PiTerm extends InferenceRule(LF.lftheory ? "Pi") {
+object UnivTerm extends InferenceRule(LF.Ptype) {
+   def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
+      case LF.ktype => Some(LF.kind)
+      case _ => None
+   }
+}
+
+object PiTerm extends InferenceRule(LF.PPi) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
@@ -17,7 +24,7 @@ class PiTerm extends InferenceRule(LF.lftheory ? "Pi") {
    }
 }
 
-class LambdaTerm extends InferenceRule(LF.lftheory ? "lambda") {
+object LambdaTerm extends InferenceRule(LF.Plambda) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
@@ -27,7 +34,7 @@ class LambdaTerm extends InferenceRule(LF.lftheory ? "lambda") {
    }
 }
 
-class ApplyTerm extends InferenceRule(LF.lftheory ? "apply") {
+object ApplyTerm extends InferenceRule(LF.Papply) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
      case Apply(f,t) =>
         solver.inferType(f) flatMap {
@@ -42,7 +49,7 @@ class ApplyTerm extends InferenceRule(LF.lftheory ? "apply") {
    }
 }
 
-class PiType extends TypingRule(LF.lftheory ? "Pi") {
+object PiType extends TypingRule(LF.PPi) {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context) : Boolean = {
       (tm,tp) match {
          case (Lambda(x,t,s),Pi(x2,t2,a)) =>
@@ -58,7 +65,7 @@ class PiType extends TypingRule(LF.lftheory ? "Pi") {
    }
 }
 
-class Eta extends EqualityRule(LF.lftheory ? "Pi") {
+object Eta extends EqualityRule(LF.PPi) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
       val Pi(x, a, b) = tp //TODO invent new variable name if context.isDeclared(x)
       val tm1Eval = OMA(tm1, List(OMV(x)))
@@ -67,14 +74,37 @@ class Eta extends EqualityRule(LF.lftheory ? "Pi") {
    }
 }
 
-class Beta extends ComputationRule(LF.lftheory ? "apply") {
+object Injective extends EqualityRule(LF.Papply) {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
+      val Apply(f, s) = tm1
+      val Apply(_, t) = tm2
+      solver.inferType(f) map solver.simplify match {
+         case Some(Pi(x,a,b)) => solver.checkEquality(s, t, Some(a))
+         case _ => false
+      }
+   }
+}
+
+object Beta extends ComputationRule(LF.Papply) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
       case Apply(Lambda(x,a,t),s) => Some(t ^ (x / s))
+      case Apply(f,t) =>
+         // simplify f recursively to see if it becomes a Lambda
+         val fS = solver.simplify(f)
+         if (f != fS) apply(solver)(Apply(fS,t))
+         else None
       case _ => None
    }
 }
 
-class Solve extends SolutionRule(LF.lftheory ? "apply") {
+object ExpandArrow extends ComputationRule(LF.Parrow) {
+   def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
+      case Arrow(a,b) => Some(Pi(LocalName.Anon, a, b))
+      case _ => None
+   }
+}
+
+object Solve extends SolutionRule(LF.Papply) {
    def apply(solver: Solver)(unknown: LocalName, args: List[Term], tm2: Term)(implicit context: Context): Boolean = {
       val vars = args mapPartial {
          case OMV(x) => if (context.isDeclared(x)) Some(x) else None

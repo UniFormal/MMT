@@ -199,7 +199,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def head = fun.head
    def role = Role_application(None)
    def components = fun :: args
-   override def toString = (fun :: args).map(_.toString).mkString("@(", ", ", ")")
+   override def toString = (fun :: args).map(_.toString).mkString("(", " ", ")")
    def toNodeID(pos : Position) =
       <om:OMA>{fun.toNodeID(pos + 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}

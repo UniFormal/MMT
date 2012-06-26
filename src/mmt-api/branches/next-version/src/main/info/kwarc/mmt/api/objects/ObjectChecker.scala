@@ -8,43 +8,6 @@ import frontend._
 import objects.Conversions._
 import scala.collection.mutable.{HashSet,HashMap}
 
-/** the type of object level judgments as used for typing and equality of terms */
-abstract class Judgement {
-  /** @return the set of names of the meta-variables occurring in this judgment
-   *    Constraints must come with a Context binding all object variables occurring freely in any expressions;
-   *    therefore, the remaining free variables are meta-variables
-   */ 
-  def freeVars : HashSet[LocalName]
-}
-
-/** represents an equality judgement, optionally at a type
- * context |- t1 = t2 : tp  if t = Some(tp)
- * or
- * context |- t1 = t2       if t = None
- */
-case class Equality(context: Context, t1: Term, t2: Term, t: Option[Term]) extends Judgement {
-   lazy val freeVars = {
-     val ret = new HashSet[LocalName]
-     val fvs = context.freeVars_ ::: t1.freeVars_ ::: t2.freeVars_ ::: (t.map(_.freeVars_).getOrElse(Nil))
-     fvs foreach {n => if (! context.isDeclared(n)) ret += n}
-     ret
-   }
-}
-
-/** represents a typing judgement
- * context |- tm : tp
- */
-case class Typing(context: Context, tm: Term, tp: Term) extends Judgement {
-  lazy val freeVars = {
-    val ret = new HashSet[LocalName]
-    val fvs = context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
-    fvs foreach {n => if (! context.isDeclared(n)) ret += n}
-    ret
-  }
-}
-
-//TODO case class InhabitationConstraint(name: LocalName, tp: Term) extends Constraint
-
 /** A wrapper around a Judgement to maintain meta-information while that Constraint is delayed */
 class DelayedConstraint(val constraint: Judgement) {
   private val freeVars = constraint.freeVars
@@ -55,6 +18,7 @@ class DelayedConstraint(val constraint: Judgement) {
   }
   /** @return true iff a variable has been solved that occurs free in this Constraint */
   def isActivatable: Boolean = activatable
+  override def toString = constraint.toString
 }
 
 /**
@@ -71,7 +35,6 @@ class DelayedConstraint(val constraint: Judgement) {
  * Use: create a new instance for every problem, call apply on all constraints, then call getSolution  
  */
 class Solver(controller: Controller, unknowns: Context) {
-   val foundStore = new FoundationStore
    /** tracks the solution, like unknowns but a definiens is added for every solved variable */ 
    private var solution : Context = unknowns
    /** tracks the delayed constraints, in any order */ 
@@ -85,10 +48,17 @@ class Solver(controller: Controller, unknowns: Context) {
     */
    def getSolution : Option[Substitution] = if (delayed.isEmpty) solution.toSubstitution else None
 
+   /** a string representation of the current state */ 
+   override def toString = {
+      "unknowns: " + unknowns.toString + "\n" +
+      "solution: " + solution.toString + "\n" +
+      "constraints:\n" + delayed.mkString("  ", "\n  ", "\n") 
+   }
+   
    /** the content that stores all constants */
    private val content = controller.globalLookup
    /** retrieve the Foundation providing the semantics of a symbol, if any */
-   private def getFoundation(p: MPath): Option[Foundation] = controller.extman.getFoundation(p)
+   private val ruleStore = controller.extman.ruleStore
    
    /** delays a constraint for future processing */
    private def delay(c: Judgement): Boolean = {
@@ -100,7 +70,9 @@ class Solver(controller: Controller, unknowns: Context) {
    private def activate: Boolean = {
       delayed find {_.isActivatable} match {
          case None => true
-         case Some(dc) => apply(dc.constraint)
+         case Some(dc) =>
+           delayed = delayed filterNot (_ == dc)
+           apply(dc.constraint)
       }
    }
    /** registers the solution for a variable; notifies all delayed constraints */
@@ -126,7 +98,8 @@ class Solver(controller: Controller, unknowns: Context) {
         case Typing(con, tm, tp) =>
            checkTyping(tm ^ subs, tp ^ subs)(con ^ subs)
         case Equality(con, tm1, tm2, tp) =>
-           checkEquality(tm1 ^ subs, tm2 ^ subs, tp map {_ ^ subs})(con ^ subs)
+           def prepare(t: Term) = simplify(t ^ subs)(con)
+           checkEquality(prepare(tm1), prepare(tm2), tp map prepare)(simplifyCon(con ^ subs))
      }
      activate
    }
@@ -153,7 +126,7 @@ class Solver(controller: Controller, unknowns: Context) {
             }
          // the foundation-dependent cases
          case tm =>
-            limitedSimplify(tp) {t => t.head flatMap {h => foundStore.typingRules.get(h)}} match {
+            limitedSimplify(tp) {t => t.head flatMap {h => ruleStore.typingRules.get(h)}} match {
                case (tpS, Some(rule)) => rule(this)(tm, tpS)
                case (tpS, None) =>
                    // assume this is an atomic type
@@ -174,8 +147,8 @@ class Solver(controller: Controller, unknowns: Context) {
          case OMV(x) => (unknowns ++ context)(x).tp
          case OMS(p) =>
             val c = content.getConstant(p)
-            c.tp match {
-               case None => c.df match {
+            c.tp orElse {
+               c.df match {
                   case None => None
                   case Some(d) => inferType(d) // expand defined constant 
                }
@@ -183,7 +156,7 @@ class Solver(controller: Controller, unknowns: Context) {
          //foundation-dependent cases
          case tm =>
             val hd = tm.head.get //TODO
-            foundStore.inferenceRules.get(hd) match {
+            ruleStore.inferenceRules.get(hd) match {
                case Some(rule) => rule(this)(tm)
                case None => None
             }
@@ -199,13 +172,7 @@ class Solver(controller: Controller, unknowns: Context) {
       // first, we check for some common cases where it's redundant to do induction on the type
       // identical terms
       if (tm1 == tm2) return true
-      // solve an unknown foundation-independently
-      (tm1, tm2) match {
-         case (OMV(x), t) if unknowns.isDeclared(x) && t.freeVars.isEmpty => return solve(x, t)
-         case (t, OMV(x)) if unknowns.isDeclared(x) && t.freeVars.isEmpty => return solve(x, t)
-         case _ =>
-      }
-      // solve an unknown by applying a foundation-specific solving rule
+      // solve an unknown
       val solved = tryToSolve(tm1, tm2) || tryToSolve(tm2, tm1)
       if (solved) return true
 
@@ -219,24 +186,37 @@ class Solver(controller: Controller, unknowns: Context) {
            itp.getOrElse(return false)
       }
       // try to simplify the type until an equality rule is applicable 
-      limitedSimplify(tp) {t => t.head flatMap {h => foundStore.equalityRules.get(h)}} match {
+      limitedSimplify(tp) {t => t.head flatMap {h => ruleStore.equalityRules.get(h)}} match {
          case (tpS, Some(rule)) => return rule(this)(tm1, tm2, tpS)
          case (tpS, None) =>
       }
-      // no equality rule applicable, i.e., we are at a base type
-      val tm1S = simplify(tm1)
-      val tm2S = simplify(tm2)
-      if (tm1S == tm2S) return true
-      delay(Equality(con, tm1, tm2, Some(tp)))
-      //TODO: incomplete; check for same head, expand definitions if necessary to make heads equal
-      // if injective recurse into components
-      // if head is unknown, delay; else false?
+      // no equality rule applicable - we are probably at a base type
+      (tm1, tm2) match {
+         //most important case: elimination rules applied to a constant
+         case (OMA(OMS(h1), args1), OMA(OMS(h2), args2)) if h1 == h2 =>
+            ruleStore.equalityRulesByHead.get(h1) match {
+               case Some(rule) => rule(this)(tm1, tm2, tp)
+               case None =>
+                 //default: apply inverse congruence rule
+                 if (args1.length == args2.length) {
+                    (args1 zip args2) forall {case (a1,a2) => checkEquality(a1, a2, None)}
+                 } else false
+            }
+         // this method is called with simplified arguments are identity has already been checked above, so nothing else to do
+         // TODO: also check binders/errors like applications above
+         case _ => delay(Equality(con, tm1, tm2, Some(tp)))
+      }
+      //TODO: expand definitions if necessary to make heads equal
    }
-   //auxiliary function of checkEquality; called twice to handle the two dual cases
+   //auxiliary function of checkEquality; called twice to handle symmetry
    private def tryToSolve(tm1: Term, tm2: Term)(implicit context: Context): Boolean = {
       tm1 match {
+         //foundation-independent
+         case OMV(m) if unknowns.isDeclared(m) && tm2.freeVars.isEmpty => //forall {v => context.isDeclaredBefore(v,m)}
+            solve(m, tm2)
+         //foundation-dependent solving rules
          case OMA(OMS(h), OMV(m) :: args) if unknowns.isDeclared(m) && ! (tm2 :: args).exists(_.freeVars contains m) =>
-            foundStore.solutionRules.get(h) match {
+            ruleStore.solutionRules.get(h) match {
                case None => false
                case Some(rule) => rule(this)(m, args, tm2)
             }
@@ -250,7 +230,7 @@ class Solver(controller: Controller, unknowns: Context) {
          case None => tm.head match {
             case None => (tm, None)
             case Some(h) =>
-               foundStore.computationRules.get(h) match {
+               ruleStore.computationRules.get(h) match {
                   case None => (tm, None) //TODO test for definition expansion
                   case Some(rule) =>
                      rule(this)(tm) match {
@@ -261,9 +241,9 @@ class Solver(controller: Controller, unknowns: Context) {
          }
       }
    }
-   private def simplify(tm: Term)(implicit context: Context): Term = tm.head match {
+   def simplify(tm: Term)(implicit context: Context): Term = tm.head match {
       case None => tm
-      case Some(h) => foundStore.computationRules.get(h) match {
+      case Some(h) => ruleStore.computationRules.get(h) match {
          case None => tm
          case Some(rule) =>
             rule(this)(tm) match {
@@ -272,32 +252,6 @@ class Solver(controller: Controller, unknowns: Context) {
             }
       }
    }
+   def simplifyCon(context: Context) = context mapTerms {case (con, t) => simplify(t)(context ++ con)}
 }
 
-abstract class TypingRule(operator: GlobalName) {
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context): Boolean
-}
-
-abstract class InferenceRule(head: GlobalName) {
-   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term]
-}
-
-abstract class ComputationRule(head: GlobalName) {
-   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term]
-}
-
-abstract class EqualityRule(head: GlobalName) {
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean
-}
-
-abstract class SolutionRule(head: GlobalName) {
-   def apply(solver: Solver)(unknown: LocalName, args: List[Term], tm2: Term)(implicit context: Context): Boolean
-}
-
-class FoundationStore {
-   val typingRules = new HashMap[ContentPath,TypingRule]
-   val inferenceRules = new HashMap[ContentPath, InferenceRule]
-   val computationRules = new HashMap[ContentPath, ComputationRule]
-   val equalityRules = new HashMap[ContentPath, EqualityRule]
-   val solutionRules = new HashMap[ContentPath, SolutionRule]
-}

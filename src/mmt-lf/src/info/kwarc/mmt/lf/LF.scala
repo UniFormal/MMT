@@ -26,14 +26,23 @@ import objects.Conversions._
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
 object LF {
-   val lfbase = new DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
+   val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
    val lftheory = lfbase ? "lf"
+   val Ptype = lftheory ? "type"
+   val Pkind = lftheory ? "kind"
+   val Parrow = lftheory ? "arrow"
+   val PPi = lftheory ? "Pi"
+   val Plambda = lftheory ? "lambda"
+   val Papply = lftheory ? "@"
+   
+   val ktype = OMS(Ptype)
+   val kind = OMS(Pkind)
+   val arrow = OMS(Parrow)
+   val Pi = OMS(PPi)
+   val lambda = OMS(Plambda)
+   val apply = OMS(Papply)
+
    def constant(name : String) = OMS(lftheory ? name)
-   val ktype = constant("type")
-   val kind = constant("kind")
-   val arrow = constant("arrow")
-   val Pi = constant("Pi")
-   val lambda = constant("lambda")
 }
 
 /* apply methods and extractor methods for Scala
@@ -46,7 +55,7 @@ object Lambda {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.lambda, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(LF.lambda, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.constant("lambda")  || b == LF.constant("implicit_lambda") => Some(n,t,s)
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.lambda  || b == LF.constant("implicit_lambda") => Some(n,t,s)
 	   case _ => None
    }
 }
@@ -57,11 +66,11 @@ object Pi {
    
    def apply(con: Context, body : Term) = OMBIND(LF.Pi, con, body) //(?)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.constant("Pi") || b == LF.constant("implicit_Pi") =>
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.Pi || b == LF.constant("implicit_Pi") =>
 	      if (rest.isEmpty) Some((n,t,s))
 	      else Some((n,t, Pi(rest.toList,s)))
 	   case OMA(LF.arrow,args) =>
-	      val name = LocalName.Anon //TODO: invent fresh name here
+	      val name = LocalName.Anon
 	      if (args.length > 2)
 	     	 Some((name, args(0), OMA(LF.arrow, args.tail)))
 	      else
@@ -72,29 +81,27 @@ object Pi {
 
 object Arrow {
 	def apply(t1 : Term, t2 : Term) = OMA(LF.arrow,List(t1,t2))
+	def apply(in: List[Term], out: Term) = if (in.isEmpty) out else OMA(LF.arrow, in ::: List(out))
 	def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case OMA(LF.arrow,List(t1: Term,t2:Term)) => Some((t1,t2))
+		case OMA(LF.arrow, hd :: tl) => Some((hd, apply(tl.init, tl.last)))
 		case _ => None
 	}
 }
 
 object Apply {
-	def apply(f: Term, a: Term) = f(a)
+	def apply(f: Term, a: Term) = OMA(LF.apply, List(f, a))
 	def unapply(t: Term) : Option[(Term,Term)] = t match {
-		case OMA(f, a) if f != LF.arrow => a.last match {
-			case t: Term =>
-			  if (a.length > 1) Some((OMA(f, a.init), t))
-			  else Some(f,t)
-			case _ => None
-		}
+		case OMA(LF.apply, f :: a) => 
+		   if (a.length > 1) Some((OMA(LF.apply, f :: a.init), a.last))
+			else Some(f,a.head)
 		case _ => None
 	}
 }
 
 object ApplySpine {
-	def apply(f: Term, a: Term*) = OMA(f, a.toList)
+	def apply(f: Term, a: Term*) = OMA(LF.apply, f :: a.toList)
 	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
-		case OMA(f, args) if f != LF.arrow =>
+		case OMA(LF.apply, f :: args) =>
 		  unapply(f) match {
 		 	 case None => Some((f, args))
 		 	 case Some((c, args0)) => Some((c, args0 ::: args))
