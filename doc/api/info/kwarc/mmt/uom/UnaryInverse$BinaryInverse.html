@@ -24,13 +24,15 @@
       <span class="symbol"> 
         <span class="name">BinaryInverse</span>
         
-        <span class="result"> extends <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></span>
+        <span class="result"> extends <a name="info.kwarc.mmt.uom.DepthRuleUnary" class="extype" href="DepthRuleUnary.html">DepthRuleUnary</a></span>
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p></p><pre>
+inv (a/b) ---&gt; b/a
+</pre></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.uom.DepthRuleUnary" class="extype" href="DepthRuleUnary.html">DepthRuleUnary</a>, <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
         
 
@@ -46,7 +48,7 @@
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall out"><span>Hide All</span></li>
                 <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse" class="in"><span>BinaryInverse</span></li><li name="info.kwarc.mmt.uom.DepthRule" class="in"><span>DepthRule</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+                <ol id="linearization"><li name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse" class="in"><span>BinaryInverse</span></li><li name="info.kwarc.mmt.uom.DepthRuleUnary" class="in"><span>DepthRuleUnary</span></li><li name="info.kwarc.mmt.uom.DepthRule" class="in"><span>DepthRule</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -82,7 +84,18 @@
         <span class="result"> = (List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>], List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>], List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>]) ⇒ <a name="info.kwarc.mmt.uom.Result" class="extype" href="Result.html">Result</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
+      <p class="shortcomment cmt">a Rewrite takes the triple (before, inside, after) and returns a simplification Result</p><div class="fullcomment"><div class="comment cmt"><p>a Rewrite takes the triple (before, inside, after) and returns a simplification Result</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.DepthRuleUnary#RewriteUnary" data-isabs="false">
+      <a id="RewriteUnary:RewriteUnary"></a>
+      <h4 class="signature">
+      <span class="kind">type</span>
+      <span class="symbol"> 
+        <span class="name">RewriteUnary</span>
+        
+        <span class="result"> = (List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>]) ⇒ <a name="info.kwarc.mmt.uom.Result" class="extype" href="Result.html">Result</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">a RewriteUnary takes only &quot;inside&quot; as an argument because &quot;before&quot; and &quot;after&quot; are empty</p><div class="fullcomment"><div class="comment cmt"><p>a RewriteUnary takes only &quot;inside&quot; as an argument because &quot;before&quot; and &quot;after&quot; are empty</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.DepthRuleUnary" class="extype" href="DepthRuleUnary.html">DepthRuleUnary</a></dd></dl></div>
     </li></ol>
             </div>
         
@@ -145,7 +158,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse#apply" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.DepthRuleUnary#apply" data-isabs="false">
       <a id="apply:Rewrite"></a>
       <h4 class="signature">
       <span class="kind">val</span>
@@ -155,7 +168,18 @@
         <span class="result">: Rewrite</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse" class="extype" href="">BinaryInverse</a> → <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
+      <p class="shortcomment cmt">the implementation of the simplification rule</p><div class="fullcomment"><div class="comment cmt"><p>the implementation of the simplification rule</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.DepthRuleUnary" class="extype" href="DepthRuleUnary.html">DepthRuleUnary</a> → <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse#applyUnary" data-isabs="false">
+      <a id="applyUnary:RewriteUnary"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">applyUnary</span>
+        
+        <span class="result">: RewriteUnary</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the implementation of the simplification rule</p><div class="fullcomment"><div class="comment cmt"><p>the implementation of the simplification rule</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse" class="extype" href="">BinaryInverse</a> → <a name="info.kwarc.mmt.uom.DepthRuleUnary" class="extype" href="DepthRuleUnary.html">DepthRuleUnary</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -227,7 +251,7 @@
         <span class="params">()</span><span class="result">: java.lang.Class[_]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -350,7 +374,11 @@
     </li></ol>
             </div>
 
-        <div name="info.kwarc.mmt.uom.DepthRule" class="parent">
+        
+
+        <div name="info.kwarc.mmt.uom.DepthRuleUnary" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.uom.DepthRuleUnary" class="extype" href="DepthRuleUnary.html">DepthRuleUnary</a></h3>
+            </div><div name="info.kwarc.mmt.uom.DepthRule" class="parent">
               <h3>Inherited from <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></h3>
             </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>

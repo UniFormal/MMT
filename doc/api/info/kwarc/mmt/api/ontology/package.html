@@ -5,32 +5,31 @@
           <title>info.kwarc.mmt.api.ontology</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link href="../../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
       <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body class="value" onload="windowTitle();">
-
-      <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
-
+        <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
+        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
         <h1>ontology</h1>
       </div>
 
       <h4 class="signature" id="signature">
       <span class="kind">package</span>
-      <span class="symbol">
+      <span class="symbol"> 
         <span class="name">ontology</span>
-        
         
         
       </span>
       </h4>
-      <div class="fullcomment" id="comment"></div>
+      
+          <div class="fullcommenttop" id="comment"></div>
+        
 
       <div id="template">
 
@@ -40,11 +39,7 @@
           
           <div id="visbl">
               <span class="filtertype">Visibility</span>
-              <ol><li class="public in">Public</li><li class="all out">All</li></ol>
-            </div>
-          <div id="impl">
-              <span class="filtertype">Impl.</span>
-              <ol><li class="concrete in">Concrete</li><li class="abstract in">Abstract</li></ol>
+              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
             </div>
         </div>
 
@@ -52,530 +47,1135 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.Binary">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.ontology.AddRelations" data-isabs="false">
+      <a id="AddRelations:AddRelations"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddRelations.html"><span class="name">AddRelations</span></a>
+        
+        <span class="params">(<span name="rels">rels: List[RelationalElement]</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">adds a list of relations to the relstore</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.AllThatAre" data-isabs="false">
+      <a id="AllThatAre:AllThatAre"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AllThatAre.html"><span class="name">AllThatAre</span></a>
+        
+        <span class="params">(<span name="tp">tp: Unary</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the set of all elements of a certain concept in the MMT ontology</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.And" data-isabs="false">
+      <a id="And:And"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="And.html"><span class="name">And</span></a>
+        
+        <span class="params">(<span name="left">left: Prop</span>, <span name="right">right: Prop</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">conjunction</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.BaseType" data-isabs="true">
+      <a id="BaseType:BaseType"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="BaseType.html"><span class="name">BaseType</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">a trait for all concrete data types that can be returned by queries; atomic types are paths and objects</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.BigUnion" data-isabs="false">
+      <a id="BigUnion:BigUnion"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="BigUnion.html"><span class="name">BigUnion</span></a>
+        
+        <span class="params">(<span name="domain">domain: Query</span>, <span name="of">of: Query</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">union of a collection of sets indexed by a set</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Binary" data-isabs="true">
       <a id="Binary:Binary"></a>
-      <h4 class="signature"><a href="Binary.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Binary</span>
-        
+      <span class="symbol"> 
+        <a href="Binary.html"><span class="name">Binary</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Choice">
-      <a id="Choice:Choice"></a>
-      <h4 class="signature"><a href="Choice.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Bound" data-isabs="false">
+      <a id="Bound:Bound"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Choice</span>
+      <span class="symbol"> 
+        <a href="Bound.html"><span class="name">Bound</span></a>
         
-        <span class="params">(<span name="qs">qs: Query*</span>)</span>
-        <span class="result"> extends Query with Product</span>
+        <span class="params">(<span name="index">index: Int</span>)</span><span class="result"> extends Query with Product with Serializable</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">the union of a list of relations</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.Concept">
-      <a id="Concept:Concept"></a>
-      <h4 class="signature"><a href="Concept.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Concept</span>
+      </h4>
+      <p class="comment cmt">a bound variable; we use de-Bruijn indices starting from 1 to refer to bound variables
+ if a variable of tuple type is bound, each component is added separately, the first one has index 1
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Choice" data-isabs="false">
+      <a id="Choice:Choice"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Choice.html"><span class="name">Choice</span></a>
         
+        <span class="params">(<span name="qs">qs: RelationExp*</span>)</span><span class="result"> extends RelationExp with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the union of a list of relations</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Closure" data-isabs="false">
+      <a id="Closure:Closure"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Closure.html"><span class="name">Closure</span></a>
+        
+        <span class="params">(<span name="of">of: Query</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">dependency closure of a path</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Component" data-isabs="false">
+      <a id="Component:Component"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Component.html"><span class="name">Component</span></a>
+        
+        <span class="params">(<span name="of">of: Query</span>, <span name="component">component: String</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">component of a declaration with a certain Path</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Comprehension" data-isabs="false">
+      <a id="Comprehension:Comprehension"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Comprehension.html"><span class="name">Comprehension</span></a>
+        
+        <span class="params">(<span name="domain">domain: Query</span>, <span name="pred">pred: Prop</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">comprehension subset of a set</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.DeleteRelations" data-isabs="false">
+      <a id="DeleteRelations:DeleteRelations"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="DeleteRelations.html"><span class="name">DeleteRelations</span></a>
+        
+        <span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">removes from the relstore all relations for which p is subject</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ESet" data-isabs="false">
+      <a id="ESet:ESet"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ESet.html"><span class="name">ESet</span></a>
+        
+        <span class="params">(<span name="tp">tp: List[QueryBaseType]</span>)</span><span class="result"> extends QueryType with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">type oa a query that returns a set of values of a base type</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ESetResult" data-isabs="false">
+      <a id="ESetResult:ESetResult"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ESetResult.html"><span class="name">ESetResult</span></a>
+        
+        <span class="params">(<span name="h">h: HashSet[List[BaseType]]</span>)</span><span class="result"> extends QueryResult with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">result of a set query</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Edge" data-isabs="true">
+      <a id="Edge:Edge"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Edge.html"><span class="name">Edge</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">The semantics of a Concept is a set of individuals</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasType">
-      <a id="HasType:HasType"></a>
-      <h4 class="signature"><a href="HasType.html">
+      </h4>
+      <p class="comment cmt">types of edges in a theory multigraph; edges may have an id; there may be at most one edge without id between two nodes</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.EdgeTo" data-isabs="false">
+      <a id="EdgeTo:EdgeTo"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">HasType</span>
+      <span class="symbol"> 
+        <a href="EdgeTo.html"><span class="name">EdgeTo</span></a>
         
-        <span class="params">(<span name="tp">tp: Unary</span>)</span>
-        <span class="result"> extends Query with Product</span>
+        <span class="params">(<span name="to">to: Path</span>, <span name="edge">edge: Edge</span>, <span name="backwards">backwards: Boolean</span>)</span><span class="result"> extends Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
+      <p class="comment cmt">an edge together with its end point, optionally may be backwards</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Elem" data-isabs="false">
+      <a id="Elem:Elem"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Elem.html"><span class="name">Elem</span></a>
+        
+        <span class="params">(<span name="tp">tp: List[QueryBaseType]</span>)</span><span class="result"> extends QueryType with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">type of query that returns an element of a base type</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ElemResult" data-isabs="false">
+      <a id="ElemResult:ElemResult"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ElemResult.html"><span class="name">ElemResult</span></a>
+        
+        <span class="params">(<span name="l">l: List[BaseType]</span>)</span><span class="result"> extends QueryResult with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">result of an element query</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Equal" data-isabs="false">
+      <a id="Equal:Equal"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Equal.html"><span class="name">Equal</span></a>
+        
+        <span class="params">(<span name="left">left: Query</span>, <span name="right">right: Query</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">equality of elements</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Evaluator" data-isabs="false">
+      <a id="Evaluator:Evaluator"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Evaluator.html"><span class="name">Evaluator</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">evaluates a query expression to a query result</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Forall" data-isabs="false">
+      <a id="Forall:Forall"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Forall.html"><span class="name">Forall</span></a>
+        
+        <span class="params">(<span name="domain">domain: Query</span>, <span name="scope">scope: Prop</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">universal quantification over a set</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.HasType" data-isabs="false">
+      <a id="HasType:HasType"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="HasType.html"><span class="name">HasType</span></a>
+        
+        <span class="params">(<span name="tp">tp: Unary</span>)</span><span class="result"> extends RelationExp with Product with Serializable</span>
+      </span>
+      </h4>
       <p class="comment cmt">the reflexive relation restricted to a unary predicate
  This permits the restriction of a result set to elements of a certain type.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Individual">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IdenticalRelations" data-isabs="false">
+      <a id="IdenticalRelations:IdenticalRelations"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="IdenticalRelations.html"><span class="name">IdenticalRelations</span></a>
+        
+        <span class="params">()</span><span class="result"> extends RelationsChange with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">does nothing</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Individual" data-isabs="false">
       <a id="Individual:Individual"></a>
-      <h4 class="signature"><a href="Individual.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Individual</span>
+      <span class="symbol"> 
+        <a href="Individual.html"><span class="name">Individual</span></a>
         
-        <span class="params">(<span name="path">path: Path</span>, <span name="tp">tp: Unary</span>)</span>
-        <span class="result"> extends RelationalElement with Product</span>
+        <span class="params">(<span name="path">path: Path</span>, <span name="tp">tp: Unary</span>)</span><span class="result"> extends RelationalElement with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">An object of type Individual represents a unary predicate in the ABox.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.OfType">
-      <a id="OfType:OfType"></a>
-      <h4 class="signature"><a href="OfType.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.InferedType" data-isabs="false">
+      <a id="InferedType:InferedType"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">OfType</span>
+      <span class="symbol"> 
+        <a href="InferedType.html"><span class="name">InferedType</span></a>
         
-        <span class="params">(<span name="tp">tp: Unary</span>)</span>
-        <span class="result"> extends Concept with Product</span>
+        <span class="params">(<span name="of">of: Query</span>, <span name="found">found: MPath</span>)</span><span class="result"> extends Query with Product with Serializable</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">The set of individuals of a certain type</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.OneOf">
-      <a id="OneOf:OneOf"></a>
-      <h4 class="signature"><a href="OneOf.html">
+      </h4>
+      <p class="comment cmt">type of an object</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsA" data-isabs="false">
+      <a id="IsA:IsA"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">OneOf</span>
+      <span class="symbol"> 
+        <a href="IsA.html"><span class="name">IsA</span></a>
         
-        <span class="params">(<span name="paths">paths: Path*</span>)</span>
-        <span class="result"> extends Concept with Product</span>
+        <span class="params">(<span name="e">e: Query</span>, <span name="t">t: Unary</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">The set of individuals listed</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.Query">
+      </h4>
+      <p class="comment cmt">typing relation between a path and a concept of the MMT ontology</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsConstant" data-isabs="false">
+      <a id="IsConstant:IsConstant"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="IsConstant.html"><span class="name">IsConstant</span></a>
+        
+        <span class="params">(<span name="rl">rl: Option[String]</span>)</span><span class="result"> extends Unary with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsEmpty" data-isabs="false">
+      <a id="IsEmpty:IsEmpty"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="IsEmpty.html"><span class="name">IsEmpty</span></a>
+        
+        <span class="params">(<span name="r">r: Query</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">emptiness of a set</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsIn" data-isabs="false">
+      <a id="IsIn:IsIn"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="IsIn.html"><span class="name">IsIn</span></a>
+        
+        <span class="params">(<span name="elem">elem: Query</span>, <span name="tp">tp: Query</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">element relation between elements and sets</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Not" data-isabs="false">
+      <a id="Not:Not"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Not.html"><span class="name">Not</span></a>
+        
+        <span class="params">(<span name="arg">arg: Prop</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">negation</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.PrefixOf" data-isabs="false">
+      <a id="PrefixOf:PrefixOf"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="PrefixOf.html"><span class="name">PrefixOf</span></a>
+        
+        <span class="params">(<span name="short">short: Query</span>, <span name="long">long: Query</span>)</span><span class="result"> extends Prop with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">ancestor relation between paths</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Present" data-isabs="false">
+      <a id="Present:Present"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Present.html"><span class="name">Present</span></a>
+        
+        <span class="params">(<span name="content">content: Query</span>, <span name="style">style: MPath</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the XML object arising from rendering an object</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Projection" data-isabs="false">
+      <a id="Projection:Projection"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Projection.html"><span class="name">Projection</span></a>
+        
+        <span class="params">(<span name="of">of: Query</span>, <span name="index">index: Int</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">projectiong</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Prop" data-isabs="true">
+      <a id="Prop:Prop"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Prop.html"><span class="name">Prop</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">propositions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Query" data-isabs="true">
       <a id="Query:Query"></a>
-      <h4 class="signature"><a href="Query.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Query</span>
-        
+      <span class="symbol"> 
+        <a href="Query.html"><span class="name">Query</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">Objects of type Query are expressions of a simple query language over an MMT ABox.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.RelStore">
+      </h4>
+      <p class="comment cmt">the expressions of the query language</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.QueryBaseType" data-isabs="true">
+      <a id="QueryBaseType:QueryBaseType"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="QueryBaseType.html"><span class="name">QueryBaseType</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">base types, used in the formation of QueryType</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.QueryResult" data-isabs="true">
+      <a id="QueryResult:QueryResult"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="QueryResult.html"><span class="name">QueryResult</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">wrapper type for the result of a query</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.QueryType" data-isabs="true">
+      <a id="QueryType:QueryType"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="QueryType.html"><span class="name">QueryType</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the types of the query language</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RelStore" data-isabs="false">
       <a id="RelStore:RelStore"></a>
-      <h4 class="signature"><a href="RelStore.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">RelStore</span>
-        
+      <span class="symbol"> 
+        <a href="RelStore.html"><span class="name">RelStore</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Relation">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Related" data-isabs="false">
+      <a id="Related:Related"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Related.html"><span class="name">Related</span></a>
+        
+        <span class="params">(<span name="to">to: Query</span>, <span name="by">by: RelationExp</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the set of all elements related to a certain path by a certain relation</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Relation" data-isabs="false">
       <a id="Relation:Relation"></a>
-      <h4 class="signature"><a href="Relation.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Relation</span>
+      <span class="symbol"> 
+        <a href="Relation.html"><span class="name">Relation</span></a>
         
-        <span class="params">(<span name="dep">dep: Binary</span>, <span name="subj">subj: Path</span>, <span name="obj">obj: Path</span>)</span>
-        <span class="result"> extends RelationalElement with Product</span>
+        <span class="params">(<span name="dep">dep: Binary</span>, <span name="subj">subj: Path</span>, <span name="obj">obj: Path</span>)</span><span class="result"> extends RelationalElement with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">An object of type Relation represents a binary predicate in the ABox.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Relatives">
-      <a id="Relatives:Relatives"></a>
-      <h4 class="signature"><a href="Relatives.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Relatives</span>
-        
-        <span class="params">(<span name="of">of: Concept</span>, <span name="by">by: Query</span>)</span>
-        <span class="result"> extends Concept with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">The image of a concept under a relation, i.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Sequence">
-      <a id="Sequence:Sequence"></a>
-      <h4 class="signature"><a href="Sequence.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Sequence</span>
-        
-        <span class="params">(<span name="qs">qs: Query*</span>)</span>
-        <span class="result"> extends Query with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">the composition of a list of relations</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.ToObject">
-      <a id="ToObject:ToObject"></a>
-      <h4 class="signature"><a href="ToObject.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">ToObject</span>
-        
-        <span class="params">(<span name="dep">dep: Binary</span>)</span>
-        <span class="result"> extends Query with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">base case: an atomic binary relation</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.ToSubject">
-      <a id="ToSubject:ToSubject"></a>
-      <h4 class="signature"><a href="ToSubject.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">ToSubject</span>
-        
-        <span class="params">(<span name="dep">dep: Binary</span>)</span>
-        <span class="result"> extends Query with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">base case: the inverse of an atomic binary relation</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Transitive">
-      <a id="Transitive:Transitive"></a>
-      <h4 class="signature"><a href="Transitive.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Transitive</span>
-        
-        <span class="params">(<span name="q">q: Query</span>)</span>
-        <span class="result"> extends Query with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">the transitive closure of a relation</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.ontology.Unary">
-      <a id="Unary:Unary"></a>
-      <h4 class="signature"><a href="Unary.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RelationExp" data-isabs="true">
+      <a id="RelationExp:RelationExp"></a>
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Unary</span>
-        
+      <span class="symbol"> 
+        <a href="RelationExp.html"><span class="name">RelationExp</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
+      <p class="comment cmt">binary relations between paths, i.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RelationsChange" data-isabs="true">
+      <a id="RelationsChange:RelationsChange"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="RelationsChange.html"><span class="name">RelationsChange</span></a>
+        
+        <span class="result"> extends Change</span>
+      </span>
+      </h4>
+      <p class="comment cmt">classes for changes to the relstore
+will be returned by the checker when checking a change
+and then applied by the controller to the relstore to mantain its adequacy
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RenameRelations" data-isabs="false">
+      <a id="RenameRelations:RenameRelations"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="RenameRelations.html"><span class="name">RenameRelations</span></a>
+        
+        <span class="params">(<span name="old">old: Path</span>, <span name="nw">nw: Path</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">replaces in the relstore, in all relations for which old is subject, old with nw</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Sequence" data-isabs="false">
+      <a id="Sequence:Sequence"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Sequence.html"><span class="name">Sequence</span></a>
+        
+        <span class="params">(<span name="qs">qs: RelationExp*</span>)</span><span class="result"> extends RelationExp with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the composition of a list of relations</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Singleton" data-isabs="false">
+      <a id="Singleton:Singleton"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Singleton.html"><span class="name">Singleton</span></a>
+        
+        <span class="params">(<span name="e">e: Query</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">singleton sets</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.StructureEdge" data-isabs="false">
+      <a id="StructureEdge:StructureEdge"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="StructureEdge.html"><span class="name">StructureEdge</span></a>
+        
+        <span class="params">(<span name="id">id: Path</span>)</span><span class="result"> extends Edge with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">named import</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.SubObject" data-isabs="false">
+      <a id="SubObject:SubObject"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="SubObject.html"><span class="name">SubObject</span></a>
+        
+        <span class="params">(<span name="of">of: Query</span>, <span name="position">position: Position</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">subobject of an object at a certain position</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.TheObject" data-isabs="false">
+      <a id="TheObject:TheObject"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="TheObject.html"><span class="name">TheObject</span></a>
+        
+        <span class="params">(<span name="a">a: Obj</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">constant object</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.TheObjects" data-isabs="false">
+      <a id="TheObjects:TheObjects"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="TheObjects.html"><span class="name">TheObjects</span></a>
+        
+        <span class="params">(<span name="as">as: Obj*</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">finite set of objects</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ThePath" data-isabs="false">
+      <a id="ThePath:ThePath"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ThePath.html"><span class="name">ThePath</span></a>
+        
+        <span class="params">(<span name="a">a: Path</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">constant path</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ThePaths" data-isabs="false">
+      <a id="ThePaths:ThePaths"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ThePaths.html"><span class="name">ThePaths</span></a>
+        
+        <span class="params">(<span name="as">as: Path*</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">finite set of paths</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.TheoryGraph" data-isabs="false">
+      <a id="TheoryGraph:TheoryGraph"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="TheoryGraph.html"><span class="name">TheoryGraph</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">This class adds advanced queries on top of a RelStore that expose the theory graph structure</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ToObject" data-isabs="false">
+      <a id="ToObject:ToObject"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ToObject.html"><span class="name">ToObject</span></a>
+        
+        <span class="params">(<span name="dep">dep: Binary</span>)</span><span class="result"> extends RelationExp with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">base case: an atomic binary relation</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ToSubject" data-isabs="false">
+      <a id="ToSubject:ToSubject"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ToSubject.html"><span class="name">ToSubject</span></a>
+        
+        <span class="params">(<span name="dep">dep: Binary</span>)</span><span class="result"> extends RelationExp with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">base case: the inverse of an atomic binary relation</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Transitive" data-isabs="false">
+      <a id="Transitive:Transitive"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Transitive.html"><span class="name">Transitive</span></a>
+        
+        <span class="params">(<span name="q">q: RelationExp</span>)</span><span class="result"> extends RelationExp with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the transitive closure of a relation</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Tuple" data-isabs="false">
+      <a id="Tuple:Tuple"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Tuple.html"><span class="name">Tuple</span></a>
+        
+        <span class="params">(<span name="components">components: List[Query]</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">tupling</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Unary" data-isabs="true">
+      <a id="Unary:Unary"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Unary.html"><span class="name">Unary</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
       <p class="comment cmt">An object of type Unary represents a unary predicate on MMT paths in the MMT ontology.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Unifies" data-isabs="false">
+      <a id="Unifies:Unifies"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Unifies.html"><span class="name">Unifies</span></a>
+        
+        <span class="params">(<span name="wth">wth: Obj</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">unification query; returns all objects in the database that unify with a certain object and the respective substitutions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Union" data-isabs="false">
+      <a id="Union:Union"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Union.html"><span class="name">Union</span></a>
+        
+        <span class="params">(<span name="left">left: Query</span>, <span name="right">right: Query</span>)</span><span class="result"> extends Query with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">union of sets</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.UpdateRelations" data-isabs="false">
+      <a id="UpdateRelations:UpdateRelations"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="UpdateRelations.html"><span class="name">UpdateRelations</span></a>
+        
+        <span class="params">(<span name="rels">rels: List[RelationalElement]</span>, <span name="p">p: Path</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">removes from the relstore all relations for which p is subject, then adds rels</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ViewEdge" data-isabs="false">
+      <a id="ViewEdge:ViewEdge"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ViewEdge.html"><span class="name">ViewEdge</span></a>
+        
+        <span class="params">(<span name="id">id: Path</span>)</span><span class="result"> extends Edge with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">named view</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.XMLResult" data-isabs="false">
+      <a id="XMLResult:XMLResult"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="XMLResult.html"><span class="name">XMLResult</span></a>
+        
+        <span class="params">(<span name="node">node: Node</span>)</span><span class="result"> extends BaseType with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
+        
+        
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Binary">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.ontology.Binary" data-isabs="false">
       <a id="Binary:Binary"></a>
-      <h4 class="signature"><a href="Binary$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Binary</span>
-        
+      <span class="symbol"> 
+        <a href="Binary$.html"><span class="name">Binary</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">helper methods for Binary items</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Declares">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Declares" data-isabs="false">
       <a id="Declares:Declares"></a>
-      <h4 class="signature"><a href="Declares$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Declares</span>
+      <span class="symbol"> 
+        <a href="Declares$.html"><span class="name">Declares</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Binary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.DependsOn">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.DependsOn" data-isabs="false">
       <a id="DependsOn:DependsOn"></a>
-      <h4 class="signature"><a href="DependsOn$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">DependsOn</span>
+      <span class="symbol"> 
+        <a href="DependsOn$.html"><span class="name">DependsOn</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Binary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.DependsOnDefiniensOf">
-      <a id="DependsOnDefiniensOf:DependsOnDefiniensOf"></a>
-      <h4 class="signature"><a href="DependsOnDefiniensOf$.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ESet" data-isabs="false">
+      <a id="ESet:ESet"></a>
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">DependsOnDefiniensOf</span>
+      <span class="symbol"> 
+        <a href="ESet$.html"><span class="name">ESet</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.DependsOnTypeOf">
-      <a id="DependsOnTypeOf:DependsOnTypeOf"></a>
-      <h4 class="signature"><a href="DependsOnTypeOf$.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ESet1" data-isabs="false">
+      <a id="ESet1:ESet1"></a>
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">DependsOnTypeOf</span>
+      <span class="symbol"> 
+        <a href="ESet1$.html"><span class="name">ESet1</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasCodomain">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Elem" data-isabs="false">
+      <a id="Elem:Elem"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Elem$.html"><span class="name">Elem</span></a>
+        
+        <span class="result"> extends Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Elem1" data-isabs="false">
+      <a id="Elem1:Elem1"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Elem1$.html"><span class="name">Elem1</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Extractor" data-isabs="false">
+      <a id="Extractor:Extractor"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Extractor$.html"><span class="name">Extractor</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">The Extractor produces the declaration-level relational representation of a SructuralElement
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.HasCodomain" data-isabs="false">
       <a id="HasCodomain:HasCodomain"></a>
-      <h4 class="signature"><a href="HasCodomain$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">HasCodomain</span>
+      <span class="symbol"> 
+        <a href="HasCodomain$.html"><span class="name">HasCodomain</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Binary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasDomain">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.HasDomain" data-isabs="false">
       <a id="HasDomain:HasDomain"></a>
-      <h4 class="signature"><a href="HasDomain$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">HasDomain</span>
+      <span class="symbol"> 
+        <a href="HasDomain$.html"><span class="name">HasDomain</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Binary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasMeta">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.HasMeta" data-isabs="false">
       <a id="HasMeta:HasMeta"></a>
-      <h4 class="signature"><a href="HasMeta$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">HasMeta</span>
+      <span class="symbol"> 
+        <a href="HasMeta$.html"><span class="name">HasMeta</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Binary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasOccurrenceOfInDefinition">
-      <a id="HasOccurrenceOfInDefinition:HasOccurrenceOfInDefinition"></a>
-      <h4 class="signature"><a href="HasOccurrenceOfInDefinition$.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IncludeEdge" data-isabs="false">
+      <a id="IncludeEdge:IncludeEdge"></a>
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">HasOccurrenceOfInDefinition</span>
+      <span class="symbol"> 
+        <a href="IncludeEdge$.html"><span class="name">IncludeEdge</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Edge with Product with Serializable</span>
       </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasOccurrenceOfInTarget">
-      <a id="HasOccurrenceOfInTarget:HasOccurrenceOfInTarget"></a>
-      <h4 class="signature"><a href="HasOccurrenceOfInTarget$.html">
-      <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">HasOccurrenceOfInTarget</span>
-        
-        
-        <span class="result"> extends Binary with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.HasOccurrenceOfInType">
-      <a id="HasOccurrenceOfInType:HasOccurrenceOfInType"></a>
-      <h4 class="signature"><a href="HasOccurrenceOfInType$.html">
-      <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">HasOccurrenceOfInType</span>
-        
-        
-        <span class="result"> extends Binary with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Includes">
+      </h4>
+      <p class="comment cmt">inclusion edge</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Includes" data-isabs="false">
       <a id="Includes:Includes"></a>
-      <h4 class="signature"><a href="Includes$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Includes</span>
+      <span class="symbol"> 
+        <a href="Includes$.html"><span class="name">Includes</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Binary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsAlias">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsAlias" data-isabs="false">
       <a id="IsAlias:IsAlias"></a>
-      <h4 class="signature"><a href="IsAlias$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsAlias</span>
+      <span class="symbol"> 
+        <a href="IsAlias$.html"><span class="name">IsAlias</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsAliasFor">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsAliasFor" data-isabs="false">
       <a id="IsAliasFor:IsAliasFor"></a>
-      <h4 class="signature"><a href="IsAliasFor$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsAliasFor</span>
+      <span class="symbol"> 
+        <a href="IsAliasFor$.html"><span class="name">IsAliasFor</span></a>
         
-        
-        <span class="result"> extends Binary with Product</span>
+        <span class="result"> extends Binary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsConAss">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsConAss" data-isabs="false">
       <a id="IsConAss:IsConAss"></a>
-      <h4 class="signature"><a href="IsConAss$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsConAss</span>
+      <span class="symbol"> 
+        <a href="IsConAss$.html"><span class="name">IsConAss</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsConstant">
-      <a id="IsConstant:IsConstant"></a>
-      <h4 class="signature"><a href="IsConstant$.html">
-      <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsConstant</span>
-        
-        
-        <span class="result"> extends Unary with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsDocument">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsDocument" data-isabs="false">
       <a id="IsDocument:IsDocument"></a>
-      <h4 class="signature"><a href="IsDocument$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsDocument</span>
+      <span class="symbol"> 
+        <a href="IsDocument$.html"><span class="name">IsDocument</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsNotation">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsInstance" data-isabs="false">
+      <a id="IsInstance:IsInstance"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="IsInstance$.html"><span class="name">IsInstance</span></a>
+        
+        <span class="result"> extends Unary with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsInstanceOf" data-isabs="false">
+      <a id="IsInstanceOf:IsInstanceOf"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="IsInstanceOf$.html"><span class="name">IsInstanceOf</span></a>
+        
+        <span class="result"> extends Binary with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsNotation" data-isabs="false">
       <a id="IsNotation:IsNotation"></a>
-      <h4 class="signature"><a href="IsNotation$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsNotation</span>
+      <span class="symbol"> 
+        <a href="IsNotation$.html"><span class="name">IsNotation</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsOpen">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsOpen" data-isabs="false">
       <a id="IsOpen:IsOpen"></a>
-      <h4 class="signature"><a href="IsOpen$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsOpen</span>
+      <span class="symbol"> 
+        <a href="IsOpen$.html"><span class="name">IsOpen</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsStrAss">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsPattern" data-isabs="false">
+      <a id="IsPattern:IsPattern"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="IsPattern$.html"><span class="name">IsPattern</span></a>
+        
+        <span class="result"> extends Unary with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsStrAss" data-isabs="false">
       <a id="IsStrAss:IsStrAss"></a>
-      <h4 class="signature"><a href="IsStrAss$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsStrAss</span>
+      <span class="symbol"> 
+        <a href="IsStrAss$.html"><span class="name">IsStrAss</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsStructure">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsStructure" data-isabs="false">
       <a id="IsStructure:IsStructure"></a>
-      <h4 class="signature"><a href="IsStructure$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsStructure</span>
+      <span class="symbol"> 
+        <a href="IsStructure$.html"><span class="name">IsStructure</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsStyle">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsStyle" data-isabs="false">
       <a id="IsStyle:IsStyle"></a>
-      <h4 class="signature"><a href="IsStyle$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsStyle</span>
+      <span class="symbol"> 
+        <a href="IsStyle$.html"><span class="name">IsStyle</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsTheory">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsTheory" data-isabs="false">
       <a id="IsTheory:IsTheory"></a>
-      <h4 class="signature"><a href="IsTheory$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsTheory</span>
+      <span class="symbol"> 
+        <a href="IsTheory$.html"><span class="name">IsTheory</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.IsView">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IsView" data-isabs="false">
       <a id="IsView:IsView"></a>
-      <h4 class="signature"><a href="IsView$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">IsView</span>
+      <span class="symbol"> 
+        <a href="IsView$.html"><span class="name">IsView</span></a>
         
-        
-        <span class="result"> extends Unary with Product</span>
+        <span class="result"> extends Unary with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Query">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.MetaEdge" data-isabs="false">
+      <a id="MetaEdge:MetaEdge"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="MetaEdge$.html"><span class="name">MetaEdge</span></a>
+        
+        <span class="result"> extends Edge with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">meta-theory edge</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ObjType" data-isabs="false">
+      <a id="ObjType:ObjType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="ObjType$.html"><span class="name">ObjType</span></a>
+        
+        <span class="result"> extends QueryBaseType with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">queries regarding the BaseType Obj</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.PathType" data-isabs="false">
+      <a id="PathType:PathType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="PathType$.html"><span class="name">PathType</span></a>
+        
+        <span class="result"> extends QueryBaseType with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">queries regarding the BaseType Path</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Prop" data-isabs="false">
+      <a id="Prop:Prop"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Prop$.html"><span class="name">Prop</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">helper object for relation expressions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Query" data-isabs="false">
       <a id="Query:Query"></a>
-      <h4 class="signature"><a href="Query$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Query</span>
-        
+      <span class="symbol"> 
+        <a href="Query$.html"><span class="name">Query</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">helper object for queries</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Reflexive">
+      </h4>
+      <p class="comment cmt">helper object for query expressions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RefersTo" data-isabs="false">
+      <a id="RefersTo:RefersTo"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="RefersTo$.html"><span class="name">RefersTo</span></a>
+        
+        <span class="result"> extends Binary with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Reflexive" data-isabs="false">
       <a id="Reflexive:Reflexive"></a>
-      <h4 class="signature"><a href="Reflexive$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Reflexive</span>
+      <span class="symbol"> 
+        <a href="Reflexive$.html"><span class="name">Reflexive</span></a>
         
-        
-        <span class="result"> extends Query with Product</span>
+        <span class="result"> extends RelationExp with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">the reflexive relation</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.ontology.Unary">
-      <a id="Unary:Unary"></a>
-      <h4 class="signature"><a href="Unary$.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RelationExp" data-isabs="false">
+      <a id="RelationExp:RelationExp"></a>
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Unary</span>
-        
+      <span class="symbol"> 
+        <a href="RelationExp$.html"><span class="name">RelationExp</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
+      <p class="comment cmt">helper object for relation expressions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RelationalElementReader" data-isabs="false">
+      <a id="RelationalElementReader:RelationalElementReader"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="RelationalElementReader$.html"><span class="name">RelationalElementReader</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Unary" data-isabs="false">
+      <a id="Unary:Unary"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Unary$.html"><span class="name">Unary</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
       <p class="comment cmt">helper object for unary items</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.XMLType" data-isabs="false">
+      <a id="XMLType:XMLType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="XMLType$.html"><span class="name">XMLType</span></a>
+        
+        <span class="result"> extends QueryBaseType with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">queries returning arbitrary XML</p>
     </li></ol>
             </div>
+
+        
 
         
 

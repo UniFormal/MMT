@@ -47,7 +47,18 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.uom.Association" data-isabs="false">
+              <ol><li visbl="pub" name="info.kwarc.mmt.uom.Antonym" data-isabs="false">
+      <a id="Antonym:Antonym"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Antonym.html"><span class="name">Antonym</span></a>
+        
+        <span class="result"> extends DepthRuleUnary</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the antony of a predicate under negation</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Association" data-isabs="false">
       <a id="Association:Association"></a>
       <h4 class="signature">
       <span class="kind">class</span>
@@ -57,7 +68,40 @@
         <span class="result"> extends DepthRule</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Associativity</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Attractor" data-isabs="false">
+      <a id="Attractor:Attractor"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Attractor.html"><span class="name">Attractor</span></a>
+        
+        <span class="result"> extends DepthRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An attractor element</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.BooleanLattice" data-isabs="false">
+      <a id="BooleanLattice:BooleanLattice"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="BooleanLattice.html"><span class="name">BooleanLattice</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BooleanLattice packages the simplification rules that yield normalization in a Boolean lattice</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.BoundedSemiLattice" data-isabs="false">
+      <a id="BoundedSemiLattice:BoundedSemiLattice"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="BoundedSemiLattice.html"><span class="name">BoundedSemiLattice</span></a>
+        
+        <span class="result"> extends Monoid</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BoundedSemiLattice packages the simplification rules that yield normalization in a bounded semilattice.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.BreadthRule" data-isabs="true">
       <a id="BreadthRule:BreadthRule"></a>
       <h4 class="signature">
@@ -68,7 +112,7 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="comment cmt">A BreadthRule looks at all arguments of an operator, but usually does not look inside them</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Collect" data-isabs="false">
       <a id="Collect:Collect"></a>
       <h4 class="signature">
@@ -79,7 +123,29 @@
         <span class="result"> extends BreadthRule</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Collection and counting of quantities that are multiple of the same base</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Commutative" data-isabs="false">
+      <a id="Commutative:Commutative"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Commutative.html"><span class="name">Commutative</span></a>
+        
+        <span class="result"> extends BreadthRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Commutativity of op</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Complement" data-isabs="false">
+      <a id="Complement:Complement"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Complement.html"><span class="name">Complement</span></a>
+        
+        <span class="result"> extends BreadthRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Complementation</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Counter" data-isabs="true">
       <a id="Counter:Counter"></a>
       <h4 class="signature">
@@ -101,7 +167,18 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="comment cmt">A DepthRule looks one level deep into the structure of one of the arguments of an operator</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.DepthRuleUnary" data-isabs="true">
+      <a id="DepthRuleUnary:DepthRuleUnary"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="DepthRuleUnary.html"><span class="name">DepthRuleUnary</span></a>
+        
+        <span class="result"> extends DepthRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A DepthRuleUnary is the special case of a DepthRule where the outer operator is unary</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Distribution" data-isabs="false">
       <a id="Distribution:Distribution"></a>
       <h4 class="signature">
@@ -112,7 +189,7 @@
         <span class="result"> extends DepthRule</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Distributivity</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.ExtractError" data-isabs="false">
       <a id="ExtractError:ExtractError"></a>
       <h4 class="signature">
@@ -134,7 +211,29 @@
         <span class="params">(<span name="it">it: Term</span>)</span><span class="result"> extends Result with Product with Serializable</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A GlobalChange changes the structure of a term.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Homomorphism" data-isabs="false">
+      <a id="Homomorphism:Homomorphism"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Homomorphism.html"><span class="name">Homomorphism</span></a>
+        
+        <span class="result"> extends DepthRuleUnary</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A homomorphism interacting with an operation</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Idempotent" data-isabs="false">
+      <a id="Idempotent:Idempotent"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Idempotent.html"><span class="name">Idempotent</span></a>
+        
+        <span class="result"> extends BreadthRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Idempotency of an operation (e.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Implementation" data-isabs="false">
       <a id="Implementation:Implementation"></a>
       <h4 class="signature">
@@ -146,6 +245,17 @@
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Involution" data-isabs="false">
+      <a id="Involution:Involution"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Involution.html"><span class="name">Involution</span></a>
+        
+        <span class="result"> extends DepthRuleUnary</span>
+      </span>
+      </h4>
+      <p class="comment cmt">a self-inverse function</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Lambda" data-isabs="false">
       <a id="Lambda:Lambda"></a>
       <h4 class="signature">
@@ -156,7 +266,7 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">beta and eta reduction</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.LocalChange" data-isabs="false">
       <a id="LocalChange:LocalChange"></a>
       <h4 class="signature">
@@ -167,7 +277,18 @@
         <span class="params">(<span name="inside">inside: List[Term]</span>)</span><span class="result"> extends Result with Product with Serializable</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A LocalChange leaves the structure of a term unchanged, but changes its arguments</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Monoid" data-isabs="false">
+      <a id="Monoid:Monoid"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Monoid.html"><span class="name">Monoid</span></a>
+        
+        <span class="result"> extends Semigroup</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Monoid packages the simplification rules that yield normalization in a monoid.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.MonoidAction" data-isabs="false">
       <a id="MonoidAction:MonoidAction"></a>
       <h4 class="signature">
@@ -178,7 +299,7 @@
         <span class="result"> extends DepthRule</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Additional rules for a monoid acting on a set</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Neutral" data-isabs="false">
       <a id="Neutral:Neutral"></a>
       <h4 class="signature">
@@ -189,7 +310,18 @@
         <span class="result"> extends DepthRule</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A neutral element</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Projection" data-isabs="false">
+      <a id="Projection:Projection"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Projection.html"><span class="name">Projection</span></a>
+        
+        <span class="result"> extends DepthRuleUnary</span>
+      </span>
+      </h4>
+      <p class="comment cmt">a projective function</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Result" data-isabs="true">
       <a id="Result:Result"></a>
       <h4 class="signature">
@@ -200,7 +332,18 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="comment cmt">The return type of a simplification rule</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.uom.Semigroup" data-isabs="false">
+      <a id="Semigroup:Semigroup"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Semigroup.html"><span class="name">Semigroup</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Semigroup packages the simplification rules that yield normalization in a semigroup.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.SemigroupAction" data-isabs="false">
       <a id="SemigroupAction:SemigroupAction"></a>
       <h4 class="signature">
@@ -211,7 +354,7 @@
         <span class="result"> extends DepthRule</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A semigroup acting on a set</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.UOMError" data-isabs="false">
       <a id="UOMError:UOMError"></a>
       <h4 class="signature">
@@ -244,7 +387,7 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A class that defines several rules for a unary inverse operator in an algebraic theory</p>
     </li></ol>
             </div>
         
@@ -270,7 +413,7 @@
       <span class="symbol"> 
         <a href="Extractor$.html"><span class="name">Extractor</span></a>
         
-        <span class="result"> extends Controller</span>
+        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
@@ -295,7 +438,7 @@
         <span class="result"> extends Result with Product with Serializable</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">no change</p>
     </li><li visbl="pub" name="info.kwarc.mmt.uom.Synthesizer" data-isabs="false">
       <a id="Synthesizer:Synthesizer"></a>
       <h4 class="signature">
@@ -303,7 +446,7 @@
       <span class="symbol"> 
         <a href="Synthesizer$.html"><span class="name">Synthesizer</span></a>
         
-        <span class="result"> extends Controller</span>
+        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
@@ -331,6 +474,8 @@
       
     </li></ol>
             </div>
+
+        
 
         
 

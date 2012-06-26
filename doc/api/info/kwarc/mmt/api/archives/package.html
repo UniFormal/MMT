@@ -54,40 +54,128 @@
       <span class="symbol"> 
         <a href="Archive.html"><span class="name">Archive</span></a>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends WritableArchive with CompilableArchive with IndexedArchive with ScalaArchive with ZipArchive</span>
+      </span>
+      </h4>
+      <p class="comment cmt">archive management</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.CompilableArchive" data-isabs="true">
+      <a id="CompilableArchive:CompilableArchive"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="CompilableArchive.html"><span class="name">CompilableArchive</span></a>
+        
+        <span class="result"> extends WritableArchive</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Dimension" data-isabs="true">
-      <a id="Dimension:Dimension"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.CompilationStep" data-isabs="false">
+      <a id="CompilationStep:CompilationStep"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="CompilationStep.html"><span class="name">CompilationStep</span></a>
+        
+        <span class="params">(<span name="from">from: String</span>, <span name="to">to: String</span>, <span name="compiler">compiler: Compiler</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Current" data-isabs="false">
+      <a id="Current:Current"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Current.html"><span class="name">Current</span></a>
+        
+        <span class="params">(<span name="file">file: File</span>, <span name="path">path: List[String]</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">convenience class for traversing an Archive</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.IndexedArchive" data-isabs="true">
+      <a id="IndexedArchive:IndexedArchive"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="IndexedArchive.html"><span class="name">IndexedArchive</span></a>
+        
+        <span class="result"> extends WritableArchive</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Modification" data-isabs="true">
+      <a id="Modification:Modification"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="Dimension.html"><span class="name">Dimension</span></a>
+        <a href="Modification.html"><span class="name">Modification</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Presentation" data-isabs="false">
-      <a id="Presentation:Presentation"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ROArchive" data-isabs="true">
+      <a id="ROArchive:ROArchive"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
+      <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="Presentation.html"><span class="name">Presentation</span></a>
+        <a href="ROArchive.html"><span class="name">ROArchive</span></a>
         
-        <span class="params">(<span name="label">label: String</span>, <span name="style">style: MPath</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="result"> extends Storage</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.SVNArchive" data-isabs="false">
+      <a id="SVNArchive:SVNArchive"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="SVNArchive.html"><span class="name">SVNArchive</span></a>
+        
+        <span class="result"> extends ROArchive</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Source" data-isabs="false">
-      <a id="Source:Source"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ScalaArchive" data-isabs="true">
+      <a id="ScalaArchive:ScalaArchive"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
+      <span class="kind">trait</span>
       <span class="symbol"> 
-        <a href="Source.html"><span class="name">Source</span></a>
+        <a href="ScalaArchive.html"><span class="name">ScalaArchive</span></a>
         
-        <span class="params">(<span name="label">label: String</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="result"> extends WritableArchive</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Timestamps" data-isabs="false">
+      <a id="Timestamps:Timestamps"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Timestamps.html"><span class="name">Timestamps</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive" data-isabs="true">
+      <a id="WritableArchive:WritableArchive"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="WritableArchive.html"><span class="name">WritableArchive</span></a>
+        
+        <span class="result"> extends ROArchive</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ZipArchive" data-isabs="true">
+      <a id="ZipArchive:ZipArchive"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="ZipArchive.html"><span class="name">ZipArchive</span></a>
+        
+        <span class="result"> extends WritableArchive</span>
       </span>
       </h4>
       
@@ -98,52 +186,76 @@
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.archives.Content" data-isabs="false">
-      <a id="Content:Content"></a>
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.archives.Added" data-isabs="false">
+      <a id="Added:Added"></a>
       <h4 class="signature">
       <span class="kind">object</span>
       <span class="symbol"> 
-        <a href="Content$.html"><span class="name">Content</span></a>
+        <a href="Added$.html"><span class="name">Added</span></a>
         
-        <span class="result"> extends Product with Serializable</span>
+        <span class="result"> extends Modification with Product with Serializable</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Narration" data-isabs="false">
-      <a id="Narration:Narration"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive" data-isabs="false">
+      <a id="Archive:Archive"></a>
       <h4 class="signature">
       <span class="kind">object</span>
       <span class="symbol"> 
-        <a href="Narration$.html"><span class="name">Narration</span></a>
-        
-        <span class="result"> extends Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Relational" data-isabs="false">
-      <a id="Relational:Relational"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Relational$.html"><span class="name">Relational</span></a>
-        
-        <span class="result"> extends Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Test" data-isabs="false">
-      <a id="Test:Test"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Test$.html"><span class="name">Test</span></a>
+        <a href="Archive$.html"><span class="name">Archive</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Deleted" data-isabs="false">
+      <a id="Deleted:Deleted"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Deleted$.html"><span class="name">Deleted</span></a>
+        
+        <span class="result"> extends Modification with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Modified" data-isabs="false">
+      <a id="Modified:Modified"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Modified$.html"><span class="name">Modified</span></a>
+        
+        <span class="result"> extends Modification with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.SVNArchive" data-isabs="false">
+      <a id="SVNArchive:SVNArchive"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="SVNArchive$.html"><span class="name">SVNArchive</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Unmodified" data-isabs="false">
+      <a id="Unmodified:Unmodified"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Unmodified$.html"><span class="name">Unmodified</span></a>
+        
+        <span class="result"> extends Modification with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
+
+        
 
         
 

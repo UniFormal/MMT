@@ -28,12 +28,14 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A DepthRule looks one level deep into the structure of one of the arguments of an operator</p><p>It is applicable to a term of the form</p><pre>
+OMA(outer, before ::: OMA(inner, inside) :: after)
+</pre></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.uom.Association" class="extype" href="Association.html">Association</a>, <a name="info.kwarc.mmt.uom.Lambda.Beta" class="extype" href="Lambda$Beta$.html">Beta</a>, <a name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse" class="extype" href="UnaryInverse$BinaryInverse.html">BinaryInverse</a>, <a name="info.kwarc.mmt.uom.UnaryInverse.Composition" class="extype" href="UnaryInverse$Composition.html">Composition</a>, <a name="info.kwarc.mmt.uom.Distribution" class="extype" href="Distribution.html">Distribution</a>, <a name="info.kwarc.mmt.uom.Lambda.Eta" class="extype" href="Lambda$Eta$.html">Eta</a>, <a name="info.kwarc.mmt.uom.UnaryInverse.Involution" class="extype" href="UnaryInverse$Involution$.html">Involution</a>, <a name="info.kwarc.mmt.uom.MonoidAction" class="extype" href="MonoidAction.html">MonoidAction</a>, <a name="info.kwarc.mmt.uom.Neutral" class="extype" href="Neutral.html">Neutral</a>, <a name="info.kwarc.mmt.uom.UnaryInverse.Neutral" class="extype" href="UnaryInverse$Neutral.html">Neutral</a>, <a name="info.kwarc.mmt.uom.SemigroupAction" class="extype" href="SemigroupAction.html">SemigroupAction</a></div>
+          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.uom.Antonym" class="extype" href="Antonym.html">Antonym</a>, <a name="info.kwarc.mmt.uom.Association" class="extype" href="Association.html">Association</a>, <a name="info.kwarc.mmt.uom.Attractor" class="extype" href="Attractor.html">Attractor</a>, <a name="info.kwarc.mmt.uom.Lambda.Beta" class="extype" href="Lambda$Beta$.html">Beta</a>, <a name="info.kwarc.mmt.uom.UnaryInverse.BinaryInverse" class="extype" href="UnaryInverse$BinaryInverse.html">BinaryInverse</a>, <a name="info.kwarc.mmt.uom.UnaryInverse.Composition" class="extype" href="UnaryInverse$Composition.html">Composition</a>, <a name="info.kwarc.mmt.uom.DepthRuleUnary" class="extype" href="DepthRuleUnary.html">DepthRuleUnary</a>, <a name="info.kwarc.mmt.uom.Distribution" class="extype" href="Distribution.html">Distribution</a>, <a name="info.kwarc.mmt.uom.Lambda.Eta" class="extype" href="Lambda$Eta$.html">Eta</a>, <a name="info.kwarc.mmt.uom.Homomorphism" class="extype" href="Homomorphism.html">Homomorphism</a>, <a name="info.kwarc.mmt.uom.Involution" class="extype" href="Involution.html">Involution</a>, <a name="info.kwarc.mmt.uom.MonoidAction" class="extype" href="MonoidAction.html">MonoidAction</a>, <a name="info.kwarc.mmt.uom.UnaryInverse.Neutral" class="extype" href="UnaryInverse$Neutral.html">Neutral</a>, <a name="info.kwarc.mmt.uom.Neutral" class="extype" href="Neutral.html">Neutral</a>, <a name="info.kwarc.mmt.uom.Projection" class="extype" href="Projection.html">Projection</a>, <a name="info.kwarc.mmt.uom.SemigroupAction" class="extype" href="SemigroupAction.html">SemigroupAction</a></div>
         </div></div>
         
 
@@ -85,7 +87,7 @@
         <span class="result"> = (List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>], List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>], List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>]) ⇒ <a name="info.kwarc.mmt.uom.Result" class="extype" href="Result.html">Result</a></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">a Rewrite takes the triple (before, inside, after) and returns a simplification Result</p>
     </li></ol>
             </div>
         
@@ -101,7 +103,7 @@
         <span class="result">: Rewrite</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="shortcomment cmt">the implementation of the simplification rule</p><div class="fullcomment"><div class="comment cmt"><p>the implementation of the simplification rule</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
     </li></ol>
             </div>
 
@@ -233,7 +235,7 @@
         <span class="params">()</span><span class="result">: java.lang.Class[_]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -355,6 +357,8 @@
         </dd></dl></div>
     </li></ol>
             </div>
+
+        
 
         <div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>

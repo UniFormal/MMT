@@ -5,32 +5,31 @@
           <title>info.kwarc.mmt.api.frontend</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link href="../../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
       <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body class="value" onload="windowTitle();">
-
-      <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
-
+        <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
+        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
         <h1>frontend</h1>
       </div>
 
       <h4 class="signature" id="signature">
       <span class="kind">package</span>
-      <span class="symbol">
+      <span class="symbol"> 
         <span class="name">frontend</span>
-        
         
         
       </span>
       </h4>
-      <div class="fullcomment" id="comment"></div>
+      
+          <div class="fullcommenttop" id="comment"></div>
+        
 
       <div id="template">
 
@@ -40,11 +39,7 @@
           
           <div id="visbl">
               <span class="filtertype">Visibility</span>
-              <ol><li class="public in">Public</li><li class="all out">All</li></ol>
-            </div>
-          <div id="impl">
-              <span class="filtertype">Impl.</span>
-              <ol><li class="concrete in">Concrete</li><li class="abstract in">Abstract</li></ol>
+              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
             </div>
         </div>
 
@@ -52,522 +47,649 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.frontend.Action">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.frontend.Action" data-isabs="true">
       <a id="Action:Action"></a>
-      <h4 class="signature"><a href="Action.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Action</span>
-        
+      <span class="symbol"> 
+        <a href="Action.html"><span class="name">Action</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">Objects of type Action represent commands that can be executed by a Controller.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.AddArchive">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddArchive" data-isabs="false">
       <a id="AddArchive:AddArchive"></a>
-      <h4 class="signature"><a href="AddArchive.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">AddArchive</span>
+      <span class="symbol"> 
+        <a href="AddArchive.html"><span class="name">AddArchive</span></a>
         
-        <span class="params">(<span name="folder">folder: File</span>)</span>
-        <span class="result"> extends Action with Product</span>
+        <span class="params">(<span name="folder">folder: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">add catalog entries for a set of local copies, based on a file in Locutor registry syntax</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.AddCatalog">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddCatalog" data-isabs="false">
       <a id="AddCatalog:AddCatalog"></a>
-      <h4 class="signature"><a href="AddCatalog.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">AddCatalog</span>
+      <span class="symbol"> 
+        <a href="AddCatalog.html"><span class="name">AddCatalog</span></a>
         
-        <span class="params">(<span name="file">file: File</span>)</span>
-        <span class="result"> extends Action with Product</span>
+        <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">add catalog entries for a set of local copies, based on a file in Locutor registry syntax</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.AddTNTBase">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddFoundation" data-isabs="false">
+      <a id="AddFoundation:AddFoundation"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddFoundation.html"><span class="name">AddFoundation</span></a>
+        
+        <span class="params">(<span name="cls">cls: String</span>, <span name="args">args: List[String]</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddImporter" data-isabs="false">
+      <a id="AddImporter:AddImporter"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddImporter.html"><span class="name">AddImporter</span></a>
+        
+        <span class="params">(<span name="cls">cls: String</span>, <span name="args">args: List[String]</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">registers a compiler</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddMWS" data-isabs="false">
+      <a id="AddMWS:AddMWS"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddMWS.html"><span class="name">AddMWS</span></a>
+        
+        <span class="params">(<span name="uri">uri: URI</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">add MathWebSearch as a web service</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddReportHandler" data-isabs="false">
+      <a id="AddReportHandler:AddReportHandler"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddReportHandler.html"><span class="name">AddReportHandler</span></a>
+        
+        <span class="params">(<span name="h">h: ReportHandler</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">add a log handler</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddSVNArchive" data-isabs="false">
+      <a id="AddSVNArchive:AddSVNArchive"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddSVNArchive.html"><span class="name">AddSVNArchive</span></a>
+        
+        <span class="params">(<span name="url">url: String</span>, <span name="rev">rev: Int</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">add a SVN Archive</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddTNTBase" data-isabs="false">
       <a id="AddTNTBase:AddTNTBase"></a>
-      <h4 class="signature"><a href="AddTNTBase.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">AddTNTBase</span>
+      <span class="symbol"> 
+        <a href="AddTNTBase.html"><span class="name">AddTNTBase</span></a>
         
-        <span class="params">(<span name="file">file: File</span>)</span>
-        <span class="result"> extends Action with Product</span>
+        <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.AddTwelf">
-      <a id="AddTwelf:AddTwelf"></a>
-      <h4 class="signature"><a href="AddTwelf.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ArchiveBuild" data-isabs="false">
+      <a id="ArchiveBuild:ArchiveBuild"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">AddTwelf</span>
+      <span class="symbol"> 
+        <a href="ArchiveBuild.html"><span class="name">ArchiveBuild</span></a>
         
-        <span class="params">(<span name="location">location: File</span>)</span>
-        <span class="result"> extends Action with Product</span>
+        <span class="params">(<span name="id">id: String</span>, <span name="dim">dim: String</span>, <span name="in">in: List[String]</span>, <span name="params">params: List[MPath]</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">register a compiler</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Closure">
+      </h4>
+      <p class="comment cmt">builds a dimension in a previously opened archive</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ArchiveMar" data-isabs="false">
+      <a id="ArchiveMar:ArchiveMar"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ArchiveMar.html"><span class="name">ArchiveMar</span></a>
+        
+        <span class="params">(<span name="id">id: String</span>, <span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">builds a dimension in a previously opened archive</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Check" data-isabs="false">
+      <a id="Check:Check"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Check.html"><span class="name">Check</span></a>
+        
+        <span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">check a knowledge item</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Closure" data-isabs="false">
       <a id="Closure:Closure"></a>
-      <h4 class="signature"><a href="Closure.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Closure</span>
+      <span class="symbol"> 
+        <a href="Closure.html"><span class="name">Closure</span></a>
         
-        <span class="params">(<span name="p">p: Path</span>)</span>
-        <span class="result"> extends MakeAbstract with Product</span>
+        <span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends MakeAbstract with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">retrieves the closure of a knowledge item</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Component">
-      <a id="Component:Component"></a>
-      <h4 class="signature"><a href="Component.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Compare" data-isabs="false">
+      <a id="Compare:Compare"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Component</span>
+      <span class="symbol"> 
+        <a href="Compare.html"><span class="name">Compare</span></a>
         
-        <span class="params">(<span name="p">p: Path</span>, <span name="comp">comp: String</span>)</span>
-        <span class="result"> extends MakeAbstract with Product</span>
+        <span class="params">(<span name="p">p: Path</span>, <span name="r">r: Int</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Component" data-isabs="false">
+      <a id="Component:Component"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Component.html"><span class="name">Component</span></a>
+        
+        <span class="params">(<span name="p">p: Path</span>, <span name="comp">comp: String</span>)</span><span class="result"> extends MakeAbstract with Product with Serializable</span>
+      </span>
+      </h4>
       <p class="comment cmt">retrieves a component of a knowledge item</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.ConsoleReport">
-      <a id="ConsoleReport:ConsoleReport"></a>
-      <h4 class="signature"><a href="ConsoleReport.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">ConsoleReport</span>
-        
-        
-        <span class="result"> extends Report</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">outputs to standard output</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Controller">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller" data-isabs="false">
       <a id="Controller:Controller"></a>
-      <h4 class="signature"><a href="Controller.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Controller</span>
-        
+      <span class="symbol"> 
+        <a href="Controller.html"><span class="name">Controller</span></a>
         
         <span class="result"> extends ROController</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">A Controller is the central class maintaining all MMT knowledge items.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.DefaultGet">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.DefaultGet" data-isabs="false">
       <a id="DefaultGet:DefaultGet"></a>
-      <h4 class="signature"><a href="DefaultGet.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">DefaultGet</span>
+      <span class="symbol"> 
+        <a href="DefaultGet.html"><span class="name">DefaultGet</span></a>
         
-        <span class="params">(<span name="pres">pres: MakeConcrete</span>)</span>
-        <span class="result"> extends Action with Product</span>
+        <span class="params">(<span name="pres">pres: MakeConcrete</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">execute the Controller-specific default Action associated with a presentable element</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Deps">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Deps" data-isabs="false">
       <a id="Deps:Deps"></a>
-      <h4 class="signature"><a href="Deps.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Deps</span>
+      <span class="symbol"> 
+        <a href="Deps.html"><span class="name">Deps</span></a>
         
-        <span class="params">(<span name="path">path: Path</span>)</span>
-        <span class="result"> extends MakeConcrete with Product</span>
+        <span class="params">(<span name="path">path: Path</span>)</span><span class="result"> extends MakeConcrete with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">retrieves all relational elements about a certain path and renders them as XML</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.ExecFile">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Elaboration" data-isabs="false">
+      <a id="Elaboration:Elaboration"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Elaboration.html"><span class="name">Elaboration</span></a>
+        
+        <span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends MakeAbstract with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">retrieves the elaboration of an instance</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExecFile" data-isabs="false">
       <a id="ExecFile:ExecFile"></a>
-      <h4 class="signature"><a href="ExecFile.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">ExecFile</span>
+      <span class="symbol"> 
+        <a href="ExecFile.html"><span class="name">ExecFile</span></a>
         
-        <span class="params">(<span name="file">file: File</span>)</span>
-        <span class="result"> extends Action with Product</span>
+        <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">load a file containing commands and execute them, fails on first error if any</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.FileReport">
-      <a id="FileReport:FileReport"></a>
-      <h4 class="signature"><a href="FileReport.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExtensionManager" data-isabs="false">
+      <a id="ExtensionManager:ExtensionManager"></a>
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">FileReport</span>
-        
-        
-        <span class="result"> extends Report with FileWriter</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">outputs to a file</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Get">
-      <a id="Get:Get"></a>
-      <h4 class="signature"><a href="Get.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Get</span>
-        
-        <span class="params">(<span name="p">p: Path</span>)</span>
-        <span class="result"> extends MakeAbstract with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">retrieves a knowledge item</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.GetAction">
-      <a id="GetAction:GetAction"></a>
-      <h4 class="signature"><a href="GetAction.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">GetAction</span>
-        
-        <span class="params">(<span name="o">o: Output</span>)</span>
-        <span class="result"> extends Action with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">Objects of type GetAction represent commands that</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.LoggingOff">
-      <a id="LoggingOff:LoggingOff"></a>
-      <h4 class="signature"><a href="LoggingOff.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">LoggingOff</span>
-        
-        <span class="params">(<span name="s">s: String</span>)</span>
-        <span class="result"> extends Action with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">switch off logging for a certain group</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.LoggingOn">
-      <a id="LoggingOn:LoggingOn"></a>
-      <h4 class="signature"><a href="LoggingOn.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">LoggingOn</span>
-        
-        <span class="params">(<span name="s">s: String</span>)</span>
-        <span class="result"> extends Action with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">switch on logging for a certain group</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.frontend.MakeAbstract">
-      <a id="MakeAbstract:MakeAbstract"></a>
-      <h4 class="signature"><a href="MakeAbstract.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">MakeAbstract</span>
-        
+      <span class="symbol"> 
+        <a href="ExtensionManager.html"><span class="name">ExtensionManager</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
+      <p class="comment cmt">An ExtensionManager maintains all language-specific extensions of MMT.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.FileHandler" data-isabs="false">
+      <a id="FileHandler:FileHandler"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="FileHandler.html"><span class="name">FileHandler</span></a>
+        
+        <span class="result"> extends ReportHandler</span>
+      </span>
+      </h4>
+      <p class="comment cmt">outputs to a file</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Get" data-isabs="false">
+      <a id="Get:Get"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Get.html"><span class="name">Get</span></a>
+        
+        <span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends MakeAbstract with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">retrieves a knowledge item</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.GetAction" data-isabs="false">
+      <a id="GetAction:GetAction"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="GetAction.html"><span class="name">GetAction</span></a>
+        
+        <span class="params">(<span name="o">o: Output</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Objects of type GetAction represent commands that</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.LoggingOff" data-isabs="false">
+      <a id="LoggingOff:LoggingOff"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="LoggingOff.html"><span class="name">LoggingOff</span></a>
+        
+        <span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">switch off logging for a certain group</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.LoggingOn" data-isabs="false">
+      <a id="LoggingOn:LoggingOn"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="LoggingOn.html"><span class="name">LoggingOn</span></a>
+        
+        <span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">switch on logging for a certain group</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.MakeAbstract" data-isabs="true">
+      <a id="MakeAbstract:MakeAbstract"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="MakeAbstract.html"><span class="name">MakeAbstract</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
       <p class="comment cmt">represent retrieval operations that return content elements
  These objects become Action commands by wrapping them in post-processing steps.</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.frontend.MakeConcrete">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.MakeConcrete" data-isabs="true">
       <a id="MakeConcrete:MakeConcrete"></a>
-      <h4 class="signature"><a href="MakeConcrete.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">MakeConcrete</span>
-        
+      <span class="symbol"> 
+        <a href="MakeConcrete.html"><span class="name">MakeConcrete</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">represents the first post-processing phase
  These produce concrete syntax from the abstract syntax.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.MultipleReports">
-      <a id="MultipleReports:MultipleReports"></a>
-      <h4 class="signature"><a href="MultipleReports.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Memory" data-isabs="false">
+      <a id="Memory:Memory"></a>
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">MultipleReports</span>
+      <span class="symbol"> 
+        <a href="Memory.html"><span class="name">Memory</span></a>
         
-        
-        <span class="result"> extends Report</span>
+        <span class="result"> extends ROMemory</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">joins a list of reports (an output category is reported if this report and the component report it)</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.NotFound">
+      </h4>
+      <p class="comment cmt">Groups all stateful objects of the controller that store MMT data</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.NotFound" data-isabs="false">
       <a id="NotFound:NotFound"></a>
-      <h4 class="signature"><a href="NotFound.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">NotFound</span>
+      <span class="symbol"> 
+        <a href="NotFound.html"><span class="name">NotFound</span></a>
         
-        <span class="params">(<span name="path">path: Path</span>)</span>
-        <span class="result"> extends Throwable with Product</span>
+        <span class="params">(<span name="path">path: Path</span>)</span><span class="result"> extends Throwable with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">An exception that is throw when a needed knowledge item is not available.</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.frontend.Output">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Output" data-isabs="true">
       <a id="Output:Output"></a>
-      <h4 class="signature"><a href="Output.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Output</span>
-        
+      <span class="symbol"> 
+        <a href="Output.html"><span class="name">Output</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">represents the final post-processing phase, which outputs concrete syntax</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Present">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Present" data-isabs="false">
       <a id="Present:Present"></a>
-      <h4 class="signature"><a href="Present.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Present</span>
+      <span class="symbol"> 
+        <a href="Present.html"><span class="name">Present</span></a>
         
-        <span class="params">(<span name="c">c: MakeAbstract</span>, <span name="nset">nset: MPath</span>)</span>
-        <span class="result"> extends MakeConcrete with Product</span>
+        <span class="params">(<span name="c">c: MakeAbstract</span>, <span name="nset">nset: MPath</span>)</span><span class="result"> extends MakeConcrete with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">takes a content element and renders it using notations</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Print">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Print" data-isabs="false">
       <a id="Print:Print"></a>
-      <h4 class="signature"><a href="Print.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Print</span>
+      <span class="symbol"> 
+        <a href="Print.html"><span class="name">Print</span></a>
         
-        <span class="params">(<span name="pres">pres: MakeConcrete</span>)</span>
-        <span class="result"> extends Output with Product</span>
+        <span class="params">(<span name="pres">pres: MakeConcrete</span>)</span><span class="result"> extends Output with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">prints to STDOUT</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.frontend.ROController">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ROController" data-isabs="true">
       <a id="ROController:ROController"></a>
-      <h4 class="signature"><a href="ROController.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">ROController</span>
-        
+      <span class="symbol"> 
+        <a href="ROController.html"><span class="name">ROController</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">An interface to a controller containing read-only methods.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Read">
-      <a id="Read:Read"></a>
-      <h4 class="signature"><a href="Read.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Read</span>
-        
-        <span class="params">(<span name="f">f: File</span>)</span>
-        <span class="result"> extends Action with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">read a knowledge item</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.frontend.Report">
-      <a id="Report:Report"></a>
-      <h4 class="signature"><a href="Report.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ROMemory" data-isabs="true">
+      <a id="ROMemory:ROMemory"></a>
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Report</span>
-        
+      <span class="symbol"> 
+        <a href="ROMemory.html"><span class="name">ROMemory</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">Instances of Report handle all output to the user</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Respond">
-      <a id="Respond:Respond"></a>
-      <h4 class="signature"><a href="Respond.html">
+      </h4>
+      <p class="comment cmt">A read-only abstraction of memory</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Read" data-isabs="false">
+      <a id="Read:Read"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Respond</span>
+      <span class="symbol"> 
+        <a href="Read.html"><span class="name">Read</span></a>
         
-        <span class="params">(<span name="pres">pres: MakeConcrete</span>, <span name="param">param: String</span>)</span>
-        <span class="result"> extends Output with Product</span>
+        <span class="params">(<span name="f">f: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
+      <p class="comment cmt">read a knowledge item</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ReadText" data-isabs="false">
+      <a id="ReadText:ReadText"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ReadText.html"><span class="name">ReadText</span></a>
+        
+        <span class="params">(<span name="f">f: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">read a Twelf file</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Report" data-isabs="false">
+      <a id="Report:Report"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Report.html"><span class="name">Report</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Instances of Report handle all output to the user</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ReportHandler" data-isabs="true">
+      <a id="ReportHandler:ReportHandler"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="ReportHandler.html"><span class="name">ReportHandler</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Respond" data-isabs="false">
+      <a id="Respond:Respond"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Respond.html"><span class="name">Respond</span></a>
+        
+        <span class="params">(<span name="pres">pres: MakeConcrete</span>, <span name="param">param: String</span>)</span><span class="result"> extends Output with Product with Serializable</span>
+      </span>
+      </h4>
       <p class="comment cmt">produces the result and throws it away
  call get to keep it in memory and retrieve it
 </p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.SetBase">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ServerOn" data-isabs="false">
+      <a id="ServerOn:ServerOn"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ServerOn.html"><span class="name">ServerOn</span></a>
+        
+        <span class="params">(<span name="port">port: Int</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">start server</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.SetBase" data-isabs="false">
       <a id="SetBase:SetBase"></a>
-      <h4 class="signature"><a href="SetBase.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">SetBase</span>
+      <span class="symbol"> 
+        <a href="SetBase.html"><span class="name">SetBase</span></a>
         
-        <span class="params">(<span name="base">base: Path</span>)</span>
-        <span class="result"> extends Action with Product</span>
+        <span class="params">(<span name="base">base: Path</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">set the current base path</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Shell">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Shell" data-isabs="false">
       <a id="Shell:Shell"></a>
-      <h4 class="signature"><a href="Shell.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Shell</span>
+      <span class="symbol"> 
+        <a href="Shell.html"><span class="name">Shell</span></a>
         
-        
-        <span class="result"> extends Controller</span>
+        <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">Creates a Controller and provides a shell interface to it.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.ToFile">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ToFile" data-isabs="false">
       <a id="ToFile:ToFile"></a>
-      <h4 class="signature"><a href="ToFile.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">ToFile</span>
+      <span class="symbol"> 
+        <a href="ToFile.html"><span class="name">ToFile</span></a>
         
-        <span class="params">(<span name="pres">pres: MakeConcrete</span>, <span name="file">file: File</span>)</span>
-        <span class="result"> extends Output with Product</span>
+        <span class="params">(<span name="pres">pres: MakeConcrete</span>, <span name="file">file: File</span>)</span><span class="result"> extends Output with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">writes to a file</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.ToNode">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ToNode" data-isabs="false">
       <a id="ToNode:ToNode"></a>
-      <h4 class="signature"><a href="ToNode.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">ToNode</span>
+      <span class="symbol"> 
+        <a href="ToNode.html"><span class="name">ToNode</span></a>
         
-        <span class="params">(<span name="c">c: MakeAbstract</span>)</span>
-        <span class="result"> extends MakeConcrete with Product</span>
+        <span class="params">(<span name="c">c: MakeAbstract</span>)</span><span class="result"> extends MakeConcrete with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">takes a content element and renders it as XML</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.ToString">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ToString" data-isabs="false">
       <a id="ToString:ToString"></a>
-      <h4 class="signature"><a href="ToString.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">ToString</span>
+      <span class="symbol"> 
+        <a href="ToString.html"><span class="name">ToString</span></a>
         
-        <span class="params">(<span name="c">c: MakeAbstract</span>)</span>
-        <span class="result"> extends MakeConcrete with Product</span>
+        <span class="params">(<span name="c">c: MakeAbstract</span>)</span><span class="result"> extends MakeConcrete with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">takes a content element and renders it as text</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ToText" data-isabs="false">
+      <a id="ToText:ToText"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ToText.html"><span class="name">ToText</span></a>
+        
+        <span class="params">(<span name="c">c: MakeAbstract</span>)</span><span class="result"> extends MakeConcrete with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
+        
+        
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Action">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.frontend.Action" data-isabs="false">
       <a id="Action:Action"></a>
-      <h4 class="signature"><a href="Action$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Action</span>
-        
+      <span class="symbol"> 
+        <a href="Action$.html"><span class="name">Action</span></a>
         
         <span class="result"> extends RegexParsers</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">helper object for Actions
 This object provides a combinator parser for Actions that is used when commands are sent to a controller as strings.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Clear">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Clear" data-isabs="false">
       <a id="Clear:Clear"></a>
-      <h4 class="signature"><a href="Clear$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Clear</span>
+      <span class="symbol"> 
+        <a href="Clear$.html"><span class="name">Clear</span></a>
         
-        
-        <span class="result"> extends Action with Product</span>
+        <span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">clear the state</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Exit">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ConsoleHandler" data-isabs="false">
+      <a id="ConsoleHandler:ConsoleHandler"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="ConsoleHandler$.html"><span class="name">ConsoleHandler</span></a>
+        
+        <span class="result"> extends ReportHandler</span>
+      </span>
+      </h4>
+      <p class="comment cmt">outputs to standard output</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Exit" data-isabs="false">
       <a id="Exit:Exit"></a>
-      <h4 class="signature"><a href="Exit$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Exit</span>
+      <span class="symbol"> 
+        <a href="Exit$.html"><span class="name">Exit</span></a>
         
-        
-        <span class="result"> extends Action with Product</span>
+        <span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">exit</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Local">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Local" data-isabs="false">
       <a id="Local:Local"></a>
-      <h4 class="signature"><a href="Local$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Local</span>
+      <span class="symbol"> 
+        <a href="Local$.html"><span class="name">Local</span></a>
         
-        
-        <span class="result"> extends Action with Product</span>
+        <span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">add a catalog entry that makes the file system accessible via file: URIs</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.NoAction">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.NoAction" data-isabs="false">
       <a id="NoAction:NoAction"></a>
-      <h4 class="signature"><a href="NoAction$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">NoAction</span>
+      <span class="symbol"> 
+        <a href="NoAction$.html"><span class="name">NoAction</span></a>
         
-        
-        <span class="result"> extends Action with Product</span>
+        <span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">do nothing</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.NullReport">
-      <a id="NullReport:NullReport"></a>
-      <h4 class="signature"><a href="NullReport$.html">
-      <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">NullReport</span>
-        
-        
-        <span class="result"> extends Report</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">outputs nothing, throws exceptions</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.PrintAll">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.PrintAll" data-isabs="false">
       <a id="PrintAll:PrintAll"></a>
-      <h4 class="signature"><a href="PrintAll$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">PrintAll</span>
+      <span class="symbol"> 
+        <a href="PrintAll$.html"><span class="name">PrintAll</span></a>
         
-        
-        <span class="result"> extends Action with Product</span>
+        <span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">print all loaded knowledge items to STDOUT in text syntax</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.PrintAllXML">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.PrintAllXML" data-isabs="false">
       <a id="PrintAllXML:PrintAllXML"></a>
-      <h4 class="signature"><a href="PrintAllXML$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">PrintAllXML</span>
+      <span class="symbol"> 
+        <a href="PrintAllXML$.html"><span class="name">PrintAllXML</span></a>
         
-        
-        <span class="result"> extends Action with Product</span>
+        <span class="result"> extends Action with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">print all loaded knowledge items to STDOUT in XML syntax</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.frontend.Run">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Run" data-isabs="false">
       <a id="Run:Run"></a>
-      <h4 class="signature"><a href="Run$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Run</span>
-        
+      <span class="symbol"> 
+        <a href="Run$.html"><span class="name">Run</span></a>
         
         <span class="result"> extends Shell</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">A shell with the DefaultFoundation.</p>
+      </h4>
+      <p class="comment cmt">A shell, the default way to run MMT as an application</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ServerOff" data-isabs="false">
+      <a id="ServerOff:ServerOff"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="ServerOff$.html"><span class="name">ServerOff</span></a>
+        
+        <span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">shut down server</p>
     </li></ol>
             </div>
+
+        
 
         
 

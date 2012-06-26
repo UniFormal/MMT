@@ -5,32 +5,31 @@
           <title>info.kwarc.mmt.api.backend</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link href="../../../../../lib/template.css" rel="stylesheet" type="text/css" media="screen" />
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
       <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body class="value" onload="windowTitle();">
-
-      <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
-
+        <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
+        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
         <h1>backend</h1>
       </div>
 
       <h4 class="signature" id="signature">
       <span class="kind">package</span>
-      <span class="symbol">
+      <span class="symbol"> 
         <span class="name">backend</span>
-        
         
         
       </span>
       </h4>
-      <div class="fullcomment" id="comment"></div>
+      
+          <div class="fullcommenttop" id="comment"></div>
+        
 
       <div id="template">
 
@@ -40,11 +39,7 @@
           
           <div id="visbl">
               <span class="filtertype">Visibility</span>
-              <ol><li class="public in">Public</li><li class="all out">All</li></ol>
-            </div>
-          <div id="impl">
-              <span class="filtertype">Impl.</span>
-              <ol><li class="concrete in">Concrete</li><li class="abstract in">Abstract</li></ol>
+              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
             </div>
         </div>
 
@@ -52,260 +47,306 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Archive">
-      <a id="Archive:Archive"></a>
-      <h4 class="signature"><a href="Archive.html">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.backend.ArchiveCustomization" data-isabs="true">
+      <a id="ArchiveCustomization:ArchiveCustomization"></a>
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Archive</span>
+      <span class="symbol"> 
+        <a href="ArchiveCustomization.html"><span class="name">ArchiveCustomization</span></a>
         
-        
-        <span class="result"> extends Storage</span>
+        <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">MAR archive management</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Ass">
-      <a id="Ass:Ass"></a>
-      <h4 class="signature"><a href="Ass.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Ass</span>
-        
-        <span class="params">(<span name="p">p: String</span>, <span name="q">q: String</span>)</span>
-        <span class="result"> extends OMQuery with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Backend">
+      </h4>
+      <p class="comment cmt">Helper class to permit customizing archives</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Backend" data-isabs="false">
       <a id="Backend:Backend"></a>
-      <h4 class="signature"><a href="Backend.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Backend</span>
-        
+      <span class="symbol"> 
+        <a href="Backend.html"><span class="name">Backend</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">a Backend holds a list of Storages and uses them to dereference Paths</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.CompilationError">
-      <a id="CompilationError:CompilationError"></a>
-      <h4 class="signature"><a href="CompilationError.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">CompilationError</span>
-        
-        <span class="params">(<span name="s">s: String</span>)</span>
-        <span class="result"> extends Exception with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.backend.Compiler">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Compiler" data-isabs="true">
       <a id="Compiler:Compiler"></a>
-      <h4 class="signature"><a href="Compiler.html">
-      <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Compiler</span>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="Compiler.html"><span class="name">Compiler</span></a>
         
-        
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends Importer</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">A Compiler transforms source files into OMDoc files
 </p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.CompilerError">
-      <a id="CompilerError:CompilerError"></a>
-      <h4 class="signature"><a href="CompilerError.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">CompilerError</span>
-        
-        <span class="params">(<span name="region">region: Region</span>, <span name="msg">msg: List[String]</span>, <span name="warning">warning: Boolean</span>)</span>
-        <span class="result"> extends Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">an error or warning returned by the compiler</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Doc">
-      <a id="Doc:Doc"></a>
-      <h4 class="signature"><a href="Doc.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Doc</span>
-        
-        <span class="params">(<span name="base">base: String</span>, <span name="p">p: String</span>, <span name="q">q: String</span>)</span>
-        <span class="result"> extends OMQuery with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.LocalCopy">
-      <a id="LocalCopy:LocalCopy"></a>
-      <h4 class="signature"><a href="LocalCopy.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">LocalCopy</span>
-        
-        <span class="params">(<span name="scheme">scheme: String</span>, <span name="authority">authority: String</span>, <span name="prefix">prefix: String</span>, <span name="base">base: File</span>)</span>
-        <span class="result"> extends Storage with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">a Storage that retrieves repository URIs from the local working copy</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.LocalSystem">
-      <a id="LocalSystem:LocalSystem"></a>
-      <h4 class="signature"><a href="LocalSystem.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">LocalSystem</span>
-        
-        <span class="params">(<span name="base">base: URI</span>)</span>
-        <span class="result"> extends Storage with Product</span>
-      </span>
-      </a></h4>
-      <p class="comment cmt">a Storage that retrieves file URIs from the local system</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Mod">
-      <a id="Mod:Mod"></a>
-      <h4 class="signature"><a href="Mod.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Mod</span>
-        
-        <span class="params">(<span name="p">p: String</span>, <span name="q">q: String</span>)</span>
-        <span class="result"> extends OMQuery with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.NotFound">
-      <a id="NotFound:NotFound"></a>
-      <h4 class="signature"><a href="NotFound.html">
-      <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">NotFound</span>
-        
-        <span class="params">(<span name="p">p: Path</span>)</span>
-        <span class="result"> extends Error with Product</span>
-      </span>
-      </a></h4>
-      
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.backend.OMBase">
-      <a id="OMBase:OMBase"></a>
-      <h4 class="signature"><a href="OMBase.html">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.DefaultCustomization" data-isabs="false">
+      <a id="DefaultCustomization:DefaultCustomization"></a>
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">OMBase</span>
+      <span class="symbol"> 
+        <a href="DefaultCustomization.html"><span class="name">DefaultCustomization</span></a>
         
+        <span class="result"> extends ArchiveCustomization</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Doc" data-isabs="false">
+      <a id="Doc:Doc"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Doc.html"><span class="name">Doc</span></a>
+        
+        <span class="params">(<span name="base">base: String</span>, <span name="p">p: String</span>, <span name="q">q: String</span>)</span><span class="result"> extends OMQuery with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Importer" data-isabs="true">
+      <a id="Importer:Importer"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="Importer.html"><span class="name">Importer</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.LocalCopy" data-isabs="false">
+      <a id="LocalCopy:LocalCopy"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="LocalCopy.html"><span class="name">LocalCopy</span></a>
+        
+        <span class="params">(<span name="scheme">scheme: String</span>, <span name="authority">authority: String</span>, <span name="prefix">prefix: String</span>, <span name="base">base: File</span>)</span><span class="result"> extends Storage with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">a Storage that retrieves repository URIs from the local working copy</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.LocalSystem" data-isabs="false">
+      <a id="LocalSystem:LocalSystem"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="LocalSystem.html"><span class="name">LocalSystem</span></a>
+        
+        <span class="params">(<span name="base">base: URI</span>)</span><span class="result"> extends Storage with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">a Storage that retrieves file URIs from the local system</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.MML" data-isabs="false">
+      <a id="MML:MML"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="MML.html"><span class="name">MML</span></a>
+        
+        <span class="result"> extends ArchiveCustomization</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Customization for Mizar</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Mod" data-isabs="false">
+      <a id="Mod:Mod"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Mod.html"><span class="name">Mod</span></a>
+        
+        <span class="params">(<span name="p">p: String</span>, <span name="q">q: String</span>)</span><span class="result"> extends OMQuery with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.OMBase" data-isabs="true">
+      <a id="OMBase:OMBase"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="OMBase.html"><span class="name">OMBase</span></a>
         
         <span class="result"> extends Storage</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">a trait for URL-addressed Storages that can serve MMT document fragments</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.backend.OMQuery">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.OMQuery" data-isabs="true">
       <a id="OMQuery:OMQuery"></a>
-      <h4 class="signature"><a href="OMQuery.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">OMQuery</span>
-        
+      <span class="symbol"> 
+        <a href="OMQuery.html"><span class="name">OMQuery</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.QueryTransformer" data-isabs="true">
+      <a id="QueryTransformer:QueryTransformer"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="QueryTransformer.html"><span class="name">QueryTransformer</span></a>
+        
+        <span class="result"> extends Importer</span>
+      </span>
+      </h4>
       
-            
-            <div class="fullcomment"><div class="block">
-          attributes: sealed abstract 
-        </div></div>
-          
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Reader">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Reader" data-isabs="true">
       <a id="Reader:Reader"></a>
-      <h4 class="signature"><a href="Reader.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Reader</span>
-        
+      <span class="symbol"> 
+        <a href="Reader.html"><span class="name">Reader</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">A Reader parses XML/MMT and calls controller.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Region">
-      <a id="Region:Region"></a>
-      <h4 class="signature"><a href="Region.html">
+      </h4>
+      <p class="comment cmt"></p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.SVNRepo" data-isabs="false">
+      <a id="SVNRepo:SVNRepo"></a>
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">Region</span>
+      <span class="symbol"> 
+        <a href="SVNRepo.html"><span class="name">SVNRepo</span></a>
         
-        <span class="params">(<span name="file">file: File</span>, <span name="beginLine">beginLine: Int</span>, <span name="beginColumn">beginColumn: Int</span>, <span name="endLine">endLine: Int</span>, <span name="endColumn">endColumn: Int</span>)</span>
-        <span class="result"> extends Product</span>
+        <span class="params">(<span name="scheme">scheme: String</span>, <span name="authority">authority: String</span>, <span name="prefix">prefix: String</span>, <span name="repository">repository: SVNRepository</span>, <span name="defaultRev">defaultRev: Int</span>)</span><span class="result"> extends Storage with Product with Serializable</span>
       </span>
-      </a></h4>
-      <p class="comment cmt">represents the location of an error</p>
-    </li><li visbl="pub" data-isabs="true" name="info.kwarc.mmt.api.backend.Storage">
+      </h4>
+      <p class="comment cmt">a Storage that retrieves repository URIs over SVN connection</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Storage" data-isabs="true">
       <a id="Storage:Storage"></a>
-      <h4 class="signature"><a href="Storage.html">
+      <h4 class="signature">
       <span class="kind">class</span>
-      <span class="symbol">
-        <span class="name">Storage</span>
-        
+      <span class="symbol"> 
+        <a href="Storage.html"><span class="name">Storage</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">Storage is an abstraction over backends that can provide MMT content
 A storage declares a URI u and must answer to all URIs that start with u.</p>
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.TNTBase">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TNTBase" data-isabs="false">
       <a id="TNTBase:TNTBase"></a>
-      <h4 class="signature"><a href="TNTBase.html">
+      <h4 class="signature">
       <span class="kind">case class</span>
-      <span class="symbol">
-        <span class="name">TNTBase</span>
+      <span class="symbol"> 
+        <a href="TNTBase.html"><span class="name">TNTBase</span></a>
         
-        <span class="params">(<span name="scheme">scheme: String</span>, <span name="authority">authority: String</span>, <span name="prefix">prefix: String</span>, <span name="ombase">ombase: URI</span>, <span name="dp">dp: List[OMQuery]</span>, <span name="mp">mp: List[OMQuery]</span>, <span name="sp">sp: List[OMQuery]</span>, <span name="ip">ip: List[OMQuery]</span>)</span>
-        <span class="result"> extends OMBase with Product</span>
+        <span class="params">(<span name="scheme">scheme: String</span>, <span name="authority">authority: String</span>, <span name="prefix">prefix: String</span>, <span name="ombase">ombase: URI</span>, <span name="dp">dp: List[OMQuery]</span>, <span name="mp">mp: List[OMQuery]</span>, <span name="sp">sp: List[OMQuery]</span>, <span name="ip">ip: List[OMQuery]</span>)</span><span class="result"> extends OMBase with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">a Storage that retrieves content from a TNTBase database</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TPTP" data-isabs="false">
+      <a id="TPTP:TPTP"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="TPTP.html"><span class="name">TPTP</span></a>
+        
+        <span class="result"> extends ArchiveCustomization</span>
+      </span>
+      </h4>
+      <p class="comment cmt">TPTP customization
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TextReader" data-isabs="false">
+      <a id="TextReader:TextReader"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="TextReader.html"><span class="name">TextReader</span></a>
+        
+        <span class="result"> extends Reader</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A TextReader parses Twelf (for now) and calls controller.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.XMLReader" data-isabs="false">
+      <a id="XMLReader:XMLReader"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="XMLReader.html"><span class="name">XMLReader</span></a>
+        
+        <span class="result"> extends Reader</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Reader parses XML/MMT and calls controller.</p>
     </li></ol>
             </div>
+        
+        
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.NotApplicable">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.backend.NotApplicable" data-isabs="false">
       <a id="NotApplicable:NotApplicable"></a>
-      <h4 class="signature"><a href="NotApplicable$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">NotApplicable</span>
+      <span class="symbol"> 
+        <a href="NotApplicable$.html"><span class="name">NotApplicable</span></a>
         
-        
-        <span class="result"> extends Throwable with Product</span>
+        <span class="result"> extends Throwable with Product with Serializable</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.OMQuery">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.OMQuery" data-isabs="false">
       <a id="OMQuery:OMQuery"></a>
-      <h4 class="signature"><a href="OMQuery$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">OMQuery</span>
-        
+      <span class="symbol"> 
+        <a href="OMQuery$.html"><span class="name">OMQuery</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       
-    </li><li visbl="pub" data-isabs="false" name="info.kwarc.mmt.api.backend.Storage">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Storage" data-isabs="false">
       <a id="Storage:Storage"></a>
-      <h4 class="signature"><a href="Storage$.html">
+      <h4 class="signature">
       <span class="kind">object</span>
-      <span class="symbol">
-        <span class="name">Storage</span>
-        
+      <span class="symbol"> 
+        <a href="Storage$.html"><span class="name">Storage</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
-      </a></h4>
+      </h4>
       <p class="comment cmt">convenience methods for backends</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TextReader" data-isabs="false">
+      <a id="TextReader:TextReader"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="TextReader$.html"><span class="name">TextReader</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TrivialQueryTransformer" data-isabs="false">
+      <a id="TrivialQueryTransformer:TrivialQueryTransformer"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="TrivialQueryTransformer$.html"><span class="name">TrivialQueryTransformer</span></a>
+        
+        <span class="result"> extends QueryTransformer</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.XMLReader" data-isabs="false">
+      <a id="XMLReader:XMLReader"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="XMLReader$.html"><span class="name">XMLReader</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
+
+        
 
         
 

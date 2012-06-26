@@ -226,13 +226,13 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Throwable</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.Error#getCausedBy" data-isabs="false">
-      <a id="getCausedBy:Option[Error]"></a>
+      <a id="getCausedBy:Option[Throwable]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">getCausedBy</span>
         
-        <span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a>]</span>
+        <span class="result">: <span name="scala.Option" class="extype">Option</span>[<span name="java.lang.Throwable" class="extype">Throwable</span>]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a></dd></dl></div>
@@ -246,7 +246,7 @@
         <span class="params">()</span><span class="result">: java.lang.Class[_]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="java.lang.Throwable#getLocalizedMessage" data-isabs="false">
       <a id="getLocalizedMessage():String"></a>
       <h4 class="signature">
@@ -446,13 +446,13 @@
       </h4>
       
     </li><li visbl="pub" name="info.kwarc.mmt.api.Error#setCausedBy" data-isabs="false">
-      <a id="setCausedBy(Error):Error"></a>
+      <a id="setCausedBy(Throwable):Error"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">setCausedBy</span>
         
-        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a></span>
+        <span class="params">(<span name="e">e: <span name="java.lang.Throwable" class="extype">Throwable</span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a></dd></dl></div>
@@ -478,6 +478,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Error#stackTrace" data-isabs="false">
+      <a id="stackTrace:String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">stackTrace</span>
+        
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -489,17 +500,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="java.lang.Throwable#toString" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Error#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">toString</span>
         
-        <span class="params">()</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
+        <span class="params">()</span><span class="result">: String</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Throwable → AnyRef → Any</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Error" class="extype" href="../api/Error.html">Error</a> → Throwable → AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -542,7 +553,12 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="scala.Product#productElements" data-isabs="false">
+    </li></ol>
+            </div>
+
+        <div class="values members" id="values">
+              <h3>Deprecated Value Members</h3>
+              <ol><li visbl="pub" name="scala.Product#productElements" data-isabs="false">
       <a id="productElements:Iterator[Any]"></a>
       <h4 class="signature">
       <span class="kind">def</span>

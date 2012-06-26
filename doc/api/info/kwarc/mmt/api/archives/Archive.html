@@ -14,9 +14,9 @@
         </head>
         <body class="type">
       <div id="definition">
-        <img src="../../../../../lib/class_big.png" />
+        <a title="Go to companion" href="Archive$.html"><img src="../../../../../lib/class_to_object_big.png" /></a>
         <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a>.<a name="info.kwarc.mmt.api.archives" class="extype" href="package.html">archives</a></p>
-        <h1>Archive</h1>
+        <h1><a title="Go to companion" href="Archive$.html">Archive</a></h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -24,13 +24,13 @@
       <span class="symbol"> 
         <span class="name">Archive</span>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends <a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a> with <a name="info.kwarc.mmt.api.archives.CompilableArchive" class="extype" href="CompilableArchive.html">CompilableArchive</a> with <a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a> with <a name="info.kwarc.mmt.api.archives.ScalaArchive" class="extype" href="ScalaArchive.html">ScalaArchive</a> with <a name="info.kwarc.mmt.api.archives.ZipArchive" class="extype" href="ZipArchive.html">ZipArchive</a></span>
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>archive management</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.api.archives.ZipArchive" class="extype" href="ZipArchive.html">ZipArchive</a>, <a name="info.kwarc.mmt.api.archives.ScalaArchive" class="extype" href="ScalaArchive.html">ScalaArchive</a>, <a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a>, <a name="info.kwarc.mmt.api.archives.CompilableArchive" class="extype" href="CompilableArchive.html">CompilableArchive</a>, <a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a>, <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a>, <a name="info.kwarc.mmt.api.backend.Storage" class="extype" href="../backend/Storage.html">Storage</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
         
 
@@ -46,7 +46,7 @@
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall out"><span>Hide All</span></li>
                 <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.api.archives.Archive" class="in"><span>Archive</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+                <ol id="linearization"><li name="info.kwarc.mmt.api.archives.Archive" class="in"><span>Archive</span></li><li name="info.kwarc.mmt.api.archives.ZipArchive" class="in"><span>ZipArchive</span></li><li name="info.kwarc.mmt.api.archives.ScalaArchive" class="in"><span>ScalaArchive</span></li><li name="info.kwarc.mmt.api.archives.IndexedArchive" class="in"><span>IndexedArchive</span></li><li name="info.kwarc.mmt.api.archives.CompilableArchive" class="in"><span>CompilableArchive</span></li><li name="info.kwarc.mmt.api.archives.WritableArchive" class="in"><span>WritableArchive</span></li><li name="info.kwarc.mmt.api.archives.ROArchive" class="in"><span>ROArchive</span></li><li name="info.kwarc.mmt.api.backend.Storage" class="in"><span>Storage</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -63,10 +63,11 @@
       <span class="symbol"> 
         <span class="name">Archive</span>
         
-        <span class="params">(<span name="root">root: <span name="java.io.File" class="extype">File</span></span>, <span name="report">report: <a name="info.kwarc.mmt.api.frontend.Report" class="extype" href="../frontend/Report.html">Report</a></span>)</span>
+        <span class="params">(<span name="root">root: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>, <span name="properties">properties: <span name="scala.collection.mutable.Map" class="extype">Map</span>[String, String]</span>, <span name="compsteps">compsteps: <span name="scala.Option" class="extype">Option</span>[List[<a name="info.kwarc.mmt.api.archives.CompilationStep" class="extype" href="CompilationStep.html">CompilationStep</a>]]</span>, <span name="report">report: <a name="info.kwarc.mmt.api.frontend.Report" class="extype" href="../frontend/Report.html">Report</a></span>)</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">root</dt><dd class="cmt"><p>the root folder that contains the source folder</p></dd><dt class="param">properties</dt><dd class="cmt"></dd><dt class="param">compsteps</dt><dd class="cmt"><p>the list of compilation steps that produces an already initialized compiler</p></dd><dt class="param">report</dt><dd class="cmt"><p>the reporting mechanism</p><p>Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -131,17 +132,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#MMTPathToFilePath" data-isabs="false">
-      <a id="MMTPathToFilePath(MPath):File"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#MMTPathToContentPath" data-isabs="false">
+      <a id="MMTPathToContentPath(MPath):File"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">MMTPathToFilePath</span>
+        <span class="name">MMTPathToContentPath</span>
         
-        <span class="params">(<span name="m">m: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>)</span><span class="result">: <span name="java.io.File" class="extype">File</span></span>
+        <span class="params">(<span name="m">m: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Get the disk path of the module in the content folder</p><div class="fullcomment"><div class="comment cmt"><p>Get the disk path of the module in the content folder</p></div><dl class="paramcmts block"><dt class="param">m</dt><dd class="cmt"><p>the MPath of the module</p></dd><dt>returns</dt><dd class="cmt"><p>the File descriptor of the destination  file in the content folder
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -153,6 +155,28 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#check" data-isabs="false">
+      <a id="check(List[String],Controller):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">check</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#clean" data-isabs="false">
+      <a id="clean(List[String],String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">clean</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="dim">dim: String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -167,28 +191,94 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#contToPres" data-isabs="false">
-      <a id="contToPres(Controller,String,MPath):Unit"></a>
+    </li><li visbl="prt" name="info.kwarc.mmt.api.archives.WritableArchive#compErrors" data-isabs="false">
+      <a id="compErrors:LinkedHashMap[List[String], List[SourceError]]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">compErrors</span>
+        
+        <span class="result">: <span name="scala.collection.mutable.LinkedHashMap" class="extype">LinkedHashMap</span>[List[String], List[<a name="info.kwarc.mmt.api.SourceError" class="extype" href="../SourceError.html">SourceError</a>]]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">compilation errors</p><div class="fullcomment"><div class="comment cmt"><p>compilation errors</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#compiledDim" data-isabs="false">
+      <a id="compiledDim:String"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">compiledDim</span>
+        
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#compsteps" data-isabs="false">
+      <a id="compsteps:Option[List[CompilationStep]]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">compsteps</span>
+        
+        <span class="result">: <span name="scala.Option" class="extype">Option</span>[List[<a name="info.kwarc.mmt.api.archives.CompilationStep" class="extype" href="CompilationStep.html">CompilationStep</a>]]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the list of compilation steps that produces an already initialized compiler</p><div class="fullcomment"><div class="comment cmt"><p>the list of compilation steps that produces an already initialized compiler</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.Archive" class="extype" href="">Archive</a> → <a name="info.kwarc.mmt.api.archives.CompilableArchive" class="extype" href="CompilableArchive.html">CompilableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#contentDir" data-isabs="false">
+      <a id="contentDir:File"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">contentDir</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="prt" name="info.kwarc.mmt.api.archives.WritableArchive#custom" data-isabs="false">
+      <a id="custom:ArchiveCustomization"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">custom</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.backend.ArchiveCustomization" class="extype" href="../backend/ArchiveCustomization.html">ArchiveCustomization</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.CompilableArchive#deleteCompiled" data-isabs="false">
+      <a id="deleteCompiled(List[String]):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">contToPres</span>
+        <span class="name">deleteCompiled</span>
         
-        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>, <span name="label">label: String</span>, <span name="style">style: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#contToRel" data-isabs="false">
-      <a id="contToRel(Controller):Unit"></a>
+      <p class="shortcomment cmt">deletes all files produced in the compilation chain</p><div class="fullcomment"><div class="comment cmt"><p>deletes all files produced in the compilation chain</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.CompilableArchive" class="extype" href="CompilableArchive.html">CompilableArchive</a></dd></dl></div>
+    </li><li visbl="prt" name="info.kwarc.mmt.api.archives.WritableArchive#deleteFile" data-isabs="false">
+      <a id="deleteFile(File):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">contToRel</span>
+        <span class="name">deleteFile</span>
         
-        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="f">f: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.IndexedArchive#deleteNarrCont" data-isabs="false">
+      <a id="deleteNarrCont(List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">deleteNarrCont</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">deletes content, narration, notation, and relational; argument is treated as paths in narration</p><div class="fullcomment"><div class="comment cmt"><p>deletes content, narration, notation, and relational; argument is treated as paths in narration</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -211,6 +301,28 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#extensionIs" data-isabs="false">
+      <a id="extensionIs(String):(String) ⇒ Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">extensionIs</span>
+        
+        <span class="params">(<span name="e">e: String</span>)</span><span class="result">: (String) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">returns a functions that filters by file name extension</p><div class="fullcomment"><div class="comment cmt"><p>returns a functions that filters by file name extension</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ScalaArchive#extractScala" data-isabs="false">
+      <a id="extractScala(List[String],String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">extractScala</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="dim">dim: String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Extract scala from a dimension</p><div class="fullcomment"><div class="comment cmt"><p>Extract scala from a dimension</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.ScalaArchive" class="extype" href="ScalaArchive.html">ScalaArchive</a></dd></dl></div>
     </li><li visbl="prt" name="scala.AnyRef#finalize" data-isabs="false">
       <a id="finalize():Unit"></a>
       <h4 class="signature">
@@ -225,7 +337,18 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#get" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#flatDir" data-isabs="false">
+      <a id="flatDir:File"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">flatDir</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#get" data-isabs="false">
       <a id="get(MPath):Node"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -235,7 +358,21 @@
         <span class="params">(<span name="m">m: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>)</span><span class="result">: <span name="scala.xml.Node" class="extype">Node</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Get a module from content folder</p><div class="fullcomment"><div class="comment cmt"><p>Get a module from content folder</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a> → <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ROArchive#get" data-isabs="false">
+      <a id="get(Path)((URI, NodeSeq) ⇒ Unit):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">get</span>
+        
+        <span class="params">(<span name="p">p: <a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a name="info.kwarc.mmt.api.utils.URI" class="extype" href="../utils/URI.html">URI</a>, <span name="scala.xml.NodeSeq" class="extype">NodeSeq</span>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">dereferences a path and sends the content to a reader
+a storage may send more content than the path references, e.</p><div class="fullcomment"><div class="comment cmt"><p>dereferences a path and sends the content to a reader
+a storage may send more content than the path references, e.g., the whole file or a dependency closure
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a> → <a name="info.kwarc.mmt.api.backend.Storage" class="extype" href="../backend/Storage.html">Storage</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -246,7 +383,29 @@
         <span class="params">()</span><span class="result">: java.lang.Class[_]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#getErrors" data-isabs="false">
+      <a id="getErrors(List[String]):List[SourceError]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getErrors</span>
+        
+        <span class="params">(<span name="l">l: List[String]</span>)</span><span class="result">: List[<a name="info.kwarc.mmt.api.SourceError" class="extype" href="../SourceError.html">SourceError</a>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#getPresentation" data-isabs="false">
+      <a id="getPresentation(MPath,Controller,MPath):Option[Node]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getPresentation</span>
+        
+        <span class="params">(<span name="in">in: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>, <span name="nset">nset: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[<span name="scala.xml.Node" class="extype">Node</span>]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -258,17 +417,39 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#init" data-isabs="false">
-      <a id="init:Unit"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#id" data-isabs="false">
+      <a id="id:String"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">id</span>
+        
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#includeDir" data-isabs="false">
+      <a id="includeDir(String):Boolean"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">init</span>
+        <span class="name">includeDir</span>
         
-        <span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="n">n: String</span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ScalaArchive#integrateScala" data-isabs="false">
+      <a id="integrateScala(List[String],String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">integrateScala</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="dim">dim: String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Integrate scala into a dimension</p><div class="fullcomment"><div class="comment cmt"><p>Integrate scala into a dimension</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.ScalaArchive" class="extype" href="ScalaArchive.html">ScalaArchive</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -280,7 +461,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#log" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#log" data-isabs="false">
       <a id="log(⇒ String):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -290,18 +471,40 @@
         <span class="params">(<span name="msg">msg: ⇒ String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#narrToCont" data-isabs="false">
-      <a id="narrToCont(Controller):Unit"></a>
+      <p class="shortcomment cmt">Report a message using the given report handler</p><div class="fullcomment"><div class="comment cmt"><p>Report a message using the given report handler</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#narrationBackend" data-isabs="false">
+      <a id="narrationBackend:LocalCopy"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
+      <span class="kind">val</span>
       <span class="symbol"> 
-        <span class="name">narrToCont</span>
+        <span class="name">narrationBackend</span>
         
-        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="result">: <a name="info.kwarc.mmt.api.backend.LocalCopy" class="extype" href="../backend/LocalCopy.html">LocalCopy</a></span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a> → <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#narrationBase" data-isabs="false">
+      <a id="narrationBase:URI"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">narrationBase</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.utils.URI" class="extype" href="../utils/URI.html">URI</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#narrationDir" data-isabs="false">
+      <a id="narrationDir:File"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">narrationDir</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -335,17 +538,161 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#put" data-isabs="false">
-      <a id="put(Module):Unit"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.CompilableArchive#produceCompiled" data-isabs="false">
+      <a id="produceCompiled(List[String]):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">put</span>
+        <span class="name">produceCompiled</span>
         
-        <span class="params">(<span name="mod">mod: <a name="info.kwarc.mmt.api.modules.Module" class="extype" href="../modules/Module.html">Module</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">apply all compilation steps, e.</p><div class="fullcomment"><div class="comment cmt"><p>apply all compilation steps, e.g., from &quot;source&quot; into &quot;compiled&quot;</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.CompilableArchive" class="extype" href="CompilableArchive.html">CompilableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#produceFlat" data-isabs="false">
+      <a id="produceFlat(List[String],Controller):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">produceFlat</span>
+        
+        <span class="params">(<span name="in">in: List[String]</span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#produceMWS" data-isabs="false">
+      <a id="produceMWS(List[String],String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">produceMWS</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="dim">dim: String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.IndexedArchive#produceNarrCont" data-isabs="false">
+      <a id="produceNarrCont(List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">produceNarrCont</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Generate content, narration, notation, and relational from compiled.</p><div class="fullcomment"><div class="comment cmt"><p>Generate content, narration, notation, and relational from compiled.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#producePres" data-isabs="false">
+      <a id="producePres(List[String],MPath,Controller):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">producePres</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="style">style: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Generate presentation from content</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#properties" data-isabs="false">
+      <a id="properties:Map[String, String]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">properties</span>
+        
+        <span class="result">: <span name="scala.collection.mutable.Map" class="extype">Map</span>[String, String]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.Archive" class="extype" href="">Archive</a> → <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.IndexedArchive#readNotation" data-isabs="false">
+      <a id="readNotation(List[String],Controller):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">readNotation</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.IndexedArchive#readRelational" data-isabs="false">
+      <a id="readRelational(List[String],Controller):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">readRelational</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#readSource" data-isabs="false">
+      <a id="readSource(List[String],Controller):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">readSource</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#relDir" data-isabs="false">
+      <a id="relDir:File"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">relDir</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#report" data-isabs="false">
+      <a id="report:Report"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">report</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.frontend.Report" class="extype" href="../frontend/Report.html">Report</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the reporting mechanism</p><div class="fullcomment"><div class="comment cmt"><p>the reporting mechanism</p><p>Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.Archive" class="extype" href="">Archive</a> → <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#root" data-isabs="false">
+      <a id="root:File"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">root</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the root folder that contains the source folder</p><div class="fullcomment"><div class="comment cmt"><p>the root folder that contains the source folder</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.Archive" class="extype" href="">Archive</a> → <a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#rootString" data-isabs="false">
+      <a id="rootString:String"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">rootString</span>
+        
+        <span class="result">: <span name="java.lang.String" class="extype">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.Archive" class="extype" href="">Archive</a> → <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#sourceDim" data-isabs="false">
+      <a id="sourceDim:String"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">sourceDim</span>
+        
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -357,17 +704,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.Archive#toMar" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ZipArchive#toMar" data-isabs="false">
       <a id="toMar(File):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">toMar</span>
         
-        <span class="params">(<span name="target">target: <span name="java.io.File" class="extype">File</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="target">target: <span name="java.io.File" class="extype">File</span> = <span class="symbol"><span class="name"><a href="WritableArchive.html#root:File">root / (root.getName + &quot;.mar&quot;)</a></span></span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Pack everything in a MAR archive.</p><div class="fullcomment"><div class="comment cmt"><p>Pack everything in a MAR archive. Caution: empty folders are not put in the archive.</p></div><dl class="paramcmts block"><dt class="param">target</dt><dd class="cmt"><p>the target MAR file. Default is &lt;name&gt;.mar in the root folder, where &lt;name&gt; is the name of the root</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.ZipArchive" class="extype" href="ZipArchive.html">ZipArchive</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -379,6 +726,39 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#traverse" data-isabs="false">
+      <a id="traverse(String,List[String],(String) ⇒ Boolean,Boolean)((Current) ⇒ Unit):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">traverse</span>
+        
+        <span class="params">(<span name="dim">dim: String</span>, <span name="in">in: List[String]</span>, <span name="filter">filter: (String) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>, <span name="sendLog">sendLog: <span name="scala.Boolean" class="extype">Boolean</span> = <span class="symbol">true</span></span>)</span><span class="params">(<span name="f">f: (<a name="info.kwarc.mmt.api.archives.Current" class="extype" href="Current.html">Current</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this</p><div class="fullcomment"><div class="comment cmt"><p>traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.CompilableArchive#updateCompiled" data-isabs="false">
+      <a id="updateCompiled(List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">updateCompiled</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">partially reruns produceCompiled using the time stamps and the system's last-modified information</p><div class="fullcomment"><div class="comment cmt"><p>partially reruns produceCompiled using the time stamps and the system's last-modified information</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.CompilableArchive" class="extype" href="CompilableArchive.html">CompilableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.IndexedArchive#updateNarrCont" data-isabs="false">
+      <a id="updateNarrCont(List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">updateNarrCont</span>
+        
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">partially reruns produceNarrCont using the time stamps and the system's last-modified information</p><div class="fullcomment"><div class="comment cmt"><p>partially reruns produceNarrCont using the time stamps and the system's last-modified information</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -424,7 +804,23 @@
     </li></ol>
             </div>
 
-        <div name="scala.AnyRef" class="parent">
+        
+
+        <div name="info.kwarc.mmt.api.archives.ZipArchive" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.archives.ZipArchive" class="extype" href="ZipArchive.html">ZipArchive</a></h3>
+            </div><div name="info.kwarc.mmt.api.archives.ScalaArchive" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.archives.ScalaArchive" class="extype" href="ScalaArchive.html">ScalaArchive</a></h3>
+            </div><div name="info.kwarc.mmt.api.archives.IndexedArchive" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.archives.IndexedArchive" class="extype" href="IndexedArchive.html">IndexedArchive</a></h3>
+            </div><div name="info.kwarc.mmt.api.archives.CompilableArchive" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.archives.CompilableArchive" class="extype" href="CompilableArchive.html">CompilableArchive</a></h3>
+            </div><div name="info.kwarc.mmt.api.archives.WritableArchive" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></h3>
+            </div><div name="info.kwarc.mmt.api.archives.ROArchive" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a></h3>
+            </div><div name="info.kwarc.mmt.api.backend.Storage" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.backend.Storage" class="extype" href="../backend/Storage.html">Storage</a></h3>
+            </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
               <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>

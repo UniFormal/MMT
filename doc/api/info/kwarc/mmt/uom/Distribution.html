@@ -28,7 +28,9 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Distributivity</p><pre>
+a1 ... (b1 + ... + bn) ... am ---&gt; (a1 ... b1 ... am) + ... + (a1 ... bn ... am)
+</pre></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -82,7 +84,7 @@
         <span class="result"> = (List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>], List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>], List[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../api/objects/Term.html">Term</a>]) ⇒ <a name="info.kwarc.mmt.uom.Result" class="extype" href="Result.html">Result</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
+      <p class="shortcomment cmt">a Rewrite takes the triple (before, inside, after) and returns a simplification Result</p><div class="fullcomment"><div class="comment cmt"><p>a Rewrite takes the triple (before, inside, after) and returns a simplification Result</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
     </li></ol>
             </div>
         
@@ -155,7 +157,7 @@
         <span class="result">: Rewrite</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.Distribution" class="extype" href="">Distribution</a> → <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
+      <p class="shortcomment cmt">the implementation of the simplification rule</p><div class="fullcomment"><div class="comment cmt"><p>the implementation of the simplification rule</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.uom.Distribution" class="extype" href="">Distribution</a> → <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -227,7 +229,7 @@
         <span class="params">()</span><span class="result">: java.lang.Class[_]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -349,6 +351,8 @@
         </dd></dl></div>
     </li></ol>
             </div>
+
+        
 
         <div name="info.kwarc.mmt.uom.DepthRule" class="parent">
               <h3>Inherited from <a name="info.kwarc.mmt.uom.DepthRule" class="extype" href="DepthRule.html">DepthRule</a></h3>
