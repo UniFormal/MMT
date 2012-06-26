@@ -13,8 +13,8 @@ class DelayedConstraint(val constraint: Judgement) {
   private val freeVars = constraint.freeVars
   private var activatable = false
   /** This must be called whenever a variable that may occur free in this constraint has been solved */
-  def solved(name: LocalName) {
-     if (! activatable && (freeVars contains name)) activatable = true
+  def solved(names: List[LocalName]) {
+     if (! activatable && (names exists {name => freeVars contains name})) activatable = true
   }
   /** @return true iff a variable has been solved that occurs free in this Constraint */
   def isActivatable: Boolean = activatable
@@ -37,6 +37,8 @@ class DelayedConstraint(val constraint: Judgement) {
 class Solver(controller: Controller, unknowns: Context) {
    /** tracks the solution, like unknowns but a definiens is added for every solved variable */ 
    private var solution : Context = unknowns
+   /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
+   private var newsolutions : List[LocalName] = Nil
    /** tracks the delayed constraints, in any order */ 
    private var delayed : List[DelayedConstraint] = Nil
    /** true if unresolved constraints are left */
@@ -68,12 +70,15 @@ class Solver(controller: Controller, unknowns: Context) {
    }
    /** activates a previously delayed constraint if one of its free variables has been solved since */
    private def activate: Boolean = {
+      delayed foreach {_.solved(newsolutions)}
       delayed find {_.isActivatable} match {
          case None => true
          case Some(dc) =>
            delayed = delayed filterNot (_ == dc)
            apply(dc.constraint)
       }
+      newsolutions = Nil
+      true
    }
    /** registers the solution for a variable; notifies all delayed constraints */
    //TODO solutions should also be propagated to currently active constraints
@@ -83,7 +88,7 @@ class Solver(controller: Controller, unknowns: Context) {
          checkEquality(value, solved.df.get, solved.tp)(Context())
       else {
          solution = left ::: solved.copy(df = Some(value)) :: right
-         delayed foreach {_.solved(name)}
+         newsolutions = name :: newsolutions
          true
       }
    }
@@ -93,15 +98,17 @@ class Solver(controller: Controller, unknowns: Context) {
     *  @return false only if the constraints are unsatisfiable; true if constraints have been resolved or delayed  
     */
    def apply(j: Judgement): Boolean = {
+     println("apply: " + j)
+     println(this)
      val subs = solution.toPartialSubstitution
-     j match {
+     val mayhold = j match {
         case Typing(con, tm, tp) =>
            checkTyping(tm ^ subs, tp ^ subs)(con ^ subs)
         case Equality(con, tm1, tm2, tp) =>
            def prepare(t: Term) = simplify(t ^ subs)(con)
            checkEquality(prepare(tm1), prepare(tm2), tp map prepare)(simplifyCon(con ^ subs))
      }
-     activate
+     if (mayhold) activate else false
    }
    /** proves a TypingConstraint by recursively applying rules and solving variables where applicable,
     *  delays a constraint if unsolved variables preclude further processing
@@ -109,6 +116,7 @@ class Solver(controller: Controller, unknowns: Context) {
     *  @return false only if the judgment does not hold; true if it holds or constraint have been delayed
     */
    def checkTyping(tm: Term, tp: Term)(implicit context: Context): Boolean = {
+      println("typing: " + context + " |- " + tm + " : " + tp)
       tm match {
          // the foundation-independent cases
          case OMV(x) => (unknowns ++ context)(x).tp match {
@@ -142,6 +150,7 @@ class Solver(controller: Controller, unknowns: Context) {
     * @return the inferred type, if inference succeeded
     */
    def inferType(tm: Term)(implicit context: Context): Option[Term] = {
+      println("inferring: " + context + " |- " + tm + " : ?")
       tm match {
          //foundation-independent cases
          case OMV(x) => (unknowns ++ context)(x).tp
@@ -169,6 +178,7 @@ class Solver(controller: Controller, unknowns: Context) {
     *  @return false only if the judgment does not hold; true if it holds or constraint have been delayed
     */
    def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit con: Context): Boolean = {
+      println("equality: " + con + " |- " + tm1 + " = " + tm2 + " : " + tpOpt)
       // first, we check for some common cases where it's redundant to do induction on the type
       // identical terms
       if (tm1 == tm2) return true

@@ -71,7 +71,7 @@ case class Context(variables : VarDecl*) extends Obj {
    def mapTerms(f: (Context,Term) => Term): Context = {
       val newvars = variables.zipWithIndex map {case (VarDecl(n,tp,df,attrs @ _*), i) =>
          val con = Context(variables.take(i) : _*)
-         VarDecl(n, tp map {f(con,_)}, tp map {f(con,_)}, attrs : _*) 
+         VarDecl(n, tp map {f(con,_)}, df map {f(con,_)}, attrs : _*) 
       }
       Context(newvars : _*)
    }

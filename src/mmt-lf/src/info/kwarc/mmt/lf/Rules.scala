@@ -54,7 +54,8 @@ object PiType extends TypingRule(LF.PPi) {
       (tm,tp) match {
          case (Lambda(x,t,s),Pi(x2,t2,a)) =>
             solver.checkEquality(t,t2,Some(LF.ktype))(context)
-            solver.checkTyping(s, a ^ (x2 / OMV(x)))(context ++ x % t)
+            val asub = if (x2 == x) a else a ^ (x2 / OMV(x))  
+            solver.checkTyping(s, asub)(context ++ x % t2)
          case (tm, Pi(x2, t2, a)) =>
             if (context.isDeclared(x2)) {
                val x = OMV("new") //TODO invent new variable name
@@ -67,27 +68,42 @@ object PiType extends TypingRule(LF.PPi) {
 
 object Eta extends EqualityRule(LF.PPi) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
-      val Pi(x, a, b) = tp //TODO invent new variable name if context.isDeclared(x)
-      val tm1Eval = OMA(tm1, List(OMV(x)))
-      val tm2Eval = OMA(tm2, List(OMV(x)))
-      solver.checkEquality(tm1Eval, tm2Eval, Some(b))(context ++ x % a)
+      val Pi(x, a, b) = tp
+      //TODO pick new variable name properly; currently, a quick optimization 
+      val (name, s, t) = (tm1, tm2) match {
+         case (Lambda(v, a1, s), Lambda(w, a2, t)) if v == w =>
+            solver.checkEquality(a1, a2, Some(LF.ktype))
+            (v, Some(s), Some(t)) 
+         case _ if ! context.isDeclared(x) => (x, None, None)
+         case _ => (x / "", None, None)
+      }
+      val tm1Eval = s getOrElse Apply(tm1, OMV(name))
+      val tm2Eval = t getOrElse Apply(tm2, OMV(name))
+      solver.checkEquality(tm1Eval, tm2Eval, Some(b))(context ++ name % a)
    }
 }
 
 object Injective extends EqualityRule(LF.Papply) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
-      val Apply(f, s) = tm1
-      val Apply(_, t) = tm2
-      solver.inferType(f) map solver.simplify match {
-         case Some(Pi(x,a,b)) => solver.checkEquality(s, t, Some(a))
-         case _ => false
-      }
+      val ApplySpine(f, s) = tm1
+      val ApplySpine(g, t) = tm2
+      if (f == g && s.length == t.length) {
+         (s zip t) forall {case (a,b) => solver.checkEquality(a,b, None)}
+/*         solver.inferType(f) map solver.simplify match {
+            case Some(Pi(x,a,b)) =>
+              solver.checkEquality(s, t, Some(a))
+            case _ => false
+         }*/
+      } else
+        false
    }
 }
 
 object Beta extends ComputationRule(LF.Papply) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
-      case Apply(Lambda(x,a,t),s) => Some(t ^ (x / s))
+      case Apply(Lambda(x,a,t),s) =>
+         solver.checkTyping(s, a)
+         Some(t ^ (x / s))
       case Apply(f,t) =>
          // simplify f recursively to see if it becomes a Lambda
          val fS = solver.simplify(f)
