@@ -167,12 +167,12 @@ object Differ {
 	def compareConstants(o : Constant, n : Constant) : StrictDiff = {
     var changes : List[StrictChange] = Nil
 
-    if(!areEqual(o.tp,o.df)) {
+    if(!areEqual(o.tp, n.tp)) {
        changes = UpdateComponent(o.path, "type", o.tp, n.tp) :: changes
 		}
 		
 		if (!areEqual(o.df, n.df))  {
-		  changes = UpdateComponent(o.path, "def", o .df, n.df) :: changes
+		  changes = UpdateComponent(o.path, "def", o.df, n.df) :: changes
 		}
 		
 		new StrictDiff(changes)
