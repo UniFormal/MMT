@@ -37,6 +37,8 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case e : ConstantAssignment => e case _ => throw GetError(msg(path))} 
    def getDefLinkAssignment(path : GlobalName, msg : Path => String = defmsg) : DefLinkAssignment =
      get(path) match {case e : DefLinkAssignment => e case _ => throw GetError(msg(path))} 
+   def getPatternAssignment(path : GlobalName, msg : Path => String = defmsg) : PatternAssignment =
+     get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
    /* The above methods should be polymorphic in the return type like this:

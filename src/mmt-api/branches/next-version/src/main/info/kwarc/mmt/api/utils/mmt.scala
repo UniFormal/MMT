@@ -21,6 +21,7 @@ object mmt {
    val poi = mmtsymbol("theory-with")
    val poim = mmtsymbol("morphism-with")
    val poiw = mmtsymbol("morphism-extend") */
+/*
    val jokerbinder = mmtsymbol("joker")
    val ellipsis = mmtsymbol("ellipsis")
    val index = mmtsymbol("index")
@@ -29,6 +30,7 @@ object mmt {
    val nat = mmtsymbol("nat")
    val plus = mmtsymbol("plus")
    val minus = mmtsymbol("minus")
-   val times = mmtsymbol("times")
+   val times = mmtsymbol("times")*/
+   val functorapplication = mmtsymbol("functorapplication")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }

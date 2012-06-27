@@ -10,12 +10,12 @@ import utils._
 import scala.io.Source
 
 /*
- * A Pattern represents a declaration pattern.
+ * A Pattern represents a declaration of a "declaration pattern".
  * 
  * @param home   the link
  * @param name   the name of the declaration pattern
  * @param params the parameters of the declaration patterns
- * @param body   the body of the declaration pattern that consists of declarations             
+ * @param body   the body of the declaration pattern that consists of symbol declarations             
  */
 class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context) extends Symbol {
    def toNode =
@@ -31,6 +31,16 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
    override def toString = 
      "Pattern for " + name.toString + " " + params.toString + " " + body.toString
 }
+
+sealed abstract class PatternExpression {
+  def toOBJNode = toString //TODO case by case in the case classes
+}
+
+case class PatternSym(path : GlobalName) extends PatternExpression 
+case class PatternAbs(params : Context, body : PatternExpression) extends PatternExpression
+case class PatternApp(pattern : PatternExpression, args : Substitution) extends PatternExpression
+case class PatternFrag(body : Context) extends PatternExpression
+
 
 class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, val matches : Substitution) extends Symbol {
    def toNode = 
