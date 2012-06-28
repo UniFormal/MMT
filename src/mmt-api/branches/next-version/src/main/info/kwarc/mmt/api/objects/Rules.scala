@@ -3,28 +3,41 @@ import info.kwarc.mmt.api._
 import objects.Conversions._
 import scala.collection.mutable.{HashMap}
 
-/** A RuleStore maintains sets of foundation-dependent rules. */
+/** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
+ * 
+ *  It maintains a separate set of TypingRule's for every subtype of Rule; the Rule's are indexed by their heads.
+ *  An instance of RuleStore is created by the ExtensionManager.
+ */
 class RuleStore {
    val typingRules = new HashMap[ContentPath,TypingRule]
    val inferenceRules = new HashMap[ContentPath, InferenceRule]
    val computationRules = new HashMap[ContentPath, ComputationRule]
    val equalityRules = new HashMap[ContentPath, EqualityRule]
-   val equalityRulesByHead = new HashMap[ContentPath, EqualityRule]
+   val atomicEqualityRules = new HashMap[ContentPath, AtomicEqualityRule]
    val solutionRules = new HashMap[ContentPath, SolutionRule]
+   val forwardSolutionRules = new HashMap[ContentPath, ForwardSolutionRule]
    
+   /** add some Rule to this RuleStore */
    def add(rs: Rule*) {
       rs foreach {
          case r: TypingRule => typingRules(r.head) = r
          case r: InferenceRule => inferenceRules(r.head) = r
          case r: ComputationRule => computationRules(r.head) = r
          case r: EqualityRule => equalityRules(r.head) = r
+         case r: AtomicEqualityRule => atomicEqualityRules(r.head) = r
          case r: SolutionRule => solutionRules(r.head) = r
+         case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
       }
    }
 }
 
-/** Unifies all Rules */ 
+/** the type of all Rules
+ * 
+ * All Rules have an apply method that is passed a Solver for callbacks.
+ * The Solver does not implement any back-tracking. Therefore, rules may only use callbacks if their effects are required.
+ */
 trait Rule {
+   /** an MMT URI that is used to indicate when the Rule is applicable */
    val head: GlobalName
 }
 
@@ -59,6 +72,7 @@ abstract class InferenceRule(val head: GlobalName) extends Rule {
 
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
  *  But it may recursively simplify the components if that makes the rule applicable.
+ *  The rule must preserve equality and well-typedness of the simplified term. If necessary, additional checks must be performed.
  *  @param head the head of the term this rule can simplify 
  */
 abstract class ComputationRule(val head: GlobalName) extends Rule {
@@ -86,11 +100,53 @@ abstract class EqualityRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean
 }
 
-/** A SolutionRule solves for an unknown that occurs in a non-solved position.
+
+/** An AtomicEqualityRule is called to handle equality of atomic terms with the same shape at a base type.
+ * Same shape means that their TorsoNormalForm has identical torso and heads.
+ * @param head the head of the two terms
+ */
+abstract class AtomicEqualityRule(val head: GlobalName) extends Rule {
+  def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean
+}
+
+/** A ForwardSolutionRule solves for an unknown by inspecting its declarations (as opposed to its use)
+ * It can solve a variable directly (e.g., if it has unit type) or apply a variable transformation (e.g., X --> (X1,X2) if X has product type).
+ * @param head the head of the type of the unknown to which this rule applies
+ * @param priority rules with high priority are applied to a freshly activated constraint is activated;
+ *   others when no activatable constraint exists 
+ */
+abstract class ForwardSolutionRule(val head: GlobalName, val priority: ForwardSolutionRule.Priority) extends Rule {
+   /** 
+    *  @param solver provides callbacks to the currently solved system of judgments
+    *  @param decl the declaration of an unknown
+    *  @return true iff it solved a variable
+    */
+   def apply(solver: Solver)(decl: VarDecl)(implicit context: Context): Boolean
+}
+
+/** auxiliary object for the class ForwardSolutionRule */
+object ForwardSolutionRule {
+   /** the two-valued type of priorities */
+   type Priority = Boolean
+   /** high priority */
+   val high = true
+   /** low priority */
+   val log = false
+}
+
+/** A SolutionRule tries to solve for an unknown that occurs in a non-solved position.
+ * It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
  */
 abstract class SolutionRule(val head: GlobalName) extends Rule {
    /** 
-    *  @return true iff it solved a variable
+    *  @param solver provides callbacks to the currently solved system of judgments
+    *  @param tm1 the term that contains the unknown to be solved
+    *  @param tm2 the second term 
+    *  @param tpOpt their type, if known
+    *  @param context their context
+    *  @return false if this rule is not applicable;
+    *    if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
+    *    (by calling an appropriate callback method such as delay or checkEquality)
     */
-   def apply(solver: Solver)(unknown: LocalName, args: List[Term], tm2: Term)(implicit context: Context): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit context: Context): Boolean
 }
