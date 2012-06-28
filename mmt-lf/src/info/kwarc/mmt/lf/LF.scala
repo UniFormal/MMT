@@ -28,30 +28,20 @@ case class LFError(msg : String) extends java.lang.Throwable(msg)
 object LF {
    val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
    val lftheory = lfbase ? "lf"
-   val Ptype = lftheory ? "type"
-   val Pkind = lftheory ? "kind"
-   val Parrow = lftheory ? "arrow"
-   val PPi = lftheory ? "Pi"
-   val Plambda = lftheory ? "lambda"
-   val Papply = lftheory ? "@"
-   
-   val ktype = OMS(Ptype)
-   val kind = OMS(Pkind)
-   val arrow = OMS(Parrow)
-   val Pi = OMS(PPi)
-   val lambda = OMS(Plambda)
-   val apply = OMS(Papply)
-
+   val ktype = OMS(LF.lftheory ? "type")
+   val kind = OMS(LF.lftheory ? "kind")
+   val arrow = OMS(LF.lftheory ? "arrow")
+   val Pi = OMS(LF.lftheory ? "Pi")
+   val lambda = OMS(LF.lftheory ? "lambda")
+   val apply = OMS(LF.lftheory ? "@")
    def constant(name : String) = OMS(lftheory ? name)
 }
 
-/* apply methods and extractor methods for Scala
-   constructor and pattern matcher: Lambda("x", tp, scope)
-   accordingly for Pi, Apply, Arrow
-   Univ(1), Univ(2) are type and kind
+/** provides apply/unapply methods for lambda abstraction
+ * for example, it permits constructing and pattern-matching terms as Lambda(variable-name, type, scope) 
  */
-
 object Lambda {
+   val path = LF.lftheory ? "lambda"
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.lambda, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(LF.lambda, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
@@ -60,11 +50,14 @@ object Lambda {
    }
 }
 
-object Pi { 
+/** provides apply/unapply methods for dependent function type formation
+ * the unapply method also matches a simple function type
+ */
+object Pi {
+   /** the MMT URI of Pi */
+   val path = LF.lftheory ? "Pi"
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.Pi, OMV(name) % tp, body)
-   //def apply(name : String, tp : Sequence, body : Term) = OMBIND(LF.constant("Pi"), SeqVarDecl(name, Some(tp),None), body)
-   
-   def apply(con: Context, body : Term) = OMBIND(LF.Pi, con, body) //(?)
+   def apply(con: Context, body : Term) = OMBIND(LF.Pi, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
 	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.Pi || b == LF.constant("implicit_Pi") =>
 	      if (rest.isEmpty) Some((n,t,s))
@@ -79,7 +72,12 @@ object Pi {
    }
 }
 
+/** provides apply/unapply methods for simple function type formation
+ * the unapply method does not match a dependent function type, even if the variable does not occur
+ */
 object Arrow {
+   /** the MMT URI of -> */
+   val path = LF.lftheory ? "arrow"
 	def apply(t1 : Term, t2 : Term) = OMA(LF.arrow,List(t1,t2))
 	def apply(in: List[Term], out: Term) = if (in.isEmpty) out else OMA(LF.arrow, in ::: List(out))
 	def unapply(t : Term) : Option[(Term,Term)] = t match {
@@ -88,16 +86,24 @@ object Arrow {
 	}
 }
 
+/** provides apply/unapply methods for application of a term to a single argument
+ * the unapply method transparently handles associativity (currying) of application
+ */
 object Apply {
+   /** the MMT URI of application */
+   val path = LF.lftheory ? "@"
 	def apply(f: Term, a: Term) = OMA(LF.apply, List(f, a))
 	def unapply(t: Term) : Option[(Term,Term)] = t match {
 		case OMA(LF.apply, f :: a) => 
 		   if (a.length > 1) Some((OMA(LF.apply, f :: a.init), a.last))
-			else Some(f,a.head)
+			else Some((f,a.head))
 		case _ => None
 	}
 }
 
+/** provides apply/unapply methods for application of a term to a list of arguments
+ * the unapply method transparently handles associativity (currying) of application
+ */ 
 object ApplySpine {
 	def apply(f: Term, a: Term*) = OMA(LF.apply, f :: a.toList)
 	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
@@ -110,21 +116,19 @@ object ApplySpine {
 	}
 }
 
+/** provides apply/unapply methods for a universes
+   in particular, Univ(1), Univ(2) are type and kind, respectively
+ */
 object Univ {
+   /** the MMT URI of kind */
+   val kind = LF.lftheory ? "kind"
+   /** the MMT URI of type */
+   val ktype = LF.lftheory ? "type"
 	def apply(level : Int) : Term = if (level == 1) LF.ktype else LF.kind
 	def unapply(t : Term) : Option[Int] =
 	   if (t == LF.kind) Some(2) else if (t == LF.ktype) Some(1) else None
 }
 
-object Const {
-   def apply(path: GlobalName) = OMID(path)
-   def unapply(t: Term) : Option[GlobalName] = t match {
-      case OMID(p: GlobalName) => Some(p)
-      case _ => None
-   }
-}
-
-//TODO: variable capture is not avoided anywhere
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {
    private def log(msg : => String) = report("lf", msg)
@@ -159,7 +163,7 @@ class LFF extends Foundation {
    def check(s : Term, T : Term, G : Context)(implicit fl : FoundationLookup) : Boolean = {
 	   s match {
 	   	case Univ(1) => T == Univ(2)
-	   	case Const(path) => equal(lookuptype(path), T, G)
+	   	case OMS(path) => equal(lookuptype(path), T, G)
 	   	case OMV(name) =>  equal(T, G(name).asInstanceOf[VarDecl].tp.get, G) //TODO; why not equal(T, G(name), G)?; what does G(name) return?  
 	   	case Lambda(x, a, t) =>
 	   		val G2 = G ++ OMV(x) % a
@@ -194,13 +198,13 @@ class LFF extends Foundation {
    def equal (tm1 : Term, tm2 : Term, G : Context)(implicit fl : FoundationLookup) : Boolean = {
 	   (tm1, tm2) match { 
  	 		case (OMV(x), OMV(y)) => x == y
- 	 		case (Const(c), Const(d)) => if (c == d) true else {
+ 	 		case (OMS(c), OMS(d)) => if (c == d) true else {
  	 			lookupdef(c) match {
  	 				case None => lookupdef(d) match {
  	 					case None => false
- 	 					case Some(t) => equal(Const(c), t, G)
+ 	 					case Some(t) => equal(OMS(c), t, G)
  	 				}
- 	 				case Some(t) => equal(Const(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
+ 	 				case Some(t) => equal(OMS(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
  	 			}
  	 		}
  	 		case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => 
@@ -240,12 +244,12 @@ class LFF extends Foundation {
    				case Lambda(x,a,t) => reduce(Apply(tm1r, tm2), G)
    				case _ => Apply(tm1r, tm2)
    			}	 	
-   		case ApplySpine(Const(p), args) => lookupdef(p) match {
+   		case ApplySpine(OMS(p), args) => lookupdef(p) match {
    			case None => t
    			case Some(d) => reduce(ApplySpine(d, args :_*), G)
    		}
    		case ApplySpine(_,_) => t
-   		case Const(p) => lookupdef(p) match {
+   		case OMS(p) => lookupdef(p) match {
    		   case Some(d) => reduce(d, G)
    		   case None => t
    		}
@@ -258,7 +262,7 @@ class LFF extends Foundation {
    def infer(s : Term, G : Context)(implicit fl : FoundationLookup) : Term = {
 	   s match {
 	   		case Univ(1) => Univ(2)
-	   		case Const(path) => lookuptype(path)
+	   		case OMS(path) => lookuptype(path)
 	   		case OMV(name) => G(name).tp.get // modify it as in check
 	   		case Lambda(name, tp, body) =>
 	   			val G2 = G ++ OMV(name) % tp

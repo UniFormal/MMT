@@ -4,14 +4,17 @@ import objects._
 import objects.Conversions._
 import utils.MyList.fromList
 
-object UnivTerm extends InferenceRule(LF.Ptype) {
+/** the type inference rule type:kind */
+object UnivTerm extends InferenceRule(Univ.ktype) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
       case LF.ktype => Some(LF.kind)
       case _ => None
    }
 }
 
-object PiTerm extends InferenceRule(LF.PPi) {
+/** the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
+ * This rule works for any universe U */
+object PiTerm extends InferenceRule(Pi.path) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
@@ -24,7 +27,9 @@ object PiTerm extends InferenceRule(LF.PPi) {
    }
 }
 
-object LambdaTerm extends InferenceRule(LF.Plambda) {
+/** the type inference rule x:A|-t:B  --->  lambda x:A.t : Pi x:A.B
+ * This rule works for B:U for any universe U */
+object LambdaTerm extends InferenceRule(Lambda.path) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
@@ -34,7 +39,9 @@ object LambdaTerm extends InferenceRule(LF.Plambda) {
    }
 }
 
-object ApplyTerm extends InferenceRule(LF.Papply) {
+/** the type inference rule f : Pi x:A.B  ,  t : A  --->  f s : B [x/t]
+ * This rule works for B:U for any universe U */
+object ApplyTerm extends InferenceRule(Apply.path) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
      case Apply(f,t) =>
         solver.inferType(f) flatMap {
@@ -49,7 +56,8 @@ object ApplyTerm extends InferenceRule(LF.Papply) {
    }
 }
 
-object PiType extends TypingRule(LF.PPi) {
+/** the type checking rule x:A|-f x:B  --->  f : Pi x:A.B */
+object PiType extends TypingRule(Pi.path) {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context) : Boolean = {
       (tm,tp) match {
          case (Lambda(x,t,s),Pi(x2,t2,a)) =>
@@ -58,7 +66,7 @@ object PiType extends TypingRule(LF.PPi) {
             solver.checkTyping(s, asub)(context ++ x % t2)
          case (tm, Pi(x2, t2, a)) =>
             if (context.isDeclared(x2)) {
-               val x = OMV("new") //TODO invent new variable name
+               val x = OMV(x2 / "")
                solver.checkTyping(Apply(tm, x), a ^ (x2 / x))(context ++ x % t2)
             } else
                solver.checkTyping(Apply(tm, OMV(x2)), a)(context ++ x2 % t2)
@@ -66,7 +74,9 @@ object PiType extends TypingRule(LF.PPi) {
    }
 }
 
-object Eta extends EqualityRule(LF.PPi) {
+/** the extensionality rule (equivalent to Eta) x:A|-f x = g x  --->  f = g
+ * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
+object Extensionality extends EqualityRule(Pi.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
       val Pi(x, a, b) = tp
       //TODO pick new variable name properly; currently, a quick optimization 
@@ -83,54 +93,70 @@ object Eta extends EqualityRule(LF.PPi) {
    }
 }
 
-object Injective extends EqualityRule(LF.Papply) {
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
-      val ApplySpine(f, s) = tm1
-      val ApplySpine(g, t) = tm2
-      if (f == g && s.length == t.length) {
-         (s zip t) forall {case (a,b) => solver.checkEquality(a,b, None)}
-/*         solver.inferType(f) map solver.simplify match {
-            case Some(Pi(x,a,b)) =>
-              solver.checkEquality(s, t, Some(a))
-            case _ => false
-         }*/
-      } else
-        false
-   }
-}
-
-object Beta extends ComputationRule(LF.Papply) {
+/** the beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
+ * If not applicable, the function term is simplified recursively and the rule tried again.
+ * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
+ */ 
+object Beta extends ComputationRule(Apply.path) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
-      case Apply(Lambda(x,a,t),s) =>
+      case Apply(Lambda(x,a,t), s) =>
          solver.checkTyping(s, a)
          Some(t ^ (x / s))
-      case Apply(f,t) =>
+      //using ApplySpine here also normalizes curried application by merging them into a single one
+      case ApplySpine(f, args) =>
          // simplify f recursively to see if it becomes a Lambda
          val fS = solver.simplify(f)
-         if (f != fS) apply(solver)(Apply(fS,t))
+         if (f != fS) apply(solver)(ApplySpine(fS,args : _*))
          else None
       case _ => None
    }
 }
 
-object ExpandArrow extends ComputationRule(LF.Parrow) {
+/** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
+ * LocalName.Anon is used for x */ 
+object ExpandArrow extends ComputationRule(Arrow.path) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
       case Arrow(a,b) => Some(Pi(LocalName.Anon, a, b))
       case _ => None
    }
 }
 
-object Solve extends SolutionRule(LF.Papply) {
-   def apply(solver: Solver)(unknown: LocalName, args: List[Term], tm2: Term)(implicit context: Context): Boolean = {
-      val vars = args mapPartial {
-         case OMV(x) => if (context.isDeclared(x)) Some(x) else None
-         case _ => None
+/** This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
+ *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
+ */
+object Solve extends SolutionRule(Apply.path) {
+   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit context: Context): Boolean = {
+      tm1 match {
+         case Apply(t, OMV(x)) if context.isDeclared(x) =>
+             if (t.freeVars contains x) return false
+             context(x) match {
+                case VarDecl(_, Some(a), _, _*) => 
+                   solver.checkEquality(t, Lambda(x, a, tm2), None) // tpOpt map {tp => Pi(x,a,tp)}
+                case _ => false
+             }
+         case _ => false
       }
-      if (vars.distinct.length == args.length) {
-         //all arguments are distinct object variables
-         val con : Context = vars map {x => context(x)}
-         solver.checkEquality(OMV(unknown), Lambda(con, tm2), None)
-      }
-      else false
+   }
+}
+
+/** This rule implements equality in the initial model.
+ *  Two terms formed by applying the same undefined function symbol to the same number of arguments are equal iff
+ *  the arguments are equal component-wise.
+ *  This rule may be implicitly present in many languages or may be present with a different name.
+ */
+//TODO: avoid losing the results of type inference
+object Initial extends AtomicEqualityRule(Apply.path) {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
+      val ApplySpine(t1, args1) = tm1
+      val ApplySpine(t2, args2) = tm2
+      if (args1.length == args2.length) {
+         val argsEqual = (args1 zip args2) forall {case (a,b) => solver.checkEquality(a,b, None)}
+         if (argsEqual) solver.checkEquality(t1,t2, None) else false
+      } else false
+/*         solver.inferType(f) map solver.simplify match {
+            case Some(Pi(x,a,b)) =>
+              solver.checkEquality(s, t, Some(a))
+            case _ => false
+         }*/
    }
 }
