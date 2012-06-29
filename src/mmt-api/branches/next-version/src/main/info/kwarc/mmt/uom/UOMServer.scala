@@ -66,12 +66,59 @@ class UOMServer(report: frontend.Report) {
         log("simplifying " + term.toString)
         val recargs = args.map(simplify)
         impls.get(p) match {
-           case Some(impl) => impl(recargs :_*)
+           case Some(impl) => impl.apply(recargs) match {
+             case NoChange => p(recargs)
+             case GlobalChange(termS) => termS
+             case LocalChange(insideS) => p(insideS)
+           }
            case None => OMA(OMID(p), recargs)
         }
         
      case _ => term
   }
+}
+
+class Simplifier extends StatelessTraverser {
+   val depthRules = new HashMap[(GlobalName,GlobalName), DepthRule]
+   def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term]): Result = {
+      after match {
+         case Nil => LocalChange(before)
+         case arg::afterRest =>
+            arg match {
+               case OMA(OMS(inner), inside) => depthRules.get((outer,inner)) match {
+                  case Some(rule) => rule.apply(before, inside, after) match {
+                     case NoChange =>
+                        applyDepthRules(outer, before ::: List(arg), afterRest)
+                     case LocalChange(insideS) =>
+                        applyDepthRules(outer, before ::: List(inner(insideS)), afterRest)
+                     case GlobalChange(tS) =>
+                        GlobalChange(tS)
+                  }
+                  case None =>
+                     applyDepthRules(outer, before ::: List(arg), afterRest)
+               }
+               case _ =>
+                 applyDepthRules(outer, before ::: List(arg), afterRest)
+            }
+      }
+      
+   }
+   def apply(t: Term)(implicit con : Context, init: Unit) : Term = t match {
+      case OMA(OMS(outer), args) =>
+         applyDepthRules(outer, Nil, args) match {
+            case LocalChange(argsS) =>
+               val argsSS = argsS map apply
+               //recheck for depth rules if a recusive call produces a GlobalChange
+               //TODO apply breadth rules
+               outer(argsSS)
+            case GlobalChange(tS) =>
+               apply(tS)
+            case NoChange => throw ImplementationError("impossible case")
+         }
+         
+         
+      case _ => Traverser(this, t)
+   }
 }
 
 object Test {
