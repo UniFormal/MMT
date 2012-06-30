@@ -24,8 +24,8 @@
   <DataProperty IRI="hasAge"/>
  </Declaration>
    
- <Declaration>
-  <NamedIndividual IRI="Liza"/>
+ <Declaration>  
+  <NamedIndividual IRI="Liza"/> <!-- Individual Liz is renamed to Liza -->
  </Declaration>
  
  <Declaration>
@@ -37,7 +37,7 @@
    <NamedIndividual IRI="Max"/>
    <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">25</Literal>
  </DataPropertyAssertion>
- 
+
  <EquivalentClasses>
   <Annotation>
    <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -50,7 +50,7 @@
   </ObjectUnionOf>
  </EquivalentClasses>
  
- <ClassAssertion>
+ <ClassAssertion> <!-- updated according to renaming Liz to Liza --> 
   <Class IRI="Mother"/>
   <NamedIndividual IRI="Liza"/>
  </ClassAssertion>
@@ -60,7 +60,7 @@
   <NamedIndividual IRI="Max"/>
  </ClassAssertion>
  
- <ObjectPropertyAssertion>
+ <ObjectPropertyAssertion> <!-- updated according to renaming Liz to Liza -->
   <Annotation>
    <AnnotationProperty IRI="http://omdoc.org/id"/>
    <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">id2</Literal>
