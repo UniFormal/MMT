@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<Ontology 
+     xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://example.com/owl/families/"
+     ontologyIRI="http://example.com/owl/families">
+
+ <Declaration>
+  <NamedIndividual IRI="Liz"/>
+ </Declaration>
+ 
+ <Declaration>
+  <NamedIndividual IRI="Max"/>
+ </Declaration>
+ 
+<!-- NamedIndividual Alice is deleted 
+ <Declaration>
+  <NamedIndividual IRI="Alice"/>  
+ </Declaration>
+-->
+
+ <Declaration>
+  <Class IRI="Father"/>
+ </Declaration>
+ 
+ <Declaration>
+  <Class IRI="Human"/> <!-- Class Person is renamed to Human -->
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="hasHusband"/>
+ </Declaration>
+ 
+ <Declaration>
+  <ObjectProperty IRI="parentOf"/>
+ </Declaration>
+ 
+ <Declaration>
+  <DataProperty IRI="hasAge"/>
+ </Declaration>
+ 
+ <Declaration>
+  <DataProperty IRI="hasSurname"/> <!-- DataProperty hasLastName is renamed to hasSurname -->
+ </Declaration>
+ 
+ <Declaration>
+  <DataProperty IRI="hasBirthname"/> <!-- DataProperty hasBirthname is added --> 
+ </Declaration>
+    
+ 
+<!-- axiom is updated by renaming the dataproperty hasLastName to hasSurname --> 
+ <DataPropertyAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-891743495</Literal>
+  </Annotation>
+  <DataProperty IRI="hasSurname"/>
+  <NamedIndividual IRI="Max"/>
+  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Evans</Literal>
+ </DataPropertyAssertion>
+ 
+ <DataPropertyAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1474761288</Literal>
+  </Annotation>
+  <DataProperty IRI="hasAge"/>
+  <NamedIndividual IRI="Max"/>
+  <Literal datatypeIRI="http://example.com/owl/families/majorAge">26</Literal>
+ </DataPropertyAssertion>
+ 
+ <ClassAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax505564719</Literal>
+  </Annotation>
+  <Class IRI="Father"/>
+  <NamedIndividual IRI="Max"/>
+ </ClassAssertion>
+ 
+ <DataPropertyAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1438746968</Literal>
+  </Annotation>
+  <DataProperty IRI="hasAge"/>
+  <NamedIndividual IRI="Liz"/>
+  <Literal datatypeIRI="http://example.com/owl/families/majorAge">25</Literal>
+ </DataPropertyAssertion>
+ 
+ <ObjectPropertyAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-799581906</Literal>
+  </Annotation>
+  <ObjectProperty IRI="hasHusband"/>
+  <NamedIndividual IRI="Liz"/>
+  <NamedIndividual IRI="Max"/>
+ </ObjectPropertyAssertion>
+
+<!-- axiom is deleted due to deleting the individual Alice 
+ <ObjectPropertyAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1397113822</Literal>
+  </Annotation>
+  <ObjectProperty IRI="hasDaughter"/>
+  <NamedIndividual IRI="Max"/>
+  <NamedIndividual IRI="Alice"/>
+ </ObjectPropertyAssertion>
+-->
+
+<!--
+ <DataPropertyAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1116048551</Literal>
+  </Annotation>
+  <DataProperty IRI="hasAge"/>
+  <NamedIndividual IRI="Alice"/>
+  <Literal datatypeIRI="http://example.com/owl/families/toddlerAge">2</Literal>
+ </DataPropertyAssertion>       
+-->
+
+<!-- axiom is deleted due to deleting the individual Alice 
+ <ObjectPropertyAssertion>
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-246865350</Literal>
+  </Annotation>
+  <ObjectProperty IRI="ParentOf"/>
+  <NamedIndividual IRI="Liz"/>
+  <NamedIndividual IRI="Alice"/>
+ </ObjectPropertyAssertion>
+-->
+ 
+ <!-- axiom is updated by renaming Class Person to Human -->
+ <DataPropertyDomain> 
+  <Annotation>
+   <AnnotationProperty IRI="http://omdoc.org/id"/>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1284912199</Literal>
+  </Annotation>
+  <DataProperty IRI="hasAge"/>
+  <Class IRI="Human"/>
+ </DataPropertyDomain>
+ 
+ <DataPropertyAssertion>	<!-- DataPropertyAssertion is added -->
+  <DataProperty IRI="hasBirthname"/>
+  <NamedIndividual IRI="Liz"/>
+  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Parker</Literal>
+ </DataPropertyAssertion>
+ 
+</Ontology>
