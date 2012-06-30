@@ -36,7 +36,7 @@
    <NamedIndividual IRI="Max"/>
    <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">25</Literal>
  </DataPropertyAssertion>
- 
+
  <EquivalentClasses>
   <Annotation>
    <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -58,7 +58,7 @@
   <Class IRI="Father"/>
   <NamedIndividual IRI="Max"/>
  </ClassAssertion>
- 
+
  <ObjectPropertyAssertion>
   <Annotation>
    <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -68,7 +68,7 @@
    <NamedIndividual IRI="Max"/>
    <NamedIndividual IRI="Liz"/>
  </ObjectPropertyAssertion>
-  
+ 
 </Ontology>
 
 
