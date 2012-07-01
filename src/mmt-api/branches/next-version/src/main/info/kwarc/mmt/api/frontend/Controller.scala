@@ -73,7 +73,7 @@ class Controller extends ROController {
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
-   val uom : UOMServer = {val u = new UOMServer(report); u.init; u}
+   val uom : UOM = {val u = new UOM(report); u.init; u}
 
    protected def log(s : => String) = report("controller", s)
 

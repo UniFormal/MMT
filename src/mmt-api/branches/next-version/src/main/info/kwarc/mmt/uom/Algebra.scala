@@ -188,20 +188,6 @@ class Lambda(lambda: GlobalName, app: GlobalName) {
    }
 }
 
-/** A BreadthRule looks at all arguments of an operator, but usually does not look inside them
- * 
- * It is applicable to a term of the form
- * {{{
- * OMA(op, args)
- * }}}
- */ 
-abstract class BreadthRule(op: GlobalName) {
-   /** a Rewrite takes the arguments args and returns a simplification Result */
-   type Rewrite = List[Term] => Result
-   /** the implementation of the simplification rule */
-   val apply: Rewrite
-}
-
 /** Implementations of Counter permit basic counting and taking multiples of quantities
  *
  * This is used as an auxiliary class to collect and count multiples of the same quantity, e.g., in a polynomial.

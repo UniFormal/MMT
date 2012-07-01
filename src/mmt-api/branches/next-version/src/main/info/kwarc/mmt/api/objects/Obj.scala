@@ -8,11 +8,30 @@ import presentation._
 import Conversions._
 
 import scala.xml.{Node}
+import scala.collection.mutable.ListMap
+
+/** a trait to be mixed into Obj 
+ * it provides a stateful key-value map for storing arbitrary information
+ *
+ * This trait introduces state into the stateless Obj case classes and should be used cautiously.
+ * For example, x match {case x => x} preserves all client properties while
+ * x match {case OMS(p) => OMS(p)} deletes all client properties. 
+ * Software components should only access properties they put themselves or
+ * that are explicitly guaranteed by other components.
+ * 
+ * While a bad idea in most situations, client properties are very useful occasinally.
+ * Example applications:
+ *   - UOM uses a property to remember whether a Term has been simplified already
+ *   - UOM uses a property to remember what kind of change a simplification has produced
+ */
+trait ClientProperties {
+   lazy val clientProperty = new ListMap[URI, Any]
+}
 
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
-abstract class Obj extends Content with ontology.BaseType with HasMetaData {
+abstract class Obj extends Content with ontology.BaseType with HasMetaData with ClientProperties {
    /** prints to OpenMath (with OMOBJ wrapper) */
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.Init)
