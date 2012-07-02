@@ -98,7 +98,7 @@
         <ObjectProperty IRI="hasSister"/>
     </Declaration>
     <Declaration>
-        <ObjectProperty IRI="hasSibling"/> <!-- hasSibling is renamed to hasCommonParentWith -->
+        <ObjectProperty IRI="hasCommonParentWith"/> <!-- hasSibling is renamed to hasCommonParentWith -->
     </Declaration>
     <Declaration>
         <ObjectProperty IRI="loves"/>
@@ -111,7 +111,7 @@
         <DataProperty IRI="hasName"/>
     </Declaration>
     <Declaration>
-        <DataProperty IRI="hasSurname"/> <!-- hasLastName is renamed to hasSurname -->
+        <DataProperty IRI="hasSurname"/> <!-- hasFamilyName is renamed to hasSurname -->
     </Declaration>
     <Declaration>
         <DataProperty IRI="hasAge"/>
@@ -121,7 +121,7 @@
     </Declaration>
     
     <Declaration>
-        <Datatype IRI="personAge"/> <!-- personAge is renamed to humanAge -->
+        <Datatype IRI="humanAge"/> <!-- personAge is renamed to humanAge -->
     </Declaration>
     <Declaration>
         <Datatype IRI="minorAge"/>
@@ -484,13 +484,13 @@
     <SubDataPropertyOf>
     	<Annotation>
          <AnnotationProperty IRI="http://omdoc.org/impact/renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasLastName to hasSurname</Literal>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax32819417</Literal>
         </Annotation>
-        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasFamilyName"/>
         <DataProperty IRI="hasName"/>
     </SubDataPropertyOf>
     
@@ -628,13 +628,13 @@
         </Annotation>
         <Annotation>
          <AnnotationProperty IRI="http://omdoc.org/impact/renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasLastName to hasSurname</Literal>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax964795910</Literal>
         </Annotation>
-        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasFamilyName"/>
         <NamedIndividual IRI="John"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Parker</Literal>
     </DataPropertyAssertion>
@@ -642,13 +642,13 @@
     <DataPropertyAssertion>
     	<Annotation>
          <AnnotationProperty IRI="http://omdoc.org/impact/renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasLastName to hasSurname</Literal>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-891743495</Literal>
         </Annotation>
-        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasFamilyName"/>
         <NamedIndividual IRI="Max"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Evans</Literal>
     </DataPropertyAssertion>
@@ -964,17 +964,13 @@
         <NamedIndividual IRI="Tom"/>
     </ClassAssertion>
     
-    <ClassAssertion>
+     <ClassAssertion> <!-- This axiom is updated by renaming object property hasSibling in CE ObjectAllValuesFrom to hasCommonParentWith -->
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming object property hasSibling in CE ObjectAllValuesFrom to hasCommonParentWith</Literal>
-       </Annotation>
-        <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1988069327</Literal>
         </Annotation>
         <ObjectAllValuesFrom>
-            <ObjectProperty IRI="hasSibling"/>
+            <ObjectProperty IRI="hasCommonParentWith"/>
             <Class IRI="Woman"/>
         </ObjectAllValuesFrom>
         <NamedIndividual IRI="Tom"/>
