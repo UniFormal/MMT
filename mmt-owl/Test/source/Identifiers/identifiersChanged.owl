@@ -35,7 +35,7 @@
  <DataPropertyAssertion>
   <DataProperty IRI="hasAge"/>
    <NamedIndividual IRI="Max"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">25</Literal>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">26</Literal>
  </DataPropertyAssertion>
 
  <EquivalentClasses>
