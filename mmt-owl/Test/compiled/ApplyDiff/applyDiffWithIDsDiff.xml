@@ -1,11 +1,4 @@
 <omdoc-diff>
-   <component name="type" path="http://example.com/owl/families?_?ax1241281692" change="update">
-      <om:OMA>
-         <om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-         <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS>
-         <om:OMS module="_" name="Human" base="http://example.com/owl/families" position="2"></om:OMS>
-      </om:OMA>
-   </component>
    <component name="type" path="http://example.com/owl/families?_?ID001" change="update">
       <om:OMA>
          <om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
@@ -18,12 +11,19 @@
          </om:OMA>
       </om:OMA>
    </component>
+   <component name="type" path="http://example.com/owl/families?_?ax1241281692" change="update">
+      <om:OMA>
+         <om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+         <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS>
+         <om:OMS module="_" name="Human" base="http://example.com/owl/families" position="2"></om:OMS>
+      </om:OMA>
+   </component>
    <declaration path="http://example.com/owl/families?_?Alice" change="delete"></declaration>
    <declaration path="http://example.com/owl/families?_?hasFamilyName" change="delete"></declaration>
    <declaration path="http://example.com/owl/families?_?Woman" change="delete"></declaration>
    <declaration path="http://example.com/owl/families?_?Person" change="delete"></declaration>
+   <declaration path="http://example.com/owl/families?_?ax-1116048551" change="delete"></declaration>
    <declaration path="http://example.com/owl/families?_?ID002" change="delete"></declaration>
-   <declaration path="http://example.com/owl/families?_?ax-353814851" change="delete"></declaration>
    <declaration path="http://example.com/owl/families?_?ax-246865350" change="delete"></declaration>
    <declaration change="add">
       <constant name="hasSurname" >

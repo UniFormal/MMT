@@ -51,6 +51,17 @@
        <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS></om:OMOBJ></type>
        
        
+     </constant><constant name="ax-1116048551" >
+       <metadata><meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid"><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMSTR position="1">ax-1116048551</om:OMSTR><om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></meta></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="hasAge" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Alice" base="http://example.com/owl/families" position="2"></om:OMS><om:OMA position="3"><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
+              <om:OMSTR position="3_1">2</om:OMSTR><om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families" position="3_2"></om:OMS>
+      </om:OMA>
+      </om:OMA></om:OMOBJ></type>
+       
+       
      </constant><constant name="ax1241281692" >
        <metadata><meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid"><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
               <om:OMSTR position="1">ax1241281692</om:OMSTR><om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
@@ -105,17 +116,6 @@
        <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
               <om:OMS module="_" name="hasAge" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Max" base="http://example.com/owl/families" position="2"></om:OMS><om:OMA position="3"><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
               <om:OMSTR position="3_1">26</om:OMSTR><om:OMS module="_" name="majorAge" base="http://example.com/owl/families" position="3_2"></om:OMS>
-      </om:OMA>
-      </om:OMA></om:OMOBJ></type>
-       
-       
-     </constant><constant name="ax-353814851" >
-       <metadata><meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid"><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMSTR position="1">ax-353814851</om:OMSTR><om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-      </om:OMA></om:OMOBJ></meta></metadata>
-       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="dataPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="hasAge" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Alice" base="http://example.com/owl/families" position="2"></om:OMS><om:OMA position="3"><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
-              <om:OMSTR position="3_1">2</om:OMSTR><om:OMS module="_" name="toddlerAge" base="http://example.com/owl/families" position="3_2"></om:OMS>
       </om:OMA>
       </om:OMA></om:OMOBJ></type>
        

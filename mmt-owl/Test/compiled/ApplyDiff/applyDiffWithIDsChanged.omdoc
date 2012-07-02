@@ -64,15 +64,6 @@
       </om:OMA></om:OMOBJ></type>
        
        
-     </constant><constant name="ax1241281692" >
-       <metadata><meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid"><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMSTR position="1">ax1241281692</om:OMSTR><om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
-      </om:OMA></om:OMOBJ></meta></metadata>
-       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
-              <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Human" base="http://example.com/owl/families" position="2"></om:OMS>
-      </om:OMA></om:OMOBJ></type>
-       
-       
      </constant><constant name="ax1474761288" >
        <metadata><meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid"><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
               <om:OMSTR position="1">ax1474761288</om:OMSTR><om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
@@ -92,6 +83,15 @@
               <om:OMS module="_" name="hasSurname" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Max" base="http://example.com/owl/families" position="2"></om:OMS><om:OMA position="3"><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="3_0"></om:OMS>
               <om:OMSTR position="3_1">Evans</om:OMSTR><om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="3_2"></om:OMS>
       </om:OMA>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="ax1241281692" >
+       <metadata><meta property="http://omdoc.org/id?_?http:%2F%2Fomdoc.org%2Fid"><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="literal" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMSTR position="1">ax1241281692</om:OMSTR><om:OMS module="OWL1Datatype" name="string" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc" position="2"></om:OMS>
+      </om:OMA></om:OMOBJ></meta></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><om:OMS module="OWL2SUB" name="subClassOf" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+              <om:OMS module="_" name="Woman" base="http://example.com/owl/families" position="1"></om:OMS><om:OMS module="_" name="Human" base="http://example.com/owl/families" position="2"></om:OMS>
       </om:OMA></om:OMOBJ></type>
        
        
