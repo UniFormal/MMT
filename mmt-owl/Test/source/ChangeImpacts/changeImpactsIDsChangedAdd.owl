@@ -118,7 +118,7 @@
         <DataProperty IRI="hasName"/>
     </Declaration>
     <Declaration>
-        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasFamilyName"/>
     </Declaration>
     <Declaration>
         <DataProperty IRI="hasAge"/>
@@ -141,6 +141,10 @@
     </Declaration>
     <Declaration>
         <Datatype IRI="toddlerAge"/>
+    </Declaration>
+    
+     <Declaration>  <!-- Datatype teenAge is added -->
+        <Datatype IRI="teenAge"/>
     </Declaration>
     
     <DatatypeDefinition>
@@ -456,7 +460,7 @@
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax32819417</Literal>
         </Annotation>
-        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasFamilyName"/>
         <DataProperty IRI="hasName"/>
     </SubDataPropertyOf>
     
@@ -579,7 +583,7 @@
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax964795910</Literal>
         </Annotation>
-        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasFamilyName"/>
         <NamedIndividual IRI="John"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Parker</Literal>
     </DataPropertyAssertion>
@@ -589,7 +593,7 @@
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-891743495</Literal>
         </Annotation>
-        <DataProperty IRI="hasLastName"/>
+        <DataProperty IRI="hasFamilyName"/>
         <NamedIndividual IRI="Max"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Evans</Literal>
     </DataPropertyAssertion>
