@@ -39,7 +39,7 @@
  </Declaration>
  
  <Declaration>
-  <DataProperty IRI="hasSurname"/> <!-- DataProperty hasLastName is renamed to hasSurname -->
+  <DataProperty IRI="hasSurname"/> <!-- DataProperty hasFamilyName is renamed to hasSurname -->
  </Declaration>
  
  <Declaration>
@@ -47,7 +47,7 @@
  </Declaration>
     
  
-<!-- axiom is updated by renaming the dataproperty hasLastName to hasSurname --> 
+<!-- axiom is updated by renaming the dataproperty hasFamilyName to hasSurname --> 
  <DataPropertyAssertion>
   <Annotation>
    <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -59,40 +59,24 @@
  </DataPropertyAssertion>
  
  <DataPropertyAssertion>
-  <Annotation>
-   <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1474761288</Literal>
-   </Annotation>
-  <DataProperty IRI="hasAge"/>
+    <DataProperty IRI="hasAge"/>
   <NamedIndividual IRI="Max"/>
   <Literal datatypeIRI="http://example.com/owl/families/majorAge">26</Literal>
  </DataPropertyAssertion>
  
  <ClassAssertion>
-  <Annotation>
-   <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax505564719</Literal>
-  </Annotation>
     <Class IRI="Father"/>
   <NamedIndividual IRI="Max"/>
  </ClassAssertion>
  
  <DataPropertyAssertion>
-  <Annotation>
-   <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1438746968</Literal>
-   </Annotation>
    <DataProperty IRI="hasAge"/>
   <NamedIndividual IRI="Liz"/>
   <Literal datatypeIRI="http://example.com/owl/families/majorAge">25</Literal>
  </DataPropertyAssertion>
  
  <ObjectPropertyAssertion>
-  <Annotation>
-   <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-799581906</Literal>
-  </Annotation>
-  <ObjectProperty IRI="hasHusband"/>
+    <ObjectProperty IRI="hasHusband"/>
   <NamedIndividual IRI="Liz"/>
   <NamedIndividual IRI="Max"/>
  </ObjectPropertyAssertion>
@@ -111,11 +95,7 @@
 
 <!--
  <DataPropertyAssertion>
-  <Annotation>
-   <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-353814851</Literal>
-  </Annotation>
-  <DataProperty IRI="hasAge"/>
+   <DataProperty IRI="hasAge"/>
   <NamedIndividual IRI="Alice"/>
   <Literal datatypeIRI="http://example.com/owl/families/toddlerAge">2</Literal>
  </DataPropertyAssertion>       
@@ -123,11 +103,7 @@
 
 <!-- axiom is deleted due to deleting the individual Alice 
  <ObjectPropertyAssertion>
-  <Annotation>
-   <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-246865350</Literal>
-  </Annotation>
-  <ObjectProperty IRI="ParentOf"/>
+    <ObjectProperty IRI="ParentOf"/>
   <NamedIndividual IRI="Liz"/>
   <NamedIndividual IRI="Alice"/>
  </ObjectPropertyAssertion>
@@ -135,14 +111,10 @@
  
  <!-- axiom is updated by renaming Class Person to Human -->
  <SubClassOf>
-  <Annotation>
-   <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1241281692</Literal>
-  </Annotation>
   <Class IRI="Woman"/>
   <Class IRI="Human"/>
  </SubClassOf>
-  
+ 
  <DataPropertyAssertion>	<!-- DataPropertyAssertion is added -->
   <DataProperty IRI="hasBirthname"/>
   <NamedIndividual IRI="Liz"/>
