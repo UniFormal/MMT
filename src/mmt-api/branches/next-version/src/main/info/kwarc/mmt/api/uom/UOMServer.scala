@@ -84,18 +84,21 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
          case Nil => LocalChange(before)
          case arg::afterRest =>
             arg match {
+               //TODO use extractor object to match the case where inside = Nil
                case OMA(OMS(inner), inside) =>
-                  var insideS = inside
                   depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
-                     rule.apply(before, insideS, after) match {
+                     val ch = rule.apply(before, inside, after)
+                     log("rule " + rule + ": " + ch)
+                     ch match {
                         case NoChange =>
                         case LocalChange(args) =>
-                           insideS = args
+                           return applyDepthRules(outer, before, args ::: afterRest)
                         //return immediately upon GlobalChange
-                        case GlobalChange(tS) => return GlobalChange(tS)
+                        case GlobalChange(tS) =>
+                           return GlobalChange(tS)
                      }
                   }
-                  applyDepthRules(outer, before ::: List(OMA(OMS(inner), insideS)), afterRest)
+                  applyDepthRules(outer, before ::: List(arg), afterRest)
                case _ =>
                  applyDepthRules(outer, before ::: List(arg), afterRest)
             }
@@ -109,7 +112,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
       var insideS = inside
       var changed = false
       breadthRules.getOrElse(op,Nil) foreach {rule =>
-         rule.apply(inside) match {
+         rule.apply(insideS) match {
             case NoChange =>
             case LocalChange(args) =>
                insideS = args
@@ -117,7 +120,8 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
             case GlobalChange(t) => return GlobalChange(t)
          }
       }
-      if (changed) LocalChange(insideS) else NoChange
+      //we have to check for insideS == inside here in case a BreadthRules falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
+      if (! changed || insideS == inside) NoChange else LocalChange(insideS)
    }
    
    /** the main simplification method
@@ -131,7 +135,11 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
     * users should not call this method (call simplify instead) */
    def apply(t: Term)(implicit con : Context, init: Unit) : Term =  t match {
       case OMA(OMS(_), _) =>
+         log("simplifying " + t)
+         report.indent
          val (tS, globalChange) = applyAux(t)
+         report.unindent
+         log("simplified  " + tS)
          if (globalChange)
             Changed(tS)
          else
@@ -150,6 +158,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
    private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: Unit) : (Term, Boolean) = t match {
       case OMA(OMS(outer), args) =>
          // state (1)
+         log("applying depth rules to   " + t)
          applyDepthRules(outer, Nil, args) match {
             case GlobalChange(tS) =>
                // go back to state (1), remember that a global change was produced
@@ -165,10 +174,14 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
                   case a => Simplified(apply(a))
                }
                // if any argument changed globally, go back to state (1)
-               if (argsSS exists {case Changed(_) => true; case _ => false})
-                  applyAux(outer(argsSS), globalChange)
+               if (argsSS exists {
+                   case Changed(t) => Changed.eraseMarker(t); true
+                   case _ => false
+                })
+                    applyAux(outer(argsSS), globalChange)
                else {
                   //state (3)
+                  log("applying breadth rules to " + outer(argsSS))
                   applyBreadthRules(outer, argsSS) match {
                      case GlobalChange(tSS) =>
                         // go back to state (1), remember that a global change was produced
@@ -191,7 +204,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
  * UOM uses it to remember that a Term has been simplified already to avoid recursing it into it again 
  */
 object Simplified {
-   private val simplifyProperty = null
+   private val simplifyProperty = utils.mmt.baseURI / "clientProperties" / "uom" / "simplified"
    def apply(t: Term) : Term = {
      t.clientProperty(simplifyProperty) = true
      t
@@ -208,7 +221,7 @@ object Simplified {
  * this information is passed upwards during recursive simplification
  */
 object Changed {
-   private val changeProperty = null
+   private val changeProperty = utils.mmt.baseURI / "clientProperties" / "uom" / "changed"
    def apply(t: Term) : Term = {
      t.clientProperty(changeProperty) = true
      t
@@ -218,4 +231,7 @@ object Changed {
         case Some(true) => Some(t)
         case None => None
       }
+   def eraseMarker(t: Term) {
+      t.clientProperty -= changeProperty
+   }
 }
