@@ -113,7 +113,7 @@
  <DataPropertyAssertion>
   <Annotation>
    <AnnotationProperty IRI="http://omdoc.org/id"/>
-   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-353814851</Literal>
+   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1116048551</Literal>
   </Annotation>
   <DataProperty IRI="hasAge"/>
   <NamedIndividual IRI="Alice"/>
