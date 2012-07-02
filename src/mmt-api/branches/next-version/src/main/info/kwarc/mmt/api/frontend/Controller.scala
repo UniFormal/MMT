@@ -10,7 +10,8 @@ import symbols.Constant
 import web._
 import utils._
 import utils.FileConversion._
-import info.kwarc.mmt.uom._
+import uom._
+
 import io.BufferedSource
 import java.io.FileInputStream
 
@@ -57,7 +58,7 @@ class Controller extends ROController {
    val docstore = memory.narration
 
    /** maintains all customizations for specific languages */
-   val extman = new ExtensionManager(report)  
+   val extman = new ExtensionManager(report)
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
@@ -73,7 +74,7 @@ class Controller extends ROController {
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
-   val uom : UOM = {val u = new UOM(report); u.init; u}
+   val uom = new UOM(report)
 
    protected def log(s : => String) = report("controller", s)
 

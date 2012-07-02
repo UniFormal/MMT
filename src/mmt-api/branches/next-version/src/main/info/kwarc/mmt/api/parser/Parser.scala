@@ -64,8 +64,6 @@ class Parser(grammar : Grammar, var lineStarts : List[(Int,Int)]) {
       var tklist = tokenize(s, "", offset)._1
       rewrite(tklist).t
     case _  => throw ParsingError("unexpected input: " + o, toRegion(offset, offset))
-
-
   }
 
   /**

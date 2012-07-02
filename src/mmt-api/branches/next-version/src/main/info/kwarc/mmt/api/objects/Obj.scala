@@ -19,7 +19,7 @@ import scala.collection.mutable.ListMap
  * Software components should only access properties they put themselves or
  * that are explicitly guaranteed by other components.
  * 
- * While a bad idea in most situations, client properties are very useful occasinally.
+ * While a bad idea in most situations, client properties are very useful occasionally.
  * Example applications:
  *   - UOM uses a property to remember whether a Term has been simplified already
  *   - UOM uses a property to remember what kind of change a simplification has produced

@@ -1,7 +1,8 @@
-package info.kwarc.mmt.uom
+package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import objects._
+import scala.collection.mutable.HashSet
 
 /** The return type of a simplification rule
  * @see DepthRule
@@ -19,6 +20,9 @@ case class GlobalChange(it: Term) extends Change
 /** no change */
 case object NoChange extends Change
 
+/** a type to unify BreadRule's and DepthRule's */
+sealed abstract class Rule
+
 /** A DepthRule looks one level deep into the structure of one of the arguments of an operator
  * 
  * It is applicable to a term of the form
@@ -26,7 +30,7 @@ case object NoChange extends Change
  * OMA(outer, before ::: OMA(inner, inside) :: after)
  * }}}
  */
-abstract class DepthRule(outer: GlobalName, inner: GlobalName) {
+abstract class DepthRule(val outer: GlobalName, val inner: GlobalName) extends Rule {
    /** a Rewrite takes the triple (before, inside, after) and returns a simplification Result */
    type Rewrite = (List[Term], List[Term], List[Term]) => Change
    /** the implementation of the simplification rule */
@@ -49,9 +53,20 @@ abstract class DepthRuleUnary(outer: GlobalName, inner: GlobalName) extends Dept
  * OMA(op, args)
  * }}}
  */ 
-abstract class BreadthRule(op: GlobalName) {
+abstract class BreadthRule(val op: GlobalName) extends Rule {
    /** a Rewrite takes the arguments args and returns a simplification Result */
    type Rewrite = List[Term] => Change
    /** the implementation of the simplification rule */
    val apply: Rewrite
+}
+
+abstract class RuleSet {
+   private val rules = new HashSet[Rule]
+
+   def declares(rs: Rule*) {rs foreach {rules += _}}
+   def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
+
+   def allRules = rules
+   def depthRules = rules filter {_.isInstanceOf[DepthRule]}
+   def breadthRules = rules filter {_.isInstanceOf[BreadthRule]}
 }

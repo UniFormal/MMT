@@ -19,7 +19,7 @@ trait ScalaArchive extends WritableArchive {
               val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val outFile = (root / "scala" / in).setExtension("scala")
               outFile.getParentFile.mkdirs
-              info.kwarc.mmt.uom.Extractor.doDocument(controller, dpath, outFile)
+              uom.Extractor.doDocument(controller, dpath, outFile)
            } catch {
               case e: Error => report(e)
               //case e => report("error", e.getMessage)
@@ -39,7 +39,7 @@ trait ScalaArchive extends WritableArchive {
               val controller = new Controller(report)
               val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
               val scalaFile = (root / "scala" / in).setExtension("scala")
-              info.kwarc.mmt.uom.Synthesizer.doDocument(controller, dpath, scalaFile)
+              uom.Synthesizer.doDocument(controller, dpath, scalaFile)
               val doc = controller.getDocument(dpath)
               xml.writeFile(doc.toNodeResolved(controller.library), inFile)
            } catch {

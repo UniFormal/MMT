@@ -1,4 +1,4 @@
-package info.kwarc.mmt.uom
+package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
 import Conversions._
@@ -44,7 +44,7 @@ class UnaryInverse(inv: GlobalName) {
     * inv inv a ---> a
     * }}}
     */
-   val involution = new Involution(inv)
+   object Involution extends Involution(inv)
    /**
     * {{{
     * inv e ---> e
@@ -340,20 +340,45 @@ class Complement(op: GlobalName, neg: GlobalName, bound: GlobalName) extends Bre
    }
 }
 
+// now some prepackaged sets of rules for common structures
+
 /** A Semigroup packages the simplification rules that yield normalization in a semigroup. */
-class Semigroup(op: GlobalName) {
-   val assoc = new Association(op)
+class Semigroup(op: GlobalName) extends RuleSet {
+   declares (
+     new Association(op)
+   )
 }
 
 /** A Monoid packages the simplification rules that yield normalization in a monoid. */
 class Monoid(op: GlobalName, unit: GlobalName) extends Semigroup(op) {
-   val neutral = new Neutral(op, unit)
+   declares (
+      new Neutral(op, unit)
+   )
+}
+
+/** A Group packages the simplification rules that yield normalization in a group. */
+class Group(op: GlobalName, unit: GlobalName, inv: GlobalName) extends Monoid(op,unit) {
+   val unaryInverse = new UnaryInverse(inv)
+   declares (
+      unaryInverse.Involution,
+      new unaryInverse.Neutral(unit),
+      new unaryInverse.Composition(op)
+   )
+}
+
+/** A Monoid packages the simplification rules that yield normalization in a monoid. */
+class CGroup(op: GlobalName, unit: GlobalName, inv: GlobalName) extends Group(op,unit,inv) {
+   declares (
+      new Commutative(op)
+   )
 }
 
 /** A BoundedSemiLattice packages the simplification rules that yield normalization in a bounded semilattice. */
 class BoundedSemiLattice(op: GlobalName, bound: GlobalName) extends Monoid(op, bound) {
-   val idem = new Idempotent(op)
-   val comm = new Commutative(op)
+   declares (
+      new Idempotent(op),
+      new Commutative(op)
+   )
 }
 
 /** A BooleanLattice packages the simplification rules that yield normalization in a Boolean lattice
@@ -361,21 +386,25 @@ class BoundedSemiLattice(op: GlobalName, bound: GlobalName) extends Monoid(op, b
  * For example, "BooleanLattice(conj, disj, truth, falsity, neg)" yields the rules for a disjunctive normal form
  * in which redundant occurrences of "truth" and "falsity" are eliminated.  
  */ 
-class BooleanLattice(meet: GlobalName, join: GlobalName, top: GlobalName, bottom: GlobalName, compl: GlobalName) {
-   val meetSL = new BoundedSemiLattice(meet, top)
-   val joinSL = new BoundedSemiLattice(join, bottom)
+class BooleanLattice(meet: GlobalName, join: GlobalName, top: GlobalName, bottom: GlobalName, compl: GlobalName) extends RuleSet {
+   imports (
+       new BoundedSemiLattice(meet, top),
+       new BoundedSemiLattice(join, bottom)
+   )
 
-   // disjunction normal form (only one distributivity rule to ensure termination)
-   val distribMJ = new Distribution(meet, join)
-   //val distribJM = new Distribution(join, meet)
-   
-   // negation-normal form
-   val deMorganM = new Homomorphism(compl, meet, join)
-   val deMorganJ = new Homomorphism(compl, join, meet)
-   val complTop = new Antonym(compl, top, bottom)
-   val complBottom = new Antonym(compl, bottom, top)
-   val doubleComplement = new Involution(compl)
+   declares (
+      // disjunction normal form (only one distributivity rule to ensure termination)
+      new Distribution(meet, join),
+      //new Distribution(join, meet)
 
-   val contradiction = new Complement(meet, compl, bottom)
-   val tnd = new Complement(join, compl, top)
+      // negation-normal form
+      new Homomorphism(compl, meet, join),
+      new Homomorphism(compl, join, meet),
+      new Antonym(compl, top, bottom),
+      new Antonym(compl, bottom, top),
+      new Involution(compl),
+
+      new Complement(meet, compl, bottom),
+      new Complement(join, compl, top)
+   )
 }

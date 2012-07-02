@@ -1,4 +1,4 @@
-package info.kwarc.mmt.uom
+package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._

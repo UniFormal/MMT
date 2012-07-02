@@ -34,3 +34,7 @@ object mmt {
    val functorapplication = mmtsymbol("functorapplication")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }
+
+object OpenMath {
+   val base = DPath(URI("http", "www.openmath.org") / "cd")
+}
