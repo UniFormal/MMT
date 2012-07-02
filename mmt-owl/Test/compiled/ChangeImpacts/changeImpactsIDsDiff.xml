@@ -1,13 +1,34 @@
 <omdoc-diff>
+   <component name="type" path="http://example.com/owl/families/?_?ax1988069327" change="update">
+      <om:OMA>
+         <om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+         <om:OMA position="1">
+            <om:OMS module="OWL2RL" name="objectAllValuesFrom" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="1_0"></om:OMS>
+            <om:OMS module="_" name="hasCommonParentWith" base="http://example.com/owl/families/" position="1_1"></om:OMS>
+            <om:OMS module="_" name="Woman" base="http://example.com/owl/families/" position="1_2"></om:OMS>
+         </om:OMA>
+         <om:OMS module="_" name="Tom" base="http://example.com/owl/families/" position="2"></om:OMS>
+      </om:OMA>
+   </component>
    <declaration path="http://example.com/owl/families/?_?age" change="delete"></declaration>
+   <declaration path="http://example.com/owl/families/?_?hasSibling" change="delete"></declaration>
    <declaration path="http://example.com/owl/families/?_?hasAncestor" change="delete"></declaration>
    <declaration path="http://example.com/owl/families/?_?Person" change="delete"></declaration>
    <declaration path="http://example.com/owl/families/?_?toddlerAge" change="delete"></declaration>
    <declaration path="http://example.com/owl/families/?_?ChildlessPerson" change="delete"></declaration>
-   <declaration path="http://example.com/owl/families/?_?hasLastName" change="delete"></declaration>
+   <declaration path="http://example.com/owl/families/?_?hasFamilyName" change="delete"></declaration>
    <declaration path="http://example.com/owl/families/?_?John" change="delete"></declaration>
    <declaration path="http://example.com/owl/families/?_?Alice" change="delete"></declaration>
    <declaration path="http://example.com/owl/families/?_?ax-1711766800" change="delete"></declaration>
+   <declaration change="add">
+      <constant name="teenAge" >
+         <type>
+            <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+               <om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </declaration>
    <declaration change="add">
       <constant name="Bob" >
          <type>
@@ -58,6 +79,15 @@
          <type>
             <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
                <om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </declaration>
+   <declaration change="add">
+      <constant name="hasCommonParentWith" >
+         <type>
+            <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+               <om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
             </om:OMOBJ>
          </type>
       </constant>
