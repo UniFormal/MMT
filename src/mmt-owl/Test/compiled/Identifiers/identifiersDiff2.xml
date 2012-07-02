@@ -1,0 +1,35 @@
+<omdoc-diff>
+   <component name="type" path="http://example.com/owl/families?_?id2" change="update">
+      <om:OMA>
+         <om:OMS module="OWL2SUB" name="objectPropertyAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+         <om:OMS module="_" name="hasWife" base="http://example.com/owl/families" position="1"></om:OMS>
+         <om:OMS module="_" name="Max" base="http://example.com/owl/families" position="2"></om:OMS>
+         <om:OMS module="_" name="Liza" base="http://example.com/owl/families" position="3"></om:OMS>
+      </om:OMA>
+   </component>
+   <declaration path="http://example.com/owl/families?_?Liz" change="delete"></declaration>
+   <declaration path="http://example.com/owl/families?_?ax-1536846860" change="delete"></declaration>
+   <declaration change="add">
+      <constant name="Liza" >
+         <type>
+            <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+               <om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </declaration>
+   <declaration change="add">
+      <constant name="ax1453937263" >
+         <type>
+            <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+               <om:OMA>
+                  <om:OMS module="OWL2SUB" name="classAssertion" base="http://latin.omdoc.org/logics/description/owl/owl2.omdoc" position="0"></om:OMS>
+                  <om:OMS module="_" name="Mother" base="http://example.com/owl/families" position="1"></om:OMS>
+                  <om:OMS module="_" name="Liza" base="http://example.com/owl/families" position="2"></om:OMS>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </declaration>
+</omdoc-diff>
+
