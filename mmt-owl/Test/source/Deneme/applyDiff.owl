@@ -25,7 +25,7 @@
  </Declaration>
  
  <Declaration>
-  <Class IRI="Woman"/> 
+    	<Class IRI="Woman"/> 
  </Declaration>
  
  <Declaration>
@@ -41,7 +41,7 @@
  </Declaration>
  
  <Declaration>
-  <DataProperty IRI="hasLastName"/> 
+  <DataProperty IRI="hasFamilyName"/> 
  </Declaration>
  
  
@@ -50,7 +50,7 @@
    <AnnotationProperty IRI="http://omdoc.org/id"/>
    <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID001</Literal>
   </Annotation>
-  <DataProperty IRI="hasLastName"/>
+  <DataProperty IRI="hasFamilyName"/>
   <NamedIndividual IRI="Max"/>
   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Evans</Literal>
  </DataPropertyAssertion>
@@ -99,10 +99,10 @@
   <NamedIndividual IRI="Liz"/>
   <NamedIndividual IRI="Alice"/>
  </ObjectPropertyAssertion>
-  
+ 
  <SubClassOf>
   <Class IRI="Woman"/>
   <Class IRI="Person"/>
  </SubClassOf>
- 
+  
 </Ontology>
