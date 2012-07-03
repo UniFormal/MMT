@@ -334,6 +334,8 @@ class Controller extends ROController {
 	      case PrintAll => report("response", "\n" + library.toString)
          case Compare(p,r) => //TODO
          case Exit =>
+            //val tg = new TheoryGraph(depstore)
+            //tg.export(utils.File("graph.gexf"))
 	         cleanup 
 	         sys.exit
      }

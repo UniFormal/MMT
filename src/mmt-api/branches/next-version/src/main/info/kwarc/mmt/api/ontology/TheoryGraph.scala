@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import utils.MyList.fromList
+import scala.xml.Node
 import scala.collection.mutable.{HashSet,HashMap}
 
 /** types of edges in a theory multigraph; edges may have an id; there may be at most one edge without id between two nodes */
@@ -70,5 +71,46 @@ class TheoryGraph(rs: RelStore) {
         case EdgeTo(t,_,_) => from <= t
       }
       filtered.quotient(_.to)
+   }
+   
+   private def gexfNode(id:Path, tp: String) =
+      <node id={id.toPath} label={id.last}><attvalues><attvalue for="type" value={tp}/></attvalues></node>
+   private def gexfEdge(id:String, from: Path, to: Path, tp: String) =
+      <edge id={id} source={from.toPath} target={to.toPath}><attvalues><attvalue for="type" value={tp}/></attvalues></edge>
+   def toGEXF: Node = {
+     var edgeNodes : List[Node] = Nil
+     var edges : List[Node] = Nil
+     nodes foreach {from => edgesFrom(from) foreach {case (_, etos) => etos foreach {
+         case EdgeTo(_,_,true) =>
+         case EdgeTo(to, ViewEdge(v), _) =>
+           edgeNodes ::= gexfNode(v, "view")
+           edges ::= gexfEdge("source: " + v.toPath, from, v, "source")
+           edges ::= gexfEdge("target: " + v.toPath, v, to, "target")
+         case EdgeTo(to, StructureEdge(s), _) =>
+           edgeNodes ::= gexfNode(s, "structure")
+           edges ::= gexfEdge("source: " + s.toPath, from, s, "source")
+           edges ::= gexfEdge("target: " + s.toPath, s, to, "target")
+         case EdgeTo(to, MetaEdge, _) =>
+           edges ::= gexfEdge("meta: " + from.toPath + "--" + to.toPath, from, to, "meta")
+         case EdgeTo(to, IncludeEdge, _) =>
+           edges ::= gexfEdge("include: " + from.toPath + "--" + to.toPath, from, to, "include")
+     }}}
+      <gexf xmlns="http://www.gexf.net/1.2draft">
+         <graph defaultedgetype="directed">
+            <attributes>
+               <attribute id="type" title="type" type="string"/>
+            </attributes>
+            <nodes>
+              {nodes map {node => gexfNode(node, "theory")}}
+              {edgeNodes}
+            </nodes>
+            <edges>{edges}</edges>
+         </graph>
+      </gexf>
+   }
+   def export(filename: utils.File) {
+      val file = utils.File.Writer(filename)
+      file.write(toGEXF.toString)
+      file.close
    }
 }
