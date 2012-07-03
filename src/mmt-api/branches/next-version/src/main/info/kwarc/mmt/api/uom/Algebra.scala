@@ -104,6 +104,15 @@ class MonoidAction(unit: GlobalName, act: GlobalName) extends DepthRule(act, uni
       }
 }
 
+/** Signs in a product
+ * {{{
+ * a1 ... -b ... am ---> - a1 ... b ... am
+ * sign must be unary
+*/
+class Sign(op: GlobalName, sign: GlobalName) extends DepthRule(op, sign) {
+   val apply: Rewrite = (before, inside, after) => GlobalChange(sign(op(before ::: inside ::: after)))
+}
+
 /** a projective function
  * {{{
  * f(f(a)) ---> f(a)
@@ -188,6 +197,7 @@ class Lambda(lambda: GlobalName, app: GlobalName) {
    }
 }
 
+/*
 /** Implementations of Counter permit basic counting and taking multiples of quantities
  *
  * This is used as an auxiliary class to collect and count multiples of the same quantity, e.g., in a polynomial.
@@ -202,60 +212,88 @@ trait Counter {
    val minusone : Term
    /** binary addition of amounts, e.g., arith1.plus */
    val add: GlobalName
-   /** "OMA(of, a, b)" represents the quantity "a bs", e.g., arith1.times */
+   /** "of(a, b)" represents the quantity "a bs", e.g., arith1.times */
    val of: GlobalName
+   /** is it OMA(of, base, amount)? */
+   val ofBaseAmount : Boolean
+   /** is it OMA(of, amount, base)? */
+   val ofAmountBase = ! ofBaseAmount
    /** a simplifier for counting values, e.g., OMI(1)+OMI(1) ---> OMI(2) */
    val simplify : Term => Term
 }
 
-/** Collection and counting of quantities that are multiple of the same base
+object IntegerCounter extends Counter {
+   val zero = OMI(0)
+   val one = OMI(1)
+   val minusone = OMI(-1)
+   val add = utils.OpenMath.arith1.plus
+   //OpenMath declares this for the multiplicative power in rings even though it works for any semigroup
+   val of = utils.OpenMath.base ? "ring1" ? "power"
+   val ofBaseAmount = true
+   def simplify(t: Term) = t match {
+      case OMA(add, args) =>
+         var nums : BigInt = 0
+         val symArgs = args filter {
+            case OMI(n) => nums += n; false
+            case _ => true
+         }
+         val all = OMI(nums) :: symArgs
+         all.length match {
+            case 0 => OMI(0) //impossible
+            case 1 => all.head
+            case _ => OMA(add, all)
+         }
+      case _ => t
+   }
+}
+*/
+
+/** Collection and counting of quantities that are integer multiples of the same base
  * {{{
  *  a1 ... am is simplified by merging successive occurrences of a, k @ a, inv(a), and unit:
- *  1) a ---> 1 @ a
+ * 1) a ---> 1 @ a
  * 1) unit ---> (remove)
  * 1) inv(a) ---> -1 @ a
  * 2) (k @ a)(l @ a) ---> (k + l) @ a
- * 3) k @ a ---> l @ a  by calling simplify
+ * 3) k @ a ---> l @ a  by adding integers
  * 4) 1 @ a ---> a
  * 4) 0 @ a ---> (remove)
- * // 4) -1 @ a ---> inv(a) 
+ * 4) -1 @ a ---> inv(a) 
  * where k @ a = k of a
  * }}}
  *
  * @param comp the aggregation operation, e.g., +
+ * @param action the dual of the above action @ of integers on Terms@ operation above: takes a Term and an OMI
  * @param unit the value of the empty aggregation (i.e., when all terms cancel out), e.g., 0
  * @param inv the unary operator producing a negative aggregate, e.g., -
  * @param commutative If true, comp is commutative, and the elements are first reordered according to the hashcode of a.
- * @param counter an implementation of counting that is used to merge quantities that are multiples of the same base   
+ * action, unit, inv, commutative are mutable so that the Collect rule can be strengthened easily when forming RuleSet's by inheritance   
 */
-class Collect(comp : GlobalName, unit: Option[GlobalName], inv: Option[GlobalName], commutative: Boolean)(count: Counter) extends BreadthRule(comp) {
-   private case class Quantity(base: Term, amount: Term) {
-      def add(that: Quantity) = Quantity(base, count.add(this.amount, that.amount))
+class Collect(comp : GlobalName, var action: GlobalName, var unit: Option[GlobalName], var inv: Option[GlobalName], var commutative: Boolean) extends BreadthRule(comp) {
+   private case class Quantity(base: Term, amount: BigInt) {
+      def add(that: Quantity) = Quantity(base, this.amount + that.amount)
+   }
+   private object QuantityMatcher {
+      def unapply(t: Term) : Option[(Term,BigInt)] = t match {
+         case OMA(OMS(op), List(base, OMI(n))) if op == action => Some((base, n))
+         case _ => None
+      }
    }
    private def fromTerm(t : Term) : Option[Quantity] = {
-      unit match {
-         case Some(u) => if (t == OMID(u)) return None
-         case _ =>
-      }
-      inv match {
-         case Some(i) => t match {
-            case OMA(OMID(`i`), List(arg:Term)) => return Some(Quantity(arg, count.minusone))
-            case _ =>
-         }
-         case _ =>
-      }
       t match {
-         case OMA(OMID(action), List(arg:Term, amount:Term)) => Some(Quantity(arg, amount))
-         case t => Some(Quantity(t, count.one))
+         case OMS(u) if unit == Some(u) => None 
+         case OMA(OMS(i), List(QuantityMatcher(base, n))) if inv == Some(i) => Some(Quantity(base, -n))
+         case OMA(OMS(i), List(arg)) if inv == Some(i) => Some(Quantity(arg, -1))
+         case QuantityMatcher(base, n) => Some(Quantity(base,n))
+         case t => Some(Quantity(t, 1))
       }
    }
    private def toTerm(f: Quantity) = {
-      val newamount = count.simplify(f.amount)
-      newamount match {
-         case count.zero => None
-         case count.one => Some(f.base)
-         // case count.minusone => Some(inv(f.base))
-         case a => Some(count.of(f.base, a))
+      f.amount match {
+         case a if a == 0 => None
+         case a if a == 1 => Some(f.base)
+         case a if a == -1 && inv.isDefined => Some(inv.get(f.base)) //inv.isEmpty is unreasonable if count.minusone is possible  
+         case a => Some(action(f.base, OMI(a)))
       }
    }
    val apply: Rewrite = args => {
@@ -265,7 +303,7 @@ class Collect(comp : GlobalName, unit: Option[GlobalName], inv: Option[GlobalNam
       }
       var done : List[Quantity] = Nil
       var current : Quantity = qs.head
-      var todo : List[Quantity] = qs.init
+      var todo : List[Quantity] = qs.tail
       // invariant: comp(done.reverse, current, todo) = comp(comp, qs) 
       while (todo != Nil) {
          val next = todo.head
@@ -280,7 +318,7 @@ class Collect(comp : GlobalName, unit: Option[GlobalName], inv: Option[GlobalNam
       done = (current :: done)
       val newargs = done.reverse.mapPartial(toTerm)
       newargs.length match {
-         case 0 => GlobalChange(OMID(unit.get)) // only possible if args == Nil (forbidden) or if all terms cancelled (then inverse and thus unit must exist)
+         case 0 if unit.isDefined => GlobalChange(OMID(unit.get)) // unit.isEmpty is unreasonable; then we use OMA(op, Nil) in lieu of unit element
          case 1 => GlobalChange(newargs.head)
          case _ => LocalChange(newargs)
       }
@@ -344,13 +382,17 @@ class Complement(op: GlobalName, neg: GlobalName, bound: GlobalName) extends Bre
 
 /** A Semigroup packages the simplification rules that yield normalization in a semigroup. */
 class Semigroup(op: GlobalName) extends RuleSet {
+   protected val collect = new Collect(op, utils.OpenMath.base ? "ring1" ? "power", None, None, false)
    declares (
-     new Association(op)
+     new Association(op),
+     collect
+     
    )
 }
 
 /** A Monoid packages the simplification rules that yield normalization in a monoid. */
 class Monoid(op: GlobalName, unit: GlobalName) extends Semigroup(op) {
+   collect.unit = Some(unit)
    declares (
       new Neutral(op, unit)
    )
@@ -358,7 +400,8 @@ class Monoid(op: GlobalName, unit: GlobalName) extends Semigroup(op) {
 
 /** A Group packages the simplification rules that yield normalization in a group. */
 class Group(op: GlobalName, unit: GlobalName, inv: GlobalName) extends Monoid(op,unit) {
-   val unaryInverse = new UnaryInverse(inv)
+   private val unaryInverse = new UnaryInverse(inv)
+   collect.inv = Some(inv)
    declares (
       unaryInverse.Involution,
       new unaryInverse.Neutral(unit),
@@ -366,11 +409,30 @@ class Group(op: GlobalName, unit: GlobalName, inv: GlobalName) extends Monoid(op
    )
 }
 
-/** A Monoid packages the simplification rules that yield normalization in a monoid. */
+/** A CGroup packages the simplification rules that yield normalization in a commutative group. */
 class CGroup(op: GlobalName, unit: GlobalName, inv: GlobalName) extends Group(op,unit,inv) {
-   declares (
-      new Commutative(op)
+   collect.commutative = true
+}
+
+/** A Ring packages the simplification rules that yield normalization in a ring (as a sum of products). */
+class Ring(plus: GlobalName, zero: GlobalName, minus: GlobalName, times: GlobalName, one: GlobalName) extends CGroup(plus, zero, minus) {
+   protected val multCollect = new Collect(times, utils.OpenMath.base ? "ring1" ? "power", Some(one), None, false)
+   collect.action = times
+   imports (
+      new Monoid(times, one)
    )
+   declares (
+      new Distribution(times, plus),
+      multCollect,
+      // some important theorems for simplification
+      new Attractor(times, zero),
+      new Sign(times, minus)
+   )
+}
+
+/** A CRing packages the simplification rules that yield normalization in a commutative ring (as a sum of products). */
+class CRing(plus: GlobalName, zero: GlobalName, minus: GlobalName, times: GlobalName, one: GlobalName) extends Ring(plus, zero, minus, times, one) {
+   multCollect.commutative = true
 }
 
 /** A BoundedSemiLattice packages the simplification rules that yield normalization in a bounded semilattice. */

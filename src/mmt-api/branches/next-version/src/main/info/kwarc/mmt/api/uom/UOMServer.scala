@@ -84,10 +84,9 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
          case Nil => LocalChange(before)
          case arg::afterRest =>
             arg match {
-               //TODO use extractor object to match the case where inside = Nil
-               case OMA(OMS(inner), inside) =>
+               case OMAMaybeNil(OMS(inner), inside) =>
                   depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
-                     val ch = rule.apply(before, inside, after)
+                     val ch = rule.apply(before, inside, afterRest)
                      log("rule " + rule + ": " + ch)
                      ch match {
                         case NoChange =>
@@ -112,7 +111,9 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
       var insideS = inside
       var changed = false
       breadthRules.getOrElse(op,Nil) foreach {rule =>
-         rule.apply(insideS) match {
+         val ch = rule.apply(insideS)
+         log("rule " + rule + ": " + ch)
+         ch match {
             case NoChange =>
             case LocalChange(args) =>
                insideS = args

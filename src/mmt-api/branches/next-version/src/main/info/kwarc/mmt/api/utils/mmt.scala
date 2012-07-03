@@ -37,4 +37,10 @@ object mmt {
 
 object OpenMath {
    val base = DPath(URI("http", "www.openmath.org") / "cd")
+   val arith1CD = base ? "arith1"
+   object arith1 {
+      val plus = arith1CD ? "plus"
+      val minus = arith1CD ? "minus"
+      val times = arith1CD ? "times"
+   }
 }

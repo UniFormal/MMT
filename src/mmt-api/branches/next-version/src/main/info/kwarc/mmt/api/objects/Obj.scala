@@ -382,6 +382,18 @@ object OMSemiFormal {
   def apply(tokens: SemiFormalObject*) : OMSemiFormal = OMSemiFormal(tokens.toList)
 }
 
+/** provides apply/unapply methods for constructing and pattern-matching a function that is may or may not be applied to arguments
+ *  Nil is used as the list of arguments in the latter case
+ *  This identifies t with OMA(t,Nil).
+ */
+object OMAMaybeNil {
+   def apply(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
+   def unapply(t: Term) : Option[(Term,List[Term])]= t match {
+      case OMA(f, args) => Some((f,args))
+      case _ => Some((t, Nil))
+   }
+}
+
 /**
  * Obj contains the parsing methods for objects.
  * There is one parsing method for each syntactic class of objects: terms, morphisms, theories.

@@ -9,10 +9,13 @@ import scala.collection.mutable.HashSet
  * @see BreadthRule)
  */
 abstract class Change
+
 /** A LocalChange leaves the structure of a term unchanged, but changes its arguments
  * @param inside the new argument list
+ * For the precise meaning of this Change, see DepthRule and BreadthRule.
  */
 case class LocalChange(inside: List[Term]) extends Change
+
 /** A GlobalChange changes the structure of a term.
  * @param it the new term
  */
@@ -29,6 +32,7 @@ sealed abstract class Rule
  * {{{
  * OMA(outer, before ::: OMA(inner, inside) :: after)
  * }}}
+ * A LocalChange replaces OMA(inner,inside).
  */
 abstract class DepthRule(val outer: GlobalName, val inner: GlobalName) extends Rule {
    /** a Rewrite takes the triple (before, inside, after) and returns a simplification Result */
@@ -52,6 +56,7 @@ abstract class DepthRuleUnary(outer: GlobalName, inner: GlobalName) extends Dept
  * {{{
  * OMA(op, args)
  * }}}
+ * A LocalChange replaces args.
  */ 
 abstract class BreadthRule(val op: GlobalName) extends Rule {
    /** a Rewrite takes the arguments args and returns a simplification Result */
@@ -60,6 +65,7 @@ abstract class BreadthRule(val op: GlobalName) extends Rule {
    val apply: Rewrite
 }
 
+/** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
 abstract class RuleSet {
    private val rules = new HashSet[Rule]
 

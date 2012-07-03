@@ -23,12 +23,15 @@ object Test {
     val Zero = OMS(zero)
     val One = OMS(one)
     
-    val cg = new CGroup(plus, zero, uminus)
-    val mon = new Monoid(times, one)
-    uom.register(cg)
+    val rg = new CRing(plus, zero, uminus, times, one)
+    uom.register(rg)
     
-    val t = plus(Zero,Zero,plus(Zero,uminus(Zero)))
-    println(uom.simplify(t))
+    val x = OMV("x")
+    val y = OMV("y")
+    
+    val t = plus(plus(One,y,x),One,x,plus(Zero,uminus(One)))
+    val p = times(plus(x,y),plus(x,uminus(y)))
+    println(uom.simplify(p))
     
     /*
      unit conversion rules
