@@ -58,10 +58,11 @@ object Action extends RegexParsers {
      private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
 
-   private def shell = setbase | readText | read | check | printall | printallxml | clear | exit
+   private def shell = setbase | readText | read | graph | check | printall | printallxml | clear | exit
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def readText = "readText" ~> file ^^ {f => ReadText(f)}
    private def read = "read" ~> file ^^ {f => Read(f)}
+   private def graph = "graph" ~> file ^^ {f => Graph(f)}
    private def check = "check" ~> path ^^ {p => Check(p)}
    private def printall = "printAll" ^^ {case _ => PrintAll}
    private def printallxml = "printXML" ^^ {case _ => PrintAllXML}
@@ -88,7 +89,7 @@ object Action extends RegexParsers {
    
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
-   private def file = str ^^ {s => home.resolve(s)}
+   private def file = str ^^ {s => File(home.resolve(s))}
    private def uri = str ^^ {s => URI(s)}
    private def int = str ^^ {s => s.toInt}
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
@@ -119,19 +120,21 @@ case class LoggingOff(s : String) extends Action {override def toString = "log- 
 /** set the current base path */
 case class SetBase(base : Path) extends Action {override def toString = "base " + base}
 /** load a file containing commands and execute them, fails on first error if any */
-case class ExecFile(file : java.io.File) extends Action {override def toString = "file " + file}
+case class ExecFile(file : File) extends Action {override def toString = "file " + file}
 /** read a knowledge item */
-case class Read(f : java.io.File) extends Action {override def toString = "read " + f}
+case class Graph(target : File) extends Action {override def toString = "graph " + target}
+/** read a knowledge item */
+case class Read(f : File) extends Action {override def toString = "read " + f}
 /** read a Twelf file */
-case class ReadText(f : java.io.File) extends Action {override def toString = "readText " + f}
+case class ReadText(f : File) extends Action {override def toString = "readText " + f}
 /** check a knowledge item */
 case class Check(p : Path) extends Action {override def toString = "check " + p}
 /** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddCatalog(file : java.io.File) extends Action {override def toString = "catalog " + file}
+case class AddCatalog(file : File) extends Action {override def toString = "catalog " + file}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
-case class AddTNTBase(file : java.io.File) extends Action {override def toString = "tntbase " + file}
+case class AddTNTBase(file : File) extends Action {override def toString = "tntbase " + file}
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
  * @param args a list of arguments that will be passed to the compiler's init method
@@ -145,7 +148,7 @@ case class AddSVNArchive(url : String,  rev : Int) extends Action {override def 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(id: String, dim: String, in : List[String], params: List[MPath] = Nil) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
 /** builds a dimension in a previously opened archive */
-case class ArchiveMar(id: String, file: java.io.File) extends Action {override def toString = "archive " + id + " mar " + file}
+case class ArchiveMar(id: String, file: File) extends Action {override def toString = "archive " + id + " mar " + file}
 /** add MathWebSearch as a web service */
 case class AddMWS(uri: URI) extends Action {override def toString = "mws " + uri}
 /** print all loaded knowledge items to STDOUT in text syntax */

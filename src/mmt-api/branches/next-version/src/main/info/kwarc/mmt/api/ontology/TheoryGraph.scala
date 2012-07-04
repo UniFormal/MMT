@@ -108,9 +108,65 @@ class TheoryGraph(rs: RelStore) {
          </graph>
       </gexf>
    }
-   def export(filename: utils.File) {
+   def exportGEXF(filename: utils.File) {
       val file = utils.File.Writer(filename)
       file.write(toGEXF.toString)
+      file.close
+   }
+   private def dotNode(id:Path, tp: String) = {
+      val label = id match {
+         case utils.mmt.mmtbase ? !(name) =>
+            objects.TheoryExp.toString(objects.Obj.fromPathEncoding(name))
+         case _ =>
+            id.last
+      }
+      val tooltipAtt = "tooltip=\"" + tp + " " + id.toPath + "\""
+      val uriAtt = "href=\"javascript:parent.navigate('" + id.toPath + "')\""
+      "\"" + id.toPath + "\" [label=\"" + label + "\"," + tooltipAtt + "," + uriAtt + "];\n"
+   }
+   private def dotEdge(id:Option[Path], from: Path, to: Path, tp: String) = {
+      val idAtts = id match {
+         case None => "tooltip=\"" + tp + "\""
+         case Some(id) => "label=\"" + id.last + "\", tooltip=\"" + tp + " " + id.toPath + "\"" + 
+           "href=\"javascript:parent.navigate('" + id.toPath + "')\"" 
+      }
+      val styleAtts = tp match {
+         case "view" => "style=dashed,color=\"blue:blue\""
+         case "structure" => "style=bold,color=red"
+         case "include" => "style=solid,color=black"
+         case "meta" => "style=solid,color=green"
+      }
+      "\"" + from.toPath + "\" -> \"" + to.toPath + "\" [ " + idAtts + "," + styleAtts + "];\n"
+   }
+   def toDot: String = {
+     var res: List[String] = Nil
+     var nodesDone: List[Path] = Nil
+     nodes.foreach {node =>
+        res ::= dotNode(node, "theory")
+        nodesDone ::= node
+     }
+     def addNodeIfNeeded(p: Path) {if (! nodesDone.contains(p))
+        res ::= dotNode(p, "theory")
+        nodesDone ::= p
+     }
+     nodes.foreach {from =>
+       addNodeIfNeeded(from)
+       edgesFrom(from) foreach {case (to, etos) =>
+          addNodeIfNeeded(to)
+          etos foreach {
+            case EdgeTo(_,_,true) =>
+            case EdgeTo(_, ViewEdge(v), _) =>      res ::= dotEdge(Some(v), from, to, "view")
+            case EdgeTo(_, StructureEdge(s), _) => res ::= dotEdge(Some(s), from, to, "structure")
+            case EdgeTo(_, MetaEdge, _) =>         res ::= dotEdge(None,    from, to, "meta")
+            case EdgeTo(_, IncludeEdge, _) =>      res ::= dotEdge(None,    from, to, "include")
+          }
+       }
+     }
+     res.reverse.mkString("digraph MMT {\n", "", "}")
+   }
+   def exportDot(filename: utils.File) {
+      val file = utils.File.Writer(filename)
+      file.write(toDot)
       file.close
    }
 }

@@ -98,7 +98,7 @@ sealed abstract class Term extends Obj {
      * If the term is module level, this is guaranteed to be correct. */
    def toMPath : MPath = this match {
      case OMMOD(p) => p
-     case _ => mmt.mmtbase ? ("[" + toString + "]").replace(" ", "_")
+     case _ => mmt.mmtbase ? Obj.toPathEncoding(this)
    }
    /** This permits the syntax term % sym for path composition */
    def %(n: LocalName) : GlobalName = GlobalName(this,n)
@@ -480,5 +480,55 @@ object Obj {
         mod % name
       case _ => throw ParseError("not a well-formed identifier: " + N.toString)
   }
+  
+  /** separator string used in fromPathEncoding and toPathEncoding */
+  private val sepString = "___"
+  /** decodes an expression encoded by toPathEncoding
+   * @throws ParseError whenever it does not understand the input
+   */
+  def fromPathEncoding(s: String) : Term = 
+     if (s.startsWith("[") && s.endsWith("]")) 
+        fromPathEncodingAux(s.substring(1, s.length - 1))
+     else
+        throw ParseError("not an MPath-encoded Term: " + s)
+
+  private def fromPathEncodingAux(s: String) : Term =
+     try {
+        s match {
+           case MPathEncodedOMS(p: ContentPath) => OMID(p)
+           case MPathEncodedOMA(p: ContentPath, args) => OMA(OMID(p), args map fromPathEncodingAux)
+           case _ => throw ParseError("not an MPath-encoded Term: " + s)
+        }
+     } catch {case e: ParseError => 
+       throw ParseError("not an MPath-encoded Term: " + s).setCausedBy(e)
+     }
+  
+  /** encodes a theory or morphism expressions as a String */
+  def toPathEncoding(t: Term) = "[" + toPathEncodingAux(t) + "]"
+  private def toPathEncodingAux(t: Term): String = t match {
+     case OMA(fun, args) => (fun::args).map(toPathEncodingAux).mkString("(", sepString, ")")
+     case OMID(p) => p.toPath 
+  }
+  private object MPathEncodedOMA {
+      def unapply(s: String): Option[(Path,List[String])] =
+         if (s.startsWith("(") && s.endsWith(")")) {
+            val parts = s.substring(1,s.length - 1).split(sepString).toList
+            val op = Path.parse(parts.head)
+            Some((op, parts.tail))
+         }
+         else
+           None
+   }
+   private object MPathEncodedOMS {
+      def unapply(s: String): Option[Path] =
+         if (! s.contains(sepString)) {
+            val op = Path.parse(s)
+            Some(op)
+         }
+         else
+           None
+   }
 }
+
+
 

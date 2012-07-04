@@ -133,6 +133,14 @@ object TheoryExp {
    /** a sound but not complete approximation of imports that does not make use of any lookups
     *  and only the information given in the theory expressions */ 
    def importsDefinitely(from: Term, to: Term) = imports(from,to) {(f,t) => f == t}
+   
+   
+   /** returns a human-oriented (short) String representation of a theory expression */
+   def toString(t: Term) : String = t match {
+      case OMMOD(f) => f.last
+      case TheoryExp.Empty => "empty"
+      case TUnion(ts) => ts.map(toString).mkString("", " + ", "")
+   }
 }
 
 /**

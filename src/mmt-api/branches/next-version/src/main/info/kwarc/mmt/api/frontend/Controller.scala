@@ -320,6 +320,9 @@ class Controller extends ROController {
 	      case NoAction => ()
 	      case Read(f) => read(f)
 	      case ReadText(f) => readText(f)
+	      case Graph(f) =>
+	         val tg = new TheoryGraph(depstore)
+            tg.exportDot(f)
 	      case Check(p) =>
 	         try {
 	            checker.check(p)(_ => (), _ => ())
@@ -334,8 +337,6 @@ class Controller extends ROController {
 	      case PrintAll => report("response", "\n" + library.toString)
          case Compare(p,r) => //TODO
          case Exit =>
-            //val tg = new TheoryGraph(depstore)
-            //tg.export(utils.File("graph.gexf"))
 	         cleanup 
 	         sys.exit
      }

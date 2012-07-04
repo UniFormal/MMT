@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import modules._
 import symbols._
 import patterns._
+import objects._
 
 /** The Extractor produces the declaration-level relational representation of a SructuralElement
  */
@@ -30,11 +31,11 @@ object Extractor {
                      f(IsConstant(c.rl).apply(c.path))
                   case s: Structure =>
                      if (s.name.isAnonymous) {
-                        f(Includes(t.path, s.from.toMPath))
+                        f(Includes(t.path, TheoryExp.simplify(s.from).toMPath))
                      } else {
                         f(dec)
-                        f(HasDomain(s.path, s.from.toMPath))
-                        f(HasCodomain(s.path, s.to.toMPath))
+                        f(HasDomain(s.path, TheoryExp.simplify(s.from).toMPath))
+                        f(HasCodomain(s.path, TheoryExp.simplify(s.to).toMPath))
                         f(IsStructure(s.path))
                      }
                   case p: Pattern =>

@@ -284,6 +284,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                }
             } catch {case _ => None}
          case !(hd) => None
+         case _ => None
    }
    
    private def getContainer(m: Term, error: String => Nothing) : ContentElement = m match {

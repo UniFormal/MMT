@@ -15,8 +15,8 @@ object Main {
     val cnew = new Controller
                                                                                                 2
     
-    cold.handle(ExecFile(new java.io.File("moc1-startup.mmt")))
-    cnew.handle(ExecFile(new java.io.File("moc2-startup.mmt")))
+    cold.handle(ExecFile(File("moc1-startup.mmt")))
+    cnew.handle(ExecFile(File("moc2-startup.mmt")))
 
     /*
     cold.backend.getArchives map {archive =>

@@ -384,7 +384,7 @@ object % {
  */
 object / {
    def unapply(l : LocalPath) : Option[(String,LocalPath)] = if (l.isNative) None else Some((l.head,l.tail))
-   def unapply(l : LocalName) : Option[(LNStep,LocalName)] = if (l.length == 1) None else Some((l.head,l.tail))
+   def unapply(l : LocalName) : Option[(LNStep,LocalName)] = if (l.length <= 1) None else Some((l.head,l.tail))
 }
 
 
@@ -393,7 +393,7 @@ object / {
  */
 object \ {
    def unapply(l : LocalPath) : Option[(LocalPath,String)] = if (l.isNative) None else Some((l.init,l.last))
-   def unapply(l : LocalName) : Option[(LocalName,LNStep)] = if (l.length == 1) None else Some((l.init,l.last))
+   def unapply(l : LocalName) : Option[(LocalName,LNStep)] = if (l.length <= 1) None else Some((l.init,l.last))
 }
 
 /** 

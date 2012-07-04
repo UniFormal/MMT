@@ -20,7 +20,13 @@ class Shell() extends {
             controller.handleLine(command)
          }
       } catch {
-         case e => controller.cleanup; throw e
+         case e: Error =>
+           controller.report(e)
+           controller.cleanup
+           throw e
+         case e =>
+           controller.cleanup
+           throw e
       }
    }
 }
