@@ -382,32 +382,25 @@ latin.leftClick = function(target){
 }
 
 latin.hoverText = function(target){
-        //handling clicks on parts of the document - active only for elements that have jobad:href
+   //handling clicks on parts of the document - active only for elements that have jobad:href
 	if (target.hasAttribute('jobad:href')) {
 		var mr = $(target).closest('mrow');
 		var select = (mr.length == 0) ? target : mr[0];
 		setSelected(select);
-		return true;
+		return target.getAttribute('jobad:href');
 	}
-	// highlight bracketed expression
+	// bracketed expression
 	if (getTagName(target) == 'mfenced') {
 		setSelected(target);
-		return true;
+		return false;
 	}
-	// highlight variable declaration
+	// variable declaration
 	if (target.hasAttribute('jobad:varref')) {
 	   var v = $(target).parents('mrow').children().filterMAttr('jobad:xref', target.getAttribute('jobad:varref'));
 		setSelected(v[0]);
-		return true;
+		return false;
 	}
-	unsetSelected();
-	return false;
-        /*
-	if (target.hasAttribute('jobad:href')) {
-		return target.getAttribute('jobad:href');
-	} else
-	   return null;
-        */
+	return null;
 }
 
 /* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
