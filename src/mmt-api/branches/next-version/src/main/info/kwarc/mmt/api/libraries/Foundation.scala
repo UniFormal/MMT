@@ -8,11 +8,12 @@ import frontend._
 import scala.collection.mutable.HashSet
 
 abstract class FoundationLookup {
+   val lup : Lookup
    def getType(p: GlobalName) : Option[Term]
    def getDefiniens(p: GlobalName) : Option[Term]
 }
 
-class PlainLookup(lup: Lookup) extends FoundationLookup {
+class PlainLookup(val lup: Lookup) extends FoundationLookup {
    def getType(p: GlobalName) : Option[Term] = {
       lup.getConstant(p).tp
    }
@@ -21,7 +22,7 @@ class PlainLookup(lup: Lookup) extends FoundationLookup {
    }
 }
 
-class TracedLookup(lup: Lookup) extends FoundationLookup {
+class TracedLookup(val lup: Lookup) extends FoundationLookup {
    private val trace = new HashSet[CPath]
    def getType(p: GlobalName) : Option[Term] = {
       trace += CPath(p, "type")

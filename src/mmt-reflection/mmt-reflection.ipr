@@ -29,6 +29,7 @@
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" />
   <component name="HighlightingAdvisor">
     <option name="SUGGEST_TYPE_AWARE_HIGHLIGHTING" value="false" />
+    <option name="TYPE_AWARE_HIGHLIGHTING_ENABLED" value="true" />
   </component>
   <component name="Palette2">
     <group name="Swing">
@@ -174,7 +175,9 @@
         <root url="jar://$PROJECT_DIR$/../../deploy/mmt/mmt-api.jar!/" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="file://$PROJECT_DIR$/../mmt-api/trunk/src" />
+      </SOURCES>
     </library>
     <library name="mmt-lf">
       <CLASSES>

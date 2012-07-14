@@ -24,16 +24,16 @@ import info.kwarc.mmt.lf._
    s ^ S  : application of the substitution S to s : Term
 */
 
-case class LFError(msg : String) extends java.lang.Throwable(msg)
+case class ReflectionError(msg : String) extends java.lang.Throwable(msg)
 
 object Reflection {
    val base = new DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "reflection" / "terms.omdoc")
-   val theory = lfbase ? "Terms"
-   def constant(name : String) = OMID(lftheory ? name)
+   val theory = LF.lfbase ? "Terms"
+   def constant(name : String) = OMID(LF.lftheory ? name)
    val intro = constant("introduction")
    val elim = constant("elimination")
    val rtype = constant("refltype")
-   val rapply = constant("reflapp")
+   val eval = constant("evaluation")
 }
 
 /* apply methods and extractor methods for Scala
@@ -43,77 +43,47 @@ object Reflection {
  */
 
 object TermRefl {
-   def apply(thy: MPath, term: Term) = OMA(Reflection.intro, List(OMID(thy), term))
+   def apply(thy: MPath, term: Term) = OMA(Reflection.intro, List(OMMOD(thy), term))
    def unapply(t : Term) : Option[(MPath,Term)] = t match {
-	   case OMA(Reflection.intro, List(thy, tm) = Some((thy, tm))
+	   case OMA(Reflection.intro, List(OMMOD(thy), tm)) => Some((thy, tm))
 	   case _ => None
    }
 }
 
-object Pi { 
-   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.constant("Pi"), OMV(name) % tp, body)
-   //def apply(name : String, tp : Sequence, body : Term) = OMBIND(LF.constant("Pi"), SeqVarDecl(name, Some(tp),None), body)
-   
-   def apply(con: Context, body : Term) = OMBIND(LF.constant("Pi"), con, body) //(?)
-   def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.constant("Pi") || b == LF.constant("implicit_Pi") =>
-	      if (rest.isEmpty) Some((n,t,s))
-	      else Some((n,t, Pi(rest.toList,s)))
-	   case OMA(LF.arrow,args) =>
-	      val name = LocalName.Anon //TODO: invent fresh name here
-	      if (args.length > 2)
-	     	 Some((name, args(0), OMA(LF.arrow, args.tail)))
-	      else
-	     	 Some((name,args(0),args(1)))
-	   case _ => None
-   }
+object TermEval {
+  def apply(thy: MPath, term: Term) = OMA(Reflection.eval, List(OMMOD(thy), term))
+  def unapply(t : Term) : Option[(MPath,Term)] = t match {
+    case OMA(Reflection.elim, List(OMMOD(thy), tm)) => Some((thy, tm))
+    case _ => None
+  }
 }
 
-object Arrow {
-	def apply(t1 : Term, t2 : Term) = OMA(LF.arrow,List(t1,t2))
-	def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case OMA(LF.arrow,List(t1: Term,t2:Term)) => Some((t1,t2))
-		case _ => None
-	}
+object ReflType {
+  def apply(thy: MPath, tp: Term)
+          ={ OMA(Reflection.rtype, List(OMMOD(thy), tp))     }
+  def unapply(t : Term) : Option[(MPath,Term)] = t match {
+    case OMA(Reflection.rtype, List(OMMOD(thy), tp)) => Some((thy, tp))
+    case _ => None
+  }
 }
 
-object Apply {
-	def apply(f: Term, a: Term) = f(a)
-	def unapply(t: Term) : Option[(Term,Term)] = t match {
-		case OMA(f, a) if f != LF.arrow => a.last match {
-			case t: Term =>
-			  if (a.length > 1) Some((OMA(f, a.init), t))
-			  else Some(f,t)
-			case _ => None
-		}
-		case _ => None
-	}
+object Elim {
+  def apply(t: Term, mor: Term) = OMA(Reflection.elim, List(t, mor))
+  def unapply(t : Term) : Option[(Term,Term)] = t match {
+    case OMA(Reflection.rtype, List(t, mor)) => Some((t, mor))
+    case _ => None
+  }
 }
 
-object ApplySpine {
-	def apply(f: Term, a: Term*) = OMA(f, a.toList)
-	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
-		case OMA(f, args) if f != LF.arrow =>
-		  unapply(f) match {
-		 	 case None => Some((f, args))
-		 	 case Some((c, args0)) => Some((c, args0 ::: args))
-		  }
-		case _ => None
-	}
-}
+/** @param theory : quoted theory
+ * @param context : context
+ */
+case class Frame(theory : MPath, context : Context)
 
-object Univ {
-	def apply(level : Int) : Term = if (level == 1) LF.ktype else LF.kind
-	def unapply(t : Term) : Option[Int] =
-	   if (t == LF.kind) Some(2) else if (t == LF.ktype) Some(1) else None
-}
 
-object Const {
-   def apply(path: GlobalName) = OMID(path)
-   def unapply(t: Term) : Option[GlobalName] = t match {
-      case OMID(p: GlobalName) => Some(p)
-      case _ => None
-   }
+case class Stack(frames : List[Frame]) {
+   def push (f : Frame) = f::frames
+   def top () = frames.last
 }
 
 //TODO: variable capture is not avoided anywhere
@@ -121,12 +91,14 @@ object Const {
 class ReflectionFoundation extends Foundation {
    private def log(msg : => String) = report("lf", msg)
    val foundTheory = LF.lftheory
-   def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit fl : FoundationLookup) : Boolean = {
+
+  def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit fl : FoundationLookup)  = false
+  def refltyping(tm : Option[Term], tp : Option[Term], W : Stack = Frame(thy: MPath, Context()))(implicit fl : FoundationLookup) : Boolean = {
       log("typing\n" + tm.toString + "\n" + tp.toString)
       (tm, tp) match {
-         case (Some(s), Some(a)) => check(s, a, G)
-         case (Some(s), None) => infer(s, G) != Univ(2)
-         case (None, Some(a)) => check(a, Univ(1), G) || check(a, Univ(2), G)
+         case (Some(s), Some(a)) => check(s, a, W)
+         case (Some(s), None) => infer(s, W) != Univ(2)
+         case (None, Some(a)) => check(a, Univ(1), W) || check(a, Univ(2), W)
          case (None, None) => false
       }
    }
@@ -148,37 +120,18 @@ class ReflectionFoundation extends Foundation {
     * check(s,T,G) iff G |- s : T : U for some U \in {type,kind}
     * checks whether a term s has type T  
     */
-   def check(s : Term, T : Term, G : Context)(implicit fl : FoundationLookup) : Boolean = {
+   def check(s : Term, T : Term, W : Stack)(implicit fl : FoundationLookup) : Boolean = {
 	   s match {
-	   	case Univ(1) => T == Univ(2)
-	   	case Const(path) => equal(lookuptype(path), T, G)
-	   	case OMV(name) =>  equal(T, G(name).asInstanceOf[VarDecl].tp.get, G) //TODO; why not equal(T, G(name), G)?; what does G(name) return?  
-	   	case Lambda(x, a, t) =>
-	   		val G2 = G ++ OMV(x) % a
-	   		reduce(T,G) match { //we reduce the type -> dependent type gets instantiated
-	   			case Pi(y, av, by) =>
-	   				val bx = by ^ G.id ++ OMV(y)/OMV(x)
-	   				equal(a, av, G) && check(a, Univ(1), G) && check(t, bx, G2) 
-	   			case _ => false
-	   		}   
-	   	case Pi(x, a, b) =>
-	   		val G2 = G ++ OMV(x) % a
-	   		(T == Univ(1) || T == Univ(2)) &&
-	   		check(a, Univ(1), G) && check(b, T, G2)
-	   	case Apply(f,arg) =>
-	   		val funtype = infer(f, G)
-	   		val argtype = infer(arg, G)
-	   		//check(f, funtype, G) && check(arg, argtype, G) && {
-	   		reduce(funtype, G) match {
-	   			case Pi(x,a,b) =>
-	   				equal(argtype, a, G) && equal(T, b ^ (G.id ++ OMV(x)/arg), G)
-	   			case _ => false
-	   		}
-	   		//}
-	   	case _ => false
+       case TermRefl(thy,tm) => T match {
+         case ReflType(thy2,tp) => if (thy == thy2) check(tm, tp, W.push(Frame(thy, Context())))
+           else throw ReflectionError("expected: " + thy + "\nfound: " + thy2)
+         case _ => throw ReflectionError("invalid type")
+       }
 	   }
    }
+}
 
+  /*
   
   /**
    * if G |- tm1 : A and G |- tm2 : A, then equal(tm1,tm2,G) iff G |- tm1 = tm2 : A
@@ -273,4 +226,4 @@ class ReflectionFoundation extends Foundation {
 	   		case _ => throw LFError("ill-formed")
 	 	}
    }
-}
+*/
