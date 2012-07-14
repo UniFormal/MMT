@@ -4,7 +4,9 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
-        <option name="compilerLibraryName" value="scala-library" />
+        <option name="compilerLibraryName" value="scala-compiler" />
+        <option name="explainTypeErrors" value="true" />
+        <option name="maximumHeapSize" value="800" />
       </configuration>
     </facet>
   </component>
@@ -17,6 +19,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="mmt-api" level="project" />
     <orderEntry type="library" name="mmt-lf" level="project" />
+    <orderEntry type="library" name="scala-compiler" level="project" />
   </component>
 </module>
 
