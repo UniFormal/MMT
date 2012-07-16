@@ -29,7 +29,7 @@ class DelayedConstraint(val constraint: Judgement) {
  * (Higher-order abstract syntax should be used to represent unknown terms with free variables as closed function terms.) 
  * The Solver decomposes the judgments individually by applying typing rules, collecting (partial) solutions along the way and possibly delaying unsolvable judgments.
  * Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
- * @param an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.
+ * @param controller an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.
  * @param unknowns the list of all unknown variables including their types and listed in dependency order;
  *   unknown variables may occur in the types of later unknowns.
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
@@ -108,7 +108,7 @@ class Solver(controller: Controller, unknowns: Context) {
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
     *  @param j the Judgement
-    *  @return false if the Judgment is definitely not provable; true if the it has been proved or delayed  
+    *  @return false if the Judgment is definitely not provable; true if it has been proved or delayed
     */
    def apply(j: Judgement): Boolean = {
      log("judgment: " + j)

@@ -8,8 +8,10 @@ import objects._
 import utils.MyList.fromList
 //import objects.Conversions._
 
-/** an Elaborator takes a ContentElement and produces further ContentElements that are the result of elaborating the former */
+/** an Elaborator takes a StructuralElement and produces further StructuralElement that are the result of elaborating the former */
 abstract class Elaborator {
+  /** @param e the StructuralElement that is elaborated
+    * @param cont a function that is applied to each produced StructuralElement */
    def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit
 }
 
