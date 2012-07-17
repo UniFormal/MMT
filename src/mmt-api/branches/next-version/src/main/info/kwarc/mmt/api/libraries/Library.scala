@@ -10,6 +10,7 @@ import utils.MyList._
 import ontology._
 
 import scala.xml.{Node,NodeSeq}
+import collection.immutable.HashSet
 
 /*abstract class ContentMessage
 case class Add(e : ContentElement) extends ContentMessage
@@ -221,13 +222,44 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
               }
           }
    }
-   
-   def getDeclarationsInScope(th : MPath) : List[Content] = {
-      val components = (importsTo(OMMOD(th))) flatMap {
-        case OMMOD(p) => getModule(p).components
-      }
-      (components ++ getModule(th).components).toList
-   }
+
+  def getDeclarationsInScope(p : MPath) : List[Content] = {
+    val mod = getModule(p)
+    mod match {
+      case th : DeclaredTheory =>
+        var scope : HashSet[Content] = new  HashSet[Content]()
+
+        th.meta foreach {meta => scope ++= getModule(meta).components}
+
+        th.components foreach {
+          case s : DeclaredStructure =>
+
+            if (s.name.isAnonymous) {
+               s.from match {
+                 case OMMOD(p) =>
+                   scope ++= getDeclarationsInScope(p)
+
+                 case _ => //TODO handle includes of complex modules
+               }
+            } else {
+              val names = s.domain.map {p =>
+                println(p.toString + " #-># " + s.get(p).toString)
+                s.get(p)
+              }
+            }
+
+          case c => println("skipped : " + c.toNode)
+        }
+
+        scope ++= th.components
+        scope.toList
+
+      case _ => Nil
+
+    }
+  }
+
+
 
    /** iterator over all includes into a theory (including the meta-theory)
     * a new iterator is needed once this has been traversed 
@@ -284,7 +316,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                }
             } catch {case _ => None}
          case !(hd) => None
-         case _ => None
+         case _ =>
+           println(p)
+           None
    }
    
    private def getContainer(m: Term, error: String => Nothing) : ContentElement = m match {

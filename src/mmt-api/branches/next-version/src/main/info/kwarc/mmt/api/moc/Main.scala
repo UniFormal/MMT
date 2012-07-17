@@ -9,11 +9,12 @@ import info.kwarc.mmt.api.presentation._
 object Main {
 
   def main(args: Array[String]): Unit = {
-    val p = new DPath(mmt.baseURI / "set_theories" / "mizar" / "HIDDEN.omdoc")
+    //val p = new DPath(mmt.baseURI / "set_theories" / "mizar" / "HIDDEN.omdoc")
+     val mp = new DPath(mmt.baseURI / "owl" / "families" / "identifiers.omdoc") //? "_"
     //TODO configure checking
     val cold = new Controller
     val cnew = new Controller
-                                                                                                2
+
     
     cold.handle(ExecFile(File("moc1-startup.mmt")))
     cnew.handle(ExecFile(File("moc2-startup.mmt")))
@@ -26,7 +27,7 @@ object Main {
 
     println("--- Computing Diff ---")
     
-    val diff = Differ.diff(cold, cnew, p, p)
+    val diff = Differ.diff(cold, cnew, mp, mp)
         
     val pp = new scala.xml.PrettyPrinter(100,2)
     println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + pp.format(diff.toNode))

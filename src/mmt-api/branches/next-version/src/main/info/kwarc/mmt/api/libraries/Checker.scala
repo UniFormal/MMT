@@ -27,7 +27,20 @@ class Checker(controller: Controller) {
    private lazy val content = controller.globalLookup
    private def log(msg: => String) {controller.report("checker", msg)}
 
-   private def tryForeach[A](args: Iterable[A])(fun: A => Unit) {
+   private var nrThys : Int = 0
+   private var nrViews : Int = 0
+   private var nrIncls : Int = 0
+   private var nrDecls : Int = 0
+
+   def printStatistics() = {
+     println("nrThys : " + nrThys)
+     println("nrViews : " + nrViews)
+     println("nrIncls : " + nrIncls)
+     println("nrDecls : " + nrDecls)
+   }
+
+
+  private def tryForeach[A](args: Iterable[A])(fun: A => Unit) {
       args foreach {a =>
         try {fun(a)}
         catch {case e @ Invalid(msg) => controller.report(e)}
@@ -49,6 +62,18 @@ class Checker(controller: Controller) {
             i => check(i.target)
          }
          case t: DeclaredTheory =>
+            nrThys += 1
+
+            nrIncls += controller.memory.content.importsTo(OMMOD(t.path)).size
+
+            //t.components collect {
+            //  case s : Structure => nrIncls += 1
+            //}
+
+            t.components collect {
+              case c : Constant => nrDecls += 1
+            }
+
             t.meta map {mt =>
               checkTheory(OMMOD(mt))
             }
@@ -58,8 +83,10 @@ class Checker(controller: Controller) {
          case t: DefinedTheory =>
             checkTheory(t.df)
          case v: DeclaredView =>
+            nrViews += 1
             checkTheory(v.from)
             checkTheory(v.to)
+
             tryForeach(v.valueListNG) {
                d => check(d)
             }

@@ -46,7 +46,7 @@ object Action extends RegexParsers {
            val segs = MyList.fromString(s.getOrElse(""), "/")
            ArchiveBuild(id, "present", segs, List(p))
         }
-     private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "mws-flat" | "mws" | "flat" |
+     private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source" | "delete" | "clean" | "extract" | "integrate"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
@@ -259,10 +259,9 @@ case class ToText(c : MakeAbstract) extends MakeConcrete {
             case Some(not) => new Operator(c.path, not)
           }
         }
-        d.path.last match {
-          case "test2" => rb(TextNotation.present(d, decs ::: LFGrammar.latexGrammar(Nil).operators))
-          case _ => rb(TextNotation.present(d, decs ::: LFGrammar.grammar.operators))
-        }
+
+        rb(TextNotation.present(d, decs ::: LFGrammar.grammar.operators))
+
       case _ =>
         println("TODO")
         rb(c.make(controller).toString)

@@ -95,6 +95,7 @@ class Controller extends ROController {
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = iterate {library.preImage(p)}
       def getDeclarationsInScope(th : MPath) = iterate {library.getDeclarationsInScope(th)}
+      def getAllPaths() = library.getAllPaths //temporary TODO remove
    }
    /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {
@@ -232,7 +233,7 @@ class Controller extends ROController {
         serv.stop
         log("Server stopped")
         server = None
-      case None => log("server is not running, so it can't be stopped")
+      case None => log("server is not running, so it cant be stopped")
     }
   }
 
@@ -283,6 +284,9 @@ class Controller extends ROController {
                case "delete" => arch.deleteNarrCont(in)
                case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
+               case "enrich" =>
+                 val me = new ModuleElaborator(this)
+                 arch.produceEnriched(in,me, this)
                case "source" =>
                   arch.readSource(in, this)
                   log("done reading source")
@@ -294,6 +298,7 @@ class Controller extends ROController {
                   log("done reading notation index")
                case "mws" => arch.produceMWS(in, "content")
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
+               case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
                case "extract" => arch.extractScala(in, "source")
                case "integrate" => arch.integrateScala(in, "source")
                case "present" => params.foreach(p => arch.producePres(Nil,p, this))

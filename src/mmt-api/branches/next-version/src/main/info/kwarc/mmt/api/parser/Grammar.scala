@@ -66,6 +66,7 @@ class Grammar(name : String, declseps : List[Separator], var ops : List[Operator
   }
 
 
+  /*
   def getOpByPrecedence : List[List[Operator]] = {
     val ops = operators.sortWith((x,y) => x.notation.precedence < y.notation.precedence)
     ops.foldLeft[List[List[Operator]]](Nil)((r,x) =>
@@ -76,6 +77,7 @@ class Grammar(name : String, declseps : List[Separator], var ops : List[Operator
       else List(x) :: r
     )
   }
+  */
 
   def isDecl(sep : Separator) = sep match {
     case SingSep(" ") => true
@@ -106,7 +108,7 @@ object LFGrammar {
 	private val operators : List[Operator] = List(
 		new Operator(thy ? "type", Notation(List(StrMk("type")), NotationProperties(Precedence(0), AssocNone()))),
     new Operator(thy ? "arrow", Notation(List(ArgMk(0), StrMk("->"), ArgMk(1)), NotationProperties(Precedence(3), AssocRight()))),
-		new Operator(thy ? "add", Notation(List(ArgMk(0), StrMk("+"),ArgMk(1)), NotationProperties(Precedence(5), AssocSeq()))),
+		//new Operator(thy ? "add", Notation(List(ArgMk(0), StrMk("+"),ArgMk(1)), NotationProperties(Precedence(5), AssocSeq()))),
 		new Binder(thy ? "lambda", Notation(List(StrMk("["), ArgMk(0), StrMk("]")), NotationProperties(Precedence(12), AssocLeft())), context, 0, BindRight()),
 		new Binder(thy ? "lambda", Notation(List(StrMk("["), ArgMk(0),StrMk(":"),ArgMk(1), StrMk("]")), NotationProperties(Precedence(12), AssocLeft())), context,0, BindRight()),
 		new Binder(thy ? "Pi", Notation(List(StrMk("{"), ArgMk(0), StrMk("}")), NotationProperties(Precedence(12), AssocLeft())), context,0, BindRight()))
@@ -123,7 +125,7 @@ object LFGrammar {
   private val markers : List[Separator]= List(
 		  SingSep(" "),
       SingSep(":"),
-      SingSep("="),
+//      SingSep("="),
       SingSep("!"),
       SingSep("/"),
       //SingSep("\\"),
@@ -137,6 +139,8 @@ object LFGrammar {
 		
   val grammar = new Grammar(name, markers, operators)
 
+
+  val notation = new Notation(List(ArgMk(0), StrMk("+"), ArgMk(1)), NotationProperties(Precedence(10), AssocLeft()))
 
   private def makeOperator(c : Constant) : Operator = { //TODO
     c.not match {

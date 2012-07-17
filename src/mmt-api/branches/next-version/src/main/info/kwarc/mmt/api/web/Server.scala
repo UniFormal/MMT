@@ -134,7 +134,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
   private def MwsResponse: HLet = new HLet {
     def act(tk: HTalk) {
       val resp = try {
-        val mws = controller.extman.getMWS.getOrElse(throw ServerError(<error message="no MathWebSearch engine defined"/>))
+        //
         val offset = tk.req.header("Offset") match {
           case Some(s) => try s.toInt catch { case _ => 0 }
           case _ => 0
@@ -158,10 +158,55 @@ class Server(val port: Int, controller: Controller) extends HServer {
             }
             (bodyXML, List(currentAid, mmlVersion))
           case "tptp" => (scala.xml.Text(bodyAsString(tk)), Nil)
+          case "lf" =>
+             val declsInScope : List[symbols.Declaration] = tk.req.header("scope") match {
+               case Some(s) =>
+                 val m : MPath = Path.parse(s) match {
+                   case mp : MPath =>
+                     println("found path : " + mp)
+                     mp
+                   case _ => throw ServerError(<error><message> expected mpath found : {s} </message></error>)
+                 }
+                 controller.memory.content.getDeclarationsInScope(m) collect {
+                   case c : symbols.Declaration => c
+                 }
+               case _ => Nil
+             }
+
+             val grammar = parser.LFGrammar.grammar
+             val lfParser = new parser.Parser(grammar)
+             println(parser.LFGrammar.notation.toNode)
+
+             val tm = try {
+               lfParser.parse(objects.OMSemiFormal(objects.Text("lf",bodyAsString(tk)) :: Nil), declsInScope)
+             } catch {
+               case e : Throwable =>
+                 println(e)
+                 throw e
+             }
+
+             def genQVars(n : Node) : Node = n match {
+               case a : scala.xml.Atom[_] => a
+               case  <m:ci>{q}</m:ci> =>
+                 if (q.toString.charAt(0) == 'q') {
+                   <mws:qvar>{q}</mws:qvar>
+                 } else {
+                   n
+                 }
+               case _ => new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(x => genQVars(x)) :_*)
+             }
+
+
+             val processedQuery = genQVars(tm.toCML)
+
+             (<mws:expr>{processedQuery}</mws:expr>, Nil)
           case _ => (bodyAsXML(tk), Nil) // default: body is forwarded to MWS untouched
         }
         val tqs = qt.transformSearchQuery(mwsquery, params)
         def wrapMWS(n: Node): Node = <mws:query output="xml" limitmin={ offset.toString } answsize={ size.toString }>{ n }</mws:query>
+        val mws = controller.extman.getMWS.getOrElse(throw ServerError(<error message="no MathWebSearch engine defined"/>))
+
+        tqs.map(q => println(wrapMWS(q)))
         val res = tqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q))) // calling MWS via HTTP post
         val total = res.foldRight(0)((r, x) => x + (r \ "@total").text.toInt)
         val totalsize = res.foldRight(0)((r, x) => x + (r \ "@size").text.toInt)
@@ -187,7 +232,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           val reader = new TextReader(ctrl, new Report)
           val res = reader.readDocument(text, dpath)
           println(res)
-          println("param : " + text)
+          //println("param : " + text)
           println("theory : " + ctrl.get(mpath).toNode)
           res._2.toList match {
             case Nil =>
@@ -200,7 +245,9 @@ class Server(val port: Int, controller: Controller) extends HServer {
                 controller.presenter(controller.get(mpath), presentation.GlobalParams(rb, nset))
                 XmlResponse(rb.get()).act(tk)
               }  catch {
-                case e : Throwable => TextResponse(e.toString).act(tk)
+                case e : Throwable =>
+                  //e.getStackTrace.map(println)
+                  TextResponse(e.toString).act(tk)
               }
             case l => TextResponse(l.mkString("\n")).act(tk)
           }

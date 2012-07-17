@@ -33,3 +33,17 @@ class Shell() extends {
 
 /** A shell, the default way to run MMT as an application */
 object Run extends Shell()
+
+
+object RunWeb {
+  val controller = new Controller
+
+  def main(args : Array[String]) : Unit = {
+    val command = args.mkString("", " ", "")
+    try {
+      controller.handleLine(command)
+    } catch {
+      case e => controller.cleanup; throw e
+    }
+  }
+}

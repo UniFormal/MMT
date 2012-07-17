@@ -98,7 +98,7 @@ object Role {
       case "context" => Role_context
       case "toplevel" => Role_ObjToplevel
       case "value" => Role_value
-      /*
+
       case "index" => Role_index
       case "seqsub" => Role_termsub //TODO fix seqsub
       case "seqsubst" => Role_termsub //TODO fix seqsub
@@ -106,7 +106,7 @@ object Role {
       case "seqvariable" => Role_termsub //TODO fix seqvariable
       case "SeqVariable" => Role_termsub //TODO fix seqvariable
       case "sequpto" => Role_termsub //TODO fix sequpto
-      */
+
       case s if s.startsWith("fragment:") => Role_Fragment(s.substring(9))
       case s => throw ParseError("illegal role: " + s)
    }

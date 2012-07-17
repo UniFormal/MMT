@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import collection.immutable.{List, HashMap}
+import symbols.{Alias, Declaration, Constant}
 
 /* Error Handling */
 
@@ -38,13 +39,27 @@ case class NotationMatch(op : Operator, matches : List[Int])  {
  * Generic Parser Class
  * @param grammar the grammar used for parsing
  */
-class Parser(grammar : Grammar, var lineStarts : List[(Int,Int)]) {
+class Parser(grammar : Grammar) {
 
   var str : String = ""
 
+  private var operators : List[Operator] = grammar.operators
+
+
+  private def getOpByPrecedence : List[List[Operator]] = {
+    val ops = operators.sortWith((x,y) => x.notation.precedence < y.notation.precedence)
+    ops.foldLeft[List[List[Operator]]](Nil)((r,x) =>
+      if (r.length == 0)
+        List(List(x))
+      else if (x.notation.precedence == r.head.head.notation.precedence)
+        (x :: r.head) :: r.tail
+      else List(x) :: r
+    )
+  }
+
   private def toPos(index: Int) : SourcePosition = {
-    val pair  = lineStarts.filter(p => (p._1 <= index)).last
-    SourcePosition(index, pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
+    //val pair  = linesStarts.filter(p => (p._1 <= index)).last
+    SourcePosition(index, 0, index)  // the column may be the bogus space character at the end of the line
   }
 
   private def toRegion(start : Int, stop : Int) : SourceRegion = {
@@ -56,14 +71,39 @@ class Parser(grammar : Grammar, var lineStarts : List[(Int,Int)]) {
     grammar.compile()
   }
 
-  def parse(o : OMSemiFormal, offset : Int) : Term = o.tokens match {
-    case Formal(obj) :: Nil => obj
-    case Text(mmt,s) :: Nil =>
-      grammar.init(s.length)
+  private def makeOperators(scope : List[Declaration]) : List[Operator] = {
+    val np =  NotationProperties(Precedence(0), AssocNone())
+    scope collect {
+      case c : Constant =>
+        c.not match {
+          case Some(not) => new Operator(c.path, not)
+          case None =>
+            new Operator(c.path, Notation(StrMk(c.path.last) :: Nil, np))
+        }
+      case a : Alias =>
+        new Operator(a.path, Notation(StrMk(a.path.last) :: Nil, np))
 
-      var tklist = tokenize(s, "", offset)._1
-      rewrite(tklist).t
-    case _  => throw ParsingError("unexpected input: " + o, toRegion(offset, offset))
+      //TODO case Assignment etc
+    }
+  }
+
+  def parse(o : OMSemiFormal, scope : List[Declaration], offset : Int = 0) : Term = {
+
+    operators = grammar.operators ::: makeOperators(scope)
+    println("Started parsing " + o.toString + " with operators : ")
+    operators.map(o => println(o.name + " ->" + o.notation.markers))
+    println("###")
+
+    o.tokens match {
+      case Formal(obj) :: Nil => obj
+      case Text(mmt,s) :: Nil =>
+        grammar.init(s.length)
+
+        val tklist = tokenize(s, "", offset)._1
+        rewrite(tklist).t
+      case _  => throw ParsingError("unexpected input: " + o, toRegion(offset, offset))
+    }
+
   }
 
   /**
@@ -148,7 +188,7 @@ class Parser(grammar : Grammar, var lineStarts : List[(Int,Int)]) {
    * @return the formal term
    */
   private def rewrite(in : List[Token]) : TermTk = {
-    rewrite(grammar.getOpByPrecedence, in) match {
+    rewrite(getOpByPrecedence, in) match {
       case Nil => throw ParsingError("Empty Expression", toRegion(0, 0))
       case hd :: Nil => hd
       case hd :: tl => TermTk(OMA(hd.t,tl.map(_.t)), getTkProps(hd, tl))
@@ -205,7 +245,8 @@ class Parser(grammar : Grammar, var lineStarts : List[(Int,Int)]) {
           if (inContext) {
             TermTk(OMV(ln), tkp)
           } else {
-            throw ParsingError("Lookup failed for symbol " + s, toRegion(tkp.start, tkp.end))
+            TermTk(OMV(ln), tkp) //free variables for more flexible queries
+            //throw ParsingError("Lookup failed for symbol " + s, toRegion(tkp.start, tkp.end))
           }
         case hd :: Nil =>
           if (inContext) {

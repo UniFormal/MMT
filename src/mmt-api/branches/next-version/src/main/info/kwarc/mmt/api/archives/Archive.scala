@@ -148,6 +148,9 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
          rels foreach {r => relFileHandle.write(r.toPath + "\n")}
          relFileHandle.close
       }
+      
+      //controller.checker.printStatistics()
+
       /*
       controller.compChecker.printStatistics()
       //println(controller.memory.ontology.getObjects(DependsOn))
@@ -175,7 +178,13 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
       println("subj" + subjects.size)
       */
     }
-    
+
+
+  /**
+   * computes the flattened theories by elaborating the patterns
+   * @param in input path
+   * @param controller the controller
+   */
     def produceFlat(in: List[String], controller: Controller) {
        val inFile = contentDir / in
        log("to do: [CONT -> FLAT]        -> " + inFile)
@@ -199,8 +208,47 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
         }
        log("done:  [CONT -> FLAT]        -> " + inFile)
     }
-    
-    
+
+
+  /**
+   * collapses (de-structures) the theory graph by replacing arrows with automatically constructed objects (e.g. a view becomes a theory by applying it to the
+   * domain).
+   * @param in input path
+   * @param controller the controller
+   */
+  def produceEnriched(in : List[String], modElab : ModuleElaborator, controller: Controller) {
+    val inFile= contentDir / in
+    //val modElab = new ModuleElaborator(controller)
+    val enrichedDir = root / "enriched"
+    log("to do: [CONT -> FLAT]       -> " + inFile)
+    if (inFile.isDirectory) {
+      inFile.list foreach {n =>
+        if (includeDir(n)) produceEnriched(in ::: List(n), modElab, controller)
+      }
+    } else if (inFile.getExtension == Some("omdoc")) {
+      try {
+        val mpath = Archive.ContentPathToMMTPath(in)
+        val mod = controller.globalLookup.getModule(mpath)
+        modElab.apply(mod){
+          case m : Module =>
+            val collapsedOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{m.toNode}</omdoc>
+            xml.writeFile(collapsedOMDoc, enrichedDir / Archive.MMTPathToContentPath(m.path))
+          case _ => None
+        }
+
+        //controller.delete(mpath)
+      } catch {
+        case e => log("ERR : " + e)
+      }
+    }
+
+
+     log("done:  [CONT -> FLAT]       -> " + inFile)
+
+  }
+
+
+
     /** Generate presentation from content */
     def producePres(in : List[String] = Nil, style : MPath, controller : Controller) {
       val inFile = contentDir / in
@@ -240,6 +288,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
     def produceMWS(in : List[String] = Nil, dim: String) {
         val sourceDim = dim match {
           case "mws-flat" => "flat"
+          case "mws-enriched" => "enriched"
           case _ => "content"
         }
         traverse(sourceDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
@@ -247,7 +296,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
            log("[  -> MWS]  " + inFile + " -> " + outFile)
            val controller = new Controller
            controller.read(inFile,None)
-           val mpath = Archive.ContentPathToMMTPath(in)
+           val mpath = Archive.ContentPathToMMTPath(inPath)
            val mod = controller.localLookup.getModule(mpath)
            mod match {
               case thy : DeclaredTheory =>

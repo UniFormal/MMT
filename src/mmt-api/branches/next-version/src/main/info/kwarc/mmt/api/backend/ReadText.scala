@@ -578,34 +578,32 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = positionAfter
     i = skipwscomments(i)
 
-    /*//initializing term parser
+ //   /*//initializing term parser
     val constants = controller.memory.content.getDeclarationsInScope(parent.path) collect {
       case c : Constant => c
     }
-    val grammar = if (parent.path.last == "test2") {
-      println("USING THE RIGHT GRAMMAR")
-      LFGrammar.latexGrammar(constants)
-    } else {
-      LFGrammar.grammar(constants)
-    }
-    val parser = new Parser(grammar, lineStarts.toList)
+    val grammar = LFGrammar.grammar
+
+    val parser = new Parser(grammar)//, lineStarts.toList)
     parser.init()
-    def tryParse(o : OMSemiFormal, offset : Int) = try {
-         Some(parser.parse(o, offset))
+    def tryParse(o : OMSemiFormal, offset : Int) = {
+      try {
+        Some(parser.parse(o, constants, offset))
       } catch {
-         case e: SourceError =>
-           errors = (errors :+ e)
-           Some(o)
+        case e: SourceError =>
+          errors = (errors :+ e)
+          Some(o)
       }
-    */
+    }
+//    */
 
     // read the optional type
     var constantType : Option[Term] = None
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, List("="))
-      constantType = Some(term) //tryParse(term, i)
+      val (term, posAfter) = crawlTerm(i, List("=","#","."))
+      constantType = tryParse(term, i)  //Some(term) //
       i = posAfter
       i = skipwscomments(i)
     }
@@ -615,8 +613,8 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, Nil)
-      constantDef = Some(term) //tryParse(term, i)
+      val (term, posAfter) = crawlTerm(i, List("#","."))
+      constantDef = tryParse(term, i)  //Some(term) //
       i = posAfter
       i = skipwscomments(i)
     }
@@ -626,10 +624,11 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     // read the optional notation
     //TODO Notation
     var constantNotation : Option[Notation] = None
-/*    if (flat.codePointAt(i) == '#') {
+///*
+    if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '#'
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i)
+      val (term, posAfter) = crawlTerm(i,List("."))
 
       //val notationProperties = Notation.parseInlineNotation(term.toString)
       val notation = TextNotation.parse(term.toString)
@@ -639,7 +638,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       i = posAfter
       i = skipwscomments(i)
     }
-*/
+//*/
     val endsAt = expectNext(i, ".")
 
     // create the constant object

@@ -18,7 +18,6 @@ object Propagator {
     case Nil => t
     case hd :: tl => box(box(t,hd), tl)
   }
-
 }
 
 abstract class Propagator(memory : ROMemory) {
