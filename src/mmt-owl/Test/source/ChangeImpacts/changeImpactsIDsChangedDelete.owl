@@ -619,7 +619,7 @@
         </Annotation>
         <DataProperty IRI="hasAge"/>
         <NamedIndividual IRI="John"/>
-        <Literal datatypeIRI="http://example.com/owl/families/majorAge">51</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">51</Literal>
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
@@ -629,7 +629,7 @@
         </Annotation>
         <DataProperty IRI="hasAge"/>
         <NamedIndividual IRI="Mary"/>
-        <Literal datatypeIRI="http://example.com/owl/families/majorAge">50</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">50</Literal>
     </DataPropertyAssertion>
     
     <NegativeDataPropertyAssertion>
@@ -639,7 +639,7 @@
         </Annotation>
         <DataProperty IRI="hasAge"/>
         <NamedIndividual IRI="Mary"/>
-        <Literal datatypeIRI="http://example.com/owl/families/majorAge">53</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">53</Literal>
     </NegativeDataPropertyAssertion>
     
     <DataPropertyAssertion>
@@ -649,7 +649,7 @@
         </Annotation>
         <DataProperty IRI="hasAge"/>
         <NamedIndividual IRI="Liz"/>
-        <Literal datatypeIRI="http://example.com/owl/families/majorAge">25</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">25</Literal>
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
@@ -659,7 +659,7 @@
         </Annotation>
         <DataProperty IRI="hasAge"/>
         <NamedIndividual IRI="Amy"/>
-        <Literal datatypeIRI="http://example.com/owl/families/majorAge">21</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">21</Literal>
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
@@ -669,7 +669,7 @@
         </Annotation>
         <DataProperty IRI="hasAge"/>
         <NamedIndividual IRI="Max"/>
-        <Literal datatypeIRI="http://example.com/owl/families/majorAge">26</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">26</Literal>
     </DataPropertyAssertion>
     
     <DataPropertyAssertion>
@@ -678,16 +678,12 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Datatype toddlerAge</Literal>
-        </Annotation>
-        <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1116048551</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
         <NamedIndividual IRI="Alice"/>
-        <Literal datatypeIRI="http://example.com/owl/families/toddlerAge">2</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">2</Literal>
     </DataPropertyAssertion>
 <!-- annotate the NamedIndividuals? -->     
 <!-- SameIndividual axiom is deleted    
