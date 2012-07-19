@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.api.uom
 
 class Axiom protected () {
@@ -130,4 +131,4 @@ class IntModule(val M: AbelianGroup) extends Module {
      else if (n == 1) x
      else M.op(scalarMult(n - 1, x), x)
    val assoc = new Proof(null)
-}
+}*/
