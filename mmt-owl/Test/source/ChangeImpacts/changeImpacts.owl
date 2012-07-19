@@ -463,43 +463,43 @@
 <DataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="John"/>
- <Literal datatypeIRI="majorAge">51</Literal>
+ <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">51</Literal>  <!-- majorAge -->
 </DataPropertyAssertion>
 
 <DataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="Mary"/>
- <Literal datatypeIRI="majorAge">50</Literal>
+ <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">50</Literal>  <!-- majorAge -->
 </DataPropertyAssertion>
 
 <NegativeDataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="Mary"/>
- <Literal datatypeIRI="majorAge">53</Literal>
+ <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">53</Literal>  <!-- majorAge -->
 </NegativeDataPropertyAssertion>
 
 <DataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="Liz"/>
- <Literal datatypeIRI="majorAge">25</Literal>
+ <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">25</Literal>  <!-- majorAge -->
 </DataPropertyAssertion>
 
 <DataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="Amy"/>
- <Literal datatypeIRI="majorAge">21</Literal>
+ <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">21</Literal>  <!-- majorAge -->
 </DataPropertyAssertion>
 
 <DataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="Max"/>
- <Literal datatypeIRI="majorAge">26</Literal>
+ <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">26</Literal>  <!-- majorAge -->
 </DataPropertyAssertion>
 
 <DataPropertyAssertion>
  <DataProperty IRI="hasAge"/>
  <NamedIndividual IRI="Alice"/>
- <Literal datatypeIRI="toddlerAge">2</Literal>
+ <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">2</Literal> <!-- toddlerAge-->
 </DataPropertyAssertion>
 
 <SameIndividual>
