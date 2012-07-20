@@ -379,17 +379,17 @@
  <DataProperty IRI="hasLastName"/>
  <DataProperty IRI="hasName"/>
 </SubDataPropertyOf>
-
+<!--
 <DisjointDataProperties>
  <DataProperty IRI="hasAge"/>
  <DataProperty IRI="hasID"/>
 </DisjointDataProperties>
-
+-->
 <EquivalentDataProperties>
  <DataProperty IRI="hasAge"/>
  <DataProperty IRI="age"/>
 </EquivalentDataProperties>
-  
+
 <DataPropertyDomain>
  <DataProperty IRI="hasAge"/>
  <Class IRI="Person"/>
@@ -397,7 +397,7 @@
 
 <DataPropertyRange>
  <DataProperty IRI="hasAge"/>
- <Datatype IRI="PersonAge"/>
+ <Datatype IRI="http://www.w3.org/2001/XMLSchema#nonNegativeInteger"/>
 </DataPropertyRange>
 
 <FunctionalDataProperty>

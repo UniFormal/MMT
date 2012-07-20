@@ -589,7 +589,7 @@
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1495705204</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
-        <Datatype IRI="PersonAge"/>
+        <Datatype IRI="personAge"/>
     </DataPropertyRange>
     
     <FunctionalDataProperty>
