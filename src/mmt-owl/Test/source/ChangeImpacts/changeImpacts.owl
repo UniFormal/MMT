@@ -455,6 +455,10 @@
 </DataPropertyAssertion>
 
 <DataPropertyAssertion>
+ <Annotation>
+  <AnnotationProperty IRI="http://omdoc.org/id"/>
+  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID001</Literal>
+ </Annotation>
  <DataProperty IRI="hasLastName"/>
  <NamedIndividual IRI="Max"/>
  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Evans</Literal>
@@ -675,6 +679,10 @@
 </ClassAssertion>
 
 <ObjectPropertyAssertion>
+ <Annotation>
+  <AnnotationProperty IRI="http://omdoc.org/id"/>
+  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID002</Literal>
+ </Annotation>
  <ObjectProperty IRI="hasDaughter"/>
  <NamedIndividual IRI="Max"/>
  <NamedIndividual IRI="Alice"/>
