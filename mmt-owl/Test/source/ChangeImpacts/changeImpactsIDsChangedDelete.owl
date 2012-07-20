@@ -469,7 +469,7 @@
         <DataProperty IRI="hasFamilyName"/>
         <DataProperty IRI="hasName"/>
     </SubDataPropertyOf>
-    
+    <!--
     <DisjointDataProperties>
     	<Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -478,7 +478,7 @@
         <DataProperty IRI="hasAge"/>
         <DataProperty IRI="hasID"/>
     </DisjointDataProperties>
-    
+    -->
     <EquivalentDataProperties>
     	<Annotation>
          <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
