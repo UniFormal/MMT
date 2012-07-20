@@ -645,8 +645,8 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
-            <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-891743495</Literal>
+        <AnnotationProperty IRI="http://omdoc.org/id"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID001</Literal>
         </Annotation>
         <DataProperty IRI="hasFamilyName"/>
         <NamedIndividual IRI="Max"/>
@@ -1041,8 +1041,8 @@
   
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
-            <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1397113822</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/id"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID002</Literal>
         </Annotation>
         <ObjectProperty IRI="hasDaughter"/>
         <NamedIndividual IRI="Max"/>
