@@ -131,7 +131,7 @@
     <Declaration>
         <Datatype IRI="toddlerAge"/>
     </Declaration>
-    
+ 
     <DatatypeDefinition>
         <Datatype IRI="minorAge"/>
         <DataIntersectionOf>
@@ -439,7 +439,7 @@
         </Annotation>
         <ObjectProperty IRI="hasAncestor"/>
     </TransitiveObjectProperty>
-    
+  
     <SubDataPropertyOf>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -448,7 +448,7 @@
         <DataProperty IRI="hasFamilyName"/>
         <DataProperty IRI="hasName"/>
     </SubDataPropertyOf>
-    
+  <!--
     <DisjointDataProperties>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -457,7 +457,7 @@
         <DataProperty IRI="hasAge"/>
         <DataProperty IRI="hasID"/>
     </DisjointDataProperties>
-    
+  --> 
     <EquivalentDataProperties>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -482,7 +482,7 @@
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1495705204</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
-        <Datatype IRI="PersonAge"/>
+        <Datatype IRI="http://www.w3.org/2001/XMLSchema#nonNegativeInteger"/>
     </DataPropertyRange>
     
     <FunctionalDataProperty>
@@ -652,7 +652,7 @@
         <NamedIndividual IRI="Alice"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">2</Literal> 
     </DataPropertyAssertion>
-    
+   
     <SameIndividual>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -670,7 +670,7 @@
         <NamedIndividual IRI="John"/>
         <NamedIndividual IRI="Tom"/>
     </DifferentIndividuals>
-    
+ 
     <ObjectPropertyAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -680,7 +680,7 @@
         <NamedIndividual IRI="John"/>
         <NamedIndividual IRI="Mary"/>
     </ObjectPropertyAssertion>
-    
+  
     <ClassAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -716,7 +716,7 @@
         </ObjectMaxCardinality>
         <NamedIndividual IRI="John"/>
     </ClassAssertion>
-    
+ 
     <EquivalentClasses>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -800,7 +800,7 @@
         <NamedIndividual IRI="Mary"/>
         <NamedIndividual IRI="Alice"/>
     </ObjectPropertyAssertion>
-    
+ 
     <ClassAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -811,7 +811,7 @@
         </DataMaxCardinality>
         <NamedIndividual IRI="Liz"/>
     </ClassAssertion>
-    
+   
     <ClassAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -822,7 +822,7 @@
         </DataMinCardinality>
         <NamedIndividual IRI="Liz"/>
     </ClassAssertion>
-    
+   
     <ObjectPropertyAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -902,7 +902,7 @@
         <Class IRI="ChildlessPerson"/>
         <NamedIndividual IRI="Amy"/>
     </ClassAssertion>
-    
+  
     <ClassAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -913,7 +913,7 @@
         </DataExactCardinality>
         <NamedIndividual IRI="Max"/>
     </ClassAssertion>
-    
+ 
     <NegativeObjectPropertyAssertion>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
