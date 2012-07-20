@@ -33,7 +33,11 @@ object Patcher {
         val d = mem.content.get(path)
         val dnew = updateComponent(d, comp, old, nw)
         mem.content.update(dnew)
+      case UpdateMetadata(path,old,nw) => 
+        val d = mem.content.get(path)
+        d.metadata = nw
       case PragmaticChange(name, diff, tp, mp) => patch(diff, mem)
+      
     }
 
   }

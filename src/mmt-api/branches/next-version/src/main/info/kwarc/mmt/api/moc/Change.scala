@@ -30,13 +30,13 @@ class StrictDiff(override val changes : List[StrictChange]) extends Diff(changes
 
 sealed trait ContentChange extends Change {
     def toNodeFlat : List[Node]
-    def getReferencedURIs : List[ContentPath]
+    def getReferencedURIs : List[Path]
 }
 
 sealed abstract class StrictChange extends ContentChange {
-  def getReferencedURI : ContentPath
+  def getReferencedURI : Path
   
-  def getReferencedURIs : List[ContentPath] = List(getReferencedURI)
+  def getReferencedURIs : List[Path] = List(getReferencedURI)
 }
 
 abstract class Add extends StrictChange
@@ -64,7 +64,7 @@ case class PragmaticChange(val name : String, val diff : StrictDiff, val termPro
 
   def toNodeFlat = diff.changes.flatMap(_.toNodeFlat)
 
-  def getReferencedURIs : List[ContentPath] = diff.changes.map(_.getReferencedURI)
+  def getReferencedURIs : List[Path] = diff.changes.map(_.getReferencedURI)
     
   def toStrict : Diff = diff
 }
@@ -169,7 +169,7 @@ case class Component(c : Option[Obj])
 
 case class UpdateComponent(path : ContentPath, name : String, old : Option[Obj], nw : Option[Obj]) extends Update with ContentChange {
 
-  def getReferencedURI : ContentPath = path
+  def getReferencedURI : CPath = CPath(path, "metadata")
 
   def toNode =
     <component path={path.toPath} name={name} change="update">
@@ -179,6 +179,18 @@ case class UpdateComponent(path : ContentPath, name : String, old : Option[Obj],
   
   def toNodeFlat =
     <change type="update" path={path.toString} component={name}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
+}
+
+case class UpdateMetadata(path : ContentPath, old : metadata.MetaData, nw : metadata.MetaData) extends Update with ContentChange {
+  def getReferencedURI :  CPath = CPath(path, "metadata") 
+  def toNode = 
+     <update path={path.toPath} name="metadata" change="update">
+      {nw.toNode}
+    </update>
+      
+  def toNodeFlat = 
+    <change type="update" path={path.toString} component="metadata"> nw.toNode </change> :: Nil
+  
 }
 
 

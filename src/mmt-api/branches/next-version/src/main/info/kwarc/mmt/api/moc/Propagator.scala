@@ -5,7 +5,7 @@ import scala.collection.immutable.{HashMap,HashSet,List}
 
 import info.kwarc.mmt.api.frontend.ROMemory
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.{CPath, Path, ContentPath}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.modules._
@@ -56,17 +56,18 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
    * @param path the path 
    * @return the set of impacted paths
    */
-  def dependsOn(path : Path) : Set[Path]
+  protected def dependsOn(path : Path) : Set[Path]
   
   /**
    * The propagation function for individual paths
    * It implements how/which impacted items are affected by the propagation
    * '''It must hold that the returned change affects exactly the impacted path'''
+   * i.e. {{{path == propFunc(path,_).getReferencedURI}}} must hold
    * @param path the impacted path
    * @param changes the set of changes that impact path
    * @return optionally the generated change
    */
-  def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange]
+  protected def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange]
   
   /**
    * The main diff propagation function
@@ -106,6 +107,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     case DeleteModule(m) =>  containedPaths(m)
     case DeleteDeclaration(d) => containedPaths(d)
     case UpdateComponent(path, name, old, nw) => new HashSet[Path]() + CPath(path,name)
+    case UpdateMetadata(path, old, nw) => new HashSet[Path]() + path
     case PragmaticChange(name, diff, tp, mp) => new HashSet[Path]() ++ diff.changes.flatMap(affectedPaths(_))
 
   }
@@ -167,7 +169,7 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
    * For the foundational impact propagator uses the default ''dependsOn'' relation given by the ontology (and gathered by the checker)
    * @param path the path 
    */
-  def dependsOn(path : Path) : Set[Path] = {   
+  protected def dependsOn(path : Path) : Set[Path] = {   
     val impacts = new mutable.HashSet[Path]()
     mem.ontology.query(path,ToSubject(DependsOn))(p => impacts += p)
     impacts
@@ -182,7 +184,7 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
    * @param path the impacted path
    * @param changes the set of changes that impact path
    */
-  def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = path match {
+  protected def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = path match {
     case cp : CPath => 
       def makeChange(otm : Option[Term]) : Option[StrictChange] = otm match {
         case Some(tm) => Some(UpdateComponent(cp.parent, cp.component, Some(tm), Some(box(tm, changes))))
@@ -233,7 +235,14 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
    */
   private def box(tm : Term, changes : Set[ContentChange]) : Term = {
     
-    OME(OMID(mmt.mmtsymbol("impacted term")), tm :: changes.flatMap(_.getReferencedURIs).map(OMID(_)).toList) 
+    def makeTerm(path : Path) : Term = path match {
+      case p : ContentPath => OMID(p)
+      case cp : CPath => OMID(cp.parent)
+      case _ => throw ImplementationError("Expected ContentPath or CPath found: " + path.toPath)
+      
+    }
+    
+    OME(OMID(mmt.mmtsymbol("impacted term")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
   }
   
 }
