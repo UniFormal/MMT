@@ -33,18 +33,17 @@ case class NotationMatch(op : Operator, matches : List[Int])  {
 }
 
 
-
-
 /**
  * Generic Parser Class
  * @param grammar the grammar used for parsing
  */
-class Parser(grammar : Grammar) {
+class Parser(grammar : Grammar, report : frontend.Report) {
 
   var str : String = ""
 
   private var operators : List[Operator] = grammar.operators
 
+  private def log(msg : => String) = report("parser",msg)
 
   private def getOpByPrecedence : List[List[Operator]] = {
     val ops = operators.sortWith((x,y) => x.notation.precedence < y.notation.precedence)
@@ -90,9 +89,9 @@ class Parser(grammar : Grammar) {
   def parse(o : OMSemiFormal, scope : List[Declaration], offset : Int = 0) : Term = {
 
     operators = grammar.operators ::: makeOperators(scope)
-    println("Started parsing " + o.toString + " with operators : ")
-    operators.map(o => println(o.name + " ->" + o.notation.markers))
-    println("###")
+    log("Started parsing " + o.toString + " with operators : ")
+    operators.map(o => log(o.name + " ->" + o.notation.markers))
+    log("###")
 
     o.tokens match {
       case Formal(obj) :: Nil => obj
@@ -215,7 +214,7 @@ class Parser(grammar : Grammar) {
         case None =>
           i += 1
         case Some(l) =>
-          println("did rewrite :" + l)
+          log("did rewrite :" + l)
           input = l
           i = 0
       }
@@ -276,14 +275,14 @@ class Parser(grammar : Grammar) {
     case Nil => None
     case _ =>
       val nwMatches = _addMatches(findMatches(ops, tks, pos), matches)
-      println("nwmatches: " + nwMatches)
+      log("nwmatches: " + nwMatches)
       val validMatches = nwMatches(pos) map {
         x => (x,_overlaps(x, nwMatches.flatMap(x => x._2).toList))
       } collect {
         case (x,Some(l)) => (x,l)
       }
 
-      println("validMatches: " + validMatches.toString )
+      log("validMatches: " + validMatches.toString )
 
       validMatches match {
         case Nil => findValidMatch(ops, alltks, tks.tail, nwMatches, pos + 1)
@@ -297,7 +296,7 @@ class Parser(grammar : Grammar) {
               case AssocRight() => findValidMatch(ops, alltks, tks.tail, _addMatches(List(y),matches), pos + 1)
               case AssocSeq() =>
                 val nm = x.extend(y)
-                println(nm)
+                log(nm)
                 findValidMatch(ops, alltks, tks.tail, _addMatches(List(nm),matches - x.ending), pos + 1)
             }
 
@@ -308,7 +307,7 @@ class Parser(grammar : Grammar) {
         case l => throw ParsingError("Parsing Ambiguous, cannot decide between several equal precedence matches : \n" + l.mkString("\n"))
       }
       /*
-      println("got to fvm with" + tks.toString() + matches.toString)
+      log("got to fvm with" + tks.toString() + matches.toString)
       (findMatches(ops, tks, pos), matches(pos)) match {
         case (Nil, Nil) => findValidMatch(ops, alltks, tks.tail, matches, pos + 1)
         case (Nil, hd :: Nil) => Some(_doApply(alltks, hd, pos))
@@ -340,13 +339,13 @@ class Parser(grammar : Grammar) {
    */
   private def _overlaps(nm : NotationMatch, matches : List[NotationMatch]) : Option[List[NotationMatch]]= {
     val tmpOverlaps =  matches.foldLeft(Nil : List[NotationMatch])( (r,x) => (if (x == nm || nm.beginning > x.ending || nm.ending < x.beginning) r else x :: r))
-    println(nm + " tmpOverlaps :" + tmpOverlaps)
+    log(nm + " tmpOverlaps :" + tmpOverlaps)
     val invalid = tmpOverlaps exists {x =>
      x.matches exists {k =>
         (nm.beginning < k && k < nm.ending && !nm.matches.contains(k))
       }
     }
-    println("invalid" + invalid)
+    log("invalid" + invalid)
     if (invalid){
       None
     } else {
@@ -355,7 +354,7 @@ class Parser(grammar : Grammar) {
          (x.beginning < k && k < x.ending && !x.matches.contains(k))
         }
       }
-      println("overlaps" + overlaps)
+      log("overlaps" + overlaps)
       Some(overlaps)
     }
 
@@ -417,7 +416,7 @@ class Parser(grammar : Grammar) {
     val matches = ops.map(op => (op,findMatch(op.notation.markers, tks, pos, false))) collect {
       case (op, Some(l)) => NotationMatch(op,l)
     }  filter {nm => nm.beginning == pos}
-    println("in matches" + pos + matches)
+    log("in matches" + pos + matches)
     matches
   }
 
@@ -430,7 +429,7 @@ class Parser(grammar : Grammar) {
    * @return the new list of tokens
    */
   private def _doApply(tks : List[SemiFormalObject], not : NotationMatch, pos : Int) : List[SemiFormalObject] = {
-    println("got here with" + tks.toString + not.toString + pos.toString)
+    log("got here with" + tks.toString + not.toString + pos.toString)
 
     /**
      * slices a list of tokens into several lists according to the cut places marked by the matched tokens
@@ -470,12 +469,12 @@ class Parser(grammar : Grammar) {
 
 
     val slices = _getSlices(not.matches, tks, not.beginning, not.ending)
-    println(slices)
+    log(slices)
     val opArgs = _genArgs(slices, not.op.notation.args, new Array[List[SemiFormalObject]](not.argNr)) map {
       case null => List(Formal(OMHID))
       case l => l
     }
-    println("opargs" + opArgs)
+    log("opargs" + opArgs)
     not.op match {
       case b : Binder =>
         val fnArgs = opArgs.zipWithIndex map {x =>
@@ -488,7 +487,7 @@ class Parser(grammar : Grammar) {
             rewrite(x._1)
           }
         }
-        println( "fnargs " + fnArgs)
+        log( "fnargs " + fnArgs)
         val con = b.context(fnArgs)
         grammar.addContext(con)
         val ret = tks.slice(0, not.beginning) ::: List(Formal(OMBIND(OMID(not.op.name), con, rewrite(tks.slice(not.ending + 1, tks.length)).obj)))
@@ -526,14 +525,14 @@ class Parser(grammar : Grammar) {
 
 
   private def tryMatch(ops : List[Operator], tks : List[Token]) : Option[List[Token]] = {
-    println("trying level : " + ops.toString)
-    println("with input : " + tks.toString)
+    log("trying level : " + ops.toString)
+    log("with input : " + tks.toString)
     var i = 0
     while (i < tks.length) {
       matches(ops, tks.slice(i, tks.length)) match {
         case None => None
         case Some(m) =>
-          println("found match " + m.toString)
+          log("found match " + m.toString)
           return Some(checkMatch(ops, tks, m, i, i))
       }
       i += 1
@@ -552,7 +551,7 @@ class Parser(grammar : Grammar) {
    */
   private def checkMatch(ops : List[Operator], tks : List[Token], old : Operator, pos : Int, oldStart : Int) : List[Token] = {
     var i = pos + 1
-    println("got here with" + old + pos + oldStart)
+    log("got here with" + old + pos + oldStart)
     while (i < pos + old.notation.mrks.length) {
       val slice = tks.slice(i, tks.length)
       matches(ops, slice) match {
@@ -628,10 +627,10 @@ class Parser(grammar : Grammar) {
    * @return the new list of tokens
    */
   private def doApply(op : Operator, tks : List[Token], pos : Int) : List[Token] = {
-    println("op")
-    println(op)
-    println(tks)
-    println(pos)
+    log("op")
+    log(op.toString)
+    log(tks.toString)
+    log(pos.toString)
 
     val left = tks.slice(0,pos)
     val args = tks.slice(pos, pos + op.notation.mrks.length).zipWithIndex.filter(x => op.notation.mrks(x._2) match {case ArgMk(s) => true case _ => false}).map(_._1)
@@ -639,7 +638,7 @@ class Parser(grammar : Grammar) {
     op match {
       case binder : Binder =>
         val fnargs = getArgs(op, args)
-        println(fnargs)
+        log(fnargs.toString)
         val context = binder.context(fnargs)
         grammar.addContext(context)
         val ret = binder.binding match {
@@ -658,19 +657,19 @@ class Parser(grammar : Grammar) {
 
   private def getArgs(op : Operator, tks : List[Token]) : List[Token] = {
     val args : Array[Token] = new Array(op.notation.argNr)
-    println("tks" + tks)
-    println("op" + op)
+    log("tks" + tks)
+    log("op" + op)
     val argMks = op.notation.mrks collect  {
       case x : ArgMk => x
     }
     tks.zip(argMks) collect {
       case (tk,ArgMk(pos)) =>
-        println("got here" + tk.toString + " " + ArgMk(pos))
+        log("got here" + tk.toString + " " + ArgMk(pos))
         args(pos) = tk
     }
 
-    println("args" + args)
-    println("toList" + args.toList)
+    log("args" + args)
+    log("toList" + args.toList)
     val fnArgs = args.toList map {
       case null => TermTk(OMHID,TokenProperties(0,0))
       case x => x
@@ -687,10 +686,6 @@ class Parser(grammar : Grammar) {
         lookupRefs(fnArgs)
     }
   }
-
-
-
-
 
 }
 

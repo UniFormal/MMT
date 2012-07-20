@@ -94,7 +94,7 @@ class Grammar(name : String, declseps : List[Separator], var ops : List[Operator
 }
 
 object LFGrammar {
-	private val name = "Simple LF Grammar"
+  private val name = "Simple LF Grammar"
   val thy = DPath(URI("http://cds.omdoc.org/foundations/lf/lf.omdoc")) ? "lf"
 
   private def context(l : List[Token]) : Context = l match {
@@ -136,7 +136,6 @@ object LFGrammar {
 	  	PairSep("(", ")")
      )
 		
-		
   val grammar = new Grammar(name, markers, operators)
 
 
@@ -159,5 +158,5 @@ object LFGrammar {
     new Grammar(name, markers, ops.map(makeOperator) ::: latexOperators)
   }
   
+  
 }
-

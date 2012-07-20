@@ -75,6 +75,8 @@ class Controller extends ROController {
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
    val uom = new UOM(report)
+   /** the parser */
+   val termParser = new parser.Parser(parser.LFGrammar.grammar, report)
 
    protected def log(s : => String) = report("controller", s)
 

@@ -30,10 +30,13 @@ class StrictDiff(override val changes : List[StrictChange]) extends Diff(changes
 
 sealed trait ContentChange extends Change {
     def toNodeFlat : List[Node]
+    def getReferencedURIs : List[ContentPath]
 }
 
 sealed abstract class StrictChange extends ContentChange {
-  def getReferencedURI : Path
+  def getReferencedURI : ContentPath
+  
+  def getReferencedURIs : List[ContentPath] = List(getReferencedURI)
 }
 
 abstract class Add extends StrictChange
@@ -41,18 +44,19 @@ abstract class Update extends StrictChange
 abstract class Delete extends StrictChange
 
 
-class PragmaticChangeType(val name : String,
-                          val matches : Diff => Boolean,
-                          val termProp : Diff => Term => Term,
-                          val modProp : Diff => Module => StrictDiff) {
+class PragmaticChangeType(
+    val name : String,
+    val matches : Diff => Boolean,
+    val termProp : Diff => Term => Term,
+    val modProp : Diff => Module => StrictDiff) {
 
-  def make(diff : Diff) : Option[PragmaticChange] = matches(diff) match {
+  def make(diff : StrictDiff) : Option[PragmaticChange] = matches(diff) match {
     case true => Some(new PragmaticChange(name, diff, termProp(diff), modProp(diff)))
     case false => None
   }
 }
 
-case class PragmaticChange(val name : String, val diff : Diff, val termProp : Term => Term, val modProp : Module => StrictDiff) extends ContentChange {
+case class PragmaticChange(val name : String, val diff : StrictDiff, val termProp : Term => Term, val modProp : Module => StrictDiff) extends ContentChange {
   def toNode =
     <PragmaticChange name={name}>
       {diff.toNode}
@@ -60,6 +64,8 @@ case class PragmaticChange(val name : String, val diff : Diff, val termProp : Te
 
   def toNodeFlat = diff.changes.flatMap(_.toNodeFlat)
 
+  def getReferencedURIs : List[ContentPath] = diff.changes.map(_.getReferencedURI)
+    
   def toStrict : Diff = diff
 }
 
@@ -163,7 +169,7 @@ case class Component(c : Option[Obj])
 
 case class UpdateComponent(path : ContentPath, name : String, old : Option[Obj], nw : Option[Obj]) extends Update with ContentChange {
 
-  def getReferencedURI : CPath = CPath(path,name)
+  def getReferencedURI : ContentPath = path
 
   def toNode =
     <component path={path.toPath} name={name} change="update">

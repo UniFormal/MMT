@@ -73,7 +73,7 @@ object Patcher {
     case(d : DefLinkAssignment, "target", Some(target : Term)) => new DefLinkAssignment(d.home, d.name, d.from, target)
 
     /** Aliases */
-    case(a : Alias, "pattern", Some(OMID(forpath : GlobalName))) => new Alias(a.home, a.name, forpath)
+    case(a : Alias, "forpath", Some(OMID(forpath : GlobalName))) => new Alias(a.home, a.name, forpath)
 
     case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +

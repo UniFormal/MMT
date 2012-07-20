@@ -584,7 +584,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     }
     val grammar = LFGrammar.grammar
 
-    val parser = new Parser(grammar)//, lineStarts.toList)
+    val parser = new Parser(grammar, controller.report)//, lineStarts.toList)
     parser.init()
     def tryParse(o : OMSemiFormal, offset : Int) = {
       try {

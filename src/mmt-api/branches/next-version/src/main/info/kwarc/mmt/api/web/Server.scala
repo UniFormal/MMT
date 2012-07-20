@@ -174,7 +174,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
              }
 
              val grammar = parser.LFGrammar.grammar
-             val lfParser = new parser.Parser(grammar)
+             val lfParser = new parser.Parser(grammar, controller.report)
              println(parser.LFGrammar.notation.toNode)
 
              val tm = try {
