@@ -154,7 +154,7 @@
     <DatatypeDefinition>
         <Datatype IRI="majorAge"/>
         <DatatypeRestriction>
-            <Datatype abbreviatedIRI="xsd:integer"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
             <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
                 <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">19</Literal>
             </FacetRestriction>
@@ -167,7 +167,7 @@
     <DatatypeDefinition>
         <Datatype IRI="personAge"/>
         <DatatypeRestriction>
-            <Datatype abbreviatedIRI="xsd:integer"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
             <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
                 <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
             </FacetRestriction>
@@ -187,7 +187,7 @@
     
     <DatatypeDefinition>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Datatype toddlerAge</Literal>
         </Annotation>
         <Datatype IRI="toddlerAge"/>
@@ -242,7 +242,7 @@
         <Class IRI="Person"/>
         <DataAllValuesFrom>
             <DataProperty IRI="hasID"/>
-            <Datatype abbreviatedIRI="xsd:nonNegativeInteger"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#nonNegativeInteger"/>
         </DataAllValuesFrom>
     </EquivalentClasses>
     
@@ -255,7 +255,7 @@
         <DataSomeValuesFrom>
             <DataProperty IRI="hasAge"/>
             <DatatypeRestriction>
-                <Datatype abbreviatedIRI="xsd:integer"/>
+                <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
                 <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minExclusive">
                     <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">12</Literal>
                 </FacetRestriction>
@@ -268,7 +268,7 @@
 <!-- renaming is skipped, just deleting? -->         
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
@@ -451,7 +451,7 @@
     
     <TransitiveObjectProperty>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
         <Annotation>
@@ -481,7 +481,7 @@
     -->
     <EquivalentDataProperties>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting DataProperty age</Literal>
         </Annotation>
         <Annotation>
@@ -580,7 +580,7 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -674,7 +674,7 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -685,7 +685,7 @@
         <NamedIndividual IRI="Alice"/>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">2</Literal>
     </DataPropertyAssertion>
-<!-- annotate the NamedIndividuals? -->     
+<!-- annotate the NamedIndividuals -->     
 <!-- SameIndividual axiom is deleted    
     <SameIndividual>
         <Annotation>
@@ -779,7 +779,7 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -832,11 +832,11 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
     	<Annotation>
@@ -892,7 +892,7 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -947,7 +947,7 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
@@ -990,7 +990,7 @@
   
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact/deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact/delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>

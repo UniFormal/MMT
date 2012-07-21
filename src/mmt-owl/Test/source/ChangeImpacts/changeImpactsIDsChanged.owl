@@ -13,14 +13,14 @@
     </Declaration>
     <Declaration>
      <Annotation>
-      <AnnotationProperty IRI="http://omdoc.org/impact#impact"/>
+      <AnnotationProperty IRI="http://omdoc.org/impact#possibleImpact"/>
       <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string"> An axiom stating that Liz and Liza are the same individuals is deleted.</Literal>
      </Annotation>
      <NamedIndividual IRI="Liz"/>
     </Declaration>
     <Declaration>
      <Annotation>
-      <AnnotationProperty IRI="http://omdoc.org/impact#impact"/>
+      <AnnotationProperty IRI="http://omdoc.org/impact#possibleImpact"/>
       <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string"> An axiom stating that Liz and Liza are the same individuals is deleted.</Literal>
      </Annotation>
      <NamedIndividual IRI="Liza"/>
@@ -149,7 +149,7 @@
     </Declaration>
     
     <Declaration>
-        <Datatype IRI="personAge"/> <!-- Datatype personAge is renamed to humanAge-->
+        <Datatype IRI="humanAge"/> <!-- Datatype personAge is renamed to humanAge-->
     </Declaration>
     <Declaration>
         <Datatype IRI="minorAge"/>
@@ -169,8 +169,8 @@
     
     <DatatypeDefinition>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge in DR DataIntersectionOf to humanAge</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Datatype personAge to humanAge</Literal>
         </Annotation>
         <Datatype IRI="minorAge"/>
         <DataIntersectionOf>
@@ -184,7 +184,7 @@
     <DatatypeDefinition>
         <Datatype IRI="majorAge"/>
         <DatatypeRestriction>
-            <Datatype abbreviatedIRI="xsd:integer"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
             <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
                 <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">19</Literal>
             </FacetRestriction>
@@ -196,12 +196,12 @@
     
     <DatatypeDefinition>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge to humanAge</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Datatype personAge to humanAge</Literal>
         </Annotation>
         <Datatype IRI="personAge"/>
         <DatatypeRestriction>
-            <Datatype abbreviatedIRI="xsd:integer"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
             <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
                 <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
             </FacetRestriction>
@@ -213,8 +213,8 @@
     
     <DatatypeDefinition>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge to humanAge</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Datatype personAge to humanAge</Literal>
         </Annotation>
         <Datatype IRI="personAge"/>
         <DataUnionOf>
@@ -225,7 +225,7 @@
     
     <DatatypeDefinition>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Datatype toddlerAge</Literal>
         </Annotation>
         <Datatype IRI="toddlerAge"/>
@@ -237,8 +237,8 @@
     
     <SubClassOf>
        <Annotation>
-        <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
+        <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -250,8 +250,8 @@
     
     <SubClassOf>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -272,8 +272,8 @@
     
     <DisjointUnion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -286,8 +286,8 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -296,7 +296,7 @@
         <Class IRI="Person"/>
         <DataAllValuesFrom>
             <DataProperty IRI="hasID"/>
-            <Datatype abbreviatedIRI="xsd:nonNegativeInteger"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#nonNegativeInteger"/>
         </DataAllValuesFrom>
     </EquivalentClasses>
     
@@ -309,7 +309,7 @@
         <DataSomeValuesFrom>
             <DataProperty IRI="hasAge"/>
             <DatatypeRestriction>
-                <Datatype abbreviatedIRI="xsd:integer"/>
+                <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
                 <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minExclusive">
                     <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">12</Literal>
                 </FacetRestriction>
@@ -322,15 +322,15 @@
  <!-- renaming should be skipped, just deleting -->       
     <EquivalentClasses>
     	<Annotation>
-    	<AnnotationProperty IRI="http://omdoc.org/impact#impact"/>
-    	<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom should be deleted , because one of its entities has been deleted</Literal>
+    	<AnnotationProperty IRI="http://omdoc.org/impact#possibleImpact"/>
+    	<Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom should be deleted, because one of its entities has been deleted</Literal>
     	</Annotation>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person in Class Expression ObjectIntersectionOf to Human</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
@@ -348,8 +348,8 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person in CE ObjectSomeValuesFrom in CE ObjectIntersectionOf to Human</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -368,8 +368,8 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person in CE ObjectSomeValuesFrom in CE ObjectIntersectionOf to Human</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -521,7 +521,7 @@
     
     <TransitiveObjectProperty>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
         <Annotation>
@@ -533,8 +533,8 @@
     
     <SubDataPropertyOf>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasFamilyName to hasSurname</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -555,7 +555,7 @@
     -->
     <EquivalentDataProperties>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting DataProperty age</Literal>
         </Annotation>
         <Annotation>
@@ -568,8 +568,8 @@
     
     <DataPropertyDomain>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Class Person to Human</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -581,10 +581,6 @@
     
     <DataPropertyRange>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming Datatype personAge to humanAge</Literal>
-        </Annotation>
-        <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1495705204</Literal>
         </Annotation>
@@ -603,8 +599,8 @@
   <!--family info-->  
     <DataPropertyAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -667,7 +663,7 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -681,12 +677,12 @@
   
     <DataPropertyAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasFamilyName to hasSurname</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -699,8 +695,8 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming DataProperty hasFamilyName to hasSurname</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
          <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -713,8 +709,8 @@
     
     <DataPropertyAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -777,7 +773,7 @@
     
     <DataPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -802,8 +798,8 @@
     
     <DifferentIndividuals>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -815,8 +811,8 @@
     
     <ObjectPropertyAssertion>
        <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -829,8 +825,8 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -845,8 +841,8 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -861,8 +857,8 @@
     
     <ClassAssertion>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -877,8 +873,8 @@
     
     <EquivalentClasses>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John in the class expression ObjectHasValue to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -906,11 +902,11 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming NamedIndividual John to James</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -963,11 +959,11 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
         <Annotation>
@@ -1034,7 +1030,7 @@
 -->        
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
@@ -1069,8 +1065,8 @@
     
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#renaming"/>
-         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom has to be updated by renaming object property hasSibling to hasCommonParentWith</Literal>
+         <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
+         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming object property hasSibling to hasCommonParentWith</Literal>
         </Annotation>
         <Annotation>
             <AnnotationProperty IRI="http://omdoc.org/id"/>
@@ -1093,7 +1089,7 @@
     
     <ClassAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
@@ -1136,7 +1132,7 @@
   
     <ObjectPropertyAssertion>
     	<Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/impact#deleting"/>
+         <AnnotationProperty IRI="http://omdoc.org/impact#delete"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
