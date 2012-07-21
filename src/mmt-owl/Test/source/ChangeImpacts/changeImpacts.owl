@@ -141,7 +141,7 @@
 </Declaration>
 
 <Declaration>
- <DataProperty IRI="hasLastName"/>
+ <DataProperty IRI="hasFamilyName"/>
 </Declaration>
 
 <Declaration>
@@ -376,7 +376,7 @@
 </TransitiveObjectProperty>
 
 <SubDataPropertyOf>
- <DataProperty IRI="hasLastName"/>
+ <DataProperty IRI="hasFamilyName"/>
  <DataProperty IRI="hasName"/>
 </SubDataPropertyOf>
 <!--
@@ -449,7 +449,7 @@
 </DataPropertyAssertion>
 
 <DataPropertyAssertion>
- <DataProperty IRI="hasLastName"/>
+ <DataProperty IRI="hasFamilyName"/>
  <NamedIndividual IRI="John"/>
  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Parker</Literal>
 </DataPropertyAssertion>
@@ -459,7 +459,7 @@
   <AnnotationProperty IRI="http://omdoc.org/id"/>
   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID001</Literal>
  </Annotation>
- <DataProperty IRI="hasLastName"/>
+ <DataProperty IRI="hasFamilyName"/>
  <NamedIndividual IRI="Max"/>
  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">Evans</Literal>
 </DataPropertyAssertion>
@@ -694,7 +694,7 @@
 <!--
 <SubClassOf>
  <DataHasValue>
-  <DataProperty IRI="hasLastName"/>
+  <DataProperty IRI="hasFamilyName"/>
   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">"Parker"</Literal>
  </DataHasValue>
  <Class IRI="Person"/>
