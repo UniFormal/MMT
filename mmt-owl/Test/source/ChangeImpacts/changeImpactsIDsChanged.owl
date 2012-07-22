@@ -14,14 +14,14 @@
     <Declaration>
      <Annotation>
       <AnnotationProperty IRI="http://omdoc.org/impact#possibleImpact"/>
-      <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string"> An axiom stating that Liz and Liza are the same individuals is deleted.</Literal>
+      <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string"> An axiom stating that Liz and Liza are the same individual is deleted.</Literal>
      </Annotation>
      <NamedIndividual IRI="Liz"/>
     </Declaration>
     <Declaration>
      <Annotation>
       <AnnotationProperty IRI="http://omdoc.org/impact#possibleImpact"/>
-      <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string"> An axiom stating that Liz and Liza are the same individuals is deleted.</Literal>
+      <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string"> An axiom stating that Liz and Liza are the same individual is deleted.</Literal>
      </Annotation>
      <NamedIndividual IRI="Liza"/>
     </Declaration>
