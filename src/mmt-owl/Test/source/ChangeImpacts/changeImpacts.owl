@@ -456,7 +456,7 @@
 
 <DataPropertyAssertion>
  <Annotation>
-  <AnnotationProperty IRI="http://omdoc.org/id"/>
+  <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID001</Literal>
  </Annotation>
  <DataProperty IRI="hasFamilyName"/>
@@ -680,7 +680,7 @@
 
 <ObjectPropertyAssertion>
  <Annotation>
-  <AnnotationProperty IRI="http://omdoc.org/id"/>
+  <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
   <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID002</Literal>
  </Annotation>
  <ObjectProperty IRI="hasDaughter"/>

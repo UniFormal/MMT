@@ -242,7 +242,7 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1241281692</Literal>
         </Annotation>
         <Class IRI="Woman"/>
@@ -255,7 +255,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1652800332</Literal>
         </Annotation>
         <Class IRI="Man"/>
@@ -264,7 +264,7 @@
     
     <DisjointClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1299199849</Literal>
         </Annotation>
         <Class IRI="Woman"/>
@@ -277,7 +277,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-344833659</Literal>
         </Annotation>
         <Class IRI="Person"/>
@@ -291,7 +291,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1637674794</Literal>
         </Annotation>
         <Class IRI="Person"/>
@@ -303,7 +303,7 @@
     
     <SubClassOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1338188629</Literal>
         </Annotation>
         <Class IRI="Teenager"/>
@@ -335,7 +335,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1039132749</Literal>
         </Annotation>
         <Class IRI="ChildlessPerson"/>
@@ -353,7 +353,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1440190575</Literal>
         </Annotation>
         <Class IRI="Mother"/>
@@ -373,7 +373,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-959512380</Literal>
         </Annotation>
         <Class IRI="Father"/>
@@ -388,7 +388,7 @@
 
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1606419908</Literal>
         </Annotation>
         <Class IRI="Parent"/>
@@ -400,7 +400,7 @@
     
     <ObjectPropertyDomain>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax873308696</Literal>
         </Annotation>
         <ObjectProperty IRI="hasWife"/>
@@ -409,7 +409,7 @@
     
      <ObjectPropertyRange>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-325152428</Literal>
         </Annotation>
         <ObjectProperty IRI="hasWife"/>
@@ -418,7 +418,7 @@
     
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1855628294</Literal>
         </Annotation>
         <Class IRI="NarcisticPerson"/>
@@ -429,7 +429,7 @@
     
     <EquivalentObjectProperties>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1972899661</Literal>
         </Annotation>
         <ObjectProperty IRI="hasDaughter"/>
@@ -438,7 +438,7 @@
     
     <SubObjectPropertyOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1838109231</Literal>
         </Annotation>
         <ObjectProperty IRI="hasDaughter"/>
@@ -447,7 +447,7 @@
     
     <SubObjectPropertyOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1162516937</Literal>
         </Annotation>
         <ObjectProperty IRI="hasSon"/>
@@ -456,7 +456,7 @@
     
     <DisjointObjectProperties>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-2119203351</Literal>
         </Annotation>
         <ObjectProperty IRI="hasSon"/>
@@ -465,7 +465,7 @@
     
     <InverseObjectProperties>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1423657695</Literal>
         </Annotation>
         <ObjectProperty IRI="hasParent"/>
@@ -474,7 +474,7 @@
     
     <FunctionalObjectProperty>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1121825817</Literal>
         </Annotation>
         <ObjectProperty IRI="hasHusband"/>
@@ -482,7 +482,7 @@
     
     <InverseFunctionalObjectProperty>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1121814865</Literal>
         </Annotation>
         <ObjectProperty IRI="hasHusband"/>
@@ -490,7 +490,7 @@
     
     <ReflexiveObjectProperty>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1187868092</Literal>
         </Annotation>
         <ObjectProperty IRI="hasRelative"/>
@@ -498,7 +498,7 @@
     
     <IrreflexiveObjectProperty>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1777720201</Literal>
         </Annotation>
         <ObjectProperty IRI="parentOf"/>
@@ -506,7 +506,7 @@
     
     <SymmetricObjectProperty>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1002358198</Literal>
         </Annotation>
         <ObjectProperty IRI="hasRelative"/>
@@ -514,7 +514,7 @@
     
     <AsymmetricObjectProperty>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1192336456</Literal>
         </Annotation>
         <ObjectProperty IRI="hasChild"/>
@@ -526,7 +526,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1444772685</Literal>
         </Annotation>
         <ObjectProperty IRI="hasAncestor"/>
@@ -538,7 +538,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax32819417</Literal>
         </Annotation>
         <DataProperty IRI="hasFamilyName"/>
@@ -547,7 +547,7 @@
    <!-- 
     <DisjointDataProperties>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-493086223</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -560,7 +560,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting DataProperty age</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax140678089</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -573,7 +573,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming Class Person to Human</Literal>
        </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1284912199</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -582,7 +582,7 @@
     
     <DataPropertyRange>
     	<Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1495705204</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -591,7 +591,7 @@
     
     <FunctionalDataProperty>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1109111715</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -604,7 +604,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1886562495</Literal>
         </Annotation>
         <DataProperty IRI="hasID"/>
@@ -614,7 +614,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1975222262</Literal>
         </Annotation>
         <DataProperty IRI="hasID"/>
@@ -624,7 +624,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax709758293</Literal>
         </Annotation>
         <DataProperty IRI="hasID"/>
@@ -634,7 +634,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax180535786</Literal>
         </Annotation>
         <DataProperty IRI="hasID"/>
@@ -644,7 +644,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1107941600</Literal>
         </Annotation>
         <DataProperty IRI="hasID"/>
@@ -654,7 +654,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax745772687</Literal>
         </Annotation>
         <DataProperty IRI="hasID"/>
@@ -668,7 +668,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1679798240</Literal>
         </Annotation>
         <DataProperty IRI="hasID"/>
@@ -686,7 +686,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax964795910</Literal>
         </Annotation>
         <DataProperty IRI="hasFamilyName"/>
@@ -700,7 +700,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming DataProperty hasFamilyName to hasSurname</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/id"/>
+         <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID001</Literal>
         </Annotation>
         <DataProperty IRI="hasFamilyName"/>
@@ -714,7 +714,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1157570453</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -724,7 +724,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1590753066</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -734,7 +734,7 @@
     
     <NegativeDataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1429575109</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -744,7 +744,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1438746968</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -754,7 +754,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax909524276</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -764,7 +764,7 @@
     
     <DataPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1474761288</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -778,7 +778,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1116048551</Literal>
         </Annotation>
         <DataProperty IRI="hasAge"/>
@@ -789,7 +789,7 @@
 <!-- SameIndividual axiom is deleted    
     <SameIndividual>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1711766800</Literal>
         </Annotation>
         <NamedIndividual IRI="Liz"/>
@@ -803,7 +803,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1713635152</Literal>
         </Annotation>
         <NamedIndividual IRI="John"/>
@@ -816,7 +816,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-834974511</Literal>
         </Annotation>
         <ObjectProperty IRI="hasWife"/>
@@ -830,7 +830,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1915018245</Literal>
         </Annotation>
         <ObjectMinCardinality cardinality="1">
@@ -846,7 +846,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1862543106</Literal>
         </Annotation>
         <ObjectExactCardinality cardinality="2">
@@ -862,7 +862,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1907524339</Literal>
         </Annotation>
         <ObjectMaxCardinality cardinality="3">
@@ -878,7 +878,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming NamedIndividual John to James</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax163847801</Literal>
         </Annotation>
         <Class IRI="JohnsChildren"/>
@@ -890,7 +890,7 @@
     
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1693134365</Literal>
         </Annotation>
         <Class IRI="JohnsChildren"/>
@@ -911,7 +911,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1498503059</Literal>
         </Annotation>
         <ObjectProperty IRI="hasRelative"/>
@@ -921,7 +921,7 @@
     
     <ClassAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1318609487</Literal>
         </Annotation>
         <Class IRI="Mother"/>
@@ -930,7 +930,7 @@
     
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax193958378</Literal>
         </Annotation>
         <ObjectProperty IRI="hasChild"/>
@@ -940,7 +940,7 @@
     
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax961310361</Literal>
         </Annotation>
         <ObjectProperty IRI="hasSon"/>
@@ -950,7 +950,7 @@
     
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax285040634</Literal>
         </Annotation>
         <ObjectProperty IRI="hasDaughter"/>
@@ -968,7 +968,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting ObjectProperty hasAncestor</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-556159636</Literal>
         </Annotation>
         <ObjectProperty IRI="hasAncestor"/>
@@ -978,7 +978,7 @@
     
     <ClassAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-193250398</Literal>
         </Annotation>
         <DataMaxCardinality cardinality="2">
@@ -989,7 +989,7 @@
     
     <ClassAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-182006801</Literal>
         </Annotation>
         <DataMinCardinality cardinality="1">
@@ -1000,7 +1000,7 @@
     
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax464831953</Literal>
         </Annotation>
         <ObjectProperty IRI="hasBrother"/>
@@ -1010,7 +1010,7 @@
     
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-799581906</Literal>
         </Annotation>
         <ObjectProperty IRI="hasHusband"/>
@@ -1021,7 +1021,7 @@
 <!-- inconsistency   
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax</Literal>
         </Annotation>
         <ObjectProperty IRI="hasHusband"/>
@@ -1035,7 +1035,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-246865350</Literal>
         </Annotation>
         <ObjectProperty IRI="ParentOf"/>
@@ -1045,7 +1045,7 @@
     
     <ClassAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1003750178</Literal>
         </Annotation>
         <Class IRI="Teenager"/>
@@ -1054,7 +1054,7 @@
     
     <ClassAssertion> <!-- This axiom is updated by renaming object property hasSibling in CE ObjectAllValuesFrom to hasCommonParentWith -->
     	<Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1988069327</Literal>
         </Annotation>
         <ObjectAllValuesFrom>
@@ -1070,7 +1070,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by renaming object property hasSibling to hasCommonParentWith</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1105091995</Literal>
         </Annotation>
         <ObjectProperty IRI="hasSibling"/>
@@ -1080,7 +1080,7 @@
     
     <ObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1324972977</Literal>
         </Annotation>
         <ObjectProperty IRI="hasSister"/>
@@ -1094,7 +1094,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting Class ChildlessPerson</Literal>
         </Annotation>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-694856842</Literal>
         </Annotation>
         <Class IRI="ChildlessPerson"/>
@@ -1103,7 +1103,7 @@
     
     <ClassAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-203523374</Literal>
         </Annotation>
         <DataExactCardinality cardinality="1">
@@ -1114,7 +1114,7 @@
     
     <NegativeObjectPropertyAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1793612164</Literal>
         </Annotation>
         <ObjectProperty IRI="hasWife"/>
@@ -1124,7 +1124,7 @@
     
     <ClassAssertion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax505564719</Literal>
         </Annotation>
         <Class IRI="Father"/>
@@ -1137,7 +1137,7 @@
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">This axiom is impacted by deleting NamedIndividual Alice</Literal>
         </Annotation>
         <Annotation>
-         <AnnotationProperty IRI="http://omdoc.org/id"/>
+         <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
          <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ID002</Literal>
         </Annotation>
         <ObjectProperty IRI="hasDaughter"/>
