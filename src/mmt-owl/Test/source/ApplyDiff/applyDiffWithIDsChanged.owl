@@ -65,7 +65,7 @@
    </Annotation>
   <DataProperty IRI="hasAge"/>
   <NamedIndividual IRI="Max"/>
-  <Literal datatypeIRI="http://example.com/owl/families/majorAge">26</Literal>
+  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">26</Literal>
  </DataPropertyAssertion>
  
  <ClassAssertion>
@@ -84,7 +84,7 @@
    </Annotation>
    <DataProperty IRI="hasAge"/>
   <NamedIndividual IRI="Liz"/>
-  <Literal datatypeIRI="http://example.com/owl/families/majorAge">25</Literal>
+  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">25</Literal>
  </DataPropertyAssertion>
  
  <ObjectPropertyAssertion>
@@ -117,7 +117,7 @@
   </Annotation>
   <DataProperty IRI="hasAge"/>
   <NamedIndividual IRI="Alice"/>
-  <Literal datatypeIRI="http://example.com/owl/families/toddlerAge">2</Literal>
+  <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">2</Literal>
  </DataPropertyAssertion>       
 -->
 
