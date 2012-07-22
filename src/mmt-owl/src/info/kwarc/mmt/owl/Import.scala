@@ -29,7 +29,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	var num : Int = 0
 	var currThy : MPath = null
 
-	val omdocIRI : IRI = IRI.create("http://omdoc.org/id")
+	val omdocIRI : IRI = IRI.create("http://omdoc.org/identifier#id")
 	
 	def printClass(c : OWLClassExpression ){println(c)}
 	def printIndividual(i : OWLIndividual){println(i)}
