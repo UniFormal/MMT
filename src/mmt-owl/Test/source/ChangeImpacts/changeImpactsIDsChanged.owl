@@ -167,6 +167,7 @@
         <Datatype IRI="teenAge"/>
     </Declaration>
     
+<!-- This axiom is impacted by renaming Datatype personAge in DR DataIntersectionOf to humanAge -->    
     <DatatypeDefinition>
         <Annotation>
          <AnnotationProperty IRI="http://omdoc.org/impact#rename"/>
