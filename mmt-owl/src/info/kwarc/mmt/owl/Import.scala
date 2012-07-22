@@ -539,23 +539,27 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	}
 	
 	def annotationPropertyToLF(ap: OWLAnnotationProperty) : GlobalName = { 
-		val name = ap.getIRI.toString
+	  val apIRI = ap.getIRI	
+	  val apString = apIRI.toString
+			
 		val base = 
 		if(ap.isBuiltIn)
-		{ name match { 
+		{ apString match { 
 		  case r if(r == "http://www.w3.org/2000/01/rdf-schema#label" || r == "http://www.w3.org/2000/01/rdf-schema#comment" ||
 		 		    r == "http://www.w3.org/2000/01/rdf-schema#seeAlso" || r == "http://www.w3.org/2000/01/rdf-schema#isDefinedBy") 
-			     => "http://www.w3.org/2000/01/rdf-schema#"
+			     => "http://www.w3.org/2000/01/rdf-schema"
 			         		      
   		  case o if(o == "http://www.w3.org/2002/07/owl#deprecated" || o == "http://www.w3.org/2002/07/owl#priorVersion" ||
   				    o == "http://www.w3.org/2002/07/owl#backwardCompatibleWith" || o == "http://www.w3.org/2002/07/owl#incompatibleWith") 
-  			   	 => "http://www.w3.org/2002/07/owl#"
+  			   	 => "http://www.w3.org/2002/07/owl"
   		  case _ =>  throw Exception("none of the built in annotation properties")
 		  }
 		}
 		else 
-			name
-		val dpath = DPath(utils.URI.fromJava (IRI.create(base).toURI))
+			(utils.URI(apIRI.toURI).copy(fragment = None)).toString
+        		
+		val dpath = DPath(utils.URI(base))
+		val name = ap.getIRI.getFragment
 		dpath ? "_" ? name //  global name = Dpath?String?String ,  base module name ,  rdfs_label
 		
 		/*
