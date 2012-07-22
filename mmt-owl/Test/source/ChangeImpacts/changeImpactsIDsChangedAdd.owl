@@ -160,7 +160,7 @@
     <DatatypeDefinition>
         <Datatype IRI="majorAge"/>
         <DatatypeRestriction>
-            <Datatype abbreviatedIRI="xsd:integer"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
             <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
                 <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">19</Literal>
             </FacetRestriction>
@@ -173,7 +173,7 @@
     <DatatypeDefinition>
         <Datatype IRI="personAge"/>
         <DatatypeRestriction>
-            <Datatype abbreviatedIRI="xsd:integer"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
             <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
                 <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">0</Literal>
             </FacetRestriction>
@@ -201,7 +201,7 @@
     
     <SubClassOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1241281692</Literal>
         </Annotation>
         <Class IRI="Woman"/>
@@ -210,7 +210,7 @@
     
     <SubClassOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1652800332</Literal>
         </Annotation>
         <Class IRI="Man"/>
@@ -219,7 +219,7 @@
     
     <DisjointClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1299199849</Literal>
         </Annotation>
         <Class IRI="Woman"/>
@@ -244,7 +244,7 @@
         <Class IRI="Person"/>
         <DataAllValuesFrom>
             <DataProperty IRI="hasID"/>
-            <Datatype abbreviatedIRI="xsd:nonNegativeInteger"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#nonNegativeInteger"/>
         </DataAllValuesFrom>
     </EquivalentClasses>
     
@@ -257,7 +257,7 @@
         <DataSomeValuesFrom>
             <DataProperty IRI="hasAge"/>
             <DatatypeRestriction>
-                <Datatype abbreviatedIRI="xsd:integer"/>
+                <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
                 <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minExclusive">
                     <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">12</Literal>
                 </FacetRestriction>

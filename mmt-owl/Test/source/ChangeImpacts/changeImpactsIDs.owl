@@ -186,7 +186,7 @@
     
     <SubClassOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1241281692</Literal>
         </Annotation>
         <Class IRI="Woman"/>
@@ -195,7 +195,7 @@
     
     <SubClassOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1652800332</Literal>
         </Annotation>
         <Class IRI="Man"/>
@@ -204,7 +204,7 @@
     
     <DisjointClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1299199849</Literal>
         </Annotation>
         <Class IRI="Woman"/>
@@ -213,7 +213,7 @@
     
     <DisjointUnion>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-344833659</Literal>
         </Annotation>
         <Class IRI="Person"/>
@@ -223,7 +223,7 @@
     
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1637674794</Literal>
         </Annotation>
         <Class IRI="Person"/>
@@ -235,7 +235,7 @@
     
     <SubClassOf>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1338188629</Literal>
         </Annotation>
         <Class IRI="Teenager"/>
@@ -255,7 +255,7 @@
         
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1039132749</Literal>
         </Annotation>
         <Class IRI="ChildlessPerson"/>
@@ -269,7 +269,7 @@
     
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1440190575</Literal>
         </Annotation>
         <Class IRI="Mother"/>
@@ -285,7 +285,7 @@
     
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-959512380</Literal>
         </Annotation>
         <Class IRI="Father"/>
@@ -300,7 +300,7 @@
 
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax1606419908</Literal>
         </Annotation>
         <Class IRI="Parent"/>
@@ -312,7 +312,7 @@
     
     <ObjectPropertyDomain>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax873308696</Literal>
         </Annotation>
         <ObjectProperty IRI="hasWife"/>
@@ -321,7 +321,7 @@
     
      <ObjectPropertyRange>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-325152428</Literal>
         </Annotation>
         <ObjectProperty IRI="hasWife"/>
@@ -330,7 +330,7 @@
     
     <EquivalentClasses>
         <Annotation>
-            <AnnotationProperty IRI="http://omdoc.org/identifier#identifier#id"/>
+            <AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
             <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string">ax-1855628294</Literal>
         </Annotation>
         <Class IRI="NarcisticPerson"/>
