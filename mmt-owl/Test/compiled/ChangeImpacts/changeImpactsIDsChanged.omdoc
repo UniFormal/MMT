@@ -1,45 +1,45 @@
 <omdoc base="file:/E:/Fall10/CompSem/Project/MMT/src/mmt-owl/Test/source/ChangeImpacts/changeImpactsIDsChanged.owl">
 	<theory base="http://example.com/owl/families/" name="_" meta="http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2">
-
+		
 		<constant name="hasSister">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasRelative">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Mary">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="teenAge">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Liza">
 			<metadata>
@@ -58,258 +58,258 @@
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasFemaleChild">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasSon">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasBrother">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Max">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Bob">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="James">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasBoyfriend">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasWife">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Woman">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="JohnsChildren">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasBirthname">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Parent">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Tom">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasName">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasID">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="humanAge">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Mother">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Student">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasSurname">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasChild">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="parentOf">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasCommonParentWith">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasParent">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="NarcisticPerson">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="minorAge">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Liz">
 			<metadata>
@@ -328,108 +328,108 @@
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasAge">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="dataProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="majorAge">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWL1Datatype" name="dataType" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasDaughter">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Father">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Man">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="loves">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Teenager">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="hasHusband">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="objectProperty" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Human">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="class" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="Amy">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMS module="OWLBase" name="individual" base="http://latin.omdoc.org/logics/description/owl/owl.omdoc"></om:OMS>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1109111715">
 			<metadata>
@@ -451,8 +451,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-954262662">
 			<metadata>
@@ -479,8 +479,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax140678089">
 			<metadata>
@@ -512,8 +512,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax909524276">
 			<metadata>
@@ -537,8 +537,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax964795910">
 			<metadata>
@@ -584,8 +584,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1423657695">
 			<metadata>
@@ -608,8 +608,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1039132749">
 			<metadata>
@@ -666,8 +666,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax745772687">
 			<metadata>
@@ -695,11 +695,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax2132640196">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -722,8 +722,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1693134365">
 			<metadata>
@@ -751,8 +751,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1862543106">
 			<metadata>
@@ -789,8 +789,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1637674794">
 			<metadata>
@@ -826,8 +826,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1003750178">
 			<metadata>
@@ -850,8 +850,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1495705204">
 			<metadata>
@@ -874,8 +874,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax32819417">
 			<metadata>
@@ -907,8 +907,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1907524339">
 			<metadata>
@@ -945,11 +945,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax64834472">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -959,8 +959,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1338188629">
 			<metadata>
@@ -1000,8 +1000,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1299199849">
 			<metadata>
@@ -1024,8 +1024,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1988069327">
 			<metadata>
@@ -1052,8 +1052,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-344833659">
 			<metadata>
@@ -1086,8 +1086,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax709758293">
 			<metadata>
@@ -1115,8 +1115,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1002358198">
 			<metadata>
@@ -1138,8 +1138,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1121825817">
 			<metadata>
@@ -1161,8 +1161,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1915018245">
 			<metadata>
@@ -1199,8 +1199,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax193958378">
 			<metadata>
@@ -1224,8 +1224,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1107941600">
 			<metadata>
@@ -1253,8 +1253,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1838109231">
 			<metadata>
@@ -1277,8 +1277,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1975222262">
 			<metadata>
@@ -1306,8 +1306,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax464831953">
 			<metadata>
@@ -1331,8 +1331,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-325152428">
 			<metadata>
@@ -1355,8 +1355,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1324972977">
 			<metadata>
@@ -1380,8 +1380,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-182006801">
 			<metadata>
@@ -1408,8 +1408,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-799581906">
 			<metadata>
@@ -1433,8 +1433,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax505564719">
 			<metadata>
@@ -1457,8 +1457,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1162516937">
 			<metadata>
@@ -1481,8 +1481,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax961310361">
 			<metadata>
@@ -1506,8 +1506,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1440190575">
 			<metadata>
@@ -1547,8 +1547,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-665678718">
 			<metadata>
@@ -1578,8 +1578,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1747333177">
 			<metadata>
@@ -1615,8 +1615,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1105091995">
 			<metadata>
@@ -1649,11 +1649,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1683632329">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -1663,8 +1663,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ID001">
 			<metadata>
@@ -1701,8 +1701,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1438746968">
 			<metadata>
@@ -1726,8 +1726,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1886562495">
 			<metadata>
@@ -1764,8 +1764,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-2119203351">
 			<metadata>
@@ -1788,8 +1788,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1444772685">
 			<metadata>
@@ -1820,8 +1820,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-203523374">
 			<metadata>
@@ -1848,8 +1848,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1972899661">
 			<metadata>
@@ -1872,8 +1872,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1713635152">
 			<metadata>
@@ -1905,8 +1905,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-193250398">
 			<metadata>
@@ -1933,8 +1933,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1652800332">
 			<metadata>
@@ -1966,8 +1966,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1157570453">
 			<metadata>
@@ -2000,8 +2000,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1116048551">
 			<metadata>
@@ -2034,8 +2034,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax873308696">
 			<metadata>
@@ -2058,8 +2058,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1474761288">
 			<metadata>
@@ -2083,8 +2083,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax180535786">
 			<metadata>
@@ -2112,8 +2112,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ID002">
 			<metadata>
@@ -2146,8 +2146,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1855628294">
 			<metadata>
@@ -2173,8 +2173,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1241281692">
 			<metadata>
@@ -2206,8 +2206,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-694856842">
 			<metadata>
@@ -2239,8 +2239,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1429575109">
 			<metadata>
@@ -2264,8 +2264,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1121814865">
 			<metadata>
@@ -2287,11 +2287,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1706945146">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -2301,8 +2301,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1679259127">
 			<metadata>
@@ -2329,8 +2329,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1318609487">
 			<metadata>
@@ -2353,8 +2353,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-834974511">
 			<metadata>
@@ -2387,11 +2387,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-692556929">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -2406,11 +2406,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax803146930">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -2425,8 +2425,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1590753066">
 			<metadata>
@@ -2450,8 +2450,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-959512380">
 			<metadata>
@@ -2491,8 +2491,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1679798240">
 			<metadata>
@@ -2529,8 +2529,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1777720201">
 			<metadata>
@@ -2552,8 +2552,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-1498503059">
 			<metadata>
@@ -2595,8 +2595,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-556159636">
 			<metadata>
@@ -2638,8 +2638,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1606419908">
 			<metadata>
@@ -2666,8 +2666,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax163847801">
 			<metadata>
@@ -2703,11 +2703,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-414075951">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -2718,8 +2718,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1284912199">
 			<metadata>
@@ -2751,8 +2751,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax-246865350">
 			<metadata>
@@ -2785,8 +2785,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax285040634">
 			<metadata>
@@ -2810,8 +2810,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1793612164">
 			<metadata>
@@ -2835,8 +2835,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1192336456">
 			<metadata>
@@ -2858,8 +2858,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax1187868092">
 			<metadata>
@@ -2881,11 +2881,11 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 		<constant name="ax600113139">
-
+			
 			<type>
 				<om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
 					<om:OMA>
@@ -2896,8 +2896,8 @@
 					</om:OMA>
 				</om:OMOBJ>
 			</type>
-       
 
+		
 		</constant>
 	</theory>
 </omdoc>
