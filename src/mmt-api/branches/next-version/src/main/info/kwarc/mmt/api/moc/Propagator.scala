@@ -61,8 +61,8 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
   /**
    * The propagation function for individual paths
    * It implements how/which impacted items are affected by the propagation
-   * '''It must hold that the returned change affects exactly the impacted path'''
-   * i.e. {{{path == propFunc(path,_).getReferencedURI}}} must hold
+   * '''It must hold that the returned change affects exactly or a sub-path of the impacted path'''
+   * i.e. semantically {{{path isAncestorOf propFunc(path,_).getReferencedURI}}} must hold
    * @param path the impacted path
    * @param changes the set of changes that impact path
    * @return optionally the generated change
@@ -242,7 +242,77 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       
     }
     
-    OME(OMID(mmt.mmtsymbol("impacted term")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
+    OME(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
+  }
+  
+}
+
+/**
+ * The structural impact propagator is an impact propagator 
+ * that ensures the totality of views
+ */
+class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
+  
+  /**
+   * Implements the dependency relation, returns all paths that depend on a certain path (i.e. the impacts)
+   * For the structural impact propagator it is based on the totality of views constraint
+   * Specifically, T?c/def -> v?c iff v : T -> S
+   * @param path the path 
+   * @return the set of impacted paths
+   */
+  def dependsOn(path : Path) : Set[Path] = {
+    var impacts = new mutable.HashSet[Path]()
+    
+    path match {
+      case CPath(GlobalName(mod, lname), "def") =>
+        mem.ontology.query(mod.toMPath, ToSubject(HasDomain)) {
+          case viewPath : MPath => 
+            impacts += viewPath ? lname
+          case _ => 
+        }
+      case _ =>
+    }
+    
+    impacts
+  }
+  
+  /**
+   * The propagation function for individual paths
+   * It implements how impacted items are affected by the propagation
+   * For the structural impact propagator this deletes assignments that are 
+   * no longer necessary and adds stubs for newly required assignments 
+   * @param path the impacted path
+   * @param changes the set of changes that impact path
+   * @return optionally the generated change
+   */
+  def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = path match {
+    case GlobalName(mod, lname) => 
+      
+      val emptyBox = OME(OMID(mmt.mmtsymbol("emptybox")), Nil)
+
+      changes.size match {
+        case 1 => 
+          changes.head match {
+            //definition is deleted -> one more undefined constant -> assignment needed for it
+            case UpdateComponent(cPath, "def", Some(s), None) => 
+              val ca = new ConstantAssignment(mod, lname, emptyBox)
+              Some(AddDeclaration(ca))                
+           
+            //definition is added -> one less undefined constant -> assignment for it no longer needed
+            case UpdateComponent(cPath, "def", None, Some(s)) => 
+              val ca = mem.content.getConstantAssignment(mod.toMPath ? lname)
+              Some(DeleteDeclaration(ca))
+            
+            case _ => None
+
+          }
+
+        case 0 => throw ImplementationError("Cannot have path impacted by no changes:" + path.toPath)
+        case _ => throw ImplementationError("Cannot have path impacted structurally by more than" +
+                                            " one change, (a view has exactly one domain)")
+      }
+    case _ => throw ImplementationError("Cannot have structural validity impact non-declarations " +
+    		                                "i.e. T?c/def -> v?c for v : T -> S ")
   }
   
 }
