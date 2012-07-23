@@ -12,7 +12,7 @@ import scala.io.Source
 /*
  * A Pattern represents a declaration of a "declaration pattern".
  * 
- * @param home   the link
+ * @param home   the link to the containing theory
  * @param name   the name of the declaration pattern
  * @param params the parameters of the declaration patterns
  * @param body   the body of the declaration pattern that consists of symbol declarations             

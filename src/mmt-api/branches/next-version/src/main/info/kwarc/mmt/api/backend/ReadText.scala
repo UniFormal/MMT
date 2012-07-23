@@ -4,6 +4,7 @@ import metadata._
 import documents._
 import modules._
 import parser._
+import patterns.Pattern
 
 //import presentation._
 import objects._
@@ -651,6 +652,70 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   }
 
 
+   /** reads a variable declaration inside a pattern body.
+     * @param start the position of the first character in the variable identifier
+     * @return variable declaration, position after the block
+     * @throws SourceError for syntactical errors */
+    private def crawlDeclarationInPatternBody(start: Int, visibleConstants: List[Declaration]) : (VarDecl, Int) =
+    {
+      val oldComment = keepComment
+
+      var i = start
+      val (name, positionAfter) = crawlIdentifier(i)  // read variable name
+      i = positionAfter
+      i = skipwscomments(i)
+
+   //   /*//initializing term parser
+      val grammar = LFGrammar.grammar
+
+      val parser = new Parser(grammar, controller.report)//, lineStarts.toList)
+      parser.init()
+      def tryParse(o : OMSemiFormal, offset : Int) = {
+        try {
+          Some(parser.parse(o, visibleConstants, offset))
+        } catch {
+          case e: SourceError =>
+            errors = (errors :+ e)
+            Some(o)
+        }
+      }
+  //    */
+
+      // read the optional type
+      var varType : Option[Term] = None
+      if (flat.codePointAt(i) == ':') {
+        i += 1  // jump over ':'
+        i = skipwscomments(i)
+        val (term, posAfter) = crawlTerm(i, List("=","#","."))
+        varType = tryParse(term, i)  //Some(term) //
+        i = posAfter
+        i = skipwscomments(i)
+      }
+
+      // read the optional definition
+      var varDef : Option[Term] = None
+      if (flat.codePointAt(i) == '=') {
+        i += 1  // jump over '='
+        i = skipwscomments(i)
+        val (term, posAfter) = crawlTerm(i, List("#","."))
+        varDef = tryParse(term, i)  //Some(term) //
+        i = posAfter
+        i = skipwscomments(i)
+      }
+
+      val endsAt = expectNext(i, ".")
+
+      // create the VarDecl object
+      val varDecl = new VarDecl(LocalName(name), varType, varDef)
+      addSourceRef(varDecl, start, endsAt)
+      addSemanticComment(varDecl, oldComment)
+
+      return (varDecl, endsAt + 1)
+    }
+
+
+
+
   /** reads an %open block
     * @param start the position of the initial % from %open
     * @param link the structure declaration before the %open statement
@@ -846,6 +911,149 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     return endsAt + 1
   }
 
+  // TODO documentation :)
+  private def crawlPatternParameter(start: Int, visibleConstants: List[Declaration]) : Pair[VarDecl, Int] =
+  {
+     var i = start
+     val grammar = LFGrammar.grammar
+
+     val parser = new Parser(grammar, controller.report)//, lineStarts.toList)
+     parser.init()
+     def tryParse(o : OMSemiFormal, offset : Int) = {
+       try {
+         Some(parser.parse(o, visibleConstants, offset))
+       } catch {
+         case e: SourceError =>
+           errors = (errors :+ e)
+           Some(o)
+       }
+     }
+
+     // skip over '['
+     i = expectNext(i, "[")
+     i += "[".length
+     i = skipwscomments(i)
+
+     // parse the variable name
+     val (name, positionAfter) = crawlIdentifier(i)
+     i = positionAfter
+     i = skipwscomments(i)
+
+     // skip over ':'
+     i = expectNext(i, ":")
+     i += ":".length
+     i = skipwscomments(i)
+
+     // parse the type
+     val (informalTerm, posAfter) = crawlTerm(i, List("]"))
+     val formalTerm : Option[Term] = tryParse(informalTerm, i)
+     i = posAfter
+
+     // skip over ']'
+     i = expectNext(i, "]")
+     i += "]".length
+     i = skipwscomments(i)
+
+     (OMV(name) % (formalTerm match { case Some(term) => term; case None => informalTerm}), i)
+  }
+
+
+  /** Reads a pattern body
+      * @param start the position of the opening {
+      * @param visibleConstants constants in scope
+      * @return pattern body as a context, position after the closing }
+      * @throws SourceError for syntactical errors */
+    private def crawlPatternBody(start: Int, visibleConstants: List[Declaration]) : (Context, Int) =
+    {
+      var i = start + 1       // jump over '{'
+      keepComment = None          // reset the last semantic comment stored
+      i = skipwscomments(i)       // check whether there is a new semantic comment
+      val body = Context()
+
+      while (i < flat.length) {
+        if (isIdentifierPartCharacter(flat.codePointAt(i))) {
+          // read variable declaration
+          val (varDecl, posAfterDeclaration) = crawlDeclarationInPatternBody(i, visibleConstants)
+          i = posAfterDeclaration
+          body ++ varDecl
+        }
+        else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
+          i = skipAfterDot(i)
+        }
+        else if (flat.codePointAt(i) == '}')    // end of signature body
+          return (body, i + 1)
+        else
+          throw TextParseError(toPos(i), "unknown declaration in pattern body")
+        keepComment = None          // reset the last semantic comment stored
+        i = skipwscomments(i)       // check whether there is a new semantic comment
+      }
+      return (body, i)
+    }
+
+
+  /** reads a pattern declaration.
+     * @param start the position of the initial % from %pattern
+     * @param parent the parent theory
+     * @return position after the block
+     * @throws SourceError for syntactical errors */
+   private def crawlPatternDeclaration(start: Int, parent: Theory) : Int =
+   {
+     //var domain : Option[Term] = None
+     //var isImplicit : Boolean = false
+
+     val oldComment = keepComment
+
+     var i = skipws(crawlKeyword(start, "%pattern"))
+
+     // parse the name
+     val (name, positionAfter) = crawlIdentifier(i)
+     i = positionAfter
+     i = skipwscomments(i)
+
+     // skip over '='
+     i = expectNext(i, "=")
+     i += "=".length
+     i = skipwscomments(i)
+
+     // all the visible constants, just in case the types use them
+     val constants = controller.memory.content.getDeclarationsInScope(parent.path) collect {
+       case c : Constant => c
+     }
+
+     // parse the pattern parameters
+     val parameterContext = Context()
+     if (flat.startsWith("[", i)) {
+       do {
+         // parse a single [ ... ] declaration
+         val (varDecl, posAfterParameter) = crawlPatternParameter(i, constants)
+         i = posAfterParameter
+         parameterContext ++ varDecl
+       } while (flat.startsWith("[", i))
+     }
+
+     // go to '{'
+     i = expectNext(i, "{")
+
+     // parse the pattern body
+     val (body, posAfterPatternBody) = crawlPatternBody(i, constants)
+     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
+
+     i = posAfterPatternBody
+
+     val endsAt = expectNext(i, ".")
+
+     // add the semantic comment and source reference
+     addSemanticComment(pattern, oldComment)
+     addSourceRef(pattern, start, endsAt)
+
+     // add the pattern to the parent theory
+     add(pattern)
+
+     return endsAt + 1
+   }
+
+
+
 
   /** Reads a constant assignment.
     * @param start the position of the first character in the constant identifier
@@ -983,6 +1191,10 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       else if (flat.startsWith("%struct", i)) {
         // read structure declaration
         i = crawlStructureDeclaration(i, parent)
+      }
+      else if (flat.startsWith("%pattern", i)) {
+        // read pattern declaration
+        i = crawlPatternDeclaration(i, parent)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
