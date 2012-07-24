@@ -39,7 +39,7 @@ object LambdaTerm extends InferenceRule(Lambda.path) {
    }
 }
 
-/** the type inference rule f : Pi x:A.B  ,  t : A  --->  f s : B [x/t]
+/** the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
  * This rule works for B:U for any universe U */
 object ApplyTerm extends InferenceRule(Apply.path) {
    def apply(solver: Solver)(tm: Term)(implicit context: Context) : Option[Term] = tm match {
@@ -74,7 +74,7 @@ object PiType extends TypingRule(Pi.path) {
    }
 }
 
-/** the extensionality rule (equivalent to Eta) x:A|-f x = g x  --->  f = g
+/** the extensionality rule (equivalent to Eta) x:A|-f x = g x  --->  f = g  : Pi x:A. B
  * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
 object Extensionality extends EqualityRule(Pi.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = {
