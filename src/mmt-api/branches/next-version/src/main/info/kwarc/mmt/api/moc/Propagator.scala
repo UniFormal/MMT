@@ -308,6 +308,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
           }
 
         case 0 => throw ImplementationError("Cannot have path impacted by no changes:" + path.toPath)
+        
         case _ => throw ImplementationError("Cannot have path impacted structurally by more than" +
                                             " one change, (a view has exactly one domain)")
       }

@@ -8,12 +8,6 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.libraries._
 
-/*
-import org.tmatesoft.svn.core._
-import org.tmatesoft.svn.core.io._
-import org.tmatesoft.svn.core.auth._
-import org.tmatesoft.svn.core.wc._
-*/
 
 object Differ {
   
@@ -35,6 +29,15 @@ object Differ {
       compareModules(mold,mnew)
     }
     
+  def diff(cold : Controller, cnew : Controller, pold : MPath, pnew : MPath) : StrictDiff = {
+
+    val old = cold.memory.content.getModule(pold)
+
+    val nw = cnew.memory.content.getModule(pnew)
+
+    compareModules(old, nw)
+  }  
+    
 	def diff(cold : Controller, cnew : Controller, pold : DPath, pnew : DPath) : StrictDiff = {
 
 	  val old = cold.getDocument(pold)
@@ -46,112 +49,25 @@ object Differ {
 	  val mnw = nw.getModulesResolved(cnew.library)(0)
 	  compareModules(mold, mnw)
 	}
-	
-	/*
-	def genCSS(c : ChangeModule, fname : String) = {
-	  val css = new java.io.FileWriter("/home/mihnea/public_html/" + fname + ".css")
-	  val js = new java.io.FileWriter("/home/mihnea/public_html/" + fname + ".js")
-	  js.write("window.onload = function() {\n")
-	  mod2CSS(c ,css, js)
-	  js.write("\n}")
-	  css.close()
-	  js.close()
-	  
-	}
-	
-	def comp2CSS(path: Path, ch : ChangeComponent, nr : Int, css : java.io.FileWriter, js : java.io.FileWriter) = {
-	  val trClass = nr match {
-	    case 0 => "omdoc-symbol"
-	    case 1 => "omdoc-definitiens"
-	  }
-	  
-	  ch match {
-	  case c : AddComponent => 	   	
-	    css.write("tr." + trClass + "[id=\"" + path.toPath + "\"] td:nth-child(" + 3 + ")\n{\ncolor:blue;\n}\n")
-	  case c : UpdateComponent =>	   	
-	    css.write("tr." + trClass + "[id=\"" + path.toPath + "\"] td:nth-child(" + 3 + ")\n{\ncolor:#00DDDD;\n}\n")
-	  case c : DeleteComponent =>	   	
-	    css.write("tr." + trClass + "[id=\"" + path.toPath + "\"] td:nth-child(" + 3 + ")\n{\ncolor:red;\n}\n")
-	  case c : IdenticalComponent => None
-	  }
-	}
-	def decl2CSS(ch : ChangeDeclaration, css : java.io.FileWriter, js : java.io.FileWriter) = ch match {
-	  case c : AddDeclaration => 
-	    val el = "tr.omdoc-symbol[id=\\\"" + c.d.path.toPath + "\\\"]"
-	    css.write("tr.omdoc-symbol[id=\"" + c.d.path.toPath + "\"]\n{\ncolor:blue;\n}\n")
-	    c.tp match {
-	      case "Constant" => js.write("document.querySelectorAll(\"" + el + "\")[0].setAttribute(\"title\", \"Added Constant\")\n")
-	      case _ => 
-	    }
-	  case c : UpdateDeclaration => 
-	    val el = "tr.omdoc-symbol[id=\\\"" + c.path.toPath + "\\\"] td:nth-child(1)"
-	   	css.write("tr.omdoc-symbol[id=\"" + c.path.toPath + "\"] td:nth-child(1)\n{\ncolor:#00DDDD;\n}\n")
-	   	c.tp match {
-	      case "Constant" => js.write("document.querySelectorAll(\"" + el + "\")[0].setAttribute(\"title\", \"Updated Constant\")\n")
-	      case _ => 
-	    }
-	    c.changes.zipWithIndex.map(p => comp2CSS(c.path, p._1, p._2, css, js))
-	  case c : RenameDeclaration =>
-	   val el = "tr.omdoc-symbol[id=\\\"" + (c.path.parent % c.name)  + "\\\"] td:nth-child(1)"
-	    css.write("tr.omdoc-symbol[id=\"" + (c.path.parent % c.name)  + "\"] td:nth-child(1)\n{\ncolor:#EEBB00;\n} \n")
-	    c.tp match {
-	      case "Constant" => js.write("document.querySelectorAll(\"" + el + "\")[0].setAttribute(\"title\", \"Renamed Constant (from " + c.path.name + ")\")\n")
-	      case _ =>
-	    }
-	    case c : DeleteDeclaration =>
-	    js.write("var result = document.querySelectorAll(\"div > table\")\n" + 
-                 "var res = result[0];\n" +
-                 "var tr = document.createElement(\"tr\")\n" +
-                 "var td = document.createElement(\"td\")\n" +
-                 "td.innerHTML = \"" + c.path.name + "\"\n" +
-                 "tr.setAttribute(\"id\",\"" + c.path.toPath +"\")\n" +
-                 "tr.setAttribute(\"class\",\"omdoc-symbol\")\n" +
-                 "tr.appendChild(td)\n" +
-                 "res.appendChild(tr)\n") 
-        val el =  "tr.omdoc-symbol[id=\\\"" + c.path.toPath + "\\\"]"        
-	  	css.write("tr.omdoc-symbol[id=\"" + c.path.toPath + "\"]\n{\ncolor:red;\nbackground:lightgray;\n}\n")	   
-	  	c.tp match {
-	      case "Constant" => js.write("document.querySelectorAll(\"" + el + "\")[0].setAttribute(\"title\", \"Deleted Constant (retrieved from old version)\")\n")
-	      case _ => 
-	    }
-	  case c : IdenticalDeclaration => 
-	    val el =  "tr.omdoc-symbol[id=\\\"" + c.path.toPath + "\\\"] td:nth-child(1)"        
-	  	c.tp match {
-	      case "Constant" => js.write("document.querySelectorAll(\"" + el + "\")[0].setAttribute(\"title\", \"Identical Constant (no change)\");\n")
-	      case _ =>
-	    }
-	}
-	
-	def mod2CSS(ch : ChangeModule, css : java.io.FileWriter, js : java.io.FileWriter) = ch match {
-	  case c : AddModule => 
-	  	css.write("div[id=\"" + c.m.path.toPath + "\"]\n{\ncolor:blue;\n}\n")
-	  	js.write("document.querySelectorAll(\"div[id=\\\"" + c.m.path.toPath + "\\\"] span:first-of-type\")[0].setAttribute(\"title\", \"Added Module \");\n")
-	  case c : UpdateModule => 
-	    css.write("div[id=\"" + c.path.toPath + "\"]\n{\ncolor:#00DDDD;\n}\n")
-	    js.write("document.querySelectorAll(\"div[id=\\\"" + c.path.toPath + "\\\"] span:first-of-type\")[0].setAttribute(\"title\", \"Updated Module \");\n")
-	    c.childChanges.map(decl2CSS(_, css, js))
-	  case c : RenameModule =>
-	  	css.write("div[id=\"" + (c.path.parent ? c.name).toPath + "\"]\n{\ncolor:#EEBB00;\n}\n")
-	  	js.write("document.querySelectorAll(\"div[id=\\\"" + (c.path.parent ? c.name).toPath + "\\\"] span:first-of-type\")[0].setAttribute(\"title\", \"Renamed Module (from " + c.path.name + ")\");\n")
-	  case c : DeleteModule =>
-	  	css.write("div[id=\"" + c.path.toPath + "\"]\n{\ncolor:red;\n}\n")
-	  case c : IdenticalModule => None
-	}	
-	*/
 		
-	def _fullType(o : Obj) : List[String] = o.toNode.label :: o.toNode.attributes.toString :: Nil
-	def _getType(s : StructuralElement) : String = s.toNode.label	
+	/**
+	 * checks if two optional objects are equal
+	 * @param old the first optional object
+	 * @param nw  the second optional objects
+	 * @return true if old and nw are equal, false otherwise
+	 */
+  private def areEqual(old : Option[Obj], nw : Option[Obj]) : Boolean = (old,nw) match {
+    case (None,None) => true
+    case (Some(o), None) => false
+    case (None, Some(n)) => false
+    case (Some(o), Some(n)) => o == n
+  }
+
+ // recursing inside objects not useful now, but may be in the future
+ /*   
+  private def _fullType(o : Obj) : List[String] = o.toNode.label :: o.toNode.attributes.toString :: Nil
 	
-	
-	def areEqual(old : Option[Obj], nw : Option[Obj]) : Boolean = (old,nw) match {
-	  case (None,None) => true
-	  case (Some(o), None) => false
-	  case (None, Some(n)) => false
-	  case (Some(o), Some(n)) => o == n
-	}
-	
-	
-	def compareObjects(o : Obj, n : Obj, pos : Position = Position(Nil)) : List[Position] = {
+	private def compareObjects(o : Obj, n : Obj, pos : Position = Position(Nil)) : List[Position] = {
 	  if (o == n) Nil
 	  else if (_fullType(o) == _fullType(n) && o.components.length == n.components.length) {
 	    o.components.zip(n.components).zipWithIndex.flatMap(p => p._1 match {
@@ -162,33 +78,51 @@ object Differ {
 	    pos :: Nil
 	  }
 	}
+	*/
 	
-	
-	def compareConstants(o : Constant, n : Constant) : StrictDiff = {
+  /**
+   * compares two constants 
+   * @param old the first constant
+   * @param nw the second constant
+   * @return the (strict) diff representing the difference between old and nw
+   */
+	private def compareConstants(old : Constant, nw : Constant) : StrictDiff = {
     var changes : List[StrictChange] = Nil
 
-    if(!areEqual(o.tp, n.tp)) {
-       changes = UpdateComponent(o.path, "type", o.tp, n.tp) :: changes
+    if(!areEqual(old.tp, nw.tp)) {
+       changes = UpdateComponent(old.path, "type", old.tp, nw.tp) :: changes
 		}
 		
-		if (!areEqual(o.df, n.df))  {
-		  changes = UpdateComponent(o.path, "def", o.df, n.df) :: changes
+		if (!areEqual(old.df, nw.df))  {
+		  changes = UpdateComponent(old.path, "def", old.df, nw.df) :: changes
 		}
 		
 		new StrictDiff(changes)
 	}
 	
-  def compareStructures(o : Structure, n : Structure) : StrictDiff = {
+	/**
+   * compares two structures 
+   * @param old the first structure
+   * @param nw the second structure
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+  private def compareStructures(old : Structure, nw : Structure) : StrictDiff = {
 	  var changes : List[StrictChange] = Nil
 
-    if (o.from != n.from) {
-	    changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
+    if (old.from != nw.from) {
+	    changes = UpdateComponent(old.path, "from", Some(old.from), Some(nw.from)) :: changes
 	  }
     //TODO changes to body of DeclaredStructure, definiens of DefinedStructure
     new StrictDiff(changes)
 	}
-	
-	def comparePatterns(old : Pattern, nw : Pattern) : StrictDiff = {
+	  
+  /**
+   * compares two patterns 
+   * @param old the first pattern
+   * @param nw the second pattern
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+	private def comparePatterns(old : Pattern, nw : Pattern) : StrictDiff = {
     var changes : List[StrictChange] = Nil
 
     if (old.params != nw.params){
@@ -202,7 +136,13 @@ object Differ {
 	  new StrictDiff(changes)
 	}
 	
-	def compareInstances(old : Instance, nw : Instance) : StrictDiff = {
+	/**
+   * compares two instances 
+   * @param old the first instance
+   * @param nw the second instance
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+	private def compareInstances(old : Instance, nw : Instance) : StrictDiff = {
     var changes : List[StrictChange] = Nil
 
 	  if (old.pattern != nw.pattern) {
@@ -216,8 +156,13 @@ object Differ {
     new StrictDiff(changes)
 	}
 	
-	
-	def compareConstantAssignments(old : ConstantAssignment, nw : ConstantAssignment) : StrictDiff = {
+	/**
+   * compares two constant assignments 
+   * @param old the first assignment
+   * @param nw the second assignment
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+	private def compareConstantAssignments(old : ConstantAssignment, nw : ConstantAssignment) : StrictDiff = {
     var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
@@ -227,7 +172,13 @@ object Differ {
 	  new StrictDiff(changes)
 	}
 	
-	def compareDefLinkAssignments(old : DefLinkAssignment, nw : DefLinkAssignment) : StrictDiff = {
+	/**
+   * compares two definitional link assignments 
+   * @param old the first assignment
+   * @param nw the second assignment
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+	private def compareDefLinkAssignments(old : DefLinkAssignment, nw : DefLinkAssignment) : StrictDiff = {
     var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
@@ -237,7 +188,13 @@ object Differ {
 	  new StrictDiff(changes)
 	}
 	
-	def compareAliases(old : Alias, nw : Alias) : StrictDiff = {
+	/**
+   * compares two aliases 
+   * @param old the first alias
+   * @param nw the second alias
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+	private def compareAliases(old : Alias, nw : Alias) : StrictDiff = {
     var changes : List[StrictChange] = Nil
 
     if (old.forpath != nw.forpath) {
@@ -246,8 +203,14 @@ object Differ {
 
 	  new StrictDiff(changes)
 	}
-
-  def compareDeclarations(old : Declaration, nw : Declaration) : StrictDiff = {
+	
+	/**
+   * compares two declarations 
+   * @param old the first declaration
+   * @param nw the second declaration
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+  private def compareDeclarations(old : Declaration, nw : Declaration) : StrictDiff = {
     (old,nw) match {
       case (o : Constant, n : Constant) =>
         compareConstants(o,n)
@@ -265,20 +228,27 @@ object Differ {
         compareAliases(o,n)
     }
   }
+  
+  /**
+   * Gets the declarations in a module
+   * @param m the module
+   * @return the list of declarations in m
+   */
+  private def _declarations(m : Module) : List[Declaration] = {
+    m.components.flatMap(x => x match {
+      case d : Declaration => List(d)
+      case _ => Nil
+    })
+  }
+    
 
-  def _declarations(m : Module) : List[Declaration] = {
-	  m.components.flatMap(x => x match {
-	    case d : Declaration => List(d)
-	    case _ => Nil
-	  })
-	}
-		
-	
-	def _max(a : Int, b : Int) : Int = {
-	  if (a > b) a else b
-	}
-	
-	def compareModules(old : Module, nw : Module) : StrictDiff = {
+	/**
+	 * compares two modules
+	 * @param old the first module
+	 * @param nw the second module
+	 * @return the (strict) diff representing the difference between old and nw
+	 */
+	private def compareModules(old : Module, nw : Module) : StrictDiff = {
       //getting all declarations stored in each library
 
 	  val od = _declarations(old)
@@ -358,7 +328,12 @@ object Differ {
 	  }
 	}	
 	
-	
+	/**
+	 * compares two libraries
+	 * @param old the first library
+	 * @param nw the second library
+	 * @return the (strict) diff representing the difference between old and nw
+	 */
 	def compareFlatLibraries(old : Library, nw : Library) : StrictDiff = {
 	  
 	  //getting all module URI's (paths) stored in each library
