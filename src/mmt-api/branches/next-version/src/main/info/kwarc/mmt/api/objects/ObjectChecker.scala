@@ -6,7 +6,7 @@ import modules._
 import symbols._
 import frontend._
 import objects.Conversions._
-import scala.collection.mutable.{HashSet,HashMap}
+import scala.collection.immutable.{HashSet,HashMap,Stack}
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
 class DelayedConstraint(val constraint: Judgement) {
@@ -34,7 +34,7 @@ class DelayedConstraint(val constraint: Judgement) {
  *   unknown variables may occur in the types of later unknowns.
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
-class Solver(controller: Controller, unknowns: Context) {
+class Solver(val controller: Controller, unknowns: Context) {
    /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
    private var solution : Context = unknowns
    /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
@@ -71,6 +71,7 @@ class Solver(controller: Controller, unknowns: Context) {
     * @return true (i.e., delayed Judgment's always return success)
     */
    private def delay(c: Judgement): Boolean = {
+     log("delaying " + c)
       val dc = new DelayedConstraint(c)
       delayed = dc :: delayed
       true
@@ -79,7 +80,7 @@ class Solver(controller: Controller, unknowns: Context) {
     * @return whatever application to the delayed judgment returns
     */
    private def activate: Boolean = {
-      delayed foreach {_.solved(newsolutions)}
+     delayed foreach {_.solved(newsolutions)}
       val res = delayed find {_.isActivatable} match {
          case None => true
          case Some(dc) =>
@@ -110,7 +111,7 @@ class Solver(controller: Controller, unknowns: Context) {
     *  @param j the Judgement
     *  @return false if the Judgment is definitely not provable; true if it has been proved or delayed
     */
-   def apply(j: Judgement): Boolean = {
+   def apply(j: Judgement) : Boolean = {
      log("judgment: " + j)
      log("state: \n" + this.toString)
      val subs = solution.toPartialSubstitution
@@ -124,6 +125,42 @@ class Solver(controller: Controller, unknowns: Context) {
      if (mayhold) activate else false
    }
 
+   /** proves a Typing Judgement by recursively applying TypingRule's and InferenceRule's. Takes reflection into account, so it needs frames */
+   def checkTypingRefl(tm: Term, tp: Term, frameStack: Stack[Frame]) : Boolean = {
+     implicit val context = if (frameStack.isEmpty) Context() else frameStack.last.context
+     log("typing: " + context + " |- " + tm + " : " + tp)
+     report.indent
+     val res = tm match {
+       // the foundation-independent cases
+       case OMV(x) => (unknowns ++ context)(x).tp match {
+         case None => false //untyped variable type-checks against nothing
+         case Some(t) => checkEqualityRefl(t, tp, None, Stack[Frame](Frame(t.toMPath,context)))
+       }
+       case OMS(p) =>
+         val c = content.getConstant(p)
+         c.tp match {
+           case None => c.df match {
+             case None => false //untyped, undefined constant type-checks against nothing
+             case Some(d) => checkTypingRefl(d, tp, Stack[Frame](Frame(d.toMPath,context))) // expand defined constant
+           }
+           case Some(t) => checkEqualityRefl(t, tp, None, Stack[Frame](Frame(t.toMPath,context)))
+         }
+       // the foundation-dependent cases
+       case tm =>
+         limitedSimplify(tp) {t => t.head flatMap {h => ruleStore.typingRules.get(h)}} match {
+           case (tpS, Some(rule)) => rule(this)(tm, tpS)
+           case (tpS, None) =>
+             // either this is an atomic type, or no typing rule is known
+             inferType(tm) match {
+               case Some(itp) => checkEqualityRefl(itp, tpS, None, Stack[Frame](Frame(itp.toMPath,context)))
+               case None => delay(Typing(context, tm, tpS))
+             }
+         }
+     }
+     report.unindent
+     res
+   }
+
    /** proves a Typing Judgment by recursively applying TypingRule's and InferenceRule's.
     * @param tm the term
     * @param tp its type
@@ -132,39 +169,7 @@ class Solver(controller: Controller, unknowns: Context) {
     * 
     * This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
     */
-   def checkTyping(tm: Term, tp: Term)(implicit context: Context): Boolean = {
-      log("typing: " + context + " |- " + tm + " : " + tp)
-      report.indent
-      val res = tm match {
-         // the foundation-independent cases
-         case OMV(x) => (unknowns ++ context)(x).tp match {
-            case None => false //untyped variable type-checks against nothing
-            case Some(t) => checkEquality(t, tp, None)
-         }
-         case OMS(p) =>
-            val c = content.getConstant(p)
-            c.tp match {
-               case None => c.df match {
-                  case None => false //untyped, undefined constant type-checks against nothing
-                  case Some(d) => checkTyping(d, tp) // expand defined constant 
-               }
-               case Some(t) => checkEquality(t, tp, None)
-            }
-         // the foundation-dependent cases
-         case tm =>
-            limitedSimplify(tp) {t => t.head flatMap {h => ruleStore.typingRules.get(h)}} match {
-               case (tpS, Some(rule)) => rule(this)(tm, tpS)
-               case (tpS, None) =>
-                   // either this is an atomic type, or no typing rule is known
-                   inferType(tm) match {
-                      case Some(itp) => checkEquality(itp, tpS, None)
-                      case None => delay(Typing(context, tm, tpS))
-                   }
-            }
-      }
-      report.unindent
-      res
-   }
+   def checkTyping(tm: Term, tp: Term)(implicit context: Context): Boolean = checkTypingRefl(tm, tp, Stack[Frame](Frame(tm.toMPath, context)))
    
    /** infers the type of a term by applying InferenceRule's
     * @param tm the term
@@ -173,32 +178,36 @@ class Solver(controller: Controller, unknowns: Context) {
     *
     * This method should not be called by users (instead, call apply to a typing judgement with an unknown type). It is only public because it serves as a callback for Rule's.
     */
-   def inferType(tm: Term)(implicit context: Context): Option[Term] = {
-      log("inference: " + context + " |- " + tm + " : ?")
-      report.indent
-      val res = tm match {
-         //foundation-independent cases
-         case OMV(x) => (unknowns ++ context)(x).tp
-         case OMS(p) =>
-            val c = content.getConstant(p)
-            c.tp orElse {
-               c.df match {
-                  case None => None
-                  case Some(d) => inferType(d) // expand defined constant 
-               }
-            }
-         //foundation-dependent cases
-         case tm =>
-            val hd = tm.head.get //TODO
-            limitedSimplify(tm) {t => t.head flatMap {h => ruleStore.inferenceRules.get(h)}} match {
-               case (tmS, Some(rule)) => rule(this)(tmS)
-               case (_, None) => None
-            }
-      }
-      report.unindent
-      log("inferred: " + res.getOrElse("failed"))
-      res
+
+   def inferTypeRefl(tm: Term, frameStack: Stack[Frame]): Option[Term] = {
+     implicit val context = if (frameStack.isEmpty) Context() else frameStack.last.context
+     log("inference: " + context + " |- " + tm + " : ?")
+     report.indent
+     val res = tm match {
+       //foundation-independent cases
+       case OMV(x) => (unknowns ++ context)(x).tp
+       case OMS(p) =>
+         val c = content.getConstant(p)
+         c.tp orElse {
+           c.df match {
+             case None => None
+             case Some(d) => inferTypeRefl(d,Stack[Frame](Frame(d.toMPath,context))) // expand defined constant
+           }
+         }
+       //foundation-dependent cases
+       case tm =>
+         val hd = tm.head.get //TODO
+         limitedSimplify(tm) {t => t.head flatMap {h => ruleStore.inferenceRules.get(h)}} match {
+           case (tmS, Some(rule)) => rule(this)(tmS)
+           case (_, None) => None
+         }
+     }
+     report.unindent
+     log("inferred: " + res.getOrElse("failed"))
+     res
    }
+
+   def inferType(tm: Term)(implicit context: Context): Option[Term] = inferTypeRefl(tm, Stack[Frame](Frame(tm.toMPath, context)))
    
    /** proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.
     * @param tm1 the first term
@@ -211,7 +220,8 @@ class Solver(controller: Controller, unknowns: Context) {
     * 
     * This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
     */
-   def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit con: Context): Boolean = {
+   def checkEqualityRefl(tm1: Term, tm2: Term, tpOpt: Option[Term], frameStack : Stack[Frame]): Boolean = {
+      implicit val con = if (frameStack.isEmpty) Context() else frameStack.last.context
       log("equality: " + con + " |- " + tm1 + " = " + tm2 + " : " + tpOpt)
       // first, we check for some common cases where it's redundant to do induction on the type
       // identical terms
@@ -230,7 +240,7 @@ class Solver(controller: Controller, unknowns: Context) {
            itp.getOrElse(return false)
       }
       // try to simplify the type until an equality rule is applicable 
-      limitedSimplify(tp) {t => t.head flatMap {h => ruleStore.equalityRules.get(h)}} match {
+      limitedSimplify(tp) {tp => tp.head flatMap {h => ruleStore.equalityRules.get(h)}} match {
          case (tpS, Some(rule)) => rule(this)(tm1, tm2, tpS)
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
@@ -248,7 +258,7 @@ class Solver(controller: Controller, unknowns: Context) {
                     //default: apply congruence rules backwards, amounting to initial model semantics, i.e., check for same number and equality of arguments everywhere
                     (tm1T.apps zip tm2T.apps) forall {case (Appendages(_,args1),Appendages(_,args2)) =>
                         if (args1.length == args2.length)
-                           (args1 zip args2) forall {case (a1, a2) => checkEquality(a1, a2, None)}
+                           (args1 zip args2) forall {case (a1, a2) => checkEqualityRefl(a1, a2, None, Stack[Frame](Frame(a1.toMPath,con)))}
                         else false
                     }
                }
@@ -257,6 +267,8 @@ class Solver(controller: Controller, unknowns: Context) {
               delay(Equality(con, tm1, tm2, Some(tp)))
       }
    }
+
+  def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit con: Context) : Boolean = checkEqualityRefl(tm1, tm2, tpOpt, Stack[Frame](Frame(tm1.toMPath, con)))
    /** tries to solve an unknown occurring as the torso of tm1 in terms of tm2.
     * It is an auxiliary function of checkEquality because it is called twice to handle symmetry of equality.
     */
@@ -322,7 +334,9 @@ class Solver(controller: Controller, unknowns: Context) {
     * 
     * This method should not be called by users. It is only public because it serves as a callback for Rule's.
     */
-   def simplify(tm: Term)(implicit context: Context): Term = tm.head match {
+   def simplify(tm: Term, frameStack : Stack[Frame]): Term = {
+     implicit val context = frameStack.last.context
+     tm.head match {
       case None => tm
       case Some(h) => ruleStore.computationRules.get(h) match {
          case None => tm
@@ -333,6 +347,8 @@ class Solver(controller: Controller, unknowns: Context) {
             }
       }
    }
+   }
+  def simplify(tm: Term)(implicit context: Context) : Term = simplify(tm, Stack[Frame](Frame(tm.toMPath, context)))
    /** applies simplify to all Term's in a Context
     * @param context the context
     * @return the simplified Context

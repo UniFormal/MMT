@@ -1,7 +1,9 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
+import libraries._
 import objects.Conversions._
 import scala.collection.mutable.{HashMap}
+import scala.collection.immutable.Stack
 
 /** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
  * 
@@ -31,6 +33,13 @@ class RuleStore {
    }
 }
 
+/** A pair (theory, context) used by rules
+ * @param theory : theory
+ * @param context : context
+ */
+case class Frame(theory : MPath, context : Context)
+
+
 /** the type of all Rules
  * 
  * All Rules have an apply method that is passed a Solver for callbacks.
@@ -46,14 +55,16 @@ trait Rule {
  *  @param head the head of the type to which this rule is applicable 
  */
 abstract class TypingRule(val head: GlobalName) extends Rule {
-   /** 
+   /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
     *  @param the type
     *  @param context its context
     *  @return true iff the typing judgment holds
     */
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context): Boolean
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit context: Context): Boolean = apply(solver, tm, tp, new Stack[Frame]().push(Frame(tm.toMPath, context)))
+
+   def apply(solver: Solver, tm: Term, tp: Term, frameStack: Stack[Frame]) : Boolean
 }
 
 /** An InferenceRule infers the type of an expression
@@ -67,7 +78,9 @@ abstract class InferenceRule(val head: GlobalName) extends Rule {
     *  @param context its context
     *  @return the inferred type if inference was possible
     */
-   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term]
+   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term] = apply(solver, tm, new Stack[Frame]().push(Frame(tm.toMPath, context)))
+
+   def apply(solver: Solver, tm: Term, frameStack: Stack[Frame]): Option[Term]
 }
 
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
@@ -82,7 +95,9 @@ abstract class ComputationRule(val head: GlobalName) extends Rule {
     *  @param context its context
     *  @return the simplified term if simplification was possible
     */
-   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term]
+   def apply(solver: Solver)(tm: Term)(implicit context: Context): Option[Term] = apply(solver, tm, new Stack[Frame]().push(Frame(tm.toMPath, context)))
+
+   def apply(solver: Solver, tm: Term, frameStack: Stack[Frame]): Option[Term]
 }
 
 /** A EqualityRule checks the equality of two expressions
@@ -97,7 +112,17 @@ abstract class EqualityRule(val head: GlobalName) extends Rule {
     *  @param context their context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit context: Context): Boolean = apply(solver, tm1, tm2, tp, new Stack[Frame]().push(Frame(tm1.toMPath, context)))
+
+  /**
+   *  @param solver provides callbacks to the currently solved system of judgments
+   *  @param tm1 the first term
+   *  @param tm2 the second term
+   *  @param tp their type
+   *  @param frameStack ...
+   *  @return true iff the judgment holds
+   */
+  def apply(solver: Solver, tm1: Term, tm2: Term, tp: Term, frameStack: Stack[Frame]) : Boolean
 }
 
 
@@ -148,5 +173,7 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
     *    if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit context: Context): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit context: Context): Boolean = apply(solver, tm1, tm2, new Stack[Frame]().push(Frame(tm1.toMPath, context)))
+
+   def apply(solver: Solver, tm1: Term, tm2: Term, frameStack: Stack[Frame]): Boolean
 }
