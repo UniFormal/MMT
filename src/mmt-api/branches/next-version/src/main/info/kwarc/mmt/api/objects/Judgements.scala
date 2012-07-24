@@ -17,11 +17,11 @@ abstract class Judgement {
  * or
  * context |- t1 = t2       if t = None
  */
-case class Equality(context: Context, t1: Term, t2: Term, t: Option[Term]) extends Judgement {
+case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends Judgement {
    lazy val freeVars = {
      val ret = new HashSet[LocalName]
-     val fvs = context.freeVars_ ::: t1.freeVars_ ::: t2.freeVars_ ::: (t.map(_.freeVars_).getOrElse(Nil))
-     fvs foreach {n => if (! context.isDeclared(n)) ret += n}
+     val fvs = stack.context.freeVars_ ::: t1.freeVars_ ::: t2.freeVars_ ::: (t.map(_.freeVars_).getOrElse(Nil))
+     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
      ret
    }
 }
@@ -29,11 +29,11 @@ case class Equality(context: Context, t1: Term, t2: Term, t: Option[Term]) exten
 /** represents a typing judgement
  * context |- tm : tp
  */
-case class Typing(context: Context, tm: Term, tp: Term) extends Judgement {
+case class Typing(stack: Stack, tm: Term, tp: Term) extends Judgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]
-    val fvs = context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
-    fvs foreach {n => if (! context.isDeclared(n)) ret += n}
+    val fvs = stack.context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
     ret
   }
 }
