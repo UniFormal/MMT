@@ -20,6 +20,15 @@
     <orderEntry type="library" name="mmt-api" level="project" />
     <orderEntry type="library" name="mmt-lf" level="project" />
     <orderEntry type="library" name="scala-compiler" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../deploy/lib/tiscaf.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
 

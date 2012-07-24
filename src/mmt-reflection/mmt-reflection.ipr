@@ -176,7 +176,7 @@
       </CLASSES>
       <JAVADOC />
       <SOURCES>
-        <root url="file://$PROJECT_DIR$/../mmt-api/trunk/src" />
+        <root url="file://$PROJECT_DIR$/../mmt-api/branches/next-version/src" />
       </SOURCES>
     </library>
     <library name="mmt-lf">
@@ -184,7 +184,9 @@
         <root url="jar://$PROJECT_DIR$/../../deploy/mmt/mmt-lf.jar!/" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="file://$PROJECT_DIR$/../mmt-lf/src" />
+      </SOURCES>
     </library>
     <library name="scala-compiler">
       <CLASSES>
