@@ -33,21 +33,26 @@ class RuleStore {
 }
 
 /** A pair (theory, context) used by rules
- * @param theory : theory
- * @param context : context
+ * @param theory the theory
+ * @param context the context
  */
-case class Frame(theory : Term, context : Context)
+case class Frame(theory : Term, context : Context) {
+   def ^(subs: Substitution) = Frame(theory, context ^ subs)
+}
 
 case class Stack(frames: List[Frame]) {
    def pop = Stack(frames.tail)
    def push(f: Frame) = Stack(f::frames)
    def theory = frames.head.theory
    def context = frames.head.context
+   /** applies the same substitution to all contexts on this stack
+    */
+   def ^(subs: Substitution) = Stack(frames.map(_ ^ subs))
 }
 
 object Stack {
    def apply(f: Frame) : Stack = Stack(List(f))
-   def apply(p: MPath) : Stack = Stack(Frame(OMMOD(p), Context()))
+   def empty(t: Term) : Stack = Stack(Frame(t, Context()))
 }
 
 /** the type of all Rules

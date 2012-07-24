@@ -34,7 +34,7 @@ class DelayedConstraint(val constraint: Judgement) {
  *   unknown variables may occur in the types of later unknowns.
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
-class Solver(val controller: Controller, unknowns: Context) {
+class Solver(val controller: Controller, theory: Term, unknowns: Context) {
    /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
    private var solution : Context = unknowns
    /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
@@ -99,7 +99,7 @@ class Solver(val controller: Controller, unknowns: Context) {
    private def solve(name: LocalName, value: Term): Boolean = {
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
-         checkEquality(value, solved.df.get, solved.tp)(Context()) //TODO
+         checkEquality(value, solved.df.get, solved.tp)(Stack.empty(theory)) //TODO
       else {
          solution = left ::: solved.copy(df = Some(value)) :: right
          newsolutions = name :: newsolutions
@@ -117,10 +117,10 @@ class Solver(val controller: Controller, unknowns: Context) {
      val subs = solution.toPartialSubstitution
      val mayhold = j match {
         case Typing(stack, tm, tp) =>
-           checkTyping(tm ^ subs, tp ^ subs)(con ^ subs)
+           checkTyping(tm ^ subs, tp ^ subs)(stack ^ subs)
         case Equality(stack, tm1, tm2, tp) =>
-           def prepare(t: Term) = simplify(t ^ subs)(con)
-           checkEquality(prepare(tm1), prepare(tm2), tp map prepare)(simplifyCon(con ^ subs))
+           def prepare(t: Term) = simplify(t ^ subs)(stack)
+           checkEquality(prepare(tm1), prepare(tm2), tp map prepare)(simplifyStack(stack ^ subs))
      }
      if (mayhold) activate else false
    }
@@ -336,6 +336,10 @@ class Solver(val controller: Controller, unknowns: Context) {
     * @param context the context
     * @return the simplified Context
     */
-   private def simplifyCon(context: Context) = context mapTerms {case (con, t) => simplify(t)(context ++ con)}
+   private def simplifyStack(stack: Stack) = {
+      val Stack(Frame(theory,context) :: tail) = stack
+      val contextS = stack.context mapTerms {case (con, t) => simplify(t)(Stack(Frame(theory,con) :: tail))}
+      Stack(Frame(theory, contextS) :: tail)
+   }
 }
 
