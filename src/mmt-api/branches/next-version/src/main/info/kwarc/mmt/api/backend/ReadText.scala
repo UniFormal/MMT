@@ -18,6 +18,36 @@ import scala.collection.mutable._
 /** A TextReader parses Twelf (for now) and calls controller.add(e) on every found content element e */
 class TextReader(controller : frontend.Controller, report : frontend.Report) extends Reader(controller, report) {
 
+  // ------------------------------- private vars -------------------------------
+
+  /** array containing all the lines in the file */
+  private var lines : Array[String] = null
+
+  /** all the lines in a single string, with " " instead of newline. */
+  private var flat  : String = ""
+
+  /** array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
+  private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
+
+  /** list of parsing errors in the file */
+  private var errors = LinkedList[SourceError] ()
+
+  /** temporary variable used during parsing: saves the last SemanticCommentBlock */
+  private var keepComment : Option[MetaData] = None
+
+  /** physical document path */
+  private var dpath : DPath = null
+
+  /** input format */
+  //TODO make this flexible
+  private var format : String = "twelf"
+
+  // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
+  private var currentNS : Option[URI] = None
+
+  // mapping from namespace prefixes to their URI
+  private var prefixes = new LinkedHashMap[String,URI] ()
+
   private def init() {
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
@@ -119,34 +149,6 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
           Pair(doc, errors)
     }
   }
-
-
-  // ------------------------------- private vars -------------------------------
-
-  /** array containing all the lines in the file */
-  private var lines : Array[String] = null
-
-  /** all the lines in a single string, with " " instead of newline. */
-  private var flat  : String = ""
-
-  /** array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
-  private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
-
-  /** list of parsing errors in the file */
-  private var errors = LinkedList[SourceError] ()
-
-  /** temporary variable used during parsing: saves the last SemanticCommentBlock */
-  private var keepComment : Option[MetaData] = None
-
-  /** physical document path */
-  private var dpath : DPath = null
-
-  // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
-  private var currentNS : Option[URI] = None
-
-  // mapping from namespace prefixes to their URI
-  private var prefixes = new LinkedHashMap[String,URI] ()
-
 
 
   // ------------------------------- lexer level: advancing -------------------------------
@@ -268,7 +270,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
    * @return the semiformal object, position after the term
    * @throws SourceError if there are unmatched right brackets }
    */
-  private def crawlTerm(start: Int, delimiters: List[String]) : Pair[OMSemiFormal, Int] =
+  private def crawlTerm(start: Int, delimiters: List[String], theory: Term) : Pair[Term, Int] =
   {
     var i = start
     while (i < flat.length) {
@@ -301,16 +303,28 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
     // computes the return value. i is assumed to be the position after the end of the term
     def computeReturnValue = {
-      val obj = OMSemiFormal((objects.Text("Twelf", getSlice(start, i - 1))))
+      val termParser = controller.extman.getTermParser(format)
+      val term = getSlice(start, i - 1)
+      val obj = termParser(term, theory)
       addSourceRef(obj, start, i - 1)
-      //val t : Term = MMTParser.parse(obj)(mem : Memory)
       Pair(obj, i)
     }
 
     throw TextParseError(toPos(i), "end of file reached while reading term")
   }
 
-
+  private def crawlNotation(start: Int, delimiters: List[String]): Pair[Notation,Int] = {
+    var i = start
+    while (i < flat.length) {
+      if (delimiters exists {d => flat.startsWith(d)}) {
+         val not = TextNotation.parse(getSlice(start, i - 1))
+         Pair(not, i)
+      } else {
+         i += 1
+      }
+    }
+    throw TextParseError(toPos(i), "end of file reached while reading notation ")
+  }
 
   /** finds the first dot which is not part of an identifier. Useful for jumping over a declaration.
     * Skips over comments and quote-surrounded strings, so dots inside them do not count.
@@ -579,32 +593,13 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = positionAfter
     i = skipwscomments(i)
 
- //   /*//initializing term parser
-    val constants = controller.memory.content.getDeclarationsInScope(parent.path) collect {
-      case c : Constant => c
-    }
-    val grammar = LFGrammar.grammar
-
-    val parser = new Parser(grammar, controller.report)//, lineStarts.toList)
-    parser.init()
-    def tryParse(o : OMSemiFormal, offset : Int) = {
-      try {
-        Some(parser.parse(o, constants, offset))
-      } catch {
-        case e: SourceError =>
-          errors = (errors :+ e)
-          Some(o)
-      }
-    }
-//    */
-
     // read the optional type
     var constantType : Option[Term] = None
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, List("=","#","."))
-      constantType = tryParse(term, i)  //Some(term) //
+      val (term, posAfter) = crawlTerm(i, List("=","#","."), parent.toTerm)
+      constantType = Some(term)
       i = posAfter
       i = skipwscomments(i)
     }
@@ -614,36 +609,27 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, List("#","."))
-      constantDef = tryParse(term, i)  //Some(term) //
+      val (term, posAfter) = crawlTerm(i, List("#","."), parent.toTerm)
+      constantDef = Some(term)
       i = posAfter
       i = skipwscomments(i)
     }
 
-
-
     // read the optional notation
-    //TODO Notation
     var constantNotation : Option[Notation] = None
-///*
     if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '#'
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i,List("."))
-
-      //val notationProperties = Notation.parseInlineNotation(term.toString)
-      val notation = TextNotation.parse(term.toString)
-      addSourceRef(notation, i, posAfter - 1)
-      constantNotation = Some(notation)
+      val (not, posAfter) = crawlNotation(i, List("."))
+      addSourceRef(not, i, posAfter - 1)
+      constantNotation = Some(not)
 
       i = posAfter
       i = skipwscomments(i)
     }
-//*/
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-
     val constant = new Constant(parent.toTerm, LocalName(cstName), constantType, constantDef, None, constantNotation)//TODO notation
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
@@ -656,7 +642,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
      * @param start the position of the first character in the variable identifier
      * @return variable declaration, position after the block
      * @throws SourceError for syntactical errors */
-    private def crawlDeclarationInPatternBody(start: Int, visibleConstants: List[Declaration]) : (VarDecl, Int) =
+    private def crawlDeclarationInPatternBody(start: Int, theory: MPath, visibleConstants: List[Declaration]) : (VarDecl, Int) =
     {
       val oldComment = keepComment
 
@@ -665,29 +651,13 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       i = positionAfter
       i = skipwscomments(i)
 
-   //   /*//initializing term parser
-      val grammar = LFGrammar.grammar
-
-      val parser = new Parser(grammar, controller.report)//, lineStarts.toList)
-      parser.init()
-      def tryParse(o : OMSemiFormal, offset : Int) = {
-        try {
-          Some(parser.parse(o, visibleConstants, offset))
-        } catch {
-          case e: SourceError =>
-            errors = (errors :+ e)
-            Some(o)
-        }
-      }
-  //    */
-
       // read the optional type
       var varType : Option[Term] = None
       if (flat.codePointAt(i) == ':') {
         i += 1  // jump over ':'
         i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, List("=","#","."))
-        varType = tryParse(term, i)  //Some(term) //
+        val (term, posAfter) = crawlTerm(i, List("=","#","."), OMMOD(theory))
+        varType = Some(term)
         i = posAfter
         i = skipwscomments(i)
       }
@@ -697,8 +667,8 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       if (flat.codePointAt(i) == '=') {
         i += 1  // jump over '='
         i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, List("#","."))
-        varDef = tryParse(term, i)  //Some(term) //
+        val (term, posAfter) = crawlTerm(i, List("#","."), OMMOD(theory))
+        varDef = Some(term)
         i = posAfter
         i = skipwscomments(i)
       }
@@ -879,7 +849,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
         throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
       else {
         // It's a DefinedStructure
-        val (morphism, positionAfter) = crawlTerm(i, Nil)
+        val (morphism, positionAfter) = crawlTerm(i, Nil, parent.toTerm)
         i = positionAfter
         domain match {
           case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism)
@@ -912,22 +882,9 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   }
 
   // TODO documentation :)
-  private def crawlPatternParameter(start: Int, visibleConstants: List[Declaration]) : Pair[VarDecl, Int] =
+  private def crawlPatternParameter(start: Int, theory: MPath, visibleConstants: List[Declaration]) : Pair[VarDecl, Int] =
   {
      var i = start
-     val grammar = LFGrammar.grammar
-
-     val parser = new Parser(grammar, controller.report)//, lineStarts.toList)
-     parser.init()
-     def tryParse(o : OMSemiFormal, offset : Int) = {
-       try {
-         Some(parser.parse(o, visibleConstants, offset))
-       } catch {
-         case e: SourceError =>
-           errors = (errors :+ e)
-           Some(o)
-       }
-     }
 
      // skip over '['
      i = expectNext(i, "[")
@@ -945,8 +902,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
      i = skipwscomments(i)
 
      // parse the type
-     val (informalTerm, posAfter) = crawlTerm(i, List("]"))
-     val formalTerm : Option[Term] = tryParse(informalTerm, i)
+     val (term, posAfter) = crawlTerm(i, List("]"), OMMOD(theory))
      i = posAfter
 
      // skip over ']'
@@ -954,7 +910,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
      i += "]".length
      i = skipwscomments(i)
 
-     (OMV(name) % (formalTerm match { case Some(term) => term; case None => informalTerm}), i)
+     (OMV(name) % term, i)
   }
 
 
@@ -963,7 +919,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       * @param visibleConstants constants in scope
       * @return pattern body as a context, position after the closing }
       * @throws SourceError for syntactical errors */
-    private def crawlPatternBody(start: Int, visibleConstants: List[Declaration]) : (Context, Int) =
+    private def crawlPatternBody(start: Int, theory: MPath, visibleConstants: List[Declaration]) : (Context, Int) =
     {
       var i = start + 1       // jump over '{'
       keepComment = None          // reset the last semantic comment stored
@@ -973,7 +929,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       while (i < flat.length) {
         if (isIdentifierPartCharacter(flat.codePointAt(i))) {
           // read variable declaration
-          val (varDecl, posAfterDeclaration) = crawlDeclarationInPatternBody(i, visibleConstants)
+          val (varDecl, posAfterDeclaration) = crawlDeclarationInPatternBody(i, theory, visibleConstants)
           i = posAfterDeclaration
           body ++ varDecl
         }
@@ -1025,7 +981,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
      if (flat.startsWith("[", i)) {
        do {
          // parse a single [ ... ] declaration
-         val (varDecl, posAfterParameter) = crawlPatternParameter(i, constants)
+         val (varDecl, posAfterParameter) = crawlPatternParameter(i, parent.path, constants)
          i = posAfterParameter
          parameterContext ++ varDecl
        } while (flat.startsWith("[", i))
@@ -1035,7 +991,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
      i = expectNext(i, "{")
 
      // parse the pattern body
-     val (body, posAfterPatternBody) = crawlPatternBody(i, constants)
+     val (body, posAfterPatternBody) = crawlPatternBody(i, parent.path, constants)
      val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
 
      i = posAfterPatternBody
@@ -1075,7 +1031,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the assigned term
-    val (term, posAfter) = crawlTerm(i, Nil)
+    val (term, posAfter) = crawlTerm(i, Nil, parent.to)
     i = posAfter
     i = skipwscomments(i)
 
@@ -1113,7 +1069,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // get the morphism
-    val (morphism, positionAfter2) = crawlTerm(i, Nil)
+    val (morphism, positionAfter2) = crawlTerm(i, Nil, parent.to)
 
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
@@ -1140,7 +1096,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     val i = skipws(crawlKeyword(start, "%include"))
 
     // get the morphism
-    val (morphism, positionAfter) = crawlTerm(i, Nil)
+    val (morphism, positionAfter) = crawlTerm(i, Nil, parent.to)
 
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
@@ -1303,7 +1259,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the domain
-    val (domain, positionAfterDomain) = crawlTerm(i, List("->"))
+    val (domain, positionAfterDomain) = crawlTerm(i, List("->"), OMMOD(utils.mmt.mmtcd))
     i = positionAfterDomain   // jump over domain
 
     i = expectNext(i, "->")
@@ -1311,7 +1267,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = skipwscomments(i)
 
     // read the codomain
-    val (codomain, positionAfterCodomain) = crawlTerm(i, List("="))
+    val (codomain, positionAfterCodomain) = crawlTerm(i, List("="), OMMOD(utils.mmt.mmtcd))
     i = positionAfterCodomain     // jump over codomain
 
     i = expectNext(i, "=")
@@ -1328,7 +1284,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     }
     else if (isIdentifierPartCharacter(flat.codePointAt(i))) {
       // It's a DefinedView
-      val (morphism, positionAfter) = crawlTerm(i, Nil)
+      val (morphism, positionAfter) = crawlTerm(i, Nil, OMMOD(utils.mmt.mmtcd))
       i = positionAfter
       view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism)
       add(view)

@@ -247,19 +247,14 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                 s.get(p)
               }
             }
-
           case c => println("skipped : " + c.toNode)
         }
-
         scope ++= th.components
         scope.toList
-
       case _ => Nil
 
     }
   }
-
-
 
    /** iterator over all includes into a theory (including the meta-theory)
     * a new iterator is needed once this has been traversed 

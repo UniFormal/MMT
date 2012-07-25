@@ -172,9 +172,9 @@ class Server(val port: Int, controller: Controller) extends HServer {
                  }
                case _ => Nil
              }
-
+             //TODO should be termParser = controller.extman.getTermParser(query)
              val grammar = parser.LFGrammar.grammar
-             val lfParser = new parser.Parser(grammar, controller.report)
+             val lfParser = new parser.Parser(grammar, controller)
              println(parser.LFGrammar.notation.toNode)
 
              val tm = try {

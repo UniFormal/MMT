@@ -1,9 +1,11 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
-import collection.immutable.{List, HashMap}
+import objects._
+import frontend._
 import symbols.{Alias, Declaration, Constant}
+
+import collection.immutable.{List, HashMap}
 
 /* Error Handling */
 
@@ -37,12 +39,14 @@ case class NotationMatch(op : Operator, matches : List[Int])  {
  * Generic Parser Class
  * @param grammar the grammar used for parsing
  */
-class Parser(grammar : Grammar, report : frontend.Report) {
+class Parser(grammar : Grammar, controller: Controller) extends TermParser {
+  def applicable(format: String) = true
 
   var str : String = ""
 
   private var operators : List[Operator] = grammar.operators
 
+  private val report = controller.report
   private def log(msg : => String) = report("parser",msg)
 
   private def getOpByPrecedence : List[List[Operator]] = {
@@ -86,8 +90,12 @@ class Parser(grammar : Grammar, report : frontend.Report) {
     }
   }
 
+  def apply(s: String, scope : Term) : Term = {
+    val includes = controller.globalLookup.importsToFlat(scope)
+    null //TODO
+  }
+  
   def parse(o : OMSemiFormal, scope : List[Declaration], offset : Int = 0) : Term = {
-
     operators = grammar.operators ::: makeOperators(scope)
     log("Started parsing " + o.toString + " with operators : ")
     operators.map(o => log(o.name + " ->" + o.notation.markers))

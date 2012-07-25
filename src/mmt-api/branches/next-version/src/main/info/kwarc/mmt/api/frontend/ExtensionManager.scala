@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import backend._
 import libraries._
+import parser._
 import utils._
 
 /** An ExtensionManager maintains all language-specific extensions of MMT.
@@ -58,6 +59,12 @@ class ExtensionManager(report: Report) {
    /** retrieves an applicable Foundation */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
 
+   /** retrieves a TermParser */
+   private var termParsers : List[TermParser] = Nil
+   def addTermParser(tp: TermParser) {termParsers ::= tp}
+   def getTermParser(format: String): TermParser = 
+      termParsers find {_.applicable(format)} getOrElse(DefaultParser)
+   
    /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}
    def getMWS : Option[URI] = mws
