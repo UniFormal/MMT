@@ -15,7 +15,6 @@ object Test {
       
       val unknowns = "a" % LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
         "d" % LF.ktype  ++ "e" % LF.ktype ++ "UO" % LF.ktype ++ "F" % OMV("UO")
-      val sol = new Solver(controller, unknowns)
       
       val latin = DPath(utils.URI("http", "latin.omdoc.org"))
       val syn = latin / "logics" / "syntax"
@@ -30,9 +29,11 @@ object Test {
       val forallI = pf ? "Forall" ? "forallI"
       
       val x = OMV("x")
+      val test = OMMOD(latin ? "test")
+      val sol = new Solver(controller, test, unknowns)
       
       // val tj = Typing(Context(), ApplySpine(impI, "b", "b'", Lambda("x", "c", x)), ded(ApplySpine(imp, tr, tr)))
-      val tj = Typing(Context(),
+      val tj = Typing(Stack.empty(test),
             ApplySpine(forallI, "F", Lambda("x", "d", ApplySpine(impI, "b", "b'", Lambda("x", "c", x)))),
             ded(Apply(forall, Lambda("x", "e", ApplySpine(imp, tr, tr))))
       )
