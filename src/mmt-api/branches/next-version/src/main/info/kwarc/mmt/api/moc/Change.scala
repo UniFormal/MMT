@@ -6,7 +6,9 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 
 import scala.xml.Node
-import collection.immutable.HashSet
+
+import scala.collection._
+import scala.collection.immutable.HashSet
 
 
 abstract class Change {
@@ -44,11 +46,17 @@ abstract class Update extends StrictChange
 abstract class Delete extends StrictChange
 
 
-class PragmaticChangeType(
-    val name : String,
-    val matches : Diff => Boolean,
-    val termProp : Diff => Term => Term,
-    val modProp : Diff => Module => StrictDiff) {
+abstract class PragmaticChangeType {
+  val name : String
+  def matches(diff : Diff) : Boolean
+  
+  def matches(chSet : Set[ContentChange]) : Boolean = {
+    matches(new Diff(chSet.toList))
+  }
+  
+  def termProp(diff : Diff)(tm : Term) : Term
+  
+  def modProp(diff : Diff)(mod : Module) : StrictDiff
 
   def make(diff : StrictDiff) : Option[PragmaticChange] = matches(diff) match {
     case true => Some(new PragmaticChange(name, diff, termProp(diff), modProp(diff)))
@@ -70,28 +78,22 @@ case class PragmaticChange(val name : String, val diff : StrictDiff, val termPro
 }
 
 
-object SamplePragmaticChanges {
-  private val name = "ConstantRename"
-  private def matches(diff : Diff) : Boolean = diff.changes match {
+object pragmaticRename extends PragmaticChangeType {
+  val name = "ConstantRename"
+  
+  def matches(diff : Diff) : Boolean = diff.changes match {
     case DeleteDeclaration(o : Constant) :: AddDeclaration(n : Constant) :: Nil =>
       o.name != n.name && o.tp == n.tp && o.df == n.df
     case _ => false
   }
 
-  //TODO
-  private def termProp(diff : Diff)(tm : Term) : Term = {
+  def termProp(diff : Diff)(tm : Term) : Term = {
     tm
   }
 
-  //TODO
-  private def modProp(diff : Diff)(m : Module) : StrictDiff = {
+  def modProp(diff : Diff)(m : Module) : StrictDiff = {
     new StrictDiff(Nil)
   }
-
-  val renameConstant = new PragmaticChangeType(name, matches, termProp, modProp)
-
-  //val sampleRename = renameConstant.make(new Diff(Nil))
-
 }
 
 
@@ -192,43 +194,6 @@ case class UpdateMetadata(path : ContentPath, old : metadata.MetaData, nw : meta
     <change type="update" path={path.toString} component="metadata"> nw.toNode </change> :: Nil
   
 }
-
-
-
-/* Declaration 
-case class TermComponent(c : Term) extends Component
-
-case class MorphComponent(c : Morph) extends Component
-
-case class TypeComponent(c : Option[Term]) extends Component
-
-case class ThyObjComponent(c : TheoryObj) extends Component
-
-case class MetaComponent(c : Option[Path]) extends Component
-
-case class ContextComponent(c : Context) extends Component
-
-case class GlobalNameComponent(c : GlobalName) extends Component
-
-case class SubstitutionComponent(c : Substitution) extends Component
-*/
-/*
-case class Component(o : Option[Obj]) {
-
-  def toNode = <OMOBJ xmlns:om="om">{o.map(_.toNode)}</OMOBJ>
-  def toNode(changes : List[(Position, Obj)]) = {
-    val nodeChanges : List[Node] = changes.map(c => <change pos={c._1.toString}>{c._2.toNode}</change>)
-    <OMOBJ xmlns:om="om">{o.map(_.toNode)}<changes>{nodeChanges}</changes></OMOBJ>
-  }
-  
-  def tp : String = o match {
-    case t : Term => "Term"
-    case o : OMMOD => "OMMOD"       
-    case o : TheoryObj => "TheoryObj"
-    case _ => throw ImplementationError("object type not supported " + o.toString)
-  }
-}
-*/
 
 
 

@@ -8,7 +8,9 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.libraries._
 
-
+/**
+ * the differ object contains methods for detecting the changes between two MMT content items (modules/declarations/objects)
+ */
 object Differ {
   
     def diff(c : Controller, p : MPath, rev : Int) : StrictDiff = {
