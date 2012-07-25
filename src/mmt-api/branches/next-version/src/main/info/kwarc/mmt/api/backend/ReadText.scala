@@ -1180,23 +1180,34 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = positionAfter   // jump over identifier
     i = expectNext(i, "=")
     i += 1    // jump over "="
-    i = expectNext(i, "{")
-
-    // add the (empty, for now) theory to the controller
-    val declaredTheory = new DeclaredTheory(getCurrentDPath, LocalPath(List(sigName)), None)
-    add(declaredTheory)
-
-    // read the theory body
-    i = crawlTheoryBody(i, declaredTheory)
+ 
+    var theory : Theory = null
+    if (flat.codePointAt(i) == '{') {
+       // It's a DeclaredTheory
+       i = expectNext(i, "{")
+       // add the (empty, for now) theory to the controller
+       val declTheory = new DeclaredTheory(getCurrentDPath, LocalPath(List(sigName)), None)
+       theory = declTheory
+       add(theory)
+       // read the theory body
+       i = crawlTheoryBody(i, declTheory)
+    }
+    else {
+      // It's a DefinedTheory
+      val (theoryExp, positionAfter) = crawlTerm(i, Nil, OMMOD(utils.mmt.mmtcd))
+      i = positionAfter
+      theory = new DefinedTheory(getCurrentDPath, LocalPath(List(sigName)), theoryExp)
+      add(theory)
+    }
 
     val endsAt = expectNext(i, ".")
 
     // add the semantic comment and source reference
-    addSemanticComment(declaredTheory, oldComment)
-    addSourceRef(declaredTheory, start, endsAt)
+    addSemanticComment(theory, oldComment)
+    addSourceRef(theory, start, endsAt)
 
     // add the link to this theory to the narrative document
-    add(MRef(dpath, declaredTheory.path))
+    add(MRef(dpath, theory.path))
     return endsAt + 1
   }
 
@@ -1282,15 +1293,13 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       add(view)
       i = crawlLinkBody(i, view.asInstanceOf[DeclaredView])
     }
-    else if (isIdentifierPartCharacter(flat.codePointAt(i))) {
+    else {
       // It's a DefinedView
       val (morphism, positionAfter) = crawlTerm(i, Nil, OMMOD(utils.mmt.mmtcd))
       i = positionAfter
       view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism)
       add(view)
     }
-    else
-      throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
 
     val endsAt = expectNext(i, ".")
 
