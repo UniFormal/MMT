@@ -48,6 +48,7 @@ case class Stack(frames: List[Frame]) {
    /** applies the same substitution to all contexts on this stack
     */
    def ^(subs: Substitution) = Stack(frames.map(_ ^ subs))
+   def ++(con: Context) = Stack(Frame(theory, context ++ con) :: frames.tail)
 }
 
 object Stack {

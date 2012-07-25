@@ -38,4 +38,4 @@ case class Typing(stack: Stack, tm: Term, tp: Term) extends Judgement {
   }
 }
 
-//TODO case class InhabitationConstraint(name: LocalName, tp: Term) extends Constraint
+//TODO case class Inhabitation(name: LocalName, tp: Term) extends Judgement
