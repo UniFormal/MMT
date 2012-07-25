@@ -146,8 +146,11 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
          }
        // the foundation-dependent cases
        case tm =>
-         limitedSimplify(tp) {t => t.head flatMap {h => ruleStore.typingRules.get(h)}} match {
-           case (tpS, Some(rule)) => rule(this)(tm, tpS)
+         limitedSimplify(tp) {t => t.head flatMap {h =>
+           ruleStore.typingRules.get(h)
+         }} match {
+           case (tpS, Some(rule)) =>
+             rule(this)(tm, tpS)
            case (tpS, None) =>
              // either this is an atomic type, or no typing rule is known
              inferType(tm) match {

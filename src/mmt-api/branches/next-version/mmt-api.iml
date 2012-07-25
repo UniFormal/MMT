@@ -12,8 +12,8 @@
   <component name="FacetManager">
     <facet type="scala" name="Scala">
       <configuration>
-        <option name="compilerLibraryLevel" value="Global" />
-        <option name="compilerLibraryName" value="scala-compiler-2.9.1" />
+        <option name="compilerLibraryLevel" value="Project" />
+        <option name="compilerLibraryName" value="dependencies" />
       </configuration>
     </facet>
   </component>

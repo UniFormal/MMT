@@ -12,6 +12,7 @@ import symbols.Constant
 
 object Test {
     val testbasenat = DPath(URI("http://latin.omdoc.org/testnat"))// problem base
+    val testbasenat2 = DPath(URI("http://latin.omdoc.org/testnat2"))
 
     //case class Error(msg : String) extends java.lang.Throwable(msg)
 
@@ -27,6 +28,8 @@ object Test {
       val Nat = new DeclaredTheory(testbasenat, LocalPath(List("nat")), Some (LF.lftheory))
       controller.add(Nat)
 
+      val Nat2 = new DeclaredTheory(testbasenat2, LocalPath(List("nat2")), Some (LF.lftheory))
+
       val nat = new Constant(OMID(Nat.path), LocalName("nat"), Some(LF.ktype), None, None, None)
       controller.add(nat)
 
@@ -38,13 +41,13 @@ object Test {
 
       println(Nat.toString)
 
-      val tm = TermRefl(Nat.path, OMA(OMID(succ.path), List(OMID(zero.path))))
-      val tp = ReflType(Nat.path, OMID(nat.path))
+      val tm = TermRefl(OMMOD(Nat.path), Apply(OMID(succ.path), OMID(zero.path)))
+      val tp = ReflType(OMMOD(Nat.path), OMID(nat.path))
 
       val unknowns = "a" % LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
         "d" % LF.ktype  ++ "e" % LF.ktype ++ "UO" % LF.ktype ++ "F" % OMV("UO")
-      val sol = new Solver(controller, unknowns)
-      val tj = Typing(Context(), tm, tp)
+      val sol = new Solver(controller,OMMOD(Nat2.path), unknowns)
+      val tj = Typing(Stack.empty(OMMOD(Nat2.path)), tm, tp)
       println(tj)
       println(sol(tj))
       println(sol)
