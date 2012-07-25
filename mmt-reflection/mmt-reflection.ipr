@@ -172,7 +172,7 @@
   <component name="libraryTable">
     <library name="mmt-api">
       <CLASSES>
-        <root url="jar://$PROJECT_DIR$/../../deploy/mmt/mmt-api.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../mmt-api/branches/next-version/build/mmt-api.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES>
