@@ -14,7 +14,7 @@ import scala.io.Source
 /** elaborates Instance declarations
  * this is also called the pragmatic-to-strict translation
  */
-class PatternChecker(controller: Controller) extends Elaborator {
+class PatternChecker(controller: Controller) extends Elaborator {  
   def getPatterns(home : Term)(n : Int) : List[Pattern] = {     
      home match {
        case OMMOD(p) => 
@@ -43,7 +43,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
   }
   def patternCheck(constants : List[Constant], pattern : Pattern) : Option[Substitution] = {        
     if (constants.length == pattern.body.length) {
-      val mat = new Matcher(controller,pattern.params)
+      val mat = new PatternMatcher(controller,pattern.params)
       var sub = Substitution()
       constants.zip(pattern.body).forall {
         case (con,decl) =>
@@ -67,10 +67,12 @@ class PatternChecker(controller: Controller) extends Elaborator {
        patts.mapPartial(p => patternCheck(List(c),p))
      case _ => 
    }
+  
+ 
 }
 
 
-class Matcher(controller : Controller, var metaContext : Context) {  
+class PatternMatcher(controller : Controller, var metaContext : Context) {  
   def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {// why do we bother with context here?    
     //if (lengthChecker(dterm,pterm)) {          
 //    println("matching " + dterm.toString() + " with " + pterm.toString())    
@@ -138,7 +140,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
 
 
 // a test run with THF (THF0) patterns
-object Test  {  
+object PatternTest  {  
   //TODO 
      // read omdoc file content --> register archive and call content command    
      // should get a list of constants
@@ -169,14 +171,15 @@ object Test  {
     														// file name ? theory name ? constant name 
     
     // get list of constant declarations
-    val conMu = try { 
-      controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "mu")
-    } catch {
-      case GetError(m) => GetError//TODO : deal with the error      
-    }
-    val constTheory = controller.globalLookup.getTheory(pbbase  ? "SomeProblem") match {
+//    val conMu = try { 
+//      controller.globalLookup.getConstant(pbbase  ? "AGT027^1" ? "mu")
+//    } catch {
+////      case GetError(m) => GetError//TODO : deal with the error  
+//      case e => e.printStackTrace()
+//    }
+    val constTheory = controller.globalLookup.getTheory(pbbase  ? "AGT027^1") match {
       case c : DeclaredTheory => c
-      case _ => throw Error("no constants in " + pbbase + "?" + "SomeProblem")
+      case _ => throw Error("no constants in " + pbbase + "?" + "AGT027^1")
     }
     val constList : List[Constant] = constTheory.valueListNG mapPartial {
       case p : Constant => Some(p)
@@ -188,7 +191,8 @@ object Test  {
     val pp = try {
       controller.globalLookup.getPattern(tptpbase ? "THF0" ? "baseType")
     } catch {
-      case GetError(m) => throw GetError(m)
+//      case GetError(m) => throw GetError(m)
+      case e => e.printStackTrace()
     }
     val pattTheory = controller.globalLookup.getTheory(tptpbase ? "THF0") match {
       case t : DeclaredTheory => t
