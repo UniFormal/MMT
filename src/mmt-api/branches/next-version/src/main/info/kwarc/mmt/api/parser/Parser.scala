@@ -50,7 +50,9 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
   private def log(msg : => String) = report("parser",msg)
 
   def apply(s: String, scope : Term) : Term = {
+    println("scope : " + scope)
     val includes = controller.globalLookup.importsToFlat(scope)
+    println("includes : " + includes.toList)
     val decls = (scope :: includes.toList) flatMap {tm => 
       controller.globalLookup.get(tm.toMPath).components
     }
