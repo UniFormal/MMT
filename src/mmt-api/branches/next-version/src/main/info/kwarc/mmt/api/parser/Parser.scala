@@ -39,7 +39,7 @@ case class NotationMatch(op : Operator, matches : List[Int])  {
  * Generic Parser Class
  * @param grammar the grammar used for parsing
  */
-class Parser(grammar : Grammar, controller: Controller) extends TermParser {
+class NotationParser(grammar : Grammar, controller: Controller) extends TermParser {
   def applicable(format: String) = true
 
   var str : String = ""
@@ -49,6 +49,43 @@ class Parser(grammar : Grammar, controller: Controller) extends TermParser {
   private val report = controller.report
   private def log(msg : => String) = report("parser",msg)
 
+  def apply(s: String, scope : Term) : Term = {
+    val includes = controller.globalLookup.importsToFlat(scope)
+    val decls = (scope :: includes.toList) flatMap {tm => 
+      controller.globalLookup.get(tm.toMPath).components
+    }
+    
+    operators = grammar.operators ::: makeOperators(decls)
+    log("Started parsing " + s + " with operators : ")
+    operators.map(o => log(o.name + " ->" + o.notation.markers))
+    log("###")
+    
+    grammar.init(s.length)
+
+    val tklist = tokenize(s, "", 0)._1
+    rewrite(tklist).t
+  }
+  
+  def parse(o : OMSemiFormal, scope : List[Declaration], offset : Int = 0) : Term = {
+    operators = grammar.operators ::: makeOperators(scope)
+    log("Started parsing " + o.toString + " with operators : ")
+    operators.map(o => log(o.name + " ->" + o.notation.markers))
+    log("###")
+
+    o.tokens match {
+      case Formal(obj) :: Nil => obj
+      case Text(mmt,s) :: Nil =>
+        grammar.init(s.length)
+
+        val tklist = tokenize(s, "", offset)._1
+        rewrite(tklist).t
+      case _  => throw ParsingError("unexpected input: " + o, toRegion(offset, offset))
+    }
+
+  }
+  
+  
+  
   private def getOpByPrecedence : List[List[Operator]] = {
     val ops = operators.sortWith((x,y) => x.notation.precedence < y.notation.precedence)
     ops.foldLeft[List[List[Operator]]](Nil)((r,x) =>
@@ -74,7 +111,7 @@ class Parser(grammar : Grammar, controller: Controller) extends TermParser {
     grammar.compile()
   }
 
-  private def makeOperators(scope : List[Declaration]) : List[Operator] = {
+  private def makeOperators(scope : List[Content]) : List[Operator] = {
     val np =  NotationProperties(Precedence(0), AssocNone())
     scope collect {
       case c : Constant =>
@@ -85,33 +122,11 @@ class Parser(grammar : Grammar, controller: Controller) extends TermParser {
         }
       case a : Alias =>
         new Operator(a.path, Notation(StrMk(a.path.last) :: Nil, np))
-
       //TODO case Assignment etc
     }
   }
 
-  def apply(s: String, scope : Term) : Term = {
-    val includes = controller.globalLookup.importsToFlat(scope)
-    null //TODO
-  }
   
-  def parse(o : OMSemiFormal, scope : List[Declaration], offset : Int = 0) : Term = {
-    operators = grammar.operators ::: makeOperators(scope)
-    log("Started parsing " + o.toString + " with operators : ")
-    operators.map(o => log(o.name + " ->" + o.notation.markers))
-    log("###")
-
-    o.tokens match {
-      case Formal(obj) :: Nil => obj
-      case Text(mmt,s) :: Nil =>
-        grammar.init(s.length)
-
-        val tklist = tokenize(s, "", offset)._1
-        rewrite(tklist).t
-      case _  => throw ParsingError("unexpected input: " + o, toRegion(offset, offset))
-    }
-
-  }
 
   /**
    * tokenizes a string

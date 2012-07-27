@@ -51,6 +51,14 @@ object Differ {
 	  val mnw = nw.getModulesResolved(cnew.library)(0)
 	  compareModules(mold, mnw)
 	}
+	
+	
+	def diff(old : StructuralElement, nw : StructuralElement) : StrictDiff = (old,nw) match {
+	  case (o : Module, n : Module) => compareModules(o, n)
+	  case (o : Declaration, n : Declaration) => compareDeclarations(o, n)
+	  case _ => throw ImplementationError("Cannot diff between " + old.toString + " and " + nw.toString)	  
+	}
+	
 		
 	/**
 	 * checks if two optional objects are equal

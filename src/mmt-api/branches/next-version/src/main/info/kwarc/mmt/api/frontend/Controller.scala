@@ -4,6 +4,8 @@ import backend._
 import presentation._
 import libraries._
 import objects._
+import symbols._
+import modules._
 import documents._
 import ontology._
 import symbols.Constant
@@ -11,6 +13,7 @@ import web._
 import utils._
 import utils.FileConversion._
 import uom._
+import moc._
 
 import io.BufferedSource
 import java.io.FileInputStream
@@ -59,6 +62,7 @@ class Controller extends ROController {
 
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(report)
+   extman.addTermParser(new parser.NotationParser(parser.LFGrammar.grammar, this))
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
@@ -75,6 +79,28 @@ class Controller extends ROController {
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
    val uom = new UOM(report)
+   
+   
+   def update(elems : List[ContentElement], refiner : PragmaticRefiner, propagator : Propagator) {
+     
+     val changes = elems flatMap {elem =>
+       try {
+         val old = globalLookup.get(elem.path)
+         moc.Differ.diff(old, elem).changes
+       } catch {
+         case e => elem match {
+           case m : Module => List(AddModule(m))
+           case d : Declaration => List(AddDeclaration(d))
+           case _ => throw ImplementationError("Updating element not supported for " + elem.toString)
+         }   
+       }
+     }
+     
+     val pChanges = refiner(new StrictDiff(changes))
+     val propDiff = propagator(pChanges)
+     
+     moc.Patcher.patch(propDiff, memory)
+   }
 
    protected def log(s : => String) = report("controller", s)
 

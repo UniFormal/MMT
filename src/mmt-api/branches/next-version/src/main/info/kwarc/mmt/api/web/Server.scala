@@ -159,26 +159,19 @@ class Server(val port: Int, controller: Controller) extends HServer {
             (bodyXML, List(currentAid, mmlVersion))
           case "tptp" => (scala.xml.Text(bodyAsString(tk)), Nil)
           case "lf" =>
-             val declsInScope : List[symbols.Declaration] = tk.req.header("scope") match {
-               case Some(s) =>
-                 val m : MPath = Path.parse(s) match {
-                   case mp : MPath =>
-                     println("found path : " + mp)
-                     mp
+             val scope = tk.req.header("scope") match {
+               case Some(s) => 
+                 Path.parse(s) match {
+                   case mp : MPath =>  objects.OMMOD(mp)
                    case _ => throw ServerError(<error><message> expected mpath found : {s} </message></error>)
                  }
-                 controller.memory.content.getDeclarationsInScope(m) collect {
-                   case c : symbols.Declaration => c
-                 }
-               case _ => Nil
+               case _ => throw ServerError(<error><message> expected a scope (mpath) passed in header </message></error>)
              }
-             //TODO should be termParser = controller.extman.getTermParser(query)
-             val grammar = parser.LFGrammar.grammar
-             val lfParser = new parser.Parser(grammar, controller)
-             println(parser.LFGrammar.notation.toNode)
+             
+             val termParser = controller.extman.getTermParser(query)
 
              val tm = try {
-               lfParser.parse(objects.OMSemiFormal(objects.Text("lf",bodyAsString(tk)) :: Nil), declsInScope)
+               termParser(bodyAsString(tk), scope)
              } catch {
                case e : Throwable =>
                  println(e)
@@ -188,7 +181,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
              def genQVars(n : Node) : Node = n match {
                case a : scala.xml.Atom[_] => a
                case  <m:ci>{q}</m:ci> =>
-                 if (q.toString.charAt(0) == 'q') {
+                 if (q.toString.startsWith("?") || q.toString.startsWith("%3F")) {
                    <mws:qvar>{q}</mws:qvar>
                  } else {
                    n
