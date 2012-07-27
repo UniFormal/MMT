@@ -437,6 +437,9 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
       case a: Archive => Some(a)
       case _ => None
    }
+   /** retrieves all Stores */
+   def getStores : List[Storage] = stores
+   
    /** splits a logical document URI into the Archive holding it and the relative path in that archive leading to it */
    def resolveLogical(uri: URI) : Option[(Archive, List[String])] = {
       getArchives find {a => 

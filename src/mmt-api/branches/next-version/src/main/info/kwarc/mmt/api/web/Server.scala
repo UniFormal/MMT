@@ -222,17 +222,24 @@ class Server(val port: Int, controller: Controller) extends HServer {
           val dpath = DPath(URI(strDPath))
           val mpath = dpath ? LocalPath(strThy :: Nil)
           val ctrl = new Controller()
+          
+          //copying storages so that while reading we will find the dependencies
+          controller.backend.getStores.foreach(ctrl.backend.addStore(_))
+          
           val reader = new TextReader(ctrl, new Report)
           val res = reader.readDocument(text, dpath)
           println(res)
           //println("param : " + text)
-          println("theory : " + ctrl.get(mpath).toNode)
+          println("theory : " + ctrl.get(mpath))
           res._2.toList match {
             case Nil =>
               val mod = ctrl.memory.content.getModule(mpath)
-              controller.memory.content.update(mod)
+              val refiner = new moc.PragmaticRefiner(new collection.immutable.HashSet[moc.PragmaticChangeType]())
+              val propagator = new moc.NullPropagator(controller.memory)
+              controller.update(List(mod),refiner, propagator)
+              println("theory2 : " + controller.memory.content.getModule(mpath))
               try {
-                controller.checker.check(mod)(_ => (), _ => ())
+                // controller.checker.check(mod)(_ => (), _ => ())
                 val nset = DPath(URI("http://cds.omdoc.org/foundations/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
                 val rb = new presentation.XMLBuilder()
                 controller.presenter(controller.get(mpath), presentation.GlobalParams(rb, nset))

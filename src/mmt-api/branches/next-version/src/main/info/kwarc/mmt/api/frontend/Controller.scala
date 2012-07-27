@@ -96,9 +96,11 @@ class Controller extends ROController {
        }
      }
      
+     //println(changes)
      val pChanges = refiner(new StrictDiff(changes))
-     val propDiff = propagator(pChanges)
-     
+     //println("pchanges" + pChanges.changes)
+     val propDiff = pChanges ++ propagator(pChanges)
+     //println("pdiff" + propDiff.changes)
      moc.Patcher.patch(propDiff, memory)
    }
 

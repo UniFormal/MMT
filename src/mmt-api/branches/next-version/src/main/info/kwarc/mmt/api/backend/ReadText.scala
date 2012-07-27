@@ -316,9 +316,9 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
   private def crawlNotation(start: Int, delimiters: List[String]): Pair[Notation,Int] = {
     var i = start
     while (i < flat.length) {
-      if (delimiters exists {d => flat.startsWith(d)}) {
+      if (delimiters exists {d => flat.startsWith(d, i)}) {
          val not = TextNotation.parse(getSlice(start, i - 1))
-         Pair(not, i)
+         return Pair(not, i)
       } else {
          i += 1
       }
@@ -1180,8 +1180,10 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     i = positionAfter   // jump over identifier
     i = expectNext(i, "=")
     i += 1    // jump over "="
- 
+    i = skipws(i)
+    
     var theory : Theory = null
+        
     if (flat.codePointAt(i) == '{') {
        // It's a DeclaredTheory
        i = expectNext(i, "{")

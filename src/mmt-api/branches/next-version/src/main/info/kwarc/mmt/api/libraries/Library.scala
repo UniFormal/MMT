@@ -65,7 +65,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          case t: DefinedTheory =>
             get(t.df % name, error)
          case t: DeclaredTheory =>
-            t.getMostSpecific(name) match {
+             t.getMostSpecific(name) match {
                case Some((d,LocalName(Nil))) => d  // perfect match
                case Some((d, ln)) => d match {
                   // a prefix exists and resolves to d, a suffix ln is left

@@ -41,17 +41,33 @@ object Patcher {
     }
 
   }
-
+  
+  private def copyDecls(old : DeclaredTheory, nw : DeclaredTheory) : DeclaredTheory = {
+    old.components collect {
+      case s : Symbol => nw.add(s)
+    }
+    nw
+  }
+  
+  private def copyDecls(old : DeclaredView, nw : DeclaredView) : DeclaredView = {
+    old.components collect {
+      case s : Assignment => nw.add(s)
+    }
+    nw
+  }
+  
   def updateComponent(d : ContentElement, comp : String,  old : Option[Obj], nw : Option[Obj]) : ContentElement = (d, comp, nw) match {
 
     /** Theories */
-    case (t : DeclaredTheory, "meta", Some(OMMOD(p))) => new DeclaredTheory(t.parent, t.name, Some(p))
-    case (t : DeclaredTheory, "meta", None) => new DeclaredTheory(t.parent, t.name, None)
+    case (t : DeclaredTheory, "meta", Some(OMMOD(p))) => copyDecls(t, new DeclaredTheory(t.parent, t.name, Some(p)))
+
+    case (t : DeclaredTheory, "meta", None) => copyDecls(t, new DeclaredTheory(t.parent, t.name, None))
+      
     case (t : DefinedTheory,  "df", Some(df : Term)) => new DefinedTheory(t.parent, t.name, df)
 
     /** Views */
-    case (v : DeclaredView, "to", Some(to : Term)) => new DeclaredView(v.parent, v.name, v.from, to)
-    case (v : DeclaredView, "from", Some(from : Term)) => new DeclaredView(v.parent, v.name, from, v.to)
+    case (v : DeclaredView, "to", Some(to : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, v.from, to))
+    case (v : DeclaredView, "from", Some(from : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, from, v.to))
     case (v : DefinedView, "to", Some(to : Term)) => new DefinedView(v.parent, v.name, v.from, to, v.df)
     case (v : DefinedView, "from", Some(from : Term)) => new DefinedView(v.parent, v.name, from, v.to, v.df)
     case (v : DefinedView,  "df", Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df)

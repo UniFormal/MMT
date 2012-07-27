@@ -231,7 +231,7 @@ object TextNotation {
       }
       val args = tmpargs.flatten
       operators.find(op => op.name == p) match {
-        case None => p.last + "  " + args.mkString(" ")
+        case None => presentTerm(body, operators) //assuming implicit binder
         case Some(op) =>
           val l =  op.notation.mrks map {
             case ArgMk(pos) => args(pos)
@@ -240,7 +240,7 @@ object TextNotation {
           l.mkString(" ")
       }
 
-    case OMV(s) => s.toString //encode special characters by using toPath instead?
+    case OMV(s) => s.toPath
 
     case OMID(p) =>
       println("got here with " + p.toString)
