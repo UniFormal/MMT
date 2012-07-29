@@ -543,7 +543,7 @@ object Export {
 	def main(args: Array[String]) {
 		
 		val controller = new Controller
-		controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
+		controller.handle(ExecFile(utils.File("startup.mmt")))
 		val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 		val exporter = new Export (manager, controller)
 			
