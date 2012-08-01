@@ -902,7 +902,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
      i = skipwscomments(i)
 
      // parse the type
-     val (term, posAfter) = crawlTerm(i, List("]"), OMMOD(theory))
+     val (term, posAfter) = crawlTermInPatternArguments(i, List("."), OMMOD(theory))
      i = posAfter
 
      // skip over ']'
@@ -912,6 +912,55 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
      (OMV(name) % term, i)
   }
+  
+  private def crawlTermInPatternArguments(start: Int, delimiters: List[String],  theory: Term) : Pair[Term, Int] =
+  {
+    var i = start
+    while (i < flat.length) {
+      val c = flat.codePointAt(i)
+      if (c == '"') // quote-surrounded string
+        i = crawlString(i)._2
+      else if (c == '%') { // comment or keyword
+        val old = i
+        i = skipwscomments(old)
+        if (i == old)    // this starts a keyword: since not inside a bracket, this ends the term
+          return computeReturnValue
+      }
+      else if (c == '(' || c == '[' || c == '{') // bracketed block
+        i = closeAnyBracket(i)
+      else if (c == ')' || c == '}') 
+        throw TextParseError(toPos(i), "unmatched right bracket " + c)
+      else if (c == ':' ||  c == ']' ) // this ends the term   // || c contains delimiter
+        return computeReturnValue
+      else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
+        i += 1
+      else if (isIdentifierPartCharacter(c)) { // identifier
+        val (id, posAfter) = crawlIdentifier(i)
+//        val (nextId, posAfterAfter) = crawlIdentifier(posAfter)
+        if (delimiters contains id ) // this ends the term
+          return computeReturnValue
+        i = posAfter
+      }
+      else
+        throw TextParseError(toPos(i), "illegal character " + c + " at this point")
+    }
+        // computes the return value. i is assumed to be the position after the end of the term
+    def computeReturnValue = {
+      val termParser = controller.extman.getTermParser(format)
+      val term = getSlice(start, i - 1)
+      val obj = termParser(term, theory)
+//      val obj = OMSemiFormal((objects.Text("Twelf", getSlice(start, i - 1))))
+      
+      addSourceRef(obj, start, i - 1)
+      //val t : Term = MMTParser.parse(obj)(mem : Memory)
+      Pair(obj, i)
+            
+     
+      
+    }
+
+    throw TextParseError(toPos(i), "end of file reached while reading term")
+}
 
 
   /** Reads a pattern body
