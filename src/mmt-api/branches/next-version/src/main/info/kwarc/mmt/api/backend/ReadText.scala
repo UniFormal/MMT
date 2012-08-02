@@ -973,14 +973,14 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
       var i = start + 1       // jump over '{'
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
-      val body = Context()
+      var body = Context()
 
       while (i < flat.length) {
         if (isIdentifierPartCharacter(flat.codePointAt(i))) {
           // read variable declaration
           val (varDecl, posAfterDeclaration) = crawlDeclarationInPatternBody(i, theory, visibleConstants)
           i = posAfterDeclaration
-          body ++ varDecl
+          body = body ++ varDecl
         }
         else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
           i = skipAfterDot(i)
@@ -1026,13 +1026,13 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
      }
 
      // parse the pattern parameters
-     val parameterContext = Context()
+     var parameterContext = Context()
      if (flat.startsWith("[", i)) {
        do {
          // parse a single [ ... ] declaration
          val (varDecl, posAfterParameter) = crawlPatternParameter(i, parent.path, constants)
          i = posAfterParameter
-         parameterContext ++ varDecl
+         parameterContext = parameterContext ++ varDecl
        } while (flat.startsWith("[", i))
      }
 
