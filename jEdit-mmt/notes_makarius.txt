@@ -1,0 +1,30 @@
+http://mercurial.selenic.com/downloads/
+http://isabelle.in.tum.de/repos/isabelle/rev/21c42b095c84
+
+----------------
+http://www.jedit.org/api/org/gjt/sp/jedit/syntax/TokenMarker.html
+chops text into tokens for assigning font style
+to hide, use degenerate font style
+
+http://www.jedit.org/api/org/gjt/sp/jedit/buffer/JEditBuffer.html#markTokens%28int,%20org.gjt.sp.jedit.syntax.TokenHandler%29
+calls
+http://www.jedit.org/api/org/gjt/sp/jedit/syntax/TokenMarker.html#markTokens%28org.gjt.sp.jedit.syntax.TokenMarker.LineContext,%20org.gjt.sp.jedit.syntax.TokenHandler,%20javax.swing.text.Segment%29
+Makarius overrides it
+tokens sent to http://www.jedit.org/api/org/gjt/sp/jedit/syntax/TokenHandler.html
+
+Makarius replaces jEdit's default TextAreaPainter with his Text_Area_Painter
+then swaps out TextAreaPainter$PaintText with his
+
+own painter: because TokenMarker always starts from 0 to get context
+TokenMarker needed to get font metrics, which is needed to convert logical and pixel coordinates
+
+patches\jedit-4.5.1\extended_styles adds additional styles
+
+TokenMarkup determined by Mode,
+mode provided by ModeProvider based on buffer
+Makarius replaces ModeProvider to force his TokenMarkup provider for his mode
+------------
+
+isabelle/scala uses jEdit plugin for Scala interpreter in jEdit console
+
+try styx font or Makarius's font isabelleText
