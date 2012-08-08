@@ -16,7 +16,7 @@ import scala.collection.mutable._
 // TODO second phase should update from fields in structures, as well as all aliases with the correct references. Currently aliases point to originatingLink?name
 
 /** A TextReader parses Twelf (for now) and calls controller.add(e) on every found content element e */
-class TextReader(controller : frontend.Controller, report : frontend.Report) extends Reader(controller, report) {
+class TextReader(controller : frontend.Controller) extends Reader(controller) {
 
   // ------------------------------- private vars -------------------------------
 
@@ -40,7 +40,7 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
 
   /** input format */
   //TODO make this flexible
-  private var format : String = "twelf"
+  private var format : String = null
 
   // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
   private var currentNS : Option[URI] = None
@@ -78,22 +78,24 @@ class TextReader(controller : frontend.Controller, report : frontend.Report) ext
     * @return a LinkedList of errors that occurred during parsing
     * @throws SourceError for non-recoverable errors that occurred during parsing
     * note that line and column numbers start from 0 */
-  def readDocument(source : scala.io.Source, dpath_ : DPath) : Pair[Document, LinkedList[SourceError]] =
+  def readDocument(source : scala.io.Source, dpath_ : DPath, fmt : String) : Pair[Document, LinkedList[SourceError]] =
   {
     // initialization
     lines = source.getLines.toArray
     source.close
     dpath = dpath_
+    format = fmt
     currentNS = Some(dpath.uri)
     init()
 
     readDocument()
   }
 
-  def readDocument(source : String, dpath_ : DPath) : Pair[Document, LinkedList[SourceError]] = {
+  def readDocument(source : String, dpath_ : DPath, fmt: String) : Pair[Document, LinkedList[SourceError]] = {
     //initialization
     lines = source.split("\n").toArray
     dpath = dpath_
+    format = fmt
     init()
 
     readDocument()

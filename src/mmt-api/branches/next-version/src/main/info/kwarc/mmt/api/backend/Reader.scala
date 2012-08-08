@@ -9,4 +9,6 @@ import symbols._
 import utils._
 
 /**  */
-abstract class Reader(controller : frontend.Controller, report : frontend.Report)
+abstract class Reader(controller : frontend.Controller) {
+   val report = controller.report
+}

@@ -129,7 +129,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
        if ((root / "source").exists) {
           traverse("source", in, extensionIs("elf")) {case Current(inFile, inPath) =>
              val source = scala.io.Source.fromFile(inFile, "UTF-8")
-             val (doc, errorList) = controller.textReader.readDocument(source, DPath(narrationBase / inPath))
+             val (doc, errorList) = controller.textReader.readDocument(source, DPath(narrationBase / inPath), "twelf")
              source.close
              if (!errorList.isEmpty)
                 log(errorList.size + " errors in " + inFile.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
@@ -241,13 +241,8 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
         case e => log("ERR : " + e)
       }
     }
-
-
-     log("done:  [CONT -> FLAT]       -> " + inFile)
-
+    log("done:  [CONT -> FLAT]       -> " + inFile)
   }
-
-
 
     /** Generate presentation from content */
     def producePres(in : List[String] = Nil, style : MPath, controller : Controller) {

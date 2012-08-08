@@ -19,7 +19,7 @@ class ExtensionManager(report: Report) {
    private def log(msg : => String) = report("extman", msg)
 
    val ruleStore = new objects.RuleStore
-   /** adds a compiler, must be initialized already */
+   /** adds an Importer and initializes it */
    def addImporter(cls: String, args: List[String]) {
        log("adding importer " + cls)
        val imp = try {

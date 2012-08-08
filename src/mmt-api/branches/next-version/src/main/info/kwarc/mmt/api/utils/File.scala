@@ -53,6 +53,11 @@ object File {
    def apply(s: String) : File = File(new java.io.File(s))
    
    def Writer(f: File) = new PrintWriter(new OutputStreamWriter(new FileOutputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+   def write(f: File, s: String) {
+      val fw = Writer(f)
+      fw.write(s)
+      fw.close
+   }
    def Reader(f: File) = new BufferedReader(new InputStreamReader(new FileInputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
    def ReadLineWise(f: File)(proc: String => Unit) {
       val r = Reader(f)

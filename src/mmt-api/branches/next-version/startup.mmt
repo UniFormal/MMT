@@ -1,7 +1,7 @@
 log console
 log file jomdoc.log
 //log+ presenter
-log+ backend
+//log+ backend
 log+ controller
 //log+ extman
 //log+ reader
@@ -20,11 +20,14 @@ file ../../../paths.mmt
 //archive latin relational
 //graph graph.dot
 archive latin notation
-archive latin check
+//archive latin check
 //http..latin.omdoc.org/category_theory/dfol_based
 
-mws http://localhost:6284
-server on 8080
+importer info.kwarc.mmt.api.backend.MMTCompiler
+archive add C:\frabe\MMT\theories
+
+//mws http://localhost:6284
+//server on 8080
 //base http://docs.omdoc.org/
 
 //archive latin compile

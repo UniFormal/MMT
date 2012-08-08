@@ -14,7 +14,7 @@ import presentation._
 import scala.xml.{Node,NodeSeq}
 
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
-class XMLReader(controller : frontend.Controller, report : frontend.Report) extends Reader(controller, report) {
+class XMLReader(controller : frontend.Controller) extends Reader(controller) {
    private def log(s : String) = report("reader", s)
    /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {

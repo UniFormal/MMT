@@ -66,9 +66,9 @@ class Controller extends ROController {
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
-   val xmlReader = new XMLReader(this, report)
+   val xmlReader = new XMLReader(this)
    /** the MMT parser (text/Twelf syntax) */
-   val textReader = new TextReader(this, report)
+   val textReader = new TextReader(this)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
    /** the checker for the validation of ContentElement's and objects */
@@ -211,7 +211,7 @@ class Controller extends ROController {
       if (server.isDefined) stopServer
    }
    /** reads a file containing a document and returns the Path of the document found in it */
-   def read(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
+   def read(f: File, docBase : Option[DPath] = None) : DPath = {
       val N = utils.xml.readFile(f)
       val dpath = docBase.getOrElse(DPath(URI.fromJava(f.toURI)))
       var p: DPath = null
@@ -224,10 +224,10 @@ class Controller extends ROController {
       p
    }
    /** reads a text/Twelf file and returns its Path */
-   def readText(f: java.io.File, docBase : Option[DPath] = None) : DPath = {
+   def readText(f: File, docBase : Option[DPath] = None) : DPath = {
       val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
       val source = scala.io.Source.fromFile(f, "UTF-8")
-      val (doc, errorList) = textReader.readDocument(source, dpath)
+      val (doc, errorList) = textReader.readDocument(source, dpath, f.getExtension.getOrElse(""))
       source.close
       if (!errorList.isEmpty)
         log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))

@@ -40,7 +40,7 @@ case class NotationMatch(op : Operator, matches : List[Int])  {
  * @param grammar the grammar used for parsing
  */
 class NotationParser(grammar : Grammar, controller: Controller) extends TermParser {
-  def applicable(format: String) = true
+  def applicable(format: String) = List("mmt", "twelf") contains format
 
   var str : String = ""
 

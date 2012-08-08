@@ -188,10 +188,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
                  }
                case _ => new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(x => genQVars(x)) :_*)
              }
-
-
              val processedQuery = genQVars(tm.toCML)
-
              (<mws:expr>{processedQuery}</mws:expr>, Nil)
           case _ => (bodyAsXML(tk), Nil) // default: body is forwarded to MWS untouched
         }
@@ -226,8 +223,8 @@ class Server(val port: Int, controller: Controller) extends HServer {
           //copying storages so that while reading we will find the dependencies
           controller.backend.getStores.foreach(ctrl.backend.addStore(_))
           
-          val reader = new TextReader(ctrl, new Report)
-          val res = reader.readDocument(text, dpath)
+          val reader = new TextReader(ctrl)
+          val res = reader.readDocument(text, dpath, "mmt")
           println(res)
           //println("param : " + text)
           println("theory : " + ctrl.get(mpath))

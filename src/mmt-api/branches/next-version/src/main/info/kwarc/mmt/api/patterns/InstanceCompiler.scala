@@ -53,7 +53,7 @@ class SubsCompiler extends Compiler {
       dir.mkdirs
     
       
-    val patcon = new PatternController()
+   val patcon = new PatternController()
 	val pc = new PatternChecker(patcon.controller)
     
     // retrieve constant list
@@ -79,7 +79,7 @@ class SubsCompiler extends Compiler {
       case _ => None
     }    
     
-    val inst = pc.getInstance(constList, pattList)
+    val inst = null // pc.getInstance(constList, pattList) FR: I've commented this out because it didn't compile
     
 //    val q = constTheory.
     
