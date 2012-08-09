@@ -58,7 +58,7 @@ class MMTPlugin extends EBPlugin {
            epu.getWhat match {
              case EditPaneUpdate.CREATED =>
                 log("handling " + epu.paramString)
-                val taExt = new StyleChanger(editPane, "lf")
+                val taExt = new StyleChanger(editPane, "mmt")
                 painter.addExtension(TextAreaPainter.DEFAULT_LAYER, taExt)
                 val ma = new MMTMouseAdapter(editPane)
                 painter.addMouseListener(ma)
