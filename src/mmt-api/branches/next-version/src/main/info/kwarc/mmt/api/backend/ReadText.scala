@@ -39,7 +39,6 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
   private var dpath : DPath = null
 
   /** input format */
-  //TODO make this flexible
   private var format : String = null
 
   // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
@@ -1229,6 +1228,17 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
     // read the name
     val (sigName, positionAfter) = crawlIdentifier(i)
     i = positionAfter   // jump over identifier
+    var meta : Option[MPath] = None
+    if (flat.codePointAt(i) == ':') {
+       i = expectNext(i, ":")
+       val (mtId, positionAfterMeta) = crawlIdentifier(i)
+       val mtTerm = moduleToAbsoluteURI(i, mtId)
+       mtTerm match {
+          case OMMOD(mt) => meta = Some(mt)
+          case _ => errors :+ TextParseError(toPos(i), "could not read meta-theory")
+       }
+       i = positionAfterMeta
+    }
     i = expectNext(i, "=")
     i += 1    // jump over "="
     i = skipws(i)
@@ -1239,7 +1249,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
        // It's a DeclaredTheory
        i = expectNext(i, "{")
        // add the (empty, for now) theory to the controller
-       val declTheory = new DeclaredTheory(getCurrentDPath, LocalPath(List(sigName)), None)
+       val declTheory = new DeclaredTheory(getCurrentDPath, LocalPath(List(sigName)), meta)
        theory = declTheory
        add(theory)
        // read the theory body
@@ -1251,6 +1261,9 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
       i = positionAfter
       theory = new DefinedTheory(getCurrentDPath, LocalPath(List(sigName)), theoryExp)
       add(theory)
+      if (meta.isDefined) {
+         errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(warning = true)
+      }
     }
 
     val endsAt = expectNext(i, ".")
@@ -1416,7 +1429,6 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
        }
     }
   }
-
 
   /** computes two- from one-dimensional coordinate 
   * @param index the one-dimensional coordinate
