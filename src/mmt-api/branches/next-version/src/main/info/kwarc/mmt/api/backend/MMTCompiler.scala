@@ -15,9 +15,8 @@ class MMTCompiler extends Compiler {
       val (doc, errorList) = tr.readDocument(source, dpath, "mmt")
       source.close
       val outFile = out.setExtension("omdoc")
-      outFile.toJava.getParentFile.mkdirs
-      File.write(outFile, doc.toNode.toString)
-      doc.toNode
+      outFile.toJava.getParentFile.mkdirs 
+      File.write(outFile, doc.toNodeResolved(controller.localLookup).toString)
       errorList.toList
    }
 }

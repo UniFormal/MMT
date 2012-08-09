@@ -5,7 +5,9 @@ import objects._
 import frontend._
 import symbols.{Alias, Declaration, Constant}
 
-import collection.immutable.{List, HashMap}
+import scala.collection._
+
+import scala.collection.immutable.{Stack, List, HashMap}
 
 /* Error Handling */
 
@@ -25,14 +27,55 @@ object ParsingError {
  * @param matches the positions of the matches for the String Markers
  */
 case class NotationMatch(op : Operator, matches : List[Int])  {
-   val beginning = matches.head - op.notation.args.head.length
+/*
+  val beginning = matches.head - op.notation.args.head.length
    val ending = matches.last + op.notation.args.last.length
    val argNr = op.notation.argNr
-
-   def extend(nm : NotationMatch) = NotationMatch(op.extend(nm.op.notation), matches ::: nm.matches)
+*/
 
    override def toString = op.toString + "@(" + matches.mkString(",") + ") "
 }
+
+
+class ParserContext {
+  var context : mutable.Stack[String] = new mutable.Stack[String]
+  
+  def addContext(ctx : List[VarDecl]) = {
+    ctx.map(_.name.last.toPath).foreach(context.push(_))
+  }
+  
+  def clearContext(i : Int) {
+    if (i > 0) {
+      context.pop()
+      clearContext(i - 1)
+    }
+  }
+  
+  private var implicitContext : mutable.Stack[LocalName] = new mutable.Stack[LocalName]
+  
+  private var counter = 1
+  
+  private val prefix = LocalName("implVar")
+  
+  def addFreshImplVar : OMV = {
+    val ln = prefix / ("v" + counter.toString)
+    counter += 1
+    implicitContext.push(ln)
+    OMV(ln)
+  }
+  
+  private def implContext : Context = {
+    Context(implicitContext.map(ln => VarDecl(ln, None, None)) : _*)
+  }
+  
+  def bindImplContext(tm : Term) : Term = implicitContext.length match {
+    case 0 => tm
+    case _ => OMBIND(OMID(utils.mmt.unknowns), implContext, tm)
+  }
+  
+}
+
+
 
 
 /**
@@ -45,9 +88,20 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
   var str : String = ""
 
   private var operators : List[Operator] = grammar.operators
-
-  private val report = controller.report
-  private def log(msg : => String) = report("parser",msg)
+  private val parserContext = new ParserContext()
+  
+  private def opsByPrecedence : List[List[Operator]] = {
+    val ops = operators.sortWith((x,y) => x.precedence < y.precedence)
+    ops.foldLeft[List[List[Operator]]](Nil)((r,x) =>
+      if (r.length == 0)
+        List(List(x))
+      else if (x.precedence == r.head.head.precedence)
+        (x :: r.head) :: r.tail
+      else List(x) :: r
+    )
+  }
+  
+  private def log(msg : => String) = controller.report("parser",msg)
 
   def apply(s: String, scope : Term) : Term = {
     println("scope : " + scope)
@@ -57,47 +111,23 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       controller.globalLookup.get(tm.toMPath).components
     }
     
+    println(controller.globalLookup.get(scope.toMPath).toNode)
+    
+    
+    println("decls in scope :  "+ decls)
+    
     operators = grammar.operators ::: makeOperators(decls)
     log("Started parsing " + s + " with operators : ")
-    operators.map(o => log(o.name + " ->" + o.notation.markers))
+    operators.map(o => log(o.toString))
     log("###")
     
     grammar.init(s.length)
 
     val tklist = tokenize(s, "", 0)._1
-    rewrite(tklist).t
+    val tm = parse(tklist).t
+    parserContext.bindImplContext(tm)
   }
-  
-  def parse(o : OMSemiFormal, scope : List[Declaration], offset : Int = 0) : Term = {
-    operators = grammar.operators ::: makeOperators(scope)
-    log("Started parsing " + o.toString + " with operators : ")
-    operators.map(o => log(o.name + " ->" + o.notation.markers))
-    log("###")
 
-    o.tokens match {
-      case Formal(obj) :: Nil => obj
-      case Text(mmt,s) :: Nil =>
-        grammar.init(s.length)
-
-        val tklist = tokenize(s, "", offset)._1
-        rewrite(tklist).t
-      case _  => throw ParsingError("unexpected input: " + o, toRegion(offset, offset))
-    }
-
-  }
-  
-  
-  
-  private def getOpByPrecedence : List[List[Operator]] = {
-    val ops = operators.sortWith((x,y) => x.notation.precedence < y.notation.precedence)
-    ops.foldLeft[List[List[Operator]]](Nil)((r,x) =>
-      if (r.length == 0)
-        List(List(x))
-      else if (x.notation.precedence == r.head.head.notation.precedence)
-        (x :: r.head) :: r.tail
-      else List(x) :: r
-    )
-  }
 
   private def toPos(index: Int) : SourcePosition = {
     //val pair  = linesStarts.filter(p => (p._1 <= index)).last
@@ -114,16 +144,11 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
   }
 
   private def makeOperators(scope : List[Content]) : List[Operator] = {
-    val np =  NotationProperties(Precedence(0), AssocNone())
     scope collect {
-      case c : Constant =>
-        c.not match {
-          case Some(not) => new Operator(c.path, not)
-          case None =>
-            new Operator(c.path, Notation(StrMk(c.path.last) :: Nil, np))
-        }
+      case c : Constant => new Operator(c.path, c.not)
+       
       case a : Alias =>
-        new Operator(a.path, Notation(StrMk(a.path.last) :: Nil, np))
+        new Operator(a.path, None)
       //TODO case Assignment etc
     }
   }
@@ -205,8 +230,343 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
     val (min,max) = tl.foldLeft((hd.start, hd.end))((r,x) => (if (x.start < r._1) x.start else r._1,if (x.end > r._2) x.end else r._2))
     TokenProperties(min, max)
   }
+  
+  private def lookupVars(tks : List[Token]) : List[Token] = {
+    tks map {
+      case st : StrTk if (parserContext.context.contains(st.s)) => TermTk(OMV(st.s), st.tkProps)
+      case tk => tk
+    }
+  }
+  
+  private def parse(tks : List[Token]) : TermTk = {
+    val newTks = lookupVars(tks)
+    val tm = parse(opsByPrecedence, newTks)
+    log("finished parsing : " + tks.mkString(" "))
+    log("got :" + tm.t.toNode)
+    tm
+  }
+  
+  
+  private def parse(ops : List[List[Operator]], tks : List[Token]) : TermTk = ops match {
+    case Nil => 
+      log("didn't find any match for operators: ")
+      log(opsByPrecedence.map(_.mkString(", ")).mkString("\n"))
+      log("and tokens : ")
+      log(tks.mkString(" "))
+      
+      val tmTks = tks map {
+        case TermTk(t,_) => t
+        case ExpTk(sep, expTks, _) => parse(expTks).t 
+        case _ => throw ParseError("don't know what to apply next")
+      }
+      tmTks match {
+        case hd :: Nil =>
+          TermTk(hd, TokenProperties(0,0))
+        case _ => 
+          log("using default application of first token")
+          TermTk(OMA(tmTks.head, tmTks.tail), TokenProperties(0,0))//TODO fix token properties
+      }
+    case hd :: tl =>    
+      log("trying level with ops : ")
+      log(hd.mkString("\n  "))
+      walkLevel(hd, TokensPos(new Stack[Token], tks)) match {
+        case None => //nothing done at this level, continue
+          log("found no match at this level")
+          parse(tl, tks)
+        case Some(tkPos) => //applied a reduce, checking if done
+          val nwTks = tkPos.toList
+          log("applied reduce, got to:" )
+          log(nwTks.mkString(" "))
+          
+          nwTks match {
+            case (t : TermTk) :: Nil => //we are done 
+              t
+            case _ => //continue from the top
+              parse(opsByPrecedence, tkPos.toList) 
+          }
+      }
+  }
+  
 
-  /**
+  
+  private def walkLevel(ops : List[Operator], tkPos : TokensPos) : Option[TokensPos] = {
+    if (tkPos.right == Nil) { //didn't find any match on this level
+      None
+    } else { //try to look of a match
+      findMatches(ops, tkPos.right) match {
+        case Nil => //nothing found, continue search
+          walkLevel(ops, tkPos.shift)
+        case hd :: Nil => //match found
+          log("found a match")
+          log(hd.toString)
+          //need to check its unambiguous
+          checkMatch(ops, tkPos.shift, hd)
+          //if checkMatch succeeds we reduce
+          Some(tkPos.reduce(hd))
+        case l => //several matches found => ambiguous parse
+          log("found multiple parses")
+          l.map(m => log(m.toString))
+          throw ParseError("Ambiguous parse :")
+      }
+    }
+  }
+  
+  
+  private def checkMatch(ops : List[Operator], tkPos : TokensPos, opMatch : ReduceMatch) {
+    if (tkPos.right != opMatch.rest) {
+      findMatches(ops, tkPos.right) match {
+        case Nil => checkMatch(ops, tkPos.shift, opMatch) //continue
+        case hd :: Nil => opMatch.clashes(hd) match {
+          case false => checkMatch(ops, tkPos.shift, opMatch)
+          case true =>
+            log("found two clashing parses while checking")
+            log(opMatch.toString)
+            log(hd.toString)
+            throw ParseError("Ambiguous Parse")
+        }
+        case l =>
+          log("found two clashing parses while checking")
+          log(opMatch.toString)
+          l.map(m => log(m.toString))
+          throw ParseError("AmbiguousParse")
+      }
+    }
+  }
+  
+  private def matchRef(op : GlobalName, tks : List[Token]) : Option[ReduceMatch] = tks match {
+    case Nil => None
+    case StrTk(s,_) :: tl if (s == op.last) => 
+      Some(ReduceMatch(OMID(op), new mutable.HashMap[Int, List[Token]](), tl))
+    case _ =>      
+      None
+  }
+  
+  
+  private def findMatches(ops : List[Operator], tks : List[Token]) : List[ReduceMatch] = {
+    def matches(op : Operator) : Option[ReduceMatch] = op.notation match {
+      case None =>
+        matchRef(op.name, tks)
+      case Some(not) => 
+        matchMarkers(op.name, not.mrks, tks, not.isBinder)
+    }
+    
+    ops.flatMap(op => matches(op))
+  }
+  
+  
+  private def matchMarkers(name : GlobalName, markers : List[NotationElement], tks : List[Token], isBinder : Boolean) : Option[ReduceMatch] = {
+    (markers, tks) match {
+      case (Nil,_) => 
+        Some(ReduceMatch(OMID(name), new mutable.HashMap[Int, List[Token]](), tks, isBinder))
+      case (_, Nil) => 
+        None
+      case _ => 
+        markers.head match {
+          case a : StdArg =>
+            if (a.matches(tks.head, isBinder)) {
+              matchMarkers(name, markers.tail, tks.tail, isBinder) match {
+                case None => None
+                case Some(opMatch) => Some(opMatch.addArg(a.pos, tks.head :: Nil))
+              }
+            } else 
+              None
+          case a : SeqArg => 
+            log("searching for seq arg of " + a.delimiter.value + " in :" )
+            log(tks.mkString(" "))
+            
+            getSeqArg(a.delimiter, tks) match {
+              case None => None
+              case Some((sqargs, sqrest)) => 
+                matchMarkers(name, markers.tail, sqrest, isBinder) match {
+                  case None => None
+                  case Some(opMatch) => Some(opMatch.addArg(a.pos, sqargs))
+                }
+            }
+          case d : Delimiter => 
+            if (d.matches(tks.head))
+              matchMarkers(name, markers.tail, tks.tail, isBinder)
+            else 
+              None
+        }
+    }
+  }
+    
+  def getSeqArg(sep : Delimiter, tks : List[Token], foundSep : Boolean = false) : Option[(List[Token], List[Token])] = tks match {
+    case Nil =>
+      None
+    case hd :: Nil => 
+      if(foundSep && hd.isArg)
+        Some(hd :: Nil, Nil)
+      else 
+        None
+    case hd :: sec :: tl => 
+      log("in seq arg" + tks.mkString)
+      log(sep.matches(sec).toString)
+      if (sep.matches(sec) && hd.isArg) {
+        getSeqArg(sep, tl, true) match {
+          case None => None 
+          case Some((args,rest)) => Some(hd :: args, rest) 
+        }
+      } else if(foundSep && hd.isArg) {
+        Some(hd :: Nil, tks.tail)
+      } else {
+        None
+      }
+  }
+  
+  case class ReduceMatch(tm : Term, matches : mutable.HashMap[Int, List[Token]], rest : List[Token], isBinder : Boolean = false) {
+    
+    override def toString : String = {
+      tm.toString + "@\n" + matches.map(p => p._1.toString + "->" + p._2.mkString(" ")).mkString("\n") + "\n" + rest.mkString(" ")
+    }
+    
+    private def addImplicit : Map[Int, List[Token]] = {
+      val n = try {
+        matches.map(_._1).max + 1
+      } catch {
+        case _ => 1
+      }
+      
+      for (i <- 1 to n) {
+        if (!matches.isDefinedAt(i)) {
+          val omv : Term = parserContext.addFreshImplVar
+          matches(i) = TermTk(omv, TokenProperties(0,0)) :: Nil
+        }
+      }
+      matches
+    }
+    
+    
+    def makeTerms : List[Term] = {
+      log("making terms of")
+      log("matches = " + matches.toString)
+      
+      //TODO implicit arguments
+     
+      val tmMatches = matches flatMap {p =>
+          p._2 map {
+            case tm : TermTk => tm.t
+            case ex : ExpTk => parse(ex.tks).t
+            case _ => throw ImplementationError("unexpected error: found delimiter as argument in reduce match")
+          }
+      }
+  
+      tmMatches.toList
+    }   
+   
+    
+    def makeContext : Context = {
+      log("making context with matches : " + matches.toString)
+      log("toTkList : " + toTkList.toString )
+      val context = Context(toTkList.map(makeVarDecl) : _*)      
+      log("context" + context)
+      context
+    }
+    
+    def makeVarDecl(tk : Token) : VarDecl = tk match {
+      case StrTk(s,_) => VarDecl(LocalName(s), None, None) //TODO add type and def
+      case _ => throw ImplementationError("unexpected error:  found non-delimiter matching binder")
+    }
+    
+    def addArg(argPos : Int, values : List[Token]) : ReduceMatch = {
+      matches.update(argPos, values)
+      this
+    }
+    
+    def clashes(nw : ReduceMatch) : Boolean = {
+      log("comparing")
+      log(nw.toString)
+      log(this.toString)
+      if (nw.tm == tm && nw.matches.head._1 == matches.head._1 && nw.matches.tail == matches.tail && nw.rest == rest) {
+        false //means smaller seq arg
+      } else { 
+        true
+      }
+    }
+    
+    def toTkList : List[Token] = matches.toList.flatMap(_._2)
+    
+    def getTkProps : TokenProperties = toTkList match {
+      case hd :: tl =>
+        val (min,max) = tl.foldLeft((hd.start, hd.end))((r,x) => (if (x.start < r._1) x.start else r._1,if (x.end > r._2) x.end else r._2))
+        TokenProperties(min, max)
+      case Nil =>
+        TokenProperties(0,0)
+        //TODO throw ParseError("implementation error -- todo")
+    }
+  }
+  
+  case class TokensPos(left : Stack[Token], right : List[Token]) {
+    def shift : TokensPos = TokensPos(left :+ right.head, right.tail)
+    
+    def reduce(opMatch : ReduceMatch) : TokensPos = opMatch.isBinder match {
+      case false => 
+        log("match arguments are : ")
+        log(opMatch.toTkList.mkString(" "))
+        val newTm = opMatch.makeTerms match {
+          case Nil => opMatch.tm
+          case l => OMA(opMatch.tm, l)
+        }
+        val tkProps = opMatch.getTkProps
+        TokensPos(left, TermTk(newTm, tkProps) :: opMatch.rest)
+      case true => 
+        val context = opMatch.makeContext
+        parserContext.addContext(context.components)
+        val body = parse(opMatch.rest).t
+        parserContext.clearContext(context.components.length)
+        
+        TokensPos(left, TermTk(OMBIND(opMatch.tm, context, body), opMatch.getTkProps) :: Nil)
+    }
+    
+    def toList : List[Token] = (left ++ right).toList
+    
+  }
+  
+  
+
+  /*
+    /**
+   * looks up references in a list of semi formal objects. References can either be symbols that are in scope or variable that are in context
+   * @param objs the list of semiformal objects
+   * @return the list of formal objects after the lookup was performed
+   */
+  def lookupRefs(objs : List[Token]) : List[TermTk] = objs map { tk =>
+    lookupRef(tk)
+  }
+
+
+  def lookupRef(tk : Token) : TermTk = tk match {
+    case TermTk(t,tkp) => TermTk(t, tkp)
+    case ExpTk(s, tks, tkp) => parse(opsByPrecedence, tks)
+    case StrTk(s, tkp) =>
+      val matchedOps = operators.filter(p => p.name.name.toString == s) //TODO: use Names.resolve to find all possible matches?
+      val ln = LocalName.parse(s)
+      val inContext = grammar.context.isDeclared(ln)
+      matchedOps match {
+        case Nil =>
+          if (inContext) {
+            TermTk(OMV(ln), tkp)
+          } else {
+            TermTk(OMV(ln), tkp) //free variables for more flexible queries
+            //throw ParsingError("Lookup failed for symbol " + s, toRegion(tkp.start, tkp.end))
+          }
+        case hd :: Nil =>
+          if (inContext) {
+            TermTk(OMV(ln), tkp) //context shadows signature
+          } else {
+            TermTk(OMID(hd.name), tkp)
+          }
+        case l => throw ParsingError("Ambiguous lookup for symbol " + s + " : \n" + l.mkString("\n"), toRegion(tkp.start, tkp.end))
+      }
+  }
+   
+   
+   */
+  
+  
+ 
+  /*
+   *  /**
    * rewrites a list of input tokens into a formal object
    * @param in the token list
    * @return the formal term
@@ -246,42 +606,8 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
     }
     lookupRefs(input)
   }
-
-  /**
-   * looks up references in a list of semi formal objects. References can either be symbols that are in scope or variable that are in context
-   * @param objs the list of semiformal objects
-   * @return the list of formal objects after the lookup was performed
    */
-  def lookupRefs(objs : List[Token]) : List[TermTk] = objs map { tk =>
-    lookupRef(tk)
-  }
-
-
-  def lookupRef(tk : Token) : TermTk = tk match {
-    case TermTk(t,tkp) => TermTk(t, tkp)
-    case ExpTk(s, tks, tkp) => rewrite(tks)
-    case StrTk(s, tkp) =>
-      val matchedOps = grammar.operators.filter(p => p.name.name.toString == s) //TODO: use Names.resolve to find all possible matches?
-      val ln = LocalName.parse(s)
-      val inContext = grammar.context.isDeclared(ln)
-      matchedOps match {
-        case Nil =>
-          if (inContext) {
-            TermTk(OMV(ln), tkp)
-          } else {
-            TermTk(OMV(ln), tkp) //free variables for more flexible queries
-            //throw ParsingError("Lookup failed for symbol " + s, toRegion(tkp.start, tkp.end))
-          }
-        case hd :: Nil =>
-          if (inContext) {
-            TermTk(OMV(ln), tkp) //context shadows signature
-          } else {
-            TermTk(OMID(hd.name), tkp)
-          }
-        case l => throw ParsingError("Ambiguous lookup for symbol " + s + " : \n" + l.mkString("\n"), toRegion(tkp.start, tkp.end))
-      }
-  }
-
+  
   /*
   /**
    * Finds (and applies) the first (if any) valid match in a list of tokens given a list of operators. Being recursive, it has some auxiliary arguments
@@ -536,18 +862,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
 
   private def tryMatch(ops : List[Operator], tks : List[Token]) : Option[List[Token]] = {
     log("trying level : " + ops.toString)
@@ -692,7 +1007,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
         log("got here" + tk.toString + " " + ArgMk(pos))
         args(pos) = tk
     }
-
+    
     log("args" + args)
     log("toList" + args.toList)
     val fnArgs = args.toList map {
@@ -711,6 +1026,6 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
         lookupRefs(fnArgs)
     }
   }
-
+*/
 }
 

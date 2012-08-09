@@ -253,23 +253,17 @@ case class ToText(c : MakeAbstract) extends MakeConcrete {
     println("Action -> ToText # content : " + con.toString)
     con match {
       case d : DeclaredTheory =>
-        val decs = controller.memory.content.getDeclarationsInScope(d.path) collect {
-          case c : Constant => c.not match {
-            case None => new Operator(c.path, parser.Notation(List(StrMk(c.path.last)), parser.NotationProperties(parser.Precedence(0), parser.AssocNone())))
-            case Some(not) => new Operator(c.path, not)
-          }
+        val decs = controller.memory.content.getDeclarationsInScope(OMMOD(d.path)) collect {
+          case c : Constant => new Operator(c.path, c.not)
         }
 
         rb(TextNotation.present(d, decs ::: LFGrammar.grammar.operators))
 
-      case _ =>
-        println("TODO")
+      case _ => //TODO add support for other module types
         rb(c.make(controller).toString)
     }
-
   }
   override def toString = c.toString + " text"
-
 }
 
 /** takes a content element and renders it using notations */

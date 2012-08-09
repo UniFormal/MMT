@@ -113,7 +113,7 @@ class Controller extends ROController {
       def importsTo(to: Term) = library.importsTo(to)
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = library.preImage(p)
-      def getDeclarationsInScope(th : MPath) = library.getDeclarationsInScope(th)
+      def getDeclarationsInScope(mod : Term) = library.getDeclarationsInScope(mod)
    }
    /** a lookup that loads missing modules dynamically */
    val globalLookup = new Lookup(report) {
@@ -122,7 +122,7 @@ class Controller extends ROController {
       def importsTo(to: Term) = iterate {library.importsTo(to)}
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = iterate {library.preImage(p)}
-      def getDeclarationsInScope(th : MPath) = iterate {library.getDeclarationsInScope(th)}
+      def getDeclarationsInScope(mod : Term) = iterate {library.getDeclarationsInScope(mod)}
       def getAllPaths() = library.getAllPaths //temporary TODO remove
    }
    /** loads a path via the backend and reports it */

@@ -223,37 +223,14 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
           }
    }
 
-  def getDeclarationsInScope(p : MPath) : List[Content] = {
-    val mod = getModule(p)
-    mod match {
-      case th : DeclaredTheory =>
-        var scope : HashSet[Content] = new  HashSet[Content]()
-
-        th.meta foreach {meta => scope ++= getModule(meta).components}
-
-        th.components foreach {
-          case s : DeclaredStructure =>
-
-            if (s.name.isAnonymous) {
-               s.from match {
-                 case OMMOD(p) =>
-                   scope ++= getDeclarationsInScope(p)
-
-                 case _ => //TODO handle includes of complex modules
-               }
-            } else {
-              val names = s.domain.map {p =>
-                println(p.toString + " #-># " + s.get(p).toString)
-                s.get(p)
-              }
-            }
-          case c => println("skipped : " + c.toNode)
-        }
-        scope ++= th.components
-        scope.toList
-      case _ => Nil
-
+  def getDeclarationsInScope(mod : Term) : List[Content] = {
+    val includes = importsToFlat(mod)
+    val decls = (mod :: includes.toList) flatMap {tm => 
+      get(tm.toMPath).components
     }
+    println("in library -- getDecsInScope :")
+    println(decls)
+    decls
   }
 
    /** iterator over all includes into a theory (including the meta-theory)

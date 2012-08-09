@@ -16,6 +16,7 @@ object mmt {
    val mempty = mmtsymbol("morphism-empty")
    val tunion = mmtsymbol("theory-union")
    val munion = mmtsymbol("morphism-union")
+   val unknowns = mmtsymbol("unknowns")
 /* val poii = mmtsymbol("theory-union")
    val poiim = mmtsymbol("morphism-union")
    val poi = mmtsymbol("theory-with")

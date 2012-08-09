@@ -218,14 +218,13 @@ class Server(val port: Int, controller: Controller) extends HServer {
         case strDPath :: strThy :: Nil =>
           val dpath = DPath(URI(strDPath))
           val mpath = dpath ? LocalPath(strThy :: Nil)
-          val ctrl = new Controller()
+          val ctrl = new Controller(controller.report)
           
           //copying storages so that while reading we will find the dependencies
           controller.backend.getStores.foreach(ctrl.backend.addStore(_))
           
           val reader = new TextReader(ctrl)
           val res = reader.readDocument(text, dpath, "mmt")
-          println(res)
           //println("param : " + text)
           println("theory : " + ctrl.get(mpath))
           res._2.toList match {

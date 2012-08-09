@@ -371,8 +371,8 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
       throw TextParseError(toPos(start), "the string does not close")
     return Pair(flat.substring(start + 1, endsAt), endsAt + 1)
   }
-
-
+  
+  
   /** reads an identifier.
     * @param start the position of the first character of the identifier
     * @return Pair(identifier as a string, position after the last character of the identifier)
@@ -1023,7 +1023,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
      i = skipwscomments(i)
 
      // all the visible constants, just in case the types use them
-     val constants = controller.memory.content.getDeclarationsInScope(parent.path) collect {
+     val constants = controller.memory.content.getDeclarationsInScope(OMMOD(parent.path)) collect {
        case c : Constant => c
      }
 
@@ -1260,7 +1260,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
     addSourceRef(theory, start, endsAt)
 
     // add the link to this theory to the narrative document
-    add(MRef(dpath, theory.path))
+    add(MRef(dpath, theory.path, true)) //TODO is it true or false ?
     return endsAt + 1
   }
 

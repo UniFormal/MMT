@@ -3,55 +3,43 @@ package info.kwarc.mmt.api.parser
 import scala.Int
 import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.{Content, ImplementationError, GlobalName}
-import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
+
 /**
  * An operator is something that takes arguments, e.g. and, or, forall
  */
-class Operator(val name : GlobalName, val notation : Notation) {
-
-  def extend(not : Notation) : Operator = new Operator(name, notation.extend(not))
-
-  def toString(args : List[Formal]) = {
-    var s = ""
-    var i = 0
-    var j = 0
-
-    val markers = notation.mrks
-
-    while (i < markers.length) {
-      s += {markers(i) match {
-        case StrMk(value) => value + " "
-        case ArgMk(pos) =>
-          val ret = args(j)
-          j += 1
-          ret
+class Operator(val name : GlobalName, val notation : Option[Notation]) {
+  def this(name : GlobalName, not : Notation) = this(name, Some(not))
+  
+  def precedence = notation match {
+    case None => 0
+    case Some(not) => not.precedence
+  }
+  
+  
+  def toString(args : List[Formal]) = notation match { 
+    case None => 
+        var s = name.last
+        args foreach {
+          s += " " + _.toString
+        }
+        s
+    case Some(not) => 
+      var s = ""
+      not.mrks.foreach {
+        case Delimiter(value) => s += value + " "
+        case arg : Argument => s += args(arg.pos).toString
       }
-      }
-      i += 1
-    }
-    s
-
+      s
   }
 
-  override def toString = notation.toString
-
-  def isBinder = false
-}
-
-/**
- * a binder is a operator that aditionally binds some context to some body
- * @param name the global name of the binder
- * @param notation the notation of the binder
- * @param context a function that extracts the bound variables from the binder arguments
- * @param binding a binding direction representing the body of the object
- * e.g. if var : type is a declaration then the standard Pi binder denoted by {var : type} body can be written as
- * Notation is List("{", 1, ":", 2, "}"), context(l) = l.head, and binding is right.
- */
-class Binder(name : GlobalName, notation : Notation, val context : List[Token] => Context, val nameArgNr : Int, val binding : Binding) extends Operator(name, notation) {
-  override def isBinder = true
+  override def toString = notation match {
+    case Some(not) => not.toString
+    case None => name.last
+  }
 }
 
 /**
@@ -61,130 +49,130 @@ class Binder(name : GlobalName, notation : Notation, val context : List[Token] =
  *      where "log" is a string marker, 2 is a argument marker for argument number 2 of log (base)
  *      and 1 for argument number 1 (nr). Then, log 2 16 is parsed as log(16,2)
  * @param mrks the list of markers
- * @param props  the notation properties
+ * @param precedence  the precedence
  */
-case class Notation(mrks : List[Marker], props : NotationProperties) extends HasMetaData {
-
-  def markers : List[StrMk] = mrks collect {case s : StrMk => s}
-  def args : List[List[ArgMk]] = mrks.foldLeft[List[List[ArgMk]]](Nil :: Nil)((r,m) => m match {case s : StrMk => Nil :: (r.head.reverse :: r.tail) case a : ArgMk => (a :: r.head) :: r.tail}).reverse
+case class Notation(mrks : List[NotationElement], precedence : Int, isBinder : Boolean = false) extends HasMetaData {
+  
+  def markers : List[Delimiter] = mrks collect {case s : Delimiter => s}
+  def args : List[List[Argument]] = mrks.foldLeft[List[List[Argument]]](Nil :: Nil)((r,m) => m match {case s : Delimiter => Nil :: (r.head.reverse :: r.tail) case a : Argument => (a :: r.head) :: r.tail}).reverse
 
   val argNr = args.flatten.length
 
-  def extend(not : Notation) : Notation = {
-    def _processMarkers(mrks : List[Marker]) : List[Marker] = mrks match {
-      case Nil => Nil
-      case StrMk(value) :: l => StrMk(value) :: _processMarkers(l)
-      case ArgMk(pos) :: l => ArgMk(pos + argNr - 1) :: _processMarkers(l)  // the args of the base minus the deleted shared one
-    }
-    Notation(mrks ::: _processMarkers(not.mrks.tail), props)  //.tail to remove the shared argument
-  }
-  def getStrMarkers : List[String] = markers.flatMap( _  match {case StrMk(s) => List(s) case _ => Nil})
+  def getStrMarkers : List[String] = markers.flatMap( _  match {case Delimiter(s) => List(s) case _ => Nil})
 
-  def precedence = props.precedence.value
-  def assoc = props.assoc
-
-  override def toString = mrks.mkString(" ") + "," + precedence + "," + assoc
+  override def toString = mrks.mkString(" ") + "," + precedence
 
   def toNode =
-    <TextNotation>
-      <Markers>
+    <text-notation isBinder={isBinder.toString}>
+      <markers>
         {mrks.map(m => m.toNode)}
-      </Markers>
-      <Precedence>
+      </markers>
+      <precedence>
         {precedence}
-      </Precedence>
-      <Assoc>
-        {assoc}
-      </Assoc>
-    </TextNotation>
+      </precedence>
+    </text-notation>
 
 }
 
 
 object TextNotation {
   def parse(s : scala.xml.Node) : Notation = s match {
-    case <TextNotation>{xmlMarkers}{xmlPrecedence}{xmlAssoc}</TextNotation> =>
+    case <text-notation>{xmlMarkers}{xmlPrecedence}</text-notation> =>
       val markers = parseMarkers(xmlMarkers)
       val precedence = parsePrecedence(xmlPrecedence)
-      val assoc = parseAssoc(xmlAssoc)
-      new Notation(markers, NotationProperties(precedence, assoc))
+      new Notation(markers, precedence, (s \ "@isBinder").text == "true")
+    case _ => throw ParseError("Invalid XML representation of notation in \n" + s)
   }
 
-  private def parseAssoc(n : scala.xml.Node) : Assoc = n match {
-    case <Assoc>{s}</Assoc> => s.toString match {
-      case "Left"  => AssocLeft()
-      case "Right" => AssocRight()
-      case "None" => AssocNone()
-      case "Seq" => AssocSeq()
-      case _ => throw ParseError("Invalid assoc value : " + s)
-    }
-    case _ => throw ParseError("Invalid XML representation of Assoc in: \n" + n)
-
-  }
-
-  private def parsePrecedence(n : scala.xml.Node) : Precedence = n match {
-    case <Precedence>{value}</Precedence> =>
+  private def parsePrecedence(n : scala.xml.Node) : Int = n match {
+    case <precedence>{value}</precedence> =>
       try {
-        Precedence(value.toString.toInt)
+        value.toString.toInt
       } catch {
-        case _ => throw ParseError("Invalid XML representation of Precedence(value : Int) in: \n" + n)
+        case _ => throw ParseError("Invalid XML representation of precedence (not an integer) in: \n" + n)
       }
     case _ => throw ParseError("Invalid XML representation of Precedence in: \n" + n)
   }
 
-  private def parseMarkers(n : scala.xml.Node) : List[Marker] = n match {
-    case <Markers>{xmlMarkers @ _*}</Markers> =>
+  private def parseMarkers(n : scala.xml.Node) : List[NotationElement] = n match {
+    case <markers>{xmlMarkers @ _*}</markers> =>
       xmlMarkers.map(x => parseMarker(x)).toList
     case _ => throw ParseError("Invalid XML representation of marker list in: \n" + n)
   }
 
-  private def parseMarker(n : scala.xml.Node) : Marker = n match {
-    case <StrMk>{s}</StrMk> => StrMk(s.toString)
+  private def parseMarker(n : scala.xml.Node) : NotationElement = n match {
+    case <delimiter>{s}</delimiter> => Delimiter(s.toString)
 
-    case <ArgMk>{s}</ArgMk> =>
+    case <std-arg>{s}</std-arg> =>
       try {
-        ArgMk(s.toString.toInt)
+        StdArg(s.toString.toInt)
       } catch {
-        case _ => throw ParseError("Invalid XML representation of ArgMk(pos : Int) in: \n" + n)
+        case _ => throw ParseError("Invalid XML representation of StdArg in: \n" + n)
       }
-    case _ => throw ParseError("Invalid XML representation of marker in: \n" + n)
+ 
+    case <seq-arg><pos>{s}</pos><delimiter>{delValue @ _*}</delimiter></seq-arg> =>
+      try {
+        SeqArg(s.toString.toInt, Delimiter(delValue.text))
+      } catch {
+        case _ => throw ParseError("Invalid XML representation of SeqArg in: \n" + n)
+      }
+    
+    case _ => throw ParseError("Invalid XML representation of notation element in: \n" + n)
 
   }
 
-
-  def parse(s : String) : Notation = {
+  def parse(str : String) : Notation = {
+    val isBinder = str.charAt(0) == '#'
+    val s = if (isBinder) {
+      str.substring(1)
+    } else { 
+      str
+    }
+    
     s.split(",").toList match {
-      case not :: prec :: asc :: Nil =>
-        val precedence = Precedence(prec.toInt)
-        val assoc = asc match {
-          case "None" => AssocNone()
-          case "Left" => AssocLeft()
-          case "Right" => AssocRight()
-          case "Seq" => AssocSeq()
-        }
-
-        val markers = not.split(" ") map {s =>
-          try {
-           ArgMk(s.toInt)
-          } catch {
-            case _ => StrMk(s)
-          }
-        }
-
-        println(Notation(markers.toList, NotationProperties(precedence, assoc)))
-        Notation(markers.toList, NotationProperties(precedence, assoc))
+      case not :: prec :: Nil =>        
+        val precedence = prec.toInt        
+        Notation(parseMarkers(not), precedence, isBinder) 
+      case not :: Nil => 
+        Notation(parseMarkers(not), 0, isBinder)
       case _ =>
         throw ParseError("Invalid notation declaration : " + s)
     }
   }
+  
+  private def parseMarkers(not : String) : List[NotationElement] = {
+    val tokens = not.split(" ").toList
+    val markers = tokens map {tk =>
+      tk.split("/").toList match {
+        case Nil => throw ImplementationError("unexpected error: string split returned empty result list")
+        case value :: Nil => //std arg or delimiter
+          try {
+            StdArg(value.toInt)
+          } catch {
+            case _ => Delimiter(value)
+          }
+        case pos :: sep :: Nil => //seq arg
+          try {
+            SeqArg(pos.toInt, Delimiter(sep))
+          } catch {
+             case _ => throw ParseError("Invalid arg position in seq notation : " + not)
+          }
+      }
+    }
+    markers
+  }
+  
 
-
+  //TODO add logging instead of print
   def present(con : Content, operators : List[Operator]) : String = {
     println("current con : " + con.toString)
     con match {
       case d : DeclaredTheory =>
         println(d.path)
         "%sig " + d.path.last + " = {\n" + d.components.map(c => "  " + present(c, operators)).filterNot(_ == "  ").mkString("\n")+ "\n}."
+      
+      case OMID(meta : MPath) => 
+        "%meta " + meta.doc.last + "?" + meta.name + "."
       case c : Constant =>
         println("constant : " + operators)
         val tp = c.tp match {
@@ -195,34 +183,44 @@ object TextNotation {
           case None => ""
           case Some(t) => " = " + presentTerm(t, operators)
         }
-
         val not = c.not match {
           case None => ""
           case Some(n) => " # " + n.toString
         }
         c.path.last + tp + df + not + "."
 
-
+//      case s : Structure => "%include " + s.from.toString
+        
       case _ =>
-        println("unsupported content element for text presentation " + con.toString)
+        println("unsupported content element for text presentation " + con.toNode)
         ""
-
     }
   }
 
 
   private def presentTerm(t : Term, operators : List[Operator]) : String = t match {
     case OMA(OMID(p), args) =>
+      println("found : " + t.toString)
       operators.find(op => op.name == p) match {
         case None =>
-          println("not found notation for constant with path " + p)
-          p.last + "  " + args.map(x => presentTerm(x, operators)).mkString(" ")
-        case Some(op) =>
-          val l =  op.notation.mrks map {
-            case ArgMk(pos) => presentTerm(args(pos), operators)
-            case StrMk(s) => s
-          }
-          l.mkString(" ")
+          throw PresentationError("Operator not in scope : " + p.toPath)
+          
+         case Some(op) =>
+           op.notation match {
+             case None => 
+               println("not found notation for constant with path " + p)
+               println("using : " + p.last + "  " + args.map(x => presentTerm(x, operators)).mkString(" "))
+               "(" + p.last + "  " + args.map(x => presentTerm(x, operators)).mkString(" ") + ")"
+             case Some(notation) => 
+               println("found notation : " + notation.toString)
+          
+               val l =  notation.mrks map {
+                 case a : Argument => presentTerm(args(a.pos), operators)
+                 case Delimiter(s) => s
+               }
+               println("using : " + l.mkString(" "))
+               l.mkString("("," ",")")
+           }
       }
 
     case OMBINDC(OMID(p), context, None, body) =>
@@ -233,11 +231,16 @@ object TextNotation {
       operators.find(op => op.name == p) match {
         case None => presentTerm(body, operators) //assuming implicit binder
         case Some(op) =>
-          val l =  op.notation.mrks map {
-            case ArgMk(pos) => args(pos)
-            case StrMk(s) => s
+          op.notation match {
+            case None => 
+             "(" + p.last + " " + context.toString + " " + body + ")"
+            case Some(notation) =>
+              val l =  notation.mrks map {
+                case a : Argument => args(a.pos)
+                case Delimiter(s) => s
+              }
+              l.mkString("("," ",")")
           }
-          l.mkString(" ")
       }
 
     case OMV(s) => s.toPath
@@ -255,7 +258,7 @@ object TextNotation {
 /**
  * A Marker is an element of a notation
  */
-trait Marker {
+sealed trait NotationElement {
   def toNode : scala.xml.Node
 }
 
@@ -264,89 +267,50 @@ trait Marker {
  * It should be filled with a term during parsing and that term will become the argument at position pos for the operator
  *@param pos the number of the operator argument
  */
-case class ArgMk(pos : Int) extends Marker {
-  override def toString = pos.toString
-  def toNode =
-    <ArgMk> {pos.toString} </ArgMk>
+sealed abstract class Argument(val pos : Int) extends NotationElement
+
+case class StdArg(override val pos : Int) extends Argument(pos) {
+  def matches(tk : Token, isBinder : Boolean = false) : Boolean = isBinder match { 
+    case true =>
+      tk match {
+        case s : StrTk => true
+        case _ => false 
+      }
+    case false => 
+      tk match {
+        case t : TermTk => true
+        case e : ExpTk => true
+        case _ => false
+      }
+  }
+  
+  override def toString = pos.toString 
+  
+  def toNode = 
+    <std-arg>{pos}</std-arg>
 }
+
+case class SeqArg(override val pos : Int, delimiter : Delimiter) extends Argument(pos) {
+  override def toString = pos.toString + "/" + delimiter.toString 
+
+  def toNode = 
+    <seq-arg><pos>{pos}</pos>{delimiter.toNode}</seq-arg>        
+}
+
 
 /**
  * A String Marker is a marker that represents a fixed part of a notation.
  * @param value the string that the marker represents
  */
-case class StrMk(value : String) extends Marker {
+case class Delimiter(value : String) extends NotationElement {
+  def matches(tk : Token) : Boolean = tk match {
+    case StrTk(s, _) => s == value
+    case _ => false
+  }
+  
   override def toString = value
   def toNode =
-    <StrMk> {value} </StrMk>
+    <delimiter> {value} </delimiter>
 }
-
-
-case class NotationProperties(precedence : Precedence, assoc : Assoc)
-
-/**
- * Precedence of a notation is used for resolving ambiguities during parsing. Higher precedence has higher priority.
- * @param value the integer precedence value
- */
-case class Precedence(value : Int) {
-  override def toString = value.toString
-}
-
-/**
- * Association of a notation is used during parsing to deal with consecutive, (partially) overlapping occurrences of the same notation
- * e.g. a + b + c
- */
-sealed trait Assoc
-
-/**
- * Left Association means the left-most occurrence has priority
- * e.g. a + b + c is parsed as +(+(a,b),c)
- */
-case class AssocLeft() extends Assoc {
-  override def toString = "Left"
-}
-
-/**
- * Right Association means the right-most occurrence has priority
- * e.g. a + b + c is parsed as +(a,+(b,c))
- */
-case class AssocRight() extends Assoc {
-  override def toString = "Right"
-}
-
-/**
- * None Association means consecutive (partially) overlapping occurrences of the same notation are not accepted
- * e.g. a + b + c gives a parsing error.
- */
-case class AssocNone() extends Assoc {
-  override def toString = "None"
-}
-
-/**
- * Sequence Association means the (several) consecutive notations are treated as one operator with more (all found) arguments
- * e.g. a + b + c  is parsed as +(a,b,c)
- */
-case class AssocSeq() extends Assoc {
-  override def toString = "Seq"
-}
-
-/**
- * Binding is the property of a notation of eagerly seizing an entire chunk of markers as one argument and parse them afterwards.
- * (basically adds parentheses)
- * It is related to precedences in the sense that both binding and precedences as defined here are specializations of generalized precedences which
- * have input and output precedences for each argument.
- * e.g. Pi and Lambda are example (right) binders. We denote Pi as "{context} body" and lambda as "[context] body"
- */
-sealed trait Binding
-
-/**
- * Right Binding means this notation when matched will take the all arguments in the right side of it and treat them as one expression
- * e.g. {x} x + x  maps to Pi(x, +(x,x)) even if Pi has a higher precedence than +.
- */
-case class BindRight() extends Binding
-/**
- * Left Binding means this notation when matched will take the all arguments in the left side of it and treat them as one expression
- */
-case class BindLeft() extends Binding
-
 
 

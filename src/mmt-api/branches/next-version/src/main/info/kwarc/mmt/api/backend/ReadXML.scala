@@ -176,6 +176,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             doCon(name,None,Some(d), None, xml.attr(s,"role"), md)
          case <constant><definition>{d}</definition><notation>{n}</notation></constant> =>
             doCon(name,None,Some(d), Some(n), xml.attr(s,"role"), md)
+         case <constant><notation>{n}</notation></constant> =>
+            doCon(name,None, None, Some(n), xml.attr(s,"role"), md)
          case <constant/> =>
             doCon(name,None,None,None,xml.attr(s,"role"), md)
          case <import>{seq @ _*}</import> =>

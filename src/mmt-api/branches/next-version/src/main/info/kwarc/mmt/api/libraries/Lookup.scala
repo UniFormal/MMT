@@ -65,7 +65,7 @@ abstract class Lookup(val report : frontend.Report) {
    def getImplicit(from: Term, to: Term) : Option[Term]
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
-   def getDeclarationsInScope(th : MPath) : List[Content]
+   def getDeclarationsInScope(mod : Term) : List[Content]
    //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
    //def structureModToSym(p : MPath) : SPath
    //def resolveAlias(s : Symbol) : Symbol

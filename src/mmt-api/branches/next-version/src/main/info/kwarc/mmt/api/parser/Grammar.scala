@@ -31,14 +31,33 @@ case class PairSep(l : String, r : String) extends Separator
 
 case class TokenProperties(start : Int, end : Int)
 
-abstract class Token(val tkProps : TokenProperties)  {
+sealed abstract class Token(val tkProps : TokenProperties)  {
   def start = tkProps.start
   def end = tkProps.end
+  
+  def isArg : Boolean
+  
+  override def toString : String
 }
 
-case class StrTk(s : String, override val tkProps : TokenProperties) extends Token(tkProps)
-case class TermTk(t : Term, override val tkProps : TokenProperties) extends Token(tkProps)
-case class ExpTk(sep : String, tks : List[Token], override val tkProps : TokenProperties) extends Token(tkProps)
+case class StrTk(s : String, override val tkProps : TokenProperties) extends Token(tkProps) {
+  
+  def isArg = false
+  
+  override def toString = s
+}
+case class TermTk(t : Term, override val tkProps : TokenProperties) extends Token(tkProps) {
+  
+  def isArg = true
+  
+  override def toString = t.toString
+}
+case class ExpTk(sep : String, tks : List[Token], override val tkProps : TokenProperties) extends Token(tkProps) {
+  
+  def isArg = true
+  
+  override def toString = tks.mkString("(", " ", ")")
+}
 
 
 /**
@@ -106,13 +125,13 @@ object LFGrammar {
   }
 
 	private val operators : List[Operator] = List(
-		new Operator(thy ? "type", Notation(List(StrMk("type")), NotationProperties(Precedence(0), AssocNone()))),
-    new Operator(thy ? "arrow", Notation(List(ArgMk(0), StrMk("->"), ArgMk(1)), NotationProperties(Precedence(3), AssocRight()))),
-		//new Operator(thy ? "add", Notation(List(ArgMk(0), StrMk("+"),ArgMk(1)), NotationProperties(Precedence(5), AssocSeq()))),
-		new Binder(thy ? "lambda", Notation(List(StrMk("["), ArgMk(0), StrMk("]")), NotationProperties(Precedence(12), AssocLeft())), context, 0, BindRight()),
-		new Binder(thy ? "lambda", Notation(List(StrMk("["), ArgMk(0),StrMk(":"),ArgMk(1), StrMk("]")), NotationProperties(Precedence(12), AssocLeft())), context,0, BindRight()),
-		new Binder(thy ? "Pi", Notation(List(StrMk("{"), ArgMk(0), StrMk("}")), NotationProperties(Precedence(12), AssocLeft())), context,0, BindRight()))
+		//new Operator(thy ? "type", Notation(List(Delimiter("type")),0)),
+    //new Operator(thy ? "arrow", Notation(List(SeqArg(0, Delimiter("->"))), 3)),
+		//new Operator(thy ? "lambda", Notation(List(Delimiter("["), StdArg(0), Delimiter("]")), 12, true)),
+    //new Operator(thy ? "pi", Notation(List(Delimiter("{"), StdArg(0), Delimiter("}")), 12, true))
+	  )
 
+        /*     
   private val latexOperators : List[Operator] = List(
     new Operator(thy ? "type", Notation(List(StrMk("type")), NotationProperties(Precedence(0), AssocNone()))),
     new Operator(thy ? "arrow", Notation(List(ArgMk(0), StrMk("\\rightarrow"), ArgMk(1)), NotationProperties(Precedence(3), AssocRight()))),
@@ -120,7 +139,7 @@ object LFGrammar {
     new Binder(thy ? "lambda", Notation(List(StrMk("\\lambda"), ArgMk(0), StrMk("\\cdot")), NotationProperties(Precedence(12), AssocLeft())), context, 0, BindRight()),
     new Binder(thy ? "lambda", Notation(List(StrMk("\\lambda"), ArgMk(0),StrMk("\\colon"),ArgMk(1), StrMk("\\cdot")), NotationProperties(Precedence(12), AssocLeft())), context,0, BindRight()),
     new Binder(thy ? "Pi", Notation(List(StrMk("{"), ArgMk(0), StrMk("}")), NotationProperties(Precedence(12), AssocLeft())), context,0, BindRight()))
-
+*/
 
   private val markers : List[Separator]= List(
 		  SingSep(" "),
@@ -139,24 +158,14 @@ object LFGrammar {
   val grammar = new Grammar(name, markers, operators)
 
 
-  val notation = new Notation(List(ArgMk(0), StrMk("+"), ArgMk(1)), NotationProperties(Precedence(10), AssocLeft()))
 
-  private def makeOperator(c : Constant) : Operator = { //TODO
-    c.not match {
+  private def makeOperator(c : Constant) : Operator = c.not match {
       case Some(not) => new Operator(c.path, not)
-      case None =>
-        val np =  NotationProperties(Precedence(0), AssocNone())
-        new Operator(c.path, Notation(StrMk(c.path.last) :: Nil, np))
-    }
+      case None => new Operator(c.path, None)
   }
 
   def grammar(ops : List[Constant]) = {
     new Grammar(name, markers, ops.map(makeOperator) ::: operators)
-  }
-
-  def latexGrammar(ops : List[Constant]) = {
-    new Grammar(name, markers, ops.map(makeOperator) ::: latexOperators)
-  }
-  
+  }  
   
 }
