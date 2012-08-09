@@ -39,7 +39,7 @@ Recall: every EditPane has one TextArea, and every TextArea has one TextAreaPain
   int defaultFontSize = jEdit.getIntegerProperty("view.fontsize",12);
   painter.setStyles(SyntaxUtilities.loadStyles(defaultFont,defaultFontSize));
   
-  EditPane.propertiesChanged calls initPainter again
+  EditPane.propertiesChanged calls initPainter again (called in particular by the constructor)
   
   In particular, the properties only contain entries of the form
     view.font.TOKENTYPE=color:COLOR bgColor:COLOR style:b style:i
