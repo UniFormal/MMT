@@ -30,7 +30,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
 //class MMTMatcher extends org.gjt.sp.jedit.textarea.StructureMatcher
 //call editPane.getTextArea().addStructureMatcher, e.g., in sidekick parser's activate method, to register it
 
-object StyleProvider {
+object StyleChanger {
    def hidden(style: SyntaxStyle) = {
       val newFont = style.getFont.deriveFont(0f)
       new SyntaxStyle(style.getForegroundColor, style.getBackgroundColor, newFont) 
@@ -43,24 +43,19 @@ object StyleProvider {
    }
 }
 
-class StyleProvider {
-   private var styles: Array[SyntaxStyle] = null
-   def setStyles(painter: TextAreaPainter) = {
-      val styles = painter.getStyles
-      styles(Token.COMMENT4) = StyleProvider.hidden(styles(Token.COMMENT4))
-      styles(Token.COMMENT3) = StyleProvider.subscript(styles(Token.COMMENT3))
-   }
-}
-
-/** A TextAreaExtension that is added to a layer below TEXT_LAYER in order to change the painter's styles
+/** A TextAreaExtension that is added to a layer below TEXT_LAYER in order to change the painter's styles for a certain mode
  *  The painter's styles are set by the EditPane according to SyntaxUtilities.loadStyles.
- *  This class will override that value.
+ *  This class will override that setting.
+ *  Tokens with type COMMENT4 will be hidden, regardless of its style settings. 
  */
-class StyleChanger(editPane: EditPane, modeName: String, styleProvider: StyleProvider) extends TextAreaExtension {
+class StyleChanger(editPane: EditPane, modeName: String) extends TextAreaExtension {
    private val textArea = editPane.getTextArea
    private val painter = textArea.getPainter
    override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
-       if (editPane.getBuffer.getMode.getName == modeName)
-          styleProvider.setStyles(painter)
+       if (editPane.getBuffer.getMode.getName == modeName) {
+          val styles = painter.getStyles
+          styles(Token.COMMENT4) = StyleChanger.hidden(styles(Token.COMMENT4))
+          styles(Token.COMMENT3) = StyleChanger.subscript(styles(Token.COMMENT3))
+       }
    }
 }
