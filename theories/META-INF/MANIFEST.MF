@@ -1,4 +1,6 @@
 id: mmt
 compilation: mmt@source -> omdoc@compiled
-source-base: http://cds.omdoc.org/
+source-base: http://latin.omdoc.org/
 narration-base: http://docs.omdoc.org/
+catalog: http://cds.omdoc.org/ lib
+
