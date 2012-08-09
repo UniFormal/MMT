@@ -28,3 +28,39 @@ Makarius replaces ModeProvider to force his TokenMarkup provider for his mode
 isabelle/scala uses jEdit plugin for Scala interpreter in jEdit console
 
 try styx font or Makarius's font isabelleText
+
+-------------
+My investigation of the data flow:
+
+Recall: every EditPane has one TextArea, and every TextArea has one TextAreaPainter
+
+1) EditPane.initPainter(TextAreaPainter painter) sets styles by calling
+  String defaultFont = jEdit.getProperty("view.font");
+  int defaultFontSize = jEdit.getIntegerProperty("view.fontsize",12);
+  painter.setStyles(SyntaxUtilities.loadStyles(defaultFont,defaultFontSize));
+  
+  EditPane.propertiesChanged calls initPainter again
+  
+  In particular, the properties only contain entries of the form
+    view.font.TOKENTYPE=color:COLOR bgColor:COLOR style:b style:i
+  additional TextAttributes of a Font (underline etc. are not used)
+  font familiy and size are maintained globally and not per token type
+  
+2) TextAreaPainter.styles holds the styles (via getStyles/setStyles)
+
+3) The constructor TextAreaPainter(TextArea textArea) adds several default TextAreaExtensions
+   among them PaintText (see 8)
+
+4) The ChunkCache calls TokenHandler.init(textArea.getPainter.getStyles, ...)
+
+5) DisplayTokenHandler holds the styles (set via init)
+
+6) DisplayTokenHandler calls the constructor Chunk(byte id, ..., SyntaxStyle[] styles, byte defaultID)
+
+7) The constructor of a Chunk sets its style as styles[id].
+
+8) PaintText calls Chunk.paintChunkList to paint a list of chunks.
+
+
+
+
