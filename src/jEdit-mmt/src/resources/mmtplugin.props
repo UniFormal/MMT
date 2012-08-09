@@ -25,17 +25,20 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.2=plugin sidekick.SideKickPlugin 1.
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.3=plugin gatchan.jedit.hyperlinks.HyperlinksPlugin 1.1
 
 # labels for actions defined in actions.xml
-mmt-showinfo.label=Show
+mmt-showinfo.label=Show info
 mmt-compile.label=Compile current buffer
-mmt-show.label=Show
-mmt-hide.label=Hide
+mmt-show.label=show hidable parts
+mmt-hide.label=hide hidable parts
+mmt-hideshow.label=toggle hidable parts
+mmt-makeHidable.label=make selection hidable
+mmt-hideCurrent.label=hide current
 
 # labels for actions defined in browser.actions.xml
 mmt-browser-compile.label=Compile
 
 # menu items for jEdit views
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
-plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-compile mmt-showinfo mmt-show mmt-hide
+plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-compile mmt-showinfo mmt-show mmt-hide mmt-hideCurrent mmt-makeHidable
 
 # menu items for file system browsers
 plugin.info.kwarc.mmt.jedit.MMTPlugin.browser-menu=mmt-browser-compile
