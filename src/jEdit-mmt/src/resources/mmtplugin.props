@@ -27,13 +27,15 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.3=plugin gatchan.jedit.hyperlinks.H
 # labels for actions defined in actions.xml
 mmt-showinfo.label=Show
 mmt-compile.label=Compile current buffer
+mmt-show.label=Show
+mmt-hide.label=Hide
 
 # labels for actions defined in browser.actions.xml
 mmt-browser-compile.label=Compile
 
 # menu items for jEdit views
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
-plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-compile mmt-showinfo
+plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-compile mmt-showinfo mmt-show mmt-hide
 
 # menu items for file system browsers
 plugin.info.kwarc.mmt.jedit.MMTPlugin.browser-menu=mmt-browser-compile

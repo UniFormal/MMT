@@ -122,7 +122,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       val root = tree.root
       try {
          log("parsing " + path.toString + " as " + dpath.toPath)
-         val (doc,errors) = controller.textReader.readDocument(src, dpath)
+         val (doc,errors) = controller.textReader.readDocument(src, dpath, "mmt")
          // add narrative structure of doc to outline tree
          buildTree(root, doc)
          // register errors with ErrorList plugin

@@ -58,16 +58,16 @@ class MMTPlugin extends EBPlugin {
            epu.getWhat match {
              case EditPaneUpdate.CREATED =>
                 log("handling " + epu.paramString)
-                val taExt = new MMTTextAreaExtension(controller, editPane)
-                painter.addExtension(TextAreaPainter.BACKGROUND_LAYER, taExt)
-                painter.putClientProperty(taKey, taExt)
-             case EditPaneUpdate.DESTROYED =>
+                val taExt = new StyleChanger(editPane, "lf", new StyleProvider)
+                painter.addExtension(TextAreaPainter.DEFAULT_LAYER, taExt)
+                /* painter.putClientProperty(taKey, taExt) */
+/*            case EditPaneUpdate.DESTROYED =>
                 log("handling " + epu.paramString)
                 val taExt = painter.getClientProperty(taKey).asInstanceOf[TextAreaExtension]
                 if (taExt != null) {
                    painter.removeExtension(taExt)
                    painter.putClientProperty(taKey, null)
-                }
+                }*/
              case _ =>
             }
         case _ => 

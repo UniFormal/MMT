@@ -9,4 +9,14 @@
 		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compileCurrent(view);
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-show">
+		<CODE>
+		   info.kwarc.mmt.jedit.Hider.show(textArea);
+		</CODE>
+	</ACTION>
+	<ACTION NAME="mmt-hide">
+		<CODE>
+		   info.kwarc.mmt.jedit.Hider.hide(textArea);
+		</CODE>
+	</ACTION>
 </ACTIONS>

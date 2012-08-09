@@ -5,6 +5,8 @@ import frontend._
 
 import org.gjt.sp.jedit._
 import textarea._
+import syntax._
+import java.awt.font.TextAttribute
 
 /** A TextAreaExtension that is added to every EditPane
  *  it can be used for custom painting, e.g., background highlighting, tooltips
@@ -24,10 +26,41 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    //def getToolTipText(xCoord: Int, yCoord: Int) {} 
 }
 
-//textArea.getPainter.addTextAreaExtension(layer, extension)
-
-
 //to highlight the current expression implement this
 //class MMTMatcher extends org.gjt.sp.jedit.textarea.StructureMatcher
-//call editPane.getTextArea().addStructureMatcher, e.g., in sidekick parser's activate method to register it
+//call editPane.getTextArea().addStructureMatcher, e.g., in sidekick parser's activate method, to register it
 
+object StyleProvider {
+   def hidden(style: SyntaxStyle) = {
+      val newFont = style.getFont.deriveFont(0f)
+      new SyntaxStyle(style.getForegroundColor, style.getBackgroundColor, newFont) 
+   }
+   def subscript(style: SyntaxStyle) = {
+      val attributes = new java.util.Hashtable[TextAttribute,Int]
+      attributes.put(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB)
+      val newFont = style.getFont.deriveFont(attributes)
+      new SyntaxStyle(style.getForegroundColor, style.getBackgroundColor, newFont) 
+   }
+}
+
+class StyleProvider {
+   private var styles: Array[SyntaxStyle] = null
+   def setStyles(painter: TextAreaPainter) = {
+      val styles = painter.getStyles
+      styles(Token.COMMENT4) = StyleProvider.hidden(styles(Token.COMMENT4))
+      styles(Token.COMMENT3) = StyleProvider.subscript(styles(Token.COMMENT3))
+   }
+}
+
+/** A TextAreaExtension that is added to a layer below TEXT_LAYER in order to change the painter's styles
+ *  The painter's styles are set by the EditPane according to SyntaxUtilities.loadStyles.
+ *  This class will override that value.
+ */
+class StyleChanger(editPane: EditPane, modeName: String, styleProvider: StyleProvider) extends TextAreaExtension {
+   private val textArea = editPane.getTextArea
+   private val painter = textArea.getPainter
+   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+       if (editPane.getBuffer.getMode.getName == modeName)
+          styleProvider.setStyles(painter)
+   }
+}
