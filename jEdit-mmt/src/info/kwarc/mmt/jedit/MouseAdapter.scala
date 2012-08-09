@@ -10,8 +10,6 @@ class MMTMouseAdapter(editPane: EditPane) extends MouseAdapter {
    override def mouseClicked(e: MouseEvent) {
       if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount == 2) {
          textArea.selectToMatchingBracket
-         textArea
       }
-      
    }
 }

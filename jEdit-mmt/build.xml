@@ -33,7 +33,7 @@
     </target>
 
    <target name="deploy">
-      <copy todir="C:\frabe\Program_Data\jEdit\jars">
+      <copy todir="${jedit.jars}">
           <fileset file="MMTPlugin.jar"/>
       	  <fileset file="${deploy}/mmt-api.jar"/>
       	  <fileset file="${deploy}/mmt-lf.jar"/>
