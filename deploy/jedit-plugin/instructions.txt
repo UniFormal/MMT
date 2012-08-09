@@ -5,13 +5,16 @@ This file contains instructions how to setup the plugin.
 Installation
 
 1) Install jEdit from http://www.jedit.org/
+   Using the Plugin Manage, install the following plugins if you do not have them already
+   - ErrorList
+   - Console
+   - SideKick
+   - Hyperlinks
 
 2) a) If you have just installed jEdit:
    Extract the contents of plugin.zip into your jEdit settings folder.
    
    b) Otherwise, do the same but with the following caveats:
-   - plugin.zip contains all plugins that the MMT plugin depends on.
-     If you have installed any of them already, simply skip it when extracting.
    - plugin.zip contains a mode for mmt and a catalog file with an entry for that mode.
      But if you have installed other modes already, you have a catalog file with other entries already.
      In that case, do not overwrite the existing file.
@@ -56,12 +59,13 @@ Functionality
 
 The mode "mmt" is added for MMT files, which includes syntax highlighting.
 Mode-specific options including the appearance of the syntax highlighting can be configured via the generic jEdit options dialog.
-
+Most importantly, the mode assigns the token types OPERATOR and KEYWORDn.
+The token types LITERAL1 to LITERAL4 are assigned to brackets at different levels.
+The token type COMMENT4 is reseved by MMT. It is assigned to all hidden, i.e., invisible, parts. Changes to its text style are ignored and overwritten.
 
 The files abbrevs contains a number of useful abbreviations to produce Unicode characters using Latex-like commands.
 For example, "öPi" expands like "\Pi". The details can be configured in jEdit's Options/Abbreviations dialog.
 If you do not use a German keyboard, you want to do a global replace of ö with some other letter in the abbrevs file before running jEdit.
-
 
 The MMT plugin integrates with jEdit core components and a number of other plugins.
 Many of these provided "dockable windows". These are subwindows of the jEdit window, which you open separately via the respective plugin.
@@ -88,13 +92,16 @@ Many of these provided "dockable windows". These are subwindows of the jEdit win
   This permits direct access to the MMT shell in the dockable Console window.
   See the MMT manual for the documentation of the MMT shell.
 
-
+- Hiding: All text enclosed in %{SHOW }% is hidable and shown. All text enclosed in %{HIDE }% is hidable and hidden.
+  The delimiters themselves are always hidden.
+  Hiding is achieved by reducing the font size to 0, i.e., the hidden parts are still in the buffer and treated as usual in all situations except for displaying.
+ 
 The plugin provides a number of jEdit actions.
 These can be bound to any key, menu item, or toolbar button via the generic jEdit options dialog.
 By default, they are available in the MMT plugin menu.
 
 - Compile current buffer: compiles the current buffer
-
+- Various actions for hiding permit hiding/showing hidable parts in the current selection.
 
 -----------------------------------------
 Working with Twelf

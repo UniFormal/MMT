@@ -157,6 +157,10 @@
 öPsi|Ψ
 öbigoplus|⨁
 öUpsilon|Υ
+öulcorner|⌜
+öurcorner|⌝
+öllcorner|⌞
+ölrcorner|⌟
 [javacc]
 [c++]
 [url]
