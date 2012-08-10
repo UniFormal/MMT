@@ -116,7 +116,7 @@ abstract class WritableArchive extends ROArchive {
   * Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
   */
 class Archive(val root: File, val properties: Map[String,String], val compsteps: Option[List[CompilationStep]], val report: Report)
-    extends WritableArchive with CompilableArchive with IndexedArchive with ScalaArchive with ZipArchive {
+    extends WritableArchive with CompilableArchive with ValidatedArchive with IndexedArchive with ScalaArchive with ZipArchive {
 
    val rootString = root.toString
    
@@ -137,18 +137,6 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
        }
     }
 
-    def check(in: List[String] = Nil, controller: Controller) {
-      traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>
-         val mpath = Archive.ContentPathToMMTPath(inPath)
-         val rels = new HashSet[RelationalElement]
-         controller.checker.check(mpath)(rels += _, _ => ())
-         val relFile = (relDir / inPath).setExtension("occ")
-         relFile.getParentFile.mkdirs
-         val relFileHandle = File.Writer(relFile)
-         rels foreach {r => relFileHandle.write(r.toPath + "\n")}
-         relFileHandle.close
-      }
-      
       //controller.checker.printStatistics()
 
       /*

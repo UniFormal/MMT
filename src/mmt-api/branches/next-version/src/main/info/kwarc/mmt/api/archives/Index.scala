@@ -8,6 +8,7 @@ import ontology._
 import utils._
 import utils.FileConversion._
 
+/** This trait adds indexing operations to Archive's */
 trait IndexedArchive extends WritableArchive {
     /** Write a module to content folder */
     private def writeToContent(mod: Module) {
