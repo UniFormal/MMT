@@ -1,0 +1,22 @@
+%sig FOL = {
+	i : type.
+	o : type.	
+	pf : o -> type.
+	
+   iff : o -> o -> o.     %infix none 80 iff.
+	forall : (i -> o) -> o.
+}.
+
+%rel Cong : FOL -> FOL = {
+   i  := [X][Y] pf (X == Y).
+   o  := [A][B] pf (A iff B).
+   pf := [A][B][_][p][q] unit.
+   
+   iff := [A][A'][r%{SHOW : pf (A iff A')}%][B][B'][s%{SHOW : pf (B iff B')}%] iffI
+             ([p%{SHOW : pf (A iff B)}%] iffI ([q : pf A'] iffEL s (iffEL p (iffER r q))) ([q : pf B'] iffEL r (iffER p (iffER s q))))
+             ([p%{SHOW : pf (A' iff B')}%] iffI ([q : pf A]  iffER s (iffEL p (iffEL r q))) ([q : pf B] iffER r (iffER p (iffEL s q)))).
+                
+   forall := [P][P'][r%{SHOW : {x}{x'} pf (x == x') -> pf ((P x) iff (P' x'))}%] iffI
+             ([p%{SHOW : pf (forall [x] P x)}%] forallI [x] iffEL (r x x refl) (forallE p x))
+             ([p%{SHOW : pf (forall [x] P' x)}%] forallI [x] iffER (r x x refl) (forallE p x)).
+}.
