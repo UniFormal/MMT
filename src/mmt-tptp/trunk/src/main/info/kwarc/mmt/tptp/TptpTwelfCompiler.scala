@@ -27,9 +27,9 @@ class TptpTwelfCompiler extends Compiler {
   private var tptppath : String = null
   private def log(msg: => String) {report("tptptwelf", msg)}
   def isApplicable(src : String) : Boolean = src == "tptp"
-  override def init(rep: Report, args: List[String]) {
+  override def init(con: Controller, args: List[String]) {
      tptppath = args(0)     
-     super.init(rep, Nil)
+     super.init(con, Nil)
   }
 
   override def compile(in : File, out : File) : List[SourceError] = {
