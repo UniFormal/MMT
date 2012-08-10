@@ -101,6 +101,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, getRegion(dec)))
       node.add(child)
       dec match {
+         //TODO: should be done with a generic function that returns the list of components
          case PlainInclude(from, _) => buildTree(child, dec.path, "from", OMMOD(from))
          case c: Constant =>
              c.tp foreach {t => buildTree(child, dec.path, "type", t)}
@@ -116,9 +117,14 @@ class MMTSideKick extends SideKickParser("mmt") {
    }
    /* build the sidekick outline tree: (sub)term node */
    private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, t: objects.Term) {
+      val label = t match {
+         case OMV(n) => "var " + n.toString
+         case OMS(p) => "con " + p.last
+         case _ => t.role.toString
+      }
       val child = t match {
-        case OMID(p) => new DefaultMutableTreeNode(new MMTTermAsset(parent, Some(p), p.last, getRegion(t)))
-        case t => new DefaultMutableTreeNode(new MMTTermAsset(parent, None, t.role.toString, getRegion(t)))
+         case OMID(p) => new DefaultMutableTreeNode(new MMTTermAsset(parent, Some(p), label, getRegion(t)))
+         case t =>       new DefaultMutableTreeNode(new MMTTermAsset(parent, None, label, getRegion(t)))
       }
       node.add(child)
       val termComponents : List[Term] = t.components mapPartial {case t: Term => Some(t); case _ => None} 
