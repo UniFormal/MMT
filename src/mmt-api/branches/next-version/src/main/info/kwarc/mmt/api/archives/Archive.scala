@@ -137,37 +137,6 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
        }
     }
 
-      //controller.checker.printStatistics()
-
-      /*
-      controller.compChecker.printStatistics()
-      //println(controller.memory.ontology.getObjects(DependsOn))
-      val ont = controller.memory.ontology
-
-      val objects = ont.getObjects(DependsOn)
-      val subjects = ont.getSubjects(DependsOn)
-      val tpObj = objects.filter(x => x.last == "type")
-      val dfObj = objects.filter(x => x.last == "definition")
-
-      val transImps = objects.toList.map(x => ont.queryList(x, Transitive(ToSubject(DependsOn))).size).sortWith((x,y) => x < y)
-      val imps = objects.toList.map(x => ont.queryList(x, ToSubject(DependsOn)).size).sortWith((x,y) => x < y)
-      val impsTp = tpObj.toList.map(x => ont.queryList(x, ToSubject(DependsOn)).size).sortWith((x,y) => x < y)
-      val impsDf = dfObj.toList.map(x => ont.queryList(x, ToSubject(DependsOn)).size).sortWith((x,y) => x < y)
-
-      val deps = subjects.toList.map(x => ont.queryList(x, ToObject(DependsOn)).size).sortWith((x,y) => x < y)
-      println(tpObj.size)
-      println(dfObj.size)
-      println("impsTp" + impsTp)
-      println("impsDf" + impsDf)
-      println("imps" + imps)
-      println("transImps" + transImps)
-      println("deps" + deps)
-      println("obj" + objects.size)
-      println("subj" + subjects.size)
-      */
-    }
-
-
   /**
    * computes the flattened theories by elaborating the patterns
    * @param in input path
