@@ -1,8 +1,13 @@
 %namespace "http://latin.omdoc.org/foundations".
 
-%sig LF = {
+%sig Typed = {
    type.
    kind.
+}.
+
+%sig LF = {
+   %include Typed.
+   
    pi ## { 1 }.
    lambda ## [ 1 ].
    @.
