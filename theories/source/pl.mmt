@@ -2,8 +2,8 @@
 
 %sig PL = {
  %include LF.
- bool = type.
- or : bool -> bool -> bool # 1 or 2.
- and : bool -> bool -> bool # 1 and 2.
- equiv : bool -> bool -> bool = [x][y] x or y # 1 <=> 2.
+ bool : type.
+ or : bool -> bool -> bool # 1 ∨ 2.
+ and : bool -> bool -> bool # 1 ∧ 2.
+ equiv : bool -> bool -> bool = [x][y] x ∨ y # 1 ⇔ 2.
 }.
