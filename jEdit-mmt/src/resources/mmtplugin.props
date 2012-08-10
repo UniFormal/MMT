@@ -16,7 +16,7 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.docs=doc.html
 
 plugin.info.kwarc.mmt.jedit.MMTPlugin.activate=startup
 plugin.info.kwarc.mmt.jedit.MMTPlugin.usePluginHome=true
-plugin.info.kwarc.mmt.jedit.MMTPlugin.jars=mmt-api.jar mmt-lf.jar lfcatalog.jar scala-library.jar tiscaf.jar
+plugin.info.kwarc.mmt.jedit.MMTPlugin.jars=scala-library.jar tiscaf.jar mmt-api.jar lfcatalog.jar mmt-lf.jar
 plugin.info.kwarc.mmt.jedit.MMTPlugin.version=1
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.0=jedit 04.05.00.00
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.1=plugin errorlist.ErrorListPlugin 1.9
