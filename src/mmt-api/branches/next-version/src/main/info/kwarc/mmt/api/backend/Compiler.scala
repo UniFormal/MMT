@@ -5,12 +5,14 @@ import frontend._
 import utils.File
 
 trait Importer {
+   protected var controller : Controller = null
    protected var report : Report = null
    /** true if this compiler can compile a certain kind of source files */
    def isApplicable(src : String): Boolean
    /** initialization (empty by default) */
-   def init(report: Report, args: List[String]) {
-      this.report = report
+   def init(controller: Controller, args: List[String]) {
+      this.controller = controller
+      report = controller.report
    }
    /** termination (empty by default)
     * Importers may create persistent data structures and processes,

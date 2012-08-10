@@ -61,7 +61,7 @@ class Controller extends ROController {
    val docstore = memory.narration
 
    /** maintains all customizations for specific languages */
-   val extman = new ExtensionManager(report)
+   val extman = new ExtensionManager(this)
    extman.addTermParser(new parser.NotationParser(parser.LFGrammar.grammar, this))
    /** the http server */
    var server : Option[Server] = None

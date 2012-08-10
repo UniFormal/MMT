@@ -10,7 +10,6 @@ class MMTCompiler extends Compiler {
    def compile(in: File, out: File) : List[SourceError] = {
       val dpath = DPath(FileURI(in))
       val source = scala.io.Source.fromFile(in.toJava, "UTF-8")
-      val controller = new Controller
       val tr = new TextReader(controller)
       val (doc, errorList) = tr.readDocument(source, dpath, "mmt")
       source.close

@@ -42,8 +42,8 @@ class Twelf extends Compiler {
     * creates and intializes a Catalog
     * first argument is the location of the twelf-server script
     */
-   override def init(rep: frontend.Report, args: List[String]) {
-      super.init(rep, Nil)
+   override def init(con: frontend.Controller, args: List[String]) {
+      super.init(con, Nil)
       path = File(args(0))
       val cat = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
       cat.init    //  throws PortUnavailable

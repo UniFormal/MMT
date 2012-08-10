@@ -10,7 +10,8 @@ import utils._
  *  This includes Compilers, QueryTransformers, and Foundations.
  *  They are provided as plugins and registered via their qualified class name, which is instantiated by reflection.
  */
-class ExtensionManager(report: Report) {
+class ExtensionManager(controller: Controller) {
+   private val report = controller.report
    private var foundations : List[Foundation] = Nil
    private var compilers : List[Compiler] = Nil
    private var querytransformers : List[QueryTransformer] = Nil
@@ -28,7 +29,7 @@ class ExtensionManager(report: Report) {
        } catch {
           case e : java.lang.Throwable => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
-       imp.init(report, args)
+       imp.init(controller, args)
        if (imp.isInstanceOf[Compiler]) {
           log("  ... as compiler")
           compilers ::= imp.asInstanceOf[Compiler]
