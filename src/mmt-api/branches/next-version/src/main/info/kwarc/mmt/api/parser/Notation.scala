@@ -101,7 +101,7 @@ object TextNotation {
   }
 
   private def parseMarker(n : scala.xml.Node) : NotationElement = n match {
-    case <delimiter>{s}</delimiter> => Delimiter(s.toString)
+    case <delimiter>{s @ _*}</delimiter> => Delimiter(s.text)
 
     case <std-arg>{s}</std-arg> =>
       try {
