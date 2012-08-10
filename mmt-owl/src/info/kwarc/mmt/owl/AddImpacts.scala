@@ -12,8 +12,7 @@ import scala.collection._
 import info.kwarc.mmt.api.ontology._
 
 class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory){
-	// path is Man (A), B depends on A
-    // changed constant
+	//changed constant
 	def dependsOn(path : Path) : Set[Path] = {
 	    var impacts = new mutable.HashSet[Path]()
 	    var whichTerm : Term = null
@@ -27,19 +26,18 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory){
 	         case _ => None
 	    }
 	    whichTerm match { 
-	        case OMS(s) =>  memory.ontology.query(path,ToSubject(RefersTo)) (p => impacts += p) // entity // B refersTo A 
-	        case _ =>   memory.ontology.query(path,ToObject(RefersTo)) (p => impacts += p) // axiom 
+	        case OMS(s) =>  memory.ontology.query(path,ToSubject(RefersTo)) (p => impacts += p) //entity  
+	        case _ =>   memory.ontology.query(path,ToObject(RefersTo)) (p => impacts += p) //axiom 
 	  }	         			
- 	   impacts //Bs
+ 	   impacts 
 	}
 
-	//path is ax168 (B), changes are As which impact B
 	//impacted constant, set of changes that have impact on the constant
 	def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = {
 		path match {
 		case CPath(parent : GlobalName, comp) => 
 			val impactedConstant = memory.content.getConstant(parent) 
-			val mdatum = changes.map(c => setMetaDatum(c, impactedConstant)) //val mdatum = changes.map(setMetaDatum)
+			val mdatum = changes.map(c => setMetaDatum(c, impactedConstant))
 	 		impactedConstant.metadata.add(mdatum.toList:_*)
 	 		None
 		case _ => None
@@ -64,7 +62,14 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory){
 	    	//case "rename" => "rename"
 	    	case "update" => "update"
 	    }
-	    val base = "http://omdoc.org/impact"
+    	
+    	val base = impCons.tp match {
+	      		   case Some(t) => t match { 
+	      		     				 case OMS(s) => "http://omdoc.org/possibleImpact"
+	      		     				 case _      => "http://omdoc.org/impact"
+	      		   				   }
+			       case None => throw Exception("Not a Term!")
+	       	 	}
 	    val dpath = DPath(utils.URI(base))
 	    val key : GlobalName = dpath ? "_" ? name 
 	    //set value for metadatum
