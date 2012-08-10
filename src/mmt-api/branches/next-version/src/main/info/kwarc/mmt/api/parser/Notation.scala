@@ -141,19 +141,19 @@ object TextNotation {
   }
   
   private def parseMarkers(not : String) : List[NotationElement] = {
-    val tokens = not.split(" ").toList
+    val tokens = not.split(" ").filter(_ != "").toList
     val markers = tokens map {tk =>
       tk.split("/").toList match {
         case Nil => throw ImplementationError("unexpected error: string split returned empty result list")
         case value :: Nil => //std arg or delimiter
           try {
-            StdArg(value.toInt)
+            StdArg(value.toInt - 1)
           } catch {
             case _ => Delimiter(value)
           }
         case pos :: sep :: Nil => //seq arg
           try {
-            SeqArg(pos.toInt, Delimiter(sep))
+            SeqArg(pos.toInt - 1, Delimiter(sep))
           } catch {
              case _ => throw ParseError("Invalid arg position in seq notation : " + not)
           }
@@ -284,14 +284,14 @@ case class StdArg(override val pos : Int) extends Argument(pos) {
       }
   }
   
-  override def toString = pos.toString 
+  override def toString = (pos + 1).toString 
   
   def toNode = 
     <std-arg>{pos}</std-arg>
 }
 
 case class SeqArg(override val pos : Int, delimiter : Delimiter) extends Argument(pos) {
-  override def toString = pos.toString + "/" + delimiter.toString 
+  override def toString = (pos + 1).toString + "/" + delimiter.toString 
 
   def toNode = 
     <seq-arg><pos>{pos}</pos>{delimiter.toNode}</seq-arg>        

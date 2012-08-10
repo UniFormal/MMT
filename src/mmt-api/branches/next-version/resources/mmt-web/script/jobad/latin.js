@@ -35,7 +35,6 @@ function load(elem) {
    var res = null;
    function cont(data) {res = data;}
    proxyAjax('get', url, '', cont, false, 'text/xml');
-   console.log(res.firstChild);
    elem.removeAttribute('jobad:load');
    return res.firstChild;
 }
@@ -44,7 +43,7 @@ function load(elem) {
 function edit() {
     
     //var url = adaptMMTURI(currentElement, 'text', false);
-    
+    console.log(currentElement);
     arr = currentElement.split("?");
     var mod = "";
     var url = "";
