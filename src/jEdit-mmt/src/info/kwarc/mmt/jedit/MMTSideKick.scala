@@ -21,12 +21,14 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
    def getOffset = offset
 }
 
+/* node in the sidekick outline tree: common ancestor class */ 
 abstract class MMTAsset(name: String, val region: SourceRegion)
   extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
   setEnd(MyPosition(region.end.offset))
   def getScope : Option[Term]
 }
 
+/* node in the sidekick outline tree: declarations */ 
 class MMTDeclAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
    setLongDescription(path.toPath)
    //setIcon
@@ -43,6 +45,7 @@ class MMTDeclAsset(val elem : StructuralElement, name: String, reg: SourceRegion
    }
 }
 
+/* node in the sidekick outline tree: terms */ 
 class MMTTermAsset(val parent: ContentPath, val path: Option[Path], name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
   path.map(p => setLongDescription(p.toPath))
   def getScope = Some(OMID(parent))
@@ -65,6 +68,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       case None => SourceRegion(SourcePosition(0,0,0), SourcePosition(0,0,0))
       case Some(r) => r.region
    }
+   /* build the sidekick outline tree: document node */
    private def buildTree(node: DefaultMutableTreeNode, doc: Document) {
       val child = new DefaultMutableTreeNode(new MMTDeclAsset(doc, doc.path.last, getRegion(doc)))
       node.add(child)
@@ -75,6 +79,7 @@ class MMTSideKick extends SideKickParser("mmt") {
            buildTree(child, controller.localLookup.getModule(m.target))
       }
    }
+   /* build the sidekick outline tree: module node */
    private def buildTree(node: DefaultMutableTreeNode, mod: Module) {
       val keyword = mod match {case _ : Theory => "theory"; case _: modules.View => "view"}
       val child = new DefaultMutableTreeNode(new MMTDeclAsset(mod, keyword + " " + mod.path.last, getRegion(mod)))
@@ -85,6 +90,7 @@ class MMTSideKick extends SideKickParser("mmt") {
          case m: DefinedModule =>
       }
    }
+   /* build the sidekick outline tree: declaration (in a module) node */
    private def buildTree(node: DefaultMutableTreeNode, dec: Declaration) {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
@@ -95,10 +101,20 @@ class MMTSideKick extends SideKickParser("mmt") {
       val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, getRegion(dec)))
       node.add(child)
       dec match {
-         case PlainInclude(from, _) => buildTree(child, dec.path, OMMOD(from))
+         case PlainInclude(from, _) => buildTree(child, dec.path, "from", OMMOD(from))
+         case c: Constant =>
+             c.tp foreach {t => buildTree(child, dec.path, "type", t)}
+             c.df foreach {t => buildTree(child, dec.path, "definition", t)}
          case _ => //TODO other cases, only reasonable once parser is better
       }
    }
+   /* build the sidekick outline tree: component of a (module or symbol level) declaration */
+   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, component: String, t: objects.Term) {
+      val child = new DefaultMutableTreeNode(new MMTTermAsset(parent, None, component, getRegion(t)))
+      node.add(child)
+      buildTree(child, parent, t)
+   }
+   /* build the sidekick outline tree: (sub)term node */
    private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, t: objects.Term) {
       val child = t match {
         case OMID(p) => new DefaultMutableTreeNode(new MMTTermAsset(parent, Some(p), p.last, getRegion(t)))
