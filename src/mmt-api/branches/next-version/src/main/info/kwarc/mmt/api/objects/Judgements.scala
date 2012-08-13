@@ -10,6 +10,12 @@ abstract class Judgement {
    *    therefore, the remaining free variables are meta-variables
    */ 
   def freeVars : HashSet[LocalName]
+  val stack: Stack
+}
+
+/** A WFJudgment defines well-formed objects */
+abstract class WFJudgement extends Judgement {
+   val wfo: Obj
 }
 
 /** represents an equality judgement, optionally at a type
@@ -29,13 +35,59 @@ case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends J
 /** represents a typing judgement
  * context |- tm : tp
  */
-case class Typing(stack: Stack, tm: Term, tp: Term) extends Judgement {
+case class Typing(stack: Stack, tm: Term, tp: Term) extends WFJudgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
     ret
   }
+  val wfo = tm
+}
+
+case class Universe(stack: Stack, univ: Term) extends WFJudgement {
+   lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: univ.freeVars_
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    ret
+  }
+  val wfo = univ
 }
 
 //TODO case class Inhabitation(name: LocalName, tp: Term) extends Judgement
+
+case class IsTheory(stack: Stack, theory: Term) extends Judgement {
+  lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: theory.freeVars_
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    ret
+  }
+}
+
+case class IsMorphism(stack: Stack, morphism: Term, from: Term) extends Judgement {
+  lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: morphism.freeVars_ ::: from.freeVars_
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    ret
+  }
+}
+
+case class IsContext(stack: Stack, context: Context) extends Judgement {
+  lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: context.freeVars_
+    ret
+  }
+}
+
+case class IsSubstitution(stack: Stack, substitution: Substitution, from: Context, to: Context) extends Judgement {
+  lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: substitution.freeVars_ ::: from.freeVars_ ::: to.freeVars_
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    ret
+  }
+}
