@@ -7,11 +7,11 @@ log+ controller
 //log+ reader
 log+ archive
 //log+ checker
-log+ object-checker
+//log+ object-checker
 //log+ query
 log+ catalog
 log+ server
-log+ parser
+//log+ parser
 //log+ presenter
 //log+ lf
 

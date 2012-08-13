@@ -322,7 +322,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
          case None => tm.head match {
             case None => (tm, None)
             case Some(h) =>
-               ruleStore.computationRules.get(h) match {
+               val rOpt = ruleStore.computationRules.get(h)
+               rOpt match {
                   case None => (tm, None) //TODO test for definition expansion
                   case Some(rule) =>
                      rule(this)(tm) match {
