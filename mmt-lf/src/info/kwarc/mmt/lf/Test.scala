@@ -11,7 +11,8 @@ object Test {
       val controller = new Controller
       controller.handleLine("file checker-test.mmt")
       val rs = controller.extman.ruleStore
-      rs.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow)
+      rs.add(new TypedRules)
+      rs.add(new LFRules)
       
       val unknowns = "a" % LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
         "d" % LF.ktype  ++ "e" % LF.ktype ++ "UO" % LF.ktype ++ "F" % OMV("UO")

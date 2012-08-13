@@ -4,12 +4,8 @@ import objects._
 import objects.Conversions._
 import utils.MyList.fromList
 
-/** the type inference rule type:kind */
-object UnivTerm extends InferenceRule(Univ.ktype) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
-      case LF.ktype => Some(LF.kind)
-      case _ => None
-   }
+class LFRules extends RuleSet {
+   val rules = List(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow)
 }
 
 /** the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U

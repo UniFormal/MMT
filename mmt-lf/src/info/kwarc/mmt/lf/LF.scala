@@ -26,14 +26,13 @@ import objects.Conversions._
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
 object LF {
-   val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
-   val lftheory = lfbase ? "lf"
-   val ktype = OMS(LF.lftheory ? "type")
-   val kind = OMS(LF.lftheory ? "kind")
+   val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "foundations")
+   val lftheory = lfbase ? "LF"
    val arrow = OMS(LF.lftheory ? "arrow")
    val Pi = OMS(LF.lftheory ? "Pi")
    val lambda = OMS(LF.lftheory ? "lambda")
    val apply = OMS(LF.lftheory ? "@")
+   val ktype = OMS(Typed.ktype)
    def constant(name : String) = OMS(lftheory ? name)
 }
 
@@ -45,7 +44,7 @@ object Lambda {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.lambda, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(LF.lambda, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.lambda  || b == LF.constant("implicit_lambda") => Some(n,t,s)
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.lambda || b == LF.constant("implicit_lambda") => Some(n,t,s)
 	   case _ => None
    }
 }
@@ -114,19 +113,6 @@ object ApplySpine {
 		  }
 		case _ => None
 	}
-}
-
-/** provides apply/unapply methods for a universes
-   in particular, Univ(1), Univ(2) are type and kind, respectively
- */
-object Univ {
-   /** the MMT URI of kind */
-   val kind = LF.lftheory ? "kind"
-   /** the MMT URI of type */
-   val ktype = LF.lftheory ? "type"
-	def apply(level : Int) : Term = if (level == 1) LF.ktype else LF.kind
-	def unapply(t : Term) : Option[Int] =
-	   if (t == LF.kind) Some(2) else if (t == LF.ktype) Some(1) else None
 }
 
 /** The LF foundation. Implements type checking and equality */
