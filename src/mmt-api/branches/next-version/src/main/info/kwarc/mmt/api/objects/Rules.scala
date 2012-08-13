@@ -13,6 +13,7 @@ class RuleStore {
    val typingRules = new HashMap[ContentPath,TypingRule]
    val inferenceRules = new HashMap[ContentPath, InferenceRule]
    val computationRules = new HashMap[ContentPath, ComputationRule]
+   val universeRules = new HashMap[ContentPath, UniverseRule]
    val equalityRules = new HashMap[ContentPath, EqualityRule]
    val atomicEqualityRules = new HashMap[ContentPath, AtomicEqualityRule]
    val solutionRules = new HashMap[ContentPath, SolutionRule]
@@ -24,11 +25,15 @@ class RuleStore {
          case r: TypingRule => typingRules(r.head) = r
          case r: InferenceRule => inferenceRules(r.head) = r
          case r: ComputationRule => computationRules(r.head) = r
+         case r: UniverseRule => universeRules(r.head) = r
          case r: EqualityRule => equalityRules(r.head) = r
          case r: AtomicEqualityRule => atomicEqualityRules(r.head) = r
          case r: SolutionRule => solutionRules(r.head) = r
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
       }
+   }
+   def add(rs: RuleSet) {
+      add(rs.rules : _*)
    }
 }
 
@@ -53,6 +58,7 @@ case class Stack(frames: List[Frame]) {
 
 object Stack {
    def apply(f: Frame) : Stack = Stack(List(f))
+   def apply(t: MPath) : Stack = empty(OMMOD(t))
    def empty(t: Term) : Stack = Stack(Frame(t, Context()))
 }
 
@@ -64,6 +70,11 @@ object Stack {
 trait Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    val head: GlobalName
+}
+
+/** A RuleSet groups some rules together */
+abstract class RuleSet {
+   val rules: List[Rule]
 }
 
 /** An TypingRule checks a term against a type.
@@ -108,6 +119,19 @@ abstract class ComputationRule(val head: GlobalName) extends Rule {
     *  @return the simplified term if simplification was possible
     */
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack): Option[Term]
+}
+
+/** A UniverseRule checks if a term is a universe
+ *  @param head the head of the universe expression 
+ */
+abstract class UniverseRule(val head: GlobalName) extends Rule {
+   /** 
+    *  @param solver provides callbacks to the currently solved system of judgments
+    *  @param univ the Term
+    *  @param stack its context
+    *  @return true iff the judgment holds
+    */
+   def apply(solver: Solver)(univ: Term)(implicit stack: Stack): Boolean
 }
 
 /** A EqualityRule checks the equality of two expressions

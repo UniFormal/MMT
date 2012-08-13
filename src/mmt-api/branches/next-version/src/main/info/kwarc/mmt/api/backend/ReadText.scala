@@ -841,9 +841,10 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
         domain match {
           case None => throw TextParseError(toPos(start), "structure is defined via a list of assignments, but its domain is not specified")
           case Some(dom)  =>
-            structure = new DeclaredStructure(parent.toTerm, LocalName(name), dom)
-            add(structure)
-            i = crawlLinkBody(i, structure.asInstanceOf[DeclaredStructure])
+            val declstructure = new DeclaredStructure(parent.toTerm, LocalName(name), dom, isImplicit)
+            add(declstructure)
+            structure = declstructure
+            i = crawlLinkBody(i, declstructure)
         }
       }
       else if (!isIdentifierPartCharacter(flat.codePointAt(i)))
@@ -853,8 +854,9 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
         val (morphism, positionAfter) = crawlTerm(i, Nil, parent.toTerm)
         i = positionAfter
         domain match {
-          case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism)
-          case None => structure = new DefinedStructure(parent.toTerm, LocalName(name), null, morphism)
+          case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism, isImplicit)
+          //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted 
+          case None => structure = new DefinedStructure(parent.toTerm, LocalName(name), null, morphism, isImplicit)
         }
 
         add(structure)
@@ -864,7 +866,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
       case None => throw TextParseError(toPos(start), "structure has no definiens and its domain is not specified")
       case Some(dom) =>
         // It's a DeclaredStructure with empty body
-        structure = new DeclaredStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)))
+        structure = new DeclaredStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), isImplicit)
         add(structure)
     }
 
@@ -1323,7 +1325,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
     var isImplicit : Boolean = false
     if (flat.startsWith("%implicit", i)) {
       isImplicit = true
-      i = skipws(crawlKeyword(i, "%implicit"))   // TODO implicit views
+      i = skipws(crawlKeyword(i, "%implicit"))
     }
     i = skipwscomments(i)
 
@@ -1355,7 +1357,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
     var view : View = null
     if (flat.codePointAt(i) == '{') {
       // It's a DeclaredView
-      view = new DeclaredView(getCurrentDPath, LocalPath(List(name)), domain, codomain)
+      view = new DeclaredView(getCurrentDPath, LocalPath(List(name)), domain, codomain, isImplicit)
       add(view)
       i = crawlLinkBody(i, view.asInstanceOf[DeclaredView])
     }
@@ -1363,7 +1365,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
       // It's a DefinedView
       val (morphism, positionAfter) = crawlTerm(i, Nil, OMMOD(utils.mmt.mmtcd))
       i = positionAfter
-      view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism)
+      view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism, isImplicit)
       add(view)
     }
 

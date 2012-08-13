@@ -66,11 +66,11 @@ object Patcher {
     case (t : DefinedTheory,  "df", Some(df : Term)) => new DefinedTheory(t.parent, t.name, df)
 
     /** Views */
-    case (v : DeclaredView, "to", Some(to : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, v.from, to))
-    case (v : DeclaredView, "from", Some(from : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, from, v.to))
-    case (v : DefinedView, "to", Some(to : Term)) => new DefinedView(v.parent, v.name, v.from, to, v.df)
-    case (v : DefinedView, "from", Some(from : Term)) => new DefinedView(v.parent, v.name, from, v.to, v.df)
-    case (v : DefinedView,  "df", Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df)
+    case (v : DeclaredView, "to", Some(to : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, v.from, to, v.isImplicit))
+    case (v : DeclaredView, "from", Some(from : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, from, v.to, v.isImplicit))
+    case (v : DefinedView, "to", Some(to : Term)) => new DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
+    case (v : DefinedView, "from", Some(from : Term)) => new DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
+    case (v : DefinedView,  "df", Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
 
     /** Constants */
     case (c : Constant, "def", Some(s : Term)) => new Constant(c.home, c.name, c.tp, Some(s), c.rl, c.not)

@@ -31,7 +31,7 @@ object Names {
    }
    /** returns the list of possible completions of partialName imported from the theory/via the structure given by qualifiers */
    def resolve(home: Term, qualifiers: List[String], partialName: String)(implicit lib: Lookup) : List[Completion] = {
-      val incls = lib.importsTo(home).toList
+      val incls = lib.visible(home).toList
       if (qualifiers.isEmpty) {
          incls flatMap {i => lookIn(i, partialName)}
       } else {
@@ -59,7 +59,7 @@ object Names {
             case _ => None
          }
       } orElse {
-         val incls = lib.importsToFlat(home).toList
+         val incls = lib.visible(home).toList
          val es = incls mapPartial {i => lib.getO(i % name)}
          if (es.length == 1) Some(es(0)) else None  // uniquely resolvable symbol in an included theory
       }

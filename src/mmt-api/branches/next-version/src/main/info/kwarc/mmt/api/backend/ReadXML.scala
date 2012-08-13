@@ -101,12 +101,13 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	            val vpath = base ? name
 	            val (m2, from) = XMLReader.getTheoryFromAttributeOrChild(m, "from", base)
 	            val (m3, to) = XMLReader.getTheoryFromAttributeOrChild(m2, "to", base)
+	            val isImplicit = parseImplicit(m)
 	            val (v, body) = m3.child match {
                   case <definition>{d}</definition> :: Nil =>
 		               val df = Obj.parseTerm(d, vpath)
-		               (new DefinedView(modParent, name, from, to, df), None)
+		               (new DefinedView(modParent, name, from, to, df, isImplicit), None)
                   case assignments =>
-	 		            (new DeclaredView(base, name, from, to), Some(assignments))
+	 		            (new DeclaredView(base, name, from, to, isImplicit), Some(assignments))
                 }
 	            add(v, md)
 	            docParent map (dp => add(MRef(dp, vpath, true)))
@@ -183,13 +184,14 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          case <import>{seq @ _*}</import> =>
             log("import " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
+            val isImplicit = parseImplicit(s2) 
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = new DefinedStructure(thy, name, from, df)
+                  val s = new DefinedStructure(thy, name, from, df, isImplicit)
                   add(s,md)
                case assignments =>
-                  val s = new DeclaredStructure(thy, name, from)
+                  val s = new DeclaredStructure(thy, name, from, isImplicit)
                   add(s,md)
                   readAssignments(OMDL(thy, name), base, assignments)
             }
@@ -286,6 +288,14 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	         case scala.xml.Comment(_) =>
 	         case  _ => throw ParseError("ABox assertion expected: " + ass)
          }
+      }
+   }
+   
+   private def parseImplicit(n: Node): Boolean = {
+      xml.attr(n, "implicit") match {
+         case "true" => true
+         case "false" | "" => xml.attr(n, "name") == ""
+         case s => throw ParseError("true|false expected in implicit attribute, found " + s)
       }
    }
 }

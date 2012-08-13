@@ -14,6 +14,8 @@ trait Link {
    val to : Term
    def toTerm : Term
    def path : ContentPath
+   val isImplicit : Boolean
+   
    protected def innerNodes : Seq[scala.xml.Node]
    /** name, from, to, etc */
    protected def outerComponents : List[Content]

@@ -109,8 +109,8 @@ class Controller extends ROController {
    /** a lookup that uses only the current memory data structures */
    val localLookup = new Lookup(report) {
       def get(path : Path) =  try {library.get(path)} catch {case NotFound(p) => throw GetError(p.toPath + "not known")}
-      def imports(from: Term, to: Term) = library.imports(from, to)
-      def importsTo(to: Term) = library.importsTo(to)
+      //def imports(from: Term, to: Term) = library.imports(from, to)
+      def visible(to: Term) = library.visible(to)
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = library.preImage(p)
       def getDeclarationsInScope(mod : Term) = library.getDeclarationsInScope(mod)
@@ -118,8 +118,8 @@ class Controller extends ROController {
    /** a lookup that loads missing modules dynamically */
    val globalLookup = new Lookup(report) {
       def get(path : Path) = iterate {library.get(path)}
-      def imports(from: Term, to: Term) = iterate {library.imports(from, to)}
-      def importsTo(to: Term) = iterate {library.importsTo(to)}
+      //def imports(from: Term, to: Term) = iterate {library.imports(from, to)}
+      def visible(to: Term) = iterate {library.visible(to)}
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = iterate {library.preImage(p)}
       def getDeclarationsInScope(mod : Term) = iterate {library.getDeclarationsInScope(mod)}
@@ -290,6 +290,7 @@ class Controller extends ROController {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
 	      case AddImporter(c, args) => extman.addImporter(c, args)
+	      case AddRuleSet(c) => extman.addRuleSet(c)
 	      case AddFoundation(c, args) => extman.addFoundation(c, args)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
@@ -309,6 +310,7 @@ class Controller extends ROController {
                case "content" => arch.produceNarrCont(in)
                case "content*" => arch.updateNarrCont(in)
                case "check" => arch.check(in, this)
+               case "validate" => arch.validate(in, this)
                case "delete" => arch.deleteNarrCont(in)
                case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)

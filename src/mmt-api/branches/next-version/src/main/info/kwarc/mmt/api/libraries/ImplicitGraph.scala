@@ -118,6 +118,11 @@ class ThinGeneratedCategory {
       else impl(from,to)
    }
    
+   /** retrieves all pairs (to,Morph) for from */
+   def outOf(from: Term) : HashSet[(Term,Term)] = impl.outOf(from)
+   /** retrieves all pairs (from,Morph) for to */
+   def into (to: Term) : HashSet[(Term,Term)] = impl.into(to)
+   
    def clear {
       direct.clear
       impl.clear

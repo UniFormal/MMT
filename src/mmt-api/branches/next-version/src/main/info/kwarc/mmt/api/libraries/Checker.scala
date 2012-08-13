@@ -49,10 +49,10 @@ class Checker(controller: Controller) {
    /** checks a StructuralElement
     * @param e the element to check
     * @param reCont a continuation called on all RelationalElement's produced while checking objects
-    * @param seCont a continuation called on the reconstructed element (possibly the same as e)
+    * @param unitCont a continuation called on every validation unit
     */ 
    //TODO: currently the reconstructed element is always e
-   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, seCont: StructuralElement => Unit) {
+   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
       val path = e.path
       log("checking " + path)
       implicit val rel = (p: Path) => reCont(RefersTo(path, p))
@@ -64,7 +64,7 @@ class Checker(controller: Controller) {
          case t: DeclaredTheory =>
             nrThys += 1
 
-            nrIncls += controller.memory.content.importsTo(OMMOD(t.path)).size
+            nrIncls += controller.memory.content.visible(OMMOD(t.path)).size
 
             //t.components collect {
             //  case s : Structure => nrIncls += 1
@@ -103,8 +103,16 @@ class Checker(controller: Controller) {
             checkTheory(s.from)
             checkMorphism(s.df, s.from, s.home)
          case c : Constant =>
-            c.tp map {t => checkTerm(c.home, t)}
-            c.df map {t => checkTerm(c.home, t)}
+            c.tp map {t => 
+               checkTerm(c.home, t)
+               OMMOD.unapply(c.home) foreach {p => unitCont(ValidationUnit(c.path $ "type", Universe(Stack(p), t)))}
+            }
+            c.df map {d => 
+               checkTerm(c.home, d)
+               OMMOD.unapply(c.home) foreach {p =>
+                  c.tp foreach {tp => unitCont(ValidationUnit(c.path $ "definiens", Typing(Stack(p), d, tp)))}
+               }
+            }
             /*
             val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
             c.tp map {t =>
@@ -165,10 +173,9 @@ class Checker(controller: Controller) {
 */
          case _ => //succeed for everything else
       }
-      seCont(e)
    }
    
-   def check(p: Path)(implicit reCont : RelationalElement => Unit, seCont: StructuralElement => Unit) {
+   def check(p: Path)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
       check(controller.get(p))
    }
 
@@ -359,7 +366,7 @@ class Checker(controller: Controller) {
             OMATTR(argR, key, valueR)
          case OMM(arg, morph) =>
             val (morphR, from, to) = inferMorphism(morph)
-            if (! content.imports(to, home))
+            if (! content.hasImplicit(to, home))
                throw Invalid("codomain of morphism is not imported into expected home theory")
             val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
             OMM(arg, morph)

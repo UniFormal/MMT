@@ -7,6 +7,7 @@ log+ controller
 //log+ reader
 log+ archive
 //log+ checker
+log+ object-checker
 //log+ query
 log+ catalog
 log+ server
@@ -27,17 +28,16 @@ log+ parser
 //http..latin.omdoc.org/category_theory/dfol_based
 
 importer info.kwarc.mmt.api.backend.MMTCompiler
-
+rules info.kwarc.mmt.lf.TypedRules
+rules info.kwarc.mmt.lf.LFRules
 archive add ../../../../theories
-
 //archive mmt clean
-
-archive mmt compile
-
-archive mmt content
-archive mmt relational
-archive mmt notation
-archive mmt check
+//archive mmt relational
+//archive mmt notation
+//archive mmt compile
+//archive mmt content
+archive mmt validate
+//archive mmt check
 
 //mws http://localhost:6284
 server on 8080

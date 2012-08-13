@@ -105,8 +105,8 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
 
   def apply(s: String, scope : Term) : Term = {
     
-    val includes = controller.globalLookup.importsToFlat(scope)
-    val decls = (scope :: includes.toList) flatMap {tm => 
+    val includes = controller.library.visible(scope)
+    val decls = includes.toList flatMap {tm => 
       controller.globalLookup.get(tm.toMPath).components
     }
     
@@ -394,7 +394,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       else 
         None
     case hd :: sec :: tl => 
-      log("in seq arg" + tks.mkString)
+      log("in seq arg " + tks.mkString)
       log(sep.matches(sec).toString)
       if (sep.matches(sec) && hd.isArg) {
         getSeqArg(sep, tl, true) match {

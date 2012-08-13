@@ -60,6 +60,18 @@ class ExtensionManager(controller: Controller) {
    /** retrieves an applicable Foundation */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
 
+   /** add a RuleSet to the RuleStore */
+   def addRuleSet(cls: String) {
+       log("adding rule set " + cls)
+       val rs = try {
+          val RS = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[objects.RuleSet]]
+          RS.newInstance
+       } catch {
+          case e : java.lang.ClassNotFoundException => throw ExtensionError("cannot instantiate class " + cls).setCausedBy(e)
+       }
+       ruleStore.add(rs)
+   }
+   
    /** retrieves a TermParser */
    private var termParsers : List[TermParser] = Nil
    def addTermParser(tp: TermParser) {termParsers ::= tp}

@@ -17,7 +17,7 @@ import info.kwarc.mmt.api.presentation._
  */
 abstract class Structure extends Symbol with Link {
    val to = home
-   def toTerm = OMDL(home, name)
+   def toTerm = if (name.isAnonymous) OMIDENT(to) else OMDL(home, name)
    /**
     * computes induced symbols, compare the corresponding method in {@link info.kwarc.mmt.api.symbols.StructureAssignment}
     * @param sym a symbol of the domain theory of the structure
@@ -27,7 +27,7 @@ abstract class Structure extends Symbol with Link {
    protected def outerString = path + " : " + from.toString
    def toNode = from match {
      case OMMOD(p) => 
-          <import name={if (name.isAnonymous) null else name.toPath} from={p.toPath}>
+          <import name={if (name.isAnonymous) null else name.toPath} from={p.toPath} implicit={if (! name.isAnonymous && isImplicit) "true" else null}>
             {getMetaDataNode}
             {innerNodes}
           </import>
@@ -46,9 +46,9 @@ abstract class Structure extends Symbol with Link {
  * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
  * @param name the name of the structure
  * @param from the domain theory
- * @param meta the optional meta-morphism
+ * @param isImplicit true iff the link is implicit
  */
-class DeclaredStructure(val home : Term, val name : LocalName, val from : Term)
+class DeclaredStructure(val home : Term, val name : LocalName, val from : Term, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_Structure
    /** override in order to permit implicit structures (identified by their domain) */
@@ -62,16 +62,17 @@ class DeclaredStructure(val home : Term, val name : LocalName, val from : Term)
   * @param name the name of the structure
   * @param from the domain theory
   * @param df the definiens
+  * @param isImplicit true iff the link is implicit
   */
-class DefinedStructure(val home : Term, val name : LocalName, val from : Term, val df : Term)
+class DefinedStructure(val home : Term, val name : LocalName, val from : Term, val df : Term, val isImplicit : Boolean)
       extends Structure with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedStructure
 }
 
 object Include {
-   def apply(home: Term, from: Term) = new DeclaredStructure(home, LocalName.Anon, from)
+   def apply(home: Term, from: Term) = new DeclaredStructure(home, LocalName.Anon, from, true)
    def unapply(t: ContentElement) : Option[(Term,Term)] = t match {
-      case s: Structure if s.name.isAnonymous => Some((s.home, s.from))
+      case d: DeclaredStructure if d.name.isAnonymous => Some((d.to, d.from)) //TODO can there be assignments?
       case _ => None
    }
 }
@@ -83,12 +84,9 @@ object Include {
  * @param to the codomain of the inclusion
  */
 object PlainInclude {
-   def apply(from : MPath, to : MPath) = new DeclaredStructure(OMMOD(to), LocalName.Anon, OMMOD(from))
+   def apply(from : MPath, to : MPath) = Include(OMMOD(to), OMMOD(from))
    def unapply(t: ContentElement) : Option[(MPath,MPath)] = t match {
-      case d: DeclaredStructure if d.name.isAnonymous => (d.from,d.to) match {
-         case (OMMOD(from), OMMOD(to)) => Some((from, to))
-         case _ => None
-      }
+      case Include(OMMOD(to), OMMOD(from)) => Some((from, to))
       case _ => None
    }
 }

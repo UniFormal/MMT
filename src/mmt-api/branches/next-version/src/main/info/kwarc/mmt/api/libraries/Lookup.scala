@@ -49,7 +49,10 @@ abstract class Lookup(val report : frontend.Report) {
          }
       }
    *  But we cannot case-split over an abstract type parameter due to Scala's compilation-time type erasure.
+   *  Maybe reflection could be used to work around that.
    */
+   
+/* FR: I removed these methods from the interface because in most cases the method visible (implemented based on implicit morphisms) is enough and better. 
    def imports(from: Term, to: Term) : Boolean
    def importsTo(to: Term) : Iterator[Term]
    def importsToFlat(to: Term, found: HashSet[Term] = new HashSet[Term]) : HashSet[Term] = {
@@ -62,17 +65,14 @@ abstract class Lookup(val report : frontend.Report) {
       }
       found
    }
+*/ 
+
+   def visible(to: Term): HashSet[Term]
    def getImplicit(from: Term, to: Term) : Option[Term]
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
    def getDeclarationsInScope(mod : Term) : List[Content]
-   //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
-   //def structureModToSym(p : MPath) : SPath
-   //def resolveAlias(s : Symbol) : Symbol
    
- /*  def imports(from : MPath, to : MPath) : Boolean
-   //def importsFrom(from : MPath) : scala.collection.mutable.Set[MPath]
-   def importsTo(to : MPath) : List[objects.ModuleObj] */
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
    

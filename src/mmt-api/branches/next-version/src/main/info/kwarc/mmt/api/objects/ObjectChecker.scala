@@ -96,10 +96,10 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
     * @param the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable
     * @return true unless the solution differs from an existing one
     */
-   private def solve(name: LocalName, value: Term): Boolean = {
+   private def solve(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
-         checkEquality(value, solved.df.get, solved.tp)(Stack.empty(theory)) //TODO
+         checkEquality(value, solved.df.get, solved.tp) //TODO
       else {
          solution = left ::: solved.copy(df = Some(value)) :: right
          newsolutions = name :: newsolutions
@@ -120,7 +120,13 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
            checkTyping(tm ^ subs, tp ^ subs)(stack ^ subs)
         case Equality(stack, tm1, tm2, tp) =>
            def prepare(t: Term) = simplify(t ^ subs)(stack)
-           checkEquality(prepare(tm1), prepare(tm2), tp map prepare)(simplifyStack(stack ^ subs))
+           checkEquality(prepare(tm1), prepare(tm2), tp map prepare)(stack ^ subs)
+        case Universe(stack, tm) =>
+           val stackS = stack ^ subs
+           inferType(tm ^ subs)(stackS) match {
+              case None => delay(j)
+              case Some(univ) => checkUniverse(univ)(stackS)
+           }
      }
      if (mayhold) activate else false
    }
@@ -174,7 +180,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
    def inferType(tm: Term)(implicit stack: Stack): Option[Term] = {
      log("inference: " + stack.context + " |- " + tm + " : ?")
      report.indent
-     val res = tm match {
+     val resFoundInd = tm match {
        //foundation-independent cases
        case OMV(x) => (unknowns ++ stack.context)(x).tp
        case OMS(p) =>
@@ -185,12 +191,14 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
              case Some(d) => inferType(d) // expand defined constant
            }
          }
-       //foundation-dependent cases
-       case tm =>
-         val hd = tm.head.get //TODO
-         limitedSimplify(tm) {t => t.head flatMap {h => ruleStore.inferenceRules.get(h)}} match {
-           case (tmS, Some(rule)) => rule(this)(tmS)
-           case (_, None) => None
+       case _ => None
+     }
+     //foundation-dependent cases if necessary
+     val res = resFoundInd orElse {
+         val (tmS, ruleOpt) = limitedSimplify(tm) {t => t.head flatMap {h => ruleStore.inferenceRules.get(h)}}
+         ruleOpt match {
+           case Some(rule) => rule(this)(tmS)
+           case None => None
          }
      }
      report.unindent
@@ -198,6 +206,17 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
      res
    }
 
+   def checkUniverse(univ: Term)(implicit stack: Stack): Boolean = {
+     log("universe: " + stack.context + " |- " + univ + " : universe")
+     report.indent
+     val res = limitedSimplify(univ) {u => u.head flatMap {h => ruleStore.universeRules.get(h)}} match {
+        case (uS, Some(rule)) => rule(this)(uS)
+        case (uS, None) => delay(Universe(stack, uS))  
+     }
+     report.unindent
+     res
+   }
+   
    /** proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.
     * @param tm1 the first term
     * @param tm2 the second term
@@ -307,7 +326,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
                   case None => (tm, None) //TODO test for definition expansion
                   case Some(rule) =>
                      rule(this)(tm) match {
-                        case Some(tmS) => limitedSimplify(tmS)(simple)
+                        case Some(tmS) =>
+                           log("simplified: " + tm + " ~~> " + tmS)
+                           limitedSimplify(tmS)(simple)
                         case None => (tm, None) 
                      }
                }

@@ -10,7 +10,7 @@ import utils.MyList._
 import ontology._
 
 import scala.xml.{Node,NodeSeq}
-import collection.immutable.HashSet
+import collection.mutable.HashSet
 
 /*abstract class ContentMessage
 case class Add(e : ContentElement) extends ContentMessage
@@ -215,28 +215,48 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                  new Constant(l.to, newName, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
               case r: Structure => assigOpt match {
                   case Some(a: DefLinkAssignment) =>
-                      new DefinedStructure(l.to, newName, r.from, a.target)
+                      new DefinedStructure(l.to, newName, r.from, a.target, false)
                   case None =>
-                      new DefinedStructure(l.to, newName, r.from, OMCOMP(r.toTerm, l.toTerm)) //TODO should be a DeclaredStructure
+                      new DefinedStructure(l.to, newName, r.from, OMCOMP(r.toTerm, l.toTerm), false) //TODO should be a DeclaredStructure
                   case _ =>  throw GetError("link " + l.path + " provides non-StructureAssignment for structure " + r.path)
               }
           }
    }
 
   def getDeclarationsInScope(mod : Term) : List[Content] = {
-    val includes = importsToFlat(mod)
-    val decls = (mod :: includes.toList) flatMap {tm => 
-      get(tm.toMPath).components
+    val impls = visibleVia(mod).toList
+    val decls = impls flatMap {case (from,via) => 
+      get(from.toMPath).components
     }
     println("in library -- getDecsInScope :")
     println(decls)
     decls
   }
 
+  /** visible theories (implicit imports and views)
+   * @param to the theory
+   * @return all pairs (theory,via) such that theory is visible in to
+   * transitive and reflexive
+   */
+  def visibleVia(to: Term) : HashSet[(Term,Term)] = {
+     val hs = implicitGraph.into(to)
+     hs add (to, OMCOMP())
+     hs
+  }
+  //TODO: both these methods do not take complex to-terms into account, e.g., a union should see all imports into its parts
+  /** visible theories (implicit imports and views)
+   * as visibleVia but dropping the implicit morphisms
+   */
+  def visible(to: Term) : HashSet[Term] = {
+     val hs = implicitGraph.into(to)
+     hs add (to, OMCOMP())
+     hs.map(_._1)
+  }
+  
    /** iterator over all includes into a theory (including the meta-theory)
     * a new iterator is needed once this has been traversed 
     */
-   def importsTo(to: Term) : Iterator[Term] = to match {
+   private def importsTo(to: Term) : Iterator[Term] = to match {
       case OMMOD(p) =>
          getTheory(p) match {
             case t: DefinedTheory => importsTo(t.df)
@@ -250,7 +270,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    }
 
    /** Checks whether a theory ("from") is included into another ("to"), transitive, reflexive */
-   def imports(from: Term, to: Term) : Boolean = {
+   private def imports(from: Term, to: Term) : Boolean = {
       TheoryExp.imports(from,to) {(f,t) => 
          importsTo(OMMOD(t)) contains OMMOD(f)
       }
@@ -318,7 +338,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          }
     }
     e match {
-       case Include(home, from) => implicitGraph(from, home) = OMIDENT(home)
+       case l: Link if l.isImplicit => implicitGraph(l.from, l.to) = l.toTerm
        case t: DeclaredTheory => t.meta match {
           case Some(m) => implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(t.toTerm)
           case None =>

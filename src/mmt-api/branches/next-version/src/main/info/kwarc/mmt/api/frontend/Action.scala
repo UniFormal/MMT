@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def comment = "//.*"r
    private def action = controller | shell | getaction
 
-   private def controller = log | local | catalog | archive | tntbase | importer | foundation | mws | server | execfile
+   private def controller = log | local | catalog | archive | tntbase | importer | foundation | rules | mws | server | execfile
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
@@ -46,12 +46,13 @@ object Action extends RegexParsers {
            val segs = MyList.fromString(s.getOrElse(""), "/")
            ArchiveBuild(id, "present", segs, List(p))
         }
-     private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
+     private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source" | "delete" | "clean" | "extract" | "integrate"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
    private def foundation = "foundation" ~> str ~ (str *) ^^ {case f ~ args => AddFoundation(f, args)}
+   private def rules = "rules" ~> str ^^ {case s => AddRuleSet(s)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def server = serveron | serveroff
      private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
@@ -140,7 +141,11 @@ case class AddTNTBase(file : File) extends Action {override def toString = "tntb
  * @param args a list of arguments that will be passed to the compiler's init method
  */
 case class AddImporter(cls: String, args: List[String]) extends Action {override def toString = "importer " + cls + args.mkString(" ", " ", "")}
+
 case class AddFoundation(cls: String, args: List[String]) extends Action {override def toString = "foundation " + cls + args.mkString(" ", " ", "")}
+
+case class AddRuleSet(cls: String) extends Action {override def toString = "rules " + cls}
+
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
 /** add a SVN Archive */
