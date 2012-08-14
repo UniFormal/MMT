@@ -125,7 +125,8 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
          deleteFile(inFile)
        }
     }
-    def readSource(in: List[String] = Nil, controller: Controller) {
+   /** structure-parses and loads an archive */ 
+   def readSource(in: List[String] = Nil, controller: Controller) {
        if ((root / "source").exists) {
           traverse("source", in, extensionIs("elf")) {case Current(inFile, inPath) =>
              val source = scala.io.Source.fromFile(inFile, "UTF-8")

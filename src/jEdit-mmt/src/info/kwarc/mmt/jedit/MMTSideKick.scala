@@ -8,6 +8,7 @@ import parser._
 import frontend._
 import libraries._
 import modules._
+import patterns._
 import objects._
 import symbols._
 import documents._
@@ -94,9 +95,9 @@ class MMTSideKick extends SideKickParser("mmt") {
    private def buildTree(node: DefaultMutableTreeNode, dec: Declaration) {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
-         case s: Structure => "structure " + s.name.toString + " "
+         case s: Structure => "structure " + s.name.toString
          case a: DefLinkAssignment => "import " + a.name.toString
-         case d: Declaration => d.name.toString
+         case d: Declaration => d.role.toString + " " + d.name.toString
       }
       val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, getRegion(dec)))
       node.add(child)
@@ -106,6 +107,10 @@ class MMTSideKick extends SideKickParser("mmt") {
          case c: Constant =>
              c.tp foreach {t => buildTree(child, dec.path, "type", t)}
              c.df foreach {t => buildTree(child, dec.path, "definition", t)}
+         case p: Pattern =>
+             //TODO this is just a quick hack
+             p.params.variables foreach {vd => vd.tp foreach {t => buildTree(child, dec.path, vd.name.toString, t)}} 
+             p.body.variables foreach {vd => vd.tp foreach {t => buildTree(child, dec.path, vd.name.toString, t)}}
          case _ => //TODO other cases, only reasonable once parser is better
       }
    }
@@ -144,7 +149,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       val root = tree.root
       try {
          log("parsing " + path.toString + " as " + dpath.toPath)
-         val (doc,errors) = controller.textReader.readDocument(src, dpath, "mmt")
+         val (doc,errors) = controller.textReader.readDocument(src, dpath)(controller.termParser.apply)
          // add narrative structure of doc to outline tree
          buildTree(root, doc)
          // register errors with ErrorList plugin

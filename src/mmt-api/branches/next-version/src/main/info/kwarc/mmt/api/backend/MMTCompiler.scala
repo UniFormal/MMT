@@ -13,12 +13,7 @@ class MMTCompiler extends Compiler {
    def compile(in: File, out: File) : List[SourceError] = {
       val dpath = DPath(FileURI(in))
       val source = scala.io.Source.fromFile(in.toJava, "UTF-8")
-      val tr = new TextReader(controller)
-      val parsingUnits = new HashSet[ParsingUnit]
-      val (doc, errorList) = tr.readDocument(source, dpath) {pu => 
-         parsingUnits += pu
-         DefaultParser(pu)
-      }
+      val (doc, errorList) = controller.textReader.readDocument(source, dpath)(controller.termParser.apply)
       source.close
       
       val outFile = out.setExtension("omdoc")
