@@ -301,7 +301,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    def preImage(p : GlobalName) : Option[GlobalName] = p.name match {
          case hd / tl =>
             try {
-               get(p.mod % !(hd)) match {
+               get(p.module % !(hd)) match {
                   case s : Structure => Some(s.from % tl)
                }
             } catch {case _ => None}

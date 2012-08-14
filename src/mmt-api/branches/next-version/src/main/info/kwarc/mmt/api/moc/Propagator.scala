@@ -3,14 +3,14 @@ package info.kwarc.mmt.api.moc
 import scala.collection._
 import scala.collection.immutable.{HashMap,HashSet,List}
 
-import info.kwarc.mmt.api.frontend.ROMemory
-import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.utils.mmt
-import info.kwarc.mmt.api.objects.{OMID, OME, Term}
+import ontology._
+import symbols._
+import patterns._
+import modules._
+import utils.mmt
+import frontend.ROMemory
+import objects._
 
 
 /**
@@ -130,10 +130,10 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     
     //component paths
     mod match {
-      case t : DeclaredTheory => cpaths += CPath(mod.path, "meta")
-      case t : DefinedTheory => cpaths += CPath(mod.path, "df")
-      case v : DeclaredView => cpaths = cpaths + CPath(mod.path, "from") + CPath(mod.path, "to")
-      case v : DefinedView => cpaths = cpaths + CPath(mod.path, "from") + CPath(mod.path, "to") + CPath(mod.path, "df") 
+      case t : DeclaredTheory => cpaths += CPath(mod.path, DomComponent)
+      case t : DefinedTheory => cpaths += CPath(mod.path, DefComponent)
+      case v : DeclaredView => cpaths = cpaths + CPath(mod.path, DomComponent) + CPath(mod.path, CodComponent)
+      case v : DefinedView => cpaths = cpaths + CPath(mod.path, DomComponent) + CPath(mod.path, CodComponent) + CPath(mod.path, DefComponent) 
     }
     
     cpaths
@@ -146,13 +146,13 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
    */
   private def containedPaths(dec : Declaration) : HashSet[Path] = {
     dec match {
-      case c : Constant => new HashSet[Path]() + dec.path + CPath(c.path, "type") + CPath(c.path, "definition")
-      case s : Structure => new HashSet[Path]() + dec.path + CPath(s.path, "from")
-      case p : Pattern => new HashSet[Path]() + dec.path + CPath(p.path, "params") + CPath(p.path, "body")
-      case i : Instance => new HashSet[Path]() + dec.path + CPath(i.path, "pattern") + CPath(i.path, "matches")
-      case a : ConstantAssignment => new HashSet[Path]() + dec.path + CPath(a.path, "target")
-      case d : DefLinkAssignment => new HashSet[Path]() + dec.path + CPath(d.path, "target")
-      case a : Alias => new HashSet[Path]() + dec.path + CPath(a.path, "forpath")
+      case c : Constant => new HashSet[Path]() + dec.path + CPath(c.path, TypeComponent) + CPath(c.path, DefComponent)
+      case s : Structure => new HashSet[Path]() + dec.path + CPath(s.path, DomComponent)
+      case p : Pattern => new HashSet[Path]() + dec.path + CPath(p.path, ParamsComponent) + CPath(p.path, PatternBodyComponent)
+      case i : Instance => new HashSet[Path]() + dec.path + CPath(i.path, PatternComponent) + CPath(i.path, MatchesComponent)
+      case a : ConstantAssignment => new HashSet[Path]() + dec.path + CPath(a.path, DefComponent)
+      case d : DefLinkAssignment => new HashSet[Path]() + dec.path + CPath(d.path, DefComponent)
+      case a : Alias => new HashSet[Path]() + dec.path + CPath(a.path, ForPathComponent)
     } 
   } 
 }
@@ -193,35 +193,33 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       
       (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
-      case (t : DeclaredTheory, "meta") => None
-      case (t : DefinedTheory, "meta") => None
-      case (t : DefinedTheory, "df") => makeChange(Some(t.df))
+      case (t : DeclaredTheory, DomComponent) => None
+      case (t : DefinedTheory, DomComponent) => None
+      case (t : DefinedTheory, DefComponent) => makeChange(Some(t.df))
 
       /* Views */
-      case (v : View, "to") => makeChange(Some(v.to))
-      case (v : View, "from") => makeChange(Some(v.from))
-      case (v : DefinedView,  "df") => makeChange(Some(v.df))
+      case (v : View, CodComponent) => makeChange(Some(v.to))
+      case (v : View, DomComponent) => makeChange(Some(v.from))
+      case (v : DefinedView,  DefComponent) => makeChange(Some(v.df))
 
       /* Constants */
-      case (c : Constant, "type") => makeChange(c.tp)
-      case (c : Constant, "def") => makeChange(c.df)
+      case (c : Constant, TypeComponent) => makeChange(c.tp)
+      case (c : Constant, DefComponent) => makeChange(c.df)
 
       /* Patterns */
-      case (p : Pattern, "params") => None //TODO makeChange(Some(p.params))
-      case (p : Pattern, "body") => None //TODO makeChange(Some(p.body))
+      case (p : Pattern, _) => None //TODO makeChange(Some(p.params))
 
       /* Instance */
-      case (i : Instance, "pattern") => None
-      case (i : Instance, "matches") => None //TODO makeChange(Some(i.matches))
+      case (i : Instance, _) => None
 
       /* ConstantAssignments */
-      case (c : ConstantAssignment, "target") => makeChange(Some(c.target))
+      case (c : ConstantAssignment, DefComponent) => makeChange(Some(c.target))
 
       /* DefLinkAssignment */
-      case (d : DefLinkAssignment, "target") => makeChange(Some(d.target))
+      case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
 
       /* Aliases */
-      case (a : Alias, "forpath") => None
+      case (a : Alias, _) => None
     }
     case _ => None  
   }
@@ -267,8 +265,8 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
         try {
           mem.content.get(p) match {
             case c : Constant => 
-              impacts += CPath(c.path, "type") 
-              impacts += CPath(c.path, "def")
+              impacts += CPath(c.path, TypeComponent) 
+              impacts += CPath(c.path, DefComponent)
             case _ => //TODO
           }
         } catch {
@@ -284,7 +282,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
   
   private def affectedPaths(path : Path) : List[Path] = path match {
     case c : CPath => c :: affectedPaths(c.parent)
-    case g : GlobalName => g :: affectedPaths(g.mod.toMPath)
+    case g : GlobalName => g :: affectedPaths(g.module.toMPath)
     case m : MPath => m :: Nil
     case _ => Nil //doc's don't count
   }
@@ -307,35 +305,33 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       
       (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
-      case (t : DeclaredTheory, "meta") => None
-      case (t : DefinedTheory, "meta") => None
-      case (t : DefinedTheory, "df") => makeChange(Some(t.df))
+      case (t : DeclaredTheory, DomComponent) => None
+      case (t : DefinedTheory, DomComponent) => None
+      case (t : DefinedTheory, DefComponent) => makeChange(Some(t.df))
 
       /* Views */
-      case (v : View, "to") => makeChange(Some(v.to))
-      case (v : View, "from") => makeChange(Some(v.from))
-      case (v : DefinedView,  "df") => makeChange(Some(v.df))
+      case (v : View, CodComponent) => makeChange(Some(v.to))
+      case (v : View, DomComponent) => makeChange(Some(v.from))
+      case (v : DefinedView, DefComponent) => makeChange(Some(v.df))
 
       /* Constants */
-      case (c : Constant, "type") => makeChange(c.tp)
-      case (c : Constant, "def") => makeChange(c.df)
+      case (c : Constant, TypeComponent) => makeChange(c.tp)
+      case (c : Constant, DefComponent) => makeChange(c.df)
 
       /* Patterns */
-      case (p : Pattern, "params") => None //TODO makeChange(Some(p.params))
-      case (p : Pattern, "body") => None //TODO makeChange(Some(p.body))
+      case (p : Pattern, _) => None //TODO makeChange(Some(p.params))
 
       /* Instance */
-      case (i : Instance, "pattern") => None
-      case (i : Instance, "matches") => None //TODO makeChange(Some(i.matches))
+      case (i : Instance, _) => None
 
       /* ConstantAssignments */
-      case (c : ConstantAssignment, "target") => makeChange(Some(c.target))
+      case (c : ConstantAssignment, DefComponent) => makeChange(Some(c.target))
 
       /* DefLinkAssignment */
-      case (d : DefLinkAssignment, "target") => makeChange(Some(d.target))
+      case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
 
       /* Aliases */
-      case (a : Alias, "forpath") => None
+      case (a : Alias, _) => None
     }
     case _ => None  
   }
@@ -378,7 +374,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
     var impacts = new mutable.HashSet[Path]()
     
     path match {
-      case CPath(GlobalName(mod, lname), "def") =>
+      case CPath(GlobalName(mod, lname), DefComponent) =>
         mem.ontology.query(mod.toMPath, ToSubject(HasDomain)) {
           case viewPath : MPath => 
             impacts += viewPath ? lname
@@ -408,12 +404,12 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
         case 1 => 
           changes.head match {
             //definition is deleted -> one more undefined constant -> assignment needed for it
-            case UpdateComponent(cPath, "def", Some(s), None) => 
+            case UpdateComponent(cPath, DefComponent, Some(s), None) => 
               val ca = new ConstantAssignment(mod, lname, emptyBox)
               Some(AddDeclaration(ca))                
            
             //definition is added -> one less undefined constant -> assignment for it no longer needed
-            case UpdateComponent(cPath, "def", None, Some(s)) => 
+            case UpdateComponent(cPath, DefComponent, None, Some(s)) => 
               val ca = mem.content.getConstantAssignment(mod.toMPath ? lname)
               Some(DeleteDeclaration(ca))
             

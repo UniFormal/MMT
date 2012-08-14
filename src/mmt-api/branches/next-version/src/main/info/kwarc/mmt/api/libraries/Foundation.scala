@@ -25,11 +25,11 @@ class PlainLookup(val lup: Lookup) extends FoundationLookup {
 class TracedLookup(val lup: Lookup) extends FoundationLookup {
    private val trace = new HashSet[CPath]
    def getType(p: GlobalName) : Option[Term] = {
-      trace += CPath(p, "type")
+      trace += CPath(p, TypeComponent)
       lup.getConstant(p).tp
    }
    def getDefiniens(p: GlobalName) : Option[Term] = {
-      trace += CPath(p, "definition")
+      trace += CPath(p, DefComponent)
       lup.getConstant(p).df
    }
    def getTrace: HashSet[CPath] = trace

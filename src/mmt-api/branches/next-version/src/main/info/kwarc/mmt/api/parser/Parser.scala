@@ -83,8 +83,6 @@ class ParserContext {
  * @param grammar the grammar used for parsing
  */
 class NotationParser(grammar : Grammar, controller: Controller) extends TermParser {
-  def applicable(format: String) = List("mmt", "twelf") contains format
-
   var str : String = ""
 
   private var operators : List[Operator] = grammar.operators
@@ -103,7 +101,10 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
   
   private def log(msg : => String) = controller.report("parser",msg)
 
-  def apply(s: String, scope : Term) : Term = {
+  def apply(pu: ParsingUnit) : Term = {
+    val scope = pu.scope
+    val s = pu.term
+    //TODO pu.context gives the context in which the Term is stated
     
     val includes = controller.library.visible(scope)
     val decls = includes.toList flatMap {tm => 

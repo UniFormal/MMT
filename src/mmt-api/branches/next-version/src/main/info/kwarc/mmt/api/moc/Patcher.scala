@@ -56,44 +56,44 @@ object Patcher {
     nw
   }
   
-  def updateComponent(d : ContentElement, comp : String,  old : Option[Obj], nw : Option[Obj]) : ContentElement = (d, comp, nw) match {
+  def updateComponent(d : ContentElement, comp : DeclarationComponent,  old : Option[Obj], nw : Option[Obj]) : ContentElement = (d, comp, nw) match {
 
     /** Theories */
-    case (t : DeclaredTheory, "meta", Some(OMMOD(p))) => copyDecls(t, new DeclaredTheory(t.parent, t.name, Some(p)))
+    case (t : DeclaredTheory, DomComponent, Some(OMMOD(p))) => copyDecls(t, new DeclaredTheory(t.parent, t.name, Some(p)))
 
-    case (t : DeclaredTheory, "meta", None) => copyDecls(t, new DeclaredTheory(t.parent, t.name, None))
+    case (t : DeclaredTheory, DomComponent, None) => copyDecls(t, new DeclaredTheory(t.parent, t.name, None))
       
-    case (t : DefinedTheory,  "df", Some(df : Term)) => new DefinedTheory(t.parent, t.name, df)
+    case (t : DefinedTheory,  DefComponent, Some(df : Term)) => new DefinedTheory(t.parent, t.name, df)
 
     /** Views */
-    case (v : DeclaredView, "to", Some(to : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, v.from, to, v.isImplicit))
-    case (v : DeclaredView, "from", Some(from : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, from, v.to, v.isImplicit))
-    case (v : DefinedView, "to", Some(to : Term)) => new DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
-    case (v : DefinedView, "from", Some(from : Term)) => new DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
-    case (v : DefinedView,  "df", Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
+    case (v : DeclaredView, CodComponent, Some(to : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, v.from, to, v.isImplicit))
+    case (v : DeclaredView, DomComponent, Some(from : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, from, v.to, v.isImplicit))
+    case (v : DefinedView, CodComponent, Some(to : Term)) => new DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
+    case (v : DefinedView, DomComponent, Some(from : Term)) => new DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
+    case (v : DefinedView,  DefComponent, Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
 
     /** Constants */
-    case (c : Constant, "def", Some(s : Term)) => new Constant(c.home, c.name, c.tp, Some(s), c.rl, c.not)
-    case (c : Constant, "def", None) => new Constant(c.home, c.name, c.tp, None, c.rl, c.not)
-    case (c : Constant, "type", Some(s : Term)) => new Constant(c.home, c.name, Some(s), c.df, c.rl, c.not)
-    case (c : Constant, "type", None) => new Constant(c.home, c.name, None, c.df, c.rl, c.not)
+    case (c : Constant, DefComponent, Some(s : Term)) => new Constant(c.home, c.name, c.tp, Some(s), c.rl, c.not)
+    case (c : Constant, DefComponent, None) => new Constant(c.home, c.name, c.tp, None, c.rl, c.not)
+    case (c : Constant, TypeComponent, Some(s : Term)) => new Constant(c.home, c.name, Some(s), c.df, c.rl, c.not)
+    case (c : Constant, TypeComponent, None) => new Constant(c.home, c.name, None, c.df, c.rl, c.not)
 
     /** Patterns */
-    case(p : Pattern,  "params", Some(params : Context)) => new Pattern(p.home, p.name, params, p.body)
-    case(p : Pattern,  "body", Some(body : Context)) => new Pattern(p.home, p.name, p.params, body)
+    case(p : Pattern,  ParamsComponent, Some(params : Context)) => new Pattern(p.home, p.name, params, p.body)
+    case(p : Pattern,  PatternBodyComponent, Some(body : Context)) => new Pattern(p.home, p.name, p.params, body)
 
     /** Instances */
-    case(i : Instance, "pattern", Some(OMID(pattern : GlobalName))) => new Instance(i.home,i.name, pattern, i.matches)
-    case(i : Instance,  "matches", Some(matches : Substitution)) => new Instance(i.home, i.name, i.pattern, matches)
+    case(i : Instance, PatternComponent, Some(OMID(pattern : GlobalName))) => new Instance(i.home,i.name, pattern, i.matches)
+    case(i : Instance,  MatchesComponent, Some(matches : Substitution)) => new Instance(i.home, i.name, i.pattern, matches)
 
     /** ConstantAssignments */
-    case(c : ConstantAssignment, "target", Some(target : Term)) => new ConstantAssignment(c.home, c.name, target)
+    case(c : ConstantAssignment, DefComponent, Some(target : Term)) => new ConstantAssignment(c.home, c.name, target)
 
     /** DefLinkAssignments */
-    case(d : DefLinkAssignment, "target", Some(target : Term)) => new DefLinkAssignment(d.home, d.name, d.from, target)
+    case(d : DefLinkAssignment, DefComponent, Some(target : Term)) => new DefLinkAssignment(d.home, d.name, d.from, target)
 
     /** Aliases */
-    case(a : Alias, "forpath", Some(OMID(forpath : GlobalName))) => new Alias(a.home, a.name, forpath)
+    case(a : Alias, ForPathComponent, Some(OMID(forpath : GlobalName))) => new Alias(a.home, a.name, forpath)
 
     case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +

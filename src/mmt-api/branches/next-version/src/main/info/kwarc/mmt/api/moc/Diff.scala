@@ -100,11 +100,11 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
     if(!areEqual(old.tp, nw.tp)) {
-       changes = UpdateComponent(old.path, "type", old.tp, nw.tp) :: changes
+       changes = UpdateComponent(old.path, TypeComponent, old.tp, nw.tp) :: changes
 		}
 		
 		if (!areEqual(old.df, nw.df))  {
-		  changes = UpdateComponent(old.path, "def", old.df, nw.df) :: changes
+		  changes = UpdateComponent(old.path, DefComponent, old.df, nw.df) :: changes
 		}
 		
 		new StrictDiff(changes)
@@ -120,7 +120,7 @@ object Differ {
 	  var changes : List[StrictChange] = Nil
 
     if (old.from != nw.from) {
-	    changes = UpdateComponent(old.path, "from", Some(old.from), Some(nw.from)) :: changes
+	    changes = UpdateComponent(old.path, DomComponent, Some(old.from), Some(nw.from)) :: changes
 	  }
     //TODO changes to body of DeclaredStructure, definiens of DefinedStructure
     new StrictDiff(changes)
@@ -136,11 +136,11 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
     if (old.params != nw.params){
-      changes = UpdateComponent(old.path, "params", Some(old.params), Some(nw.params)) :: changes
+      changes = UpdateComponent(old.path, ParamsComponent, Some(old.params), Some(nw.params)) :: changes
     }
 
     if (old.body != nw.body) {
-      changes = UpdateComponent(old.path, "body", Some(old.body), Some(nw.body)) :: changes
+      changes = UpdateComponent(old.path, PatternBodyComponent, Some(old.body), Some(nw.body)) :: changes
     }
 
 	  new StrictDiff(changes)
@@ -156,11 +156,11 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
 	  if (old.pattern != nw.pattern) {
-	    changes = UpdateComponent(old.path, "pattern", Some(OMID(old.pattern)), Some(OMID(nw.pattern))) :: changes
+	    changes = UpdateComponent(old.path, PatternComponent, Some(OMID(old.pattern)), Some(OMID(nw.pattern))) :: changes
 	  }
 
 	  if (old.matches != nw.matches) {
-      changes = UpdateComponent(old.path, "matches", Some(old.matches), Some(nw.matches)) :: changes
+      changes = UpdateComponent(old.path, MatchesComponent, Some(old.matches), Some(nw.matches)) :: changes
     }
 
     new StrictDiff(changes)
@@ -176,7 +176,7 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
-      changes = UpdateComponent(old.path, "target", Some(old.target), Some(nw.target)) :: changes
+      changes = UpdateComponent(old.path, DefComponent, Some(old.target), Some(nw.target)) :: changes
     }
 	  
 	  new StrictDiff(changes)
@@ -192,7 +192,7 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
-      changes = UpdateComponent(old.path, "target", Some(old.target), Some(nw.target)) :: changes
+      changes = UpdateComponent(old.path, DefComponent, Some(old.target), Some(nw.target)) :: changes
     }
 
 	  new StrictDiff(changes)
@@ -208,7 +208,7 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
     if (old.forpath != nw.forpath) {
-      changes = UpdateComponent(old.path, "forpath", Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
+      changes = UpdateComponent(old.path, ForPathComponent, Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
     }
 
 	  new StrictDiff(changes)
@@ -287,11 +287,11 @@ object Differ {
 
         (o.meta, n.meta) match {
 	    	  case (None,None) => None
-	    	  case (None,Some(p)) => changes = UpdateComponent(o.path, "meta", None, Some(OMMOD(p))) :: changes
-	    	  case (Some(p),None) => changes = UpdateComponent(o.path, "meta", Some(OMMOD(p)), None) :: changes
+	    	  case (None,Some(p)) => changes = UpdateComponent(o.path, DomComponent, None, Some(OMMOD(p))) :: changes
+	    	  case (Some(p),None) => changes = UpdateComponent(o.path, DomComponent, Some(OMMOD(p)), None) :: changes
 	    	  case (Some(op),Some(np)) =>
             if (op != np) {
-	    	      changes = UpdateComponent(o.path, "meta", Some(OMMOD(op)), Some(OMMOD(np))) :: changes
+	    	      changes = UpdateComponent(o.path, DomComponent, Some(OMMOD(op)), Some(OMMOD(np))) :: changes
             }
         }
 
@@ -301,7 +301,7 @@ object Differ {
         var changes : List[StrictChange] = Nil
 
 	      if (o.df != n.df) {
-	        changes = UpdateComponent(o.path, "df", Some(o.df), Some(n.df)) :: changes
+	        changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
         }
 
 	      new StrictDiff(changes) ++ innerChanges
@@ -310,11 +310,11 @@ object Differ {
         var changes : List[StrictChange] = Nil
 
         if (o.from != n.from) {
-          changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
+          changes = UpdateComponent(o.path, DomComponent, Some(o.from), Some(n.from)) :: changes
         }
 
         if (o.to != n.to) {
-          changes = UpdateComponent(o.path, "to", Some(o.to), Some(n.to)) :: changes
+          changes = UpdateComponent(o.path, CodComponent, Some(o.to), Some(n.to)) :: changes
         }
 
         new StrictDiff(changes)  ++ innerChanges
@@ -323,15 +323,15 @@ object Differ {
         var changes : List[StrictChange] = Nil
 
         if (o.from != n.from) {
-          changes = UpdateComponent(o.path, "from", Some(o.from), Some(n.from)) :: changes
+          changes = UpdateComponent(o.path, DomComponent, Some(o.from), Some(n.from)) :: changes
         }
 
         if (o.to != n.to) {
-          changes = UpdateComponent(o.path, "to", Some(o.to), Some(n.to)) :: changes
+          changes = UpdateComponent(o.path, CodComponent, Some(o.to), Some(n.to)) :: changes
         }
 
         if (o.df != n.df) {
-          changes = UpdateComponent(o.path, "df", Some(o.df), Some(n.df)) :: changes
+          changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
         }
 
 	      new StrictDiff(changes)  ++ innerChanges

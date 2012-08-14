@@ -167,11 +167,9 @@ class Server(val port: Int, controller: Controller) extends HServer {
                  }
                case _ => throw ServerError(<error><message> expected a scope (mpath) passed in header </message></error>)
              }
-             
-             val termParser = controller.extman.getTermParser(query)
-
+             val termParser = controller.termParser
              val tm = try {
-               termParser(bodyAsString(tk), scope)
+               termParser(parser.ParsingUnit(null, scope, objects.Context(), bodyAsString(tk)))
              } catch {
                case e : Throwable =>
                  println(e)
@@ -222,7 +220,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           
           val reader = new TextReader(controller, ctrl.add)
           
-          val res = reader.readDocument(text, dpath, "mmt")
+          val res = reader.readDocument(text, dpath)(controller.termParser.apply)
           //println("param : " + text)
           println("theory : " + ctrl.get(mpath))
           res._2.toList match {

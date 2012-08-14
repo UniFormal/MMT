@@ -105,12 +105,12 @@ class Checker(controller: Controller) {
          case c : Constant =>
             c.tp map {t => 
                checkTerm(c.home, t)
-               OMMOD.unapply(c.home) foreach {p => unitCont(ValidationUnit(c.path $ "type", Universe(Stack(p), t)))}
+               OMMOD.unapply(c.home) foreach {p => unitCont(ValidationUnit(c.path $ TypeComponent, Universe(Stack(p), t)))}
             }
             c.df map {d => 
                checkTerm(c.home, d)
                OMMOD.unapply(c.home) foreach {p =>
-                  c.tp foreach {tp => unitCont(ValidationUnit(c.path $ "definiens", Typing(Stack(p), d, tp)))}
+                  c.tp foreach {tp => unitCont(ValidationUnit(c.path $ DefComponent, Typing(Stack(p), d, tp)))}
                }
             }
             /*

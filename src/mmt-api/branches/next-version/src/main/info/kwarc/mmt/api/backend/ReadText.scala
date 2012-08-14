@@ -14,7 +14,6 @@ import utils._
 import scala.collection.mutable._
 
 // TODO second phase should update from fields in structures, as well as all aliases with the correct references. Currently aliases point to originatingLink?name
-
 /** A TextReader parses Twelf (for now) and calls controller.add(e) on every found content element e */
 class TextReader(controller : frontend.Controller, cont : StructuralElement => Unit) extends Reader(controller) {
   def this(ctrl : frontend.Controller) = this(ctrl, ctrl.add)
@@ -41,6 +40,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   /** input format */
   private var format : String = null
+  private var puCont : ParsingUnit => Term = null 
 
   // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
   private var currentNS : Option[URI] = None
@@ -78,24 +78,24 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     * @return a LinkedList of errors that occurred during parsing
     * @throws SourceError for non-recoverable errors that occurred during parsing
     * note that line and column numbers start from 0 */
-  def readDocument(source : scala.io.Source, dpath_ : DPath, fmt : String) : Pair[Document, LinkedList[SourceError]] =
+  def readDocument(source : scala.io.Source, dpath_ : DPath)(puCont_ : ParsingUnit => Term) : Pair[Document, LinkedList[SourceError]] =
   {
     // initialization
     lines = source.getLines.toArray
     source.close
     dpath = dpath_
-    format = fmt
+    puCont = puCont_
     currentNS = Some(dpath.uri)
     init()
 
     readDocument()
   }
 
-  def readDocument(source : String, dpath_ : DPath, fmt: String) : Pair[Document, LinkedList[SourceError]] = {
+  def readDocument(source : String, dpath_ : DPath)(puCont_ : ParsingUnit => Term) : Pair[Document, LinkedList[SourceError]] = {
     //initialization
     lines = source.split("\n").toArray
     dpath = dpath_
-    format = fmt
+    puCont = puCont_
     init()
     readDocument()
   }
@@ -267,11 +267,12 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   /** puts a term into an OMSemiFormal object
    * @param start the position of the first character in the term
-   * @param delimiters identifiers that terminate the term if they occur outside brackets (e.g., = in c:A=t)
+   * @param delimChars characters that terminate the term if they occur outside brackets (e.g., ] in [x:A]
+   * @param delimiters identifiers that terminate the term if they occur outside brackets (e.g., = in c:A=t) but not inside an identifier
    * @return the semiformal object, position after the term
    * @throws SourceError if there are unmatched right brackets }
    */
-  private def crawlTerm(start: Int, delimiters: List[String], theory: Term) : Pair[Term, Int] =
+  private def crawlTerm(start: Int, delimChars: List[Char], delimiters: List[String], component: CPath, theory: Term, context: Context = Context()) : Pair[Term, Int] =
   {
     var i = start
     while (i < flat.length) {
@@ -286,15 +287,17 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       }
       else if (c == '(' || c == '[' || c == '{') // bracketed block
         i = closeAnyBracket(i)
+      else if (delimChars contains c) // these end the term if they occur anywhere outside a bracketed block
+        return computeReturnValue
       else if (c == ')' || c == ']' || c == '}')
         throw TextParseError(toPos(i), "unmatched right bracket " + c)
-      else if (c == ':' || c == '.') // this ends the term
+      else if (c == '.' && Character.isWhitespace(flat.charAt(i+1))) // . followed by whitespace ends the term
         return computeReturnValue
       else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
         i += 1
       else if (isIdentifierPartCharacter(c)) { // identifier
         val (id, posAfter) = crawlIdentifier(i)
-        if (delimiters contains id) // this ends the term
+        if (delimiters contains id) // these ends the term  if they occur anywhere outside a bracketed block and are not part of a larger identifier
           return computeReturnValue
         i = posAfter
       }
@@ -304,9 +307,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
     // computes the return value. i is assumed to be the position after the end of the term
     def computeReturnValue = {
-      val termParser = controller.extman.getTermParser(format)
       val term = getSlice(start, i - 1)
-      val obj = termParser(term, theory)
+      val pu = ParsingUnit(component, theory, context, term)
+      val obj = puCont(pu)
       addSourceRef(obj, start, i - 1)
       Pair(obj, i)
     }
@@ -593,13 +596,15 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val (cstName, positionAfter) = crawlIdentifier(i)  // read constant name
     i = positionAfter
     i = skipwscomments(i)
+    
+    val cpath = parent.path ? cstName
 
     // read the optional type
     var constantType : Option[Term] = None
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, List("=","#","."), parent.toTerm)
+      val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), cpath $ TypeComponent, parent.toTerm)
       constantType = Some(term)
       i = posAfter
       i = skipwscomments(i)
@@ -610,7 +615,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, List("#","."), parent.toTerm)
+      val (term, posAfter) = crawlTerm(i, Nil, List("#"), cpath $ DefComponent, parent.toTerm)
       constantDef = Some(term)
       i = posAfter
       i = skipwscomments(i)
@@ -631,60 +636,12 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = new Constant(parent.toTerm, LocalName(cstName), constantType, constantDef, None, constantNotation)
+    val constant = new Constant(cpath.module, cpath.name, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
     return endsAt + 1
   }
-
-
-   /** reads a variable declaration inside a pattern body.
-     * @param start the position of the first character in the variable identifier
-     * @return variable declaration, position after the block
-     * @throws SourceError for syntactical errors */
-    private def crawlDeclarationInPatternBody(start: Int, theory: MPath, visibleConstants: List[Declaration]) : (VarDecl, Int) =
-    {
-      val oldComment = keepComment
-
-      var i = start
-      val (name, positionAfter) = crawlIdentifier(i)  // read variable name
-      i = positionAfter
-      i = skipwscomments(i)
-
-      // read the optional type
-      var varType : Option[Term] = None
-      if (flat.codePointAt(i) == ':') {
-        i += 1  // jump over ':'
-        i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, List("=","#","."), OMMOD(theory))
-        varType = Some(term)
-        i = posAfter
-        i = skipwscomments(i)
-      }
-
-      // read the optional definition
-      var varDef : Option[Term] = None
-      if (flat.codePointAt(i) == '=') {
-        i += 1  // jump over '='
-        i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, List("#","."), OMMOD(theory))
-        varDef = Some(term)
-        i = posAfter
-        i = skipwscomments(i)
-      }
-
-      val endsAt = expectNext(i, ".")
-
-      // create the VarDecl object
-      val varDecl = new VarDecl(LocalName(name), varType, varDef)
-      addSourceRef(varDecl, start, endsAt)
-      addSemanticComment(varDecl, oldComment)
-
-      return (varDecl, endsAt + 1)
-    }
-
-
 
 
   /** reads an %open block
@@ -821,6 +778,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     i = positionAfter
     i = skipwscomments(i)
 
+    val spath = parent.path ? name
+    
     // parse the optional domain
     if (flat.codePointAt(i) == ':') {
       i += 1
@@ -851,7 +810,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
       else {
         // It's a DefinedStructure
-        val (morphism, positionAfter) = crawlTerm(i, Nil, parent.toTerm)
+        val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, parent.toTerm)
         i = positionAfter
         domain match {
           case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism, isImplicit)
@@ -884,15 +843,28 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     return endsAt + 1
   }
 
-  // TODO documentation :)
-  private def crawlPatternParameter(start: Int, theory: MPath, visibleConstants: List[Declaration]) : Pair[VarDecl, Int] =
+  // parse a parameter list [param_1]...[param_n]
+  private def crawlParameterList(start: Int, theory: MPath) : Pair[Context, Int] = {
+     var parameterContext = Context()
+     var i = start
+     if (flat.startsWith("[", i)) {
+       i = expectNext(i, "[")
+       i += "[".length
+       i = skipwscomments(i)
+       do {
+         // parse a single declaration
+         val (varDecl, posAfterParameter) = crawlParameter(i, theory, parameterContext)
+         i = posAfterParameter
+         parameterContext = parameterContext ++ varDecl
+       } while (! flat.startsWith("[", i))
+     }
+     (parameterContext, i)
+  }
+
+  // parses a single parameter x1 : T1 = D1]
+  private def crawlParameter(start: Int, theory: MPath, context: Context) : Pair[VarDecl, Int] =
   {
      var i = start
-
-     // skip over '['
-     i = expectNext(i, "[")
-     i += "[".length
-     i = skipwscomments(i)
 
      // parse the variable name
      val (name, positionAfter) = crawlIdentifier(i)
@@ -905,73 +877,24 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = skipwscomments(i)
 
      // parse the type
-     val (term, posAfter) = crawlTermInPatternArguments(i, List("."), OMMOD(theory))
+     val (term, posAfter) = crawlTerm(i, List(']'), Nil, theory ? name $ TypeComponent, OMMOD(theory), context)
+     val vd = OMV(name) % term
      i = posAfter
-
+     
      // skip over ']'
      i = expectNext(i, "]")
      i += "]".length
      i = skipwscomments(i)
-
-     (OMV(name) % term, i)
+     (vd, i)
   }
   
-  private def crawlTermInPatternArguments(start: Int, delimiters: List[String],  theory: Term) : Pair[Term, Int] =
-  {
-    var i = start
-    while (i < flat.length) {
-      val c = flat.codePointAt(i)
-      if (c == '"') // quote-surrounded string
-        i = crawlString(i)._2
-      else if (c == '%') { // comment or keyword
-        val old = i
-        i = skipwscomments(old)
-        if (i == old)    // this starts a keyword: since not inside a bracket, this ends the term
-          return computeReturnValue
-      }
-      else if (c == '(' || c == '[' || c == '{') // bracketed block
-        i = closeAnyBracket(i)
-      else if (c == ')' || c == '}') 
-        throw TextParseError(toPos(i), "unmatched right bracket " + c)
-      else if (c == ':' ||  c == ']' ) // this ends the term   // || c contains delimiter
-        return computeReturnValue
-      else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
-        i += 1
-      else if (isIdentifierPartCharacter(c)) { // identifier
-        val (id, posAfter) = crawlIdentifier(i)
-//        val (nextId, posAfterAfter) = crawlIdentifier(posAfter)
-        if (delimiters contains id ) // this ends the term
-          return computeReturnValue
-        i = posAfter
-      }
-      else
-        throw TextParseError(toPos(i), "illegal character " + c + " at this point")
-    }
-        // computes the return value. i is assumed to be the position after the end of the term
-    def computeReturnValue = {
-      val termParser = controller.extman.getTermParser(format)
-      val term = getSlice(start, i - 1)
-      val obj = termParser(term, theory)
-//      val obj = OMSemiFormal((objects.Text("Twelf", getSlice(start, i - 1))))
-      
-      addSourceRef(obj, start, i - 1)
-      //val t : Term = MMTParser.parse(obj)(mem : Memory)
-      Pair(obj, i)
-            
-     
-      
-    }
-
-    throw TextParseError(toPos(i), "end of file reached while reading term")
-}
-
 
   /** Reads a pattern body
       * @param start the position of the opening {
-      * @param visibleConstants constants in scope
+      * @param theory the URI of the pattern
       * @return pattern body as a context, position after the closing }
       * @throws SourceError for syntactical errors */
-    private def crawlPatternBody(start: Int, theory: MPath, visibleConstants: List[Declaration]) : (Context, Int) =
+    private def crawlPatternBody(start: Int, theory: MPath, context: Context) : (Context, Int) =
     {
       var i = start + 1       // jump over '{'
       keepComment = None          // reset the last semantic comment stored
@@ -981,7 +904,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       while (i < flat.length) {
         if (isIdentifierPartCharacter(flat.codePointAt(i))) {
           // read variable declaration
-          val (varDecl, posAfterDeclaration) = crawlDeclarationInPatternBody(i, theory, visibleConstants)
+          val (varDecl, posAfterDeclaration) = crawlDeclarationInPatternBody(i, theory, context ++ body)
           i = posAfterDeclaration
           body = body ++ varDecl
         }
@@ -996,6 +919,52 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         i = skipwscomments(i)       // check whether there is a new semantic comment
       }
       return (body, i)
+    }
+
+
+   /** reads a variable declaration inside a pattern body.
+     * @param start the position of the first character in the variable identifier
+     * @return variable declaration, position after the block
+     * @throws SourceError for syntactical errors */
+    private def crawlDeclarationInPatternBody(start: Int, theory: MPath, context: Context) : (VarDecl, Int) =
+    {
+      val oldComment = keepComment
+
+      var i = start
+      val (name, positionAfter) = crawlIdentifier(i)  // read variable name
+      i = positionAfter
+      i = skipwscomments(i)
+
+      // read the optional type
+      var varType : Option[Term] = None
+      if (flat.codePointAt(i) == ':') {
+        i += 1  // jump over ':'
+        i = skipwscomments(i)
+        val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), theory ? name $ TypeComponent, OMMOD(theory), context)
+        varType = Some(term)
+        i = posAfter
+        i = skipwscomments(i)
+      }
+
+      // read the optional definition
+      var varDef : Option[Term] = None
+      if (flat.codePointAt(i) == '=') {
+        i += 1  // jump over '='
+        i = skipwscomments(i)
+        val (term, posAfter) = crawlTerm(i, Nil, List("#"), theory ? name $ DefComponent, OMMOD(theory), context)
+        varDef = Some(term)
+        i = posAfter
+        i = skipwscomments(i)
+      }
+
+      val endsAt = expectNext(i, ".")
+
+      // create the VarDecl object
+      val varDecl = new VarDecl(LocalName(name), varType, varDef)
+      addSourceRef(varDecl, start, endsAt)
+      addSemanticComment(varDecl, oldComment)
+
+      return (varDecl, endsAt + 1)
     }
 
 
@@ -1017,33 +986,21 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      val (name, positionAfter) = crawlIdentifier(i)
      i = positionAfter
      i = skipwscomments(i)
-
+     val patternMPath = parent.path / name
+     
      // skip over '='
      i = expectNext(i, "=")
      i += "=".length
      i = skipwscomments(i)
 
-     // all the visible constants, just in case the types use them
-     val constants = controller.memory.content.getDeclarationsInScope(OMMOD(parent.path)) collect {
-       case c : Constant => c
-     }
-
-     // parse the pattern parameters
-     var parameterContext = Context()
-     if (flat.startsWith("[", i)) {
-       do {
-         // parse a single [ ... ] declaration
-         val (varDecl, posAfterParameter) = crawlPatternParameter(i, parent.path, constants)
-         i = posAfterParameter
-         parameterContext = parameterContext ++ varDecl
-       } while (flat.startsWith("[", i))
-     }
-
+     val (parameterContext, posAfter) = crawlParameterList(i, patternMPath)
+     i = posAfter
+     
      // go to '{'
      i = expectNext(i, "{")
 
      // parse the pattern body
-     val (body, posAfterPatternBody) = crawlPatternBody(i, parent.path, constants)
+     val (body, posAfterPatternBody) = crawlPatternBody(i, patternMPath, parameterContext)
      val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
 
      i = posAfterPatternBody
@@ -1077,20 +1034,22 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val (cstName, positionAfter) = crawlIdentifier(i)
     val constantName = cstName.replaceAll("\\Q.\\E", "/")    // TODO replace . with / in names?
     i = positionAfter
+    
+    val apath = parent.toTerm % cstName
 
     i = expectNext(i, ":=")
     i += ":=".length
     i = skipwscomments(i)
 
     // read the assigned term
-    val (term, posAfter) = crawlTerm(i, Nil, parent.to)
+    val (term, posAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.to)
     i = posAfter
     i = skipwscomments(i)
 
     val endsAt = expectNext(i, ".")
 
     // add the constant assignment to the controller
-    val constantAssignment = new ConstantAssignment(parent.toTerm, LocalName(constantName), term)
+    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, term)
     add(constantAssignment)
 
     // add semantic comment and source references
@@ -1116,12 +1075,14 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val structureName = strName.replaceAll("\\Q.\\E", "/")   // TODO replace . with / in names?
     i = positionAfter
 
+    val apath = parent.toTerm % strName
+
     i = expectNext(i, ":=")
     i += ":=".length
     i = skipwscomments(i)
 
     // get the morphism
-    val (morphism, positionAfter2) = crawlTerm(i, Nil, parent.to)
+    val (morphism, positionAfter2) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.to)
 
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
@@ -1147,13 +1108,16 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val oldComment = keepComment
     val i = skipws(crawlKeyword(start, "%include"))
 
-    // get the morphism
-    val (morphism, positionAfter) = crawlTerm(i, Nil, parent.to)
+    val domain = OMSemiFormal(Text("nl", "unknown")) //should be required in input
+    val apath = parent.toTerm % LocalName(MorphismStep(OMIDENT(domain)))
 
+    // get the morphism
+    val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.to)
+    
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
     // add the include assignment to the controller
-    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName.Anon, OMSemiFormal(Text("nl", "domain of"), Formal(morphism)), morphism) //TODO using informal description of unknown domain
+    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName.Anon, domain, morphism)
     add(defLinkAssignment)
 
     // add semantic comment and source references
@@ -1230,6 +1194,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     // read the name
     val (sigName, positionAfter) = crawlIdentifier(i)
     i = positionAfter   // jump over identifier
+    val tpath = getCurrentDPath ? sigName
     var meta : Option[MPath] = None
     if (flat.codePointAt(i) == ':') {
        i = expectNext(i, ":")
@@ -1251,7 +1216,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
        // It's a DeclaredTheory
        i = expectNext(i, "{")
        // add the (empty, for now) theory to the controller
-       val declTheory = new DeclaredTheory(getCurrentDPath, LocalPath(List(sigName)), meta)
+       val declTheory = new DeclaredTheory(tpath.parent, tpath.name, meta)
        theory = declTheory
        add(theory)
        // read the theory body
@@ -1259,9 +1224,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     }
     else {
       // It's a DefinedTheory
-      val (theoryExp, positionAfter) = crawlTerm(i, Nil, OMMOD(utils.mmt.mmtcd))
+      val (theoryExp, positionAfter) = crawlTerm(i, Nil, Nil, tpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
       i = positionAfter
-      theory = new DefinedTheory(getCurrentDPath, LocalPath(List(sigName)), theoryExp)
+      theory = new DefinedTheory(tpath.parent, tpath.name, theoryExp)
       add(theory)
       if (meta.isDefined) {
          errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(warning = true)
@@ -1332,13 +1297,14 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     // read the name
     val (name, positionAfter) = crawlIdentifier(i)
     i = positionAfter   // jump over name
+    val vpath = getCurrentDPath ? name
 
     i = expectNext(i, ":")
     i += 1    // jump over ":"
     i = skipwscomments(i)
 
     // read the domain
-    val (domain, positionAfterDomain) = crawlTerm(i, List("->"), OMMOD(utils.mmt.mmtcd))
+    val (domain, positionAfterDomain) = crawlTerm(i, Nil, List("->"), vpath $ DomComponent, OMMOD(utils.mmt.mmtcd))
     i = positionAfterDomain   // jump over domain
 
     i = expectNext(i, "->")
@@ -1346,7 +1312,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     i = skipwscomments(i)
 
     // read the codomain
-    val (codomain, positionAfterCodomain) = crawlTerm(i, List("="), OMMOD(utils.mmt.mmtcd))
+    val (codomain, positionAfterCodomain) = crawlTerm(i, Nil, List("="), vpath $ CodComponent, OMMOD(utils.mmt.mmtcd))
     i = positionAfterCodomain     // jump over codomain
 
     i = expectNext(i, "=")
@@ -1357,15 +1323,15 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     var view : View = null
     if (flat.codePointAt(i) == '{') {
       // It's a DeclaredView
-      view = new DeclaredView(getCurrentDPath, LocalPath(List(name)), domain, codomain, isImplicit)
+      view = new DeclaredView(vpath.parent, vpath.name, domain, codomain, isImplicit)
       add(view)
       i = crawlLinkBody(i, view.asInstanceOf[DeclaredView])
     }
     else {
       // It's a DefinedView
-      val (morphism, positionAfter) = crawlTerm(i, Nil, OMMOD(utils.mmt.mmtcd))
+      val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, vpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
       i = positionAfter
-      view = new DefinedView(getCurrentDPath, LocalPath(List(name)), domain, codomain, morphism, isImplicit)
+      view = new DefinedView(vpath.parent, vpath.name, domain, codomain, morphism, isImplicit)
       add(view)
     }
 

@@ -62,11 +62,12 @@ class Controller extends ROController {
 
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
-   extman.addTermParser(new parser.NotationParser(parser.LFGrammar.grammar, this))
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(this)
+   /** the MMT term parser */
+   val termParser = new parser.NotationParser(parser.LFGrammar.grammar, this)
    /** the MMT parser (text/Twelf syntax) */
    val textReader = new TextReader(this)
    /** the catalog maintaining all registered physical storage units */
@@ -227,7 +228,7 @@ class Controller extends ROController {
    def readText(f: File, docBase : Option[DPath] = None) : DPath = {
       val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
       val source = scala.io.Source.fromFile(f, "UTF-8")
-      val (doc, errorList) = textReader.readDocument(source, dpath, f.getExtension.getOrElse(""))
+      val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
       source.close
       if (!errorList.isEmpty)
         log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))

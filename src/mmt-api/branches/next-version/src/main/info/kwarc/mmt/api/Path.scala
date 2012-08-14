@@ -79,7 +79,7 @@ case class DPath(uri : URI) extends Path {
 trait ContentPath extends Path {
    /** checks if the path is a generic MMT path */
    def isGeneric : Boolean
-   def $(comp: String) = CPath(this, comp)
+   def $(comp: DeclarationComponent) = CPath(this, comp)
 }
 
 /**
@@ -107,15 +107,15 @@ case class MPath(parent : DPath, name : LocalPath) extends ContentPath {
 /** A GlobalName represents the MMT URI of a symbol-level declaration.
  * This includes virtual declarations and declarations within complex module expressions.
  */
-case class GlobalName(mod: Term, name: LocalName) extends ContentPath {
+case class GlobalName(module: Term, name: LocalName) extends ContentPath {
    def doc = utils.mmt.mmtbase
-   def ^! = if (name.length == 1) mod.toMPath else GlobalName(mod, name.init)
+   def ^! = if (name.length == 1) module.toMPath else GlobalName(module, name.init)
    def last = name.last.toPath
    def apply(args: List[Term]) : Term = OMA(OMID(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
    /** true iff the parent is a named module and each include step is a named module or structure */
-   def isSimple : Boolean = mod.isInstanceOf[OMID] && name.steps.forall(_.isSimple)
-   def isGeneric = (mod.toMPath == mmt.mmtcd)
+   def isSimple : Boolean = module.isInstanceOf[OMID] && name.steps.forall(_.isSimple)
+   def isGeneric = (module.toMPath == mmt.mmtcd)
 }
 
 /**
@@ -198,10 +198,10 @@ case class MorphismStep(from: Term) extends LNStep {
    def isSimple : Boolean = from.isInstanceOf[OMID]
 }
 
-case class CPath(parent: ContentPath, component: String) extends Path {
+case class CPath(parent: ContentPath, component: DeclarationComponent) extends Path {
    def doc = parent.doc
    def ^! = parent
-   def last = component
+   def last = component.toString
 }
 
 /*
@@ -274,7 +274,9 @@ object Path {
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
       if (comp == "") path else path match {
-         case cp: ContentPath => CPath(cp, comp)
+         case cp: ContentPath =>
+            val compP = TermComponent.parse(comp)
+            CPath(cp, compP)
          case p => throw ParseError("cannot take component " + comp + " of path " + p)
       }
    }

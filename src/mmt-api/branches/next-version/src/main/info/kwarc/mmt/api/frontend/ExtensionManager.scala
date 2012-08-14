@@ -72,12 +72,6 @@ class ExtensionManager(controller: Controller) {
        ruleStore.add(rs)
    }
    
-   /** retrieves a TermParser */
-   private var termParsers : List[TermParser] = Nil
-   def addTermParser(tp: TermParser) {termParsers ::= tp}
-   def getTermParser(format: String): TermParser = 
-      termParsers find {_.applicable(format)} getOrElse(DefaultParser)
-   
    /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}
    def getMWS : Option[URI] = mws

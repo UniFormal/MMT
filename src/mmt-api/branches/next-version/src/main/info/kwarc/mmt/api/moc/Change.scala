@@ -169,22 +169,22 @@ case class DeleteDeclaration(d : Declaration) extends Delete with ChangeDeclarat
  */
 case class Component(c : Option[Obj])
 
-case class UpdateComponent(path : ContentPath, name : String, old : Option[Obj], nw : Option[Obj]) extends Update with ContentChange {
+case class UpdateComponent(path : ContentPath, name : DeclarationComponent, old : Option[Obj], nw : Option[Obj]) extends Update with ContentChange {
 
-  def getReferencedURI : CPath = CPath(path, "metadata")
+  def getReferencedURI : CPath = CPath(path, MetaDataComponent)
 
   def toNode =
-    <component path={path.toPath} name={name} change="update">
+    <component path={path.toPath} name={name.toString} change="update">
       {nw.map(x => x.toNode).toSeq}
     </component>
 //  	  {o.toNode(changes)}
   
   def toNodeFlat =
-    <change type="update" path={path.toString} component={name}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
+    <change type="update" path={path.toString} component={name.toString}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
 }
 
 case class UpdateMetadata(path : ContentPath, old : metadata.MetaData, nw : metadata.MetaData) extends Update with ContentChange {
-  def getReferencedURI :  CPath = CPath(path, "metadata") 
+  def getReferencedURI :  CPath = CPath(path, MetaDataComponent) 
   def toNode = 
      <update path={path.toPath} name="metadata" change="update">
       {nw.toNode}

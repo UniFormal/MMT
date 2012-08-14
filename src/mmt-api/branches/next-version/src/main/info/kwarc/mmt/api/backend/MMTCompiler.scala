@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
 import frontend._
 import utils._
+import parser._
 
 /** a Compiler that uses the generic MMT functions */
 class MMTCompiler extends Compiler {
@@ -11,7 +12,9 @@ class MMTCompiler extends Compiler {
       val dpath = DPath(FileURI(in))
       val source = scala.io.Source.fromFile(in.toJava, "UTF-8")
       val tr = new TextReader(controller)
-      val (doc, errorList) = tr.readDocument(source, dpath, "mmt")
+      val (doc, errorList) = tr.readDocument(source, dpath) {case ParsingUnit(comp, theory, context, term) =>
+         null //TODO
+      }
       source.close
       
       val outFile = out.setExtension("omdoc")
