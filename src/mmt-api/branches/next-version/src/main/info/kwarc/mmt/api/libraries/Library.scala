@@ -228,8 +228,6 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
     val decls = impls flatMap {case (from,via) => 
       get(from.toMPath).components
     }
-    println("in library -- getDecsInScope :")
-    println(decls)
     decls
   }
 

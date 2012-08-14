@@ -11,6 +11,7 @@ log+ archive
 //log+ query
 log+ catalog
 log+ server
+log+ abox
 //log+ parser
 //log+ presenter
 //log+ lf
@@ -31,13 +32,14 @@ importer info.kwarc.mmt.api.backend.MMTCompiler
 rules info.kwarc.mmt.lf.TypedRules
 rules info.kwarc.mmt.lf.LFRules
 archive add ../../../../theories
+log+ backend
 //archive mmt clean
-//archive mmt relational
-//archive mmt notation
-//archive mmt compile
-//archive mmt content
-archive mmt validate
-//archive mmt check
+archive mmt compile
+archive mmt content
+archive mmt relational
+archive mmt notation
+archive mmt check
+//archive mmt validate
 
 //mws http://localhost:6284
 server on 8080

@@ -248,6 +248,120 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
 }
 
 /**
+ * The occurs-in impact propagator is an impact propagator based on the occurs-in (refers-to) relation
+ * that marks impacted items by surrounding them with error terms so that 
+ * after the error terms are replaced with valid ones the validity of the entire 
+ * theory graph is ensured 
+ */
+class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
+  /**
+   * Implements the dependency relation, returns all paths that refer to a certain path (i.e. the impacts)
+   * For the foundational impact propagator uses the default ''refersTo'' relation given by the ontology (and gathered by the checker)
+   * @param path the path 
+   */
+  protected def dependsOn(path : Path) : Set[Path] = {
+    val impacts = new mutable.HashSet[Path]()
+    
+    affectedPaths(path) foreach {p =>
+      mem.ontology.query(p,ToSubject(RefersTo)) {p => 
+        try {
+          mem.content.get(p) match {
+            case c : Constant => 
+              impacts += CPath(c.path, "type") 
+              impacts += CPath(c.path, "def")
+            case _ => //TODO
+          }
+        } catch {
+          case _ => println(p.toPathLong)
+        }
+      }
+        
+    }
+    println("printing dep info")
+    println("impacts of " + path.toPath + " are : "+ impacts)
+    impacts 
+  }
+  
+  private def affectedPaths(path : Path) : List[Path] = path match {
+    case c : CPath => c :: affectedPaths(c.parent)
+    case g : GlobalName => g :: affectedPaths(g.mod.toMPath)
+    case m : MPath => m :: Nil
+    case _ => Nil //doc's don't count
+  }
+  
+  /**
+   * The propagation function for individual paths
+   * It implements how impacted items are affected by the propagation
+   * For the foundational impact propagator this applies box terms (OpenMath error terms) to 
+   * surround (potentially) invalid terms for strict changes and applies the default
+   * propagation function for pragmatic changes (if applicable). 
+   * @param path the impacted path
+   * @param changes the set of changes that impact path
+   */
+  protected def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = path match {
+    case cp : CPath => 
+      def makeChange(otm : Option[Term]) : Option[StrictChange] = otm match {
+        case Some(tm) => Some(UpdateComponent(cp.parent, cp.component, Some(tm), Some(box(tm, changes))))
+        case None => None
+      }
+      
+      (mem.content.get(cp.parent), cp.component) match {
+      /* Theories */
+      case (t : DeclaredTheory, "meta") => None
+      case (t : DefinedTheory, "meta") => None
+      case (t : DefinedTheory, "df") => makeChange(Some(t.df))
+
+      /* Views */
+      case (v : View, "to") => makeChange(Some(v.to))
+      case (v : View, "from") => makeChange(Some(v.from))
+      case (v : DefinedView,  "df") => makeChange(Some(v.df))
+
+      /* Constants */
+      case (c : Constant, "type") => makeChange(c.tp)
+      case (c : Constant, "def") => makeChange(c.df)
+
+      /* Patterns */
+      case (p : Pattern, "params") => None //TODO makeChange(Some(p.params))
+      case (p : Pattern, "body") => None //TODO makeChange(Some(p.body))
+
+      /* Instance */
+      case (i : Instance, "pattern") => None
+      case (i : Instance, "matches") => None //TODO makeChange(Some(i.matches))
+
+      /* ConstantAssignments */
+      case (c : ConstantAssignment, "target") => makeChange(Some(c.target))
+
+      /* DefLinkAssignment */
+      case (d : DefLinkAssignment, "target") => makeChange(Some(d.target))
+
+      /* Aliases */
+      case (a : Alias, "forpath") => None
+    }
+    case _ => None  
+  }
+  
+  /**
+   * Function that marks the errors by surrounding with box terms
+   * TODO: refine by adding better error information
+   * @param tm the impacted term
+   * @param changes the changes that impact tm
+   * @return the boxed term
+   */
+  private def box(tm : Term, changes : Set[ContentChange]) : Term = {
+    
+    def makeTerm(path : Path) : Term = path match {
+      case p : ContentPath => OMID(p)
+      case cp : CPath => OMID(cp.parent)
+      case _ => throw ImplementationError("Expected ContentPath or CPath found: " + path.toPath)
+      
+    }
+    
+    OME(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
+  }
+  
+}
+
+/**
  * The structural impact propagator is an impact propagator 
  * that ensures the totality of views
  */

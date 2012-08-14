@@ -96,11 +96,11 @@ class Controller extends ROController {
        }
      }
      
-     //println(changes)
+     println(changes)
      val pChanges = refiner(new StrictDiff(changes))
-     //println("pchanges" + pChanges.changes)
+     println("pchanges : " + pChanges.changes)
      val propDiff = pChanges ++ propagator(pChanges)
-     //println("pdiff" + propDiff.changes)
+     println("pdiff : " + propDiff.changes)
      moc.Patcher.patch(propDiff, memory)
    }
 
@@ -360,7 +360,7 @@ class Controller extends ROController {
             tg.exportDot(f)
 	      case Check(p) =>
 	         try {
-	            checker.check(p)(_ => (), _ => ())
+	            checker.check(p)( _ => (), _ => ())
 	            log("check succeeded")
 	         } catch {
 	          case e: Error =>

@@ -16,7 +16,8 @@ import scala.collection.mutable._
 // TODO second phase should update from fields in structures, as well as all aliases with the correct references. Currently aliases point to originatingLink?name
 
 /** A TextReader parses Twelf (for now) and calls controller.add(e) on every found content element e */
-class TextReader(controller : frontend.Controller) extends Reader(controller) {
+class TextReader(controller : frontend.Controller, cont : StructuralElement => Unit) extends Reader(controller) {
+  def this(ctrl : frontend.Controller) = this(ctrl, ctrl.add)
 
   // ------------------------------- private vars -------------------------------
 
@@ -46,7 +47,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
 
   // mapping from namespace prefixes to their URI
   private var prefixes = new LinkedHashMap[String,URI] ()
-
+ 
   private def init() {
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
@@ -96,7 +97,6 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
     dpath = dpath_
     format = fmt
     init()
-
     readDocument()
   }
 
@@ -631,7 +631,7 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = new Constant(parent.toTerm, LocalName(cstName), constantType, constantDef, None, constantNotation)//TODO notation
+    val constant = new Constant(parent.toTerm, LocalName(cstName), constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
@@ -1388,7 +1388,8 @@ class TextReader(controller : frontend.Controller) extends Reader(controller) {
 
   /** tells the controller given as class parameter to add the StructuralElement */
   private def add(e : StructuralElement) {
-     controller.add(e)
+    //controller.add(e)
+    cont(e)
   }
 
 

@@ -20,7 +20,11 @@ trait ValidatedArchive extends WritableArchive {
       traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
          val rels = new HashSet[RelationalElement]
-         controller.checker.check(mpath)(rels += _, _ => ())
+         def reCont(r : RelationalElement) = {
+           rels += r
+           controller.memory.ontology += r
+         }
+         controller.checker.check(mpath)(reCont, _ => ())
          val relFile = (relDir / inPath).setExtension("occ")
          relFile.getParentFile.mkdirs
          val relFileHandle = File.Writer(relFile)

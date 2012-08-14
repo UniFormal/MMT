@@ -168,11 +168,14 @@ object TextNotation {
     println("current con : " + con.toString)
     con match {
       case d : DeclaredTheory =>
+        val namespace = "%namespace \"" +  d.path.parent  + "\"." 
         println(d.path)
-        "%sig " + d.path.last + " = {\n" + d.components.map(c => "  " + present(c, operators)).filterNot(_ == "  ").mkString("\n")+ "\n}."
-      
+        val sig = "%sig " + d.path.last + " = {\n" + d.components.map(c => "  " + present(c, operators)).filterNot(_ == "  ").mkString("\n")+ "\n}."
+        namespace + "\n\n" + sig
       case OMID(meta : MPath) => 
         "%meta " + meta.doc.last + "?" + meta.name + "."
+      
+      case Include(from, to) => "%include " + to.toMPath.last + "."
       case c : Constant =>
         println("constant : " + operators)
         val tp = c.tp match {
@@ -213,19 +216,46 @@ object TextNotation {
                "(" + p.last + "  " + args.map(x => presentTerm(x, operators)).mkString(" ") + ")"
              case Some(notation) => 
                println("found notation : " + notation.toString)
-          
-               val l =  notation.mrks map {
-                 case a : Argument => presentTerm(args(a.pos), operators)
-                 case Delimiter(s) => s
+               
+               val argMks = notation.mrks collect {
+                 case a : Argument => a
                }
-               println("using : " + l.mkString(" "))
-               l.mkString("("," ",")")
+               
+               if (argMks.length == args.length) {
+                 val l =  notation.mrks map {
+                   case a : Argument => presentTerm(args(a.pos), operators)
+                   case Delimiter(s) => s
+                 }
+                 println("using : " + l.mkString(" "))
+                 l.mkString("("," ",")")
+               } else { // a seq arg with arbitrary length
+                 
+                 val seqLen = args.length - argMks.length + 1
+                 var foundSeq = false
+                 def getPos(pos : Int) : Int= {
+                   if (foundSeq)
+                     pos + seqLen - 1
+                   else 
+                     pos
+                 }
+                 
+                 val l = notation.mrks map {
+                   case Delimiter(s) => s
+                   case StdArg(pos) => presentTerm(args(getPos(pos)), operators)
+                   case SeqArg(pos, sep) =>
+                     foundSeq = true
+                     args.slice(pos, pos + seqLen).map(presentTerm(_, operators)).mkString(" " + sep.value + " ")
+                 }
+                 
+                 l.mkString("(", " ",")")
+                 
+               }
            }
       }
 
     case OMBINDC(OMID(p), context, None, body) =>
       val tmpargs = context.variables collect {
-        case VarDecl(s, Some(tp),_,_) => s :: presentTerm(tp, operators) :: Nil
+        case VarDecl(s, _, _) => s :: Nil //TODO handle var type and def
       }
       val args = tmpargs.flatten
       operators.find(op => op.name == p) match {
@@ -235,11 +265,14 @@ object TextNotation {
             case None => 
              "(" + p.last + " " + context.toString + " " + body + ")"
             case Some(notation) =>
+              println("found notation " + notation.toString)
+              println("with args" + args.toString)
               val l =  notation.mrks map {
                 case a : Argument => args(a.pos)
                 case Delimiter(s) => s
               }
-              l.mkString("("," ",")")
+              
+              "(" + l.mkString(" ") + " " + presentTerm(body, operators) + ")"
           }
       }
 

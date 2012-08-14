@@ -220,10 +220,8 @@ class Server(val port: Int, controller: Controller) extends HServer {
           val mpath = dpath ? LocalPath(strThy :: Nil)
           val ctrl = new Controller(controller.report)
           
-          //copying storages so that while reading we will find the dependencies
-          controller.backend.getStores.foreach(ctrl.backend.addStore(_))
+          val reader = new TextReader(controller, ctrl.add)
           
-          val reader = new TextReader(ctrl)
           val res = reader.readDocument(text, dpath, "mmt")
           //println("param : " + text)
           println("theory : " + ctrl.get(mpath))
@@ -231,7 +229,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
             case Nil =>
               val mod = ctrl.memory.content.getModule(mpath)
               val refiner = new moc.PragmaticRefiner(new collection.immutable.HashSet[moc.PragmaticChangeType]())
-              val propagator = new moc.NullPropagator(controller.memory)
+              val propagator = new moc.OccursInImpactPropagator(controller.memory)
               controller.update(List(mod),refiner, propagator)
               println("theory2 : " + controller.memory.content.getModule(mpath))
               try {

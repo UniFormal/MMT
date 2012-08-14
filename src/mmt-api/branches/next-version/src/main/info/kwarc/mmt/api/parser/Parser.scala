@@ -109,6 +109,8 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
     val decls = includes.toList flatMap {tm => 
       controller.globalLookup.get(tm.toMPath).components
     }
+    log("includes : " + includes)
+    log("decls : " + decls)
     
     operators = grammar.operators ::: makeOperators(decls)
     log("Started parsing " + s + " with operators : ")
@@ -251,7 +253,10 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       val tmTks = tks map {
         case TermTk(t,_) => t
         case ExpTk(sep, expTks, _) => parse(expTks).t 
-        case _ => throw ParseError("don't know what to apply next")
+        case _ =>
+          log("stuck at tokens : " + tks)
+          log("with operators : " + opsByPrecedence)
+          throw ParseError("don't know what to apply next")
       }
       tmTks match {
         case hd :: Nil =>

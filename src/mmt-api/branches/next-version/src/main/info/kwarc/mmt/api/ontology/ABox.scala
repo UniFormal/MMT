@@ -29,14 +29,13 @@ class RelStore(report : frontend.Report) {
    def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
    def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
 
-
    /** adds a declaration */
    def +=(d : RelationalElement) {
       log(d.toString)
       d match {
         case Relation(dep, subj, obj) =>                  
            subjects += ((dep, obj), subj)
-           objects += ((subj, dep), obj)
+           objects += ((subj, dep), obj)           
            dependencies += ((subj, obj), dep)
         case Individual(p, tp) =>
            types(p) = tp
