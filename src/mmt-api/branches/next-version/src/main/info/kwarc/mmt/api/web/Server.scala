@@ -218,7 +218,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           val mpath = dpath ? LocalPath(strThy :: Nil)
           val ctrl = new Controller(controller.report)
           
-          val reader = new TextReader(controller, ctrl.add)
+          val reader = new TextReader(controller)
           
           val res = reader.readDocument(text, dpath)(controller.termParser.apply)
           //println("param : " + text)

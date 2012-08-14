@@ -318,9 +318,12 @@ class Controller extends ROController {
                case "enrich" =>
                  val me = new ModuleElaborator(this)
                  arch.produceEnriched(in,me, this)
-               case "source" =>
-                  arch.readSource(in, this)
-                  log("done reading source")
+               case "source-terms" | "source-structure" => arch match {
+                  case arch: archives.MMTArchive =>
+                     arch.readSource(in, this, dim.endsWith("-terms"))
+                     log("done reading source")
+                  case _ => log("archive is not an MMT archive")
+               }
                case "relational" =>
                   arch.readRelational(in, this)
                   log("done reading relational index")

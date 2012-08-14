@@ -125,18 +125,6 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
          deleteFile(inFile)
        }
     }
-   /** structure-parses and loads an archive */ 
-   def readSource(in: List[String] = Nil, controller: Controller) {
-       if ((root / "source").exists) {
-          traverse("source", in, extensionIs("elf")) {case Current(inFile, inPath) =>
-             val source = scala.io.Source.fromFile(inFile, "UTF-8")
-             val (doc, errorList) = controller.textReader.readDocument(source, DPath(narrationBase / inPath))(parser.DefaultParser.apply)
-             source.close
-             if (!errorList.isEmpty)
-                log(errorList.size + " errors in " + inFile.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
-          }
-       }
-    }
 
   /**
    * computes the flattened theories by elaborating the patterns

@@ -378,7 +378,10 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
                    properties("compiled") = compiled._2
              }
           }
-          val arch = new Archive(root, properties, compsteps map {_.reverse}, report)
+          val arch = if (properties.get("type") == Some("mmt"))
+              new Archive(root, properties, compsteps map {_.reverse}, report) with MMTArchive
+          else
+              new Archive(root, properties, compsteps map {_.reverse}, report)
           compsteps foreach {_ foreach {case CompilationStep(from,_,compiler) => compiler.register(arch, from)}}
           addStore(arch)
           arch
