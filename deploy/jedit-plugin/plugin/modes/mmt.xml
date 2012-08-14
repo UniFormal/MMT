@@ -75,6 +75,7 @@
 			<KEYWORD1>%sig</KEYWORD1>
 			<KEYWORD1>%view</KEYWORD1>
 			<KEYWORD1>%rel</KEYWORD1>
+			<KEYWORD1>%pattern</KEYWORD1>
 			<KEYWORD1>%struct</KEYWORD1>
 			<KEYWORD1>%open</KEYWORD1>
 			<KEYWORD1>%as</KEYWORD1>
