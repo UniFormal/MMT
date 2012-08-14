@@ -4,6 +4,8 @@ import frontend._
 import utils._
 import parser._
 
+import scala.collection.mutable.HashSet
+
 /** a Compiler that uses the generic MMT functions */
 class MMTCompiler extends Compiler {
    def isApplicable(src : String): Boolean = src == "mmt"
@@ -12,8 +14,10 @@ class MMTCompiler extends Compiler {
       val dpath = DPath(FileURI(in))
       val source = scala.io.Source.fromFile(in.toJava, "UTF-8")
       val tr = new TextReader(controller)
-      val (doc, errorList) = tr.readDocument(source, dpath) {case ParsingUnit(comp, theory, context, term) =>
-         null //TODO
+      val parsingUnits = new HashSet[ParsingUnit]
+      val (doc, errorList) = tr.readDocument(source, dpath) {pu => 
+         parsingUnits += pu
+         DefaultParser(pu)
       }
       source.close
       
