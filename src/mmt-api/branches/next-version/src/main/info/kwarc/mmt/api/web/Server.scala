@@ -218,7 +218,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           val mpath = dpath ? LocalPath(strThy :: Nil)
           val ctrl = new Controller(controller.report)
           
-          val reader = new TextReader(controller)
+          val reader = new TextReader(controller, ctrl.add)
           
           val res = reader.readDocument(text, dpath)(controller.termParser.apply)
           //println("param : " + text)
@@ -226,7 +226,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           res._2.toList match {
             case Nil =>
               val mod = ctrl.memory.content.getModule(mpath)
-              val refiner = new moc.PragmaticRefiner(new collection.immutable.HashSet[moc.PragmaticChangeType]())
+              val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename))
               val propagator = new moc.OccursInImpactPropagator(controller.memory)
               controller.update(List(mod),refiner, propagator)
               println("theory2 : " + controller.memory.content.getModule(mpath))

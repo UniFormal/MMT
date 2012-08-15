@@ -98,7 +98,7 @@ class Controller extends ROController {
      }
      
      println(changes)
-     val pChanges = refiner(new StrictDiff(changes))
+     val pChanges = refiner(new StrictDiff(changes), true)
      println("pchanges : " + pChanges.changes)
      val propDiff = pChanges ++ propagator(pChanges)
      println("pdiff : " + propDiff.changes)

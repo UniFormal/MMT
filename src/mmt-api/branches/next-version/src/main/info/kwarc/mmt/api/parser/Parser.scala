@@ -443,13 +443,14 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       
       //TODO implicit arguments
      
-      val tmMatches = matches flatMap {p =>
+      val tmMatches = matches.toSeq.sortBy(_._1) flatMap {p =>
           p._2 map {
             case tm : TermTk => tm.t
             case ex : ExpTk => parse(ex.tks).t
             case _ => throw ImplementationError("unexpected error: found delimiter as argument in reduce match")
           }
       }
+      log("make terms result : " + tmMatches.toList)
   
       tmMatches.toList
     }   

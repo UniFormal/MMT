@@ -12,7 +12,7 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
     val matches = new mutable.HashMap[PragmaticChangeType,mutable.HashSet[Set[Int]]]()
     
     val changes = diff.changes.zipWithIndex.toSet
-    changes.subsets map {indexedChSet =>
+    changes.subsets foreach {indexedChSet =>       
       // have to explicitly state more generic type due to 
       // Set being invariant in its type parameter 
       val chSet : Set[ContentChange] = indexedChSet.map(_._1)
@@ -35,7 +35,11 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
     enabledMatches = matches
   }
   
-  def enrich(diff :  StrictDiff) : Diff = {
+  def enrich(diff :  StrictDiff, forceAllApplicable : Boolean = false) : Diff = {
+    if (forceAllApplicable) {
+      setEnabledMatches(detectPossibleRefinements(diff))
+    }
+    
     val changes = diff.changes
     
     val tmp = enabledMatches.flatMap(_._2).flatten
@@ -47,7 +51,7 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
     
     var newChanges : List[ContentChange] = unusedChanges.map(_._1) 
     
-    enabledMatches map {p =>
+    enabledMatches foreach {p =>
       val ptype = p._1
       p._2 map {indexes =>
         val usedChanges = indexes.map(changes(_))
@@ -62,7 +66,10 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
     new Diff(newChanges)
   }
   
-  def apply(diff : StrictDiff) : Diff = enrich(diff)
+  def apply(diff : StrictDiff, forceAllApplicable : Boolean = false) : Diff = enrich(diff, forceAllApplicable)
 
 }
+
+
+
 

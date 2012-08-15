@@ -270,13 +270,11 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
             case _ => //TODO
           }
         } catch {
-          case _ => println(p.toPathLong)
+          case _ => //TODO
         }
       }
         
     }
-    println("printing dep info")
-    println("impacts of " + path.toPath + " are : "+ impacts)
     impacts 
   }
   
@@ -343,16 +341,15 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
    * @param changes the changes that impact tm
    * @return the boxed term
    */
-  private def box(tm : Term, changes : Set[ContentChange]) : Term = {
-    
-    def makeTerm(path : Path) : Term = path match {
-      case p : ContentPath => OMID(p)
-      case cp : CPath => OMID(cp.parent)
-      case _ => throw ImplementationError("Expected ContentPath or CPath found: " + path.toPath)
-      
-    }
-    
-    OME(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
+  private def box(tm : Term, changes : Set[ContentChange]) : Term = changes.toSeq match {
+    case Seq(p : PragmaticChange) => p.termProp(tm)
+    case _ => 
+      def makeTerm(path : Path) : Term = path match {
+        case p : ContentPath => OMID(p)
+        case cp : CPath => OMID(cp.parent)
+        case _ => throw ImplementationError("Expected ContentPath or CPath found: " + path.toPath)
+      }
+      OME(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
   }
   
 }

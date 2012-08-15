@@ -77,25 +77,46 @@ case class PragmaticChange(val name : String, val diff : StrictDiff, val termPro
   def toStrict : Diff = diff
 }
 
-
 object pragmaticRename extends PragmaticChangeType {
   val name = "ConstantRename"
   
   def matches(diff : Diff) : Boolean = diff.changes match {
     case DeleteDeclaration(o : Constant) :: AddDeclaration(n : Constant) :: Nil =>
       o.name != n.name && o.tp == n.tp && o.df == n.df
+    case AddDeclaration(n : Constant) :: DeleteDeclaration(o : Constant) :: Nil =>
+      o.name != n.name && o.tp == n.tp && o.df == n.df
     case _ => false
   }
-
+ 
   def termProp(diff : Diff)(tm : Term) : Term = {
-    tm
+    val (old,nw) = diff.changes match {
+      case DeleteDeclaration(o : Constant) :: AddDeclaration(n : Constant) :: Nil =>
+        (o.path, n.path)
+      case AddDeclaration(n : Constant) :: DeleteDeclaration(o : Constant) :: Nil =>
+        (o.path, n.path)
+      case _ => 
+        throw ImplementationError("unexpected error: invalid diff used to propagate in pragmatic change: " + name)
+    }
+    
+    def prop(t : Term) : Term = t match {
+      case OMID(p) => if (p == old) OMID(nw) else t
+      case OMA(f, args) => OMA(prop(f), args.map(prop))
+      case OMBIND(binder, con, body) =>
+        val newCon = Context(con.components.map(v =>
+          VarDecl(v.name, v.tp.map(prop), v.df.map(prop), v.ats :_ *)
+        ) :_ *)
+        
+        OMBIND(prop(binder), newCon, prop(body))
+      case _ => t
+    }
+    
+    prop(tm)
   }
 
   def modProp(diff : Diff)(m : Module) : StrictDiff = {
     new StrictDiff(Nil)
   }
 }
-
 
 /**
  * Module Level

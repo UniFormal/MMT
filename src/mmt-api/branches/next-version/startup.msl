@@ -11,8 +11,8 @@ log+ archive
 //log+ query
 log+ catalog
 log+ server
-log+ abox
-//log+ parser
+//log+ abox
+log+ parser
 //log+ presenter
 //log+ lf
 
@@ -33,7 +33,8 @@ rules info.kwarc.mmt.lf.TypedRules
 rules info.kwarc.mmt.lf.LFRules
 archive add ../../../../theories
 log+ backend
-//archive mmt clean
+archive mmt clean
+archive mmt source-structure
 archive mmt compile
 archive mmt content
 archive mmt relational
