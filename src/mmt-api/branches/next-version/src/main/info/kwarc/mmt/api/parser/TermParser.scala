@@ -19,3 +19,12 @@ abstract class TermParser {
 object DefaultParser extends TermParser {
    def apply(pu: ParsingUnit): Term = OMSemiFormal(Text(pu.scope.toMPath.toPath, pu.term))
 }
+
+/**
+ * Generic Error Class
+ */
+object ParsingError {
+  def apply(msg : String, sr : SourceRegion) = SourceError("object-parser", SourceRef(null, sr), msg) //TODO container missing
+//("Parsing Error: " + msg + " at (" + start + ","+ end + ")") {
+  //def stackTrace : String = getStackTrace.map(x => x.toString).mkString("","\n","")
+}

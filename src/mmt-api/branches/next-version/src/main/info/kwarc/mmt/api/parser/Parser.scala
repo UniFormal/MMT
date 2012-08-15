@@ -9,17 +9,6 @@ import scala.collection._
 
 import scala.collection.immutable.{Stack, List, HashMap}
 
-/* Error Handling */
-
-/**
- * Generic Error Class
- */
-object ParsingError {
-  def apply(msg : String, sr : SourceRegion) = SourceError("object-parser", SourceRef(null, sr), msg) //TODO container missing
-//("Parsing Error: " + msg + " at (" + start + ","+ end + ")") {
-  //def stackTrace : String = getStackTrace.map(x => x.toString).mkString("","\n","")
-}
-
 
 /**
  * A class representing a match of a notation in a list of tokens
@@ -32,7 +21,6 @@ case class NotationMatch(op : Operator, matches : List[Int])  {
    val ending = matches.last + op.notation.args.last.length
    val argNr = op.notation.argNr
 */
-
    override def toString = op.toString + "@(" + matches.mkString(",") + ") "
 }
 
@@ -74,9 +62,6 @@ class ParserContext {
   }
   
 }
-
-
-
 
 /**
  * Generic Parser Class

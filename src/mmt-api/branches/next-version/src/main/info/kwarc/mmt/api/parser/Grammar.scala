@@ -31,34 +31,28 @@ case class PairSep(l : String, r : String) extends Separator
 
 case class TokenProperties(start : Int, end : Int)
 
-sealed abstract class Token(val tkProps : TokenProperties)  {
+sealed abstract class Token {
+  val tkProps : TokenProperties
   def start = tkProps.start
   def end = tkProps.end
-  
   def isArg : Boolean
-  
   override def toString : String
 }
 
-case class StrTk(s : String, override val tkProps : TokenProperties) extends Token(tkProps) {
-  
+case class StrTk(s : String, tkProps : TokenProperties) extends Token {
   def isArg = false
-  
   override def toString = s
 }
-case class TermTk(t : Term, override val tkProps : TokenProperties) extends Token(tkProps) {
-  
+
+case class TermTk(t : Term, tkProps : TokenProperties) extends Token {
   def isArg = true
-  
   override def toString = t.toString
 }
-case class ExpTk(sep : String, tks : List[Token], override val tkProps : TokenProperties) extends Token(tkProps) {
-  
+
+case class ExpTk(sep : String, tks : List[Token], tkProps : TokenProperties) extends Token {
   def isArg = true
-  
   override def toString = tks.mkString("(", " ", ")")
 }
-
 
 /**
  * Class for grammars
