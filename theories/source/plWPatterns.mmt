@@ -1,0 +1,19 @@
+%namespace "http://cds.omdoc.org/foundations".
+
+%% includes patterns
+
+%sig PL = {
+  %include LF.
+  o : type.
+  or : o -> o -> o # 1 ∨ 2.
+  and : o -> o -> o # 1 ∧ 2.
+  not : o -> o # ¬ 1
+  ded : o -> type
+
+  %pattern boolVar = {
+	p : o.
+  }.	
+  %pattern axiom = [F : o] {
+	ax : ded F.
+  }.
+}.
