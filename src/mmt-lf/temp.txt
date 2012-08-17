@@ -1,0 +1,44 @@
+class Program {
+   var decls : List[DECL] = Nil
+   case class DECLHEAD(name: String) {
+      def typedef(e: EXP) = {
+         TYPEDEF(name, e)
+      }
+      def adt(cs: CONS*) = {
+         ADT(name, cs.toList)
+      }
+      def record(fs: FIELD*) = {
+         RECORD(name, fs.toList)
+      }
+   }
+   case class function(args: ARG*)(ret: EXP)(e: EXP) {
+      def =:(n: String) {
+         decls ::= FUNCTION(n, args.toList, ret, e)
+      }
+   }
+   implicit def stringToDECLHEAD(n: String) : DECLHEAD = DECLHEAD(n)
+   object declare {
+       def unapplySeq(d: NDECL) : Option[Seq[ID]]= {
+          decls ::= d
+          val s : List[String] = d match {
+             case a: ADT => a.name :: a.constructors.map(_.name)
+             case r: RECORD => r.name :: r.fields.map(_.name)
+             case _ => Nil
+          }
+          Some(s.map(ID(_)))
+       }
+   }
+   
+   val declare(nat, zero, succ) = "nat" adt ("zero" of (), "succ" of "nat")
+   val declare(rat, enum, denom) = "rat" record ("enum" ::: nat, "denom" ::: nat)
+   val declare(rat2) = "rat2" typedef PROD(List(nat, nat))
+
+   def main {
+      "nat" adt ("zero" of (), "succ" of nat)
+      "rat" record ("enum" ::: "nat", "denom" ::: nat)
+      "rat2" typedef PROD(List("nat", "nat"))
+      "embed" =: function("x" :: "nat")("rat")(
+         ARECORD("rat", List("enum" ::: "x", "denom" ::: "succ"%"zero"))
+      )
+   }
+}
