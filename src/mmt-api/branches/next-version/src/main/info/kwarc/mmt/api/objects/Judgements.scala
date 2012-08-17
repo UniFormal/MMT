@@ -55,7 +55,14 @@ case class Universe(stack: Stack, univ: Term) extends WFJudgement {
   val wfo = univ
 }
 
-//TODO case class Inhabitation(name: LocalName, tp: Term) extends Judgement
+case class Inhabitation(stack: Stack, tp: Term) extends Judgement {
+   lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: tp.freeVars_
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    ret
+  }   
+}
 
 case class IsTheory(stack: Stack, theory: Term) extends Judgement {
   lazy val freeVars = {
