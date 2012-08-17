@@ -10,10 +10,6 @@ object Typed {
    val kind = path ? "kind"
 }
 
-class TypedRules extends RuleSet {
-   val rules = List(UniverseType,UniverseKind,UnivTerm)
-}
-
 /** provides apply/unapply methods for a universes
    in particular, Univ(1), Univ(2) are type and kind, respectively
  */

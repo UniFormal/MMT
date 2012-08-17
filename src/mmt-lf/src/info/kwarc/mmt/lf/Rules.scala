@@ -4,10 +4,6 @@ import objects._
 import objects.Conversions._
 import utils.MyList.fromList
 
-class LFRules extends RuleSet {
-   val rules = List(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow)
-}
-
 /** the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
  * This rule works for any universe U */
 object PiTerm extends InferenceRule(Pi.path) {
