@@ -86,7 +86,13 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
             val key = NotationKey(Some(s.path), s.role)
             val notation = controller.get(gpar.nset, key)
             render(notation.pres, s.contComponents, List(0), gpar, lpar)
-         case o: Obj =>
+         case o1: Obj =>
+            val o = o1 match {
+               case o1: Term => controller.pragmatic.pragmaticHead(o1)
+               case _ => o1
+            }
+            println(o1)
+            println(o)
             //default values
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar

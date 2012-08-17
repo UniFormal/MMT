@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def comment = "//.*"r
    private def action = controller | shell | getaction
 
-   private def controller = log | local | catalog | archive | tntbase | importer | foundation | rules | mws | server | execfile
+   private def controller = log | local | catalog | archive | tntbase | importer | foundation | plugin | mws | server | execfile
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
@@ -52,7 +52,7 @@ object Action extends RegexParsers {
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
    private def foundation = "foundation" ~> str ~ (str *) ^^ {case f ~ args => AddFoundation(f, args)}
-   private def rules = "rules" ~> str ^^ {case s => AddRuleSet(s)}
+   private def plugin = "plugin" ~> str ^^ {case s => AddPlugin(s)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def server = serveron | serveroff
      private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
@@ -144,7 +144,7 @@ case class AddImporter(cls: String, args: List[String]) extends Action {override
 
 case class AddFoundation(cls: String, args: List[String]) extends Action {override def toString = "foundation " + cls + args.mkString(" ", " ", "")}
 
-case class AddRuleSet(cls: String) extends Action {override def toString = "rules " + cls}
+case class AddPlugin(cls: String) extends Action {override def toString = "plugin " + cls}
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}

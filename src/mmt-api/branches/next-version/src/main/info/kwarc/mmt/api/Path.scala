@@ -283,7 +283,7 @@ object Path {
    /** splits uri?mod?name?component into (uri, mod, name, component) */
    private def split(s : String) : (URI, String, String, String) = {
       if (s.indexOf("#") != -1)
-         throw new ParseError("MMT-URI may not have fragment")
+         throw new ParseError("MMT-URI may not have fragment: " + s)
       val comps = s.split("\\?",-1)
       val doc = URI(comps(0))  //note: split returns at least List(""), never Nil
       comps.length match {
@@ -363,9 +363,8 @@ object Path {
  * This permits the syntax doc ? mod in patterns. 
  */
 object ? {
-   //def apply(d: DPath,  l: LocalPath) : MPath = MPath(d, l)
    def unapply(p : Path) : Option[(DPath,LocalPath)] = p match {
-      case p : MPath => Some((p ^^, p.name))
+      case MPath(doc, name) => Some((doc, name))
       case _ => None
    }
 }
@@ -374,7 +373,6 @@ object ? {
  * This permits the syntax mod % sym in patterns.
  */
 object % {
-   //def apply(mod: Term, n: LocalName) : GlobalName = GlobalName(mod,n)
    def unapply(p : Path) : Option[(Term,LocalName)] = p match {
       case GlobalName(term,n) => Some((term,n))
       case _ => None

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.gui
-
+// commented out for now to avoid dependency on jfxrt.jar
+/*
 import javafx.application.Platform
 import javafx.scene.Scene
 import javafx.stage.Stage
@@ -67,3 +68,4 @@ object Browser {
      scene.onKeyPressed = (e => println(e.getText()))
    }
 }
+*/

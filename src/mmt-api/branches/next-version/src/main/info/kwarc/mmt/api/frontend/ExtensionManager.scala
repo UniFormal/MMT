@@ -20,6 +20,24 @@ class ExtensionManager(controller: Controller) {
    private def log(msg : => String) = report("extman", msg)
 
    val ruleStore = new objects.RuleStore
+   val pragmaticStore = new pragmatics.PragmaticStore
+
+   private var loadedPlugins : List[java.lang.Class[_ <: Plugin]] = Nil
+   def addPlugin(pl: Plugin, args: List[String]) {
+       loadedPlugins ::= pl.getClass
+       pl.dependencies foreach {d => if (! (loadedPlugins contains d)) addPlugin(d, Nil)}
+       pl.init(controller, args)
+   }
+   def addPlugin(cls: String, args: List[String]) {
+       log("adding plugin " + cls)
+       val pl = try {
+          val Pl = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Plugin]]
+          Pl.newInstance
+       } catch {
+          case e : java.lang.Throwable => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
+       }
+       addPlugin(pl, args)
+   }
    /** adds an Importer and initializes it */
    def addImporter(cls: String, args: List[String]) {
        log("adding importer " + cls)
@@ -60,18 +78,6 @@ class ExtensionManager(controller: Controller) {
    /** retrieves an applicable Foundation */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
 
-   /** add a RuleSet to the RuleStore */
-   def addRuleSet(cls: String) {
-       log("adding rule set " + cls)
-       val rs = try {
-          val RS = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[objects.RuleSet]]
-          RS.newInstance
-       } catch {
-          case e : java.lang.ClassNotFoundException => throw ExtensionError("cannot instantiate class " + cls).setCausedBy(e)
-       }
-       ruleStore.add(rs)
-   }
-   
    /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}
    def getMWS : Option[URI] = mws

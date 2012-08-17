@@ -16,7 +16,7 @@ log+ parser
 //log+ presenter
 //log+ lf
 
-//file ../../../paths.mmt
+file ../../../paths.mmt
 
 //catalog latin-locutor.xml
 //archive latin source
@@ -29,8 +29,7 @@ log+ parser
 //http..latin.omdoc.org/category_theory/dfol_based
 
 importer info.kwarc.mmt.api.backend.MMTCompiler
-rules info.kwarc.mmt.lf.TypedRules
-rules info.kwarc.mmt.lf.LFRules
+plugin info.kwarc.mmt.lf.Plugin
 archive add ../../../../theories
 log+ backend
 archive mmt clean

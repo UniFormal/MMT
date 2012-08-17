@@ -8,6 +8,7 @@ import symbols._
 import modules._
 import documents._
 import ontology._
+import pragmatics._
 import symbols.Constant
 import web._
 import utils._
@@ -74,6 +75,8 @@ class Controller extends ROController {
    val backend = new Backend(extman, report)
    /** the checker for the validation of ContentElement's and objects */
    val checker = new Checker(this)
+   /** pragmatic MMT features besides Patterns */
+   val pragmatic = new Pragmatics(this)
    /** the MMT rendering engine */
    val presenter = new presentation.Presenter(this, report)
    /** the query engine */
@@ -291,7 +294,7 @@ class Controller extends ROController {
 	      case AddCatalog(f) =>
 	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
 	      case AddImporter(c, args) => extman.addImporter(c, args)
-	      case AddRuleSet(c) => extman.addRuleSet(c)
+	      case AddPlugin(c) => extman.addPlugin(c, Nil)
 	      case AddFoundation(c, args) => extman.addFoundation(c, args)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
