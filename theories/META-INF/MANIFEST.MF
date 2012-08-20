@@ -1,6 +1,6 @@
 id: mmt
 type: mmt
 compilation: mmt@source -> omdoc@compiled
-source-base: http://latin.omdoc.org/
-narration-base: http://docs.omdoc.org/
+source-base: http://cds.omdoc.org/
+narration-base: http://docs.omdoc.org/mmt/
 
