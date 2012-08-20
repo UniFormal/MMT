@@ -23,7 +23,9 @@ abstract class Structure extends Symbol with Link {
     * @param sym a symbol of the domain theory of the structure
     * @return the induced symbol
     */
-   protected def outerComponents = List(StringLiteral(name.toString), from)
+   protected def outerComponents = List(
+         StringLiteral(if (name.isAnonymous) "include" else name.toString),
+         from)
    protected def outerString = path + " : " + from.toString
    def toNode = from match {
      case OMMOD(p) => 

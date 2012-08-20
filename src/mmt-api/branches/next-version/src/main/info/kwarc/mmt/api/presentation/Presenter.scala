@@ -91,8 +91,6 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
                case o1: Term => controller.pragmatic.pragmaticHead(o1)
                case _ => o1
             }
-            println(o1)
-            println(o)
             //default values
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar

@@ -209,7 +209,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
           val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern
           val prefix = if (target != base) target.getName + "/" else ""
           Storage.virtDoc(entries, prefix)
-      } else throw BackendError(path)
+        } else throw BackendError(path)
       cont(uri, N)   
    }
 }

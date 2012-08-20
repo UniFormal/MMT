@@ -108,7 +108,7 @@ object xml {
          case "visib" => namespace("omdoc")
          case "om" => "http://www.openmath.org/OpenMath"
          case "xhtml" => "http://www.w3.org/1999/xhtml"
-         case "html" => "http://www.w3.org/TR/REC-html40"
+         case "html" => "http://www.w3.org/1999/xhtml"
          case "mathml" => "http://www.w3.org/1998/Math/MathML"
       }
    }

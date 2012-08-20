@@ -5,7 +5,7 @@ log file jomdoc.log
 log+ controller
 //log+ extman
 //log+ reader
-log+ archive
+log+ archive    
 //log+ checker
 //log+ object-checker
 //log+ query
@@ -32,13 +32,13 @@ importer info.kwarc.mmt.api.backend.MMTCompiler
 plugin info.kwarc.mmt.lf.Plugin
 archive add ../../../../theories
 log+ backend
-archive mmt clean
-archive mmt source-structure
-archive mmt compile
-archive mmt content
+//archive mmt clean
+//archive mmt source-structure
+//archive mmt compile
+//archive mmt content
 archive mmt relational
 archive mmt notation
-archive mmt check
+//archive mmt check
 //archive mmt validate
 
 //mws http://localhost:6284

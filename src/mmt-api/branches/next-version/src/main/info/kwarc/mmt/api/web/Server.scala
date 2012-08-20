@@ -265,8 +265,8 @@ class Server(val port: Int, controller: Controller) extends HServer {
         Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, controller.getBase, controller.getHome) match {
           case DefaultGet(p) => p match {
             case frontend.Present(_, _) => tk.req.header("Accept") match {
-              case Some("text/xml") => false // TODO both false?
-              case _ => false // TODO both false?
+              case Some("text/xml") => false
+              case _ => false // TODO could be determined based on the presentation style
             }
             case ToNode(_) | Deps(_) => false
             case ToString(_) => true
@@ -283,7 +283,9 @@ class Server(val port: Int, controller: Controller) extends HServer {
         else
           XmlResponse(node).act(tk)
       } catch {
-        case e: Error => XmlResponse(<div>{ "get error:\n\n" + e.msg }</div>).act(tk)
+        case e: Error =>
+           val ns = utils.xml.namespace("html")
+           XmlResponse(<div xmlns={ns}>{e.msg.split("\\n").map(s => <p>{s}</p>)}</div>).act(tk)
       }
     }
   }
