@@ -84,7 +84,7 @@ object FunType {
      })
   }
   def unapply(t: Term): Option[(List[(Option[LocalName], Term)], Term)] = {
-    val q : Option[(List[(Option[LocalName], Term)], Term)] = t match {
+    /*val q : Option[(List[(Option[LocalName], Term)], Term)] = */t match {
       case Pi(name, tp, bd) => {
         val nm = name match {
         	case LocalName.Anon => None
@@ -107,7 +107,6 @@ object FunType {
       case t : Term => Some(null,t)
       case _ => None
     }
-    q
   }
 }
 
