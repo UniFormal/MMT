@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import objects._
 
 object Typed {
-   val path = DPath(utils.URI("http", "cds.omdoc.org") / "foundations") ? "Typed"
+   val path = DPath(utils.URI("http", "cds.omdoc.org") / "foundational") ? "Typed"
    /** the MMT URI of type */
    val ktype = path ? "type"
    /** the MMT URI of kind */
