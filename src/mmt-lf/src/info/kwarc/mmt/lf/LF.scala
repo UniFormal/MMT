@@ -94,6 +94,7 @@ object FunType {
           case None => return None
           case Some((a,b)) => (a,b)
         }
+        if (tl == null) Some(List((nm, tp)), ls) else Some(List((nm, tp)) ++ tl, ls)
         Some(List((nm, tp)) ++ tl, ls)
       }
       
@@ -104,7 +105,7 @@ object FunType {
         }
         Some(List((None, t1)) ++ tl, ls) 
       }  
-      case t : Term => Some(null,t)
+      case t : Term => Some(List(),t)
       case _ => None
     }
   }
