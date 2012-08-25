@@ -986,7 +986,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      val (name, positionAfter) = crawlIdentifier(i)
      i = positionAfter
      i = skipwscomments(i)
-     val patternMPath = parent.path / name
+//     val patternMPath = parent.path / name
+     val patternMPath = parent.path 
      
      // skip over '='
      i = expectNext(i, "=")
