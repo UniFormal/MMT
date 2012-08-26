@@ -1,13 +1,19 @@
 package info.kwarc.mmt.lf.compile
 
 /** SML as an implementation of a FuncLang */
-object SML extends FuncLang {
+object SML extends FuncLang[String] {
+   private var current : String = null
    def exp(e: EXP) : String = e match {
      case EQUAL(left,right) => "(" + exp(left) + " = " + exp(right) + ")"
+     case INTS => "int"
      case INT(value) => value.toString
+     case PLUS(x,y) => "(" + exp(x) + " + " + exp(y) + ")"
+     case TIMES(x,y) => "(" + exp(x) + " * " + exp(y) + ")"
+     case BOOLS => "bool"
+     case STRINGS => "string"
      case STRING(value) => "\"" + value + "\""
      case STRINGCONCAT(left, right) => "(" + exp(left) + " ^ " + exp(right) + ")"
-     case ID(name) => name
+     case ID(name) => if (name == "") current else name
      case APPLY(fun, args @ _*) => fun + args.map(exp).mkString("(", ",", ")")
      case IF(cond, thn, els) => "(if " + exp(cond) + " then " + exp(thn) + " else " + exp(els) + ")"  
      case MATCH(arg, cases) => "case " + exp(arg) + "\n" + cases.map(cas).mkString("  of ", "\n   | ", "\n")
@@ -26,8 +32,14 @@ object SML extends FuncLang {
    }
    def cons(c: CONS) = c.name + " of " + c.args.map(exp).mkString("", " * ", "")
    def arg(a: ARG) = a.name + ": " + exp(a.tp) 
-   private def ADTaux(a: ADT) = a.name + " = " + a.constructors.map(cons).mkString("", " | ", "\n")
-   private def FUNCTIONaux(f: FUNCTION) = f.name + f.args.map(arg).mkString("(",",",")") + " : " + exp(f.ret) + " = " + exp(f.body) + "\n"
+   private def ADTaux(a: ADT) = {
+      current = a.name
+      a.name + " = " + a.constructors.map(cons).mkString("", " | ", "\n")
+   }
+   private def FUNCTIONaux(f: FUNCTION) = {
+      current = f.name
+      f.name + f.args.map(arg).mkString("(",",",")") + " : " + exp(f.ret) + " = " + exp(f.body) + "\n"
+   }
    def decl(d: DECL) = d match {
      case a : ADT => "datatype " + ADTaux(a)
      case ADTRec(adts) => adts.map(ADTaux).mkString("datatype ", "     and ", "\n")
