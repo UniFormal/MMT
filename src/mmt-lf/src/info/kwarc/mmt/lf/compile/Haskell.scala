@@ -3,13 +3,19 @@ package info.kwarc.mmt.lf.compile
 case class Unsupported(msg: String) extends java.lang.Throwable 
 
 /** Haskell as an implementation of a FuncLang */
-object Haskell extends FuncLang {
+object Haskell extends FuncLang[String] {
+   private var current : String = null
    def exp(e: EXP) : String = e match {
      case EQUAL(left,right) => "(" + exp(left) + " == " + exp(right) + ")"
+     case INTS => "int"
      case INT(value) => value.toString
+     case PLUS(x,y) => "(" + exp(x) + " + " + exp(y) + ")"
+     case TIMES(x,y) => "(" + exp(x) + " * " + exp(y) + ")"
+     case BOOLS => "bool"
+     case STRINGS => "string"
      case STRING(value) => "\"" + value + "\""
      case STRINGCONCAT(left, right) => "(" + exp(left) + " + " + exp(right) + ")"
-     case ID(name) => name
+     case ID(name) => if (name == "") current else name
      case APPLY(fun, args @ _*) => fun + args.map(exp).mkString("(", ",", ")")
      case IF(cond, thn, els) => "(if " + exp(cond) + " then " + exp(thn) + " else " + exp(els) + ")"  
      case MATCH(arg, cases) => "case " + exp(arg) + "\n" + cases.map(cas).mkString("  of ", "\n   ", "\n")
@@ -28,15 +34,21 @@ object Haskell extends FuncLang {
    }
    def cons(c: CONS) = c.name + " " + c.args.map(exp).mkString("", " ", "")
    def arg(a: ARG) = a.name + ": " + exp(a.tp) 
-   private def ADTaux(a: ADT) = a.name + " = " + a.constructors.map(cons).mkString("", " | ", "\n")
-   private def FUNCTIONaux(f: FUNCTION) = f.name + f.args.map(arg).mkString("(",",",")") + " : " + exp(f.ret) + " = " + exp(f.body) + "\n"
+   private def ADTaux(a: ADT) = {
+      current = a.name
+      a.name + " = " + a.constructors.map(cons).mkString("", " | ", "\n")
+   }
+   private def FUNCTIONaux(f: FUNCTION) = {
+      current = f.name
+      f.name + f.args.map(arg).mkString("(",",",")") + " : " + exp(f.ret) + " = " + exp(f.body) + "\n"
+   }
    def decl(d: DECL) = d match {
      case a : ADT => "data " + ADTaux(a)
      case ADTRec(adts) => adts.map(decl).mkString("", "", "")
      case TYPEDEF(name, df) => "type " + name + " = " + exp(df) + "\n"
-     case FUNCTION(name, args, ret, body) =>
-        name + " :: " + args.map(a => exp(a.tp)).mkString("", " -> ", " -> ") + exp(ret) + "\n" +
-        name + " " + args.map(_.name).mkString("", " ", " = ") + exp(body) + "\n"
+     case f: FUNCTION =>
+        f.name + " :: " + f.args.map(a => exp(a.tp)).mkString("", " -> ", " -> ") + exp(f.ret) + "\n" +
+        f.name + " " + f.args.map(_.name).mkString("", " ", " = ") + exp(f.body) + "\n"
      case FUNCTIONRec(fs) => fs.map(decl).mkString("", "\n", "")
      case RECORD(name, fields) => "data " + name + " = " + name + fields.map {case FIELD(n,v) => n + " :: " + exp(v)}.mkString("{", ",", "}")
      case EXCEPTION(e) => ""
