@@ -844,19 +844,21 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   }
 
   // parse a parameter list [param_1]...[param_n]
+  // does not work, since expects [param_1 param_2 ... does not expect ]!
   private def crawlParameterList(start: Int, theory: MPath) : Pair[Context, Int] = {
      var parameterContext = Context()
      var i = start
      if (flat.startsWith("[", i)) {
-       i = expectNext(i, "[")
-       i += "[".length
-       i = skipwscomments(i)
        do {
          // parse a single declaration
+         i = expectNext(i, "[")
+         i += "[".length
+         i = skipwscomments(i)
          val (varDecl, posAfterParameter) = crawlParameter(i, theory, parameterContext)
          i = posAfterParameter
          parameterContext = parameterContext ++ varDecl
-       } while (! flat.startsWith("[", i))
+         i = skipwscomments(i)
+       } while (! flat.startsWith("{", i))
      }
      (parameterContext, i)
   }
