@@ -29,7 +29,7 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
    override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("conBegin",params.length + 1)) 
    def components = OMID(path) :: params ::: body
    override def toString = 
-     "Pattern for " + name.toString + " " + params.toString + " " + body.toString
+     "Pattern for " + name.toString + {if (params.variables.toList.isEmpty) "" else  {" [ " + params.toString + " ]" }} + " { " + body.toString + " }"
 }
 
 sealed abstract class PatternExpression {
