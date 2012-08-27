@@ -250,7 +250,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         if (c == closingBracket)      // found the matching right bracket
           return i + 1
         else
-          throw TextParseError(toPos(i), "unmatched right bracket " + c)
+          throw TextParseError(toPos(i), "unmatched right bracket " + c.toChar)
       else if (c == ':') // type of an expression
         i += 1
       else if (c == '.') // end of a local declaration (not in the language yet; just in case)
@@ -258,18 +258,18 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
         i = skipws(i)
       else
-        throw TextParseError(toPos(i), "illegal character " + c + " at this point")
+        throw TextParseError(toPos(i), "illegal character " + c.toChar + " at this point")
     }
     i
   }
 
 
 
-  /** puts a term into an OMSemiFormal object
+  /** reads a term and calls the TermParser on it
    * @param start the position of the first character in the term
    * @param delimChars characters that terminate the term if they occur outside brackets (e.g., ] in [x:A]
    * @param delimiters identifiers that terminate the term if they occur outside brackets (e.g., = in c:A=t) but not inside an identifier
-   * @return the semiformal object, position after the term
+   * @return the parsed term, position after the term
    * @throws SourceError if there are unmatched right brackets }
    */
   private def crawlTerm(start: Int, delimChars: List[Char], delimiters: List[String], component: CPath, theory: Term, context: Context = Context()) : Pair[Term, Int] =
@@ -291,18 +291,18 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         return computeReturnValue
       else if (c == ')' || c == ']' || c == '}')
         throw TextParseError(toPos(i), "unmatched right bracket " + c)
-      else if (c == '.' && Character.isWhitespace(flat.charAt(i+1))) // . followed by whitespace ends the term
+      else if (c == '.') // TODO remove this check and add . to delimChars
         return computeReturnValue
       else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
         i += 1
       else if (isIdentifierPartCharacter(c)) { // identifier
-        val (id, posAfter) = crawlIdentifier(i)
+        val (id, posAfter) = crawlIdentifier(i) // also finds identifiers that contain . 
         if (delimiters contains id) // these ends the term  if they occur anywhere outside a bracketed block and are not part of a larger identifier
           return computeReturnValue
         i = posAfter
       }
       else
-        throw TextParseError(toPos(i), "illegal character " + c + " at this point")
+        throw TextParseError(toPos(i), "illegal character " + c.toChar + " at this point")
     }
 
     // computes the return value. i is assumed to be the position after the end of the term
@@ -879,7 +879,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = skipwscomments(i)
 
      // parse the type
-     val (term, posAfter) = crawlTerm(i, List(']'), Nil, theory ? name $ TypeComponent, OMMOD(theory), context)
+     val (term, posAfter) = crawlTerm(i, List(']'), Nil, theory ? name $ TypeComponent, OMMOD(theory ^), context)
      val vd = OMV(name) % term
      i = posAfter
      
@@ -914,7 +914,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
           i = skipAfterDot(i)
         }
         else if (flat.codePointAt(i) == '}')    // end of signature body
-          return (body, i + 1)
+          return (body, i)
         else
           throw TextParseError(toPos(i), "unknown declaration in pattern body")
         keepComment = None          // reset the last semantic comment stored
@@ -942,7 +942,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       if (flat.codePointAt(i) == ':') {
         i += 1  // jump over ':'
         i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), theory ? name $ TypeComponent, OMMOD(theory), context)
+        val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), theory ? name $ TypeComponent, OMMOD(theory ^), context) // TODO remove ^ to avoid ignoring notations inside pattern body (occurs multiple times)
         varType = Some(term)
         i = posAfter
         i = skipwscomments(i)
@@ -953,7 +953,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       if (flat.codePointAt(i) == '=') {
         i += 1  // jump over '='
         i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, Nil, List("#"), theory ? name $ DefComponent, OMMOD(theory), context)
+        val (term, posAfter) = crawlTerm(i, Nil, List("#"), theory ? name $ DefComponent, OMMOD(theory ^), context)
         varDef = Some(term)
         i = posAfter
         i = skipwscomments(i)
@@ -988,8 +988,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      val (name, positionAfter) = crawlIdentifier(i)
      i = positionAfter
      i = skipwscomments(i)
-//     val patternMPath = parent.path / name
-     val patternMPath = parent.path 
+     val patternMPath = parent.path / name
      
      // skip over '='
      i = expectNext(i, "=")
@@ -1006,8 +1005,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      val (body, posAfterPatternBody) = crawlPatternBody(i, patternMPath, parameterContext)
      val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
 
-     i = posAfterPatternBody
-
+     i = expectNext(posAfterPatternBody, "}")
+     i = skipwscomments(i+1)
      val endsAt = expectNext(i, ".")
 
      // add the semantic comment and source reference
