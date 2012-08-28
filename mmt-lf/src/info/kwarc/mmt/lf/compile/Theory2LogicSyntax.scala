@@ -17,8 +17,6 @@ import presentation._
 /*
  * translates an mmt theory to a logic syntax
  */
-
-
 class Theory2LogicSyntax {
 	case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg) 
   
@@ -40,78 +38,83 @@ class Theory2LogicSyntax {
 //	        case Some(x) => x
 //	        case None => throw TheoryLookupError("no categories could be determined")
 //	      }
-	      LogicSyntax(getCats(decList,CatRef("bool")),CatRef("bool"),null)
+	      LogicSyntax(List(getCat(decList,CatRef("bool"))),CatRef("bool"),getDecls(decList))
 	    }	      	   
 	    case theo : DefinedTheory => throw TheoryLookupError("a DefinedTheory")
 	    case _ =>  throw TheoryLookupError("unidentified theory") 
 	  }
 	  
 	  logsyn
-//	  LogicSyntax(null,CatRef("empty"),null)
 	}
 	
-	def getDecls(sl : List[Symbol]) : List[Category] = {
-	  sl.foreach(a => a match {
-	    case _ =>
-	  })
-	  null
+	// helper function for term names
+	def tName(t : Term) : String = {
+	  val s = t.toString
+	  s.substring(s.lastIndexOf("?") + 1)
 	}
 	/*
-	def getCats(sl : List[Symbol], cat: Option[String]) : List[Category] = {
+	 * a very stupid Declaration parser
+	 */
+	def getDecls(sl : List[Symbol]) : List[Declaration] = {
+	  sl.mapPartial{
+	    case a : Pattern => {
+	      val name = a.name.toString
+	      val args = a.params.components.mapPartial{ v =>
+	        v.tp
+	      }
+	      Some(Declaration(name,args.map{ x => CatRef(tName(x)) }))
+	    }
+	    case _ => None  
+	  }
+	}
+	
+	// have so cat : Category, get connectives/functions of that Category
+	def getCat(sl : List[Symbol], cat : CatRef) : Category = {
+	  
+	  // get connectives of category cat
 	  val cons = sl mapPartial {
 	    case a : Constant => a.tp match {
-	      case Some(FunType(in, out)) =>
-	         val catrefs = in.map {
-	           case (None, t) =>
-	              t match {
-	                 case OMS(c) => // a constructor
-	                 case Apply(OMS(c), ts) => // a constructor for c (only in case of non-Nil arguments of category)
-	                 case _ => // impossible
-	              }
-	           case (Some(x), t) => //unsupported for now
-	         }
-	         out match {
-	           case Univ(1) => Some(CatRef(""))//TODO return category // a category; in should be Nil for now; 'type'
-	           case OMS(c) => None //TODO // a constructor
-//	              Connective(a.name.toString, catrefs) //?
-	           case Apply(OMS(c), ts) => None //? // a constructor for c (only in case of non-Nil arguments of category), like 'tm i'
-	           case _ => None // throw error?  // impossible
-	         }
-	      case _ => None
-	    }
-	    case a : Pattern => None //TODO
-	    case _ => None
-	  }
-	  List(Category("bool",cons))
-	} */
-	def getCats(sl : List[Symbol], cat : CatRef) : List[Category] = {
-	  sl mapPartial {
-	    case a : Constant => a.tp match {
 	      case Some(FunType(in, out)) => {
-	        if (in != null) in foreach {a => print(a.toString + "   ")}
-	        println(out.toString())
 	        //TODO check if 'out' is of the same category as 'cat'
-	        if (in == null) None else {
-	        	val catrefs = in.map {
-	        		case (None, t) => println("") 
-	        		  None
+	        if (tName(out) == cat.toString()) {
+	        	if (in.isEmpty) None else {
+	        		val catrefs : List[CatRef] = in.mapPartial {
+	        			case (None, t) => Some(CatRef(tName(t)))
+	        			case (Some(lname),t) => None//TODO unsupported
+	        		}
+	        	
+	        		Some(List(Connective(a.name.toString, catrefs)))
 	        	}
-	        }
-	        
-	        None
+	        } else None
 	      }
 	      case _ => None // not FunType
 	    }
-	    case _ => None // not Constant
+	    // produce ConstantSymbol
+	    case a : Pattern => {
+	      val cos = a.body.variables.toList.mapPartial{ v =>
+	        	v.tp
+	      }
+	      val args = a.params.variables.toList.mapPartial{ v =>
+	    	  	v.tp
+	      } map {x => CatRef(tName(x))}
+	      
+	      val cs = cos map { x =>
+	        ConstantSymbol(a.name.toString, tName(x),args)
+	      }
+	      Some(cs)
+	    } 
+	    // not a Constant declaration or a Pattern, disregard
+	    case _ => None 
 	  }
-	  List()
+	  // fill in a Category
+	  Category(cat.toString,cons.flatten)
 	}
 	
 	
 	def getCatRefs(sl : List[Symbol]) : List[CatRef] = {
 	  sl mapPartial {
 	    case a : Constant =>  a.tp match {
-	      	case Some(FunType(in, out)) => if (out == Univ(1) && in == null) Some(CatRef("bool")) else None     
+	      	case Some(FunType(in, out)) => if (out == Univ(1) && in == null) Some(CatRef("o")) else None     
 	      	case _ => None
 	      }
 	    
@@ -119,6 +122,7 @@ class Theory2LogicSyntax {
 	  }
 	  
 	}
+	
   
 }
 /*
@@ -133,11 +137,15 @@ object Test {
     
     // add file to archive, go through structure!
     // read a source file
-    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/pl.mmt"
+    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/plWPatterns.mmt"
+//    val sourceFile1 = "/home/aivaras/TPTP/LogicAtlas/source/logics/propositional/syntax/syntax.elf"  
+//    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/lf.mmt"  
 //    val sourceFile2 = "/home/aivaras/TPTP/LogicAtlas/source/logics/propositional/syntax/syntax.elf" 
 //    cont.handleLine("archive add /home/aivaras/TPTP/LogicAtlas")
 //    cont.handleLine("archive latin source-structure")
 //    cont.handleLine("achive latin compile")
+       cont.handleLine("log console")
+        cont.handleLine("log+ parser")
     cont.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
     cont.handleLine("archive mmt source-structure")
     cont.handleLine("archive mmt compile")
@@ -147,9 +155,7 @@ object Test {
     println("errors: " + errl.toString)
     val path = DPath(utils.URI("http://cds.omdoc.org/foundational"))
 //    println(cont.globalLookup.getAllPaths().toString)
-//    val tt = cont.localLookup.getTheory(path ? "PL")
-//    println(tt.getClass.toString)
-    val theo =  cont.localLookup.getTheory(path ? "PL") match {
+    val theo =  cont.localLookup.getTheory(path ? "PLpatt") match {
       case d : DeclaredTheory => d
       case _ => throw TestError("attempted retrieving not a DeclaredTheory")
     }
