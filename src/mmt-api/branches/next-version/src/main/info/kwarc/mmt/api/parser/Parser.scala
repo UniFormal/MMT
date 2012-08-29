@@ -89,14 +89,14 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
   def apply(pu: ParsingUnit) : Term = {
     val scope = pu.scope
     val s = pu.term
-    //TODO pu.context gives the context in which the Term is stated
-    
+    parserContext.addContext(pu.context.variables.toList)
     val includes = controller.library.visible(scope)
     val decls = includes.toList flatMap {tm => 
       controller.globalLookup.get(tm.toMPath).components
     }
     log("includes : " + includes)
     log("decls : " + decls)
+    log("context: " + pu.context)
     
     operators = grammar.operators ::: makeOperators(decls)
     log("Started parsing " + s + " with operators : ")
@@ -497,9 +497,9 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
         TokensPos(left, TermTk(newTm, tkProps) :: opMatch.rest)
       case true => 
         val context = opMatch.makeContext
-        parserContext.addContext(context.components)
+        parserContext.addContext(context.variables.toList)
         val body = parse(opMatch.rest).t
-        parserContext.clearContext(context.components.length)
+        parserContext.clearContext(context.variables.length)
         
         TokensPos(left, TermTk(OMBIND(opMatch.tm, context, body), opMatch.getTkProps) :: Nil)
     }
