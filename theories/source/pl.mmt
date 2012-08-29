@@ -1,9 +1,15 @@
 %namespace "http://cds.omdoc.org/foundational".
 
-%sig PL = {
-  %include LF.
+%sig PL : LF = {
   bool : type.
   or : bool -> bool -> bool # 1 ∨ 2.
   and : bool -> bool -> bool # 1 ∧ 2.
   equiv : bool -> bool -> bool = [x][y] x ∨ y # 1 ⇔ 2.
+  
+  ded : bool -> type.
+  andI  : {A}{B} ded A -> ded B -> ded (A ∧ B).
+  andEl : {A}{B} ded (A ∧ B) -> (ded A).
+  andEr : {A}{B} ded (A ∧ B) -> (ded B).
+  
+  comm : {A}{B} ded (A ∧ B) -> ded (B ∧ A) = [A][B][p] andI (andEr p) (andEl p). 
 }.
