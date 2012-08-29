@@ -156,9 +156,13 @@ class MMTSideKick extends SideKickParser("mmt") {
          errors foreach {
             case s: SourceError =>
                //parse error thrown by TextReader
-               val tp = if (s.warning || ! s.fatal) ErrorSource.WARNING else ErrorSource.ERROR
+               val tp = if (s.warning) ErrorSource.WARNING else ErrorSource.ERROR
                val pos = s.ref.region.start
-               val error = new DefaultErrorSource.DefaultError(errorSource, tp, s.ref.container.pathAsString, pos.line, pos.column, pos.column + 1, s.mainMessage)
+               val file = controller.backend.resolveLogical(s.ref.container) match {
+                  case Some((a,p)) => (a.sourceDir / p).toString
+                  case None => s.ref.container.toString
+               }
+               val error = new DefaultErrorSource.DefaultError(errorSource, tp, file, pos.line, pos.column, pos.column + 1, s.mainMessage)
                errorSource.addError(error)
       }
       tree
