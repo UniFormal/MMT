@@ -121,10 +121,12 @@ class MMTSideKick extends SideKickParser("mmt") {
       buildTree(child, parent, t)
    }
    /* build the sidekick outline tree: (sub)term node */
-   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, t: objects.Term) {
+   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, t: objects.Obj) {
       val label = t match {
          case OMV(n) => "var " + n.toString
          case OMS(p) => "con " + p.last
+         case OMSemiFormal(_) => "unparsed"
+         case v: VarDecl => "Var " + v.name
          case _ => t.role.toString
       }
       val child = t match {
@@ -132,8 +134,11 @@ class MMTSideKick extends SideKickParser("mmt") {
          case t =>       new DefaultMutableTreeNode(new MMTTermAsset(parent, None, label, getRegion(t)))
       }
       node.add(child)
-      val termComponents : List[Term] = t.components mapPartial {case t: Term => Some(t); case _ => None} 
-      termComponents foreach {c => buildTree(child, parent, c)}
+      val objComponents : List[Obj] = t.components mapPartial {
+         case o: Obj => Some(o)
+         case _ => None
+      } 
+      objComponents foreach {c => buildTree(child, parent, c)}
    }
    
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {

@@ -95,11 +95,7 @@ class MMTPlugin extends EBPlugin {
       val wm = view.getDockableWindowManager
       wm.addDockableWindow("mmt-dockable")
       val d = wm.getDockableWindow("mmt-dockable").asInstanceOf[MMTDockable]
-      val ta = view.getTextArea
-      MMTPlugin.getCurrentID(view.getBuffer, ta.getCaretPosition) match {
-         case None =>
-         case Some((_,_,_,id)) => d.setText(id)
-      }
+      d.init
    }
 }
 
