@@ -12,7 +12,7 @@ log+ archive
 log+ catalog
 log+ server
 //log+ abox
-log+ parser
+//log+ parser
 //log+ presenter
 //log+ lf
 
