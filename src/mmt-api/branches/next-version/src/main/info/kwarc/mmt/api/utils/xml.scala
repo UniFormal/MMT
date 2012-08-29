@@ -129,10 +129,9 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
    def /(n : String) : URI = this / List(n)
    /** drop query, fragment, append to path
     *  path stays relative/absolute; but URI(_, Some(_), Nil, false, _, _) / _ turns path absolute
+    *  trailing empty segment of this URI is dropped when appending
     */   
-   def /(p : List[String]) : URI = {
-      URI(scheme, authority, path ::: p, absolute)
-   }
+   def /(p : List[String]) : URI = URI(scheme, authority, pathNoTrailingSlash ::: p, absolute)
    /** drops query and fragment, drop last path segment (if any) */
    def ^ : URI = URI(scheme, authority, if (path.isEmpty) Nil else path.init, absolute)
    /** drops query and fragment and path */
@@ -162,7 +161,8 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
       else
          URI(toJava.resolve(u.toJava))
    }
-   
+   /** removes an empty trailing segment, which results from a trailing / */
+   val pathNoTrailingSlash = if (path.endsWith(List(""))) path.init else path
    /** returns the whole path as a string (/-separated, possibly with a leading /) */
    def pathAsString : String = {
      val tmp = path.mkString(if (absolute) "/" else "", "/", "")

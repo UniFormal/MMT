@@ -370,6 +370,16 @@ object ? {
 }
 
 /** 
+ * This permits the syntax mod ?? name in patterns. 
+ */
+object ?? {
+   def unapply(p : Path) : Option[(MPath,LocalName)] = p match {
+      case GlobalName(OMMOD(p), n) => Some((p,n))
+      case _ => None
+   }
+}
+
+/** 
  * This permits the syntax mod % sym in patterns.
  */
 object % {

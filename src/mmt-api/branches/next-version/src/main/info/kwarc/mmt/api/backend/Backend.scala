@@ -446,13 +446,14 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
    /** splits a logical document URI into the Archive holding it and the relative path in that archive leading to it */
    def resolveLogical(uri: URI) : Option[(Archive, List[String])] = {
       getArchives find {a => 
-        a.narrationBase.^! == uri.^! && uri.path.startsWith(a.narrationBase.path)
-      } map {a => (a, uri.path.drop(a.narrationBase.path.length))}
+        a.narrationBase.^! == uri.^! && uri.path.startsWith(a.narrationBase.pathNoTrailingSlash)
+      } map {a => (a, uri.path.drop(a.narrationBase.pathNoTrailingSlash.length))}
    }
    /** splits a physcial document URI into the Archive holding it and the relative path in that archive leading to it */
    def resolvePhysical(file: File) : Option[(Archive, List[String])] = {
-      getArchives find {a => file.toString.startsWith(a.root.toString)} map {
-        a => (a, File(file.toString.substring(a.root.toString.length + 1)).segments.tail)
+      val segments = file.segments
+      getArchives find {a => segments.startsWith(a.root.segments)} map {
+        a => (a, segments.drop(a.root.segments.length + 1)) // + 1 to drop "source" directory
       }
    }
    /** closes all svn sessions */

@@ -72,6 +72,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
 
   private var operators : List[Operator] = grammar.operators
   private val parserContext = new ParserContext()
+  private var scope: Term = null
   
   private def opsByPrecedence : List[List[Operator]] = {
     val ops = operators.sortWith((x,y) => x.precedence < y.precedence)
@@ -87,7 +88,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
   private def log(msg : => String) = controller.report("parser",msg)
 
   def apply(pu: ParsingUnit) : Term = {
-    val scope = pu.scope
+    scope = pu.scope
     val s = pu.term
     parserContext.addContext(pu.context.variables.toList)
     val includes = controller.library.visible(scope)
@@ -204,7 +205,6 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       case Some(SingSep(m)) =>  if (grammar.isDecl(SingSep(m))) (1,SingSep(m)) else (2,SingSep(m))
       case Some(PairSep(l,r)) => if (s.substring(i).startsWith(l)) (1,PairSep(l,r)) else (2,PairSep(l,r))
     }
-
   }
 
 
@@ -228,6 +228,26 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
     tm
   }
   
+  private def makeOMA(fun: Term, args: List[Term]) : Term = {
+     val theory = fun match {
+        case OMS(th ?? _) => th
+        case _ => TheoryExp.meta(scope)(controller.globalLookup) match {
+           case Some(t) => t
+           case None => utils.mmt.mmtcd
+        }
+     }
+     controller.pragmatic.strictApplication(theory, fun, args)
+  }
+  private def makeOMBIND(bin: Term, context: Context, body: Term) : Term = {
+     val theory = bin match {
+        case OMS(th ?? _) => th
+        case _ => TheoryExp.meta(scope)(controller.globalLookup) match {
+           case Some(t) => t
+           case None => utils.mmt.mmtcd
+        }
+     }
+     controller.pragmatic.strictBinding(theory, bin, context, body)
+  }
   
   private def parse(ops : List[List[Operator]], tks : List[Token]) : TermTk = ops match {
     case Nil => 
@@ -249,7 +269,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
           TermTk(hd, TokenProperties(0,0))
         case _ => 
           log("using default application of first token")
-          TermTk(OMA(tmTks.head, tmTks.tail), TokenProperties(0,0))//TODO fix token properties
+          TermTk(makeOMA(tmTks.head, tmTks.tail), TokenProperties(0,0))//TODO fix token properties
       }
     case hd :: tl =>    
       log("trying level with ops : ")
@@ -491,7 +511,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
         log(opMatch.toTkList.mkString(" "))
         val newTm = opMatch.makeTerms match {
           case Nil => opMatch.tm
-          case l => OMA(opMatch.tm, l)
+          case l => makeOMA(opMatch.tm, l)
         }
         val tkProps = opMatch.getTkProps
         TokensPos(left, TermTk(newTm, tkProps) :: opMatch.rest)
@@ -501,7 +521,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
         val body = parse(opMatch.rest).t
         parserContext.clearContext(context.variables.length)
         
-        TokensPos(left, TermTk(OMBIND(opMatch.tm, context, body), opMatch.getTkProps) :: Nil)
+        TokensPos(left, TermTk(makeOMBIND(opMatch.tm, context, body), opMatch.getTkProps) :: Nil)
     }
     
     def toList : List[Token] = (left ++ right).toList

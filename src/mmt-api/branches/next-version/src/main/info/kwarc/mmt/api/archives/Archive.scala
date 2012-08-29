@@ -49,6 +49,7 @@ abstract class WritableArchive extends ROArchive {
    
     val sourceDim = properties("source")
     val compiledDim = properties("compiled")
+    val sourceDir = root / sourceDim
     val narrationDir = root / "narration"
     val contentDir = root / "content"
     val relDir = root / "relational"

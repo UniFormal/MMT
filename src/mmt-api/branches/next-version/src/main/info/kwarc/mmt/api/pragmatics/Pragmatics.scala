@@ -8,7 +8,7 @@ import libraries._
 
 class Pragmatics(controller: Controller) {
    private val ps = controller.extman.pragmaticStore
-   private val lup = controller.globalLookup
+   private lazy val lup = controller.globalLookup // must be lazy due to order of class initialization
    def strictApplication(theory: MPath, fun: Term, args: List[Term]) : Term = {
       lup.getTheory(theory) match {
          case d: DeclaredTheory => d.meta match {
@@ -73,10 +73,12 @@ abstract class Feature {
 
 trait Application extends Feature {
    val apply: GlobalName
+   override def toString = "Application: apply = " + apply.toPath
 }
 
 trait HOAS extends Application {
    val lambda: GlobalName
+   override def toString = super.toString + "; HOAS: lambda = " + lambda.toPath  
 }
 
 //what about the other typing judgements - often there is more than one

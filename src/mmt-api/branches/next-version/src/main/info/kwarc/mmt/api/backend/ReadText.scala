@@ -309,7 +309,13 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     def computeReturnValue = {
       val term = getSlice(start, i - 1)
       val pu = ParsingUnit(component, theory, context, term)
-      val obj = puCont(pu)
+      val obj = try {
+         puCont(pu)  
+      } catch {
+         case e: ParseError =>
+            errors = errors :+ TextParseError(toPos(start), e.getMessage)
+            DefaultParser(pu)
+      }
       addSourceRef(obj, start, i - 1)
       Pair(obj, i)
     }
@@ -1195,11 +1201,12 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
     // read the name
     val (sigName, positionAfter) = crawlIdentifier(i)
-    i = positionAfter   // jump over identifier
+    i = skipwscomments(positionAfter)   // jump over identifier
     val tpath = getCurrentDPath ? sigName
     var meta : Option[MPath] = None
     if (flat.codePointAt(i) == ':') {
-       i = expectNext(i, ":")
+       i = expectNext(i, ":") + 1
+       i = skipwscomments(i)
        val (mtId, positionAfterMeta) = crawlIdentifier(i)
        val mtTerm = moduleToAbsoluteURI(i, mtId)
        mtTerm match {
