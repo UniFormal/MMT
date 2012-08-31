@@ -36,6 +36,10 @@ case class File(toJava: java.io.File) {
        case None => File(toString + "." + ext)
        case Some(s) => File(toString.substring(0, toString.length - s.length) + ext)
    }
+   def removeExtension : File = getExtension match {
+       case None => this
+       case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
+   }
 }
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
