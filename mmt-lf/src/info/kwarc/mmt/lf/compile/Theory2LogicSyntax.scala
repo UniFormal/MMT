@@ -1,7 +1,6 @@
 package info.kwarc.mmt.lf.compile
 
 import info.kwarc.mmt.lf._
-//import info.kwarc.mmt.lf.{URI => _}
 import info.kwarc.mmt.lf.compile._
 import info.kwarc.mmt.api._
 import modules._
@@ -13,6 +12,8 @@ import MyList._
 import frontend._
 import patterns._
 import presentation._
+import scala.sys.process._
+import frontend.ToString
 
 /*
  * translates an mmt theory to a logic syntax
@@ -38,19 +39,44 @@ class Theory2LogicSyntax {
 //	        case Some(x) => x
 //	        case None => throw TheoryLookupError("no categories could be determined")
 //	      }
-	      LogicSyntax(List(getCat(decList,CatRef("bool"))),CatRef("bool"),getDecls(decList))
+	      
+	      
+	      val cats = getCatRefs(decList) map { x =>
+	        getCat(decList,x)
+	      } 
+	      
+//	      println( (decList mapPartial {x => x match { case x : Constant => Some(x); case _ => None }  }   )  map isFormCat )
+	      
+	      LogicSyntax(cats,CatRef("bool"),getDecls(decList))
 	    }	      	   
 	    case theo : DefinedTheory => throw TheoryLookupError("a DefinedTheory")
 	    case _ =>  throw TheoryLookupError("unidentified theory") 
 	  }
+	 
+	  
+	 val c = new Compiler(logsyn)
+	 
+	 val l = c.get map { x => Haskell.decl(x) + "\n" }
+	 
+	 val ls : String = "\"" + l.toString() + "\""
+    
+	 println(ls)
+//    "echo" + ls #> new java.io.File("/home/aivaras/Desktop/out.txt") !
+	  
 	  
 	  logsyn
 	}
 	
 	// helper function for term names
-	def tName(t : Term) : String = {
-	  val s = t.toString
-	  s.substring(s.lastIndexOf("?") + 1)
+	// should only work when called on atomic types
+	def head(t : Term) : CatRef = {	  
+	  t match {
+    	case ApplySpine(OMS(x),args) =>  CatRef(x.name.toPath)
+	    case OMS(s) =>  CatRef(s.name.toPath)
+	    case OMA(x,ar) => CatRef(x.toString())// ApplySpine does not work?
+	    // in case of a function type, throw error
+	    case _ => throw TheoryLookupError("this is a function type " + t.toString())
+	  }
 	}
 	/*
 	 * a very stupid Declaration parser
@@ -62,7 +88,7 @@ class Theory2LogicSyntax {
 	      val args = a.params.components.mapPartial{ v =>
 	        v.tp
 	      }
-	      Some(Declaration(name,args.map{ x => CatRef(tName(x)) }))
+	      Some(Declaration(name,args.map{ x => head(x) }))
 	    }
 	    case _ => None  
 	  }
@@ -75,31 +101,44 @@ class Theory2LogicSyntax {
 	  val cons = sl mapPartial {
 	    case a : Constant => a.tp match {
 	      case Some(FunType(in, out)) => {
-	        //TODO check if 'out' is of the same category as 'cat'
-	        if (tName(out) == cat.toString()) {
-	        	if (in.isEmpty) None else {
-	        		val catrefs : List[CatRef] = in.mapPartial {
-	        			case (None, t) => Some(CatRef(tName(t)))
-	        			case (Some(lname),t) => None//TODO unsupported
-	        		}
+	        //check if 'out' is of the same category as 'cat'
+	        if (head(out) == cat) {
+	        
+//	        	if (head(out) == cat.toString()) {
+	        		if (in.isEmpty) None else {
+	        			val catrefs : List[CatRef] = in.mapPartial {
+	        				case (None, t) => t match {
+	        				case Apply(OMS(x),args) =>  CatRef(x.name.toPath)
+	        			  	case OMS(s) =>  CatRef(s.name.toPath)
+	        				} 
+	        			  	Some(head(t))
+	        				case (Some(lname),t) => None//TODO unsupported
+	        			}	
 	        	
-	        		Some(List(Connective(a.name.toString, catrefs)))
-	        	}
+	        			Some(List(Connective(a.name.toString, catrefs)))
+	        		}
+//	        	} else None
 	        } else None
 	      }
 	      case _ => None // not FunType
 	    }
 	    // produce ConstantSymbol
 	    case a : Pattern => {
+	      
+	      
 	      val cos = a.body.variables.toList.mapPartial{ v =>
 	        	v.tp
 	      }
+	      
 	      val args = a.params.variables.toList.mapPartial{ v =>
 	    	  	v.tp
-	      } map {x => CatRef(tName(x))}
+	      } map {x => head(x)}
 	      
-	      val cs = cos map { x =>
-	        ConstantSymbol(a.name.toString, tName(x),args)
+	      
+	      val cs = cos mapPartial { x =>
+	        if (head(x) == cat) 
+	        	Some(ConstantSymbol(a.name.toString, head(x).toString,args))
+	        else None
 	      }
 	      Some(cs)
 	    } 
@@ -114,7 +153,8 @@ class Theory2LogicSyntax {
 	def getCatRefs(sl : List[Symbol]) : List[CatRef] = {
 	  sl mapPartial {
 	    case a : Constant =>  a.tp match {
-	      	case Some(FunType(in, out)) => if (out == Univ(1) && in == null) Some(CatRef("o")) else None     
+	      	case Some(FunType(in, out)) => 
+	      	  if (out == Univ(1) && in == List()) Some(CatRef(a.name.toString)) else None     
 	      	case _ => None
 	      }
 	    
@@ -123,6 +163,12 @@ class Theory2LogicSyntax {
 	  
 	}
 	
+	def isFormCat(c : Constant) : Boolean = {
+	  c.tp match {
+	    case Some(FunType(in,out)) => in == List() && out == Univ(1)
+	    case _ => false
+	  }
+	}
   
 }
 /*
@@ -145,7 +191,7 @@ object Test {
 //    cont.handleLine("archive latin source-structure")
 //    cont.handleLine("achive latin compile")
        cont.handleLine("log console")
-        cont.handleLine("log+ parser")
+//        cont.handleLine("log+ parser")
     cont.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
     cont.handleLine("archive mmt source-structure")
     cont.handleLine("archive mmt compile")
@@ -159,13 +205,17 @@ object Test {
       case d : DeclaredTheory => d
       case _ => throw TestError("attempted retrieving not a DeclaredTheory")
     }
-    println(theo.toString())
+//    println(theo.toString())
     val tls = new Theory2LogicSyntax()
-    println(theo.valueListNG foreach {a => a.toString})
+//    println(theo.valueListNG foreach {a => a.toString})
     println(tls.translateTheory(theo))
+        
     
 //    cont.globalLookup.getTheory(path ? "PL")
     println("\n\nend")
+    
+    
+    
   }
 }
 
