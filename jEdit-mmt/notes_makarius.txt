@@ -52,7 +52,7 @@ Moreover, every TextArea has a ChunkCache.
 3) The constructor TextAreaPainter(TextArea textArea) adds several default TextAreaExtensions
    among them PaintText (see 8)
 
-4) The ChunkCache calls TokenHandler.init(textArea.getPainter.getStyles, ...)
+4) The ChunkCache calls maintains a DisplayTokenHandler and calls init(textArea.getPainter.getStyles, ...)
 
 5) DisplayTokenHandler holds the styles (set via init)
 
