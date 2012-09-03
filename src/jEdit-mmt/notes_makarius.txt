@@ -33,6 +33,7 @@ try styx font or Makarius's font isabelleText
 My investigation of the data flow:
 
 Recall: every EditPane has one TextArea, and every TextArea has one TextAreaPainter
+Moreover, every TextArea has a ChunkCache.
 
 1) EditPane.initPainter(TextAreaPainter painter) sets styles by calling
   String defaultFont = jEdit.getProperty("view.font");
@@ -44,7 +45,7 @@ Recall: every EditPane has one TextArea, and every TextArea has one TextAreaPain
   In particular, the properties only contain entries of the form
     view.font.TOKENTYPE=color:COLOR bgColor:COLOR style:b style:i
   additional TextAttributes of a Font (underline etc. are not used)
-  font familiy and size are maintained globally and not per token type
+  font family and size are maintained globally and not per token type
   
 2) TextAreaPainter.styles holds the styles (via getStyles/setStyles)
 
@@ -62,5 +63,17 @@ Recall: every EditPane has one TextArea, and every TextArea has one TextAreaPain
 8) PaintText calls Chunk.paintChunkList to paint a list of chunks.
 
 
+In prinicple, one could do the following to change the styles arbitrarily, i.e., in a TextAreaExtension that runs before PaintText
+var chunk = textArea.chunkCache.getLineInfo(screenLine).chunks
+while (chunks != null) {
+  chunk.style ...
+  chunk = chunk.next
+}
+But chunkCache, getLineInfo, and chunks are package-private in the textarea package.
 
+A workaround is this
 
+package org.gjt.sp.jedit.textarea
+case class Trick(textArea: TextArea) {
+   textArea.chunkCache.getLineInfo(0).chunks.style = ...
+}
