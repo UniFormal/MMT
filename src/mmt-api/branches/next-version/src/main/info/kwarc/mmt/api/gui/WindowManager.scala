@@ -1,13 +1,21 @@
 package info.kwarc.mmt.api.gui
 
 import javax.swing._
+import java.awt.event._
 
-class Window(val id: String) extends JFrame(id) {
-   private val textArea = new JTextArea(20,20)
+class Window(val id: String, wm: WindowManager) extends JFrame(id) {
+   private val textArea = new JTextArea()
    add(textArea)
+   addWindowListener(new WindowAdapter {
+      override def windowClosed(e: WindowEvent) {wm.deleteWindow(id)} 
+   })
+   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
    setVisible(true)
+   //toFront()
+   setAlwaysOnTop(true)
    def set(content: String) {
       textArea.setText(content)
+      pack()
    }
 }
 
@@ -19,8 +27,16 @@ class WindowManager {
          case None => createWindow(id)
       }
    }
+   def deleteWindow(id: String) {
+      windows = windows filter {w =>
+         if (w.id == id) {
+            w.dispose
+            false
+         } else true
+      }
+   }
    def createWindow(id: String) : Window = {
-      val w = new Window(id)
+      val w = new Window(id, this)
       windows ::= w
       w
    }

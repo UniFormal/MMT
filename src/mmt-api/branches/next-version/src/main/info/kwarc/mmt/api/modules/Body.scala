@@ -149,6 +149,8 @@ trait Body[S <: Declaration] {
    def iterator = valueList.iterator
    protected def innerNodes = valueListNG.map(_.toNode)
    protected def innerNodesElab = valueListElab.map(_.toNode)
-   protected def innerString = valueListNG.map("\t" + _.toString).mkString(" = {\n", "\n", "\n}")
+   protected def innerString =
+      if (valueListNG.isEmpty) ""
+      else valueListNG.map("\t" + _.toString).mkString(" = {\n", "\n", "\n}")
    def innerComponents = valueListNG.filter(! _.isGenerated)
 }

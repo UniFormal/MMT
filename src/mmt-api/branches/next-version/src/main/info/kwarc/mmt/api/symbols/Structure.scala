@@ -26,7 +26,7 @@ abstract class Structure extends Symbol with Link {
    protected def outerComponents = List(
          StringLiteral(if (name.isAnonymous) "include" else name.toString),
          from)
-   protected def outerString = path + " : " + from.toString
+   protected def outerString = if (name.isAnonymous) "include " + from.toString else path + " : " + from.toString
    def toNode = from match {
      case OMMOD(p) => 
           <import name={if (name.isAnonymous) null else name.toPath} from={p.toPath} implicit={if (! name.isAnonymous && isImplicit) "true" else null}>
