@@ -20,7 +20,7 @@ file ../../../paths.mmt
 
 importer info.kwarc.mmt.api.backend.MMTCompiler
 plugin info.kwarc.mmt.lf.Plugin
-//archive add ../../../../theories
+archive add ../../../../theories
 //log+ backend
 //archive mmt clean
 //archive mmt source-structure

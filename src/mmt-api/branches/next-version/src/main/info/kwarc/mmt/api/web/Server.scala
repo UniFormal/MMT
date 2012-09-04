@@ -368,7 +368,10 @@ class Server(val port: Int, controller: Controller) extends HServer {
     log(action.toString)
     val ret: scala.xml.Node = action match {
       case frontend.DefaultGet(p) => frontend.Respond(p, "").get(controller)
-      case a: frontend.Respond => a.get(controller)
+	  case GetAction(a: frontend.ToWindow) =>
+	     a.make(controller)
+		 <done action={a.toString}/>
+      case GetAction(a: frontend.Respond) => a.get(controller)
       case a => <error action={ a.toString }/>
     }
     log("done")

@@ -324,7 +324,7 @@ case class ToWindow(pres : MakeConcrete, window: String) extends Output {
       val res = rb.get
       controller.winman.getWindow(window).set(res.toString)
    }
-   override def toString = pres + " write " + window
+   override def toString = pres + " window " + window
 }
 /** produces the result and throws it away
  *  call get to keep it in memory and retrieve it
