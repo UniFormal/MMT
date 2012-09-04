@@ -70,9 +70,10 @@ object Action extends RegexParsers {
    private def clear = "clear" ^^ {case _ => Clear}
    private def exit = "exit" ^^ {case _ => Exit}
 
-   private def getaction = diff | tofile | respond | print | defaultget
+   private def getaction = diff | tofile | towindow | respond | print | defaultget
    private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
    private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
+   private def towindow = presentation ~ ("window" ~> str) ^^ {case p ~ w => GetAction(ToWindow(p,w))}
    private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
    private def defaultget = presentation ^^ {p => DefaultGet(p)}
    private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
@@ -314,6 +315,16 @@ case class ToFile(pres : MakeConcrete, file : java.io.File) extends Output {
       rb.file.close
    }
    override def toString = pres + " write " + file
+}
+/** displays content in a window */
+case class ToWindow(pres : MakeConcrete, window: String) extends Output {
+   def make(controller : Controller) {
+      val rb = new XMLBuilder
+      pres.make(controller, rb)
+      val res = rb.get
+      controller.winman.getWindow(window).set(res.toString)
+   }
+   override def toString = pres + " write " + window
 }
 /** produces the result and throws it away
  *  call get to keep it in memory and retrieve it

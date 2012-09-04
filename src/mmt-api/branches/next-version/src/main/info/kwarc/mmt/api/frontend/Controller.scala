@@ -15,6 +15,7 @@ import utils._
 import utils.FileConversion._
 import uom._
 import moc._
+import gui._
 
 import io.BufferedSource
 import java.io.FileInputStream
@@ -83,6 +84,8 @@ class Controller extends ROController {
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
    val uom = new UOM(report)
+   /** the window manager */
+   val winman = new WindowManager
    
    
    def update(elems : List[ContentElement], refiner : PragmaticRefiner, propagator : Propagator) {
