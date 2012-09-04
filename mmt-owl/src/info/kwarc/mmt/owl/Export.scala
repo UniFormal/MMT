@@ -4,7 +4,6 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.io._
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.util.SimpleIRIMapper
-import java.io.File
 import java.net.URI
 import scala.collection.mutable.Set 
 import scala.collection.JavaConversions._ 
@@ -552,14 +551,14 @@ object Export {
 		
 		//val file : File = new File("examples\\ex2.owl");
 								
-		val source : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc")		
-		val target : File = new File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2ToOWL.owl")
+		val source : File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc"))		
+		val target : File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2ToOWL.owl"))
 		
 		val doc : DPath  = controller.read(source)
 		
 		def writeToFile(iri : IRI, trg : File) {
 			val onto = manager.getOntology(iri)
-			val file = new java.io.FileWriter(trg)
+			val file = new java.io.FileWriter(trg.toJava)
 			val ontoTarget = new WriterDocumentTarget(file)
 			val OWLXMLformat = new OWLXMLOntologyFormat()
 			manager.saveOntology(onto, OWLXMLformat, ontoTarget)
@@ -576,8 +575,8 @@ object Export {
 		if (iris.length == 1) {
 			writeToFile(iris.head, target)
 		} else {
-			target.mkdirs()
-		    iris.foreach {iri => writeToFile(iri, new File(target, Utils.IRILast(iri)))}
+			target.toJava.mkdirs()
+		    iris.foreach {iri => writeToFile(iri, target / Utils.IRILast(iri))}
 		}
 	}
 }
