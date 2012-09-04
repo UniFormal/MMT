@@ -1,7 +1,0 @@
-local
-catalog moc3-locutor.xml
-base http://cds.omdoc.org/
-log+ controller
-log+ reader
-
-

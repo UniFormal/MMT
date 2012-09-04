@@ -204,6 +204,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
    def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
       val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
+      println("target is " + target)
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
           val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern

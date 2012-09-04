@@ -144,7 +144,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          log("constant " + name.toString + " found")
          val tp = t.map(Obj.parseTerm(_, base))
          val df = d.map(Obj.parseTerm(_, base))
-         val notation = xmlNotation.map(TextNotation.parse(_))
+         val notation = xmlNotation.map(TextNotation.parse(_, tpath ? name))
          val rl = if (r == "") None else Some(r)
          val c = new Constant(thy, name, tp, df, rl, notation)  //TODO parse <notation>
          add(c,md)

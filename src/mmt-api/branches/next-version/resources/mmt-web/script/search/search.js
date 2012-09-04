@@ -30,7 +30,7 @@ $(function(){
 			req.setRequestHeader("Content-type","text/xml");
 			req.setRequestHeader("Size","2030");
 		    
-		        req.setRequestHeader("scope","http://latin.omdoc.org/math?IntAryth");
+		        req.setRequestHeader("scope","http://latin.omdoc.org/math?IntArith");
 			
 		        req.onload = function(e) {
 			    var resp = e.target.response.replace(/mws:/g,"");

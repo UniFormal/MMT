@@ -11,8 +11,8 @@ import info.kwarc.mmt.api._
 /**
  * An operator is something that takes arguments, e.g. and, or, forall
  */
-class Operator(val name : GlobalName, val notation : Option[Notation]) {
-  def this(name : GlobalName, not : Notation) = this(name, Some(not))
+class Operator(val name : GlobalName, val notation : Option[TextNotation]) {
+  def this(name : GlobalName, not : TextNotation) = this(name, Some(not))
   
   def precedence = notation match {
     case None => 0
@@ -51,14 +51,27 @@ class Operator(val name : GlobalName, val notation : Option[Notation]) {
  * @param mrks the list of markers
  * @param precedence  the precedence
  */
-case class Notation(mrks : List[NotationElement], precedence : Int, isBinder : Boolean = false) extends HasMetaData {
+case class TextNotation(mrks : List[NotationElement], precedence : Int, isBinder : Boolean = false, conPath : GlobalName) extends presentation.Notation {
   
-  def markers : List[Delimiter] = mrks collect {case s : Delimiter => s}
+  val wrap = false 
+  val oPrec = Some(presentation.Precedence.integer(precedence))
+  lazy val pres = {
+    val tokens = mrks map {
+      case Delimiter(s) => presentation.Text(s)
+      case StdArg(p) => presentation.Component(presentation.NumberedIndex(p),None)
+      case SeqArg(p,sep) => presentation.Presentation.Empty // TODO
+    }    
+    presentation.PList(tokens)
+  }
+  val key = presentation.NotationKey(None, Role_Notation)
+  val nset = conPath.module.toMPath
+  
+  def delimiters : List[Delimiter] = mrks collect {case s : Delimiter => s}
   def args : List[List[Argument]] = mrks.foldLeft[List[List[Argument]]](Nil :: Nil)((r,m) => m match {case s : Delimiter => Nil :: (r.head.reverse :: r.tail) case a : Argument => (a :: r.head) :: r.tail}).reverse
 
   val argNr = args.flatten.length
 
-  def getStrMarkers : List[String] = markers.flatMap( _  match {case Delimiter(s) => List(s) case _ => Nil})
+  def getStrMarkers : List[String] = delimiters.map(_.value)
 
   override def toString = mrks.mkString(" ") + "," + precedence
 
@@ -76,11 +89,11 @@ case class Notation(mrks : List[NotationElement], precedence : Int, isBinder : B
 
 
 object TextNotation {
-  def parse(s : scala.xml.Node) : Notation = s match {
+  def parse(s : scala.xml.Node, conPath : GlobalName) : TextNotation = s match {
     case <text-notation>{xmlMarkers}{xmlPrecedence}</text-notation> =>
       val markers = parseMarkers(xmlMarkers)
       val precedence = parsePrecedence(xmlPrecedence)
-      new Notation(markers, precedence, (s \ "@isBinder").text == "true")
+      new TextNotation(markers, precedence, (s \ "@isBinder").text == "true", conPath)
     case _ => throw ParseError("Invalid XML representation of notation in \n" + s)
   }
 
@@ -121,7 +134,7 @@ object TextNotation {
 
   }
 
-  def parse(str : String) : Notation = {
+  def parse(str : String, conPath : GlobalName) : TextNotation = {
     val isBinder = str.charAt(0) == '#'
     val s = if (isBinder) {
       str.substring(1)
@@ -132,9 +145,9 @@ object TextNotation {
     s.split(",").toList match {
       case not :: prec :: Nil =>        
         val precedence = prec.toInt        
-        Notation(parseMarkers(not), precedence, isBinder) 
+        TextNotation(parseMarkers(not), precedence, isBinder, conPath) 
       case not :: Nil => 
-        Notation(parseMarkers(not), 0, isBinder)
+        TextNotation(parseMarkers(not), 0, isBinder, conPath)
       case _ =>
         throw ParseError("Invalid notation declaration : " + s)
     }
@@ -303,7 +316,7 @@ sealed trait NotationElement {
 sealed abstract class Argument(val pos : Int) extends NotationElement
 
 case class StdArg(override val pos : Int) extends Argument(pos) {
-  def matches(tk : Token, isBinder : Boolean = false) : Boolean = isBinder match { 
+  def matches(tk : Token, isBinder : Boolean = false, tolerant : Boolean = false) : Boolean = isBinder match { 
     case true =>
       tk match {
         case s : StrTk => true
@@ -313,7 +326,7 @@ case class StdArg(override val pos : Int) extends Argument(pos) {
       tk match {
         case t : TermTk => true
         case e : ExpTk => true
-        case _ => false
+        case s : StrTk => false || tolerant
       }
   }
   

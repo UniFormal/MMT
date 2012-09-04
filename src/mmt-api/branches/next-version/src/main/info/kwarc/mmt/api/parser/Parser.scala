@@ -70,6 +70,7 @@ class ParserContext {
 class NotationParser(grammar : Grammar, controller: Controller) extends TermParser {
   var str : String = ""
 
+  private var tolerant : Boolean = false
   private var operators : List[Operator] = grammar.operators
   private val parserContext = new ParserContext()
   private var scope: Term = null
@@ -87,9 +88,12 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
   
   private def log(msg : => String) = controller.report("parser",msg)
 
-  def apply(pu: ParsingUnit) : Term = {
+  def apply(pu :  ParsingUnit) = apply(pu, false)
+  
+  def apply(pu: ParsingUnit, tlr : Boolean) : Term = {
     scope = pu.scope
     val s = pu.term
+    tolerant = tlr
     parserContext.addContext(pu.context.variables.toList)
     val includes = controller.library.visible(scope)
     val decls = includes.toList flatMap {tm => 
@@ -259,10 +263,14 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       val tmTks = tks map {
         case TermTk(t,_) => t
         case ExpTk(sep, expTks, _) => parse(expTks).t 
-        case _ =>
-          log("stuck at tokens : " + tks)
-          log("with operators : " + opsByPrecedence)
-          throw ParseError("don't know what to apply next")
+        case StrTk(s,tp) => 
+          if (tolerant) {
+            OMV(s)
+          } else {
+            log("stuck at tokens : " + tks)
+            log("with operators : " + opsByPrecedence)
+            throw ParseError("don't know what to apply next")
+          }
       }
       tmTks match {
         case hd :: Nil =>
@@ -368,7 +376,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       case _ => 
         markers.head match {
           case a : StdArg =>
-            if (a.matches(tks.head, isBinder)) {
+            if (a.matches(tks.head, isBinder, tolerant)) {
               matchMarkers(name, markers.tail, tks.tail, isBinder) match {
                 case None => None
                 case Some(opMatch) => Some(opMatch.addArg(a.pos, tks.head :: Nil))
@@ -452,7 +460,12 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
           p._2 map {
             case tm : TermTk => tm.t
             case ex : ExpTk => parse(ex.tks).t
-            case _ => throw ImplementationError("unexpected error: found delimiter as argument in reduce match")
+            case stk : StrTk => 
+            if (tolerant) {
+              OMV(stk.s)  
+            } else {
+              throw ImplementationError("unexpected error: found delimiter as argument in reduce match")  
+            }
           }
       }
       log("make terms result : " + tmMatches.toList)

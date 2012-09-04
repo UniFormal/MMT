@@ -1,8 +1,0 @@
-
-local
-catalog lcr2.xml
-base http://cds.omdoc.org/
-log+ controller
-log+ reader
-
-

@@ -323,11 +323,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     throw TextParseError(toPos(i), "end of file reached while reading term")
   }
 
-  private def crawlNotation(start: Int, delimiters: List[String]): Pair[Notation,Int] = {
+  private def crawlNotation(start: Int, delimiters: List[String], cpath : GlobalName): Pair[TextNotation,Int] = {
     var i = start
     while (i < flat.length) {
       if (delimiters exists {d => flat.startsWith(d, i)}) {
-         val not = TextNotation.parse(getSlice(start, i - 1))
+         val not = TextNotation.parse(getSlice(start, i - 1), cpath)
          return Pair(not, i)
       } else {
          i += 1
@@ -628,11 +628,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     }
 
     // read the optional notation
-    var constantNotation : Option[Notation] = None
+    var constantNotation : Option[TextNotation] = None
     if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '#'
       i = skipwscomments(i)
-      val (not, posAfter) = crawlNotation(i, List("."))
+      val (not, posAfter) = crawlNotation(i, List("."), cpath)
       addSourceRef(not, i, posAfter - 1)
       constantNotation = Some(not)
 

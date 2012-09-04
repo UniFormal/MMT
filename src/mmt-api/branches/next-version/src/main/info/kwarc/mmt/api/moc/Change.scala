@@ -217,11 +217,3 @@ case class UpdateMetadata(path : ContentPath, old : metadata.MetaData, nw : meta
 }
 
 
-
-
-
-
-
-
-
-

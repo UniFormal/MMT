@@ -12,53 +12,42 @@ log+ archive
 log+ catalog
 log+ server
 //log+ abox
-//log+ parser
+log+ parser
 //log+ presenter
 //log+ lf
 
 file ../../../paths.mmt
 
-//catalog latin-locutor.xml
-//archive latin source
-//graph graph.dot
-//archive latin clean
-//archive latin content
-//archive latin relational
-//archive latin notation
-//archive latin check
-//http..latin.omdoc.org/category_theory/dfol_based
-
 importer info.kwarc.mmt.api.backend.MMTCompiler
 plugin info.kwarc.mmt.lf.Plugin
-archive add ../../../../theories
-log+ backend
+//archive add ../../../../theories
+//log+ backend
 //archive mmt clean
 //archive mmt source-structure
 //archive mmt compile
-//archive mmt content
+archive mmt content
 archive mmt relational
 archive mmt notation
-//archive mmt check
+archive mmt check
 //archive mmt validate
 
-//mws http://localhost:6284
-server on 8080
-//base http://docs.omdoc.org/
-
+//archive latin clean
 //archive latin compile
-//archive latin content*
-//archive latin content logics
-
+//archive latin content
+//archive latin relational
 //archive latin check
 //archive latin notation
-//archive latin elab
-//archive latin mar C:\other\ombase\latin.mar
+//archive latin enrich
+//archive latin mws-enriched
+//archive latin content logics
+
+mws http://localhost:6284
+server on 8080
+
+//base http://docs.omdoc.org/
 
 //http://cds.omdoc.org/foundations/lf/lf.omdoc
 //foundation info.kwarc.mmt.lf.LFF
 
 //importer info.kwarc.mmt.mizar.test.MwsService
 //importer info.kwarc.mmt.tptp.TptpCompiler
-//archive mml content
-//archive mml flat
-//archive mml mws-flat
