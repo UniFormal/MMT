@@ -6,7 +6,9 @@
 : command line paramets are passed to the shell and executed as a command
 : java -Xmx1024m -cp ../mmt-api/trunk/build/mmt-api.jar;../../deploy/lib/*;../../deploy/lfcatalog/*;../../deploy/mmt/*;mmt-owl.jar;lib/owlapi-bin.jar info.kwarc.mmt.api.frontend.RunNull
 
-java -Xmx1024m -cp ../mmt-api/branches/next-version/build/mmt-api.jar;../../deploy/lib/*;../../deploy/lfcatalog/*;../../deploy/mmt/*;mmt-owl.jar;lib/owlapi-bin.jar info.kwarc.mmt.api.frontend.Run
+: java -Xmx1024m -cp ../mmt-api/branches/next-version/build/mmt-api.jar;../../deploy/lib/*;../../deploy/lfcatalog/*;../../deploy/mmt/*;mmt-owl.jar;lib/owlapi-bin.jar info.kwarc.mmt.api.frontend.Run
+
+java -Xmx1024m -cp ../../deploy/lib/*;../mmt-api/branches/next-version/build/mmt-api.jar;../../src/lfcatalog/trunk/build/lfcatalog.jar;../../src/mmt-lf/mmt-lf.jar;lib/owlapi-bin.jar;mmt-owl.jar info.kwarc.mmt.api.frontend.Run
 
 
 

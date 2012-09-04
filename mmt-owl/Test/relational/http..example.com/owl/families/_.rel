@@ -1,5 +1,7 @@
 theory http://example.com/owl/families/?_
 HasMeta http://example.com/owl/families/?_ http://latin.omdoc.org/logics/description/owl/owl2.omdoc?OWL2
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?age
+constant: http://example.com/owl/families/?_?age
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Liza
 constant: http://example.com/owl/families/?_?Liza
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasSister
@@ -12,26 +14,24 @@ Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?M
 constant: http://example.com/owl/families/?_?Mary
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasFemaleChild
 constant: http://example.com/owl/families/?_?hasFemaleChild
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasAncestor
+constant: http://example.com/owl/families/?_?hasAncestor
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasSon
 constant: http://example.com/owl/families/?_?hasSon
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasBrother
 constant: http://example.com/owl/families/?_?hasBrother
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Liz
+constant: http://example.com/owl/families/?_?Liz
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Max
 constant: http://example.com/owl/families/?_?Max
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Bob
-constant: http://example.com/owl/families/?_?Bob
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?James
-constant: http://example.com/owl/families/?_?James
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasBoyfriend
-constant: http://example.com/owl/families/?_?hasBoyfriend
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasWife
 constant: http://example.com/owl/families/?_?hasWife
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Woman
 constant: http://example.com/owl/families/?_?Woman
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?JohnsChildren
 constant: http://example.com/owl/families/?_?JohnsChildren
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasBirthname
-constant: http://example.com/owl/families/?_?hasBirthname
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Person
+constant: http://example.com/owl/families/?_?Person
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Parent
 constant: http://example.com/owl/families/?_?Parent
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Tom
@@ -40,30 +40,34 @@ Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?h
 constant: http://example.com/owl/families/?_?hasName
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasID
 constant: http://example.com/owl/families/?_?hasID
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?toddlerAge
+constant: http://example.com/owl/families/?_?toddlerAge
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Mother
 constant: http://example.com/owl/families/?_?Mother
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Student
-constant: http://example.com/owl/families/?_?Student
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasSurname
-constant: http://example.com/owl/families/?_?hasSurname
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ChildlessPerson
+constant: http://example.com/owl/families/?_?ChildlessPerson
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasChild
 constant: http://example.com/owl/families/?_?hasChild
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?personAge
 constant: http://example.com/owl/families/?_?personAge
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Liz
-constant: http://example.com/owl/families/?_?Liz
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?parentOf
 constant: http://example.com/owl/families/?_?parentOf
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasParent
 constant: http://example.com/owl/families/?_?hasParent
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasFamilyName
+constant: http://example.com/owl/families/?_?hasFamilyName
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?NarcisticPerson
 constant: http://example.com/owl/families/?_?NarcisticPerson
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?minorAge
 constant: http://example.com/owl/families/?_?minorAge
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?John
+constant: http://example.com/owl/families/?_?John
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasAge
 constant: http://example.com/owl/families/?_?hasAge
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?majorAge
 constant: http://example.com/owl/families/?_?majorAge
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Alice
+constant: http://example.com/owl/families/?_?Alice
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasDaughter
 constant: http://example.com/owl/families/?_?hasDaughter
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Father
@@ -76,179 +80,163 @@ Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?T
 constant: http://example.com/owl/families/?_?Teenager
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?hasHusband
 constant: http://example.com/owl/families/?_?hasHusband
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Human
-constant: http://example.com/owl/families/?_?Human
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?Amy
 constant: http://example.com/owl/families/?_?Amy
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-954262662
-constant: http://example.com/owl/families/?_?ax-954262662
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-246865350
-constant: http://example.com/owl/families/?_?ax-246865350
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1187868092
-constant: http://example.com/owl/families/?_?ax1187868092
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1444772685
-constant: http://example.com/owl/families/?_?ax-1444772685
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1652800332
-constant: http://example.com/owl/families/?_?ax-1652800332
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-834974511
-constant: http://example.com/owl/families/?_?ax-834974511
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1002358198
-constant: http://example.com/owl/families/?_?ax1002358198
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1241281692
-constant: http://example.com/owl/families/?_?ax1241281692
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1988069327
-constant: http://example.com/owl/families/?_?ax1988069327
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1713635152
-constant: http://example.com/owl/families/?_?ax-1713635152
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax64834472
-constant: http://example.com/owl/families/?_?ax64834472
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1886562495
-constant: http://example.com/owl/families/?_?ax-1886562495
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-891743495
-constant: http://example.com/owl/families/?_?ax-891743495
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1972899661
-constant: http://example.com/owl/families/?_?ax-1972899661
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1838109231
-constant: http://example.com/owl/families/?_?ax-1838109231
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1590753066
-constant: http://example.com/owl/families/?_?ax-1590753066
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1474761288
-constant: http://example.com/owl/families/?_?ax1474761288
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1855628294
-constant: http://example.com/owl/families/?_?ax-1855628294
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax140678089
-constant: http://example.com/owl/families/?_?ax140678089
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1693134365
-constant: http://example.com/owl/families/?_?ax-1693134365
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1907524339
-constant: http://example.com/owl/families/?_?ax1907524339
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1157570453
-constant: http://example.com/owl/families/?_?ax-1157570453
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1299199849
-constant: http://example.com/owl/families/?_?ax1299199849
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-959512380
-constant: http://example.com/owl/families/?_?ax-959512380
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-556159636
-constant: http://example.com/owl/families/?_?ax-556159636
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1397113822
-constant: http://example.com/owl/families/?_?ax1397113822
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax2132640196
-constant: http://example.com/owl/families/?_?ax2132640196
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1747333177
-constant: http://example.com/owl/families/?_?ax1747333177
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax909524276
-constant: http://example.com/owl/families/?_?ax909524276
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-665678718
-constant: http://example.com/owl/families/?_?ax-665678718
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax505564719
-constant: http://example.com/owl/families/?_?ax505564719
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax285040634
-constant: http://example.com/owl/families/?_?ax285040634
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1975222262
-constant: http://example.com/owl/families/?_?ax1975222262
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1105091995
-constant: http://example.com/owl/families/?_?ax1105091995
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1109111715
 constant: http://example.com/owl/families/?_?ax-1109111715
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-104827863
-constant: http://example.com/owl/families/?_?ax-104827863
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1338188629
-constant: http://example.com/owl/families/?_?ax-1338188629
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1679798240
-constant: http://example.com/owl/families/?_?ax1679798240
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-193250398
-constant: http://example.com/owl/families/?_?ax-193250398
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1683632329
-constant: http://example.com/owl/families/?_?ax-1683632329
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1162516937
-constant: http://example.com/owl/families/?_?ax-1162516937
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1777720201
-constant: http://example.com/owl/families/?_?ax1777720201
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1429575109
-constant: http://example.com/owl/families/?_?ax-1429575109
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-799581906
-constant: http://example.com/owl/families/?_?ax-799581906
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax873308696
-constant: http://example.com/owl/families/?_?ax873308696
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-2119203351
-constant: http://example.com/owl/families/?_?ax-2119203351
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax32819417
-constant: http://example.com/owl/families/?_?ax32819417
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-493086223
-constant: http://example.com/owl/families/?_?ax-493086223
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-325152428
-constant: http://example.com/owl/families/?_?ax-325152428
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-694856842
-constant: http://example.com/owl/families/?_?ax-694856842
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax180535786
-constant: http://example.com/owl/families/?_?ax180535786
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1637674794
-constant: http://example.com/owl/families/?_?ax-1637674794
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1915018245
-constant: http://example.com/owl/families/?_?ax1915018245
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1284912199
-constant: http://example.com/owl/families/?_?ax1284912199
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1793612164
-constant: http://example.com/owl/families/?_?ax1793612164
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1606419908
-constant: http://example.com/owl/families/?_?ax1606419908
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1324972977
-constant: http://example.com/owl/families/?_?ax1324972977
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1192336456
-constant: http://example.com/owl/families/?_?ax1192336456
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax964795910
-constant: http://example.com/owl/families/?_?ax964795910
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1438746968
-constant: http://example.com/owl/families/?_?ax1438746968
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1107941600
-constant: http://example.com/owl/families/?_?ax1107941600
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1862543106
 constant: http://example.com/owl/families/?_?ax1862543106
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-182006801
-constant: http://example.com/owl/families/?_?ax-182006801
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1318609487
-constant: http://example.com/owl/families/?_?ax-1318609487
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax464831953
-constant: http://example.com/owl/families/?_?ax464831953
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1121825817
-constant: http://example.com/owl/families/?_?ax-1121825817
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1706945146
-constant: http://example.com/owl/families/?_?ax-1706945146
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-203523374
-constant: http://example.com/owl/families/?_?ax-203523374
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax709758293
-constant: http://example.com/owl/families/?_?ax709758293
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1679259127
-constant: http://example.com/owl/families/?_?ax-1679259127
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1440190575
-constant: http://example.com/owl/families/?_?ax1440190575
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1003750178
-constant: http://example.com/owl/families/?_?ax1003750178
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax163847801
-constant: http://example.com/owl/families/?_?ax163847801
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-692556929
-constant: http://example.com/owl/families/?_?ax-692556929
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax961310361
-constant: http://example.com/owl/families/?_?ax961310361
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax803146930
-constant: http://example.com/owl/families/?_?ax803146930
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax193958378
-constant: http://example.com/owl/families/?_?ax193958378
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax745772687
-constant: http://example.com/owl/families/?_?ax745772687
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1747498123
+constant: http://example.com/owl/families/?_?ax-1747498123
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-341839419
+constant: http://example.com/owl/families/?_?ax-341839419
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax909524276
+constant: http://example.com/owl/families/?_?ax909524276
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1423657695
 constant: http://example.com/owl/families/?_?ax1423657695
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax745772687
+constant: http://example.com/owl/families/?_?ax745772687
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1693134365
+constant: http://example.com/owl/families/?_?ax-1693134365
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1915018245
+constant: http://example.com/owl/families/?_?ax1915018245
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1003750178
+constant: http://example.com/owl/families/?_?ax1003750178
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1495705204
 constant: http://example.com/owl/families/?_?ax1495705204
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1907524339
+constant: http://example.com/owl/families/?_?ax1907524339
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1116048551
 constant: http://example.com/owl/families/?_?ax-1116048551
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1498503059
 constant: http://example.com/owl/families/?_?ax-1498503059
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1121814865
-constant: http://example.com/owl/families/?_?ax-1121814865
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-344833659
-constant: http://example.com/owl/families/?_?ax-344833659
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1299199849
+constant: http://example.com/owl/families/?_?ax1299199849
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-959512380
+constant: http://example.com/owl/families/?_?ax-959512380
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1711766800
+constant: http://example.com/owl/families/?_?ax-1711766800
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax32819417
+constant: http://example.com/owl/families/?_?ax32819417
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax709758293
+constant: http://example.com/owl/families/?_?ax709758293
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1157570453
+constant: http://example.com/owl/families/?_?ax-1157570453
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1002358198
+constant: http://example.com/owl/families/?_?ax1002358198
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1121825817
+constant: http://example.com/owl/families/?_?ax-1121825817
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1107941600
+constant: http://example.com/owl/families/?_?ax1107941600
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax193958378
+constant: http://example.com/owl/families/?_?ax193958378
 Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1039132749
 constant: http://example.com/owl/families/?_?ax-1039132749
-Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax600113139
-constant: http://example.com/owl/families/?_?ax600113139
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1838109231
+constant: http://example.com/owl/families/?_?ax-1838109231
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1975222262
+constant: http://example.com/owl/families/?_?ax1975222262
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1105091995
+constant: http://example.com/owl/families/?_?ax1105091995
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-325152428
+constant: http://example.com/owl/families/?_?ax-325152428
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax464831953
+constant: http://example.com/owl/families/?_?ax464831953
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1324972977
+constant: http://example.com/owl/families/?_?ax1324972977
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-182006801
+constant: http://example.com/owl/families/?_?ax-182006801
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-799581906
+constant: http://example.com/owl/families/?_?ax-799581906
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax505564719
+constant: http://example.com/owl/families/?_?ax505564719
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax964795910
+constant: http://example.com/owl/families/?_?ax964795910
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-834974511
+constant: http://example.com/owl/families/?_?ax-834974511
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1162516937
+constant: http://example.com/owl/families/?_?ax-1162516937
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax961310361
+constant: http://example.com/owl/families/?_?ax961310361
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1713462917
+constant: http://example.com/owl/families/?_?ax-1713462917
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1338188629
+constant: http://example.com/owl/families/?_?ax-1338188629
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1444772685
+constant: http://example.com/owl/families/?_?ax-1444772685
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-344833659
+constant: http://example.com/owl/families/?_?ax-344833659
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1440190575
+constant: http://example.com/owl/families/?_?ax1440190575
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1438746968
+constant: http://example.com/owl/families/?_?ax1438746968
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-2119203351
+constant: http://example.com/owl/families/?_?ax-2119203351
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1637674794
+constant: http://example.com/owl/families/?_?ax-1637674794
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1713635152
+constant: http://example.com/owl/families/?_?ax-1713635152
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-203523374
+constant: http://example.com/owl/families/?_?ax-203523374
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1972899661
+constant: http://example.com/owl/families/?_?ax-1972899661
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-193250398
+constant: http://example.com/owl/families/?_?ax-193250398
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1886562495
+constant: http://example.com/owl/families/?_?ax-1886562495
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1988069327
+constant: http://example.com/owl/families/?_?ax1988069327
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1652800332
+constant: http://example.com/owl/families/?_?ax-1652800332
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-694856842
+constant: http://example.com/owl/families/?_?ax-694856842
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax873308696
+constant: http://example.com/owl/families/?_?ax873308696
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1474761288
+constant: http://example.com/owl/families/?_?ax1474761288
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax180535786
+constant: http://example.com/owl/families/?_?ax180535786
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-246865350
+constant: http://example.com/owl/families/?_?ax-246865350
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ID002
+constant: http://example.com/owl/families/?_?ID002
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax140678089
+constant: http://example.com/owl/families/?_?ax140678089
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1855628294
+constant: http://example.com/owl/families/?_?ax-1855628294
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1121814865
+constant: http://example.com/owl/families/?_?ax-1121814865
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1429575109
+constant: http://example.com/owl/families/?_?ax-1429575109
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1284912199
+constant: http://example.com/owl/families/?_?ax1284912199
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1094845780
+constant: http://example.com/owl/families/?_?ax1094845780
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1318609487
+constant: http://example.com/owl/families/?_?ax-1318609487
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ID001
+constant: http://example.com/owl/families/?_?ID001
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1241281692
+constant: http://example.com/owl/families/?_?ax1241281692
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1590753066
+constant: http://example.com/owl/families/?_?ax-1590753066
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax163847801
+constant: http://example.com/owl/families/?_?ax163847801
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1777720201
+constant: http://example.com/owl/families/?_?ax1777720201
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1679798240
+constant: http://example.com/owl/families/?_?ax1679798240
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-556159636
+constant: http://example.com/owl/families/?_?ax-556159636
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1606419908
+constant: http://example.com/owl/families/?_?ax1606419908
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax-1642939654
+constant: http://example.com/owl/families/?_?ax-1642939654
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax285040634
+constant: http://example.com/owl/families/?_?ax285040634
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1793612164
+constant: http://example.com/owl/families/?_?ax1793612164
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1187868092
+constant: http://example.com/owl/families/?_?ax1187868092
+Declares http://example.com/owl/families/?_ http://example.com/owl/families/?_?ax1192336456
+constant: http://example.com/owl/families/?_?ax1192336456
