@@ -28,11 +28,11 @@ import uk.ac.manchester.cs.owl.owlapi._
 //class AddIdentifiers (manager : OWLOntologyManager, controller : Controller)  {
 class AddIdentifiers (managerID : OWLOntologyManager)  {  
   
-  val omdocIRI : IRI = IRI.create("http://omdoc.org/id")
+  val omdocIRI : IRI = IRI.create("http://omdoc.org/identifier#id")
   private val dataFactory = new OWLDataFactoryImpl
   
   def ontologyToOntologyIDs(ontology : OWLOntology) : OWLOntology = {
-    //val docIRI : IRI  = manager.getOntologyDocumentIRI(ontology)
+    
 	val ontoIRI : IRI  = ontology.getOntologyID.getOntologyIRI
 	val ontologyIDs = managerID.createOntology(IRI.create(ontoIRI.toString))
 	
@@ -75,7 +75,7 @@ object AddIdentifiers {
      val addIdentifiers = new AddIdentifiers (managerID)
      
      val source : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\Identifiers\\identifiersChanged.owl")		
-	 val target: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\Identifiers\\identifiersChangedIDs2.owl")
+	 val target: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\source\\Identifiers\\identifiersChangedIDs.owl")
      
      val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(source)
      println("Loaded Ontology: " + ontology)
