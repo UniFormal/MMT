@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def comment = "//.*"r
    private def action = controller | shell | getaction
 
-   private def controller = log | local | catalog | archive | tntbase | importer | foundation | plugin | mws | server | execfile
+   private def controller = log | local | catalog | archive | tntbase | importer | foundation | plugin | mws | server | windowaction | execfile
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
@@ -88,6 +88,11 @@ object Action extends RegexParsers {
    private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
    private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, s)}
    private def get = path ^^ {p => Get(p)}
+   
+   private def windowaction = windowclose | windowpos | browser
+   private def windowclose = "window" ~> str <~ "close" ^^ {s => WindowClose(s)}
+   private def windowpos   = ("window" ~> str <~ "position") ~ int ~ int ^^ {case s ~ x ~ y => WindowPosition(s, x, y)}
+   private def browser = "browser" ~> ("on" | "off") ^^ {s => BrowserAction(s)}
    
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
@@ -171,6 +176,20 @@ case object Clear extends Action {override def toString = "clear"}
 case object Exit extends Action {override def toString = "exit"}
 /** do nothing */
 case object NoAction extends Action {override def toString = ""}
+/** close a window with a give ID */
+case class WindowClose(window: String) extends Action {
+  override def toString = "window " + window + " close"  
+}
+/** position a window with a give ID */
+case class WindowPosition(window: String, x:Int, y: Int) extends Action {
+  override def toString = "window " + window + " position " + x + " " + y  
+}
+/** send a browser command
+ * @param command on or off
+ */
+case class BrowserAction(command: String) extends Action {
+  override def toString = "browser " + command
+}
 
 /** Objects of type GetAction represent commands that
  *  - retrieve knowledge items in abstract/internal syntax (see MakeAbstract)

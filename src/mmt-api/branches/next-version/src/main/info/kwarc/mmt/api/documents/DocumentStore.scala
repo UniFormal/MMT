@@ -26,6 +26,8 @@ class DocStore(mem : ROMemory, report : Report) extends RODocStore {
       try {documents(p)}
       catch {case _ => throw NotFound(p)}
    }
+   /** retrieves all documents in any order */
+   def getDocuments : List[Document] = documents.values.toList 
    /**
     * deletes a document
     * @param the document to be deleted

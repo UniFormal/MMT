@@ -361,14 +361,18 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          }
       }
    }
+   /** updates a ContentElement by deleting and adding it */
    def update(e : ContentElement) {
 	   delete(e.path)
 	   add(e)
    }
+   /** forgets everything */
    def clear {
       modules.clear
       implicitGraph.clear
    }
+   /** retrieves all modules in any order */
+   def getModules = modules.values.toList
    
    def toNode : NodeSeq = modules.values.map(_.toNode).toList
    override def toString = modules.values.map(_.toString).mkString("","\n\n","")

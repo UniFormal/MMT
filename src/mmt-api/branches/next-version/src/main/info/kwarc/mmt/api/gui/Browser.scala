@@ -1,71 +1,38 @@
 package info.kwarc.mmt.api.gui
-// commented out for now to avoid dependency on jfxrt.jar
-/*
-import javafx.application.Platform
-import javafx.scene.Scene
-import javafx.stage.Stage
-import javafx.scene.web._
-import javafx.event._
-import javafx.scene.input._
-import javafx.embed.swing._
 
 import javax.swing._
+import java.awt.event._
 
-/*
-class Browser extends Application {
-   def start(stage: Stage) {
-      stage.setTitle("Hello World!")
-      val wv = new WebView
-      val webEngine = wv.getEngine
-      stage.setScene(new Scene(wv))
-      webEngine.load("http://cds.omdoc.org:8080")
-      stage.show()
-   }
-}
-*/
+import info.kwarc.mmt.api._
+import frontend._
 
-case class Handler[E <: Event](f : E => Unit) extends EventHandler[E] {
-   def handle(e: E) {f(e)}
-}
-
-case class MyScene(scene: Scene) {
-   def onKeyPressed = scene.getOnKeyPressed
-   def onKeyPressed_= (f: KeyEvent => Unit) {
-      scene.setOnKeyPressed(Handler(f))
-   }
-}
-
-object MyScene {
-   implicit def sToMyS(s: Scene) = MyScene(s)
-}
-
-import MyScene._
-
-object FXHelpers {
-   def wrap[A](a : => A) {
-      val runnable = new Runnable {
-         def run {a}
+class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
+   private val controller = wm.controller
+   private val textArea = new JTextArea()
+   add(textArea)
+   addWindowListener(new WindowAdapter {
+      override def windowClosed(e: WindowEvent) {wm.closeBrowser} 
+   })
+   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
+   setVisible(true)
+   def paint {
+      var s : String = ""
+      s += "logging\n"
+      s += controller.report.groups.toList.mkString("\t", ", ", "\n")
+      s += "\narchives\n"
+      controller.backend.getArchives foreach {a =>
+         s += "\t" + a.id + " " + a.rootString + "\n"
       }
-      Platform.runLater(runnable)
+      s += "\ndocuments\n" 
+      controller.docstore.getDocuments foreach {d =>
+         s += "\t" + d.path.toString + "\n"
+      }
+      s += "\nmodules\n" 
+      controller.library.getModules foreach {m =>
+         s += "\t" + m.path.toString + "\n"
+      }
+      
+      textArea.setText(s)
+      pack()
    }
 }
-
-import FXHelpers._
-
-object Browser {
-   def test {
-     val frame = new JFrame("test")
-     val jfx = new JFXPanel
-     frame.add(jfx)
-     wrap {
-       val wv = new WebView
-       jfx.setScene(new Scene(wv))
-       val webEngine = wv.getEngine
-       webEngine.load("http://cds.omdoc.org:8080")
-     }
-     frame.setVisible(true)
-     val scene = jfx.getScene
-     scene.onKeyPressed = (e => println(e.getText()))
-   }
-}
-*/

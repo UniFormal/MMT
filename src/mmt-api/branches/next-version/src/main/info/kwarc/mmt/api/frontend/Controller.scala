@@ -85,7 +85,7 @@ class Controller extends ROController {
    /** the universal machine, a computation engine */
    val uom = new UOM(report)
    /** the window manager */
-   val winman = new WindowManager
+   val winman = new WindowManager(this)
    
    
    def update(elems : List[ContentElement], refiner : PragmaticRefiner, propagator : Propagator) {
@@ -381,6 +381,13 @@ class Controller extends ROController {
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)
          case Compare(p,r) => //TODO
+         case WindowClose(w) => winman.deleteWindow(w)
+         case WindowPosition(w,x,y) => winman.getWindow(w).move(x,y)
+         case BrowserAction(c) => c match {
+            case "on" => winman.openBrowser
+            case "off" => winman.closeBrowser
+         }
+             
          case Exit =>
 	         cleanup 
 	         sys.exit

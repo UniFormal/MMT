@@ -3,13 +3,16 @@ package info.kwarc.mmt.api.gui
 import javax.swing._
 import java.awt.event._
 
-class Window(val id: String, wm: WindowManager) extends JFrame(id) {
+import info.kwarc.mmt.api._
+import frontend._
+
+class Window(val id: String, wm: WindowManager) extends JWindow() {
    private val textArea = new JTextArea()
    add(textArea)
    addWindowListener(new WindowAdapter {
       override def windowClosed(e: WindowEvent) {wm.deleteWindow(id)} 
    })
-   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
+   //setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
    setVisible(true)
    //toFront()
    setAlwaysOnTop(true)
@@ -19,8 +22,18 @@ class Window(val id: String, wm: WindowManager) extends JFrame(id) {
    }
 }
 
-class WindowManager {
+class WindowManager(val controller: Controller) {
    private var windows : List[Window] = Nil
+   private var browser: Option[JFrame] = None
+   def openBrowser {
+      val b = new Browser(this)
+      b.paint
+      browser = Some(b)
+   }
+   def closeBrowser {
+      browser.foreach(_.dispose)
+      browser = None
+   }
    def getWindow(id: String) : Window = {
       windows.find(_.id == id) match {
          case Some(w) => w
