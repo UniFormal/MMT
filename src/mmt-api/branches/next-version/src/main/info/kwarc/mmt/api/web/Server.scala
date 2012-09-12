@@ -212,36 +212,69 @@ class Server(val port: Int, controller: Controller) extends HServer {
   private def ParserResponse : HLet = new HLet {
     def act(tk : HTalk) {
       val text = tk.req.param("text").getOrElse(throw ServerError(<error><message>found no text to parse</message></error>))
+      val save = tk.req.param("save").map(_ == "true").getOrElse(false) //if save parameter is "true" then save otherwise don't
       tk.req.query.split("\\?").toList match {
         case strDPath :: strThy :: Nil =>
           val dpath = DPath(URI(strDPath))
           val mpath = dpath ? LocalPath(strThy :: Nil)
           val ctrl = new Controller(controller.report)
-          
           val reader = new TextReader(controller, ctrl.add)
-          
           val res = reader.readDocument(text, dpath)(controller.termParser.apply)
-          //println("param : " + text)
-          println("theory : " + ctrl.get(mpath))
           res._2.toList match {
-            case Nil =>
-              val mod = ctrl.memory.content.getModule(mpath)
-              val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename))
-              val propagator = new moc.OccursInImpactPropagator(controller.memory)
-              controller.update(List(mod),refiner, propagator)
-              println("theory2 : " + controller.memory.content.getModule(mpath))
+            case Nil => //no error -> parsing successful
               try {
-                // controller.checker.check(mod)(_ => (), _ => ())
+                val mod = ctrl.memory.content.getModule(mpath)
                 val nset = DPath(URI("http://cds.omdoc.org/foundations/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
                 val rb = new presentation.XMLBuilder()
-                controller.presenter(controller.get(mpath), presentation.GlobalParams(rb, nset))
-                XmlResponse(rb.get()).act(tk)
+                val module = if(save) {
+                  controller.get(mpath)
+                } else {
+                  mod
+                }
+                controller.presenter(module, presentation.GlobalParams(rb, nset))
+                val thyXML = rb.get()
+                val response = new collection.mutable.HashMap[String,Any]()
+                response("success") = "true"                                      
+                val sdiff = controller.detectChanges(List(mod))
+                save match {
+                  case false => //just detecting refinements
+                    val refs = controller.detectRefinements(sdiff)
+                    response("info") = JSONArray(refs)
+                    response("pres") =  thyXML.toString
+                  case true => //updating and returning list of done updates
+                    val pchanges = tk.req.param("pchanges").map(_.split("\n").toList).getOrElse(Nil)       
+                    val boxedPaths = controller.update(sdiff, pchanges)
+
+                    def invPaths(p : Path, parents : Set[Path] = Nil.toSet) : Set[Path] = {
+                    println("calling for path " + p + " with parents " + parents.mkString(", "))  
+                    p match {
+                      case d : DPath => 
+                        controller.getDocument(d).getItems.flatMap(x => invPaths(x.target, parents + d)).toSet
+                      case m : MPath => 
+                        val affected = boxedPaths exists {cp => cp.parent match {
+                          case gn : GlobalName => gn.module.toMPath == m
+                          case mp : MPath => mp == p 
+                          case _ => false
+                        }}
+                        if (affected)
+                          parents + p
+                        else 
+                          Nil.toSet
+                      case _ => Nil.toSet
+                    }}
+                    response("pres") = JSONArray(invPaths(controller.getBase).map(_.toString).toList)
+                }
+                JsonResponse(JSONObject(response.toMap)).act(tk)
               }  catch {
                 case e : Throwable =>
-                  //e.getStackTrace.map(println)
                   TextResponse(e.toString).act(tk)
               }
-            case l => TextResponse(l.mkString("\n")).act(tk)
+            case l => //parsing failed -> returning errors 
+              val response = new collection.mutable.HashMap[String,Any]()
+              response("success") = "false"
+              response("info") = JSONArray(Nil)
+              response("pres") = l.map(e => (<p>{e.toString}</p>).toString).mkString("")
+              JsonResponse(JSONObject(response.toMap)).act(tk)
           }
         case _ => throw ServerError(<error><message> invalid theory name in query : {tk.req.query}</message></error>)
       }

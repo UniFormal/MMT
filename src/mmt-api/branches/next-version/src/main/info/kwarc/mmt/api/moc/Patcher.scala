@@ -36,7 +36,7 @@ object Patcher {
       case UpdateMetadata(path,old,nw) => 
         val d = mem.content.get(path)
         d.metadata = nw
-      case PragmaticChange(name, diff, tp, mp) => patch(diff, mem)
+      case PragmaticChange(name, diff, tp, mp, desc) => patch(diff, mem)
       
     }
 

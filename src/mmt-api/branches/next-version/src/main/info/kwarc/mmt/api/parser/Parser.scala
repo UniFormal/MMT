@@ -360,7 +360,7 @@ class NotationParser(grammar : Grammar, controller: Controller) extends TermPars
       case None =>
         matchRef(op.name, tks)
       case Some(not) => 
-        matchMarkers(op.name, not.mrks, tks, not.isBinder)
+        matchMarkers(op.name, not.markers, tks, not.isBinder)
     }
     
     ops.flatMap(op => matches(op))

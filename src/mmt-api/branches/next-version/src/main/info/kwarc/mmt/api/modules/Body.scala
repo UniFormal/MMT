@@ -45,6 +45,7 @@ trait Body[S <: Declaration] {
       statements.get(name) match {
          case Some(d) => Some((d, rest))
          case None => name match {
+            case LocalName.Anon => None
             case !(n) => None
             case ln \ n => getMostSpecific(ln, n / rest)
          }

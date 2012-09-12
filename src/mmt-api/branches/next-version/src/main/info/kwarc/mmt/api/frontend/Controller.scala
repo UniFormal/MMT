@@ -86,10 +86,13 @@ class Controller extends ROController {
    val uom = new UOM(report)
    /** the window manager */
    val winman = new WindowManager(this)
+   /** moc.refiner - handling pragmatic changes in scope */ 
+   val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
+   /** moc.propagator - handling change propagation */
+   val propagator = new moc.OccursInImpactPropagator(memory)
+         
    
-   
-   def update(elems : List[ContentElement], refiner : PragmaticRefiner, propagator : Propagator) {
-     
+   def detectChanges(elems : List[ContentElement]) : StrictDiff = {
      val changes = elems flatMap {elem =>
        try {
          val old = globalLookup.get(elem.path)
@@ -102,13 +105,22 @@ class Controller extends ROController {
          }   
        }
      }
-     
+     new StrictDiff(changes)
+   }
+   
+   def detectRefinements(diff : StrictDiff) : List[String] = {
+     refiner.detectPossibleRefinements(diff).map(_._1.description).toList
+   }
+   
+   def update(diff : StrictDiff, withChanges : List[String] = Nil) : Set[CPath] = {     
+     val changes = diff.changes     
      println(changes)
-     val pChanges = refiner(new StrictDiff(changes), true)
+     val pChanges = refiner(new StrictDiff(changes), Some(withChanges))
      println("pchanges : " + pChanges.changes)
      val propDiff = pChanges ++ propagator(pChanges)
      println("pdiff : " + propDiff.changes)
      moc.Patcher.patch(propDiff, memory)
+     propagator.boxedPaths
    }
 
    protected def log(s : => String) = report("controller", s)

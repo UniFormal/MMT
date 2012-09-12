@@ -58,23 +58,84 @@ abstract class PragmaticChangeType {
   
   def modProp(diff : Diff)(mod : Module) : StrictDiff
 
+  def description(diff : Diff) : String
+  
   def make(diff : StrictDiff) : Option[PragmaticChange] = matches(diff) match {
-    case true => Some(new PragmaticChange(name, diff, termProp(diff), modProp(diff)))
+    case true => Some(new PragmaticChange(name, diff, termProp(diff), modProp(diff), description(diff)))
     case false => None
   }
 }
 
-case class PragmaticChange(val name : String, val diff : StrictDiff, val termProp : Term => Term, val modProp : Module => StrictDiff) extends ContentChange {
+case class PragmaticChange(
+			 val name : String, 
+			 val diff : StrictDiff, 
+			 val termProp : Term => Term, 
+			 val modProp : Module => StrictDiff,
+			 val description : String
+		   ) extends ContentChange {
   def toNode =
     <PragmaticChange name={name}>
       {diff.toNode}
     </PragmaticChange>
 
   def toNodeFlat = diff.changes.flatMap(_.toNodeFlat)
+  
 
   def getReferencedURIs : List[Path] = diff.changes.map(_.getReferencedURI)
     
   def toStrict : Diff = diff
+}
+
+object pragmaticAlphaRename extends PragmaticChangeType {
+  val name = "AlphaRename"
+  
+  private def isAlpha(old : Option[Term], nw : Option[Term])
+    (implicit context : immutable.HashMap[String, String]) : Boolean = (old,nw) match {
+    case (Some(o), Some(n)) => isAlpha(o,n)
+    case (None, None) => true
+    case _ => false
+  }  
+    
+  private def isAlpha(old : Term, nw : Term)(implicit context : immutable.HashMap[String, String]) : Boolean = {
+    (old,nw) match {
+      case (OMID(p1), OMID(p2)) => p1 == p2
+      case (OMA(f, args), OMA(f2, args2)) => 
+        isAlpha(f,f2) && args.length == args2.length && args.zip(args2).forall(p => isAlpha(p._1, p._2)) 
+      case (OMV(n), OMV(n2)) => context(n.toPath) == n2.toPath
+      case (OMBIND(b, con, body), OMBIND(b2,con2, body2)) if (isAlpha(b,b2)) => 
+        if (con.components.length == con2.components.length) {
+          var newcon = context
+          var holds = con.components.zip(con2.components) forall {
+            case (VarDecl(n, tp, df), VarDecl(n2, tp2, df2)) => 
+              newcon += (n.toPath -> n2.toPath)
+              isAlpha(tp, tp2) && isAlpha(df, df2)              
+          }
+          holds && isAlpha(body, body2)(newcon)
+        } else {
+          false
+        }
+      case _ => false
+    }
+  }  
+  
+  def matches(diff : Diff) : Boolean = diff.changes match {
+    case UpdateComponent(p,c, Some(t : Term), Some(t2 : Term)) :: Nil => isAlpha(t,t2)(new immutable.HashMap[String,String])
+    case _ => false
+  }
+  
+  def termProp(diff : Diff)(tm : Term) : Term = tm
+  
+  def modProp(diff : Diff)(m : Module) : StrictDiff = {
+    new StrictDiff(Nil)
+  }
+  
+  def description(diff : Diff) : String = {
+    val (p, c) = diff.changes match {
+      case UpdateComponent(p,c, Some(t : Term), Some(t2 : Term)) :: Nil => p -> c
+      case _ => throw ImplementationError("Invalid diff " + diff.toString + " for pragmatic change" + name)
+    }
+    "Alpha Rename detected in " + c + " of constant " + p.toPath
+  }
 }
 
 object pragmaticRename extends PragmaticChangeType {
@@ -115,6 +176,19 @@ object pragmaticRename extends PragmaticChangeType {
 
   def modProp(diff : Diff)(m : Module) : StrictDiff = {
     new StrictDiff(Nil)
+  }
+  
+  def description(diff : Diff) : String = {
+    val (mod,old,nw) = diff.changes match {
+      case DeleteDeclaration(o : Constant) :: AddDeclaration(n : Constant) :: Nil =>
+        (o.path.module.toMPath, o.path.name, n.path.name)
+      case AddDeclaration(n : Constant) :: DeleteDeclaration(o : Constant) :: Nil =>
+        (o.path.module.toMPath, o.path.name, n.path.name)
+      case _ => 
+        throw ImplementationError("unexpected error: invalid diff used to propagate in pragmatic change: " + name)
+    }
+    
+    "Rename in module " + mod.toString + " from " + old.toString + " to " + nw.toString()
   }
 }
 

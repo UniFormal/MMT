@@ -29,7 +29,7 @@ class Operator(val name : GlobalName, val notation : Option[TextNotation]) {
         s
     case Some(not) => 
       var s = ""
-      not.mrks.foreach {
+      not.markers.foreach {
         case Delimiter(value) => s += value + " "
         case arg : Argument => s += args(arg.pos).toString
       }
@@ -51,34 +51,42 @@ class Operator(val name : GlobalName, val notation : Option[TextNotation]) {
  * @param mrks the list of markers
  * @param precedence  the precedence
  */
-case class TextNotation(mrks : List[NotationElement], precedence : Int, isBinder : Boolean = false, conPath : GlobalName) extends presentation.Notation {
+case class TextNotation(markers : List[NotationElement], precedence : Int, isBinder : Boolean = false, conPath : GlobalName) extends presentation.Notation {
   
   val wrap = false 
   val oPrec = Some(presentation.Precedence.integer(precedence))
-  lazy val pres = {
-    val tokens = mrks map {
+
+  lazy val pres = {  
+    val tokens = markers map {
       case Delimiter(s) => presentation.Text(s)
-      case StdArg(p) => presentation.Component(presentation.NumberedIndex(p),None)
-      case SeqArg(p,sep) => presentation.Presentation.Empty // TODO
-    }    
-    presentation.PList(tokens)
+      case StdArg(p) => presentation.Component(presentation.NumberedIndex(p + 1),oPrec.map(_.weaken))
+      case SeqArg(p,sep) => presentation.Iterate(presentation.NumberedIndex(1),
+    		  									 presentation.NumberedIndex(-1),
+    		  									 presentation.OpSep() + presentation.Text(sep.value) + presentation.OpSep(),
+    		  									 oPrec.map(_.weaken))
+    }
+    if (isBinder) {
+      presentation.PList(tokens) + presentation.Component(presentation.NumberedIndex(-1),None)
+    } else {
+      presentation.PList(tokens)
+    }
   }
-  val key = presentation.NotationKey(None, Role_Notation)
+  val key = presentation.NotationKey(Some(conPath), Role_Notation)
   val nset = conPath.module.toMPath
   
-  def delimiters : List[Delimiter] = mrks collect {case s : Delimiter => s}
-  def args : List[List[Argument]] = mrks.foldLeft[List[List[Argument]]](Nil :: Nil)((r,m) => m match {case s : Delimiter => Nil :: (r.head.reverse :: r.tail) case a : Argument => (a :: r.head) :: r.tail}).reverse
+  def delimiters : List[Delimiter] = markers collect {case s : Delimiter => s}
+  def args : List[List[Argument]] = markers.foldLeft[List[List[Argument]]](Nil :: Nil)((r,m) => m match {case s : Delimiter => Nil :: (r.head.reverse :: r.tail) case a : Argument => (a :: r.head) :: r.tail}).reverse
 
   val argNr = args.flatten.length
 
   def getStrMarkers : List[String] = delimiters.map(_.value)
 
-  override def toString = mrks.mkString(" ") + "," + precedence
+  override def toString = markers.mkString(" ") + "," + precedence
 
   def toNode =
     <text-notation isBinder={isBinder.toString}>
       <markers>
-        {mrks.map(m => m.toNode)}
+        {markers.map(m => m.toNode)}
       </markers>
       <precedence>
         {precedence}
@@ -230,12 +238,12 @@ object TextNotation {
              case Some(notation) => 
                println("found notation : " + notation.toString)
                
-               val argMks = notation.mrks collect {
+               val argMks = notation.markers collect {
                  case a : Argument => a
                }
                
                if (argMks.length == args.length) {
-                 val l =  notation.mrks map {
+                 val l =  notation.markers map {
                    case a : Argument => presentTerm(args(a.pos), operators)
                    case Delimiter(s) => s
                  }
@@ -252,7 +260,7 @@ object TextNotation {
                      pos
                  }
                  
-                 val l = notation.mrks map {
+                 val l = notation.markers map {
                    case Delimiter(s) => s
                    case StdArg(pos) => presentTerm(args(getPos(pos)), operators)
                    case SeqArg(pos, sep) =>
@@ -280,7 +288,7 @@ object TextNotation {
             case Some(notation) =>
               println("found notation " + notation.toString)
               println("with args" + args.toString)
-              val l =  notation.mrks map {
+              val l =  notation.markers map {
                 case a : Argument => args(a.pos)
                 case Delimiter(s) => s
               }

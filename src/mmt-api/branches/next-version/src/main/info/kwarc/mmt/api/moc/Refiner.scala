@@ -8,8 +8,8 @@ import scala.collection.immutable.{HashMap}
 
 class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
   
-  def detectPossibleRefinements(diff : StrictDiff) : Map[PragmaticChangeType, Set[Set[Int]]] = {
-    val matches = new mutable.HashMap[PragmaticChangeType,mutable.HashSet[Set[Int]]]()
+  def detectPossibleRefinements(diff : StrictDiff) : Set[(PragmaticChange, Set[Int])] = {
+    val matches = new mutable.HashSet[(PragmaticChange,Set[Int])]()
     
     val changes = diff.changes.zipWithIndex.toSet
     changes.subsets foreach {indexedChSet =>       
@@ -19,54 +19,43 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
       val chIndexes = indexedChSet.map(_._2)
       pragTypes map {pType =>
         if (pType.matches(chSet)) {
-          if (!matches.isDefinedAt(pType)) {
-            matches(pType) = new mutable.HashSet[Set[Int]]
+          val usedChanges = chIndexes.map(diff.changes(_)).toList
+          pType.make(new StrictDiff(usedChanges)) match {
+            case Some(ch) => matches += (ch -> chIndexes)
+            case _ => throw ImplementationError("given refinement doesn't conform to pragmatic change type. " + pType.name + " with changes " + usedChanges)
           }
-          matches(pType) += chIndexes
         } 
       }
     }
     matches
   }
   
-  private var enabledMatches : Map[PragmaticChangeType, Set[Set[Int]]] = new HashMap[PragmaticChangeType, Set[Set[Int]]]()
+  private var enabledMatches : Set[(PragmaticChange, Set[Int])] = new immutable.HashSet[(PragmaticChange, Set[Int])]()
   
-  def setEnabledMatches(matches : Map[PragmaticChangeType, Set[Set[Int]]]) = {
+  private def setEnabledMatches(matches : Set[(PragmaticChange, Set[Int])]) = {
     enabledMatches = matches
   }
   
-  def enrich(diff :  StrictDiff, forceAllApplicable : Boolean = false) : Diff = {
-    if (forceAllApplicable) {
-      setEnabledMatches(detectPossibleRefinements(diff))
+  def enrich(diff :  StrictDiff, withChanges : Option[List[String]] = None) : Diff = {
+    val possibleMatches = detectPossibleRefinements(diff)
+    val enabledMatches = withChanges match {
+      case None => possibleMatches //default is to apply all possible refinements
+      case Some(l) => possibleMatches.filter(p => l.contains(p._1.description))
     }
-    
     val changes = diff.changes
     
-    val tmp = enabledMatches.flatMap(_._2).flatten
-    
-    val usedIndexes = tmp.toSet
+    val tmp = enabledMatches.flatMap(_._2) //list of used indexes
+    val usedIndexes = tmp.toSet //set of used indexes
+    //ensure that used indexes are unique
     require(usedIndexes.size == tmp.size, "Error: each change must be used in at most one pragmatic refinement but duplicates found in " + tmp)
-    
     val unusedChanges = changes.zipWithIndex filter {p => !usedIndexes.contains(p._2)}
-    
-    var newChanges : List[ContentChange] = unusedChanges.map(_._1) 
-    
-    enabledMatches foreach {p =>
-      val ptype = p._1
-      p._2 map {indexes =>
-        val usedChanges = indexes.map(changes(_))
-        ptype.make(new StrictDiff(usedChanges.toList)) match {
-          case Some(ch) => newChanges ::= ch
-          case None => throw ImplementationError("given refinement doesn't conform to pragmatic change type. " + ptype.name + " with changes " + usedChanges)
-        }
-      }
-      
-    }
-   
+
+    var newChanges : List[ContentChange] = unusedChanges.map(_._1) ++ enabledMatches.map(_._1)
+
     new Diff(newChanges)
   }
   
-  def apply(diff : StrictDiff, forceAllApplicable : Boolean = false) : Diff = enrich(diff, forceAllApplicable)
+  def apply(diff : StrictDiff, withChanges : Option[List[String]] = None) : Diff = enrich(diff, withChanges)
 
 }
 

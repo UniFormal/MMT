@@ -33,6 +33,12 @@ abstract class Propagator(mem : ROMemory) {
    * @return the generated propagation diff
    */
   def apply(diff : Diff) : Diff = propagate(diff)
+  
+  
+  /**
+   * paths made invalid by the propagation 
+   */
+  var boxedPaths : immutable.Set[CPath] = Nil.toSet
 }
 
 
@@ -93,8 +99,9 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
       propFunc(p._1, p._2) 
     }
     
-    new Diff(propagatedChanges.toList)
-    
+    val pdiff = new Diff(propagatedChanges.toList)
+    updateBoxedPaths(diff, pdiff)
+    pdiff
   }
   
   /**
@@ -108,7 +115,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     case DeleteDeclaration(d) => containedPaths(d)
     case UpdateComponent(path, name, old, nw) => new HashSet[Path]() + CPath(path,name)
     case UpdateMetadata(path, old, nw) => new HashSet[Path]() + path
-    case PragmaticChange(name, diff, tp, mp) => new HashSet[Path]() ++ diff.changes.flatMap(affectedPaths(_))
+    case PragmaticChange(name, diff, tp, mp, desc) => new HashSet[Path]() ++ diff.changes.flatMap(affectedPaths(_))
 
   }
 
@@ -154,7 +161,33 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
       case d : DefLinkAssignment => new HashSet[Path]() + dec.path + CPath(d.path, DefComponent)
       case a : Alias => new HashSet[Path]() + dec.path + CPath(a.path, ForPathComponent)
     } 
-  } 
+  }
+  
+  private def updateBoxedPaths(diff : Diff, pdiff : Diff) = {
+    def isBoxed(tm : Option[Obj]) : Boolean = tm match {
+      case None => false
+      case Some(t : OME) => true
+      case _ => false
+    }
+    
+    //removing unboxed paths
+    diff.changes foreach {
+      case UpdateComponent(p,c,t1,t2) => boxedPaths -= CPath(p,c)
+      case DeleteDeclaration(d) => 
+        val tmp = boxedPaths 
+        tmp.foreach(p => if (p.parent == d.path) boxedPaths -= p)
+      case DeleteModule(m) => 
+        val tmp = boxedPaths 
+        tmp.foreach(p => if (p.parent == m.path || p.parent.^! == m.path) boxedPaths -= p)
+      case _ => None
+    }
+    
+    //adding new boxed paths
+    pdiff.changes foreach {
+      case UpdateComponent(p,c,t1,t2) if isBoxed(t2) => boxedPaths += CPath(p,c)
+      case _ => None
+    }
+  }
 }
 
 /**

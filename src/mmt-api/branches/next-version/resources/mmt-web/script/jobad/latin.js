@@ -43,7 +43,6 @@ function load(elem) {
 function edit() {
     
     //var url = adaptMMTURI(currentElement, 'text', false);
-    console.log(currentElement);
     arr = currentElement.split("?");
     var mod = "";
     var url = "";
@@ -64,7 +63,6 @@ function edit() {
 	});
 	
 	//proxyAjax('get', url, '', cont, false, 'text');
-	console.log(res);
 	
 	//$('mo').filter(function() {return $(this).attr('jobad:href') == currentElement;}).each(function() {$(this).attr('style', 'color:red !important');});
 	
@@ -86,35 +84,96 @@ function edit() {
 	    columns = spres[i].length
     }
 
-    a.html("<textarea rows=\"" + rows +"\" cols=\"" + columns + "\">" + res + "</textarea><br/>" + "<button onClick=compileText(\"" + mod + "\") class=\"ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only\" role=\"button\" aria-disabled=\"false\">Compile</button><div class=\"parser-response\"></div>");
+    a.html("<textarea rows=\"" + rows +"\" cols=\"" + columns + "\">" + res + "</textarea><br/>" + 
+	   "<div class=\"parser-info\" style=\"padding-bottom:5px;\"></div>" + 
+	   "<button id=\"compile\" onClick=compileText(\"" + mod + "\",\"false\") class=\"ui-button ui-widget ui-state-default\"" +
+           "role=\"button\">Compile</button>" + 
+	   "<button id=\"save\" onClick=compileText(\"" + mod + "\",\"true\") disabled=\"true\" class=\"ui-button ui-widget ui-state-disabled ui-state-default ui-corner-all ui-button-text-only\"" +
+           "role=\"button\" aria-disabled=\"false\">Save</button>" + 
+	   "<div class=\"parser-response\" style=\"padding-top:5px;\"></div>");
     var textarea = $(id + " textarea")[0];
     mycm = CodeMirror.fromTextArea(textarea);
+    mycm.setOption('onChange', function() {
+	var save = $("#save");
+	save.attr("disabled", "disabled");
+	save.addClass("ui-state-disabled")
+	
+    });
     return res;
 }
 
 var mycm;
+var invalidPaths = [];
 
-function compileText(mod) {
+function compileText(mod, save) {
     mycm.save();
     var id = "div#" + RegExp.escape(mod);   
     var text = $(id + " textarea").val()//.replace(/[#]/g, "\\$&");
-    console.log(text);
+    var checkedPchanges = $(id + " :checkbox").map(function(value, index) {
+	if ($(this).attr("checked")) {
+	    return $(this).attr("value");
+	}
+    }).get().join("\n");
     var cont = function(data) {
-	console.log(data);
-	$(id + " div.parser-response").html("<table id=\"generated_78\" class=\"decllist foldee\" cellpadding=\"5px\" title=\"false\">" + data + "</table>");
+//	console.log(data);
+	if (data.success == "true") {
+	    var saveBtn = $("#save");
+	    saveBtn.removeAttr("disabled");
+	    saveBtn.removeClass("ui-state-disabled");
+	}
+	if (save == "true") {
+	    $(id + " div.parser-info").html("");
+	    if (data.success == "true") {
+		invalidPaths = data.pres;
+		markInvalids();
+		$(id + " div.parser-response").html("<i>Commit Successful</i><br/");
+	    } else {
+		$(id + " div.parser-response").html("<i>Commit Failed -- Please Try Again</i><br/>");
+	    }
+	} else {
+	    if (data.success == "true") {
+		if (data.info.length > 0) {//there are pragmatic changes
+		    var pChanges = $.map(data.info, function(value,index) {
+			return "<input type=\"checkbox\" name=\"pchange\" value=\"" + value + "\">" + value +"</input>";
+		    }).join("<br/>");		    
+		    var info = "<i>Found Pragmatic Changes:</i><br/>" + pChanges
+		    $(id + " div.parser-info").html(info);
+		}
+		var pres = "<i>Compile Successful : </i><br/>" + 
+		    "<table cellpadding=\"5px\">" + data.pres + "</table>";
+		$(id + " div.parser-response").html(pres);
+	    } else {
+		var pres = "<i>Compile Failed : </i><br/>" + 
+		    "<table cellpadding=\"5px\">" + data.pres + "</table>";
+		$(id + " div.parser-response").html(pres);
+	    }
+	}
     }
     $.ajax({
 	'type' : 'post',
 	'url' : "/:parse?" + mod,
-	'dataType' : 'text',
-	'data' : {'text' : text}, 
+	'data' : {'text' : text, 'save' : save, "pchanges" : checkedPchanges}, 
 	'success' : cont
     });
-
 }
 
 RegExp.escape = function(text) {
     return text.replace(/[!\"#$%&'()*+,.\/:;<=>?@[\]^`{|}~]/g, "\\$&");
+}
+
+function markInvalids() {
+    $("span").each(function(i2,v2) {
+	if($(v2).attr("jobad:href")) {
+	    $(v2).css("color", "black");
+	}
+    });
+    $.each(invalidPaths, function(i,v) {
+	$("span").each(function(i2,v2) {
+	    if($(v2).attr("jobad:href") == v) {
+		$(v2).css("color", "red");
+	    }
+	});
+    });
 }
 
 
@@ -129,14 +188,16 @@ function flatClick(elem) {
    }
 }
 function remoteClick(elem) {
-   var ref = load(elem);
-   $(elem).replaceWith(ref);
+    var ref = load(elem);
+    $(elem).replaceWith(ref);
+    markInvalids();
 }
 
 function ajaxReplaceIn(url, targetid) {
    function cont(data) {
        var targetnode = $('#' + targetid).children('div');
-        targetnode.replaceWith(data.firstChild);
+       targetnode.replaceWith(data.firstChild);
+       markInvalids();
    }
    $.ajax({ 'url': url,
             'dataType': 'xml',
@@ -145,20 +206,20 @@ function ajaxReplaceIn(url, targetid) {
 }
 
 function latin_navigate(uri) {
-		// main div
-		var url = adaptMMTURI(uri, '', true);
-		ajaxReplaceIn(url, 'main');
-		// cross references
-		/* var refurl = catalog + '/:query/incoming?' + uri;
-		ajaxReplaceIn(refurl, 'crossrefs');
-      $('#crossrefs').jstree({
-              "core" : {"animation": 0},
-              "themes" : {"theme" : "classic", "icons" : false},
-              "plugins" : ["html_data", "themes", "ui", "hotkeys"]
-      }); */
-		// breadcrumbs
-		var bcurl = '/:breadcrumbs?' + uri;
-		ajaxReplaceIn(bcurl, 'breadcrumbs');
+    // main div
+    var url = adaptMMTURI(uri, '', true);
+    ajaxReplaceIn(url, 'main');
+    // cross references
+    /* var refurl = catalog + '/:query/incoming?' + uri;
+       ajaxReplaceIn(refurl, 'crossrefs');
+       $('#crossrefs').jstree({
+       "core" : {"animation": 0},
+       "themes" : {"theme" : "classic", "icons" : false},
+       "plugins" : ["html_data", "themes", "ui", "hotkeys"]
+       }); */
+    // breadcrumbs
+    var bcurl = '/:breadcrumbs?' + uri;
+    ajaxReplaceIn(bcurl, 'breadcrumbs');
 }
 
 /**
@@ -334,9 +395,9 @@ var latin = clone(Service);
  */
 latin.init = function(){
 	//updateVisibility(document.documentElement);
-   $('#currentstyle').text(notstyle.split("?").pop());
-   var query = window.location.search.substring(1);
-   latin_navigate(query);
+    $('#currentstyle').text(notstyle.split("?").pop());
+    var query = window.location.search.substring(1);
+    latin_navigate(query);
 }
 
 function unsetSelected(){
