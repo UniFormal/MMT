@@ -10,6 +10,9 @@ class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
    private val controller = wm.controller
    private val textArea = new JTextArea()
    add(textArea)
+   /* private val paintButton = new JButton("repaint")
+   paintButton.addEventListener()
+   add(paintButton) */
    addWindowListener(new WindowAdapter {
       override def windowClosed(e: WindowEvent) {wm.closeBrowser} 
    })
@@ -26,6 +29,9 @@ class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
       s += "\ndocuments\n" 
       controller.docstore.getDocuments foreach {d =>
          s += "\t" + d.path.toString + "\n"
+         d.getItems foreach {i =>
+            s += "\t\t" + i.target.toString + "\n"
+         }
       }
       s += "\nmodules\n" 
       controller.library.getModules foreach {m =>
