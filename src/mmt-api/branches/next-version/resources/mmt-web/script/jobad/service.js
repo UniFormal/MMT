@@ -124,7 +124,7 @@ function getClassArray(elem) {
    return classes.split(/\s+/);
 }
 
-// the following functions f add functionality to jQuery and can be used as $(...).f
+// the following functions $.fn.f add functionality to jQuery and can be used as $(...).f
 // contrary to the built-in jQuery analogues, these work for 'pref:name' attributes and math elements
 /** add a class cl to all matched elements */
 $.fn.addMClass = function(cl){
