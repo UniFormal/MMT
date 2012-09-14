@@ -168,12 +168,14 @@ class MMTSideKick extends SideKickParser("mmt") {
                   case None => s.ref.container.toString
                }
                val error = new DefaultErrorSource.DefaultError(errorSource, tp, file, pos.line, pos.column, pos.column + 1, s.mainMessage)
+               s.extraMessages foreach {m => error.addExtraMessage(m)}
                errorSource.addError(error)
       }
       tree
       } catch {case e =>
          // other error, e.g., by the get methods in buildTree
          val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, e.getMessage)
+         e.getStackTrace foreach {m => error.addExtraMessage(m.toString)}
          errorSource.addError(error)
          log(e.getMessage)
          tree
