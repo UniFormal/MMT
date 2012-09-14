@@ -315,6 +315,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          case e: ParseError =>
             errors = errors :+ TextParseError(toPos(start), e.getMessage)
             DefaultParser(pu)
+         case e =>
+            errors = errors :+ TextParseError(toPos(start), e.getMessage)
+            DefaultParser(pu)
       }
       addSourceRef(obj, start, i - 1)
       Pair(obj, i)
@@ -1116,7 +1119,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val oldComment = keepComment
     val i = skipws(crawlKeyword(start, "%include"))
 
-    val domain = OMSemiFormal(Text("nl", "unknown")) //should be required in input
+    val domain = OMSemiFormal(Text("nl", "unknown " + i.toString)) //should be required in input, i is needed for uniqueness
     val apath = parent.toTerm % LocalName(MorphismStep(OMIDENT(domain)))
 
     // get the morphism

@@ -9,6 +9,7 @@ import scala.collection.mutable.{HashSet}
 /** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
 trait BaseType
 case class XMLResult(node: scala.xml.Node) extends BaseType
+case class StringResult(string: String) extends BaseType
 
 /** wrapper type for the result of a query */
 sealed abstract class QueryResult {

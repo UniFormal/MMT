@@ -12,6 +12,8 @@ case object PathType extends QueryBaseType
 case object ObjType extends QueryBaseType
 /** queries returning arbitrary XML */
 case object XMLType extends QueryBaseType
+/** queries returning arbitrary strings */
+case object StringType extends QueryBaseType
 
 /** the types of the query language */
 sealed abstract class QueryType
