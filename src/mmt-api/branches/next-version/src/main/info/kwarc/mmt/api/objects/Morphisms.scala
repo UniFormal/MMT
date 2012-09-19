@@ -234,6 +234,15 @@ object MUnion {
    }
 }
 
+object ExplicitMorph {
+  def apply(rec : Record, dom : Term) : Term = OMA(OMID(mmt.explmorph), List(dom, OMREC(rec)))
+  def unapply(m : Term) : Option[(Record, Term)] = m match {
+    case OMA(OMID(mmt.explmorph), List(dom, OMREC(rec))) => Some((rec, dom))
+    case _ => None
+  }
+}
+
+
 /*
 case class OMUNIONPIM(push: Morph, along: Morph, wth: Morph) extends Morph with ComposedModuleObject {
    def role = Role_pushout_im
