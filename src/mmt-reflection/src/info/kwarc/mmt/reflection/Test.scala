@@ -39,7 +39,8 @@ object Test {
       val succ = new Constant(OMID(Nat.path), LocalName("succ"), Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
       controller.add(succ)
 
-      //val addnat = ExplicitMorph(Record(List((LocalName("nat"),Some(Arrow(OMID(nat.path),OMID(nat.path)))), (LocalName("zero"), Lambda(LocalName("n"), OMID("n".path) )), (LocalName("succ")) )),OMMOD(Nat.path)))
+      val addnat = ExplicitMorph(Record(List((LocalName("nat"),Arrow(OMID(nat.path),OMID(nat.path))))),OMMOD(Nat.path))
+      //(LocalName("zero"), Lambda(LocalName("n"), OMID("n".path) )), (LocalName("succ")) )
       //controller.add(addnat)
 
       println(Nat.toString)
