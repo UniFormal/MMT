@@ -32,6 +32,7 @@ object mmt {
    val plus = mmtsymbol("plus")
    val minus = mmtsymbol("minus")
    val times = mmtsymbol("times")*/
+   val explmorph = mmtsymbol("explicit morphism")
    val functorapplication = mmtsymbol("functorapplication")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }
