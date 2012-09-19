@@ -39,9 +39,10 @@ object ReflectionMorph {
   val ttype = constant("type")
 }
 
-
 object MorphRefl {
-  def apply(thy: Term, term: Term) = OMA(OMS(ReflectionMorph.intro), List(thy, term))
+  def apply(thy: Term, term: Term) = term match {
+    case ExplicitMorph(rec,dom) => OMA(OMS(ReflectionMorph.intro), List(thy,term))
+  }
   def unapply(t : Term) : Option[(Term,Term)] = t match {
     case OMA(OMS(ReflectionMorph.intro), List(thy, tm)) => Some((thy, tm))
     case _ => None
@@ -49,7 +50,9 @@ object MorphRefl {
 }
 
 object MorphEval {
-  def apply(thy: Term, term: Term) = OMA(OMS(ReflectionMorph.eval), List(thy, term))
+  def apply(thy: Term, term: Term) = term match {
+    case ExplicitMorph(rec,dom) => OMA(OMS(ReflectionMorph.eval), List(thy,term))
+  }
   def unapply(t : Term) : Option[(Term,Term)] = t match {
     case OMA(OMS(ReflectionMorph.eval), List(thy, tm)) => Some((thy, tm))
     case _ => None
@@ -57,7 +60,7 @@ object MorphEval {
 }
 
 object MorphReflType {
-  def apply(thy: Term, tp: Term)= OMA(OMS(ReflectionMorph.rtype), List(thy, tp))
+  def apply(thy: Term, tp: Term) = OMA(OMS(ReflectionMorph.rtype), List(thy, tp))
   def unapply(t : Term) : Option[(Term,Term)] = t match {
     case OMA(OMS(ReflectionMorph.rtype), List(thy, tp)) => Some((thy, tp))
     case _ => None
@@ -65,7 +68,14 @@ object MorphReflType {
 }
 
 object MorphElim {
-  def apply(t: Term, mor: Term) = OMA(OMS(ReflectionMorph.elim), List(t, mor))
+  def apply(t: Term, mor: Term) = mor match {
+    case ExplicitMorph(rec,dom) =>  t match {
+      case OMID(path) => rec.fields.find(localName => Some(localName._1) == path.toTriple._3) match {
+        case Some(pair) => pair._2
+      }
+    }
+    case _ =>  OMA(OMS(ReflectionMorph.elim), List(t, mor))
+  }
   def unapply(t : Term) : Option[(Term,Term)] = t match {
     case OMA(OMS(ReflectionMorph.elim), List(t, mor)) => Some((t, mor))
     case _ => None
@@ -121,6 +131,8 @@ object MorphElimReflectionRule extends InferenceRule(ReflectionMorph.elim){
 }
 
 /* Computation Rules for Reflected Morphisms */
+
+/* Given W |- MorphRefl(s,m), it holds that  W |- MorphRefl(s,m).t = m(t) */
 
 object ComputationMorphReflectionRule extends ComputationRule(ReflectionMorph.elim){
   implicit def pCont(p:Path){}

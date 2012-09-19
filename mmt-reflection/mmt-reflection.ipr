@@ -27,6 +27,9 @@
     <option name="SKIP_IMPORT_STATEMENTS" value="false" />
   </component>
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" />
+  <component name="EntryPointsManager">
+    <entry_points version="2.0" />
+  </component>
   <component name="HighlightingAdvisor">
     <option name="SUGGEST_TYPE_AWARE_HIGHLIGHTING" value="false" />
     <option name="TYPE_AWARE_HIGHLIGHTING_ENABLED" value="true" />
@@ -190,8 +193,8 @@
     </library>
     <library name="scala-compiler">
       <CLASSES>
-        <root url="jar://$PROJECT_DIR$/../../../scala-2.9.2/lib/scala-compiler.jar!/" />
-        <root url="jar://$PROJECT_DIR$/../../../scala-2.9.2/lib/scala-library.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../deploy/lib/scala-compiler.jar!/" />
+        <root url="jar://$PROJECT_DIR$/../../deploy/lib/scala-library.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />
