@@ -40,7 +40,7 @@ object Test {
       controller.add(succ)
 
       val addnat = ExplicitMorph(Record(List((LocalName("nat"),Arrow(OMID(nat.path),OMID(nat.path))))),OMMOD(Nat.path))
-      //(LocalName("zero"), Lambda(LocalName("n"), OMID("n".path) )), (LocalName("succ")) )
+      //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
       //controller.add(addnat)
 
       println(Nat.toString)
