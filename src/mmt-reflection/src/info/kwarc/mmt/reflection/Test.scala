@@ -39,12 +39,15 @@ object Test {
       val succ = new Constant(OMID(Nat.path), LocalName("succ"), Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
       controller.add(succ)
 
+      //val addnat = new (ExplicitMorph(Record(List((LocalName("nat"),Some(Arrow(OMID(nat.path),OMID(nat.path)))), (LocalName("zero"), Lambda(LocalName("n"), OMID("n".path),  )), (LocalName("succ")) )),OMMOD(Nat.path)))
+      //controller.add(addnat)
+
       println(Nat.toString)
 
       val tm = TermRefl(OMMOD(Nat.path), Apply(OMID(succ.path), OMID(zero.path)))
       val tp = ReflType(OMMOD(Nat.path), OMID(nat.path))
 
-      val unknowns = "a" % LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
+      val unknowns =  "a"% LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
         "d" % LF.ktype  ++ "e" % LF.ktype ++ "UO" % LF.ktype ++ "F" % OMV("UO")
       val sol = new Solver(controller,OMMOD(Nat2.path), unknowns)
       val tj = Typing(Stack.empty(OMMOD(Nat2.path)), tm, tp)

@@ -135,7 +135,7 @@ object ComputationReflectionRule extends ComputationRule(Reflection.elim){
      case Elim(TermRefl(s,t),mor) =>
        if(!stack.frames.isEmpty) {
         try {
-          solver.controller.checker.checkMorphism(mor,s,stack.theory)
+          solver.checkMorphism(mor,s)
         }
         catch {
          case e:Error => false
