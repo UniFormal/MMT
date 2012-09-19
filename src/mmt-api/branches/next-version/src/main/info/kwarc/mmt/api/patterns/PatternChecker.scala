@@ -14,13 +14,18 @@ import scala.io.Source
 /** elaborates Instance declarations
  * this is also called the pragmatic-to-strict translation
  */
-class PatternChecker(controller: Controller) extends Elaborator {  
-  def getPatterns(home : Term)(n : Int) : List[Pattern] = {     
+//TODO naming problem - PatternChecker already declared?
+class PatternChecker(controller: Controller) extends Elaborator {
+  case class getPatternsError(msg : String) extends java.lang.Throwable(msg)
+/** retrieves patterns from theory
+* 
+*/
+  def getPatterns(home : Term)(n : Int) : List[Pattern] = {         
      home match {
        case OMMOD(p) => 
          val thy = controller.globalLookup(p)
          thy match {
-           case d : DeclaredTheory => d.meta match {
+           case d : DeclaredTheory => d.meta match { // other case d: DefinedTheory, it does not have meta
              case Some(m) => 
                val cmeta = controller.globalLookup(m)
                cmeta match {
@@ -28,6 +33,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
                    val decls = mthy.valueList
                    decls.mapPartial{
                      case p : Pattern => 
+                       val m = p.body.variables.toList.length
                        if (p.body.variables.toList.length == n) { 
                          Some(p)
                        } else None
@@ -36,31 +42,38 @@ class PatternChecker(controller: Controller) extends Elaborator {
                }
              case None => Nil
             }
-           case _ => Nil //TODO
+           case _ => throw getPatternsError("not a declared theory")
           }
-        case _ => Nil //TODO
+        case _ => throw getPatternsError(home.toString + " not an OMMOD") 
      }
   }
-  def patternCheck(constants : List[Constant], pattern : Pattern) : Option[Substitution] = {        
+  def patternCheck(constants : List[Constant], pattern : Pattern) : Option[Instance] = {        
     if (constants.length == pattern.body.length) {
-      val mat = new PatternMatcher(controller,pattern.params)
-      var sub = Substitution()
-      constants.zip(pattern.body).forall {
+      val mat = new Matcher(controller,pattern.params)
+      var sub = Substitution() // obsolete?
+      // substitution
+      val z = constants.zip(pattern.body).map {
         case (con,decl) =>
           val dtype = decl.tp.map(t => t ^ sub)
           val ddef = decl.df.map(d => d ^ sub)
-          sub ++ Sub(con.name,decl.name)      
-//          println("matching " + con.tp.toString + con.df.toString +  " with " + dtype.toString + ddef.toString)
-          val res1 = mat(con.tp,dtype,Context())
-          val res2 = mat(con.df,ddef,Context())
-          val res = res1 && res2
-          println(res1.toString + "  " + res2.toString)// just to get a prompt in the shell          
-          res
-        
-      }
-      mat.metaContext.toSubstitution 
+//          sub ++ Sub(con.name,decl.name)      
+//          println("matching >> " + con.name +  " <<>> " + pattern.name)
+          val res1 = mat(con.tp,dtype,Context())// match type
+          val res2 = mat(con.df,ddef,Context())// match definition
+          (res1,res2) match {
+            case (Some(a),Some(b)) => sub = sub ++ a ++ b 
+              						Some(a ++ b)
+            case _ => None
+          }
+      }.flatten.foldLeft(Substitution())((a,b) => a ++ b)
+      if (z.isEmpty) return None // if no matches were found, z is empty list, so this is not the pattern we want
+      mat.metaContext.toSubstitution
+      val c = constants(0)
+      Some(new Instance(c.home,c.name,GlobalName(c.home, pattern.name),z))
+      
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  
+  
   def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit = e match {
      case c: Constant =>
        val patts = getPatterns(c.home)(1)
@@ -68,57 +81,93 @@ class PatternChecker(controller: Controller) extends Elaborator {
      case _ => 
    }
   
+  
+  // check const decl vs list of patterns
+  def getInstance(constList : List[Constant], pattList : List[Pattern]) : List[Instance]= {        
+        val ins : List[Instance] = constList.map{
+          c => pattList.map( p => {
+            this.patternCheck(List(c),p) match {
+              case Some(sub) => Some(sub) //Some(new Instance(c.home,c.name,GlobalName(c.home, p.name),sub))
+              case None => None
+            } 
+          }) 
+          }.flatten.flatten
+        ins
+  }
  
 }
 
 
-class PatternMatcher(controller : Controller, var metaContext : Context) {  
-  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Boolean = {// why do we bother with context here?    
+class Matcher(controller : Controller, var metaContext : Context) {  
+  def apply(dterm : Term, pterm : Term, con : Context = Context()) : Option[Substitution] = {    
     //if (lengthChecker(dterm,pterm)) {          
 //    println("matching " + dterm.toString() + " with " + pterm.toString())    
         (dterm,pterm) match {
-        	case (OMID(a), OMID(b)) => a.toString == b.toString
-        	case (OMI(i),OMI(j)) => i == j                   
-            case (OMV(v),OMV(w)) if (v == w) => con.isDeclared(v) && con.isDeclared(w) 
+        	// OM reference
+        	case (OMID(a), OMID(b)) => if (a.toString == b.toString) //Some(Substitution(Sub("OMID match",OMID(a))))  else None
+        									Some(Substitution())
+        									else None
+        	// integers
+        	case (OMI(i),OMI(j)) => if (i == j) { Some(Substitution(Sub("OMI match",OMI(i)))) } else None
+        	// variables
+            case (OMV(v),OMV(w)) => if ((v == w) && (con.isDeclared(v) && con.isDeclared(w)))
+              Some(Substitution(Sub(OMV(w).name,OMV(v)))) 
+              else None  
+            // function application  
             case (OMA(f1,args1),OMA(f2,args2)) => 
-               apply(f1,f2,con) && args1.zip(args2).forall { 
-                  case (x,y) => apply(x,y,con) 
+               val fun = apply(f1,f2,con) match {
+                 case Some(a) => a
+                 case None => return None // if functions did not match, quit
                }
-            case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b), con)                  
-            // OMBIND case gone, due Florian??
-            case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => apply(b1,b2,con) && apply(cond1,cond2,con ++ ctx1) && apply(bod1,bod2,con ++ ctx1)
-// a missing case:  ??
-            case (OMV(v), _) => metaContext.isDeclared(v)
-//            							metaContext.++() // add v = anyT as definien to the metaContext, also true
-//            						else false
+               val argl = args1.zip(args2).map { 
+                  case (x,y) => apply(x,y,con) 
+               }              
+               // if some arguments did not match, the lengths will be different
+               if (argl.length != argl.flatten.length) return None  
+               val args = argl.flatten.foldRight(Substitution())((a,b) => a ++ b)
+               Some(fun ++ args)
+            // OM symbol
+            case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b), con)
+            // conditional binder
+            case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => 
+              val res1 = apply(b1,b2,con) 
+              val res2 = apply(cond1,cond2,con ++ ctx1)  
+              val res3 = apply(bod1,bod2,con ++ ctx1)
+              (res1,res2,res3) match {
+                case (Some(a), Some(b), Some(c)) => Some(a ++ b ++ c)
+                case _ => None
+              }
+            // var to anything  
+            case (OMV(v), x) => if (metaContext.isDeclared(v)) Some(Substitution(Sub("OMV to Term", OMV(v)))) else None 
             // check if constant and variable types are the same                        
             case (OMS(s),OMV(v)) => {
               val const = controller.globalLookup.getConstant(s)
               val vardecs = metaContext.components
               val vardec = vardecs.find(x => x.name == v)
               vardec match {                
-                case Some(v) => (v.tp,const.tp) match {
-                  	case (None,None) => true 
-                  	case (Some(a),Some(b)) => a == b
-                  	case (_,_) => false
+                case Some(w) => (w.tp,const.tp) match {
+                  	case (None,None) => Some(Substitution(Sub("OMS to OMV",OMV(v.toString))))//empty  
+                  	case (Some(a),Some(b)) => if (a == b) Some(Substitution(Sub("OMS to OMV" + OMV(v).name,a))) else None
+                  	case (_,_) => None
                 }
-                case _ => false
+                case _ => None
               }              
             }
-            // missing:  OMA, OMBIND, OMI ...   to OMV
+            // term to var
             case (t, OMV(v)) => {                
-              metaContext.isDeclared(v)
+              if (metaContext.isDeclared(v)) Some(Substitution(Sub(OMV(v).name,t)))
+              else None
             }
-            case (_,_) => false      
+            case (_,_) => None      
         }
     //}
   }
     
-  def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Boolean = {
+  def apply(dterm : Option[Term], pterm : Option[Term], con : Context) : Option[Substitution] = {
     (dterm,pterm) match {
-      case (Some(d),Some(p)) => apply(d,p,con)
-      case (None,None) => true
-      case (_,_) => false
+      case (Some(d),Some(p)) => apply(d,p,con)//?
+      case (None,None) => Some(Substitution())// occurs when there is no definient 
+      case (_,_) => None
     }
   }
   
@@ -134,7 +183,7 @@ class PatternMatcher(controller : Controller, var metaContext : Context) {
          freeVars(len1N)
          lengthSolver()
      }
-     */
+     */   
   }
 }
 
@@ -156,7 +205,7 @@ object PatternTest  {
   val typedConDef = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedConDef"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMV("A")))),Some(OMV("D"))))
   val theorem = new Pattern(OMID(tptpbase ? "THF0"), LocalName("theorem"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F")))),Some(OMV("D"))))
   val controller = new Controller
-  controller.handleLine("file pattern-test.mmt")// run what's written in this file first - add logs, archives etc.
+  controller.handleLine("file pattern-test.msl")// run what's written in this file first - add logs, archives etc.
   controller.add(baseType)
   controller.add(typedCon)
   controller.add(axiom)
@@ -209,9 +258,19 @@ object PatternTest  {
     val matches = constList.foreach {
         a => println(a.name.toString) 
           pattList.foreach {
-          p => pc.patternCheck(List(a),p) 
+          p => {
+           pc.patternCheck(List(a),p) match {
+             case Some(ins) => {
+            	 println(a.name + " matches " + p.name)
+            	 ins.matches
+            	 println("substitution" + ins.matches.toString())
+             }
+             case _ =>
+           } 
+          } 
         }
       }
+    
     
 //      val testCon = controller.globalLookup.getConstant(pbbase  ? "SomeProblem" ? "meq_ind")
 //    
