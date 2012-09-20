@@ -51,9 +51,10 @@ object Test {
       val succ_refl = new Constant(OMID(Nat2.path), LocalName("s"), Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(Nat2.path), OMID(succ.path))), None, None))
       controller.add(succ_refl)
 
-      val sigma = Record(List((LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))))
-      val sigma1 = Record(List((LocalName("zero"),Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))))
-      val sigma2 = Record(List((LocalName("succ"),Lambda(LocalName("f"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)), Lambda(LocalName("n"), OMID(nat_refl.path), ApplyTerm(succ_refl,Apply(LocalName("f"),LocalName("n"))))))))
+      val sigma_n = (LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))
+      val sigma_z = (LocalName("zero"),Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))
+      val sigma_s = Record(List((LocalName("succ"),Lambda(LocalName("f"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)), Lambda(LocalName("n"), OMID(nat_refl.path), ApplyTerm(succ_refl,Apply(LocalName("f"),LocalName("n"))))))))
+      val sigma = Record(List(sigma_n,sigma_z))
 
       val addnat = ExplicitMorph(sigma,OMMOD(Nat2.path))
       //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
