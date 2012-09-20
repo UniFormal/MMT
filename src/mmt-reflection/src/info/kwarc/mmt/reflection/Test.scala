@@ -39,14 +39,20 @@ object Test {
       val succ = new Constant(OMID(Nat.path), LocalName("succ"), Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
       controller.add(succ)
 
-      val addnat = ExplicitMorph(Record(List((LocalName("nat"),Arrow(OMID(nat.path),OMID(nat.path))))),OMMOD(Nat.path))
+      val tm = TermRefl(OMMOD(Nat.path), Apply(OMID(succ.path), OMID(zero.path)))
+
+      val nat_refl = new Constant(OMID(Nat2.path), LocalName("N"), Some(LF.ktype), Some(ReflType(OMMOD(Nat2.path), OMID(nat.path)), None, None)
+      val zero_refl = new Constant(OMID(Nat2.path),LocalName("0"), Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(Nat2.path), OMID(zero.path))), None, None)
+      val succ_refl = new Constant(OMID(Nat2.path), LocalName("s"), Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(Nat2.path), OMID(succ.path))), None, None))
+
+
+      //val addnat = ExplicitMorph(Record(List((LocalName("nat"),Arrow(OMID(tp),OMID(tp.toMpath))))),OMMOD(Nat2.path))
       //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
       //controller.add(addnat)
 
       println(Nat.toString)
 
-      val tm = TermRefl(OMMOD(Nat.path), Apply(OMID(succ.path), OMID(zero.path)))
-      val tp = ReflType(OMMOD(Nat.path), OMID(nat.path))
+
 
       val unknowns =  "a"% LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
         "d" % LF.ktype  ++ "e" % LF.ktype ++ "UO" % LF.ktype ++ "F" % OMV("UO")
