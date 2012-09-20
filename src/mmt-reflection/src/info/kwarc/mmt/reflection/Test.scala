@@ -52,7 +52,7 @@ object Test {
       controller.add(succ_refl)
 
       val sigma = Record(List((LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))))
-      val sigma1 = Record(List((LocalName("zero"),Lambda(LocalName("lambda"),OMID(nat_refl.path),OMV(LocalName("x"))))))
+      val sigma1 = Record(List((LocalName("zero"),Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))))
       val sigma2 = Record(List((LocalName("succ"),Lambda(LocalName("f"),OMV(LocalName("x")),OMV(LocalName("x"))))))
 
       val addnat = ExplicitMorph(sigma,OMMOD(Nat2.path))
