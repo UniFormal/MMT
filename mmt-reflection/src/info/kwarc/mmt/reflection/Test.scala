@@ -29,6 +29,7 @@ object Test {
       controller.add(Nat)
 
       val Nat2 = new DeclaredTheory(testbasenat2, LocalPath(List("nat2")), Some (LF.lftheory))
+      controller.add(Nat2)
 
       val nat = new Constant(OMID(Nat.path), LocalName("nat"), Some(LF.ktype), None, None, None)
       controller.add(nat)
@@ -41,10 +42,14 @@ object Test {
 
       val tm = TermRefl(OMMOD(Nat.path), Apply(OMID(succ.path), OMID(zero.path)))
 
-      val nat_refl = new Constant(OMID(Nat2.path), LocalName("N"), Some(LF.ktype), Some(ReflType(OMMOD(Nat2.path), OMID(nat.path)), None, None)
-      val zero_refl = new Constant(OMID(Nat2.path),LocalName("0"), Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(Nat2.path), OMID(zero.path))), None, None)
-      val succ_refl = new Constant(OMID(Nat2.path), LocalName("s"), Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(Nat2.path), OMID(succ.path))), None, None))
+      val nat_refl = new Constant(OMID(Nat2.path), LocalName("N"), Some(LF.ktype), Some(ReflType(OMMOD(Nat2.path), OMID(nat.path))), None, None)
+      controller.add(nat_refl)
 
+      val zero_refl = new Constant(OMID(Nat2.path),LocalName("0"), Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(Nat2.path), OMID(zero.path))), None, None)
+      controller.add(zero_refl)
+
+      val succ_refl = new Constant(OMID(Nat2.path), LocalName("s"), Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(Nat2.path), OMID(succ.path))), None, None))
+      controller.add(succ_refl)
 
       //val addnat = ExplicitMorph(Record(List((LocalName("nat"),Arrow(OMID(tp),OMID(tp.toMpath))))),OMMOD(Nat2.path))
       //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
