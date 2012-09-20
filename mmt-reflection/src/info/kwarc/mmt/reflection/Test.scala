@@ -25,31 +25,49 @@ object Test {
       //val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
       //controller.add(baseType)
 
+      //the meta-level theory of natural numbers
       val Nat = new DeclaredTheory(testbasenat, LocalPath(List("nat")), Some (LF.lftheory))
       controller.add(Nat)
 
-      val Nat2 = new DeclaredTheory(testbasenat2, LocalPath(List("nat2")), Some (LF.lftheory))
-      controller.add(Nat2)
+      //the reflected theory of natural numbers
+      val NatR = new DeclaredTheory(testbasenat2, LocalPath(List("nat2")), Some (LF.lftheory))
+      controller.add(NatR)
 
+      //generic type of natural numbers in the theory Nat
       val nat = new Constant(OMID(Nat.path), LocalName("nat"), Some(LF.ktype), None, None, None)
       controller.add(nat)
 
+      //zero constructor in the theory Nat
       val zero = new Constant(OMID(Nat.path), LocalName("zero"), Some(OMID(nat.path)), None, None, None)
       controller.add(zero)
 
+      //successor constructor in the theory Nat
       val succ = new Constant(OMID(Nat.path), LocalName("succ"), Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
       controller.add(succ)
 
-      val tm = TermRefl(OMMOD(Nat.path), Apply(OMID(succ.path), OMID(zero.path)))
-
-      val nat_refl = new Constant(OMID(Nat2.path), LocalName("N"), Some(LF.ktype), Some(ReflType(OMMOD(Nat2.path), OMID(nat.path))), None, None)
+      //reflected type of natural numbers in the theory NatR
+      val nat_refl = new Constant(OMID(NatR.path), LocalName("N"), Some(LF.ktype), Some(ReflType(OMMOD(NatR.path), OMID(nat.path))), None, None)
       controller.add(nat_refl)
 
-      val zero_refl = new Constant(OMID(Nat2.path),LocalName("0"), Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(Nat2.path), OMID(zero.path))), None, None)
+      //zero constructor reflected from the theory Nat down to the theory NatR
+      val zero_refl = new Constant(OMID(NatR.path),LocalName("0"), Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(NatR.path), OMID(zero.path))), None, None)
       controller.add(zero_refl)
 
-      val succ_refl = new Constant(OMID(Nat2.path), LocalName("s"), Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(Nat2.path), OMID(succ.path))), None, None))
+      //successor constructor reflected from the theory Nat down to the theory NatR
+      val succ_refl = new Constant(OMID(NatR.path), LocalName("s"), Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(NatR.path), OMID(succ.path))), None, None))
       controller.add(succ_refl)
+
+      /**
+      * auxiliaries for defining binary natural number addition (add)      *
+      */
+
+      /**
+      * auxiliaries for defining the corresponding morphism as a Record
+      *  sigma_n: assignment for the type of natural numbers
+      *  sigma_z: assignment for the zero constructor
+      *  sigma_s: assignment for the successor constructor
+      *  sigma: corresponding record for the addition morphism mapping from Nat to NatR
+      */
 
       val sigma_n = (LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))
       val sigma_z = (LocalName("zero"),Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))
@@ -60,17 +78,16 @@ object Test {
       //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
       //controller.add(addnat)
 
-      println(Nat.toString)
 
-
-
-      val unknowns =  "a"% LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
-        "d" % LF.ktype  ++ "e" % LF.ktype ++ "UO" % LF.ktype ++ "F" % OMV("UO")
-      val sol = new Solver(controller,OMMOD(Nat2.path), unknowns)
-      val tj = Typing(Stack.empty(OMMOD(Nat2.path)), tm, tp)
-      println(tj)
-      println(sol(tj))
-      println(sol)
+      //println(Nat.toString)
+      //val unknowns =  "a"% LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
+      //  "d" % LF.ktype  ++ "e" % LF.ktype ++ "UO" % LF.ktype ++ "F" % OMV("UO")
+      //val sol = new Solver(controller,OMMOD(Nat2.path), unknowns)
+      //val tm = TermRefl(OMMOD(Nat.path), Apply(OMID(succ.path), OMID(zero.path)))
+      //val tj = Typing(Stack.empty(OMMOD(Nat2.path)), tm, tp)
+      //println(tj)
+      //println(sol(tj))
+      //println(sol)
 //
 //      implicit def pToOMID(p: GlobalName) = OMID(p)
 //
