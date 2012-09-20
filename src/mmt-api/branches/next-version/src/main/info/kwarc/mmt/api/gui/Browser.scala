@@ -1,4 +1,7 @@
 package info.kwarc.mmt.api.gui
+import info.kwarc.mmt.api._
+import backend._
+import archives._
 
 import javax.swing._
 import java.awt.event._
@@ -22,9 +25,14 @@ class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
       var s : String = ""
       s += "logging\n"
       s += controller.report.groups.toList.mkString("\t", ", ", "\n")
-      s += "\narchives\n"
-      controller.backend.getArchives foreach {a =>
-         s += "\t" + a.id + " " + a.rootString + "\n"
+      s += "\nbackend\n"
+      controller.backend.getStores foreach {
+         case a: Archive =>
+            s += "\tarchive " + a.id + " " + a.rootString + "\n"
+         case l: LocalCopy =>
+            s += "\tmathpath " + l.localBase + " " + l.base + "\n"
+         case r: SVNRepo =>
+            s += r.toString //TODO better printing
       }
       s += "\ndocuments\n" 
       controller.docstore.getDocuments foreach {d =>

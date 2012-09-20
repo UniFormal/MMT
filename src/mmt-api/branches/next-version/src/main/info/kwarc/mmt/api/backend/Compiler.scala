@@ -36,6 +36,8 @@ trait Compiler extends Importer {
 
    /** registers an archive with this compiler */
    def register(arch: Archive, dim: String) {}
+   /** unregisters an archive with this compiler */
+   def unregister(arch: Archive, dim: String) {}
 }
 
 trait QueryTransformer extends Importer {

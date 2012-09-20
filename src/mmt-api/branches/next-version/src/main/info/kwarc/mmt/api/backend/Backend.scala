@@ -287,6 +287,10 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
          log("adding storage " + d.toString)
       }
    }
+   def removeStore(s: Storage) {
+      stores = stores.filter(_ != s)
+      log("removing storage " + s.toString)
+   }
    
    //this must be redesigned
    def copyStorages(newRev : Int = -1) : List[Storage] = {
@@ -387,6 +391,15 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
           openArchive(newRoot)
       }
       else throw NotApplicable
+   }
+   def closeArchive(id: String) {
+      getArchive(id) foreach {arch =>
+         removeStore(arch)
+         removeStore(arch.narrationBackend)
+         arch.compsteps foreach {_ foreach {
+           case CompilationStep(from,_,compiler) => compiler.unregister(arch, from)
+         }}
+      }
    }
    
    private def extractMar(file: java.io.File, newRoot: java.io.File) {

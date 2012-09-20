@@ -355,6 +355,7 @@ class Controller extends ROController {
                case "extract" => arch.extractScala(in, "source")
                case "integrate" => arch.integrateScala(in, "source")
                case "present" => params.foreach(p => arch.producePres(Nil,p, this))
+               case "close" => backend.closeArchive(id)
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
