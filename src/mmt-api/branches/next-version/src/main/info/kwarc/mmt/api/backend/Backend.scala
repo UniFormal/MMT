@@ -345,14 +345,6 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
                    val key = tline.substring(0,p).trim
                    val value = tline.substring(p+1).trim
                    properties(key) = value
-                   if (key == "catalog") {
-                      val List(a, b) = value.split("\\s").toList
-                      val uri = URI(a)
-                      val url = new java.io.File(root, b)
-                      val cat = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, url)
-                      log("adding catalog entry " + cat)
-                      stores ::= cat
-                   }
                 }
              }
              properties.get("compilation") foreach {value =>

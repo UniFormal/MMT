@@ -25,14 +25,14 @@ object Action extends RegexParsers {
    private def comment = "//.*"r
    private def action = controller | shell | getaction
 
-   private def controller = log | local | catalog | archive | tntbase | importer | foundation | plugin | mws | server | windowaction | execfile
+   private def controller = log | local | mathpath | archive | tntbase | importer | foundation | plugin | mws | server | windowaction | execfile
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
-   private def catalog = "catalog" ~> file ^^ {f => AddCatalog(f)}
+   private def mathpath = "mathpath" ~> uri ~ file ^^ {case u ~ f => AddMathPath(u,f)}
    private def archive = archopen | archdim | archmar | archpres | svnarchopen
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
@@ -47,7 +47,7 @@ object Action extends RegexParsers {
            ArchiveBuild(id, "present", segs, List(p))
         }
      private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
-           "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate"
+           "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
@@ -139,7 +139,7 @@ case class Check(p : Path) extends Action {override def toString = "check " + p}
 /** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddCatalog(file : File) extends Action {override def toString = "catalog " + file}
+case class AddMathPath(uri: URI, file : File) extends Action {override def toString = "mathpath " + uri + " " + file}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : File) extends Action {override def toString = "tntbase " + file}
 /** registers a compiler

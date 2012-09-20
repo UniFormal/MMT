@@ -306,8 +306,9 @@ class Controller extends ROController {
    def handle(act : Action) : Unit = {
 	  if (act != NoAction) report("user", act.toString)
 	  act match {
-	      case AddCatalog(f) =>
-	         backend.addStore(Storage.fromLocutorRegistry(f) : _*)
+	      case AddMathPath(uri,file) =>
+	         val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
+	         backend.addStore(lc)
 	      case AddImporter(c, args) => extman.addImporter(c, args)
 	      case AddPlugin(c) => extman.addPlugin(c, Nil)
 	      case AddFoundation(c, args) => extman.addFoundation(c, args)
