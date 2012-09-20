@@ -53,7 +53,7 @@ object Test {
 
       val sigma = Record(List((LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))))
       val sigma1 = Record(List((LocalName("zero"),Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))))
-      val sigma2 = Record(List((LocalName("succ"),Lambda(LocalName("f"),OMV(LocalName("x")),OMV(LocalName("x"))))))
+      val sigma2 = Record(List((LocalName("succ"),Lambda(LocalName("f"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)), Lambda(LocalName("n"), OMID(nat_refl.path), ApplyTerm(succ_refl,Apply(LocalName("f"),LocalName("n"))))))))
 
       val addnat = ExplicitMorph(sigma,OMMOD(Nat2.path))
       //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
