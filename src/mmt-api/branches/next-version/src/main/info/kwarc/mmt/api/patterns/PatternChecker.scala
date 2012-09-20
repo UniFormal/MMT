@@ -65,11 +65,12 @@ class PatternChecker(controller: Controller) extends Elaborator {
               						Some(a ++ b)
             case _ => None
           }
-      }.flatten.foldLeft(Substitution())((a,b) => a ++ b)
+      }.flatten
       if (z.isEmpty) return None // if no matches were found, z is empty list, so this is not the pattern we want
+      sub = z.foldLeft(sub)((a,b) => a ++ b)
       mat.metaContext.toSubstitution
       val c = constants(0)
-      Some(new Instance(c.home,c.name,GlobalName(c.home, pattern.name),z))
+      Some(new Instance(c.home,c.name,GlobalName(c.home, pattern.name),sub))
       
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  
@@ -104,10 +105,11 @@ class Matcher(controller : Controller, var metaContext : Context) {
 //    println("matching " + dterm.toString() + " with " + pterm.toString())    
         (dterm,pterm) match {
         	// OM reference
-        	case (OMID(a), OMID(b)) => if (a.toString == b.toString) //Some(Substitution(Sub("OMID match",OMID(a))))  else None
+        	case (OMID(a), OMID(b)) =>	// OMID(a) == OMID(b) does not work!?
+        	  							if (a.last == b.last) //Some(Substitution(Sub("OMID match",OMID(a))))  else None
         									Some(Substitution())
         									else None
-        	// integers
+        	// integers (not needed in THF0)
         	case (OMI(i),OMI(j)) => if (i == j) { Some(Substitution(Sub("OMI match",OMI(i)))) } else None
         	// variables
             case (OMV(v),OMV(w)) => if ((v == w) && (con.isDeclared(v) && con.isDeclared(w)))
@@ -263,7 +265,7 @@ object PatternTest  {
              case Some(ins) => {
             	 println(a.name + " matches " + p.name)
             	 ins.matches
-            	 println("substitution" + ins.matches.toString())
+            	 println("substitution: " + ins.matches.toString())
              }
              case _ =>
            } 

@@ -17,17 +17,14 @@ import objects.Conversions._
 import utils.MyList._
 import scala.io.Source
 
-/*	substitution compiler: omdoc theory -> omdoc instances
+/*	pragmatic OMDoc compiler: omdoc theory -> omdoc pragmatic declaration (instances)
  *  reads an omdoc file with a declared theory in it, parses into controller
  *  retrieves the theory as mmt data structure from the controller, retrieves patterns from the controller
  *  pattern-checks declarations in theory with patterns via PatternChecker -> list of pattern instances
  *  writes out instances into an omdoc file in the same directory as the input file, different file name
  */
-// TODO
 /* [SOLVED] written instances cannot be turned into content via "archive content" yet, bugs to fix
- * reorder, clarify, clean the code - right now the code is crap 
- * make code compatible (make calls same as to any other compiler), can parse patterns from file
- * output the instance files into separate folder (not "/compiled/")
+ * [?] make code compatible (make calls same as to any other compiler), can parse patterns from file
  */
 
 //case class SomeError(msg : String) extends java.lang.Throwable(msg)  
@@ -36,7 +33,13 @@ class InstanceCompiler extends Compiler {
   
   def isApplicable(src : String) : Boolean = src.substring(src.lastIndexOf(".")) == "omdoc"    
   
-
+  private var tptppath : String = null
+  private def log(msg: => String) {report("pragmatic:", msg)}    
+  override def init(con: Controller, args: List[String]) {
+     tptppath = args(0)     
+     super.init(con, Nil)
+  }
+    
   case class CompilationError(msg : String) extends java.lang.Throwable(msg)     
     
   override def compile(in : File, out : File) : List[SourceError] = {
@@ -45,7 +48,7 @@ class InstanceCompiler extends Compiler {
     val path = in.toJava.getPath
     
     // compute output directory
-    // TODO too specific, only applies to tptp
+    // TODO too specific, only applies to TPTP
     var fileDir = ""
     if (path.contains("Axioms"))
       fileDir = path.substring(path.lastIndexOf("Axioms"), path.lastIndexOf("/"))
@@ -75,13 +78,14 @@ class InstanceCompiler extends Compiler {
     // retrieve patterns    
     val pattTheory = patcon.controller.globalLookup.getTheory(tptpbase ? "THF0") match {
       case t : DeclaredTheory => t
-      case _ => throw GetError("no patterns in " + tptpbase + "?" + "THF0")      
+      case _ => throw GetError("no patterns in " + tptpbase + "?" + "THF0")// maybe not throw error here yet?      
     }        
     val pattList : List[Pattern] = pattTheory.valueListNG mapPartial {
       case p : Pattern => Some(p)
       case _ => None
     }    
-    val inst =  pc.getInstance(constList, pattList)// FR: I've commented this out because it didn't compile
+    // get list of all Instance for the theory
+    val inst =  pc.getInstance(constList, pattList)
     
     // write to output file            
     write(out.setExtension("omdoc"), fileDir, fileName, inst)
@@ -97,9 +101,7 @@ class InstanceCompiler extends Compiler {
 		val docPath = out.toJava.getPath
 		val pp = new scala.xml.PrettyPrinter(100,2)
 		val fw = new java.io.FileWriter(docPath)	  		
-	  	
 //		val base = (patcon.controller.getBase) / fileDir
-		
 		val nd : scala.xml.Node = 
 		<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={tptpbase.toString()}>
 		   <theory name={"test"} base={tptpbase.toString()} meta={"http://cds.omdoc.org/foundations/lf/lf.omdoc?lf"}>     
@@ -122,7 +124,7 @@ class PatternController {
         val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
         val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))// problem base
         
-        controller.handleLine("file instCompTest.mmt")
+        controller.handleLine("file instCompTest.msl")
         
         val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
         val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
@@ -146,6 +148,7 @@ object CompTest {
 
 	def main(args : Array[String]) {
 	  
+//	 patcon.controller.handleLine("file instCompTest.mmt")
 	  
 	 val thName : String = "AGT027^1"
 	 
