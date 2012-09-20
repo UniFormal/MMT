@@ -52,8 +52,8 @@ object Test {
       controller.add(succ_refl)
 
       val sigma = Record(List((LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))))
-      val sigma1 = Record(List((LocalName("zero"),Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x"))))))
-      //val sigma2 = Record(List((LocalName("succ"),Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x"))))))
+      val sigma1 = Record(List((LocalName("zero"),Lambda(LocalName("lambda"),OMID(nat_refl.path),OMV(LocalName("x"))))))
+      val sigma2 = Record(List((LocalName("succ"),Lambda(LocalName("f"),OMV(LocalName("x")),OMV(LocalName("x"))))))
 
       val addnat = ExplicitMorph(sigma,OMMOD(Nat2.path))
       //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
