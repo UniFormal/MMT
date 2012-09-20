@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+
+<style name="latex" from="http://cds.omdoc.org/" to="text/latex">
+
+  <include from="omdoc/ascii.omdoc?ascii"/>
+
+  <notation role="Theory">
+    <component index="0"/>
+    <text value="\;:=\; "/>
+    <if test="present" index="1">
+      <then>
+        <component index="1"/>
+        <text value="\; "/>
+      </then>
+    </if>
+    <text value="\{ \\"/>
+    <fragment name="newline"/>
+    <components begin="2" end="-1">
+      <body>
+        <text value="\tb "/>
+        <recurse/>
+        <text value="\\"/>
+        <fragment name="newline"/>
+      </body>
+      <post>
+        <text value="\}"/>
+      </post>
+    </components>
+  </notation>
+  
+  <notation role="Constant">
+    <component index="0"/>
+    <if test="present" index="1">
+      <then>
+        <text value="\; :\; "/>
+        <component index="1"/>
+      </then>
+    </if>
+    <if test="present" index="2">
+      <then>
+        <text value="\; =\; "/>
+        <component index="2"/>
+      </then>
+    </if>
+  </notation>
+  
+  <notation role="Structure">
+    <component index="0"/>
+    <text value=" : "/>
+    <component index="1"/>
+    <components begin="2" end="-1">
+      <pre>
+        <text value=" := \{"/>
+      </pre>
+      <post>
+        <text value="\}"/>
+      </post>
+      <separator>
+        <text value=",\;"/>
+      </separator>
+    </components>
+  </notation>
+
+  <notation role="fragment:opsep">
+    <text value="\;"/>
+  </notation>
+  <notation role="fragment:argsep">
+    <text value="\;"/>
+  </notation>
+  
+</style>
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
