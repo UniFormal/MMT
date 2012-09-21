@@ -27,14 +27,12 @@ import scala.io.Source
  * [?] make code compatible (make calls same as to any other compiler), can parse patterns from file
  */
 
-//case class SomeError(msg : String) extends java.lang.Throwable(msg)  
-
 class InstanceCompiler extends Compiler {
   
-  def isApplicable(src : String) : Boolean = src.substring(src.lastIndexOf(".")) == "omdoc"    
+  def isApplicable(src : String) : Boolean = src == "omdoc"    
   
   private var tptppath : String = null
-  private def log(msg: => String) {report("pragmatic:", msg)}    
+  private def log(msg: => String) {report("comp. pragmatic:", msg)}    
   override def init(con: Controller, args: List[String]) {
      tptppath = args(0)     
      super.init(con, Nil)
@@ -50,10 +48,11 @@ class InstanceCompiler extends Compiler {
     // compute output directory
     // TODO too specific, only applies to TPTP
     var fileDir = ""
-    if (path.contains("Axioms"))
-      fileDir = path.substring(path.lastIndexOf("Axioms"), path.lastIndexOf("/"))
-    else
-      fileDir = path.substring(path.lastIndexOf("Problems"), path.lastIndexOf("/"))
+//    if (path.contains("Axioms"))
+//      fileDir = path.substring(path.lastIndexOf("Axioms"), path.lastIndexOf("/"))
+//    else
+//      fileDir = path.substring(path.lastIndexOf("Problems"), path.lastIndexOf("/"))
+    fileDir = path.substring(0,path.lastIndexOf("/"))  
     val dir = out.toJava.getParentFile
     if (!dir.exists)
       dir.mkdirs
@@ -65,11 +64,11 @@ class InstanceCompiler extends Compiler {
 	val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
 	val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))// problem base  
 	val thName = fileName.substring(0,fileName.lastIndexOf("."))
+//	val thName = fileName
 	// retrieve constant declarations
    	val constTheory = patcon.controller.globalLookup.getTheory(pbbase  ? thName) match {
       case c : DeclaredTheory => c
-      case _ => //throw SomeError("no constants in " + pbbase + "?" + thName)
-        throw CompilationError("no constants in " + pbbase + "?" + thName)
+      case _ => throw CompilationError("not a declared theory " + pbbase + "?" + thName)
     }
     val constList : List[Constant] = constTheory.valueListNG mapPartial {
       case p : Constant => Some(p)
@@ -78,7 +77,7 @@ class InstanceCompiler extends Compiler {
     // retrieve patterns    
     val pattTheory = patcon.controller.globalLookup.getTheory(tptpbase ? "THF0") match {
       case t : DeclaredTheory => t
-      case _ => throw GetError("no patterns in " + tptpbase + "?" + "THF0")// maybe not throw error here yet?      
+      case _ => throw GetError("not a declared theory " + tptpbase + "?" + "THF0")      
     }        
     val pattList : List[Pattern] = pattTheory.valueListNG mapPartial {
       case p : Pattern => Some(p)
@@ -96,7 +95,7 @@ class InstanceCompiler extends Compiler {
   
   
   def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
-    	
+    	val thName = name.substring(0,name.lastIndexOf("."))
 	  	val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
 		val docPath = out.toJava.getPath
 		val pp = new scala.xml.PrettyPrinter(100,2)
@@ -104,7 +103,7 @@ class InstanceCompiler extends Compiler {
 //		val base = (patcon.controller.getBase) / fileDir
 		val nd : scala.xml.Node = 
 		<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base={tptpbase.toString()}>
-		   <theory name={"test"} base={tptpbase.toString()} meta={"http://cds.omdoc.org/foundations/lf/lf.omdoc?lf"}>     
+		   <theory name={thName} base={tptpbase.toString()} meta={"http://cds.omdoc.org/foundations/lf/lf.omdoc?lf"}>     
 			{ins.map(x => x.toNode)}
 			 </theory>
 		</omdoc>
@@ -124,8 +123,18 @@ class PatternController {
         val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
         val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))// problem base
         
-        controller.handleLine("file instCompTest.msl")
-        
+//        controller.handleLine("file instCompTest.msl")
+        controller.handleLine("log console")
+        controller.handleLine("log file test.log")
+        controller.handleLine("log+ archive")
+        controller.handleLine("log+ controller")
+        controller.handleLine("log+ extman")
+        controller.handleLine("importer info.kwarc.mmt.tptp.TptpTwelfCompiler /home/aivaras/TPTP/MMT")
+        controller.handleLine("importer info.kwarc.mmt.api.patterns.InstanceCompiler /home/aivaras/TPTP/MMT")
+        controller.handleLine("archive add /home/aivaras/TPTP/tptp")
+        controller.handleLine("archive add /home/aivaras/TPTP/LogicAtlas")
+
+
         val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
         val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
         val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "THF0" ? "$istrue"), List(OMV("F"))) )
@@ -148,17 +157,19 @@ object CompTest {
 
 	def main(args : Array[String]) {
 	  
-//	 patcon.controller.handleLine("file instCompTest.mmt")
+	 val compiler = new InstanceCompiler
+	 
+	 patcon.controller.handleLine("file instCompTest.msl")
 	  
 	 val thName : String = "AGT027^1"
 	 
 		 
-	  val compiler = new InstanceCompiler
 	  
-	  val in = new File(new java.io.File("/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT027^1.omdoc"))
-	  val out = new File(new java.io.File("/home/aivaras/TPTP/tptp/pragmatic/Problems/AGT/AGT027^1p.omdoc"))
 	  
-	  compiler.compile(in, out)
+//	  val in = new File(new java.io.File("/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT027^1.omdoc"))
+//	  val out = new File(new java.io.File("/home/aivaras/TPTP/tptp/pragmatic/Problems/AGT/AGT027^1.omdoc"))
+	  
+//	  compiler.compile(in, out)
     	  
 	  println("\nend")
 	  
