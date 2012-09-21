@@ -88,14 +88,11 @@ object Test {
           OMID(nat_refl.path),
           Lambda(LocalName("n"),
             OMID(nat_refl.path),
-            Apply(OMV("m")^{sigma},
+            Apply(Apply(OMREC(sigma),OMV("m")),
               OMV("n"))))),
         None, None)
 
-     //val addnat = ExplicitMorph(sigma,OMMOD(NatR.path))
-      //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
-      //controller.add(addnat)
-
+      controller.add(add)
 
       //println(Nat.toString)
       //val unknowns =  "a"% LF.ktype ++ "a'" % LF.ktype ++ "b" % OMV("a") ++ "b'" % OMV("a'")  ++ "c" % LF.ktype  ++
