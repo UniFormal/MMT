@@ -34,27 +34,39 @@ object Test {
       controller.add(NatR)
 
       //generic type of natural numbers in the theory Nat
-      val nat = new Constant(OMID(Nat.path), LocalName("nat"), Some(LF.ktype), None, None, None)
+      val nat = new Constant(OMID(Nat.path),
+        LocalName("nat"),
+          Some(LF.ktype), None, None, None)
       controller.add(nat)
 
       //zero constructor in the theory Nat
-      val zero = new Constant(OMID(Nat.path), LocalName("zero"), Some(OMID(nat.path)), None, None, None)
+      val zero = new Constant(OMID(Nat.path),
+        LocalName("zero"),
+          Some(OMID(nat.path)), None, None, None)
       controller.add(zero)
 
       //successor constructor in the theory Nat
-      val succ = new Constant(OMID(Nat.path), LocalName("succ"), Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
+      val succ = new Constant(OMID(Nat.path),
+        LocalName("succ"),
+          Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
       controller.add(succ)
 
       //reflected type of natural numbers in the theory NatR
-      val nat_refl = new Constant(OMID(NatR.path), LocalName("N"), Some(LF.ktype), Some(ReflType(OMMOD(NatR.path), OMID(nat.path))), None, None)
+      val nat_refl = new Constant(OMID(NatR.path),
+        LocalName("N"),
+          Some(LF.ktype), Some(ReflType(OMMOD(NatR.path), OMID(nat.path))), None, None)
       controller.add(nat_refl)
 
       //zero constructor reflected from the theory Nat down to the theory NatR
-      val zero_refl = new Constant(OMID(NatR.path),LocalName("0"), Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(NatR.path), OMID(zero.path))), None, None)
+      val zero_refl = new Constant(OMID(NatR.path),
+        LocalName("0"),
+          Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(NatR.path), OMID(zero.path))), None, None)
       controller.add(zero_refl)
 
       //successor constructor reflected from the theory Nat down to the theory NatR
-      val succ_refl = new Constant(OMID(NatR.path), LocalName("s"), Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(NatR.path), OMID(succ.path))), None, None))
+      val succ_refl = new Constant(OMID(NatR.path),
+        LocalName("s"),
+          Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(NatR.path), OMID(succ.path))), None, None)
       controller.add(succ_refl)
 
       /**
