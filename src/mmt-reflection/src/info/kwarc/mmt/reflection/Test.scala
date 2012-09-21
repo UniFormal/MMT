@@ -26,11 +26,11 @@ object Test {
       //controller.add(baseType)
 
       //the meta-level theory of natural numbers
-      val Nat = new DeclaredTheory(testbasenat, LocalPath(List("nat")), Some (LF.lftheory))
+      val Nat = new DeclaredTheory(testbasenat, LocalPath(List("Nat")), Some (LF.lftheory))
       controller.add(Nat)
 
       //the reflected theory of natural numbers
-      val NatR = new DeclaredTheory(testbasenat2, LocalPath(List("nat2")), Some (LF.lftheory))
+      val NatR = new DeclaredTheory(testbasenat2, LocalPath(List("NatR")), Some (LF.lftheory))
       controller.add(NatR)
 
       //generic type of natural numbers in the theory Nat
@@ -58,7 +58,7 @@ object Test {
       controller.add(succ_refl)
 
       /**
-      * auxiliaries for defining binary natural number addition (add)      *
+      * auxiliaries for defining binary natural number addition (add)
       */
 
       /**
@@ -71,10 +71,28 @@ object Test {
 
       val sigma_n = (LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))
       val sigma_z = (LocalName("zero"),Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))
-      val sigma_s = Record(List((LocalName("succ"),Lambda(LocalName("f"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)), Lambda(LocalName("n"), OMID(nat_refl.path), ApplyTerm(succ_refl,Apply(LocalName("f"),LocalName("n"))))))))
-      val sigma = Record(List(sigma_n,sigma_z))
+      val sigma_s = (LocalName("succ"),
+        Lambda(LocalName("f"),
+          Arrow(OMID(nat_refl.path),OMID(nat_refl.path)),
+          Lambda(LocalName("n"),
+            OMID(nat_refl.path),
+            Apply(OMID(succ_refl.path),
+              Apply(OMV("f"),OMV("n"))))))
+      val sigma = Record(List(sigma_n,sigma_z, sigma_s))
 
-      val addnat = ExplicitMorph(sigma,OMMOD(NatR.path))
+      val add = new Constant(OMID(NatR.path),
+        LocalName("add"),
+        Some(Arrow(OMID(nat_refl.path),
+          Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))),
+        Some(Lambda(LocalName("m"),
+          OMID(nat_refl.path),
+          Lambda(LocalName("n"),
+            OMID(nat_refl.path),
+            Apply(OMV("m")^{sigma},
+              OMV("n"))))),
+        None, None)
+
+     //val addnat = ExplicitMorph(sigma,OMMOD(NatR.path))
       //(LocalName("zero"), Lambda(LocalName("lambda"),OMV(LocalName("x")),OMV(LocalName("x")))),(LocalName("succ")...)  not sure about these
       //controller.add(addnat)
 
