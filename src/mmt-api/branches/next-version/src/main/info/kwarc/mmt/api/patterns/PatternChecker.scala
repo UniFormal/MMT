@@ -14,7 +14,6 @@ import scala.io.Source
 /** elaborates Instance declarations
  * this is also called the pragmatic-to-strict translation
  */
-//TODO naming problem - PatternChecker already declared?
 class PatternChecker(controller: Controller) extends Elaborator {
   case class getPatternsError(msg : String) extends java.lang.Throwable(msg)
 /** retrieves patterns from theory
@@ -85,7 +84,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
   
   // check const decl vs list of patterns
   def getInstance(constList : List[Constant], pattList : List[Pattern]) : List[Instance]= {        
-        val ins : List[Instance] = constList.map{
+        val ins = constList.map{
           c => pattList.map( p => {
             this.patternCheck(List(c),p) match {
               case Some(sub) => Some(sub) //Some(new Instance(c.home,c.name,GlobalName(c.home, p.name),sub))
@@ -93,6 +92,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
             } 
           }) 
           }.flatten.flatten
+        val valid = constList.length == ins
         ins
   }
  
@@ -110,6 +110,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
         									Some(Substitution())
         									else None
         	// integers (not needed in THF0)
+        	// ------ do not occur in TPTP.THF case; sequences not suppored yet, so not needed -------							
         	case (OMI(i),OMI(j)) => if (i == j) { Some(Substitution(Sub("OMI match",OMI(i)))) } else None
         	// variables
             case (OMV(v),OMV(w)) => if ((v == w) && (con.isDeclared(v) && con.isDeclared(w)))
