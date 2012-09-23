@@ -32,7 +32,9 @@ object Action extends RegexParsers {
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
    private def local = "local" ^^ {case _ => Local}
-   private def mathpath = "mathpath" ~> uri ~ file ^^ {case u ~ f => AddMathPath(u,f)}
+   private def mathpath = "mathpath" ~> (mathpathFS | mathpathSVN)
+     private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
+     private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
    private def archive = archopen | archdim | archmar | archpres | svnarchopen
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
@@ -139,7 +141,12 @@ case class Check(p : Path) extends Action {override def toString = "check " + p}
 /** add a catalog entry that makes the file system accessible via file: URIs */
 case object Local extends Action {override def toString = "local"}
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddMathPath(uri: URI, file : File) extends Action {override def toString = "mathpath " + uri + " " + file}
+case class AddMathPathFS(uri: URI, file : File) extends Action {override def toString = "mathpath local " + uri + " " + file}
+case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Option[String]) extends Action {
+   override def toString = "mathpath svn " + uri +
+      (if (rev == -1) "" else " " + rev) +
+      (user.map(" " + _).getOrElse("") + password.map(" " + _).getOrElse(""))
+}
 /** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
 case class AddTNTBase(file : File) extends Action {override def toString = "tntbase " + file}
 /** registers a compiler

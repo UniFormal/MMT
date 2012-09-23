@@ -32,44 +32,6 @@ abstract class Storage {
 
 /** convenience methods for backends */
 object Storage {
-   /** reads a locutor registry file and returns a list of Storages */
-   def fromLocutorRegistry(file : java.io.File) : List[Storage] = {
-      val N = utils.xml.readFile(file)
-    
-      /*
-      val l = for (R <- (N\\"registry"\\"repository").toList) yield {
-   	     val repos = URI(xml.attr(R, "location"))
-         for {wc <- R.child.toList if wc.label == "wc"} yield {
-            val path = xml.attr(wc,"location")
-            val localDir = new java.io.File(xml.attr(wc, "root"))
-            LocalCopy(repos.scheme.getOrElse(null), repos.authority.getOrElse(null), repos.pathAsString + path, localDir)
-         }
-      }.toList
-      l.flatten 
-      */ 
-      
-     val lc = (N\\"registry"\\"repository").toList.flatMap(R => {
-      val repos = URI(xml.attr(R, "location"))
-      R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
-     })
-     
-     val svn = (N\\"registry"\\"svn-repository").toList.flatMap(R => {
-      val repos = URI(xml.attr(R, "location"))
-      R.child.toList.filter(wc => wc.label == "wc").map(wc => {
-        val url = xml.attr(wc, "root")
-        val name = xml.attr(wc, "username")
-        val password = xml.attr(wc, "password")
-        val defRev = try {xml.attr(wc, "revision").toInt} catch {case _ => -1}
-        
-        val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
-        val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager(name, password)
-        repository.setAuthenticationManager(authManager)
-        SVNRepo(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), repository, defRev)
-      }).toList}) 
-
-     lc ::: svn
-   }
-   
    /** reads an OMBase description file and returns the described OMBases */
    def fromOMBaseCatalog(file : java.io.File) : List[OMBase] = {
       val N = utils.xml.readFile(file)
