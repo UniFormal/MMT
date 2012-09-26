@@ -39,10 +39,13 @@ object Rep {
 }
 
 object Sequence {
-  def apply (seq : Term*) : Term = 
-    OMA(OMS(LFS.seq),seq.toList)
+  def apply (seq : Term*) : Term = seq.length match {
+    case 0 => OMS(LFS.seq)
+    case _ => OMA(OMS(LFS.seq),seq.toList)
+  }  
   def unapply(t : Term) : Option[List[Term]] = t match {
     case OMA(OMS(LFS.seq),args) => Some(args)
+    case OMS(LFS.seq) => Some(Nil)
     case _ => None
   }
 }
