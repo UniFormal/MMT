@@ -31,7 +31,19 @@ class Server(val port: Int, controller: Controller) extends HServer {
   protected def selectorPoolSize = 2
 
   private def log(message: => String) { controller.report("server", message) }
-
+  /**
+   * Cross-Origin Resource Sharing
+   * For cross website ajax queries
+   */
+  private def CORS_AllowOrigin(origin : String) = true //for now
+  private def checkCORS(tk : HTalk) : HTalk = tk.req.header("Origin")  match {
+    case None => tk
+    case Some(s) => CORS_AllowOrigin(s) match {
+      case true => tk.setHeader(" Access-Control-Allow-Origin", s)
+      case false => tk
+    }
+  }
+  
   private def bodyAsString(tk: HTalk): String = {
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
     new String(bodyArray, "UTF-8")
@@ -203,7 +215,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
       } catch {
         case ServerError(n) => n
         case e: ParseError => <error><message>{ e.getMessage }</message></error>
-        case _ => <error><message>error translating query</message></error>
+        case e => <error><message>error translating query : {e.getMessage()}</message></error>
       }
       XmlResponse(resp).act(tk)
     }
@@ -324,20 +336,6 @@ class Server(val port: Int, controller: Controller) extends HServer {
   }
 
   /**
-   * A text response that the server sends back to the browser
-   * @param text the message that is sent in the HTTP body
-   */
-  private def TextResponse(text: String): HLet = new HLet {
-    def act(tk: HTalk) {
-      val out = text.getBytes("UTF-8")
-      tk.setContentLength(out.size) // if not buffered
-        .setContentType("text/plain; charset=utf8")
-        .write(out)
-        .close
-    }
-  }
-
-  /**
    * A resource response that the server sends back to the browser
    * @param path the path to the resource
    */
@@ -369,13 +367,27 @@ class Server(val port: Int, controller: Controller) extends HServer {
   }
 
   /**
+   * A text response that the server sends back to the browser
+   * @param text the message that is sent in the HTTP body
+   */
+  private def TextResponse(text: String): HLet = new HLet {
+    def act(tk: HTalk) {
+      val out = text.getBytes("UTF-8")
+      checkCORS(tk).setContentLength(out.size) // if not buffered
+        .setContentType("text/plain; charset=utf8")
+        .write(out)
+        .close
+    }
+  }
+
+  /**
    * An XML response that the server sends back to the browser
    * @param node the XML message that is sent in the HTTP body
    */
   private def XmlResponse(node: scala.xml.Node): HLet = new HLet {
     def act(tk: HTalk) {
       val out: Array[Byte] = node.toString.getBytes("UTF-8")
-      tk.setContentLength(out.size) // if not buffered
+      checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("text/xml; charset=utf8")
         .write(out)
         .close
@@ -389,7 +401,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
   private def JsonResponse(json: JSONType): HLet = new HLet {
     def act(tk: HTalk) {
       val out: Array[Byte] = json.toString.getBytes("UTF-8")
-      tk.setContentLength(out.size) // if not buffered
+      checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("application/json; charset=utf8")
         .write(out)
         .close

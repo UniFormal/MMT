@@ -58,11 +58,11 @@ case class TextNotation(markers : List[NotationElement], precedence : Int, isBin
 
   lazy val pres = {  
     val tokens = markers map {
-      case Delimiter(s) => presentation.Text(s)
+      case Delimiter(s) => presentation.Fragment("constant", presentation.Text(conPath.toPath), presentation.Text(s))
       case StdArg(p) => presentation.Component(presentation.NumberedIndex(p + 1),oPrec.map(_.weaken))
       case SeqArg(p,sep) => presentation.Iterate(presentation.NumberedIndex(1),
     		  									 presentation.NumberedIndex(-1),
-    		  									 presentation.OpSep() + presentation.Text(sep.value) + presentation.OpSep(),
+    		  									 presentation.OpSep() + presentation.Fragment("constant", presentation.Text(conPath.toPath), presentation.Text(sep.value)) + presentation.OpSep(),
     		  									 oPrec.map(_.weaken))
     }
     if (isBinder) {
@@ -191,11 +191,11 @@ object TextNotation {
       case d : DeclaredTheory =>
         val namespace = "%namespace \"" +  d.path.parent  + "\"." 
         println(d.path)
-        val sig = "%sig " + d.path.last + " = {\n" + d.components.map(c => "  " + present(c, operators)).filterNot(_ == "  ").mkString("\n")+ "\n}."
+        val sig = "%sig " + d.path.last + " = {\n" + d.innerComponents.map(c => "  " + present(c, operators)).filterNot(_ == "  ").mkString("\n")+ "\n}."
         namespace + "\n\n" + sig
-      case OMID(meta : MPath) => 
-        "%meta " + meta.doc.last + "?" + meta.name + "."
-      
+//      case OMMOD(meta : MPath) => 
+//        "%meta " + meta.doc.last + "?" + meta.name + "."
+        
       case Include(from, to) => "%include " + to.toMPath.last + "."
       case c : Constant =>
         println("constant : " + operators)
@@ -214,7 +214,8 @@ object TextNotation {
         c.path.last + tp + df + not + "."
 
 //      case s : Structure => "%include " + s.from.toString
-        
+     
+      case t : Term => presentTerm(t, operators)
       case _ =>
         println("unsupported content element for text presentation " + con.toNode)
         ""

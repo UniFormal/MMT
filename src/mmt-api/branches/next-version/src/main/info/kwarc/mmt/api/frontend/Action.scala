@@ -283,15 +283,25 @@ case class ToText(c : MakeAbstract) extends MakeConcrete {
   def make(controller : Controller, rb : RenderingHandler) {
     val con = c.make(controller)
     println("Action -> ToText # content : " + con.toString)
+    val home = c match {
+      case Component(p : GlobalName, component) => Some(p.module)
+      case Get(p : GlobalName) => Some(p.module)
+      case Get(p : MPath) => Some(OMMOD(p))
+      case _ => None
+    }
+    
+    val decs = home.map(controller.memory.content.getDeclarationsInScope(_) collect {
+      case c : Constant => new Operator(c.path, c.not)
+    }).getOrElse(Nil) ::: LFGrammar.grammar.operators
+    
     con match {
       case d : DeclaredTheory =>
-        val decs = controller.memory.content.getDeclarationsInScope(OMMOD(d.path)) collect {
-          case c : Constant => new Operator(c.path, c.not)
-        }
-
-        rb(TextNotation.present(d, decs ::: LFGrammar.grammar.operators))
-
-      case _ => //TODO add support for other module types
+        rb(TextNotation.present(d, decs))
+      case c : Constant =>
+        rb(TextNotation.present(c, decs))
+      case t : Term => 
+        rb(TextNotation.present(con, decs))
+      case _ => //TODO add support for other content types
         rb(c.make(controller).toString)
     }
   }

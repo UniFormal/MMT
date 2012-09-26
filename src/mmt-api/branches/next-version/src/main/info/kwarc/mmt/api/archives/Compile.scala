@@ -11,6 +11,7 @@ trait CompilableArchive extends WritableArchive {
     private val compiledTimestamps = new Timestamps(root / sourceDim, root / "META-INF" / "timestamps" / sourceDim)
     /** apply all compilation steps, e.g., from "source" into "compiled" */
     def produceCompiled(in : List[String] = Nil) {
+       println("CompSteps : " + compsteps)
        //reset errors
        compsteps match {
           case Some(CompilationStep(from, _ , compiler) :: _) => 

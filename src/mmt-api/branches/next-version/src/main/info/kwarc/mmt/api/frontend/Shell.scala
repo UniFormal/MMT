@@ -34,7 +34,6 @@ class Shell() extends {
 /** A shell, the default way to run MMT as an application */
 object Run extends Shell()
 
-
 object RunWeb {
   val controller = new Controller
 

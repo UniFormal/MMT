@@ -166,14 +166,13 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
    def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
       val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
-      println("target is " + target)
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
           val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern
           val prefix = if (target != base) target.getName + "/" else ""
           Storage.virtDoc(entries, prefix)
         } else throw BackendError(path)
-      cont(uri, N)   
+      cont(uri, N)
    }
 }
 
@@ -190,7 +189,6 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
         case None => rev
         case Some(s) => try {s.toInt} catch {case _ => rev}
       }
-      println("getting revision " + revision + " of file " + path)
       val N : scala.xml.Node = repository.checkPath(target, revision) match {
         case SVNNodeKind.FILE => 
           var fileProperties : SVNProperties = new SVNProperties()
@@ -264,7 +262,7 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
 
   
    def openArchive(url : String, rev : Int) : SVNArchive = {
-     println(url, rev)
+     log("opening archive at " + url + ":" + rev)
      val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
      val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager()
      repository.setAuthenticationManager(authManager)

@@ -268,7 +268,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    }
 
    /** Checks whether a theory ("from") is included into another ("to"), transitive, reflexive */
-   private def imports(from: Term, to: Term) : Boolean = {
+   def imports(from: Term, to: Term) : Boolean = {
       TheoryExp.imports(from,to) {(f,t) => 
          importsTo(OMMOD(t)) contains OMMOD(f)
       }

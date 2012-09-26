@@ -19,7 +19,8 @@ abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
 class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
       extends Theory(doc, name) with DeclaredModule[Symbol] {
    def role = Role_DeclaredTheory
-   def components = StringLiteral(name.flat) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   override def compNames = List(("name", 0), ("meta",1))
    override def toString = path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
    <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>

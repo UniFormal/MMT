@@ -99,7 +99,16 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     init()
     readDocument()
   }
-
+  
+  /*
+  def readTheory(source : String, ns_ : URI)(puCont_ : ParsingUnit => Term) : Pair[Theory, LinkedList[SourceError]] = {
+    //init
+    lines = source.split("\n").toArray
+    puCont = puCont_
+    init()
+    crawlTheory(0)
+  }
+*/
 
   private def readDocument() : Pair[Document, LinkedList[SourceError]] = {
     var i = 0  // position in the flattened file

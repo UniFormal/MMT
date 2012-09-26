@@ -156,7 +156,8 @@ class Controller extends ROController {
       // get, ...
       backend.get(path) {
         // read, ...
-        case (u,n) => xmlReader.readDocuments(DPath(u), n) {
+        case (u,n) =>
+          xmlReader.readDocuments(DPath(u), n) {
            // and add the content with URI path
            e => add(e)
         }
