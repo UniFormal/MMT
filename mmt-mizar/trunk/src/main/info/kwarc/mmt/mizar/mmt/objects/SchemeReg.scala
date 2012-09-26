@@ -12,17 +12,18 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lfs._
 
 
 
 
 object RegPatterns  {
   val MizExistentialReg = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizExistentialRegistration"),
-		  Context(TermVarDecl("n", None, None),
-				  SeqVarDecl("argTypes", Some(SeqSubst(Mizar.tp,"i", SeqUpTo(OMV("n")))), None),
-				  TermVarDecl("typ", Some(Mizar.tp), None),
-				  TermVarDecl("cluster", Some(Mizar.attr(OMV("typ"))), None)),
-		  Context(TermVarDecl("reg", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
+		  Context(VarDecl(LocalName("n"), None, None),
+				  VarDecl(LocalName("argTypes"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None),
+				  VarDecl(LocalName("typ"), Some(Mizar.tp), None),
+				  VarDecl(LocalName("cluster"), Some(Mizar.attr(OMV("typ"))), None)),
+		  Context(VarDecl(LocalName("reg"), Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
 		      Mizar.proof(Mizar.exists("q", 
 		          Mizar.adjective(OMV("cluster"), OMV("typ")),
 		          Mizar.constant("true")))))),
@@ -30,25 +31,25 @@ object RegPatterns  {
 				  
   
   val MizFunctionalReg = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFunctionalRegistration"),
-		  Context(TermVarDecl("n", None, None),
-				  SeqVarDecl("argTypes", Some(SeqSubst(Mizar.tp,"i", SeqUpTo(OMV("n")))), None),
-				  TermVarDecl("functor", Some(Mizar.tp), None),
-				  TermVarDecl("cluster", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
-				      Mizar.attr(OMA(OMV("functor"), List(SeqVar("x"))))))), None)),
-		  Context(TermVarDecl("reg", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
+		  Context(VarDecl(LocalName("n"), None, None),
+				  VarDecl(LocalName("argTypes"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None),
+				  VarDecl(LocalName("functor"), Some(Mizar.tp), None),
+				  VarDecl(LocalName("cluster"), Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
+				      Mizar.attr(Mizar.apply(OMV("functor"), OMV("x")))))), None)),
+		  Context(VarDecl(LocalName("reg"), Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
 		      Mizar.proof(Mizar.exists("q", 
-		          Mizar.adjective(OMV("cluster"), OMA(OMV("functor"), List(SeqVar("x")))),
+		          Mizar.adjective(OMV("cluster"), Mizar.apply(OMV("functor"), OMV("x"))),
 		          Mizar.constant("true")))))),
 		      None)))
 	  
     
   val MizConditionalReg = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizConditionalRegistration"),
-		  Context(TermVarDecl("n", None, None),
-				  SeqVarDecl("argTypes", Some(SeqSubst(Mizar.tp,"i", SeqUpTo(OMV("n")))), None),
-				  TermVarDecl("typ", Some(Mizar.tp), None),
-				  TermVarDecl("first", Some(Mizar.attr(OMV("typ"))), None),
-				  TermVarDecl("second", Some(Mizar.attr(OMV("typ"))), None)),
-		  Context(TermVarDecl("reg", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
+		  Context(VarDecl(LocalName("n"), None, None),
+				  VarDecl(LocalName("argTypes"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None),
+				  VarDecl(LocalName("typ"), Some(Mizar.tp), None),
+				  VarDecl(LocalName("first"), Some(Mizar.attr(OMV("typ"))), None),
+				  VarDecl(LocalName("second"), Some(Mizar.attr(OMV("typ"))), None)),
+		  Context(VarDecl(LocalName("reg"), Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "argTypes", "n",
 		      Mizar.proof(Mizar.implies(
 		          Mizar.exists("q", Mizar.adjective(OMV("first"), OMV("typ")),Mizar.constant("true")),
 		          Mizar.exists("q", Mizar.adjective(OMV("second"), OMV("typ")),Mizar.constant("true"))))))),          
@@ -113,12 +114,12 @@ object  MMTCCluster {
 
 object SchemePatterns {
   val MizSchemeDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizSchemeDef"),
-						Context(TermVarDecl("n", None, None),
-					                 SeqVarDecl("args", Some(SeqSubst(Mizar.tp,"i", SeqUpTo(OMV("n")))), None)) ++ 
-					                 Context(TermVarDecl("m", None, None),
-					                 SeqVarDecl("premises", Some(SeqSubst(Mizar.prop,"i", SeqUpTo(OMV("m")))), None)) ++
-						             Context(TermVarDecl("prop", Some(Mizar.prop), None)),
-						Context(TermVarDecl("scheme", Some( MMTUtils.args("x", "n", MMTUtils.argTypes("x", "args", "n",
-								            Mizar.proof(Mizar.implies(Mizar.and(SeqVar("premises"), Mizar.constant("true")),OMV("prop")))))),
+						Context(VarDecl(LocalName("n"), None, None),
+					                 VarDecl(LocalName("args"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None)) ++ 
+					                 Context(VarDecl(LocalName("m"), None, None),
+					                 VarDecl(LocalName("premises"), Some(SeqMap(Mizar.prop, LocalName("i"), OMV("m"))), None)) ++
+						             Context(VarDecl(LocalName("prop"), Some(Mizar.prop), None)),
+						Context(VarDecl(LocalName("scheme"), Some( MMTUtils.args("x", "n", MMTUtils.argTypes("x", "args", "n",
+								            Mizar.proof(Mizar.implies(Mizar.and(OMV("premises"), Mizar.constant("true")),OMV("prop")))))),
 						                    None)))
 }

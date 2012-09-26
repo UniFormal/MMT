@@ -6,6 +6,7 @@ import info.kwarc.mmt.mizar.mmt.objects._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lfs._
 
 object TypeTranslator {
 	def translateTyp(t : MizTyp) : Term = {
@@ -14,7 +15,7 @@ object TypeTranslator {
 		val cluster = translateCluster(t.clusters(0))
 		val tp = tms.length match {
 		  case 0 => tpfunc
-		  case _ => OMA(tpfunc, tms)
+		  case _ => Mizar.apply(tpfunc, tms : _*)
 		}
 		Mizar.adjective(cluster,tp)
 	}
@@ -24,13 +25,13 @@ object TypeTranslator {
 			case t : MizVar => TranslationController.resolveVar(t.nr) 
 			case t : MizConst =>  TranslationController.resolveConst(t.nr)
 			case t : MizConstFunc => t.args.length match {
-			  case 0 => OMA(OMID(MMTUtils.getPath("qvar","constFunc")), List(OMV("f" + t.nr.toString)))
-			  case _ => OMA(OMA(OMID(MMTUtils.getPath("qvar","constFunc")), List(OMV("f" + t.nr.toString))), t.args.map(translateTerm))
+			  case 0 => Mizar.apply(OMID(MMTUtils.getPath("qvar","constFunc")), OMV("f" + t.nr.toString))
+			  case _ => Mizar.apply(Mizar.apply(OMID(MMTUtils.getPath("qvar","constFunc")), OMV("f" + t.nr.toString)), t.args.map(translateTerm) : _*)
 			}
 			case t : MizFunc => MMTFunc(MMTResolve(t.aid, t.kind, t.absnr), t.args.map(translateTerm).toList) 
 			case t : MizSchemeFunc => t.args.length match {
-			  case 0 => Index(SeqVar("x"), OMI(t.nr))
-			  case _ => OMA(Index(SeqVar("x"), OMI(t.nr)),t.args.map(TypeTranslator.translateTerm))
+			  case 0 => Index(OMV("x"), OMI(t.nr))
+			  case _ => Mizar.apply(Index(OMV("x"), OMI(t.nr)), t.args.map(TypeTranslator.translateTerm) : _*)
 			}
 
 			case t : MizLocusVar => TranslationController.resolveLocusVar(t.nr)
@@ -42,8 +43,7 @@ object TypeTranslator {
 			  val form = PropositionTranslator.translateFormula(t.form)
 			  val v = TranslationController.getFreeVar()
 			  args.map(x => TranslationController.clearVarBinder())
-			  args.foldRight[(Term,Term)](form -> Mizar.fraenkel(v,Mizar.set,Mizar.eq(OMV(v),term),term))((p,r) => (Lambda(p._2,p._1,r._1) -> Mizar.fraenkel(p._2,p._1,r._1,r._2)))._2
-			  
+			  args.foldRight[(Term,Term)](form -> Mizar.fraenkel(v,Mizar.set,Mizar.eq(OMV(v),term),term))((p,r) => (Lambda(LocalName(p._2), p._1,r._1) -> Mizar.fraenkel(p._2,p._1,r._1,r._2)))._2		  
 			case t : MizNum => OMI(t.nr)
 			case t : MizPrivFunc => translateTerm(t.term)
 			case _ => throw ImplementationError("Error in TypeTranslator -> translateTerm -> case _" + term.toString)

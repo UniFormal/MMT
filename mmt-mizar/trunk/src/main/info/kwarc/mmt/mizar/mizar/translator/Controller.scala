@@ -12,14 +12,15 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.ArrayStack
+import info.kwarc.mmt.lf._
 
 
 object TranslationController {
 	
-    val controller = {
+    var controller = {
        val c = new frontend.Controller
-       c.setFileReport(File("mizar.log"))
-       c.setCheckNone //c.setFoundChecker(new libraries.DefaultFoundation(controller.report))
+//       c.setFileReport(File("mizar.log"))
+//       c.setCheckNone //c.setFoundChecker(new libraries.DefaultFoundation(controller.report))
        c
     }
     
@@ -55,7 +56,7 @@ object TranslationController {
 	
 	def resolveConst(nr : Int) : Term = {
 	  if (query) {
-	    OMA(OMID(MMTUtils.getPath("qvar","const")), List(OMV("c" + nr.toString)))
+	    Mizar.apply(OMID(MMTUtils.getPath("qvar","const")), OMV("c" + nr.toString))
 	  } else {
 	    OMID(MMTUtils.getPath(TranslationController.currentAid, "C" + nr))
 	  }
@@ -63,7 +64,7 @@ object TranslationController {
 	
 	def addQVarBinder() = {
 	  val name = "x" + varContext.length
-	  varContext.push(OMA(OMID(DPath(Mizar.baseURI) ? "qvar" ? "qvar"),List(OMV(name))))
+	  varContext.push(Mizar.apply(OMID(DPath(Mizar.baseURI) ? "qvar" ? "qvar"), OMV(name)))
 	}
 	
 	def addVarBinder(n : Option[String]) : String = n match {
@@ -91,7 +92,7 @@ object TranslationController {
 	def addRetTerm(path: GlobalName) = {
 	    locusVarContext.length match {
 	      case 0 => locusVarContext.push(OMID(path))
-	      case _ => locusVarContext.push(OMA(OMID(path), locusVarContext.toList))
+	      case _ => locusVarContext.push(Mizar.apply(OMID(path), locusVarContext : _*))
 	    }
 	}
 	

@@ -17,7 +17,6 @@ import objects.Conversions._
 
 
 object ArticleTranslator {
-  
 	
 	def translateArticle(art : MizArticle) {		
 		var el : List[MizAny] = art.elems.reverse
@@ -64,14 +63,14 @@ object ArticleTranslator {
 	  val tm = TypeTranslator.translateTerm(s.term)
 	  val tp = TypeTranslator.translateTyp(s.typ)
 	  val name = "C" + s.constnr
-	  val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), Some(tm), None)
+	  val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), Some(tm), None, None)
 	  TranslationController.add(c)
 	}
 	
 	def translateConsider(c : MizConsider) = {
 	  val startnr = c.constnr
 	  val ex_prop = PropositionTranslator.translateProposition(c.prop)
-	  val ex_c = new Constant(OMMOD(TranslationController.currentTheory), LocalName("ex_prop_" + startnr), Some(ex_prop), None, None)
+	  val ex_c = new Constant(OMMOD(TranslationController.currentTheory), LocalName("ex_prop_" + startnr), Some(ex_prop), None, None, None)
 	  TranslationController.add(ex_c)
 	  val typs = c.typs.map(TypeTranslator.translateTyp)
 	  val props = c.props.map(PropositionTranslator.translateProposition)
@@ -79,7 +78,7 @@ object ArticleTranslator {
 	  var i : Int = 0
 	  while (i < typs.length) {
 	    val name = "C" + (startnr + i).toString
-	    val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(typs(i)), None, None)
+	    val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(typs(i)), None, None, None)
 	    TranslationController.add(const)
 	    i += 1
 	  }
@@ -88,7 +87,7 @@ object ArticleTranslator {
 	  i = 0
 	  while (i < props.length) {
 	    val name = "prop_" + startnr + "_" + i
-	    val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(props(i)), None, None)
+	    val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(props(i)), None, None, None)
 	    TranslationController.add(const)
 	    i += 1
 	  }
@@ -103,11 +102,11 @@ object ArticleTranslator {
 	  var i : Int = 0
 	  while (i < tms.length) {
 	    val name = "C" + (startnr + i).toString
-	    val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tms(i)._1), Some(tms(i)._2), None)
+	    val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tms(i)._1), Some(tms(i)._2), None, None)
 	    TranslationController.add(c)
 	    
 	    val propname = name + "_prop"
-	    val c_prop = new Constant(OMMOD(TranslationController.currentTheory), LocalName(propname), Some(prop), None, None)
+	    val c_prop = new Constant(OMMOD(TranslationController.currentTheory), LocalName(propname), Some(prop), None, None, None)
 	    TranslationController.add(c_prop)
 	    i += 1
 	  }
@@ -115,19 +114,19 @@ object ArticleTranslator {
 	
 	def translateNotation(n : MizNotation) = {
 		val tp = n.antonymic match  {
-			case true => OMA(Mizar.constant("not"), MMTResolve(n.constrAid, n.kind, n.constrAbsnr) :: Nil )
+			case true => Mizar.not(MMTResolve(n.constrAid, n.kind, n.constrAbsnr))
 			case false => MMTResolve(n.constrAid, n.kind, n.constrAbsnr)
 		}
 		val name = "N" + n.kind + n.nr 
-		val nt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None,None )
+		val nt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None, None, None)
 		TranslationController.add(nt)
 	}
 	
 	def translateJustifiedTheorem(j : MizJustifiedTheorem) {
 	    val name = "T" + j.nr
-		val tp = Mizar.compact(OMA(Mizar.constant("proof"), PropositionTranslator.translateProposition(j.prop) :: Nil))
+		val tp = Mizar.compact(Mizar.proof(PropositionTranslator.translateProposition(j.prop)))
 		
-		val jt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None, None)
+		val jt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None, None, None)
 		
 		TranslationController.add(jt)
 	}

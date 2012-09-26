@@ -6,6 +6,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lfs._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects.Conversions._
 
@@ -22,7 +23,7 @@ object SchemeRegTranslator {
 	
 	def translateRCluster(rc : MizRCluster) = {
 		val name = "RC" + rc.nr  
-		rc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2 + 1))))
+		rc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
 
 		val argTypes = rc.args.map(TypeTranslator.translateTyp)
 		
@@ -31,7 +32,7 @@ object SchemeRegTranslator {
 		val typ = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateTyp(rc.typ)))
 		val cluster = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(rc.cluster)))
 	
-		val matches = (OMV("n") / OMI(argNr)) ++ (SeqVar("argTypes") / SeqItemList(argTypes)) ++ 
+		val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes :_*)) ++ 
 					(OMV("typ") / typ) ++ (OMV("cluster") / cluster)
 	
 		val pattern = RegPatterns.MizExistentialReg
@@ -42,14 +43,14 @@ object SchemeRegTranslator {
 	
 	def translateFCluster(fc : MizFCluster) = {
 		val name = "FC" + fc.nr  
-		fc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2 + 1))))
+		fc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
 
 		val argTypes = fc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
 		val functor = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateTerm(fc.functor)))
 		val cluster = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(fc.cluster)))
 	
-		val matches = (OMV("n") / OMI(argNr)) ++ (SeqVar("argTypes") / SeqItemList(argTypes)) ++ 
+		val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ 
 					(OMV("functor") / functor) ++ (OMV("cluster") / cluster)
 	
 		val pattern = RegPatterns.MizFunctionalReg
@@ -64,7 +65,7 @@ object SchemeRegTranslator {
 	def translateCCluster(cc : MizCCluster) = {
 		val name = "CC" + cc.nr  
 	  
-		cc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2 + 1))))
+		cc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
 
 		val argTypes = cc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
@@ -72,7 +73,7 @@ object SchemeRegTranslator {
 		val first = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.first)))
 		val second = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.second)))
 
-		val matches = (OMV("n") / OMI(argNr)) ++ (SeqVar("argTypes") / SeqItemList(argTypes)) ++ 
+		val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ 
 					(OMV("typ") / typ) ++ (OMV("first") / first) ++ (OMV("second") / second)
 	
 		val pattern = RegPatterns.MizConditionalReg
@@ -89,11 +90,11 @@ object SchemeRegTranslator {
 	    case f : MizSchemeFuncDecl =>
 	      val args = f.argTypes.map(TypeTranslator.translateTyp(_))
 	      val retType = TypeTranslator.translateTyp(f.retType)
-	      OMA(LF.arrow, args ::: retType :: Nil)
+	      Arrow(args, retType)
 	    case p : MizSchemePredDecl => 
 	      val args = p.argTypes.map(TypeTranslator.translateTyp(_))
 	      val retType = Mizar.constant("prop")
-	      OMA(LF.arrow, args ::: retType :: Nil)
+	      Arrow(args, retType)
 
 	  }
 	}
@@ -101,7 +102,7 @@ object SchemeRegTranslator {
 	def translateScheme(s : MizSchemeDef) = {
 	  val name = "S" + s.schemeNr
 	  
-	  s.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(SeqVar("x"), OMI(p._2 + 1))))
+	  s.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
 
 	  
 	  val args = s.args.map(x => translateSchemeArg(x))
@@ -112,8 +113,8 @@ object SchemeRegTranslator {
 	  //pattern
 	  val inst = {
 	    val pattern = SchemePatterns.MizSchemeDef
-	    val matches = ("n" / OMI(args.length)) ++ (SeqVar("args") / SeqItemList(args)) ++
-	    			  ("m" / OMI(premises.length)) ++ (SeqVar("premises") / SeqItemList(premises)) ++
+	    val matches = ("n" / OMI(args.length)) ++ (OMV("args") / Sequence(args : _*)) ++
+	    			  ("m" / OMI(premises.length)) ++ (OMV("premises") / Sequence(premises :_ *)) ++
 	    			  ("prop" / prop)
 	    val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 	    TranslationController.clearLocusVarContext()
