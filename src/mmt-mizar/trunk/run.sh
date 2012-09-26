@@ -1,1 +1,1 @@
-env JAVA_OPTS="-Xmx2048M" scala -classpath ../../mmt-api/trunk/build/mmt-api.jar:bin info.kwarc.mmt.mizar.test.Main $1 
+env JAVA_OPTS="-Xmx2048M" scala -classpath ../../../deploy/mmt/*:../../../deploy/lib/*:bin info.kwarc.mmt.mizar.test.Main $1 

@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lfs._
 import info.kwarc.mmt.api.patterns._
 import objects.Conversions._
 
@@ -23,26 +24,26 @@ object artPatterns {
   
   val SynonymicNotation : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("SynonymicNotation"),
       Context(
-          TermVarDecl("nr", None, None),
-          SeqVarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
-          TermVarDecl("ref", Some(Mizar.constant("prop")), None)
+          VarDecl("nr", None, None),
+          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
+          VarDecl("ref", Some(Mizar.constant("prop")), None)
           ),
-      Context(TermVarDecl("notation",Some(OMV("ref")), None))
+      Context(VarDecl("notation",Some(OMV("ref")), None))
   )
   
   val AntonymicNotation : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("AntonymicNotation"),
       Context(
-          TermVarDecl("nr", None, None),
-          SeqVarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
-          TermVarDecl("ref", Some(Mizar.constant("prop")), None)
+          VarDecl("nr", None, None),
+          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
+          VarDecl("ref", Some(Mizar.constant("prop")), None)
           ),
-      Context(TermVarDecl("notation", Some(OMA(Mizar.constant("not"),List(OMV("ref")))), None))
+      Context(VarDecl("notation", Some(Mizar.apply(Mizar.constant("not"),OMV("ref"))), None))
   )
   
   
   val Lemma : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("Lemma"),
-      Context(TermVarDecl("prop", Some(Mizar.constant("prop")),None)),
-      Context(TermVarDecl("lemma", Some(OMA(Mizar.constant("proof"), List(OMV("prop")))), None)))
+      Context(VarDecl("prop", Some(Mizar.constant("prop")),None)),
+      Context(VarDecl("lemma", Some(Mizar.apply(Mizar.constant("proof"), OMV("prop"))), None)))
   
 }
 

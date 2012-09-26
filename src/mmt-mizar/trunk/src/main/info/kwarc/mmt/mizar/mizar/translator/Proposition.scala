@@ -5,6 +5,8 @@ import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mmt.objects._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lfs._
 
 object PropositionTranslator {
 	def translateFormula(form : MizFormula) : Term = {
@@ -25,8 +27,8 @@ object PropositionTranslator {
 			}
 			case f : MizPred => MMTPred(f.aid, f.absnr, f.kind, f.terms.map(TypeTranslator.translateTerm))
 			case f : MizSchemePred => f.terms.length match {
-			  case 0 => Index(SeqVar("x"), OMI(f.nr))
-			  case _ => OMA(Index(SeqVar("x"), OMI(f.nr)),f.terms.map(TypeTranslator.translateTerm))
+			  case 0 => Index(OMV("x"), OMI(f.nr))
+			  case _ => Mizar.apply(Index(OMV("x"), OMI(f.nr)), f.terms.map(TypeTranslator.translateTerm) : _*)
 			}
 			case f : MizPrivPred =>  {
 				val form = translateFormula(f.formula)

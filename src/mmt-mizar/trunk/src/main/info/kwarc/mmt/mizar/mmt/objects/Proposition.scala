@@ -8,14 +8,15 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.lf._
 
 
 object MMTNot {
-	def apply(form : Term) = OMA(Mizar.constant("not"), form :: Nil)
+	def apply(form : Term) = Mizar.apply(Mizar.constant("not"), form)
 }
 
 object MMTAnd {
-	def apply(forms : List[Term]) = OMA(Mizar.constant("and"), forms) 
+	def apply(forms : List[Term]) = Mizar.apply(Mizar.constant("and"), forms :_ *) 
 }
 
 object MMTFor {
@@ -24,13 +25,13 @@ object MMTFor {
 
 //only for queries, so exists is allowed
 object MMTExists {
-	def apply(vname : String, tp : Term, form : Term) = OMBIND(OMA(Mizar.constant("ex"), List(tp)),Context(TermVarDecl(vname, Some(Mizar.any), None)), form)
+	def apply(vname : String, tp : Term, form : Term) = OMBIND(Mizar.apply(Mizar.constant("ex"), tp), Context(VarDecl(LocalName(vname), Some(Mizar.any), None)), form)
 }
 
 object MMTPred {
 	def apply(aid : String, absnr : Int, kind : String, vars : List[Term]) =  vars.length match {
 	  case 0 => MMTResolve(aid, kind, absnr)
-	  case _ => OMA(MMTResolve(aid, kind, absnr), vars)
+	  case _ => Mizar.apply(MMTResolve(aid, kind, absnr), vars : _*)
 	}
 }
 /*
@@ -39,7 +40,7 @@ object MMTPrivPred {
 }
 */
 object MMTIs {
-	def apply(tm : Term, tp : Term) = OMA(Mizar.constant("is"), tm :: tp :: Nil)
+	def apply(tm : Term, tp : Term) = Mizar.apply(Mizar.constant("is"), tm, tp)
 }
 
 object MMTVerum {

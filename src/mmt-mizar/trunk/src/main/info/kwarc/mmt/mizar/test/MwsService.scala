@@ -12,20 +12,6 @@ import java.net.HttpURLConnection;
 import java.net._
 import java.io._
 
-/*
-class M2OWebServer {
-  def main() {
-    val port = 6649
-    val threads = 5
-    val w = new M2OThread()
-  }
-}
-
-class M2OThread extends M2OWebServer with Runnable {
-  
-}
-*/
-
 class MwsService() extends QueryTransformer {
   def isApplicable(src : String) : Boolean = src == "mizar"
 
@@ -136,7 +122,8 @@ class MwsService() extends QueryTransformer {
   
   
   def main(args: Array[String]): Unit = {
-    val n = MizarCompiler.getNode("test.xml")
+    val mizar = new MizarCompiler
+    val n = mizar.getNode("test.xml")
 	val q = transformSearchQuery(n, List("ORDINAL2",""))
 	println(q)
 	val urlStr = "http://localhost:6284"

@@ -16,7 +16,7 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.lf._
 //import scala.xml._
 
-object MizarCompiler extends Compiler {
+class MizarCompiler extends Compiler {
 	var lib : List[String] = "HIDDEN" :: Nil
 
 	def parseVocabularies(n : scala.xml.Node) : List[String] = {
@@ -37,9 +37,9 @@ object MizarCompiler extends Compiler {
 	}
 	
 	
-	def printArticle(mml : String, aid : String) {
+	def printArticle(mml : String, version : Int, aid : String) {
 		val docPath = mml + "/compiled/"  + aid + ".omdoc" 
-		val base = Mizar.baseURI
+		val base = Mizar.baseURI / version.toString
 		val pp = new scala.xml.PrettyPrinter(100,2)
 	
 		val th = TranslationController.controller.get(new DPath(base) ? aid)
@@ -58,22 +58,32 @@ object MizarCompiler extends Compiler {
 		
 	}
 
-override def init(report: Report, args : List[String] = Nil) {
-	//controller-init
-
-	TranslationController.controller.handle(ExecFile(new java.io.File("m2o-startup.mmt")))
+override def init(cont : Controller, args : List[String] = Nil) {
+	this.controller = cont
+    report = controller.report
+    //controller-init
+	//TranslationController.controller.handle(ExecFile(File(new java.io.File("m2o-startup.mmt"))))
+    TranslationController.controller = cont
 }
 
 
 def isApplicable(src : String) : Boolean = {
-  val len = src.length
-  src.substring(len-4,len) == ".miz"
+  //val len = src.length
+  //src.substring(len-4,len) == ".miz"
+  src == "mizar"
 }
 
 def getBase(f : File) : String = {
-  f.toJava.getParentFile().getParent() match {
+  f.toJava.getParentFile().getParentFile().getParent() match {
     case null => "./"
     case s => s + "/"
+  }
+}
+
+def getVersion(f : File) : Int = {
+  f.toJava.getParentFile().getName() match {
+    case null => 1132
+    case s => s.toInt
   }
 }
 
@@ -84,38 +94,37 @@ def getAid(f : File) : String = {
 
 }
 
-override def compile(in : File, out : File) : List[CompilerError] = {
+override def compile(in : File, out : File) : List[SourceError] = {
   val base = getBase(in)
-  
+  val version = getVersion(in)
   val aid = getAid(in)
-  
-  translateArticle(base,aid.toUpperCase())
+  translateArticle(base, version, aid.toUpperCase())
   Nil
 }
 
-def compileLibrary(files : List[File]) : List[CompilerError] = {
-  files.map(f => translateArticle(getBase(f), getAid(f).toUpperCase()))
-  
+def compileLibrary(files : List[File]) : List[SourceError] = {
+  files.map(f => translateArticle(getBase(f), getVersion(f), getAid(f).toUpperCase()))
   Nil 
 }
 
 
-def translateArticle(mml : String, aid : String) : Unit = {
+def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 	val name = aid.toLowerCase()
+	//println("attempting to translate article " + name)
 	if (!lib.contains(aid)) {
 		//files
-		val xmlabs = mml + "/export/" + name + ".xmlabs" //TODO perhaps replace
-		val dcx = mml + "/export/" + name + ".dcx"
-		val idx = mml + "/export/" + name + ".idx"
-		val frx = mml + "/export/" + name + ".frx"
-		val sgl = mml + "/export/" + name + ".sgl"
+		val xmlabs = mml + "/export/" + version.toString + "/" + name + ".xmlabs" //TODO perhaps replace
+		val dcx = mml + "/export/" + version.toString + "/" + name + ".dcx"
+		val idx = mml + "/export/" + version.toString + "/" + name + ".idx"
+		val frx = mml + "/export/" + version.toString + "/" + name + ".frx"
+		val sgl = mml + "/export/" + version.toString + "/" + name + ".sgl"
 		
 		var voc : List[String] = Nil
 		scala.io.Source.fromFile(sgl).getLines().foreach(s => if (s.charAt(0).isLetter) voc = voc :+ s)
 
 		//parseVocabularies(getNode(vcl))
 		val fv = voc.filter(s => s != aid)
-		fv.map(s => translateArticle(mml,s))	
+		fv.map(s => translateArticle(mml, version, s))	
 
 		println("Translating article " +  name) //TODO use logger
 
@@ -132,7 +141,7 @@ def translateArticle(mml : String, aid : String) : Unit = {
 
 		TranslationController.currentAid = article.title
 
-		val path = new DPath(Mizar.baseURI)
+		val path = new DPath(Mizar.baseURI / version.toString)
 		val d = new Document(path)
 		
 		TranslationController.add(d)
@@ -162,7 +171,7 @@ def translateArticle(mml : String, aid : String) : Unit = {
 		//println("am : " + TranslationController.am)
 		//println("ai : " + TranslationController.ai)
 		
-		printArticle(mml, article.title)
+		printArticle(mml, version, article.title)
 		lib = aid :: lib
 	} 
 }

@@ -13,6 +13,7 @@
 		<pathelement location="${deploy}/lib/scala-library.jar"/>
 		<pathelement location="${deploy}/lib/scala-compiler.jar"/>
 		<pathelement location="${deploy}/mmt/mmt-api.jar"/>
+		<pathelement location="${deploy}/mmt/mmt-lfs.jar"/>
 		<pathelement location="${deploy}/mmt/mmt-lf.jar"/>
 	</path>
 	<!-- This defines the task scalac (which is similar to javac but for scala). -->

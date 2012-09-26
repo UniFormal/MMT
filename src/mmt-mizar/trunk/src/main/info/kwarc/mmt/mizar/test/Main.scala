@@ -19,7 +19,7 @@ import scala.xml._
 
 object Main {
   		
-  def dumpPatterns() : Unit = {
+  def dumpPatterns(mmlBase : String) : Unit = {
     var p : scala.collection.mutable.LinkedList[Node] = new scala.collection.mutable.LinkedList()
     p = p :+ DefPatterns.MizAttrIsCompleteDef.toNode
     p = p :+ DefPatterns.MizAttrIsPartialDef.toNode
@@ -59,7 +59,7 @@ object Main {
     p = p :+ RegPatterns.MizConditionalReg.toNode
     p = p :+ RegPatterns.MizFunctionalReg.toNode
 
-    val docPath = "/home/mihnea/kwarc/omdoc/" + "content/http..latin.omdoc.org/foundations/mizar/mizar-patterns.omdoc" 
+    val docPath = mmlBase + "lib/foundations/mizar/mizar-patterns.omdoc" 
     
     val out = new java.io.FileWriter(docPath)
     val base = URI("http", "latin.omdoc.org") / "foundations" / "mizar" 
@@ -68,7 +68,7 @@ object Main {
     val nd : scala.xml.Node = 
     	<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">
     		<theory name="mizar-patterns" base={base.toString}>
-    		  <include from="?HIDDEN"/>
+    		  <import from="?HIDDEN"/>
     		{p}
     		</theory>
     	</omdoc>
@@ -79,13 +79,17 @@ object Main {
   }
   
   def main(args: Array[String]): Unit = {
-	    dumpPatterns()
-	 
-        MizarCompiler.init(new Report)
+        try {
+          dumpPatterns(args(0))
+        } catch {
+          case e => println("dumping patterns failed, mml base path expected as first argument (ending with /)")
+        }
+	    //val mizar = new MizarCompiler
+        //mizar.init(new Controller)
 	    
 	    
-	    val f = File("/home/mihnea/kwarc/oaff/mml/source/")
-	    val files = f.toJava.listFiles().map(f => File(f)).filter(x => MizarCompiler.isApplicable(x.toJava.getName())).toList
+	   // val f = File("/home/mihnea/kwarc/oaff/mml/source/")
+	    //val files = f.toJava.listFiles().map(f => File(f)).filter(x => mizar.isApplicable(x.toJava.getName())).toList
 	    
 	    //val testFiles = List("jordan.miz")// "tarski.miz","xboole_0.miz", "enumset1.miz", "zfmisc_1.miz", "subset_1.miz", "relat_1.miz", "setfam_1.miz", "funct_1.miz", "relat_2.miz", "relset_1.miz")
 	    //val files = testFiles.map(x => File("/home/mihnea/kwarc/oaff/mml/source/" + x))

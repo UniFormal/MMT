@@ -65,7 +65,7 @@ object MMTTerm {
 object MMTAttribute {
 	def apply(aid : String, kind : String, absnr : Int, value : Boolean) : Term = {
 		value match {
-		  case false => OMA(Mizar.constant("neg-attr"), List(MMTResolve(aid, kind, absnr)))
+		  case false => Mizar.apply(Mizar.constant("neg-attr"), MMTResolve(aid, kind, absnr))
 		  case true => MMTResolve(aid, kind, absnr)
 		}
 	}
@@ -74,7 +74,7 @@ object MMTAttribute {
 object MMTFunc {
 	def apply(f : Term, args : List[Term]) : Term = args.length match {
 		case 0 => f
-		case _ => OMA(f,args)
+		case _ => Mizar.apply(f, args : _*)
 	}
 }
 
