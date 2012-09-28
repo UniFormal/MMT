@@ -29,12 +29,26 @@ class MML extends ArchiveCustomization {
   }
   
   def prepareQuery(t: Obj): scala.xml.Node = {
-    makeHVars(t.toCML, Nil, Nil, true)
+    makeHVars(removeLFApp(t.toCML), Nil, Nil, true)
   }
 
+  private def removeLFApp(n : scala.xml.Node) : scala.xml.Node = n match {
+    case <m:apply><csymbol>{x}</csymbol>{s @ _*}</m:apply> => 
+      if (x.toString == "http://cds.omdoc.org/foundational?LF?@")
+        <m:apply>{s.map(removeLFApp)}</m:apply>
+      else {        
+        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(removeLFApp) : _*)
+      }
+    case _ =>  
+      if (n.child.length == 0)
+        n
+      else
+        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(removeLFApp(_)) : _*)
+  }
+  
   private def makeHVars(n : scala.xml.Node, uvars : List[String], evars : List[String], negFlag : Boolean) : scala.xml.Node = n match {
     case <m:apply><csymbol>{s}</csymbol><m:bvar><m:apply>{zz}<m:ci>{v}</m:ci>{a}{b}</m:apply>{rest @ _*}</m:bvar>{body}</m:apply> =>
-      if (s.toString == "http://cds.omdoc.org/foundations/lf/lf.omdoc?lf?Pi") {
+      if (s.toString == "http://cds.omdoc.org/foundational?LF?Pi") {//"http://cds.omdoc.org/foundations/lf/lf.omdoc?lf?Pi") {
 
         var bd = body
         if (rest.length > 0)
