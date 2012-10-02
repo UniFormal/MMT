@@ -17,4 +17,5 @@ case class Context(vars: List[(String,Type)]) {
 abstract class FuncLang[A] {
    def exp(e: EXP) : A
    def decl(d: DECL) : A
+   def prog(ds: List[DECL]) : List[A] = ds map decl
 }
