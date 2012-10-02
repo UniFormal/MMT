@@ -12,14 +12,15 @@ import MyList._
 import frontend._
 import patterns._
 import presentation._
-import scala.sys.process._
+//import scala.sys.process._
 import frontend.ToString
 
 /*
  * translates an mmt theory to a logic syntax
  */
 class Theory2LogicSyntax {
-	case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg) 
+	case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg)
+	 
   
 	/*
 	 * translates a theory to a logic syntax LogicSyntax = (List[Category], CatRef, List[Declaration])
@@ -53,17 +54,6 @@ class Theory2LogicSyntax {
 	    case _ =>  throw TheoryLookupError("unidentified theory") 
 	  }
 	 
-	  
-	 val c = new Compiler(logsyn)
-	 
-	 val l = c.get map { x => Haskell.decl(x) + "\n" }
-	 
-	 val ls : String = "\"" + l.toString() + "\""
-    
-	 println(ls)
-//    "echo" + ls #> new java.io.File("/home/aivaras/Desktop/out.txt") !
-	  
-	  
 	  logsyn
 	}
 	
@@ -180,7 +170,6 @@ object Test {
   def main(args : Array[String]) = {
     val cont = new Controller()
     
-    
     // add file to archive, go through structure!
     // read a source file
     val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/plWPatterns.mmt"
@@ -206,15 +195,25 @@ object Test {
       case _ => throw TestError("attempted retrieving not a DeclaredTheory")
     }
 //    println(theo.toString())
-    val tls = new Theory2LogicSyntax()
 //    println(theo.valueListNG foreach {a => a.toString})
-    println(tls.translateTheory(theo))
-        
-    
+//    println(tls.translateTheory(theo))
+     val theoName = theo.name.toString 
+	 val tls = new Theory2LogicSyntax()
+     val ls = tls.translateTheory(theo)
+     
+	 val c = new Compiler(ls)
+	 
+	 val l = c.get
+	 
+	 // parent dir
+	 val dir : String = "/home/aivaras/Hets-src/MMT/test"
+	 // logic name  
+	 val name : String = "Propositional"
+	   
+	 val lw = new LogicWriter
+	 lw.compile(l, theoName, dir)
+	 
 //    cont.globalLookup.getTheory(path ? "PL")
-    println("\n\nend")
-    
-    
     
   }
 }
