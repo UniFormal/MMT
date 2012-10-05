@@ -103,5 +103,6 @@ object Haskell extends FuncLang[String] {
    // haskell native datatypes and checker
    private val haskellTypes : List[String] = List("Integer","Bool")//,"String","Int")
    private def haskellType(name : String) : Boolean = haskellTypes.exists( name == )
-   private def checkNativeTypeConflict(name : String) : String = if (haskellType(name)) name + "_l" else name
+   //TODO this could be improved
+   private def checkNativeTypeConflict(name : String) : String = if (upc(name) == "Bool" || upc(name) == "Boolean") "Form" else  if (haskellType(name)) name + "'" else name
 }

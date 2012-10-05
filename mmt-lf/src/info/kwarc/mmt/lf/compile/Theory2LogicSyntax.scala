@@ -29,26 +29,15 @@ class Theory2LogicSyntax {
 	  val logsyn = theo match {
 	    case theo : DeclaredTheory => {
 	      val decList = theo.valueListNG
-//	      val formCat = getForm(decList) match {
-//	        case Some(x) => x
-//	        case None => throw TheoryLookupError("could not determine formula category in: " + decList.toString)
-//	      }
-//	      println(formCat)
-//	      println(getCats(decList))
-//	      LogicSyntax(getCats(decList),formCat,null)
-//	      val f = getForm(decList) match {
-//	        case Some(x) => x
-//	        case None => throw TheoryLookupError("no categories could be determined")
-//	      }
-	      
 	      
 	      val cats = getCatRefs(decList) map { x =>
 	        getCat(decList,x)
 	      } 
+	      val formCat = getFormCat(decList) // get category of formulas
 	      
 //	      println( (decList mapPartial {x => x match { case x : Constant => Some(x); case _ => None }  }   )  map isFormCat )
 	      
-	      LogicSyntax(cats,CatRef("bool"),getDecls(decList))
+	      LogicSyntax(cats,formCat,getDecls(decList))
 	    }	      	   
 	    case theo : DefinedTheory => throw TheoryLookupError("a DefinedTheory")
 	    case _ =>  throw TheoryLookupError("unidentified theory") 
@@ -135,6 +124,7 @@ class Theory2LogicSyntax {
 	    // not a Constant declaration or a Pattern, disregard
 	    case _ => None 
 	  }
+	  val q = cons.flatten
 	  // fill in a Category
 	  Category(cat.toString,cons.flatten)
 	}
@@ -153,18 +143,32 @@ class Theory2LogicSyntax {
 	  
 	}
 	
+	// recognizes the category for formulas
 	def isFormCat(c : Constant) : Boolean = {
 	  c.tp match {
 	    case Some(FunType(in,out)) => in == List() && out == Univ(1)
 	    case _ => false
 	  }
 	}
+	def getFormCat(ls : List[Symbol]) : CatRef = {
+	  ls foreach { x => x match {
+	    	case x : Constant => if (isFormCat(x)) return CatRef(x.name.toString)
+	    	case _ =>  
+	  	} 
+	  }
+	  CatRef("form")
+	}
   
 }
-/*
- * test object
- */
 
+
+/* test object:
+ * reads a theory file -> mmt theory
+ * translates mmt theory -> logic syntax
+ * logic syntax -- lf.compile.Compiler --> compiled pseudo-code
+ * pseudocode --> lf.compile.Haskell --> haskell code : List[String]
+ * writes code strings to file(s)
+ */
 object Test {
   case class TestError(msg : String) extends java.lang.Throwable(msg)  
   def main(args : Array[String]) = {
@@ -173,14 +177,8 @@ object Test {
     // add file to archive, go through structure!
     // read a source file
     val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/plWPatterns.mmt"
-//    val sourceFile1 = "/home/aivaras/TPTP/LogicAtlas/source/logics/propositional/syntax/syntax.elf"  
-//    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/lf.mmt"  
-//    val sourceFile2 = "/home/aivaras/TPTP/LogicAtlas/source/logics/propositional/syntax/syntax.elf" 
-//    cont.handleLine("archive add /home/aivaras/TPTP/LogicAtlas")
-//    cont.handleLine("archive latin source-structure")
-//    cont.handleLine("achive latin compile")
-       cont.handleLine("log console")
-//        cont.handleLine("log+ parser")
+    cont.handleLine("log console")
+//        cont.handleLine("log+ parser") // adds log messages from the file parser
     cont.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
     cont.handleLine("archive mmt source-structure")
     cont.handleLine("archive mmt compile")
@@ -206,14 +204,14 @@ object Test {
 	 val l = c.get
 	 
 	 // parent dir
-	 val dir : String = "/home/aivaras/Hets-src/MMT/test"
+	 val dir : String = "/home/aivaras/Hets-src/"
 	 // logic name  
 	 val name : String = "Propositional"
 	   
 	 val lw = new LogicWriter
 	 lw.compile(l, theoName, dir)
 	 
-//    cont.globalLookup.getTheory(path ? "PL")
+//	 println(theo.toString)
     
   }
 }
