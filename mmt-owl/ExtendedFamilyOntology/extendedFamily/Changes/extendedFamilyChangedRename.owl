@@ -1,0 +1,708 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" 
+	  xml:base="http://example.com/owl/families/" 
+	  xmlns:xsd="http://www.w3.org/2001/XMLSchema#" 
+	  ontologyIRI="http://example.com/owl/families/">
+	
+	<!-- NamedIndividual John has been renamed to James. -->
+	<Declaration>
+		<NamedIndividual IRI="James"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Mary"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Liz"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Liza"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Tom"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Amy"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Max"/>
+	</Declaration>
+	
+	<Declaration>
+		<NamedIndividual IRI="Alice"/>
+	</Declaration>
+	   
+	<!-- Class Person has been renamed to Human. -->
+	<Declaration>
+		<Class IRI="Human"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="Man"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="Woman"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="Father"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="Mother"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="Parent"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="Teenager"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="ChildlessPerson"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="NarcisticPerson"/>
+	</Declaration>
+	
+	<Declaration>
+		<Class IRI="JohnsChildren"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasAncestor"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasParent"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="parentOf"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasChild"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasFemaleChild"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasRelative"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasWife"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasHusband"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasDaughter"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasSon"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasBrother"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="hasSister"/>
+	</Declaration>
+	
+	<!-- ObjectProperty hasSibling has been renamed to hasCommonParentWith. -->
+	<Declaration>
+		<ObjectProperty IRI="hasCommonParentWith"/>
+	</Declaration>
+	
+	<Declaration>
+		<ObjectProperty IRI="loves"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="hasID"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="hasName"/>
+	</Declaration>
+	
+	<!-- DataProperty hasFamilyName has been renamed to hasSurname. -->
+	<Declaration>
+		<DataProperty IRI="hasSurname"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="hasAge"/>
+	</Declaration>
+	
+	<Declaration>
+		<DataProperty IRI="age"/>
+	</Declaration>
+	
+	<!-- Datatype personAge has been renamed to humanAge. -->
+	<Declaration>
+		<Datatype IRI="humanAge"/>
+	</Declaration>
+	
+	<Declaration>
+		<Datatype IRI="minorAge"/>
+	</Declaration>
+	
+	<Declaration>
+		<Datatype IRI="majorAge"/>
+	</Declaration>
+	
+	<Declaration>
+		<Datatype IRI="toddlerAge"/>
+	</Declaration>
+	
+	<DatatypeDefinition>
+		<Datatype IRI="minorAge"/>
+		<DataIntersectionOf>
+			<Datatype IRI="personAge"/>
+			<DataComplementOf>
+				<Datatype IRI="majorAge"/>
+			</DataComplementOf>
+		</DataIntersectionOf>
+	</DatatypeDefinition>
+	
+	<DatatypeDefinition>
+		<Datatype IRI="majorAge"/>
+		<DatatypeRestriction>
+			<Datatype IRI="xsd:integer"/>
+			<FacetRestriction facet="xsd:minInclusive">
+				<Literal datatypeIRI="xsd:integer">19</Literal>
+			</FacetRestriction>
+			<FacetRestriction facet="xsd:maxInclusive">
+				<Literal datatypeIRI="xsd:integer">150</Literal>
+			</FacetRestriction>
+		</DatatypeRestriction>
+	</DatatypeDefinition>
+	
+	<DatatypeDefinition>
+		<Datatype IRI="personAge"/>
+		<DatatypeRestriction>
+			<Datatype IRI="xsd:integer"/>
+			<FacetRestriction facet="xsd:minInclusive">
+				<Literal datatypeIRI="xsd:integer">0</Literal>
+			</FacetRestriction>
+			<FacetRestriction facet="xsd:maxInclusive">
+				<Literal datatypeIRI="xsd:integer">150</Literal>
+			</FacetRestriction>
+		</DatatypeRestriction>
+	</DatatypeDefinition>
+	
+	<DatatypeDefinition>
+		<Datatype IRI="personAge"/>
+		<DataUnionOf>
+			<Datatype IRI="majorAge"/>
+			<Datatype IRI="minorAge"/>
+		</DataUnionOf>
+	</DatatypeDefinition>
+	
+	<DatatypeDefinition>
+		<Datatype IRI="toddlerAge"/>
+		<DataOneOf>
+			<Literal datatypeIRI="xsd:integer">1</Literal>
+			<Literal datatypeIRI="xsd:integer">2</Literal>
+		</DataOneOf>
+	</DatatypeDefinition>
+	
+	<SubClassOf>
+		<Class IRI="Woman"/>
+		<Class IRI="Person"/>
+	</SubClassOf>
+	
+	<SubClassOf>
+		<Class IRI="Man"/>
+		<Class IRI="Person"/>
+	</SubClassOf>
+	
+	<DisjointClasses>
+		<Class IRI="Woman"/>
+		<Class IRI="Man"/>
+	</DisjointClasses>
+	
+	<DisjointUnion>
+		<Class IRI="Person"/>
+		<Class IRI="Woman"/>
+		<Class IRI="Man"/>
+	</DisjointUnion>
+	
+	<EquivalentClasses>
+		<Class IRI="Person"/>
+		<DataAllValuesFrom>
+			<DataProperty IRI="hasID"/>
+			<Datatype IRI="xsd:nonNegativeInteger"/>
+		</DataAllValuesFrom>
+	</EquivalentClasses>
+	
+	<SubClassOf>
+		<Class IRI="Teenager"/>
+		<DataSomeValuesFrom>
+			<DataProperty IRI="hasAge"/>
+			<DatatypeRestriction>
+				<Datatype IRI="xsd:integer"/>
+				<FacetRestriction facet="xsd:minExclusive">
+					<Literal datatypeIRI="xsd:integer">12</Literal>
+				</FacetRestriction>
+				<FacetRestriction facet="xsd:maxInclusive">
+					<Literal datatypeIRI="xsd:integer">18</Literal>
+				</FacetRestriction>
+			</DatatypeRestriction>
+		</DataSomeValuesFrom>
+	</SubClassOf>
+	
+	<EquivalentClasses>
+		<Class IRI="ChildlessPerson"/>
+		<ObjectIntersectionOf>
+			<Class IRI="Person"/>
+			<ObjectComplementOf>
+				<Class IRI="Parent"/>
+			</ObjectComplementOf>
+		</ObjectIntersectionOf>
+	</EquivalentClasses>
+	
+	<EquivalentClasses>
+		<Class IRI="Mother"/>
+		<ObjectIntersectionOf>
+			<ObjectSomeValuesFrom>
+				<ObjectProperty IRI="hasChild"/>
+				<Class IRI="Person"/>
+			</ObjectSomeValuesFrom>
+			<Class IRI="Woman"/>
+		</ObjectIntersectionOf>
+	</EquivalentClasses>
+	
+	<EquivalentClasses>
+		<Class IRI="Father"/>
+		<ObjectIntersectionOf>
+			<ObjectSomeValuesFrom>
+				<ObjectProperty IRI="hasChild"/>
+				<Class IRI="Person"/>
+			</ObjectSomeValuesFrom>
+			<Class IRI="Man"/>
+		</ObjectIntersectionOf>
+	</EquivalentClasses>
+	
+	<EquivalentClasses>
+		<Class IRI="Parent"/>
+		<ObjectUnionOf>
+			<Class IRI="Mother"/>
+			<Class IRI="Father"/>
+		</ObjectUnionOf>
+	</EquivalentClasses>
+	
+	<ObjectPropertyDomain>
+		<ObjectProperty IRI="hasWife"/>
+		<Class IRI="Man"/>
+	</ObjectPropertyDomain>
+	
+	<ObjectPropertyRange>
+		<ObjectProperty IRI="hasWife"/>
+		<Class IRI="Woman"/>
+	</ObjectPropertyRange>
+	
+	<EquivalentClasses>
+		<Class IRI="NarcisticPerson"/>
+		<ObjectHasSelf>
+			<ObjectProperty IRI="loves"/>
+		</ObjectHasSelf>
+	</EquivalentClasses>
+	
+	<EquivalentObjectProperties>
+		<ObjectProperty IRI="hasDaughter"/>
+		<ObjectProperty IRI="hasFemaleChild"/>
+	</EquivalentObjectProperties>
+	
+	<SubObjectPropertyOf>
+		<ObjectProperty IRI="hasDaughter"/>
+		<ObjectProperty IRI="hasChild"/>
+	</SubObjectPropertyOf>
+	
+	<SubObjectPropertyOf>
+		<ObjectProperty IRI="hasSon"/>
+		<ObjectProperty IRI="hasChild"/>
+	</SubObjectPropertyOf>
+	
+	<DisjointObjectProperties>
+		<ObjectProperty IRI="hasSon"/>
+		<ObjectProperty IRI="hasDaughter"/>
+	</DisjointObjectProperties>
+	
+	<InverseObjectProperties>
+		<ObjectProperty IRI="hasParent"/>
+		<ObjectProperty IRI="hasChild"/>
+	</InverseObjectProperties>
+	
+	<FunctionalObjectProperty>
+		<ObjectProperty IRI="hasHusband"/>
+	</FunctionalObjectProperty>
+	
+	<InverseFunctionalObjectProperty>
+		<ObjectProperty IRI="hasHusband"/>
+	</InverseFunctionalObjectProperty>
+	
+	<ReflexiveObjectProperty>
+		<ObjectProperty IRI="hasRelative"/>
+	</ReflexiveObjectProperty>
+	
+	<IrreflexiveObjectProperty>
+		<ObjectProperty IRI="parentOf"/>
+	</IrreflexiveObjectProperty>
+	
+	<SymmetricObjectProperty>
+		<ObjectProperty IRI="hasRelative"/>
+	</SymmetricObjectProperty>
+	
+	<AsymmetricObjectProperty>
+		<ObjectProperty IRI="hasChild"/>
+	</AsymmetricObjectProperty>
+	
+	<TransitiveObjectProperty>
+		<ObjectProperty IRI="hasAncestor"/>
+	</TransitiveObjectProperty>
+	
+	<SubDataPropertyOf>
+		<DataProperty IRI="hasFamilyName"/>
+		<DataProperty IRI="hasName"/>
+	</SubDataPropertyOf>
+	
+	<DisjointDataProperties>
+		<DataProperty IRI="hasAge"/>
+		<DataProperty IRI="hasID"/>
+	</DisjointDataProperties>
+	
+	<EquivalentDataProperties>
+		<DataProperty IRI="hasAge"/>
+		<DataProperty IRI="age"/>
+	</EquivalentDataProperties>
+	
+	<DataPropertyDomain>
+		<DataProperty IRI="hasAge"/>
+		<Class IRI="Person"/>
+	</DataPropertyDomain>
+	
+	<DataPropertyRange>
+		<DataProperty IRI="hasAge"/>
+		<Datatype IRI="xsd:nonNegativeInteger"/>
+	</DataPropertyRange>
+	
+	<FunctionalDataProperty>
+		<DataProperty IRI="hasAge"/>
+	</FunctionalDataProperty>
+	
+	<HasKey>
+		<Class IRI="Person"/>
+		<dataProperty IRI="hasID"/>
+	</HasKey>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400001</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Mary"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400002</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Liz"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400003</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Amy"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400004</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Tom"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400005</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Max"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400006</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Alice"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400007</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasFamilyName"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="xsd:string">Parker</Literal>
+	</DataPropertyAssertion>
+	
+	<SubClassOf>
+		<DataHasValue>
+			<DataProperty IRI="hasFamilyName"/>
+			<Literal datatypeIRI="xsd:string">"Parker"</Literal>
+		</DataHasValue>
+		<Class IRI="Person"/>
+	</SubClassOf>
+	
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ID001</Literal>
+		</Annotation>
+		<DataProperty IRI="hasFamilyName"/>
+		<NamedIndividual IRI="Max"/>
+		<Literal datatypeIRI="xsd:string">Evans</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="xsd:integer">51</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Mary"/>
+		<Literal datatypeIRI="xsd:integer">50</Literal>
+	</DataPropertyAssertion>
+	
+	<NegativeDataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Mary"/>
+		<Literal datatypeIRI="xsd:integer">53</Literal>
+	</NegativeDataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Liz"/>
+		<Literal datatypeIRI="xsd:integer">25</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Amy"/>
+		<Literal datatypeIRI="xsd:integer">21</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Max"/>
+		<Literal datatypeIRI="xsd:integer">26</Literal>
+	</DataPropertyAssertion>
+	
+	<DataPropertyAssertion>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Alice"/>
+		<Literal datatypeIRI="xsd:integer">2</Literal>
+	</DataPropertyAssertion>
+	
+	<SameIndividual>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Liza"/>
+	</SameIndividual>
+	
+	<DifferentIndividuals>
+		<NamedIndividual IRI="John"/>
+		<NamedIndividual IRI="Tom"/>
+	</DifferentIndividuals>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasWife"/>
+		<NamedIndividual IRI="John"/>
+		<NamedIndividual IRI="Mary"/>
+	</ObjectPropertyAssertion>
+	
+	<ClassAssertion>
+		<ObjectMinCardinality cardinality="1">
+			<ObjectProperty IRI="hasChild"/>
+			<Class IRI="Parent"/>
+		</ObjectMinCardinality>
+		<NamedIndividual IRI="John"/>
+	</ClassAssertion>
+	
+	<ClassAssertion>
+		<ObjectExactCardinality cardinality="2">
+			<ObjectProperty IRI="hasChild"/>
+			<Class IRI="Parent"/>
+		</ObjectExactCardinality>
+		<NamedIndividual IRI="John"/>
+	</ClassAssertion>
+	
+	<ClassAssertion>
+		<ObjectMaxCardinality cardinality="3">
+			<ObjectProperty IRI="hasChild"/>
+			<Class IRI="Parent"/>
+		</ObjectMaxCardinality>
+		<NamedIndividual IRI="John"/>
+	</ClassAssertion>
+	
+	<EquivalentClasses>
+		<Class IRI="JohnsChildren"/>
+		<ObjectHasValue>
+			<ObjectProperty IRI="hasParent"/>
+			<NamedIndividual IRI="John"/>
+		</ObjectHasValue>
+	</EquivalentClasses>
+	
+	<EquivalentClasses>
+		<Class IRI="JohnsChildren"/>
+		<ObjectOneOf>
+			<NamedIndividual IRI="Liz"/>
+			<NamedIndividual IRI="Tom"/>
+			<NamedIndividual IRI="Amy"/>
+		</ObjectOneOf>
+	</EquivalentClasses>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasRelative"/>
+		<NamedIndividual IRI="John"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+	
+	<ClassAssertion>
+		<Class IRI="Mother"/>
+		<NamedIndividual IRI="Mary"/>
+	</ClassAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasChild"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Liz"/>
+	</ObjectPropertyAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasSon"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Tom"/>
+	</ObjectPropertyAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasDaughter"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Amy"/>
+	</ObjectPropertyAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasAncestor"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+	
+	<ClassAssertion>
+		<DataMaxCardinality cardinality="2">
+			<DataProperty IRI="hasName"/>
+		</DataMaxCardinality>
+		<NamedIndividual IRI="Liz"/>
+	</ClassAssertion>
+	
+	<ClassAssertion>
+		<DataMinCardinality cardinality="1">
+			<DataProperty IRI="hasName"/>
+		</DataMinCardinality>
+		<NamedIndividual IRI="Liz"/>
+	</ClassAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasBrother"/>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Tom"/>
+	</ObjectPropertyAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasHusband"/>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Max"/>
+	</ObjectPropertyAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="ParentOf"/>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+	
+	<ClassAssertion>
+		<Class IRI="Teenager"/>
+		<NamedIndividual IRI="Tom"/>
+	</ClassAssertion>
+	
+	<ClassAssertion>
+		<ObjectAllValuesFrom>
+			<ObjectProperty IRI="hasSibling"/>
+			<Class IRI="Woman"/>
+		</ObjectAllValuesFrom>
+		<NamedIndividual IRI="Tom"/>
+	</ClassAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasSibling"/>
+		<NamedIndividual IRI="Tom"/>
+		<NamedIndividual IRI="Liz"/>
+	</ObjectPropertyAssertion>
+	
+	<ObjectPropertyAssertion>
+		<ObjectProperty IRI="hasSister"/>
+		<NamedIndividual IRI="Tom"/>
+		<NamedIndividual IRI="Amy"/>
+	</ObjectPropertyAssertion>
+	
+	<ClassAssertion>
+		<Class IRI="ChildlessPerson"/>
+		<NamedIndividual IRI="Amy"/>
+	</ClassAssertion>
+	
+	<ClassAssertion>
+		<DataExactCardinality cardinality="1">
+			<DataProperty IRI="hasName"/>
+		</DataExactCardinality>
+		<NamedIndividual IRI="Max"/>
+	</ClassAssertion>
+	
+	<NegativeObjectPropertyAssertion>
+		<ObjectProperty IRI="hasWife"/>
+		<NamedIndividual IRI="Max"/>
+		<NamedIndividual IRI="Mary"/>
+	</NegativeObjectPropertyAssertion>
+	
+	<ClassAssertion>
+		<Class IRI="Father"/>
+		<NamedIndividual IRI="Max"/>
+	</ClassAssertion>
+	
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ID002</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasDaughter"/>
+		<NamedIndividual IRI="Max"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+
+</Ontology>
+

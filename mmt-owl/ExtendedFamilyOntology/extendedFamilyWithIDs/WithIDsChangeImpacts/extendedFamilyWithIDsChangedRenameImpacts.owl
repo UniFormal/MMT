@@ -1,0 +1,1040 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" 
+	  xml:base="http://example.com/owl/families/" 
+	  xmlns:xsd="http://www.w3.org/2001/XMLSchema#" 
+	  ontologyIRI="http://example.com/owl/families/">
+     
+    <!-- NamedIndividual John has been renamed to James. -->
+	<Declaration>
+		<NamedIndividual IRI="James"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="Mary"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="Liz"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="Liza"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="Tom"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="Amy"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="Max"/>
+	</Declaration>
+
+	<Declaration>
+		<NamedIndividual IRI="Alice"/>
+	</Declaration>
+    
+    <!-- Class Person has been renamed to Human. -->
+	<Declaration>
+		<Class IRI="Human"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="Man"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="Woman"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="Father"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="Mother"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="Parent"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="Teenager"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="ChildlessPerson"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="NarcisticPerson"/>
+	</Declaration>
+
+	<Declaration>
+		<Class IRI="JohnsChildren"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasAncestor"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasParent"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="parentOf"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasChild"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasFemaleChild"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasRelative"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasWife"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasHusband"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasDaughter"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasSon"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasBrother"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="hasSister"/>
+	</Declaration>
+    
+    <!-- ObjectProperty hasSibling has been renamed to hasCommonParentWith. -->
+	<Declaration>
+		<ObjectProperty IRI="hasCommonParentWith"/>
+	</Declaration>
+
+	<Declaration>
+		<ObjectProperty IRI="loves"/>
+	</Declaration>
+
+	<Declaration>
+		<DataProperty IRI="hasID"/>
+	</Declaration>
+
+	<Declaration>
+		<DataProperty IRI="hasName"/>
+	</Declaration>
+    
+    <!-- DataProperty hasFamilyName has been renamed to hasSurname. -->
+	<Declaration>
+		<DataProperty IRI="hasSurname"/>
+	</Declaration>
+
+	<Declaration>
+		<DataProperty IRI="hasAge"/>
+	</Declaration>
+
+	<Declaration>
+		<DataProperty IRI="age"/>
+	</Declaration>
+    
+    <!-- Datatype personAge has been renamed to humanAge. -->
+	<Declaration>
+		<Datatype IRI="humanAge"/>
+	</Declaration>
+
+	<Declaration>
+		<Datatype IRI="minorAge"/>
+	</Declaration>
+
+	<Declaration>
+		<Datatype IRI="majorAge"/>
+	</Declaration>
+
+	<Declaration>
+		<Datatype IRI="toddlerAge"/>
+	</Declaration>
+ 
+    <!-- Impact: Datatype personAge has been renamed to humanAge. -->
+	<DatatypeDefinition>
+		<Datatype IRI="minorAge"/>
+		<DataIntersectionOf>
+			<Datatype IRI="personAge"/>
+			<DataComplementOf>
+				<Datatype IRI="majorAge"/>
+			</DataComplementOf>
+		</DataIntersectionOf>
+	</DatatypeDefinition>
+
+	<DatatypeDefinition>
+		<Datatype IRI="majorAge"/>
+		<DatatypeRestriction>
+			<Datatype abbreviatedIRI="xsd:integer"/>
+			<FacetRestriction facet="xsd:minInclusive">
+				<Literal datatypeIRI="xsd:integer">19</Literal>
+			</FacetRestriction>
+			<FacetRestriction facet="xsd:maxInclusive">
+				<Literal datatypeIRI="xsd:integer">150</Literal>
+			</FacetRestriction>
+		</DatatypeRestriction>
+	</DatatypeDefinition>
+    
+    <!-- Impact: Datatype personAge has been renamed to humanAge. -->
+	<DatatypeDefinition>
+		<Datatype IRI="personAge"/>
+		<DatatypeRestriction>
+			<Datatype abbreviatedIRI="xsd:integer"/>
+			<FacetRestriction facet="xsd:minInclusive">
+				<Literal datatypeIRI="xsd:integer">0</Literal>
+			</FacetRestriction>
+			<FacetRestriction facet="xsd:maxInclusive">
+				<Literal datatypeIRI="xsd:integer">150</Literal>
+			</FacetRestriction>
+		</DatatypeRestriction>
+	</DatatypeDefinition>
+    
+    <!-- Impact: Datatype personAge has been renamed to humanAge. -->
+	<DatatypeDefinition>
+		<Datatype IRI="personAge"/>
+		<DataUnionOf>
+			<Datatype IRI="majorAge"/>
+			<Datatype IRI="minorAge"/>
+		</DataUnionOf>
+	</DatatypeDefinition>
+
+	<DatatypeDefinition>
+		<Datatype IRI="toddlerAge"/>
+		<DataOneOf>
+			<Literal datatypeIRI="xsd:integer">1</Literal>
+			<Literal datatypeIRI="xsd:integer">2</Literal>
+		</DataOneOf>
+	</DatatypeDefinition>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<SubClassOf>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1241281692</Literal>
+		</Annotation>
+		<Class IRI="Woman"/>
+		<Class IRI="Person"/>
+	</SubClassOf>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<SubClassOf>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1652800332</Literal>
+		</Annotation>
+		<Class IRI="Man"/>
+		<Class IRI="Person"/>
+	</SubClassOf>
+
+	<DisjointClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1299199849</Literal>
+		</Annotation>
+		<Class IRI="Woman"/>
+		<Class IRI="Man"/>
+	</DisjointClasses>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<DisjointUnion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-344833659</Literal>
+		</Annotation>
+		<Class IRI="Person"/>
+		<Class IRI="Woman"/>
+		<Class IRI="Man"/>
+	</DisjointUnion>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1637674794</Literal>
+		</Annotation>
+		<Class IRI="Person"/>
+		<DataAllValuesFrom>
+			<DataProperty IRI="hasID"/>
+			<Datatype abbreviatedIRI="xsd:nonNegativeInteger"/>
+		</DataAllValuesFrom>
+	</EquivalentClasses>
+
+	<SubClassOf>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1338188629</Literal>
+		</Annotation>
+		<Class IRI="Teenager"/>
+		<DataSomeValuesFrom>
+			<DataProperty IRI="hasAge"/>
+			<DatatypeRestriction>
+				<Datatype abbreviatedIRI="xsd:integer"/>
+				<FacetRestriction facet="xsd:minExclusive">
+					<Literal datatypeIRI="xsd:integer">12</Literal>
+				</FacetRestriction>
+				<FacetRestriction facet="xsd:maxInclusive">
+					<Literal datatypeIRI="xsd:integer">18</Literal>
+				</FacetRestriction>
+			</DatatypeRestriction>
+		</DataSomeValuesFrom>
+	</SubClassOf>
+        
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1039132749</Literal>
+		</Annotation>
+		<Class IRI="ChildlessPerson"/>
+		<ObjectIntersectionOf>
+			<Class IRI="Person"/>
+			<ObjectComplementOf>
+				<Class IRI="Parent"/>
+			</ObjectComplementOf>
+		</ObjectIntersectionOf>
+	</EquivalentClasses>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1440190575</Literal>
+		</Annotation>
+		<Class IRI="Mother"/>
+		<ObjectIntersectionOf>
+			<Class IRI="Woman"/>
+			<ObjectSomeValuesFrom>
+				<ObjectProperty IRI="hasChild"/>
+				<Class IRI="Person"/>
+			</ObjectSomeValuesFrom>
+		</ObjectIntersectionOf>
+	</EquivalentClasses>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-959512380</Literal>
+		</Annotation>
+		<Class IRI="Father"/>
+		<ObjectIntersectionOf>
+			<Class IRI="Man"/>
+			<ObjectSomeValuesFrom>
+				<ObjectProperty IRI="hasChild"/>
+				<Class IRI="Person"/>
+			</ObjectSomeValuesFrom>
+		</ObjectIntersectionOf>
+	</EquivalentClasses>
+
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1606419908</Literal>
+		</Annotation>
+		<Class IRI="Parent"/>
+		<ObjectUnionOf>
+			<Class IRI="Mother"/>
+			<Class IRI="Father"/>
+		</ObjectUnionOf>
+	</EquivalentClasses>
+
+	<ObjectPropertyDomain>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax873308696</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasWife"/>
+		<Class IRI="Man"/>
+	</ObjectPropertyDomain>
+
+	<ObjectPropertyRange>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-325152428</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasWife"/>
+		<Class IRI="Woman"/>
+	</ObjectPropertyRange>
+
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1855628294</Literal>
+		</Annotation>
+		<Class IRI="NarcisticPerson"/>
+		<ObjectHasSelf>
+			<ObjectProperty IRI="loves"/>
+		</ObjectHasSelf>
+	</EquivalentClasses>
+
+	<EquivalentObjectProperties>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1972899661</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasDaughter"/>
+		<ObjectProperty IRI="hasFemaleChild"/>
+	</EquivalentObjectProperties>
+
+	<SubObjectPropertyOf>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1838109231</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasDaughter"/>
+		<ObjectProperty IRI="hasChild"/>
+	</SubObjectPropertyOf>
+
+	<SubObjectPropertyOf>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1162516937</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasSon"/>
+		<ObjectProperty IRI="hasChild"/>
+	</SubObjectPropertyOf>
+
+	<DisjointObjectProperties>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-2119203351</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasSon"/>
+		<ObjectProperty IRI="hasDaughter"/>
+	</DisjointObjectProperties>
+
+	<InverseObjectProperties>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1423657695</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasParent"/>
+		<ObjectProperty IRI="hasChild"/>
+	</InverseObjectProperties>
+
+	<FunctionalObjectProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1121825817</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasHusband"/>
+	</FunctionalObjectProperty>
+
+	<InverseFunctionalObjectProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1121814865</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasHusband"/>
+	</InverseFunctionalObjectProperty>
+
+	<ReflexiveObjectProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1187868092</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasRelative"/>
+	</ReflexiveObjectProperty>
+
+	<IrreflexiveObjectProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1777720201</Literal>
+		</Annotation>
+		<ObjectProperty IRI="parentOf"/>
+	</IrreflexiveObjectProperty>
+
+	<SymmetricObjectProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1002358198</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasRelative"/>
+	</SymmetricObjectProperty>
+
+	<AsymmetricObjectProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1192336456</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasChild"/>
+	</AsymmetricObjectProperty>
+
+	<TransitiveObjectProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1444772685</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasAncestor"/>
+	</TransitiveObjectProperty>
+  
+    <!-- Impact: DataProperty hasFamilyName has been renamed to hasSurname. -->
+	<SubDataPropertyOf>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax32819417</Literal>
+		</Annotation>
+		<DataProperty IRI="hasFamilyName"/>
+		<DataProperty IRI="hasName"/>
+	</SubDataPropertyOf>
+
+	<DisjointDataProperties>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax149677787</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<DataProperty IRI="hasID"/>
+	</DisjointDataProperties>
+
+	<EquivalentDataProperties>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax140678089</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<DataProperty IRI="age"/>
+	</EquivalentDataProperties>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<DataPropertyDomain>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1284912199</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<Class IRI="Person"/>
+	</DataPropertyDomain>
+
+	<DataPropertyRange>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1495705204</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<Datatype IRI="xsd:nonNegativeInteger"/>
+	</DataPropertyRange>
+
+	<FunctionalDataProperty>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1109111715</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+	</FunctionalDataProperty>
+    
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<HasKey>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax910910171</Literal>
+		</Annotation>
+		<Class IRI="Person"/>
+		<dataProperty IRI="hasID"/>
+	</HasKey>
+  
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1886562495</Literal>
+		</Annotation>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400001</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1975222262</Literal>
+		</Annotation>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Mary"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400002</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax709758293</Literal>
+		</Annotation>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Liz"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400003</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax180535786</Literal>
+		</Annotation>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Amy"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400004</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1107941600</Literal>
+		</Annotation>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Tom"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400005</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax745772687</Literal>
+		</Annotation>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Max"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400006</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1679798240</Literal>
+		</Annotation>
+		<DataProperty IRI="hasID"/>
+		<NamedIndividual IRI="Alice"/>
+		<Literal datatypeIRI="xsd:nonNegativeInteger">123400007</Literal>
+	</DataPropertyAssertion>
+    
+    <!-- Impact: DataProperty hasFamilyName has been renamed to hasSurname. -->
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax964795910</Literal>
+		</Annotation>
+		<DataProperty IRI="hasFamilyName"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="xsd:string">Parker</Literal>
+	</DataPropertyAssertion>
+    
+    <!-- Impact: DataProperty hasFamilyName has been renamed to hasSurname. -->
+    <!-- Impact: Class Person has been renamed to Human. -->
+	<SubClassOf>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax648959103</Literal>
+		</Annotation>
+		<DataHasValue>
+			<DataProperty IRI="hasFamilyName"/>
+			<Literal datatypeIRI="xsd:string">"Parker"</Literal>
+		</DataHasValue>
+		<Class IRI="Person"/>
+	</SubClassOf>
+	
+    <!-- Impact: DataProperty hasFamilyName has been renamed to hasSurname. -->
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ID001</Literal>
+		</Annotation>
+		<DataProperty IRI="hasFamilyName"/>
+		<NamedIndividual IRI="Max"/>
+		<Literal datatypeIRI="xsd:string">Evans</Literal>
+	</DataPropertyAssertion>
+    
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1157570453</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="John"/>
+		<Literal datatypeIRI="xsd:integer">51</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1590753066</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Mary"/>
+		<Literal datatypeIRI="xsd:integer">50</Literal>
+	</DataPropertyAssertion>
+
+	<NegativeDataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1429575109</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Mary"/>
+		<Literal datatypeIRI="xsd:integer">53</Literal>
+	</NegativeDataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1438746968</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Liz"/>
+		<Literal datatypeIRI="xsd:integer">25</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax909524276</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Amy"/>
+		<Literal datatypeIRI="xsd:integer">21</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1474761288</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Max"/>
+		<Literal datatypeIRI="xsd:integer">26</Literal>
+	</DataPropertyAssertion>
+
+	<DataPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1116048551</Literal>
+		</Annotation>
+		<DataProperty IRI="hasAge"/>
+		<NamedIndividual IRI="Alice"/>
+		<Literal datatypeIRI="xsd:integer">2</Literal>
+	</DataPropertyAssertion>
+
+	<SameIndividual>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1711766800</Literal>
+		</Annotation>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Liza"/>
+	</SameIndividual>
+    
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<DifferentIndividuals>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1713635152</Literal>
+		</Annotation>
+		<NamedIndividual IRI="John"/>
+		<NamedIndividual IRI="Tom"/>
+	</DifferentIndividuals>
+ 
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-834974511</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasWife"/>
+		<NamedIndividual IRI="John"/>
+		<NamedIndividual IRI="Mary"/>
+	</ObjectPropertyAssertion>
+  
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1915018245</Literal>
+		</Annotation>
+		<ObjectMinCardinality cardinality="1">
+			<ObjectProperty IRI="hasChild"/>
+			<Class IRI="Parent"/>
+		</ObjectMinCardinality>
+		<NamedIndividual IRI="John"/>
+	</ClassAssertion>
+    
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1862543106</Literal>
+		</Annotation>
+		<ObjectExactCardinality cardinality="2">
+			<ObjectProperty IRI="hasChild"/>
+			<Class IRI="Parent"/>
+		</ObjectExactCardinality>
+		<NamedIndividual IRI="John"/>
+	</ClassAssertion>
+    
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1907524339</Literal>
+		</Annotation>
+		<ObjectMaxCardinality cardinality="3">
+			<ObjectProperty IRI="hasChild"/>
+			<Class IRI="Parent"/>
+		</ObjectMaxCardinality>
+		<NamedIndividual IRI="John"/>
+	</ClassAssertion>
+ 
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax163847801</Literal>
+		</Annotation>
+		<Class IRI="JohnsChildren"/>
+		<ObjectHasValue>
+			<ObjectProperty IRI="hasParent"/>
+			<NamedIndividual IRI="John"/>
+		</ObjectHasValue>
+	</EquivalentClasses>
+
+	<EquivalentClasses>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1693134365</Literal>
+		</Annotation>
+		<Class IRI="JohnsChildren"/>
+		<ObjectOneOf>
+			<NamedIndividual IRI="Liz"/>
+			<NamedIndividual IRI="Tom"/>
+			<NamedIndividual IRI="Amy"/>
+		</ObjectOneOf>
+	</EquivalentClasses>
+    
+    <!-- Impact: NamedIndividual John has been renamed to James. -->
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1498503059</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasRelative"/>
+		<NamedIndividual IRI="John"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-1318609487</Literal>
+		</Annotation>
+		<Class IRI="Mother"/>
+		<NamedIndividual IRI="Mary"/>
+	</ClassAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax193958378</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasChild"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Liz"/>
+	</ObjectPropertyAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax961310361</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasSon"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Tom"/>
+	</ObjectPropertyAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax285040634</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasDaughter"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Amy"/>
+	</ObjectPropertyAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-556159636</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasAncestor"/>
+		<NamedIndividual IRI="Mary"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-193250398</Literal>
+		</Annotation>
+		<DataMaxCardinality cardinality="2">
+			<DataProperty IRI="hasName"/>
+		</DataMaxCardinality>
+		<NamedIndividual IRI="Liz"/>
+	</ClassAssertion>
+
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-182006801</Literal>
+		</Annotation>
+		<DataMinCardinality cardinality="1">
+			<DataProperty IRI="hasName"/>
+		</DataMinCardinality>
+		<NamedIndividual IRI="Liz"/>
+	</ClassAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax464831953</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasBrother"/>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Tom"/>
+	</ObjectPropertyAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-799581906</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasHusband"/>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Max"/>
+	</ObjectPropertyAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-246865350</Literal>
+		</Annotation>
+		<ObjectProperty IRI="ParentOf"/>
+		<NamedIndividual IRI="Liz"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1003750178</Literal>
+		</Annotation>
+		<Class IRI="Teenager"/>
+		<NamedIndividual IRI="Tom"/>
+	</ClassAssertion>
+    
+    <!-- Impact: ObjectProperty hasSibling has been renamed to hasCommonParentWith. -->
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1988069327</Literal>
+		</Annotation>
+		<ObjectAllValuesFrom>
+			<ObjectProperty IRI="hasSibling"/>
+			<Class IRI="Woman"/>
+		</ObjectAllValuesFrom>
+		<NamedIndividual IRI="Tom"/>
+	</ClassAssertion>
+    
+    <!-- Impact: ObjectProperty hasSibling has been renamed to hasCommonParentWith. -->
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1105091995</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasSibling"/>
+		<NamedIndividual IRI="Tom"/>
+		<NamedIndividual IRI="Liz"/>
+	</ObjectPropertyAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1324972977</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasSister"/>
+		<NamedIndividual IRI="Tom"/>
+		<NamedIndividual IRI="Amy"/>
+	</ObjectPropertyAssertion>
+
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-694856842</Literal>
+		</Annotation>
+		<Class IRI="ChildlessPerson"/>
+		<NamedIndividual IRI="Amy"/>
+	</ClassAssertion>
+
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax-203523374</Literal>
+		</Annotation>
+		<DataExactCardinality cardinality="1">
+			<DataProperty IRI="hasName"/>
+		</DataExactCardinality>
+		<NamedIndividual IRI="Max"/>
+	</ClassAssertion>
+
+	<NegativeObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax1793612164</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasWife"/>
+		<NamedIndividual IRI="Max"/>
+		<NamedIndividual IRI="Mary"/>
+	</NegativeObjectPropertyAssertion>
+
+	<ClassAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ax505564719</Literal>
+		</Annotation>
+		<Class IRI="Father"/>
+		<NamedIndividual IRI="Max"/>
+	</ClassAssertion>
+
+	<ObjectPropertyAssertion>
+		<Annotation>
+			<AnnotationProperty IRI="http://omdoc.org/identifier#id"/>
+			<Literal datatypeIRI="xsd:string">ID002</Literal>
+		</Annotation>
+		<ObjectProperty IRI="hasDaughter"/>
+		<NamedIndividual IRI="Max"/>
+		<NamedIndividual IRI="Alice"/>
+	</ObjectPropertyAssertion>
+
+</Ontology>
+
+
+
+
