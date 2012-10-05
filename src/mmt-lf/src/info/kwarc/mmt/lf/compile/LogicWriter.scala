@@ -67,12 +67,16 @@ class LogicWriter() {
 	val basic = logdir + "/" + "AS_BASIC_" + lname + ".hs"
 	val morphism = logdir + "/" + "Morphism.hs"
 	val tools = logdir + "/" + "Tools.hs"
+	//import qualified Data.Map as Map 
+	val imports : List[String]= List("Common.Id","Common.Map","Coomon.ProofTree","qualified Data.Map as Map") map {x => "import " + x}
     
     // write 
     var fw = File(main)
-    var pre_main = "module " + " " + lname + "." + "Logic_" + lname + " where\n\n"
-    pre_main += "import " + lname + "." + "AS_BASIC_" + lname + "\n\n"
-    File.write(fw,pre_main)
+    var pre_main = List("module " + " " + lname + "." + "Logic_" + lname + " where\n\n")
+//    pre_main = imports
+//    premain ::= List("")
+    pre_main :::= List("import " + lname + "." + "AS_BASIC_" + lname + "\n\n")
+    File.write(fw,pre_main.mkString)
     fw = File(basic)
     var pre_basic = "module " + " " + lname + "." + "AS_BASIC_" + lname + " where\n\n" 
     File.write(fw,pre_basic + (fs.basic map {x => Haskell.decl(x)} mkString))
@@ -85,36 +89,60 @@ class LogicWriter() {
   }
   
 //  private val preamble = "module " 
-  
-  private case class LogDescr(lname : String){
-    var lines : List[String] = List()
-    val name = lname.head.toUpperCase + lname.substring(1)
-    def apply() {
-      lines ::= "data " + name + " = " + name + " deriving Show"
-//      val language = ""
-//      val category = ""
-//      val sentences = ""
-//      val monoid = ""
-//      val syntax = ""
-//      val logic = ""
-    }
-  }
-  
 }
 
-sealed abstract class CLASS 
-case class language(lname : String) extends CLASS {
+sealed abstract class CLASS() {
+//  val name = lname.head.toUpperCase + lname.substring(1)
+  var start = "instance "
+  var sign = "()"
+  var form = "()"
+  var morph = "()" //// source, target, propMap
+  var symb = "()"
+  var basic_spec = "()"  
+  var symb_items = "()"
+  var symb_map_items = "()"
+    
+    
+  var className = "()"
+  var args : List[String] = List() // list of instance arguments
+  var funs : List[String] = List() // list of function declarations in a class to be implemented
+  var impl : List[String] = List() // list of implementations
+}
+case class InsLanguage(lname : String) extends CLASS {
+  className = "Language"
+    
   val name = lname.head.toUpperCase + lname.substring(1)
   var description = "no decription" 
   def apply(descr : String) = { description = descr}
-  def print : String = "data " + name + " = " + name + " deriving Show" + "\n" + 
-    "instance Language " + name + " where\n" + "description _ = " + "\"" + description + "\"" 
+  def print : List[String] = List("data " + name + " = " + name + " deriving Show", 
+    start + name + " where\n" + "description _ = " + "\"" + description + "\"") 
 }
 
-case class category(lname : String) extends CLASS {
+case class InsCategory(lname : String) extends CLASS {
   val name = lname.head.toUpperCase + lname.substring(1)
-  var sign = "()"
-  var morphism = "()"
+  def print : List[String] = List(start + "Category" + sign + morph + " where ",
+		  "ide = ()",
+		  "dom = ()",
+		  "com = ()",
+		  "inInclusion = ()",
+		  "legal_mor = ()",
+		  "composeMorphisms = ()"
+      ) map {x => x + "\n"}
+}
+
+case class InsSyntax(lname : String) extends CLASS {
+  val name = lname.head.toUpperCase + lname.substring(1)
+  def print : List[String] =  List (
+    start + "lname",
+    basic_spec,
+    symb_items,
+    symb_map_items,
+    "where",
+    ""
+  )
+}
+
+case class InsSentences(lname : String) extends CLASS {
+  val name = lname.head.toUpperCase + lname.substring(1)
   
-//  def print : String =   
 }

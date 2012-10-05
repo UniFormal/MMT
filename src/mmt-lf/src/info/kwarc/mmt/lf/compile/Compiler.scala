@@ -57,6 +57,13 @@ class Compiler(log: LogicSyntax) extends Program {
    val declare(theo, sign, axioms) =
      "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))
    
+   //TODO Basic_spec  = Basic_spec [Decl]
+   val declare(basic_spec) = "basic_spec" typedef LIST(decl) 
+   // declare morphism
+   val declare(morphism,source,target) = "morphism" record ("source" ::: sigs, "target" ::: sigs)
+   // symbols
+   val declare(symb,sname) = "symb" record ("sname" ::: id)  
+     
    val declare(error) = "error" exception
    // the functions that map parse trees to expressions
    
