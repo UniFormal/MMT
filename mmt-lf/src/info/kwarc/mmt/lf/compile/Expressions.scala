@@ -66,6 +66,10 @@ case class APPLY(fun: String, args: EXP*) extends EXP {
    def ==>(body: EXP) = CASE(this, body)
 }
 
+case class ANY extends EXP {
+  def apply() = Unit
+}
+ 
 /** if then else */
 case class IF(cond: EXP, thn: EXP, els: EXP) extends EXP
 /** pattern matching */

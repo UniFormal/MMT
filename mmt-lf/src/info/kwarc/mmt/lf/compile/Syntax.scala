@@ -21,6 +21,8 @@ case class Binder(name: String, argument: Option[CatRef], bound: CatRef, scope: 
 case class ConstantSymbol(pattern: String, name: String, arguments: List[CatRef]) extends Constructor
 /** a bound variable */
 case object VariableSymbol extends Constructor
+/** a constructor for formulas, i.e. true : bool, false : bool */
+case class Constructor0(name : String) extends Constructor
 
 /** a pragmatic declaration with some argument types */
 case class Declaration(pattern: String, arguments: List[CatRef])

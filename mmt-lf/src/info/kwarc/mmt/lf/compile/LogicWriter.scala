@@ -26,10 +26,10 @@ class LogicWriter() {
      d match {
      	case d : ADT => fs.basic ::= d
      	case d : ADTRec => fs.basic ::= d//l map {x => split(x,fs)} 
-     	case d : TYPEDEF => if (d.name == "sigs") fs.sign ::= d else fs.basic ::= d
+     	case d : TYPEDEF => if (d.name == "sigs") fs.basic ::= d else fs.basic ::= d
      	case d : FUNCTION => fs.tools ::= d 
      	case d : FUNCTIONRec => fs.tools ::= d
-     	case d : RECORD => if (d.name == "theo") fs.sign ::= d else fs.basic ::= d
+     	case d : RECORD => if (d.name == "theo") fs.basic ::= d else fs.basic ::= d
      	case d : EXCEPTION => fs.basic ::= d
      	case _ => 
      }
@@ -68,20 +68,25 @@ class LogicWriter() {
 	val morphism = logdir + "/" + "Morphism.hs"
 	val tools = logdir + "/" + "Tools.hs"
 	//import qualified Data.Map as Map 
-	val imports : List[String]= List("Common.Id","Common.Map","Coomon.ProofTree","qualified Data.Map as Map") map {x => "import " + x}
+	val imports : List[String]= List("Logic.Logic"/*,"Common.Id","Common.Map","Common.ProofTree"*/,"qualified Data.Map as Map") map {x => "import " + x + "\n"}
     
+	val importSign = ""//"import " + lname + ".Sign\n"
+	val importBasic = "import " + lname + ".AS_BASIC_" + lname + "\n"
+	
     // write 
     var fw = File(main)
     var pre_main = List("module " + " " + lname + "." + "Logic_" + lname + " where\n\n")
-//    pre_main = imports
-//    premain ::= List("")
-    pre_main :::= List("import " + lname + "." + "AS_BASIC_" + lname + "\n\n")
+    pre_main ++= imports
+    pre_main ++= List("import " + lname + "." + "AS_BASIC_" + lname + "\n\n")
+    //pre_main ++= InsLanguage(lname).print
+    //pre_main ++= InsCategory(lname).print
     File.write(fw,pre_main.mkString)
     fw = File(basic)
     var pre_basic = "module " + " " + lname + "." + "AS_BASIC_" + lname + " where\n\n" 
-    File.write(fw,pre_basic + (fs.basic map {x => Haskell.decl(x)} mkString))
+    File.write(fw,pre_basic + importSign + (fs.basic map {x => Haskell.decl(x) + "\n"} mkString))
     fw = File(sign)
-    File.write(fw,fs.sign map {x => Haskell.decl(x)} mkString)
+    var pre_sign = "module " + " " + lname + "." + "Sign" + " where\n\n"
+    File.write(fw,pre_sign + importBasic + (fs.sign map {x => Haskell.decl(x)} mkString))
     fw = File(morphism)
     File.write(fw,fs.morphism map {x => Haskell.decl(x)} mkString)
     fw = File(tools)
@@ -115,7 +120,7 @@ case class InsLanguage(lname : String) extends CLASS {
   var description = "no decription" 
   def apply(descr : String) = { description = descr}
   def print : List[String] = List("data " + name + " = " + name + " deriving Show", 
-    start + name + " where\n" + "description _ = " + "\"" + description + "\"") 
+    start + name + " where\n" + "description _ = " + "\"" + description + "\"") map {x => x + "\n"}
 }
 
 case class InsCategory(lname : String) extends CLASS {

@@ -36,6 +36,7 @@ class Compiler(log: LogicSyntax) extends Program {
             CONS(n, arg ::: List(vrb, (scope:EXP)))
          case ConstantSymbol(p, n, args) => CONS(p + "_" + n, id :: argsToEXP(args))
          case VariableSymbol => CONS(c + "_var", List(vrb))
+         case Constructor0(n) => CONS(n, Nil)
       }
       val declare(_*) = c adt (cases :_*)
    }
@@ -65,6 +66,10 @@ class Compiler(log: LogicSyntax) extends Program {
    val declare(symb,sname) = "symb" record ("sname" ::: id)  
      
    val declare(error) = "error" exception
+   
+   // parse tree
+   val declare(tree, varr, app, bind, tbind) = "tree" adt(CONS("variable",List(id)),CONS("application",List(id,LIST(ID("")))),CONS("bind",List(id,id,ID(""))),CONS("tbind",List(id,id,ID(""),ID(""))))
+   
    // the functions that map parse trees to expressions
    
    def parse(c: CatRef, a: EXP) = APPLY(c.target + "_from_pt", a)
@@ -162,7 +167,7 @@ class Compiler(log: LogicSyntax) extends Program {
    // the functions that map expressions to LF
    val tolffuncs = log.cats map {case Category(c, cons) =>
       val declare(_) =
-        c + "_to_lf" function "lf.exp" <-- ("x" :: c) == {"x" Match(cons map {
+        c + "_to_lf" function "lf.exp" <-- ("x" :: c) == {"x" Match( cons map {
           case Connective(n, args) => CASE(APPLY(n, varlist(args) : _*), lf.app(n,recvarlist(args)))
           case Binder(n, Some(a), bound, scope) =>
             val lambda = lf.lam("v", lf.app(bound.target, List(tolf(a, "a"))), tolf(scope, "s"))
@@ -171,10 +176,11 @@ class Compiler(log: LogicSyntax) extends Program {
             ID(n)("v","s") ==> lf.app(n, List(lf.lam("v", bound.target, tolf(scope, "s"))))
           case ConstantSymbol(p, n, args) =>
             ID(p + "_" + n)("i", varlist(args)) ==> lf.qapp("i", n, recvarlist(args))
+          case Constructor0(n) => CASE(APPLY(n, varlist(Nil) : _*), lf.app(n,recvarlist(Nil)))  
           case VariableSymbol =>
             ID(c + "_var")("n") ==> lf.variable("n")
-        } : _*)}
-   }
+        }  :  _*) }
+   }//TODO add case _ => error
    
    // a function that maps declarations to LF instance declarations
    val declare(decl_to_lf) =

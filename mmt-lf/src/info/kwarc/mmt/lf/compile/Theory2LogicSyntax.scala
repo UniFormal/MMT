@@ -52,6 +52,7 @@ class Theory2LogicSyntax {
 	  t match {
     	case ApplySpine(OMS(x),args) =>  CatRef(x.name.toPath)
 	    case OMS(s) =>  CatRef(s.name.toPath)
+	    case OMSemiFormal(s) => CatRef("semi-formal")
 	    case OMA(x,ar) => CatRef(x.toString())// ApplySpine does not work?
 	    // in case of a function type, throw error
 	    case _ => throw TheoryLookupError("this is a function type " + t.toString())
@@ -66,8 +67,9 @@ class Theory2LogicSyntax {
 	      val name = a.name.toString
 	      val args = a.params.components.mapPartial{ v =>
 	        v.tp
-	      }
-	      Some(Declaration(name,args.map{ x => head(x) }))
+	      } 
+	      val ars = args.map{ q => head(q) }
+	      Some(Declaration(name, ars))
 	    }
 	    case _ => None  
 	  }
@@ -84,7 +86,8 @@ class Theory2LogicSyntax {
 	        if (head(out) == cat) {
 	        
 //	        	if (head(out) == cat.toString()) {
-	        		if (in.isEmpty) None else {
+	        		if (in.isEmpty) Some(List(Constructor0(a.name.toString))) 
+	        		else {
 	        			val catrefs : List[CatRef] = in.mapPartial {
 	        				case (None, t) => t match {
 	        				case Apply(OMS(x),args) =>  CatRef(x.name.toPath)
@@ -99,7 +102,7 @@ class Theory2LogicSyntax {
 //	        	} else None
 	        } else None
 	      }
-	      case _ => None // not FunType
+	      case x => None // not FunType
 	    }
 	    // produce ConstantSymbol
 	    case a : Pattern => {
@@ -176,7 +179,10 @@ object Test {
     
     // add file to archive, go through structure!
     // read a source file
-    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/plWPatterns.mmt"
+//    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/plWPatterns.mmt"
+//    val thname = "PLpatt"
+    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/PLimpl.mmt"
+    val thname = "PLimpl"
     cont.handleLine("log console")
 //        cont.handleLine("log+ parser") // adds log messages from the file parser
     cont.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
@@ -188,7 +194,7 @@ object Test {
     println("errors: " + errl.toString)
     val path = DPath(utils.URI("http://cds.omdoc.org/foundational"))
 //    println(cont.globalLookup.getAllPaths().toString)
-    val theo =  cont.localLookup.getTheory(path ? "PLpatt") match {
+    val theo =  cont.localLookup.getTheory(path ? thname) match {
       case d : DeclaredTheory => d
       case _ => throw TestError("attempted retrieving not a DeclaredTheory")
     }
@@ -198,7 +204,7 @@ object Test {
      val theoName = theo.name.toString 
 	 val tls = new Theory2LogicSyntax()
      val ls = tls.translateTheory(theo)
-     
+//     println(ls)
 	 val c = new Compiler(ls)
 	 
 	 val l = c.get
