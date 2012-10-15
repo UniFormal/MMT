@@ -15,8 +15,13 @@ object Haskell extends FuncLang[String] {
      case STRINGS => "String"
      case STRING(value) => "\"" + value + "\""
      case STRINGCONCAT(left, right) => "(" + exp(left) + " + " + exp(right) + ")"
-     case ID(name) => if (name == "") current else {
-       val q = ids
+     case ID(name) => if (name == "") {
+       ids.find(_._1 == current) match {
+         case Some((_,b)) => if (b) checkNativeTypeConflict(upc(current)) else checkNativeTypeConflict(current)
+         case None => current
+       } 
+     }
+     else {
        ids.find(_._1 == name) match {
          case Some((_,b)) => if (b) checkNativeTypeConflict(upc(name)) else checkNativeTypeConflict(name)
          case None => name
