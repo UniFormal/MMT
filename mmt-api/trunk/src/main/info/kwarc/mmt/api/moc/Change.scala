@@ -41,11 +41,11 @@ trait ChangeModule extends ContentElementChange {
 }
 
 case class AddModule(m : Module) extends Add with ChangeModule {
-  def toNode =
+  def toNode = 
     <module change="add">
-      {m.toNode}
-    </module>
-
+	  {m.toNode}
+	</module>
+	  
   def toNodeFlat = <change type="add" path={m.path.toPath}> {m.toNode} </change> :: Nil
 
 }
@@ -111,13 +111,12 @@ case class Component(c : Option[Obj])
 
 case class UpdateComponent(path : Path, name : String, old : Option[Obj], nw : Option[Obj]) extends Update with ContentElementChange {
   def toNode =
-  	<component path={path.toPath} name={name} change="update">
-      {nw.map(_.toNode)}
+  	<component name={name} change="update">
   	</component>
 //  	  {o.toNode(changes)}
   
   def toNodeFlat =
-    <change type="update" path={path.toString} component={name}> {nw.map(_.toNode)} </change> :: Nil
+    <change type="update" path={path.toString} component={name}> //TODO </change> :: Nil
 }
 
 

@@ -93,7 +93,7 @@ object Differ {
 	    }
 	    c.changes.zipWithIndex.map(p => comp2CSS(c.path, p._1, p._2, css, js))
 	  case c : RenameDeclaration =>
-	   val el = "tr.omdoc-symbol[id=\\\"" + (c.path.parent % c.name)  + "\\\"] td:nth-child(1)"
+	    val el = "tr.omdoc-symbol[id=\\\"" + (c.path.parent % c.name)  + "\\\"] td:nth-child(1)"
 	    css.write("tr.omdoc-symbol[id=\"" + (c.path.parent % c.name)  + "\"] td:nth-child(1)\n{\ncolor:#EEBB00;\n} \n")
 	    c.tp match {
 	      case "Constant" => js.write("document.querySelectorAll(\"" + el + "\")[0].setAttribute(\"title\", \"Renamed Constant (from " + c.path.name + ")\")\n")
@@ -197,8 +197,8 @@ object Differ {
       changes = UpdateComponent(old.path, "params", Some(old.params), Some(nw.params)) :: changes
     }
 
-    if (old.body != nw.body) {
-      changes = UpdateComponent(old.path, "con", Some(old.body), Some(nw.body)) :: changes
+    if (old.con != nw.con) {
+      changes = UpdateComponent(old.path, "con", Some(old.con), Some(nw.con)) :: changes
     }
 
 	  new Diff(changes)
@@ -248,27 +248,27 @@ object Differ {
 
 	  new Diff(changes)
 	}
-
-  def compareDeclarations(old : Declaration, nw : Declaration) : Diff = {
-    (old,nw) match {
-      case (o : Constant, n : Constant) =>
-        compareConstants(o,n)
-      case (o : Include, n : Include) =>
-        compareIncludes(o,n)
-      case (o : Pattern, n : Pattern) =>
-        comparePatterns(o,n)
-      case (o : Instance, n : Instance) =>
-        compareInstances(o,n)
-      case (o : ConstantAssignment, n : ConstantAssignment) =>
-        compareConstantAssignments(o,n)
-      case (o : DefLinkAssignment, n : DefLinkAssignment) =>
-        compareDefLinkAssignments(o,n)
-      case (o : Alias, n : Alias) =>
-        compareAliases(o,n)
-    }
-  }
-
-  def _declarations(m : Module) : List[Declaration] = {
+	
+	def compareDeclarations(old : Declaration, nw : Declaration) : Diff = {
+	  (old,nw) match {
+	    case (o : Constant, n : Constant) => 
+	      compareConstants(o,n)
+	    case (o : Include, n : Include) =>
+	      compareIncludes(o,n)
+	    case (o : Pattern, n : Pattern) => 
+	      comparePatterns(o,n)
+	    case (o : Instance, n : Instance) => 
+	      compareInstances(o,n)
+	    case (o : ConstantAssignment, n : ConstantAssignment) => 
+	      compareConstantAssignments(o,n)
+	    case (o : DefLinkAssignment, n : DefLinkAssignment) => 
+	      compareDefLinkAssignments(o,n)
+	    case (o : Alias, n : Alias) => 
+	      compareAliases(o,n)
+	  }
+	}
+		
+	def _declarations(m : Module) : List[Declaration] = {
 	  m.components.flatMap(x => x match {
 	    case d : Declaration => List(d)
 	    case _ => Nil
