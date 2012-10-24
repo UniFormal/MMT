@@ -21,11 +21,13 @@ import frontend._
 import symbols._
 import objects._
 import objects.Conversions._
+import info.kwarc.mmt.api.frontend._ // for report
 //import utils.MyList
+
 
 import scala.sys.process._
 
-//TODO 
+//TODO implementation
 /*	should be able to read in twelf files
  * twelf++ (typecheck and pattern match) the read files
  * 
@@ -33,77 +35,69 @@ import scala.sys.process._
  * check the specifications, give sensible error messages if does not pass
  * 
  */
+case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg)
 
 object Main {
   
-   val base = "http://latin.omdoc.org/logics/syntax"
+   val latinbase = "http://latin.omdoc.org/logics/syntax"
+   val foundational = "http://cds.omdoc.org/foundational"  
   
    def main(args: Array[String]) {
      
      if (args.length == 0) {
-    	 println("No arguments given. Expecting filepath argument.\nTerminating.")
+    	 println("No arguments given. Expecting [flag] [filepath] arguments.\nTerminating.")
     	 return
      } 
      
        try {         
-         val filename = args(0) // take first argument - file name of the source
-         val controller = new frontend.Controller
-         val uri = new utils.URI(None,None,List(base + "?" + filename))
+         val flag = args(0)
+         println("flag: " + flag)
+         val filename = args(1) // take first argument - file name of the source
          
-         val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
-         val (doc, err) = controller.textReader.readDocument(source, DPath(uri),"")
-         source.close()
-//         println("doc: ")      
-         val fileout = "/home/aivaras/Desktop/Hets/hets-mmt-output.txt"
-           val output = controller.library.toString()
-           println(output)
-//         "echo" + " " + output #> new java.io.File(fileout) ! 
-//         val items = doc.getItems
-//         println(controller.globalLookup.getTheory(DPath(uri) ? "Logic") )
-//         println(controller.library.toString())
-//         val patt = controller.localLookup.getPattern(controller.library.getAllPaths.head ? "dqq" )
-//         println("printing patter:")
-//         println(patt) 
-//         val t = controller.get(controller.library.getAllPaths.head)
-//         println(t)
-//         
-////         val pc = new PatternChecker(controller)
-////         val home = OMMOD(controller.library.getAllPaths.head)
-////         println(pc.getPatterns(home)(2))
-//         
-//         println(t.components.map(x => x.getClass()))
-//         val comps = t.components.filter(x => x match {
-//           case x : Constant => true
-//           case _ => false
-//         })                 
-//         comps.map(x => {println(x.getClass()); println(x)})
-//         
-//         val translator = new Translator(controller)
-//         val q = translator.translate(comps.head)
-//         val res = comps.map(x => {
-//           val q =  translator.translate(x)
-//           q
-//         })
-//         res.map(x => {println(x.getClass()); println(x)})
-//         
-         
-         if (! err.isEmpty) {
-                    println("errors occured: ")
-                    println(err.toString())
-                    return
+         val fl = File(new java.io.File(filename))
+         if (!(new java.io.File(filename).exists())) {
+           println("File " + filename + " does not exist!")
+           return
          }
-
          
-
-//         translator.translate(controller.get(controller.library.getAllPaths.head))
+         val controller = new frontend.Controller
+         val uri = new utils.URI(None,None,List(foundational + "?" + filename))
+         controller.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
+         controller.handleLine("archive mmt source-structure")
          
-         //TODO give .hs data structures
-         // via info.kwarc.mmt.lf.compile ?
-         // translate to data structures?
-//         val exp  = Haskell.exp(ID("name"))
-//         println(exp)
+         println("reading file " + filename)
+         val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
+         val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
+         source.close()
          
-       
+         if (!err.isEmpty) {
+           println("errors while reading " + filename + " encountered:")
+           err map println
+           return
+         }
+         
+         val thname = filename.substring(filename.lastIndexOf("/")+1, filename.lastIndexOf("."))
+         
+         // ----------- RUN ----------------------------         
+         
+         val theo =  controller.localLookup.getTheory(DPath(utils.URI("http://cds.omdoc.org/foundational")) ? thname) match {
+         	case d : DeclaredTheory => d
+         	case _ => throw TheoryLookupError("attempted retrieving not a DeclaredTheory")
+         }
+         val tls = new Theory2LogicSyntax()
+         println("translating " + thname + " to logic syntax")
+         val ls = tls.translateTheory(theo)
+         println("compiling pseudo-code")
+         val c = new Compiler(ls)
+         val l = c.get
+         
+         val dir : String = "/home/aivaras/Hets-src/"
+         
+         val lw = new LogicWriter
+         println("writing to files in " + dir + thname)
+         lw.compile(l, thname, dir)
+         
+         
        } // <------------ end of main
       catch {
         case e : java.lang.ArrayIndexOutOfBoundsException => println("Error: array index out of bounds")
@@ -111,9 +105,9 @@ object Main {
         													
         case e : java.lang.OutOfMemoryError => println("ran out of memory!") 
         										e.printStackTrace()
-
-        case e : FileNotFoundException => println("no such file: " + args(0) + ", check spelling")
-        case e : IOException => println("IO exception")
+//
+//        case e : FileNotFoundException => println("no such file: " + args(0) + ", check spelling")
+//        case e : IOException => println("IO exception")
 //        case e => println("unknown error:")
 //        				throw e
 //        				e.printStackTrace()
