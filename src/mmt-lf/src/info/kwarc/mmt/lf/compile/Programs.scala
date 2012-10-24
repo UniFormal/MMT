@@ -3,6 +3,7 @@ package info.kwarc.mmt.lf.compile
 abstract class Program {
    /** stores the list of declarations in reverse declaration-order */
    private var decls : List[DECL] = Nil
+   //TODO for hets specific compiler - have separate lists of declarations for a logic file system?
    /** adds a declaration
     *  merges consecutive ADT's and FUNCTION's into ADTRec and FUNCTIONRec
     */

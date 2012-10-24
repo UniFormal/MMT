@@ -86,8 +86,8 @@ class Theory2LogicSyntax {
 	        if (head(out) == cat) {
 	        
 //	        	if (head(out) == cat.toString()) {
-	        		if (in.isEmpty) Some(List(Constructor0(a.name.toString))) 
-	        		else {
+	        		 
+	        		
 	        			val catrefs : List[CatRef] = in.mapPartial {
 	        				case (None, t) => t match {
 	        				case Apply(OMS(x),args) =>  CatRef(x.name.toPath)
@@ -98,7 +98,7 @@ class Theory2LogicSyntax {
 	        			}	
 	        	
 	        			Some(List(Connective(a.name.toString, catrefs)))
-	        		}
+
 //	        	} else None
 	        } else None
 	      }
@@ -179,10 +179,10 @@ object Test {
     
     // add file to archive, go through structure!
     // read a source file
-//    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/plWPatterns.mmt"
-//    val thname = "PLpatt"
-    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/PLimpl.mmt"
-    val thname = "PLimpl"
+    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/plWPatterns.mmt"
+    val thname = "PLpatt"
+//    val sourceFile1 = "/home/aivaras/TPTP/MMT/theories/source/PLimpl.mmt"
+//    val thname = "PLimpl"
     cont.handleLine("log console")
 //        cont.handleLine("log+ parser") // adds log messages from the file parser
     cont.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
@@ -209,10 +209,10 @@ object Test {
 	 
 	 val l = c.get
 	 
-	 // parent dir
+//	 // parent dir
 	 val dir : String = "/home/aivaras/Hets-src/"
-	 // logic name  
-	 val name : String = "Propositional"
+//	 // logic name  
+//	 val name : String = "Propositional"
 	   
 	 val lw = new LogicWriter
 	 lw.compile(l, theoName, dir)

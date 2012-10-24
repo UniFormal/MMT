@@ -44,9 +44,11 @@ class Compiler(log: LogicSyntax) extends Program {
    // the declarations
    val decls = log.decls map {case Declaration(p, args) =>
      // datatype p = p of a1 ... an
-      val declare(_*) = p adt (p of (id, argsToEXP(args)))
+     //TODO must be converted to a sequence!
+      val declare(_*) = p adt (p of (id, argsToEXP(args) /*: _**/))
    }
    // the labeled union type of all declaration types
+   //TODO arguments of CONS should not be declared as ALIST for decls
    val ofdecls = log.decls map {case Declaration(p, _) =>
       CONS(p + "_decl", List(p))
    }
@@ -55,6 +57,7 @@ class Compiler(log: LogicSyntax) extends Program {
    // the type of signatures
    val declare(sigs) = "sigs" typedef LIST(decl)
    // the type of theories
+   //TODO find axiom declaration - should take a single declaration, not a list?
    val declare(theo, sign, axioms) =
      "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))
    
@@ -68,13 +71,19 @@ class Compiler(log: LogicSyntax) extends Program {
    val declare(error) = "error" exception
    
    // parse tree
-   val declare(tree, varr, app, bind, tbind) = "tree" adt(CONS("variable",List(id)),CONS("application",List(id,LIST(ID("")))),CONS("bind",List(id,id,ID(""))),CONS("tbind",List(id,id,ID(""),ID(""))))
+   val declare(tree, varr, app, bind, tbind) = "tree" adt (
+       CONS("variable",List(id)),
+       CONS("application",List(id,LIST(ID("")))),
+       CONS("bind",List(id,id,ID(""))),
+       CONS("tbind",List(id,id,ID(""),ID("")))
+   )
    
    // the functions that map parse trees to expressions
    
    def parse(c: CatRef, a: EXP) = APPLY(c.target + "_from_pt", a)
    def qualIDFirst(e: EXP) = APPLY("parse.qualIDSplitFirst", e)   //parse.qualIDSplit("instance_name") = ("instance","name")
    def qualIDSecond(e: EXP) = APPLY("parse.qualIDSplitSecond", e)
+   //TODO generate 'case _ => error' at the end
    val parsefuncs = log.cats map {case Category(c, cons) =>
       val appcase = cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
         case (rest, Connective(con,cats)) =>
@@ -180,7 +189,7 @@ class Compiler(log: LogicSyntax) extends Program {
           case VariableSymbol =>
             ID(c + "_var")("n") ==> lf.variable("n")
         }  :  _*) }
-   }//TODO add case _ => error
+   }//TODO add case _ => error any new var name matched here
    
    // a function that maps declarations to LF instance declarations
    val declare(decl_to_lf) =

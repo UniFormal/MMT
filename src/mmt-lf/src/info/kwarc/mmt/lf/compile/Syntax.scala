@@ -23,6 +23,8 @@ case class ConstantSymbol(pattern: String, name: String, arguments: List[CatRef]
 case object VariableSymbol extends Constructor
 /** a constructor for formulas, i.e. true : bool, false : bool */
 case class Constructor0(name : String) extends Constructor
+//TODO remove this, use connective with 0 args instead, detect on theory2logicsyn level
+
 
 /** a pragmatic declaration with some argument types */
 case class Declaration(pattern: String, arguments: List[CatRef])

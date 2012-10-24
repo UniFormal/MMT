@@ -32,7 +32,7 @@ object Haskell extends FuncLang[String] {
      case MATCH(arg, cases) => "case " + exp(arg) + "\n" + cases.map(cas).mkString("  of ", "\n   ", "\n")
      case ERROR(e, msg) => "error " + exp(STRINGCONCAT(STRING(e + ": "), msg))
      case LIST(tp) => "[" + exp(tp) + "]"
-     case ALIST(elems) => if (!elems.isEmpty) elems.map(exp).mkString("[", ",", "]") else ""
+     case ALIST(elems) => elems.map(exp).mkString("[", ",", "]")
      case LENGTH(list) => "length(" + exp(list) + ")"
      case AT(list, index) => "(" + exp(list) + " !! " + exp(index) + ")"
      case CONCAT(left, right) => "(" + exp(left) + " ++ " + exp(right) + ")"
@@ -73,7 +73,7 @@ object Haskell extends FuncLang[String] {
         val q = ids
         decl(d)
       }
-      println(ids)
+//      println(ids)
       q
    }
    private def declName(d : DECL) : List[(String,Boolean)] = d match {
