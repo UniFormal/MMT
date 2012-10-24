@@ -15,6 +15,8 @@ import scala.io.Source
  * this is also called the pragmatic-to-strict translation
  */
 class PatternChecker(controller: Controller) extends Elaborator {
+  private var valid : Boolean = true // theory is valid? 
+  
   case class getPatternsError(msg : String) extends java.lang.Throwable(msg)
 /** retrieves patterns from theory
 * 
@@ -87,15 +89,30 @@ class PatternChecker(controller: Controller) extends Elaborator {
         val ins = constList.map{
           c => pattList.map( p => {
             this.patternCheck(List(c),p) match {
-              case Some(sub) => Some(sub) //Some(new Instance(c.home,c.name,GlobalName(c.home, p.name),sub))
+              case Some(sub) => Some(sub)
               case None => None
             } 
           }) 
           }.flatten.flatten
-        val valid = constList.length == ins
+        val valid = constList.length == ins.length
         ins
   }
- 
+ /*	takes 1 constant and a list of declaration patterns
+  * validates in 
+  */
+  def getInstance(const : Constant, pattList : List[Pattern]) : List[Instance] = {
+    val ins = pattList.map { p =>
+      patternCheck(List(const),p)
+    }.flatten
+    ins.length match {
+      case 1 => println("constant " + const.home.toString() + const.name + " validated") 
+      case 0 => valid = false
+      		println("constant " + const.home.toString() + const.name + " could not be validated: no patterns matched")
+      case _ => valid = false
+      		println("constant " + const.home.toString() + const.name + " could not be validated: more than one pattern matched")
+    }
+    ins
+  }
 }
 
 
