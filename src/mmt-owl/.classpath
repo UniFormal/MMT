@@ -6,6 +6,6 @@
 	<classpathentry kind="lib" path="lib/owlapi-bin.jar"/>
 	<classpathentry kind="lib" path="lib/mmt-api/mmt-lf.jar"/>
 	<classpathentry kind="lib" path="lib/scala/tiscaf.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api-nv"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

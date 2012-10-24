@@ -23,7 +23,7 @@
         <mkdir dir="doc/api"/>
         <scaladoc destdir="doc/api" doctitle="MMT" srcdir="."  
                   classpathref="scaladoc.classpath">
-            <include name="src/mmt-api/branches/next-version/src/**/*.scala"/>
+            <include name="src/mmt-api/trunk/src/**/*.scala"/>
             <include name="src/mmt-lf/src/**/*.scala"/>
             <exclude name="src/mmt-mizar/trunk/src/**/*.scala"/>
             <exclude name="src/mmt-owl/src/**/*.scala"/>
