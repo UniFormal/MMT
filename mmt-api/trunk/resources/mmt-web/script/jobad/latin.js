@@ -12,6 +12,7 @@ function setStyle(style) {
    notstyle = style;
     $('#currentstyle').text(style.split("?").pop());
 }
+
 /**
  * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
  * act: String: action to call on MMTURI
@@ -34,27 +35,158 @@ function load(elem) {
    var res = null;
    function cont(data) {res = data;}
    proxyAjax('get', url, '', cont, false, 'text/xml');
-   console.log(res.firstChild);
    elem.removeAttribute('jobad:load');
    return res.firstChild;
 }
 
 
-function diff() {
-    
-    var url = adaptMMTURI(currentElement, '_diff_720', false);
-    var res = null;
-    function cont(data) {res = data;}
-    proxyAjax('get', url, '', cont, false, 'text/xml');
-    console.log(res.firstChild);
-    
-    //$('mo').filter(function() {return $(this).attr('jobad:href') == currentElement;}).each(function() {$(this).attr('style', 'color:red !important');});
-    
-    console.log(currentElement);
-    console.log(currentComponent);
-    console.log(currentPosition);
-    //return true;
-    return res.firstChild;
+function edit() {
+    var path = currentElement
+    var comp = currentComponent
+    arr = path.split("?");
+    var mod = "";
+    var url = "";
+    if (arr.length >= 2) {
+    	url = "/:mmt?" + arr[0] + "?" + arr[1] + "?" ;
+    	if (arr.length == 3) {
+    		url += arr[2];
+    		if (comp != "" && comp != "name") {
+    			url += " component " + comp
+    		}
+    	}
+    	url += "?text";    
+    	function cont(data) {
+    		console.log(path);
+    		console.log(comp);
+    		var math = null;
+    		$("math").each(function(i,v) {
+    			if($(v).attr("jobad:owner") == path && $(v).attr("jobad:component") == comp) {
+    				math = $(v).parent();
+    			} 
+    		});
+    		
+    		if (math == null) {
+    			return false;
+    		}
+    		var spres = data.split("\n"); 
+    		var rows = spres.length;
+    		var columns = 20;
+    		var i;
+    		for (i = 0; i < spres.length; ++i) {
+    			if (spres[i].length > columns)
+    				columns = spres[i].length
+    		}
+    	    
+    		math.html('<textarea rows="' + rows +'" cols="' + columns + '\">' + data + '</textarea>');
+    	    console.log(math);
+	        console.log(math.parent());
+	        math.parent().append('<button id="save" style="width:20px;height:20px" onClick=compileText("' + path + '", "true")> Save </button>');   			
+ //   			"<div class=\"parser-info\" style=\"padding-bottom:5px;\"></div>" + 
+ //   			"<button id=\"compile\" onClick=compileText(\"" + path + "\",\"false\") class=\"ui-button ui-widget ui-state-default\"" +
+ // 			"role=\"button\">Compile</button>" + 
+ //  			"<button id=\"save\" onClick=compileText(\"" + path + "\",\"true\") disabled=\"true\" class=\"ui-button ui-widget ui-state-disabled ui-state-default ui-corner-all ui-button-text-only\"" +
+ //   			"role=\"button\" aria-disabled=\"false\">Save</button>" + 
+ //   			"<div class=\"parser-response\" style=\"padding-top:5px;\"></div> + "
+ //				"");
+    		
+ 			math.parent().find("button").button({
+ 				icons: {
+ 					primary: "ui-icon-disk"
+ 				},
+ 				text: false
+ 			});
+ 			
+    		var textarea = math.find("textarea")[0];
+    		
+    		mycm = CodeMirror.fromTextArea(textarea);
+    		mycm.setOption('onChange', function() {
+    				var save = $("#save");
+    				save.attr("disabled", "disabled");
+    				save.addClass("ui-state-disabled")
+    		});
+    	}
+    	$.ajax({
+    			'type' : 'get',
+    			'url' : url,
+    			'dataType' : 'text',
+    			'success' : cont,
+    			'async' : false
+    	});	
+    }
+}
+
+var mycm;
+var invalidPaths = [];
+
+function compileText(mod, save) {
+    mycm.save();
+    var id = "div#" + RegExp.escape(mod);   
+    var text = $(id + " textarea").val()//.replace(/[#]/g, "\\$&");
+    var checkedPchanges = $(id + " :checkbox").map(function(value, index) {
+	if ($(this).attr("checked")) {
+	    return $(this).attr("value");
+	}
+    }).get().join("\n");
+    var cont = function(data) {
+//	console.log(data);
+	if (data.success == "true") {
+	    var saveBtn = $("#save");
+	    saveBtn.removeAttr("disabled");
+	    saveBtn.removeClass("ui-state-disabled");
+	}
+	if (save == "true") {
+	    $(id + " div.parser-info").html("");
+	    if (data.success == "true") {
+		invalidPaths = data.pres;
+		markInvalids();
+		$(id + " div.parser-response").html("<i>Commit Successful</i><br/");
+	    } else {
+		$(id + " div.parser-response").html("<i>Commit Failed -- Please Try Again</i><br/>");
+	    }
+	} else {
+	    if (data.success == "true") {
+		if (data.info.length > 0) {//there are pragmatic changes
+		    var pChanges = $.map(data.info, function(value,index) {
+			return "<input type=\"checkbox\" name=\"pchange\" value=\"" + value + "\">" + value +"</input>";
+		    }).join("<br/>");		    
+		    var info = "<i>Found Pragmatic Changes:</i><br/>" + pChanges
+		    $(id + " div.parser-info").html(info);
+		}
+		var pres = "<i>Compile Successful : </i><br/>" + 
+		    "<table cellpadding=\"5px\">" + data.pres + "</table>";
+		$(id + " div.parser-response").html(pres);
+	    } else {
+		var pres = "<i>Compile Failed : </i><br/>" + 
+		    "<table cellpadding=\"5px\">" + data.pres + "</table>";
+		$(id + " div.parser-response").html(pres);
+	    }
+	}
+    }
+    $.ajax({
+	'type' : 'post',
+	'url' : "/:parse?" + mod,
+	'data' : {'text' : text, 'save' : save, "pchanges" : checkedPchanges}, 
+	'success' : cont
+    });
+}
+
+RegExp.escape = function(text) {
+    return text.replace(/[!\"#$%&'()*+,.\/:;<=>?@[\]^`{|}~]/g, "\\$&");
+}
+
+function markInvalids() {
+    $("span").each(function(i2,v2) {
+	if($(v2).attr("jobad:href")) {
+	    $(v2).css("color", "black");
+	}
+    });
+    $.each(invalidPaths, function(i,v) {
+	$("span").each(function(i2,v2) {
+	    if($(v2).attr("jobad:href") == v) {
+		$(v2).css("color", "red");
+	    }
+	});
+    });
 }
 
 
@@ -69,14 +201,16 @@ function flatClick(elem) {
    }
 }
 function remoteClick(elem) {
-   var ref = load(elem);
-   $(elem).replaceWith(ref);
+    var ref = load(elem);
+    $(elem).replaceWith(ref);
+    markInvalids();
 }
 
 function ajaxReplaceIn(url, targetid) {
    function cont(data) {
        var targetnode = $('#' + targetid).children('div');
-        targetnode.replaceWith(data.firstChild);
+       targetnode.replaceWith(data.firstChild);
+       markInvalids();
    }
    $.ajax({ 'url': url,
             'dataType': 'xml',
@@ -85,20 +219,20 @@ function ajaxReplaceIn(url, targetid) {
 }
 
 function latin_navigate(uri) {
-		// main div
-		var url = adaptMMTURI(uri, '', true);
-		ajaxReplaceIn(url, 'main');
-		// cross references
-		/* var refurl = catalog + '/:query/incoming?' + uri;
-		ajaxReplaceIn(refurl, 'crossrefs');
-      $('#crossrefs').jstree({
-              "core" : {"animation": 0},
-              "themes" : {"theme" : "classic", "icons" : false},
-              "plugins" : ["html_data", "themes", "ui", "hotkeys"]
-      }); */
-		// breadcrumbs
-		var bcurl = '/:breadcrumbs?' + uri;
-		ajaxReplaceIn(bcurl, 'breadcrumbs');
+    // main div
+    var url = adaptMMTURI(uri, '', true);
+    ajaxReplaceIn(url, 'main');
+    // cross references
+    /* var refurl = catalog + '/:query/incoming?' + uri;
+       ajaxReplaceIn(refurl, 'crossrefs');
+       $('#crossrefs').jstree({
+       "core" : {"animation": 0},
+       "themes" : {"theme" : "classic", "icons" : false},
+       "plugins" : ["html_data", "themes", "ui", "hotkeys"]
+       }); */
+    // breadcrumbs
+    var bcurl = '/:breadcrumbs?' + uri;
+    ajaxReplaceIn(bcurl, 'breadcrumbs');
 }
 
 /**
@@ -199,7 +333,7 @@ function cond_parse(str, arr){
 // for initialization: wrap all jobad:conditional elements in mactions
 function createMactions(root) {
    $(root).find('[jobad:conditional]').filter(function(){
-      return (getTagName(this.parent) !== 'maction');
+      return (geTagName(this.parent) !== 'maction');
    }).each(function(){
       createMactionElement(null, 'conditional', this);
    });
@@ -274,9 +408,9 @@ var latin = clone(Service);
  */
 latin.init = function(){
 	//updateVisibility(document.documentElement);
-   $('#currentstyle').text(notstyle.split("?").pop());
-   var query = window.location.search.substring(1);
-   latin_navigate(query);
+    $('#currentstyle').text(notstyle.split("?").pop());
+    var query = window.location.search.substring(1);
+    latin_navigate(query);
 }
 
 function unsetSelected(){
@@ -321,32 +455,25 @@ latin.leftClick = function(target){
 }
 
 latin.hoverText = function(target){
-        //handling clicks on parts of the document - active only for elements that have jobad:href
+   //handling clicks on parts of the document - active only for elements that have jobad:href
 	if (target.hasAttribute('jobad:href')) {
 		var mr = $(target).closest('mrow');
 		var select = (mr.length == 0) ? target : mr[0];
 		setSelected(select);
-		return true;
+		return target.getAttribute('jobad:href');
 	}
-	// highlight bracketed expression
+	// bracketed expression
 	if (getTagName(target) == 'mfenced') {
 		setSelected(target);
-		return true;
+		return false;
 	}
-	// highlight variable declaration
+	// variable declaration
 	if (target.hasAttribute('jobad:varref')) {
 	   var v = $(target).parents('mrow').children().filterMAttr('jobad:xref', target.getAttribute('jobad:varref'));
 		setSelected(v[0]);
-		return true;
+		return false;
 	}
-	unsetSelected();
-	return false;
-        /*
-	if (target.hasAttribute('jobad:href')) {
-		return target.getAttribute('jobad:href');
-	} else
-	   return null;
-        */
+	return null;
 }
 
 /* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
@@ -379,7 +506,7 @@ var visibMenu = [
    ["implicit arguments", '', visibSubmenu('implicit-arg')],
    ["implicit binders", '', visibSubmenu('implicit-binder')],
    ["redundant brackets", '', visibSubmenu('brackets')],
-   ["diff", "diff()"],
+   ["edit", "edit()"],
 
 ];
 latin.contextMenuEntries = function(target){
@@ -435,7 +562,7 @@ function XMLElem(tag, content) {return XMLElem1(tag, null, null, content);}
 function XMLElem1(tag, key, value, content) {
   var atts = (key == null) ? "" : XMLAttr(key,value);
   var begin = '<' + tag + atts;
-  if (content == null) {
+    if (content == null) {
     return begin + '/>';
   } else {
     return begin + '>' + content + '</' + tag + '>';

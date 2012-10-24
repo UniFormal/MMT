@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api.utils.MyList.fromList
 
+/** Wrapper around List to provide some custom extensions */
 class MyList[A](l : List[A]) {
    implicit def toList : List[A] = l
    /** folding for non-associative folding functions, e.g. Nil => start; List(a) => a; List(a,b) => map(a,b), ... */
@@ -20,7 +21,7 @@ class MyList[A](l : List[A]) {
    
    def  #:(a : A) = l.exists(_ == a)
    def !#:(a : A) = ! l.exists(_ == a)
-   
+      
    def quotient[B](f : A => B) : List[(B,List[A])] = {
       var in : List[(B, A)] = l.map(x => (f(x), x))      
       var out : List[(B, List[A])] = Nil

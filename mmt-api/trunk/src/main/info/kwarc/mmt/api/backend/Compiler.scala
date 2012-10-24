@@ -1,15 +1,18 @@
 package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
+import archives._
 import frontend._
 import utils.File
 
 trait Importer {
+   protected var controller : Controller = null
    protected var report : Report = null
    /** true if this compiler can compile a certain kind of source files */
    def isApplicable(src : String): Boolean
    /** initialization (empty by default) */
-   def init(report: Report, args: List[String]) {
-      this.report = report
+   def init(controller: Controller, args: List[String]) {
+      this.controller = controller
+      report = controller.report
    }
    /** termination (empty by default)
     * Importers may create persistent data structures and processes,
@@ -29,21 +32,12 @@ trait Compiler extends Importer {
      * @param in the input file 
      * @param out the output file without extension
      */
-   def compile(in: File, out: File) : List[CompilerError]
+   def compile(in: File, out: File) : List[SourceError]
 
    /** registers an archive with this compiler */
    def register(arch: Archive, dim: String) {}
-
-}
-
-/** an error or warning returned by the compiler */
-case class CompilerError(region: Region, msg : List[String], warning: Boolean) {
-   override def toString = region.toString + msg.mkString("\n","\n","\n") 
-}
-
-/** represents the location of an error */
-case class Region(file: File, beginLine: Int, beginColumn: Int, endLine: Int, endColumn: Int) {
-   override def toString = file.toString + "#" + beginLine + "." + beginColumn + "-" + endLine + "." + endColumn
+   /** unregisters an archive with this compiler */
+   def unregister(arch: Archive, dim: String) {}
 }
 
 trait QueryTransformer extends Importer {

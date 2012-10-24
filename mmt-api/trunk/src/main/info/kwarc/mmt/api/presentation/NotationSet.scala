@@ -14,6 +14,7 @@ object Defaults {
    }
 }
 
+/** Stores a set of notations for presentation */
 class Style(val parent : DPath, name : LocalPath, val defaults : Defaults,
             val from : Path, val to : Path, report : frontend.Report)
                 extends PresentationElement {

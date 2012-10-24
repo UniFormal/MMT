@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.metadata
 import info.kwarc.mmt.api._
 import objects._
 import utils._
+import utils.MyList._
 
 import scala.xml._
 
@@ -15,16 +16,29 @@ trait HasMetaData {
 
 /**
  * represents a list of metadata key-value pairs
- * duplicates keys or key-value pairs are permitted
+ * duplicate keys or key-value pairs are permitted
  */
 class MetaData {
    protected var data: List[MetaDatum] = Nil
    /** add metadata item, order of insertion is preserved */
    def add(newdata: MetaDatum*) {data = data ::: newdata.toList}
+   def delete(key: GlobalName) {
+      data = data.filter(md => md.key != key)
+   }
+   def update(key: GlobalName, values: List[Obj]) {
+      delete(key)
+      values map  {value => add(new MetaDatum(key, value))}
+   }
+   def keys = data.map(_.key).distinct
    /** get all metadata */
    def getAll : List[MetaDatum] = data
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
+   def getValues(key: GlobalName) : List[Obj] = get(key).map(_.value)
+   def getLink(key: GlobalName) : List[URI] = data.mapPartial {
+      case Link(k, u) if k == key => Some(u)
+      case _ => None
+   }
    def toNode = <metadata>{data.map(_.toNode)}</metadata>
    // def toString
 }
@@ -56,6 +70,11 @@ object MetaData {
          mdata
       case _ => throw ParseError("metadata expected: " + node) // TODO parse meta and link
    }
+   def apply(pairs : MetaDatum*) : MetaData = {
+     val metadata = new MetaData
+     metadata.add(pairs: _*)
+     return metadata
+   }
 }
 
 /**
@@ -66,7 +85,7 @@ object MetaData {
 class MetaDatum(val key: GlobalName, val value: Obj) {
    def toNode = this match {
       case Link(key, uri) => <link rel={key.toPath} resource={uri.toString}/> 
-      case _ => <meta property={key.toPath}>{value.toNode}</meta> 
+      case _ => <meta property={key.toPath}>{value.toOBJNode}</meta> 
    }
    // def toString
 }

@@ -52,7 +52,7 @@ sealed abstract class Binary(val desc : String) {
    def unary_+ = ToObject(this)
 }
 
-// module - module, symbol (assignment) - module
+// module - module, component - component
 case object DependsOn extends Binary("S depends on O")
 // theory - theory
 case object HasMeta extends Binary("S has meta-theory O")
@@ -61,15 +61,9 @@ case object Includes extends Binary("S includes O")
 case object HasDomain extends Binary("S has domain O")
 case object HasCodomain extends Binary("S has codomain O")
 // constant - constant (not used yet)
-case object DependsOnTypeOf extends Binary("S depends on the type of O")
-case object DependsOnDefiniensOf extends Binary("S depends on the definiens of O")
 case object IsInstanceOf extends Binary("S is instance of O")
-
-// constant (assignment) - constant (deprecated)
-case object HasOccurrenceOfInType extends Binary("S refers to O in type")
-case object HasOccurrenceOfInDefinition extends Binary("S refers to O in definition")
-case object HasOccurrenceOfInTarget extends Binary("S refers to O")
-
+//path - path
+case object RefersTo extends Binary("S refers to O")
 //parent - child (many-many relation because a declaration may be referenced in other documents)
 case object Declares extends Binary("S contains declaration of O")
 // symbol - symbol, module - module
@@ -77,11 +71,10 @@ case object IsAliasFor extends Binary("S is alias for O")
 
 /** helper methods for Binary items */
 object Binary {
-   val all = List(HasOccurrenceOfInType,HasOccurrenceOfInDefinition,HasOccurrenceOfInTarget,
-                          DependsOnTypeOf,DependsOnDefiniensOf,DependsOn,Includes,IsAliasFor,HasMeta,HasDomain,HasCodomain,Declares)
+   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares)
    def parse(s: String) : Binary = all.find(_.toString == s) match {
       case Some(i) => i
-      case _ => HasOccurrenceOfInType // throw ParseError("binary predicate expected, found: " + s) //TODO temporary fix to parse obsolete data
+      case _ => throw ParseError("binary predicate expected, found: " + s)
    }
 }
 
@@ -102,19 +95,6 @@ case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalEle
    def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
    override def toString = subj.toString + " " + dep.toString + " " + obj.toString
    def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
-}
-
-/**
- * Same as relation only with more specific paths, should extend Relation eventually, but currently under development
- * //TODO
- */
-case class FineGrainedRelation(dep : Binary, subj : Path, subjComponent : String, obj :Path, objComponent : String) extends RelationalElement {
-   //TODO
-   val path = subj
-   def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
-   override def toString = subj.toString + " " + dep.toString + " " + obj.toString
-   def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
-  
 }
 
 /** 

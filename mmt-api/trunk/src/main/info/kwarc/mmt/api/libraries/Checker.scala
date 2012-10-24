@@ -1,409 +1,163 @@
 package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.moc._
-
+import documents._
+import modules._
+import symbols._
+import objects._
+import patterns._
+import ontology._
+import utils._
+import moc._
 import frontend._
 
-import info.kwarc.mmt.api.utils.MyList.fromList
-import info.kwarc.mmt.api.objects.Conversions._
-
-/** CheckResult is the result type of checking a content element */
-sealed abstract class CheckResult
-sealed abstract class CheckContentResult extends CheckResult
-sealed abstract class CheckChangeResult extends CheckResult
-/** the content element is well-formed
- * @param deps the list of dependencies of the object
- */
-case class ContentSuccess(deps : List[RelationalElement]) extends CheckContentResult
-/** the content element is well-formed and was reconstructed to several new objects (e.g., type inference)
- * @param recon the reconstructed content elements
- */
-case class ContentReconstructed(recon : List[ContentElement], deps : List[RelationalElement]) extends CheckContentResult
-
-/** the change is well-formed and was reconstructed to several new objects (e.g., type inference)
- * @param recon the reconstructed content elements
- */
-case class ChangeSuccess(recon : List[ContentElement], deps : List[RelationsChange]) extends CheckChangeResult
-
-/** the content element is ill-formed
- * @param msg an error message 
- */
-case class ContentFail(msg : String) extends CheckContentResult 
-/** the content element is ill-formed
- * @param msg an error message 
- */
-case class ChangeFail(msg : String) extends CheckChangeResult 
-
-
-/** Objects of type Checker can be used by a Library to check added ContentElements.
-  *  They may return reconstructed declarations and can infer the relational representation. */
-abstract class Checker {
-   
-   def check(s : ContentElement)(implicit mem: ROMemory) : CheckContentResult
-   
-   def get(p : Path, component : String, callerPath : Path, callerComponent : String)(implicit mem: ROMemory) : ContentElement = {
-     mem.ontology += FineGrainedRelation(DependsOn, callerPath, callerComponent, p, component) 
-     mem.content.get(p)
-   }
-   
-}
-
-/**
- * A Checker that always succeeds.
- */
-object NullChecker extends Checker {
-   def check(s : ContentElement)(implicit mem : ROMemory) = ContentSuccess(Nil)
-}
+import utils.MyList.fromList
+import objects.Conversions._
 
 /**
  * A Checker that checks only knowledge items whose well-formedness is foundation-independent.
  */
-abstract class ModuleChecker extends Checker {
-   def check(s : ContentElement)(implicit mem : ROMemory) : CheckContentResult = try {
-      checkModuleLevel(s)
-   } catch {
-      case e : Error => ContentFail("content element contains ill-formed object\n" + e.msg)
-      //case e => Fail("error during checking: " + e.msg)
-   }
-   def checkModuleLevel(e: ContentElement)(implicit mem : ROMemory) : CheckContentResult = {
-      e match {
-         case t: DeclaredTheory =>
-            checkEmpty(t)
-            val d = List(IsTheory(t.path))
-            t.meta match {
-               case Some(mt) =>
-                  checkTheo(OMMOD(mt), _ => null, _ => null)
-                  val mincl = PlainInclude(mt, t.path)
-                  mincl.setOrigin(MetaInclude)
-                  val minclflat = mem.content.importsTo(OMMOD(mt)).toList.map {from =>
-                     val i = new Include(OMMOD(t.path), from)
-                     i.setOrigin(MetaInclude)
-                     i
-                  }
-                  ContentReconstructed(t :: mincl :: minclflat, HasMeta(t.path, mt) :: d)
-               case _ =>
-                  ContentSuccess(d)
-            }
-         case t : DefinedTheory =>
-            val deps = checkTheo(t.df, IsAliasFor(t.path, _), DependsOn(t.path, _))
-            ContentSuccess(IsTheory(t.path) :: deps)
-         case l : DeclaredView =>
-            checkEmpty(l)
-            ContentSuccess(checkLink(l, e.path))
-         case l : DefinedView =>
-            val occs = checkMorphism(l.df, l.from, l.to)
-            val deps = occs.map(DependsOn(l.path, _))
-            ContentSuccess(checkLink(l, e.path) ::: deps)
-         case l: Include =>
-            val par = checkAtomic(l.home)
-            val deps = checkTheo(l.from, Includes(par, _), DependsOn(par, _))
-            if (mem.content.imports(l.from, l.home)) {
-               // ignoring redundant import
-               ContentReconstructed(Nil, Nil)
-            } else {
-               // flattening (transitive closure) of includes
-               val flat = mem.content.importsTo(l.from).toList.mapPartial {t =>
-                  if (mem.content.imports(t, l.home)) None
-                  else {
-                     val i = new Include(l.home, t)
-                     i.setOrigin(IncludeClosure)
-                     Some(i)
-                  }
-               }
-               ContentReconstructed(l :: flat, deps)
-            }
-         case s: DeclaredStructure =>
-            checkEmpty(s)
-            val par = checkAtomic(s.home)
-            ContentSuccess(checkLink(s, s.path))
-         case s: DefinedStructure =>
-            checkAtomic(s.home)
-            val ldeps = checkLink(s, s.path)
-            val ddeps = checkMorphism(s.df, s.from, s.to).map(DependsOn(s.path, _))
-            ContentSuccess(ldeps ::: ddeps)
-         case e => checkSymbolLevel(e)
-      }
-   }
-   def checkSymbolLevel(e: ContentElement)(implicit mem: ROMemory) : CheckContentResult
-   
-   protected def checkLink(l : Link, path : Path)(implicit mem: ROMemory) : List[RelationalElement] = {
-	  val todep = l match {
-         case _ : View =>
-            val ds = checkTheo(l.to, HasCodomain(path, _), DependsOn(path, _))
-            IsView(path) :: ds
-         case _ : Structure => List(IsStructure(path))
-      }
-      val fromdep = checkTheo(l.to, HasDomain(path, _), DependsOn(path, _))
-      todep ::: fromdep
-   }
-   protected def checkAtomic(m: ModuleObj) : MPath = m match {
-      case OMMOD(p) => p
-      case _ => throw Invalid("adding constants to composed theories not allowed")
-   }
-   protected def checkEmpty[D <: Declaration](b: Body[D]) {
-      if (! b.isEmpty) throw Invalid("body not empty")
-   }
-
-   /** checks whether a theory object is well-formed relative to a library
-    *  @param t the theory
-    *  @param atomic return value to construct if the theory is atomic
-    *  @param nonatomic return value to construct for all occurrences in a nonatomic theory 
-    *  @param mem the memory
-    *  @return the list of return values
-    */
-   def checkTheo[A](t : TheoryObj, atomic: Path => A, nonatomic: Path => A)(implicit mem: ROMemory) : List[A] = t match {
-     case OMMOD(p) =>
-       checkTheoRef(p)
-       List(atomic(p))
-     case TEmpty(mt) => mt match {
-        case None => Nil
-        case Some(mt) =>
-           checkTheo(OMMOD(mt), _ => null, _ => null)
-           List(atomic(mt))
-     }
-     case TUnion(l,r) =>
-        //TODO check same meta-theory?
-        val lr = checkTheo(l, atomic, nonatomic) ::: checkTheo(r, atomic, nonatomic)
-        lr.distinct
-   }
-  /** checks whether a morphism object is well-formed relative to a library and infers its type
-    *  @param mem the memory
-    *  @param m the theory
-    *  @return the list of named objects occurring in m, the domain and codomain of m
-    */
-   def inferMorphism(m : Morph)(implicit mem: ROMemory) : (List[Path], TheoryObj, TheoryObj) = m match {
-     case OMMOD(m : MPath) =>
-        val l = checkLinkRef(m)
-        (List(m), l.from, l.to)
-     case OMDL(to, name) =>
-        val occs = checkTheo(to, p => p, p => p)
-        val from = mem.content.get(to % name) match {
-           case l: DefinitionalLink => l.from
-           case _ => throw Invalid("invalid morphism " + m)
-        }
-        (occs, from, to)
-     case OMIDENT(t) =>
-        val occs = checkTheo(t, p => p, p => p)
-        (occs, t, t)
-     case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
-     case OMCOMP(hd :: Nil) => inferMorphism(hd)
-     case OMCOMP(hd :: tl) =>
-        val (l1, r,s1) = inferMorphism(hd)
-        val (l3, s2,t) = inferMorphism(OMCOMP(tl))
-        val l2 = checkInclude(s1,s2) match { 
-           case Some(l) => l
-           case None => throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
-        }
-        (l1 ::: l2 ::: l3, r, t)
-     case MEmpty(f,t) =>
-        val occs = checkTheo(f, p => p, p => p) ::: checkTheo(t, p => p, p => p)
-        (occs, f,t)
-     case MUnion(l,r) =>
-        val (loccs, ld, lc) = inferMorphism(l)
-        val (roccs, rd, rc) = inferMorphism(r)
-        // TODO l === r on (intersection ld rd)
-        val dom = TUnion(ld, rd)
-        val cod = if (mem.content.imports(lc, rc)) rc
-           else if (mem.content.imports(rc, lc)) lc
-           else TUnion(rc, lc)
-        (loccs ::: roccs, dom ,cod)
-   }
-   def checkInclude(from: TheoryObj, to: TheoryObj)(implicit mem: ROMemory) : Option[List[Path]] = {
-        if (from == to) Some(Nil)
-        else if (mem.content.imports(from,to)) Some(List(to % LocalName(IncludeStep(from))))
-        else None
-   }
-   /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
-    *  @param mem the memory
-    *  @param m the morphism
-    *  @param dom the domain
-    *  @param cod the codomain
-    *  @return the list of identifiers occurring in m
-    */
-   def checkMorphism(m : Morph, dom : TheoryObj, cod : TheoryObj)(implicit mem: ROMemory) : List[Path] = {
-      val (l, d,c) = inferMorphism(m)
-      (checkInclude(dom, d), checkInclude(c, cod)) match {
-         case (Some(l0), Some(l1)) => l0 ::: l ::: l1
-         case _ => throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + c + " -> " + d)
-      }
-   }
-   /** called for every reference to a theory */
-   def checkTheoRef(p: MPath)(implicit mem: ROMemory) : Theory = mem.content.getTheory(p)
-   /** called for every reference to a link */
-   def checkLinkRef(p: MPath)(implicit mem: ROMemory) : Link = mem.content.getLink(p)
-}
-
-object SimpleChecker extends ModuleChecker {
-   def checkSymbolLevel(e: ContentElement)(implicit mem: ROMemory) = ContentSuccess(Nil)
-}
-
-/**
- * A Checker that implements MMT-well-formedness relative to a foundation.
- */
-class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecker {
-     def checkModuleChange(c : ChangeModule)(implicit mem: ROMemory) : CheckChangeResult = c match {
-     case AddModule(m) => check(m) match {
-       case ContentSuccess(l) => ChangeSuccess(Nil,AddRelations(l) :: Nil)
-       case ContentReconstructed(r,l) => ChangeSuccess(r, AddRelations(l) :: Nil)
-       case ContentFail(msg) => ChangeFail(msg)
-     }
-     case RenameModule(pold, pnew) => 
-       try {
-         mem.content.get(pold)
-    	 try {
-    	   mem.content.get(pnew)
-           ChangeFail("trying to rename module to already existent path " + pnew)
-    	 } catch {
-    	   case e : Error => ChangeSuccess(Nil, RenameRelations(pold, pnew) :: Nil)
-         }
-       } catch {
-         case e : Error => ChangeFail("trying to rename non-existent module path " + e.msg)
-       }
-     
-     case DeleteModule(m) => 
-       try {
-         val v = mem.content.get(m.path)
-         if (v == m) {
-           ChangeSuccess(Nil, DeleteRelations(m.path) :: Nil)
-         } else {
-           ChangeFail("deleted module does not fit with actual value, change would not be inversable: Change Value:\n " + m.toString + "\n LibraryValue\n" + v.toString)
-         }
-       } catch {
-         case e : Error => ChangeFail("trying to delete non-existent module " + e.msg)
-       }
-   }
-   
-   def checkDeclarationChange(ch : ChangeDeclaration)(implicit mem : ROMemory) : CheckChangeResult = ch match {
-     case AddDeclaration(d) => check(d) match {
-       case ContentSuccess(l) => ChangeSuccess(Nil, AddRelations(l) :: Nil)
-       case ContentReconstructed(r,l) => ChangeSuccess(r, AddRelations(l) :: Nil)
-       case ContentFail(msg) => ChangeFail(msg)
-     }
-     case DeleteDeclaration(d) => 
-       try {
-         val v = mem.content.get(d.path)
-         if (v == d) {
-           ChangeSuccess(Nil, DeleteRelations(d.path) :: Nil)
-         } else {
-           ChangeFail("deleted module does not fit with actual value, change would not be inversable: Change Value:\n " + d.toString + "\n LibraryValue\n" + v.toString)
-         }
-       } catch {
-         case e : Error => ChangeFail("trying to delete non-existent module " + e.msg)
-       }
-
-     case RenameDeclaration(pold,pnew) =>
-       try {
-         mem.content.get(pold)
-    	 try {
-    	   mem.content.get(pold.mod ? pnew)
-           ChangeFail("trying to rename declaration to already existent path " + pnew)
-    	 } catch {
-    	   case e : Error => ChangeSuccess(Nil, RenameRelations(pold, pold.mod ? pnew) :: Nil)
-         }
-       } catch {
-         case e : Error => ChangeFail("trying to rename non-existent declaration path " + e.msg)
-       }
-   }
-   
-   def checkComponentChange(home : TheoryObj, path : Path, ch : UpdateComponent)(implicit mem : ROMemory) : CheckChangeResult = ch match {
-
-     case UpdateComponent(name,old, nw, chs) => {
-       val dec = mem.content.get(path)
-       val compNames = dec.compNames.toMap
-       val libco = dec.components(compNames(name.toPath))
-       if (libco == old) {
-         nw match {
-           case t : Term => 
-           	 try {
-           	   val s = checkTerm(home, Context(), t).map(p => FineGrainedRelation(DependsOn,path, name.toPath, p, "TODO")) //TODO component, either add here or remove in FineGrainedRelation class
-           	   ChangeSuccess(Nil, AddRelations(s) :: Nil)  
-             } catch {
-               case e : Error => ChangeFail(e.msg)
-             }
-         case _ => throw ImplementationError(nw.toString)
-         }
-       } else {
-         ChangeFail("Trying to delete nonexistent component")
-       }
-     }
-   }
-
   //Note: Even Library.addUnchecked checks that declarations can only be added to atomic declared theories/views.
   //Therefore, the home modules are not checked here.
   //Body.add checks that no two declarations of the same name exist. Therefore, names are not checked here.
   //Names that are prefixes of other names in the same body are permitted.
   //  This works well for links, for theories it is questionable. Refusing declaration with non-primitive names might be forbidden.
   //  When retrieving, more specific entries overrule the more general ones.
+class Checker(controller: Controller) {
+   private val extman = controller.extman
+   private lazy val content = controller.globalLookup
+   private def log(msg: => String) {controller.report("checker", msg)}
 
-  //TODO: compatibility of multiple assignments to the same knowledge item
-  /** checks whether a content element may be added to a library
-    * @param mem the memory
-    * @param s the content element
-    * throws backend.NotFound(p) if possibly well-formed after retrieving p
-    */
-   def checkSymbolLevel(s : ContentElement)(implicit mem: ROMemory) : CheckContentResult = s match {
+   private var nrThys : Int = 0
+   private var nrViews : Int = 0
+   private var nrIncls : Int = 0
+   private var nrDecls : Int = 0
+
+   def printStatistics() = {
+     println("nrThys : " + nrThys)
+     println("nrViews : " + nrViews)
+     println("nrIncls : " + nrIncls)
+     println("nrDecls : " + nrDecls)
+   }
+
+
+  private def tryForeach[A](args: Iterable[A])(fun: A => Unit) {
+      args foreach {a =>
+        try {fun(a)}
+        catch {case e @ Invalid(msg) => controller.report(e)}
+      }
+   }
+   /** checks a StructuralElement
+    * @param e the element to check
+    * @param reCont a continuation called on all RelationalElement's produced while checking objects
+    * @param unitCont a continuation called on every validation unit
+    */ 
+   //TODO: currently the reconstructed element is always e
+   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
+      val path = e.path
+      log("checking " + path)
+      implicit val rel = (p: Path) => reCont(RefersTo(path, p))
+      implicit val lib = controller.globalLookup
+      e match {
+         case d: Document => tryForeach(d.getLocalItems) {
+            i => check(i.target)
+         }
+         case t: DeclaredTheory =>
+            nrThys += 1
+
+            nrIncls += controller.memory.content.visible(OMMOD(t.path)).size
+
+            //t.components collect {
+            //  case s : Structure => nrIncls += 1
+            //}
+
+            t.components collect {
+              case c : Constant => nrDecls += 1
+            }
+
+            t.meta map {mt =>
+              checkTheory(OMMOD(mt))
+            }
+            tryForeach(t.valueListNG) {
+               d => check(d)
+            }
+         case t: DefinedTheory =>
+            checkTheory(t.df)
+         case v: DeclaredView =>
+            nrViews += 1
+            checkTheory(v.from)
+            checkTheory(v.to)
+
+            tryForeach(v.valueListNG) {
+               d => check(d)
+            }
+         case v: DefinedView =>
+            checkTheory(v.from)
+            checkTheory(v.to)
+            checkMorphism(v.df, v.from, v.to)
+         case s: DeclaredStructure =>
+            checkTheory(s.from)
+            tryForeach(s.valueListNG) {
+               d => check(d)
+            }
+         case s: DefinedStructure =>
+            checkTheory(s.from)
+            checkMorphism(s.df, s.from, s.home)
          case c : Constant =>
-            if (c.parent == foundation.foundTheory) return ContentSuccess(Nil) //TODO this should be more sophisticated; it should be possible to register multiple foundations
-            //checkHomeTheory(c)
-            val occtp = if (c.tp.isDefined) checkTerm(c.home, c.tp.get) else Nil
-            val occdf = if (c.df.isDefined) checkTerm(c.home, c.df.get) else Nil
-            if (! foundation.typing(c.df, c.tp)(mem.content)) return ContentFail("constant declaration does not type-check")
-            val deps = IsConstant(c.rl).apply(c.path) ::  
-              occtp.map(HasOccurrenceOfInType(c.path, _)) ::: occdf.map(HasOccurrenceOfInDefinition(c.path, _))
-            ContentSuccess(deps)
-         case a : ConstantAssignment =>
-            val (l,d) = getSource(a)
-            val c = d match {
-                case c : Constant => c
-                case _ => return ContentFail("constant-assignment to non-constant")
+            c.tp map {t => 
+               checkTerm(c.home, t)
+               OMMOD.unapply(c.home) foreach {p => unitCont(ValidationUnit(c.path $ TypeComponent, Universe(Stack(p), t)))}
             }
-            val occas = checkTerm(l.to, a.target)
-            if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home))(mem.content))
-               return ContentFail("assignment does not type-check")
-            val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)(mem.content)
-            if (! defleq) return ContentFail("assignment violates definedness ordering")
-            val deps = IsConAss(a.path) :: occas.map(HasOccurrenceOfInTarget(a.path, _))
-            ContentSuccess(deps)
-         case a : DefLinkAssignment =>
-            val (l,d) = getSource(a)
-            val s = d match {
-                case s : Structure => s
-                case _ => return ContentFail("structure-assignment to non-structure")
-            }
-            val occs = checkMorphism(a.target, s.from, l.to)
-            val deps = IsStrAss(a.path) :: occs.map(DependsOn(a.path, _))
-            // flattening of includes: this assignment also applies to every theory t included into s.from 
-            val flat = mem.content.importsTo(s.from).toList.mapPartial {t =>
-               val name = a.name.thenInclude(t)
-               if (l.declares(name)) None //here, the compatibility check can be added
-               else {
-                  val r = new DefLinkAssignment(a.home, name, a.target)
-                  r.setOrigin(IncludeClosure)
-                  Some(r)
+            c.df map {d => 
+               checkTerm(c.home, d)
+               OMMOD.unapply(c.home) foreach {p =>
+                  c.tp foreach {tp => unitCont(ValidationUnit(c.path $ DefComponent, Typing(Stack(p), d, tp)))}
                }
             }
-            ContentReconstructed(a :: flat, deps)
+            /*
+            val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
+            c.tp map {t =>
+               val trace = foundation.tracedTyping(None, Some(t))
+               trace foreach {t => reCont(DependsOn(c.path $ "type", t))}
+            }
+            c.df map {t =>
+               val trace = foundation.tracedTyping(c.df, c.tp)
+               trace foreach {t => reCont(DependsOn(c.path $ "definition", t))}
+            }
+            */
+         //TODO: compatibility of multiple assignments to the same knowledge item
+         case a : ConstantAssignment =>
+            val (t,l) = try {
+               content.getDomain(a)
+            } catch { 
+              case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
+            }
+            val c = content.getConstant(t.path ? a.name)
+            checkTerm(l.to, a.target)
+         case a : DefLinkAssignment =>
+            val (t,l) = try {
+               content.getDomain(a)
+            } catch { 
+              case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
+            }
+            if (a.name.isAnonymous) {
+               checkMorphism(a.target, a.from, l.to)
+            } else {
+               val s = content.getStructure(t.path ? a.name)
+               if (s.from != a.from) throw Invalid("import-assignment has bad domain: found " + a.from + " expected " + s.from) 
+               checkMorphism(a.target, s.from, l.to)
+            }
          case p : Pattern =>
-            val paths = checkContext(p.home, p.params ++ p.con)  
-            val deps = IsPattern(p.path) :: paths.map(HasOccurrenceOfInDefinition(p.path, _))
-            ContentSuccess(deps)
+            checkContext(p.home, Context(), p.params)
+            checkContext(p.home, p.params, p.body)
          case i : Instance => 
-            val pt : Pattern = mem.content.getPattern(i.pattern)
-            val paths : List[Path] = Nil //checkSubstitution(i.home, i.matches, pt.params, Context())
-            // Mihnea's instances already refer to the elaborated constants stemming from the same instance
-            val deps = IsInstance(i.path) :: IsInstanceOf(i.path, i.pattern) :: paths.map(HasOccurrenceOfInDefinition(i.path, _))
-            val elab = Instance.elaborate(i, true)(mem.content, report)
-            i.setOrigin(Elaborated)
-            ContentReconstructed(i :: elab, deps)
-         case _ => ContentSuccess(Nil)
-   }
-/*       case a : Alias =>
+            val pt = try {
+               content.getPattern(i.pattern)
+            } catch {
+               case e: GetError => throw Invalid("invalid pattern: " + i.pattern).setCausedBy(e)
+            }
+            //TODO mihnea's instances already refer to their elaboration in their matches
+            checkSubstitution(i.home, i.matches, pt.params, Context())
+/*        case a : Alias =>
             mem.content.get(a.forpath)
             if (mem.content.imports(a.forpath.parent, a.parent))
                Success(List(IsAlias(a.path), IsAliasFor(a.path, a.forpath)))
@@ -416,149 +170,252 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             val name = a.as.map(LocalName(_)).getOrElse(a.name)
             val al = new Alias(str.to, name, str.to ? str.name / source.name)
             Reconstructed(List(a, al), List(IsOpen(a.path)))
- */
-
-   private def getSource(a: Assignment)(implicit mem: ROMemory) : (DeclaredLink, ContentElement) = {
-      val p = a.home match {
-         case OMMOD(p) => p
-         case OMDL(OMMOD(p), name) => OMMOD(p) % name 
-         case _ => throw Invalid("adding assignment to non-atomic link")
+*/
+         case _ => //succeed for everything else
       }
-      val l = mem.content.get(p) match {
-         case l: DeclaredLink => l
-         case _ => throw Invalid("adding assignment to non-declared link") 
-      }
-      val s = try {mem.content.get(l.from % a.name)}
-              catch {case e : Error => throw Invalid("assignment to undeclared name").setCausedBy(e)}
-      (l, s)
    }
+   
+   def check(p: Path)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
+      check(controller.get(p))
+   }
+
+/*   
+   def check(cp: CPath) {
+      content.getO(cp.parent) match {
+        case None => throw Invalid("non-existing item: " + cp.parent)
+        case Some(e) => e match {
+           case c: Constant =>
+              val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
+              cp.component match {
+                 case "type" =>
+                     try {
+                       val trace = foundation.tracedTyping(None, c.tp)
+                       trace foreach {t => ont += DependsOn(cp, t)}
+                     } catch {
+                       case e : Invalid => throw Invalid("Typing failed: invalid type for constant \"" + c.name + "\"")
+                     }
+                  case "definition" =>
+                   try {
+                     val trace = foundation.tracedTyping(c.df, c.tp)
+                     if (c.df != None) {
+                       trace foreach {t => ont += DependsOn(cp, t)}
+                     }
+                   } catch {
+                     case e : Invalid => throw Invalid("Typing failed: invalid definition for constant \"" + c.name + "\"")
+                   }
+                 case c => throw Invalid("illegal component: " + c)
+              }
+           case a: ConstantAssignment =>
+              val link = content.getLink(a.parent) 
+              val foundation = extman.getFoundation(link.to.toMPath).getOrElse(throw Invalid("no foundation found for " + link.to)) //TODO: non-atomic codomain
+              cp.component match {
+                 case "type" => 
+                 case "definition" =>
+                     //println(link.from.toNode)
+                     //println(link.to.toNode)
+                     //println("t" + a.toString)
+                    //if (! foundation.typing(Some(a.target), c.tp.map(_ * a.home))(mem.content))
+                    //return ContentFail("assignment does not type-check")
+                    //val defleq = c.df.isEmpty || a.target == OMHID() || foundation.equality(c.df.get, a.target)(mem.content)
+                    //if (! defleq) return ContentFail("assignment violates definedness ordering")
+                    try {
+                      val ctp = con.getO(link.from.%(a.name)) match {
+                        case Some(c : Constant) => c.tp.getOrElse(throw Invalid("Untyped Constant as base for morphism"))
+                        case x => throw Invalid("link defined from non-constant")
+                      }
+                      val expTp = ctp * link.toMorph
+                      val trace = foundation.tracedTyping(Some(a.target), Some(expTp))
+                      trace foreach {t => ont += DependsOn(cp, t)}
+                    }
+                 case c => throw Invalid("illegal component: " + c)
+              }
+        }
+      }
+   }
+*/
+  /** checks whether a theory object is well-formed
+    *  @param t the theory
+    *  @return the reconstructed theory
+    */
+   def checkTheory(t : Term)(implicit pCont: Path => Unit) : Term = {
+     t match {
+        case OMMOD(p) =>
+          val thy = controller.globalLookup.getTheory(p)
+          pCont(p)
+          t
+        case OMS(mmt.tempty) => t
+        case TheoryExp.Empty =>
+           t
+        case TUnion(ts) =>
+           //TODO check same meta-theory?
+           val tsR = ts map {t => checkTheory(t)}
+           TUnion(tsR)
+        case _ => throw Invalid("not a valid theory " + t)
+      }
+   }
+   
+  /** checks whether a morphism object is well-formed and infers its type
+    *  @param m the theory
+    *  @return the reconstructed morphism, its domain and codomain
+    */
+   def inferMorphism(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = m match {
+     case OMMOD(p) =>
+        val l = controller.globalLookup.getLink(p)
+        pCont(p)
+        (m, l.from, l.to)
+     case OMDL(to, name) =>
+        checkTheory(to)
+        val from = content.get(to % name) match {
+           case l: Structure => l.from
+           case _ => throw Invalid("invalid morphism " + m)
+        }
+        // TODO pCont ??
+        (m, from, to)
+     case OMIDENT(t) =>
+        checkTheory(t)
+        (m, t, t)
+     case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
+     case OMCOMP(hd::Nil) => inferMorphism(hd)
+     case OMCOMP(hd :: tl) =>
+        val (hdR, r, s1) = inferMorphism(hd)
+        val (tlR, s2, t) = inferMorphism(OMCOMP(tl))
+        val l = content.getImplicit(s1,s2) match { 
+           case Some(l) => l
+           case None => throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
+        }
+        (OMCOMP(hdR, l, tlR), r, t)
+     case Morph.Empty => throw Invalid("cannot infer type of empty morphism")
+     case MUnion(ms) =>
+        val infs = ms map {m => inferMorphism(m)}
+        val rms  = infs map {i => i._1}
+        val doms = infs map {i => i._2}
+        val cods = infs map {i => i._3}
+        // TODO l and r agree on all joint domains
+        val dom = TUnion(doms)
+        val cod = TUnion(cods) //TODO: simplify by removing redundant theories in cods using mem.content.imports(_,_)
+        (MUnion(rms), dom ,cod)
+   }
+   
+   /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
+    *  @param m the morphism
+    *  @param dom the domain
+    *  @param cod the codomain
+    *  @return the reconstructed morphism (with necessary implicit morphisms inserted)
+    */
+   def checkMorphism(m : Term, dom : Term, cod : Term)(implicit pCont: Path => Unit) : Term = {
+      val (l,d,c) = inferMorphism(m)
+      (content.getImplicit(dom, d), content.getImplicit(c, cod)) match {
+         case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
+         case _ => throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c)
+      }
+   }
+
    /**
-    * Checks structural well-formedness of a closed term relative to a library and a home theory.
+    * Checks structural well-formedness of a closed term relative to a home theory.
     * @param home the home theory
     * @param s the term
-    * @param mem  the memory
-    * @return the list of identifiers occurring in s (no duplicates, random order)
+    * @return the reconstructed term
     */
-   def checkTerm(home: TheoryObj, s : Term)(implicit mem: ROMemory) : List[Path] = {
-      checkTheo(home, p => p, p => p)
-      checkTerm(home, Context(), s).distinct
-   }
-   //TODO redesign role checking, currently not done
-   private def checkTerm(home : TheoryObj, context : Context, s : Term)(implicit mem: ROMemory) : List[Path] = {
+   def checkTerm(home: Term, s : Term)(implicit pCont: Path => Unit) : Term = checkTerm(home, Context(), s)
+   /**
+    * Checks structural well-formedness of a term in context relative to a home theory.
+    * @param home the home theory
+    * @param s the term
+    * @return the reconstructed term
+    */
+   private def checkTerm(home : Term, context : Context, s : Term)(implicit pCont: Path => Unit) : Term = {
       s match {
-         case OMID((h: TheoryObj) % (IncludeStep(from) / ln)) =>
-            if (! mem.content.imports(from, h))
-               throw Invalid(from + " is not imported into " + h + " in " + s)
-            checkTerm(home, context, OMID(from % ln))
-         case OMID(path) =>
-            //val toccs = checkTheo(path.parent) TODO check theory?
-            val s = try {mem.content.get(path)}
+//         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>
+//            if (! content.imports(from, h))
+//               throw Invalid(from + " is not imported into " + h + " in " + s)
+//            checkTerm(home, context, OMID(from % ln))
+         case OMS(GlobalName(t,n)) =>
+            val path = t % n
+            val ce = try {content.get(t % n)}
                     catch {case e: GetError =>
                                 throw Invalid("ill-formed constant reference").setCausedBy(e)
                     }
-            s match {
+            ce match {
                case a : Alias =>
-                  if (! mem.content.imports(a.home, home))
-                     throw Invalid("constant " + s.path + " is not imported into home theory " + home)
-                  List(path)
+                  if (! content.hasImplicit(a.home, home))
+                     throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
                case c : Constant =>
-                  if (! mem.content.imports(c.home, home))
-                     throw Invalid("constant " + s.path + " is not imported into home theory " + home)
-
-                  List(path)
+                  if (! content.hasImplicit(c.home, home))
+                     throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
                case _ => throw Invalid(path + " does not refer to constant")
             }
+            pCont(path)
+            s
          case OMV(name) =>
             if (! context.isDeclared(name)) throw Invalid("variable is not declared: " + name)
-            Nil
+            s
          case OMA(fun, args) =>
-            val occf = checkTerm(home, context, fun) //TODO level of application cannot be inferred
-            val occa = checkSeq(home, context, SeqItemList(args))
-            occf ::: occa
+            val funR = checkTerm(home, context, fun)
+            val argsR = args map {a => checkTerm(home, context, a)}
+            OMA(funR, argsR)
          case OMBINDC(binder, bound, condition, scope) =>
-            val newcontext = context ++ bound // every variable can occur in every variable declaration
-            val occb = checkTerm(home, context, binder)
-            val occv = bound.variables.flatMap {
-               // not checking the attributions
-               case TermVarDecl(_, tp, df, attrs @ _*) => 
-                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkTerm(home, newcontext, _))                     
-               case SeqVarDecl(_, tp, df) => 
-                 List(tp,df).filter(_.isDefined).map(_.get).flatMap(checkSeq(home, newcontext, _))
-            }
-            val occc = if (condition.isDefined) checkTerm(home, newcontext, condition.get)
-               else Nil
-            val occs = checkTerm(home, newcontext, scope)
-            occb ::: occv.toList ::: occc ::: occs
+            val binderR = checkTerm(home, context, binder)
+            val boundR = checkContext(home, context, bound)
+            val conditionR = condition map {c => checkTerm(home, context ++ bound, c)}
+            val scopeR = checkTerm(home,  context ++ bound, scope)
+            OMBINDC(binderR, boundR, conditionR, scopeR)
          case OMATTR(arg, key, value) =>
-            val occa = checkTerm(home, context, arg)
-            val occk = checkTerm(home, context, key)
-            val occv = checkTerm(home, context, value)
-            occa ::: occk ::: occv
+            val argR = checkTerm(home, context, arg)
+            checkTerm(home, context, key)
+            val valueR = checkTerm(home, context, value)
+            OMATTR(argR, key, valueR)
          case OMM(arg, morph) =>
-            val (occm, from, to) = inferMorphism(morph)
-            if (! mem.content.imports(to, home))
+            val (morphR, from, to) = inferMorphism(morph)
+            if (! content.hasImplicit(to, home))
                throw Invalid("codomain of morphism is not imported into expected home theory")
-            val occa = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
-            occm ::: occa
-         case t @ OMSub(arg, via) =>
-            val bigcon = context ++ via
-            val occvia = via.variables.toList flatMap {
-               case TermVarDecl(n, t, d, atts @ _*) =>
-                  t.map(checkTerm(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkTerm(home, bigcon, _)).getOrElse(Nil)
-               case SeqVarDecl(n, t, d) =>
-                  t.map(checkSeq(home, bigcon, _)).getOrElse(Nil) ::: d.map(checkSeq(home, bigcon, _)).getOrElse(Nil)
-               }
-            val occarg = checkTerm(home, bigcon, arg)
-            occvia ::: occarg
-         case OMHID => Nil//TODO roles
+            val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
+            OMM(arg, morph)
+         case OMHID => s//TODO
          case OME(err, args) =>
-            val occe = checkTerm(home, context, err)
-            val occa = args.flatMap(checkTerm(home, context, _))
-            occe ::: occa
-         case OMFOREIGN(node) => Nil //TODO
-         case OMI(i) => Nil //TODO check if integers are permitted
-         case OMSTR(s) => Nil //TODO check if strings are permitted
-         case OMF(d) => Nil //TODO check if floats are permitted
-         case OMSemiFormal(t) => Nil //TODO
-         case Index(seq,ind) => checkSeq(home,context,seq) ::: checkTerm(home,context,ind)
+            val errR  = checkTerm(home, context, err)
+            val argsR = args.map(checkTerm(home, context, _))
+            OME(errR, argsR)
+         case OMFOREIGN(node) => s //TODO
+         case OMI(i) => s //TODO check if integers are permitted
+         case OMSTR(str) => s //TODO check if strings are permitted
+         case OMF(d) => s //TODO check if floats are permitted
+         case OMSemiFormal(t) => s //TODO
+         //case _ => s
       }
    }
-   def checkSeq(home : TheoryObj, context : Context, s : objects.Sequence)(implicit mem: ROMemory) : List[Path] = s match {
-   	  case t: Term => checkTerm(home, context, t)
-   	  case SeqVar(n) =>
-          try {
-        	  context(n) match {
-   		  	    case SeqVarDecl(_,_,_) => Nil
-   		  	    case TermVarDecl(_,_,_,_*) => throw Invalid("sequence variable expected, found term variable: " + n)
-   	  	      }
-          } catch {
-        	  case LookupError(n) => throw Invalid("sequence variable is not declared: " + n) 
-          }
-   	  //case SeqSubst(ex,n,sq) => checkTerm(home,context ++ TermVarDecl(n,None,None),ex) ::: checkSeq(home,context,sq)
-      case SeqSubst(sq1,n,sq2) => checkSeq(home,context ++ TermVarDecl(n,None,None),sq1) ::: checkSeq(home,context,sq2)
-   	  case SeqUpTo(t) => checkTerm(home,context,t)
-   	  case SeqItemList(items) => items.flatMap(i => checkSeq(home,context,i))   	  
+
+   /**
+    * Checks structural well-formedness of a context relative to a home theory and a context.
+    * @param home the home theory
+    * @param context
+    * @param con the context
+    * @return the reconstructed context
+    * if context is valid, then this succeeds iff context ++ con is valid
+    */
+   def checkContext(home: Term, context: Context = Context(), con: Context)(implicit pCont: Path => Unit) : Context = {
+      con.zipWithIndex map {
+    	  case (VarDecl(name, tp, df, attrs @_*), i) => 
+    	     val tpR = tp.map(x => checkTerm(home, context ++ con.take(i), x)) 
+    	     val dfR = df.map(x => checkTerm(home, context ++ con.take(i), x)) 
+    	     VarDecl(name, tpR, dfR, attrs :_*) //TODO check attribution
+      }
    }
-   def checkContext(home: TheoryObj, con: Context)(implicit mem: ROMemory) : List[Path] = {
-      con.flatMap {
-    	  case TermVarDecl(name, tp, df, attrs @_*) => 
-    	   val tpl = tp.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
-    	   val dfl = df.map(x => checkTerm(home,con,x)).getOrElse(Nil) 
-    	   tpl ::: dfl //TODO not checking attributes
-    	  case SeqVarDecl(name, tp, df, attrs @_*) => 
-    	   val tpl = tp.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
-    	   val dfl = df.map(x => checkSeq(home,con,x)).getOrElse(Nil) 
-    	   tpl ::: dfl //TODO not checking attributes
-    	  }
-   }
-   def checkSubstitution(home: TheoryObj, subs: Substitution, from: Context, to: Context)(implicit mem: ROMemory) : List[Path] = {
+   /**
+    * Checks structural well-formedness of a substitution relative to a home theory.
+    * @param home the home theory
+    * @param subs the substitution
+    * @param from the context declaring the variables to be substituted
+    * @param from the context in which the substituting terms live
+    * @return the reconstructed substitution
+    */
+   def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit pCont: Path => Unit) : Substitution = {
       if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
-      (from zip subs).flatMap {       
-    	  case (TermVarDecl(n,tp,df,attrs @ _*), TermSub(m,t)) if n == m => checkTerm(home,to,t) 
-    	  case (SeqVarDecl(n,tp,df,attrs @ _*),SeqSub(m,s)) if n == m => checkSeq(home,to,s)
-    	  case (v,s) => throw Invalid("illegal case " + s + " for declaration " + v)
+      (from zip subs) map {       
+    	  case (VarDecl(n,tp,df,attrs @ _*), Sub(m,t)) if n == m =>
+    	     val tR = checkTerm(home,to,t)
+    	     Sub(m,tR)
+    	  case (v,s) =>
+    	     throw Invalid("illegal case " + s + " for declaration " + v)
       }
    }
 }
-
-class StructuralChecker(report: Report) extends FoundChecker(new DefaultFoundation, report)

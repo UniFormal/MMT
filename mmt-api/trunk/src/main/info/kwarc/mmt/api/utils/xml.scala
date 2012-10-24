@@ -61,7 +61,7 @@ object xml {
          val c = in(0)
          val enc = c match {
             case '?' => "%3F"
-            case '/' => "2F"
+            case '/' => "%2F"
             case '%' => "%25"
             case '#' => "%23"
             case c => c
@@ -108,13 +108,17 @@ object xml {
          case "visib" => namespace("omdoc")
          case "om" => "http://www.openmath.org/OpenMath"
          case "xhtml" => "http://www.w3.org/1999/xhtml"
-         case "html" => "http://www.w3.org/TR/REC-html40"
+         case "html" => "http://www.w3.org/1999/xhtml"
          case "mathml" => "http://www.w3.org/1998/Math/MathML"
       }
    }
 }
 
-case class URI(scheme: Option[String], authority: Option[String], path: List[String], absolute: Boolean, query: Option[String], fragment: Option[String]) {
+/** Custom implementation of the URI RFC that's better than java.net.URI
+ * @param abs true if the path is absolute (ignored if scheme or authority are present) */
+case class URI(scheme: Option[String], authority: Option[String], path: List[String] = Nil, private val abs: Boolean = false, query: Option[String] = None, fragment: Option[String] = None) {
+   /** true if the path is absolute; automatically set to true if scheme or authority are present */ 
+   val absolute = abs || scheme.isDefined || authority.isDefined
    /** drop path, query, fragment, append (absolute) path of length 1 */
    def !/(n : String) : URI = this !/ List(n)
    /** drop path, query, fragment, append (absolute) path */
@@ -125,18 +129,28 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
    def /(n : String) : URI = this / List(n)
    /** drop query, fragment, append to path
     *  path stays relative/absolute; but URI(_, Some(_), Nil, false, _, _) / _ turns path absolute
+    *  trailing empty segment of this URI is dropped when appending
     */   
-   def /(p : List[String]) : URI = {
-      val abs = absolute || (authority != None && path == Nil) 
-      URI(scheme, authority, path ::: p, abs, None, None)
-   }
+   def /(p : List[String]) : URI = URI(scheme, authority, pathNoTrailingSlash ::: p, absolute)
    /** drops query and fragment, drop last path segment (if any) */
-   def ^ : URI = URI(scheme, authority, if (path.isEmpty) Nil else path.init, absolute, None, None)
+   def ^ : URI = URI(scheme, authority, if (path.isEmpty) Nil else path.init, absolute)
+   /** drops query and fragment and path */
+   def ^! : URI = URI(scheme, authority)
    /** drop query, fragment, append query */
-   def ?(q: String) = URI(scheme, authority, path, absolute, Some(q), None)
+   def ?(q: String) = URI(scheme, authority, path, absolute, Some(q))
    /** drop fragment, append fragment */
-   def addFragment(f: String) = URI(scheme, authority, path, absolute, query, Some(f))
-   
+   def ##(f: String) = URI(scheme, authority, path, absolute, query, Some(f))
+   /** true iff this is a prefix of u */
+   def <=(u: URI): Boolean = u.toString.startsWith(this.toString)
+/* potentially useful, but currently not needed   
+   def relativize(u: URI): URI =
+          if (scheme != u.scheme) u
+     else if (authority != u.authority) URI(None, u.authority, u.path, u.absolute, u.query, u.fragment)
+     else if (path != u.path) URI(None, None, u.path, u.absolute, u.query, u.fragment)
+     else if (query != u.query) URI(None, None, Nil, false, u.query, u.fragment)
+     else if (fragment != u.fragment) URI(None, None, Nil, false, None, u.fragment)
+     else URI(None, None, Nil, false, None, None)
+     */
    /** parses a URI and resolves it against this */
    def resolve(s : String) : URI = resolve(URI(s))
    /** resolves a URI against this one (using the java.net.URI resolution algorithm except when u has no scheme, authority, path) */
@@ -147,7 +161,8 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
       else
          URI(toJava.resolve(u.toJava))
    }
-   
+   /** removes an empty trailing segment, which results from a trailing / */
+   val pathNoTrailingSlash = if (path.endsWith(List(""))) path.init else path
    /** returns the whole path as a string (/-separated, possibly with a leading /) */
    def pathAsString : String = {
      val tmp = path.mkString(if (absolute) "/" else "", "/", "")
@@ -192,18 +207,18 @@ object URI {
        return URI(new java.net.URI(m.group(2), m.group(4), m.group(5), m.group(7), m.group(9)))
    }
    /** returns a relative URI with scheme and authority only */
-   def apply(s: String, a: String) : URI = URI(Some(s), Some(a), Nil, false, None, None)
+   def apply(s: String, a: String) : URI = URI(Some(s), Some(a))
    /** returns an absolute URI with scheme, authority, and path */
-   def apply(s: String, a: String, p: List[String]) : URI = URI(Some(s), Some(a), p, true, None, None)
+   def apply(s: String, a: String, p: List[String]) : URI = URI(Some(s), Some(a), p, true)
    /** returns a URI with scheme, authority, absolute path, and query */
    def apply(scheme : String, authority : String, path : List[String], query : String) : URI =
       (URI(scheme, authority) / path) ? query
    /** returns a URI with a scheme only */
-   def scheme(s: String) = URI(Some(s), None, Nil, false, None, None) 
+   def scheme(s: String) = URI(Some(s), None) 
    /** the URI "file:" */
    val file = scheme("file")
    /** returns a URI with no scheme or authority and relative path */
-   def relative(path: String*) = URI(None, None, path.toList, false, None, None)
+   def relative(path: String*) = URI(None, None, path.toList, false)
    implicit def toJava(u : URI) : java.net.URI = u.toJava
    implicit def fromJava(u : java.net.URI) = apply(u)
 }

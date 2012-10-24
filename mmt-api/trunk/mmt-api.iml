@@ -12,10 +12,8 @@
   <component name="FacetManager">
     <facet type="scala" name="Scala">
       <configuration>
-        <option name="compilerLibraryLevel" value="Global" />
-        <option name="compilerLibraryName" value="scala-library-2.9.1.r0-b20110831114755" />
-        <option name="deprecationWarnings" value="true" />
-        <option name="uncheckedWarnings" value="true" />
+        <option name="compilerLibraryLevel" value="Project" />
+        <option name="compilerLibraryName" value="dependencies" />
       </configuration>
     </facet>
   </component>
@@ -26,38 +24,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src/main" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER" level="application" />
-    <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
-    <orderEntry type="module-library" exported="">
-      <library name="tntbase-plugin-api.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/tntbase-plugin-api.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library name="tiscaf.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/tiscaf.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module" module-name="lfcatalog" />
-    <orderEntry type="module-library" exported="">
-      <library name="svnkit.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/svnkit.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="library" exported="" name="scala-compiler-2.9.1.r0-b20110831114755" level="application" />
-    <orderEntry type="library" exported="" name="scala-library-2.9.1.r0-b20110831114755" level="application" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="library" name="dependencies" level="project" />
   </component>
 </module>
 

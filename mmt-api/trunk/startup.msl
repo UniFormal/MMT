@@ -1,0 +1,52 @@
+log console
+log file jomdoc.log
+//log+ presenter
+//log+ backend
+log+ controller
+//log+ extman
+//log+ reader
+log+ archive    
+//log+ checker
+//log+ object-checker
+//log+ query
+log+ catalog
+log+ server
+//log+ abox
+//log+ parser
+//log+ presenter
+//log+ lf
+
+//file ../../../paths.mmt
+
+importer info.kwarc.mmt.api.backend.MMTCompiler
+plugin info.kwarc.mmt.lf.Plugin
+archive add ../../../../theories
+//log+ backend
+//archive mmt clean
+//archive mmt source-structure
+//archive mmt compile
+//archive mmt content
+archive mmt relational
+archive mmt notation
+archive mmt check
+//archive mmt validate
+
+//archive latin clean
+//archive latin compile
+//archive latin content
+//archive latin relational
+//archive latin check
+//archive latin notation
+//archive latin enrich
+//archive latin mws-enriched
+//archive latin content logics
+
+mws http://localhost:6284
+server on 8080
+base http://docs.omdoc.org/mmt/
+
+//http://cds.omdoc.org/foundations/lf/lf.omdoc
+//foundation info.kwarc.mmt.lf.LFF
+
+//importer info.kwarc.mmt.mizar.test.MwsService
+//importer info.kwarc.mmt.tptp.TptpCompiler

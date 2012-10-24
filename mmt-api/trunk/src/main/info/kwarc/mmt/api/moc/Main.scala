@@ -9,20 +9,25 @@ import info.kwarc.mmt.api.presentation._
 object Main {
 
   def main(args: Array[String]): Unit = {
-    val p = new DPath(mmt.baseURI / "set_theories" / "mizar" / "HIDDEN.omdoc")    
-    
-    val fc = new libraries.FoundChecker(new libraries.DefaultFoundation, new Report)
+    //val p = new DPath(mmt.baseURI / "set_theories" / "mizar" / "HIDDEN.omdoc")
+     val mp = new DPath(mmt.baseURI / "owl" / "families" / "identifiers.omdoc") //? "_"
+    //TODO configure checking
     val cold = new Controller
-    cold.setFileReport(File("moc.log"))
     val cnew = new Controller
+
     
-    
-    cold.handle(ExecFile(new java.io.File("moc1-startup.mmt")))
-    cnew.handle(ExecFile(new java.io.File("moc2-startup.mmt")))
-     
+    cold.handle(ExecFile(File("moc1-startup.mmt")))
+    cnew.handle(ExecFile(File("moc2-startup.mmt")))
+
+    /*
+    cold.backend.getArchives map {archive =>
+      archive.generateSVNArchive(cnew.backend)
+    }
+    */
+
     println("--- Computing Diff ---")
     
-    val diff = Differ.diff(cold, cnew, p, p)
+    val diff = Differ.diff(cold, cnew, mp, mp)
         
     val pp = new scala.xml.PrettyPrinter(100,2)
     println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + pp.format(diff.toNode))

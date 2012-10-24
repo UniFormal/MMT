@@ -6,18 +6,26 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.utils._
 
+import scala.collection.mutable.HashSet
+
+/** A read-only abstraction of a library. A Library is a Lookup with write methods */
 abstract class Lookup(val report : frontend.Report) {
    def apply(path : Path) = get(path)
 
    def get(path : Path) : ContentElement
-   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case GetError(_) => None}
+   /** Same as get, but returns an option
+    * @return Some(content) if get succeeds, None if get throws an error
+    */
+   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case GetError(_) | BackendError(_) => None}
    //typed access methods
    private def defmsg(path : Path) : String = "no element of required type found at " + path
-   def getModule(path : MPath, msg : Path => String = defmsg) : Module = 
-     get(path) match {case e : Module => e case _ => throw GetError(msg(path))}
+   def getModule(path : MPath, msg : Path => String = defmsg) : Module =
+     get(path) match {case m: Module => m case _ => throw GetError(msg(path))}
    def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
-     get(path) match {case e : Theory => e case _ => throw GetError(msg(path))}
-   def getLink(path : Path, msg : Path => String = defmsg) : Link =
+     get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
+   def getView(path : MPath, msg : Path => String = defmsg) : View =
+     get(path) match {case v: View => v case _ => throw GetError(msg(path))}
+   def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
      get(path) match {case e : Link => e case _ => throw GetError(msg(path))}
    def getSymbol(path : GlobalName, msg : Path => String = defmsg) : Symbol =
      get(path) match {case e : Symbol => e case _ => throw GetError(msg(path))} 
@@ -29,6 +37,8 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case e : ConstantAssignment => e case _ => throw GetError(msg(path))} 
    def getDefLinkAssignment(path : GlobalName, msg : Path => String = defmsg) : DefLinkAssignment =
      get(path) match {case e : DefLinkAssignment => e case _ => throw GetError(msg(path))} 
+   def getPatternAssignment(path : GlobalName, msg : Path => String = defmsg) : PatternAssignment =
+     get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
    /* The above methods should be polymorphic in the return type like this:
@@ -39,59 +49,82 @@ abstract class Lookup(val report : frontend.Report) {
          }
       }
    *  But we cannot case-split over an abstract type parameter due to Scala's compilation-time type erasure.
+   *  Maybe reflection could be used to work around that.
    */
-   /*
-   def localDomain(th : ModuleObj) : Iterator[LocalPath]
+   
+/* FR: I removed these methods from the interface because in most cases the method visible (implemented based on implicit morphisms) is enough and better. 
+   def imports(from: Term, to: Term) : Boolean
+   def importsTo(to: Term) : Iterator[Term]
+   def importsToFlat(to: Term, found: HashSet[Term] = new HashSet[Term]) : HashSet[Term] = {
+      val imps = importsTo(to)
+      imps foreach {i =>
+         if (! (found contains i)) {
+            found += i
+            importsToFlat(i, found)
+         }
+      }
+      found
+   }
+*/ 
 
-   def globalDomain(th : ModuleObj) : Iterator[LocalPath]
+   def visible(to: Term): HashSet[Term]
+   def getImplicit(from: Term, to: Term) : Option[Term]
+   def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
+
+   def getDeclarationsInScope(mod : Term) : List[Content]
    
-   def localImports(th : TheoryObj) : List[TheoryObj]
-   
-   def localImports(m : Morph) : List[Morph]
-   
-   def globalImports(th : TheoryObj) : Iterator[TheoryObj]
-   
-   def globalImports(m : Morph) : Iterator[Morph]
-    */
-   
-   def imports(from: TheoryObj, to: TheoryObj) : Boolean
-   def importsTo(to: TheoryObj) : Iterator[TheoryObj]
-   //def getSymbolNoAlias(path : Path) : Symbol = resolveAlias(getSymbol(path)) 
-   //def structureModToSym(p : MPath) : SPath
-   //def resolveAlias(s : Symbol) : Symbol
-   
- /*  def imports(from : MPath, to : MPath) : Boolean
-   //def importsFrom(from : MPath) : scala.collection.mutable.Set[MPath]
-   def importsTo(to : MPath) : List[objects.ModuleObj] */
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
    
+  /** gets the source of an Assignment declared in a DeclaredLink
+    * @param a the assignment
+    * @return the containing link and the source theory
+    */
+   def getDomain(a: Assignment) : (DeclaredTheory,DeclaredLink) = {
+      val p = a.home match {
+         case OMMOD(p) => p
+         case OMDL(OMMOD(p), name) => OMMOD(p) % name 
+         case _ => throw GetError("non-atomic link")
+      }
+      val l = get(p) match {
+         case l: DeclaredLink => l
+         case _ => throw GetError("non-declared link") 
+      }
+      val dom = l.from match {
+         case OMMOD(t) => getTheory(t) match {
+           case t: DeclaredTheory => t
+           case _ => throw GetError("domain of declared link is not a declared theory")
+         }
+         case _ => throw GetError("domain of declared link is not a declared theory")
+      }
+      (dom,l)
+   }
    
    /**
     * A Traverser that recursively expands definitions of Constants.
     * It carries along a test function that is used to determine when a constant should be expanded. 
     */
-   object ExpandDefinitions extends Traverser[GlobalName => Boolean] {
-      def doTerm(t: Term)(implicit con: Context, expand: GlobalName => Boolean) = t match {
-         case OMID(p) if expand(p) => getConstant(p).df match {
-            case Some(t) => doTerm(t)
+   object ExpandDefinitions extends Traverser[ContentPath => Boolean] {
+      def apply(t: Term)(implicit con: Context, expand: ContentPath => Boolean) = t match {
+         case OMID(p: GlobalName) if expand(p) => getConstant(p).df match {
+            case Some(t) => apply(t)
             case None => OMID(p)
          }
-         case t => Traverser.doTerm(this, t)(con, expand)
+         case t => Traverser.apply(this, t)(con, expand)
       }
    }
    
    /**
     * A Traverser that recursively eliminates all explicit morphism applications.
     * apply(t,m) can be used to apply a morphism to a term.
-    */
-   object ApplyMorphs extends Traverser[Morph] {
-      def doTerm(t: Term)(implicit con: Context, morph: Morph) = t match {
-         case OMM(arg, via) => doTerm(arg)(con, morph * via)
+    */                                     // TODO term
+   object ApplyMorphs extends Traverser[Term] {
+      def apply(t: Term)(implicit con: Context, morph: Term) = t match {
+         case OMM(arg, via) => apply(arg)(con, OMCOMP(morph, via))
          case OMID(theo % ln) =>
            val t = getConstantAssignment(morph % ln).target
-           doTerm(t)
-         case t => Traverser.doTerm(this,t)(con, morph)
+           apply(t)
+         case t => Traverser.apply(this,t)(con, morph)
       }
    }
 }

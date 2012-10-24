@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.utils
 
+
+// TODO delete?
 abstract class Token
 case object EOF extends Token
 case class Keyword(s: String) extends Token

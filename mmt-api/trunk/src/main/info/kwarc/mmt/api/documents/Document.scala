@@ -10,9 +10,7 @@ import info.kwarc.mmt.api.modules._
  * A document is stored as a list of references (XRef) to content items.
  * The content itself is stored in the controller.
  * 
- * @param path the URI of the document
- * @param inititems the initial list of references
- * @param controller a read-only controller in which references are resolved to obtain the full document
+ * @param path the URI of the document; for toplevel documents, this is a URL
  */
 class Document(val path : DPath) extends NarrativeElement {
    /** constructs a non-empty document */

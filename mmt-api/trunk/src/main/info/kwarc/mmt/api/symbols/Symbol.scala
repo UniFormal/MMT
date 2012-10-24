@@ -6,20 +6,18 @@ import info.kwarc.mmt.api.objects._
 /**
  * A Symbol represents an MMT symbol.<p>
  * 
- * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory
- * @param name the name of the symbol
+ * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
  */
 abstract class Symbol extends Declaration {
-   val home : TheoryObj
+   val home : Term
 }
 
 /**
  * An Assignment represents an MMT assignment.<p>
  * 
- * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent link
- * @param name the name of the instantiated symbol
+ * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent link
  */
 abstract class Assignment extends Declaration {
-   val home : Morph
+   val home : Term
    //val target : Obj
 }
