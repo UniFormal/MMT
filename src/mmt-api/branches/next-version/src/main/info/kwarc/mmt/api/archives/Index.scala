@@ -99,11 +99,12 @@ trait IndexedArchive extends WritableArchive {
           }
        }
     }
-    def readRelational(in: List[String] = Nil, controller: Controller) {
+    def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
        if ((root / "relational").exists) {
-          traverse("relational", in, extensionIs("rel")) {case Current(inFile, inPath) =>
+          traverse("relational", in, extensionIs(kd)) {case Current(inFile, inPath) =>
              ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
           }
+          //TODO this should only add implicits for the dependencies it read
           controller.depstore.getDeps foreach {
              case Relation(Includes, to: MPath, from: MPath) => controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
              case Relation(HasMeta, thy: MPath, meta: MPath) => controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))

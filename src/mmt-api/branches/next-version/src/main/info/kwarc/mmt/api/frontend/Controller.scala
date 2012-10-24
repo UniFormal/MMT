@@ -358,7 +358,8 @@ class Controller extends ROController {
                   case _ => log("archive is not an MMT archive")
                }
                case "relational" =>
-                  arch.readRelational(in, this)
+                  arch.readRelational(in, this, "rel")
+                  arch.readRelational(in, this, "occ")
                   log("done reading relational index")
                case "notation" => 
                   arch.readNotation(in, this)

@@ -16,16 +16,25 @@ trait HasMetaData {
 
 /**
  * represents a list of metadata key-value pairs
- * duplicates keys or key-value pairs are permitted
+ * duplicate keys or key-value pairs are permitted
  */
 class MetaData {
    protected var data: List[MetaDatum] = Nil
    /** add metadata item, order of insertion is preserved */
    def add(newdata: MetaDatum*) {data = data ::: newdata.toList}
+   def delete(key: GlobalName) {
+      data = data.filter(md => md.key != key)
+   }
+   def update(key: GlobalName, values: List[Obj]) {
+      delete(key)
+      values map  {value => add(new MetaDatum(key, value))}
+   }
+   def keys = data.map(_.key).distinct
    /** get all metadata */
    def getAll : List[MetaDatum] = data
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
+   def getValues(key: GlobalName) : List[Obj] = get(key).map(_.value)
    def getLink(key: GlobalName) : List[URI] = data.mapPartial {
       case Link(k, u) if k == key => Some(u)
       case _ => None

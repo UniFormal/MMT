@@ -73,7 +73,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
    * @param changes the set of changes that impact path
    * @return optionally the generated change
    */
-  protected def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange]
+  protected def propFunc(path : Path, changes : Set[ContentChange]) : List[StrictChange]
   
   /**
    * The main diff propagation function
@@ -114,7 +114,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     case DeleteModule(m) =>  containedPaths(m)
     case DeleteDeclaration(d) => containedPaths(d)
     case UpdateComponent(path, name, old, nw) => new HashSet[Path]() + CPath(path,name)
-    case UpdateMetadata(path, old, nw) => new HashSet[Path]() + path
+    case UpdateMetadata(path, key, old, nw) => new HashSet[Path]() + path
     case PragmaticChange(name, diff, tp, mp, desc) => new HashSet[Path]() ++ diff.changes.flatMap(affectedPaths(_))
 
   }
@@ -217,14 +217,14 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
    * @param path the impacted path
    * @param changes the set of changes that impact path
    */
-  protected def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = path match {
+  protected def propFunc(path : Path, changes : Set[ContentChange]) : List[StrictChange] = path match {
     case cp : CPath => 
       def makeChange(otm : Option[Term]) : Option[StrictChange] = otm match {
         case Some(tm) => Some(UpdateComponent(cp.parent, cp.component, Some(tm), Some(box(tm, changes))))
         case None => None
       }
       
-      (mem.content.get(cp.parent), cp.component) match {
+      val chOpt = (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
       case (t : DeclaredTheory, DomComponent) => None
       case (t : DefinedTheory, DomComponent) => None
@@ -254,7 +254,8 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       /* Aliases */
       case (a : Alias, _) => None
     }
-    case _ => None  
+    chOpt.toList
+    case _ => Nil  
   }
   
   /**
@@ -327,14 +328,14 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
    * @param path the impacted path
    * @param changes the set of changes that impact path
    */
-  protected def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = path match {
+  protected def propFunc(path : Path, changes : Set[ContentChange]) : List[StrictChange] = path match {
     case cp : CPath => 
       def makeChange(otm : Option[Term]) : Option[StrictChange] = otm match {
         case Some(tm) => Some(UpdateComponent(cp.parent, cp.component, Some(tm), Some(box(tm, changes))))
         case None => None
       }
       
-      (mem.content.get(cp.parent), cp.component) match {
+      val chOpt = (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
       case (t : DeclaredTheory, DomComponent) => None
       case (t : DefinedTheory, DomComponent) => None
@@ -364,7 +365,8 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       /* Aliases */
       case (a : Alias, _) => None
     }
-    case _ => None  
+    chOpt.toList
+    case _ => Nil  
   }
   
   /**
@@ -425,7 +427,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
    * @param changes the set of changes that impact path
    * @return optionally the generated change
    */
-  def propFunc(path : Path, changes : Set[ContentChange]) : Option[StrictChange] = path match {
+  def propFunc(path : Path, changes : Set[ContentChange]) : List[StrictChange] = path match {
     case GlobalName(mod, lname) => 
       
       val emptyBox = OME(OMID(mmt.mmtsymbol("emptybox")), Nil)
@@ -436,14 +438,14 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
             //definition is deleted -> one more undefined constant -> assignment needed for it
             case UpdateComponent(cPath, DefComponent, Some(s), None) => 
               val ca = new ConstantAssignment(mod, lname, emptyBox)
-              Some(AddDeclaration(ca))                
+              List(AddDeclaration(ca))                
            
             //definition is added -> one less undefined constant -> assignment for it no longer needed
             case UpdateComponent(cPath, DefComponent, None, Some(s)) => 
               val ca = mem.content.getConstantAssignment(mod.toMPath ? lname)
-              Some(DeleteDeclaration(ca))
+              List(DeleteDeclaration(ca))
             
-            case _ => None
+            case _ => Nil
 
           }
 

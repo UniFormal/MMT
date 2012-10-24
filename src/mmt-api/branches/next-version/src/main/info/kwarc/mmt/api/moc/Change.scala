@@ -275,18 +275,19 @@ case class UpdateComponent(path : ContentPath, name : DeclarationComponent, old 
 //  	  {o.toNode(changes)}
   
   def toNodeFlat =
-    <change type="update" path={path.toString} component={name.toString}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
+    <change type="update" path={path.toPath} component={name.toString}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
 }
 
-case class UpdateMetadata(path : ContentPath, old : metadata.MetaData, nw : metadata.MetaData) extends Update with ContentChange {
+case class UpdateMetadata(path : ContentPath, key : GlobalName, old: List[Obj], nw : List[Obj]) extends Update with ContentChange {
   def getReferencedURI :  CPath = CPath(path, MetaDataComponent) 
-  def toNode = 
-     <update path={path.toPath} name="metadata" change="update">
-      {nw.toNode}
-    </update>
-      
-  def toNodeFlat = 
-    <change type="update" path={path.toString} component="metadata"> nw.toNode </change> :: Nil
+  def toNode =
+    <metadata path={path.toPath} key={key.toPath} change="update">
+      {nw.map(x => x.toNode).toSeq}
+    </metadata>
+//  	  {o.toNode(changes)}
+  
+  def toNodeFlat =
+    <change type="update" path={path.toPath} key={key.toPath}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
   
 }
 
