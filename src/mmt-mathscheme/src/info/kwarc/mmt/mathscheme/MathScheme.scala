@@ -1,5 +1,6 @@
 package info.kwarc.mmt.mathscheme
 import info.kwarc.mmt.api._
+import frontend._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.backend._
 import utils.File
@@ -26,8 +27,8 @@ class MathScheme extends Compiler {
     * creates and initializes a Catalog
     * first argument is the location of the twelf-server script
     */
-   override def init(rep: frontend.Report, args: List[String]) {
-      super.init(rep, Nil)
+   override def init(controller: Controller, args: List[String]) {
+      super.init(controller, Nil)
       val p = args(0)
       if (p.startsWith("cygwin:")) {
          prefix = Some(p.substring(7,p.length))
