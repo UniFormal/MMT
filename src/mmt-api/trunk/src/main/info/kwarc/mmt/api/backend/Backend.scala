@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
 import utils._
 import frontend._
+import archives._
 
 import scala.xml._
 import info.kwarc.mmt.api.utils.MyList.fromList
@@ -13,66 +14,24 @@ import utils.FileConversion._
 import org.tmatesoft.svn.core._
 import org.tmatesoft.svn.core.io._
 import org.tmatesoft.svn.core.auth._
-//import org.tmatesoft.svn.core.wc.SVNWCUtil
 import org.tmatesoft.svn.core.wc.SVNWCUtil
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
 case object NotApplicable extends java.lang.Throwable
-case class NotFound(p : Path) extends info.kwarc.mmt.api.Error("Cannot find resource " + p.toString)
 
 /** Storage is an abstraction over backends that can provide MMT content
  * A storage declares a URI u and must answer to all URIs that start with u.
  */
 abstract class Storage {
-   /** called automatically when added; a storage may send arbitrary content to the reader during initialization */
-   def init(reader : Reader) {}
    /** dereferences a path and sends the content to a reader
     * a storage may send more content than the path references, e.g., the whole file or a dependency closure
     */
-   def get(path : Path, reader : Reader)
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit)
 }
 
 /** convenience methods for backends */
 object Storage {
-   /** reads a locutor registry file and returns a list of Storages */
-   def fromLocutorRegistry(file : java.io.File) : List[Storage] = {
-      val N = utils.xml.readFile(file)
-    
-      /*
-      val l = for (R <- (N\\"registry"\\"repository").toList) yield {
-   	     val repos = URI(xml.attr(R, "location"))
-         for {wc <- R.child.toList if wc.label == "wc"} yield {
-            val path = xml.attr(wc,"location")
-            val localDir = new java.io.File(xml.attr(wc, "root"))
-            LocalCopy(repos.scheme.getOrElse(null), repos.authority.getOrElse(null), repos.pathAsString + path, localDir)
-         }
-      }.toList
-      l.flatten 
-      */ 
-      
-     val lc = (N\\"registry"\\"repository").toList.flatMap(R => {
-      val repos = URI(xml.attr(R, "location"))
-      R.child.toList.filter(wc => wc.label == "wc").map(wc => LocalCopy(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), new java.io.File(xml.attr(wc, "root")))).toList
-     })
-     
-     val svn = (N\\"registry"\\"svn-repository").toList.flatMap(R => {
-      val repos = URI(xml.attr(R, "location"))
-      R.child.toList.filter(wc => wc.label == "wc").map(wc => {
-        val url = xml.attr(wc, "root")
-        val name = xml.attr(wc, "username")
-        val password = xml.attr(wc, "password")
-        val defRev = try {xml.attr(wc, "revision").toInt} catch {case _ => -1}
-        
-        val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
-        val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager(name, password)
-        repository.setAuthenticationManager(authManager)
-        SVNRepo(repos.schemeNull, repos.authorityNull, repos.pathAsString + xml.attr(wc, "location"), repository, defRev)
-      }).toList}) 
-
-     lc ::: svn
-   }
-   
    /** reads an OMBase description file and returns the described OMBases */
    def fromOMBaseCatalog(file : java.io.File) : List[OMBase] = {
       val N = utils.xml.readFile(file)
@@ -123,7 +82,6 @@ object OMQuery {
       n match {
          case <documents/> => Some(Doc(xml.attr(n, "base"),p, q))
          case <modules/> => Some(Mod(p, q))
-         case <assertions/> => Some(Ass(p, q))
          case scala.xml.Comment(_) => None
          case _ => throw ParseError("illegal query type: " + n)
       }
@@ -133,14 +91,14 @@ object OMQuery {
        p match {
           case p: DPath => s1 
           case p: MPath => s1.replace("%mod%", p.name.flat)
-          case p: GlobalName => s1.replace("%mod%", p.parent.toMPath.name.flat).replace("%name%", p.name.flat)
+          case p: GlobalName => s1.replace("%mod%", p.module.toMPath.name.flat).replace("%name%", p.name.toPath)
+          case _: CPath => s1 //TODO: check
        }
    }
 }
 sealed abstract class OMQuery(val path : String, val query : String)
 case class Doc(base : String, p : String, q : String) extends OMQuery(p, q)
 case class Mod(p : String, q : String) extends OMQuery(p, q)
-case class Ass(p : String, q : String) extends OMQuery(p, q)
 
 /** a trait for URL-addressed Storages that can serve MMT document fragments */
 abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : URI,
@@ -169,23 +127,12 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
         }
      }
      def handleResponse(msg : => String, N : NodeSeq) : NodeSeq
-     override def init(reader : Reader) {
-    	ipats.foreach {q => 
-           val N = handleResponse("path " + q.path + " and body " + q.query, sendRequest(q.path,q.query))
-           q match {
-              case Doc(b, _, _) =>
-                 val base = DPath(URI(b))
-                 reader.readDocuments(base, N)
-              case Mod(_, _) => reader.readModules(mmt.mmtbase, None, N)
-              case Ass(_, _) => reader.readAssertions(N)
-           }
-    	}
-     }
-     def get(path : Path, reader : Reader) {
+     def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
         val qs = path match {
            case p : DPath => dpats
            case p : MPath => mpats
            case p : GlobalName => spats
+           case _ : CPath => Nil //TODO: check
         }
         qs.foreach {q =>
            val qpath = OMQuery.replace(q.path, path)
@@ -193,10 +140,9 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
            val N = handleResponse("path " + qpath + " and body " + qbody, sendRequest(qpath,qbody))
            q match {
               case Doc(b, _, _) =>
-                 val base = DPath(URI(OMQuery.replace(b, path)))
-                 reader.readDocuments(base, N)
-              case Mod(_, _) => reader.readModules(path.doc, None, N)
-              case Ass(_, _) => reader.readAssertions(N)
+                 val base = URI(OMQuery.replace(b, path))
+                 cont(base, N)
+              case Mod(_, _) => cont(path.doc.uri, N)
            }
         }
      }
@@ -205,19 +151,19 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
 /** a Storage that retrieves file URIs from the local system */
 case class LocalSystem(base : URI) extends Storage {
    val localBase = URI(Some("file"), None, Nil, true, None, None)
-   def get(path : Path, reader : Reader) {
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = base.resolve(path.doc.uri)
       val test = Storage.getSuffix(localBase, uri)
       val file = new java.io.File(uri.toJava)
       val N = utils.xml.readFile(file)
-      reader.readDocuments(DPath(uri), N)
+      cont(uri, N)
    }
 }
 
 /** a Storage that retrieves repository URIs from the local working copy */
 case class LocalCopy(scheme : String, authority : String, prefix : String, base : java.io.File) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
-   def get(path : Path, reader : Reader) {
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
       val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
       val N = if (target.isFile) utils.xml.readFile(target)
@@ -225,8 +171,8 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
           val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern
           val prefix = if (target != base) target.getName + "/" else ""
           Storage.virtDoc(entries, prefix)
-      } else throw NotFound(path)
-      reader.readDocuments(DPath(uri), N)   
+        } else throw BackendError(path)
+      cont(uri, N)
    }
 }
 
@@ -234,8 +180,8 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
 case class SVNRepo(scheme : String, authority : String, prefix : String, repository : SVNRepository, defaultRev : Int = -1) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
    
-   def get(path : Path, reader : Reader) = get(path, reader, defaultRev)
-   def get(path : Path, reader : Reader, rev : Int) {
+   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {get(path, defaultRev)}
+   def get(path : Path, rev: Int)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
       val target = Storage.getSuffix(localBase, uri)
       
@@ -243,7 +189,6 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
         case None => rev
         case Some(s) => try {s.toInt} catch {case _ => rev}
       }
-      println("getting revision " + revision + " of file " + path)
       val N : scala.xml.Node = repository.checkPath(target, revision) match {
         case SVNNodeKind.FILE => 
           var fileProperties : SVNProperties = new SVNProperties()
@@ -263,9 +208,9 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
             }
           }
           Storage.virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
-        case SVNNodeKind.NONE => throw NotFound(path)
+        case SVNNodeKind.NONE => throw BackendError(path)
       }
-      reader.readDocuments(DPath(uri), N)
+      cont(uri, N)
    }
 }
 
@@ -293,15 +238,18 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
 
 
 /** a Backend holds a list of Storages and uses them to dereference Paths */
-class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Report) {
+class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Report) {
    private var stores : List[Storage] = Nil
    private def log(msg : => String) = report("backend", msg)
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
       s.foreach {d =>
          log("adding storage " + d.toString)
-         d.init(reader)
       }
+   }
+   def removeStore(s: Storage) {
+      stores = stores.filter(_ != s)
+      log("removing storage " + s.toString)
    }
    
    //this must be redesigned
@@ -311,8 +259,41 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
        case _ => s
      })
    }
-   
-   /** @throws NotFound if the root file cannot be read
+
+  
+   def openArchive(url : String, rev : Int) : SVNArchive = {
+     log("opening archive at " + url + ":" + rev)
+     val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
+     val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager()
+     repository.setAuthenticationManager(authManager)
+     repository.checkPath(".", rev) match {
+       case SVNNodeKind.DIR =>
+         val properties = new scala.collection.mutable.ListMap[String, String]
+         val manifest = "META-INF/MANIFEST.MF"
+         repository.checkPath(manifest, rev) match {
+           case SVNNodeKind.FILE =>
+             val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
+             repository.getFile(manifest, rev, null, baos)
+             val lines = baos.toString().split("\n").map(_.trim).filterNot(line => line.startsWith("//") || line.isEmpty)
+             lines map { line =>
+               val p = line.indexOf(":")
+               val key = line.substring(0,p).trim
+               val value = line.substring(p+1).trim
+               properties(key) = value
+               //TODO handle catalog key
+             }
+             val arch = new SVNArchive(repository, properties, report, rev)
+             addStore(arch)
+             arch
+
+           case _ => throw NotApplicable
+         }
+       case SVNNodeKind.FILE => throw NotApplicable //TODO
+       case _ => throw NotApplicable
+     }
+   }
+  
+   /** @throws BackendError if the root file cannot be read
      * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
    def openArchive(root: java.io.File) : Archive = {
       //TODO: check if "root" is meta-inf file, branch accordingly
@@ -323,19 +304,11 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
           if (manifest.isFile) {
              File.ReadLineWise(manifest) {case line =>
                 val tline = line.trim
-                if (! tline.startsWith("//") && ! tline.isEmpty) {
+                if (! tline.startsWith("//") && tline != "") {
                    val p = tline.indexOf(":")
                    val key = tline.substring(0,p).trim
                    val value = tline.substring(p+1).trim
                    properties(key) = value
-                   if (key == "catalog") {
-                      val List(a, b) = value.split("\\s").toList
-                      val uri = URI(a)
-                      val url = new java.io.File(root, b)
-                      val cat = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, url)
-                      log("adding catalog entry " + cat)
-                      stores ::= cat
-                   }
                 }
              }
              properties.get("compilation") foreach {value =>
@@ -362,7 +335,10 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
                    properties("compiled") = compiled._2
              }
           }
-          val arch = new Archive(root, properties, compsteps map {_.reverse}, report)
+          val arch = if (properties.get("type") == Some("mmt"))
+              new Archive(root, properties, compsteps map {_.reverse}, report) with MMTArchive
+          else
+              new Archive(root, properties, compsteps map {_.reverse}, report)
           compsteps foreach {_ foreach {case CompilationStep(from,_,compiler) => compiler.register(arch, from)}}
           addStore(arch)
           arch
@@ -375,6 +351,15 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
           openArchive(newRoot)
       }
       else throw NotApplicable
+   }
+   def closeArchive(id: String) {
+      getArchive(id) foreach {arch =>
+         removeStore(arch)
+         removeStore(arch.narrationBackend)
+         arch.compsteps foreach {_ foreach {
+           case CompilationStep(from,_,compiler) => compiler.unregister(arch, from)
+         }}
+      }
    }
    
    private def extractMar(file: java.io.File, newRoot: java.io.File) {
@@ -397,18 +382,17 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
        }
    }
    /** look up a path in the first Storage that is applicable and send the content to the reader */
-   def get(p : Path) = {
+   def get(p : Path)(implicit cont: (URI,NodeSeq) => Unit) = {
       def getInList(l : List[Storage], p : Path) {l match {
-         case Nil => throw NotFound(p)
+         case Nil => throw BackendError(p)
          case hd :: tl =>
             log("trying " + hd)
-      	    try {hd.get(p, reader)}
+      	    try {hd.get(p)}
             catch {case NotApplicable =>
                log(hd.toString + " not applicable to " + p)
                getInList(tl, p)
             }
       }}
-      
       getInList(stores, p)
    }
    
@@ -421,6 +405,22 @@ class Backend(reader : Reader, extman: ExtensionManager, report : info.kwarc.mmt
    def getArchives : List[Archive] = stores mapPartial {
       case a: Archive => Some(a)
       case _ => None
+   }
+   /** retrieves all Stores */
+   def getStores : List[Storage] = stores
+   
+   /** splits a logical document URI into the Archive holding it and the relative path in that archive leading to it */
+   def resolveLogical(uri: URI) : Option[(Archive, List[String])] = {
+      getArchives find {a => 
+        a.narrationBase.^! == uri.^! && uri.path.startsWith(a.narrationBase.pathNoTrailingSlash)
+      } map {a => (a, uri.path.drop(a.narrationBase.pathNoTrailingSlash.length))}
+   }
+   /** splits a physcial document URI into the Archive holding it and the relative path in that archive leading to it */
+   def resolvePhysical(file: File) : Option[(Archive, List[String])] = {
+      val segments = file.segments
+      getArchives find {a => segments.startsWith(a.root.segments)} map {
+        a => (a, segments.drop(a.root.segments.length + 1)) // + 1 to drop "source" directory
+      }
    }
    /** closes all svn sessions */
    def cleanup = {

@@ -5,13 +5,12 @@ import info.kwarc.mmt.api.utils._
 
 /** Creates a Controller and provides a shell interface to it.
  * The command syntax is given by the Action class and the parser in its companion object.
- * @param foundation the foundation that is used for type checking
+
  */
 class Shell() extends {
    val controller = new Controller
+
    def main(args : Array[String]) : Unit = {
-      controller.setConsoleReport
-      controller.setFileReport(File("jomdoc.log"))
       val command = args.mkString("", " ", "")
       try {
          controller.handleLine(command)
@@ -21,7 +20,13 @@ class Shell() extends {
             controller.handleLine(command)
          }
       } catch {
-         case e => controller.cleanup; throw e
+         case e: Error =>
+           controller.report(e)
+           controller.cleanup
+           throw e
+         case e =>
+           controller.cleanup
+           throw e
       }
    }
 }
@@ -29,5 +34,15 @@ class Shell() extends {
 /** A shell, the default way to run MMT as an application */
 object Run extends Shell()
 
-/** same as Run, obsolete */
-object RunNull extends Shell()
+object RunWeb {
+  val controller = new Controller
+
+  def main(args : Array[String]) : Unit = {
+    val command = args.mkString("", " ", "")
+    try {
+      controller.handleLine(command)
+    } catch {
+      case e => controller.cleanup; throw e
+    }
+  }
+}

@@ -5,6 +5,7 @@ import frontend._
 import backend._
 import ontology._
 import modules._
+import utils.URI
 import zgs.httpd._
 import zgs.httpd.let._
 import scala.util.parsing.json.{ JSONType, JSONArray, JSONObject }
@@ -30,11 +31,24 @@ class Server(val port: Int, controller: Controller) extends HServer {
   protected def selectorPoolSize = 2
 
   private def log(message: => String) { controller.report("server", message) }
-
+  /**
+   * Cross-Origin Resource Sharing
+   * For cross website ajax queries
+   */
+  private def CORS_AllowOrigin(origin : String) = true //for now
+  private def checkCORS(tk : HTalk) : HTalk = tk.req.header("Origin")  match {
+    case None => tk
+    case Some(s) => CORS_AllowOrigin(s) match {
+      case true => tk.setHeader(" Access-Control-Allow-Origin", s)
+      case false => tk
+    }
+  }
+  
   private def bodyAsString(tk: HTalk): String = {
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
     new String(bodyArray, "UTF-8")
   }
+
   private def bodyAsXML(tk: HTalk): Node = {
     val bodyString = bodyAsString(tk)
     val bodyXML = try {
@@ -78,6 +92,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           }
         case ":uom" :: _ => Some(UomResponse)
         case ":search" :: _ => Some(MwsResponse)
+        case ":parse" ::_ => Some(ParserResponse)
         case ":mmt" :: _ => Some(MmtResponse)
         // empty path 
         case List("") | Nil => Some(resourceResponse("browse.html"))
@@ -131,7 +146,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
   private def MwsResponse: HLet = new HLet {
     def act(tk: HTalk) {
       val resp = try {
-        val mws = controller.extman.getMWS.getOrElse(throw ServerError(<error message="no MathWebSearch engine defined"/>))
+        //
         val offset = tk.req.header("Offset") match {
           case Some(s) => try s.toInt catch { case _ => 0 }
           case _ => 0
@@ -155,10 +170,43 @@ class Server(val port: Int, controller: Controller) extends HServer {
             }
             (bodyXML, List(currentAid, mmlVersion))
           case "tptp" => (scala.xml.Text(bodyAsString(tk)), Nil)
+          case "lf" =>
+             val scope = tk.req.header("scope") match {
+               case Some(s) => 
+                 Path.parse(s) match {
+                   case mp : MPath =>  objects.OMMOD(mp)
+                   case _ => throw ServerError(<error><message> expected mpath found : {s} </message></error>)
+                 }
+               case _ => throw ServerError(<error><message> expected a scope (mpath) passed in header </message></error>)
+             }
+             val termParser = controller.termParser
+             val tm = try {
+               termParser(parser.ParsingUnit(null, scope, objects.Context(), bodyAsString(tk)), true)
+             } catch {
+               case e : Throwable =>
+                 println(e)
+                 throw e
+             }
+
+             def genQVars(n : Node) : Node = n match {
+               case a : scala.xml.Atom[_] => a
+               case  <m:ci>{q}</m:ci> =>
+                 if (q.toString.startsWith("?") || q.toString.startsWith("%3F")) {
+                   <mws:qvar>{q}</mws:qvar>
+                 } else {
+                   n
+                 }
+               case _ => new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(x => genQVars(x)) :_*)
+             }
+             val processedQuery = genQVars(tm.toCML)
+             (<mws:expr>{processedQuery}</mws:expr>, Nil)
           case _ => (bodyAsXML(tk), Nil) // default: body is forwarded to MWS untouched
         }
         val tqs = qt.transformSearchQuery(mwsquery, params)
         def wrapMWS(n: Node): Node = <mws:query output="xml" limitmin={ offset.toString } answsize={ size.toString }>{ n }</mws:query>
+        val mws = controller.extman.getMWS.getOrElse(throw ServerError(<error message="no MathWebSearch engine defined"/>))
+
+        tqs.map(q => println(wrapMWS(q)))
         val res = tqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q))) // calling MWS via HTTP post
         val total = res.foldRight(0)((r, x) => x + (r \ "@total").text.toInt)
         val totalsize = res.foldRight(0)((r, x) => x + (r \ "@size").text.toInt)
@@ -167,11 +215,84 @@ class Server(val port: Int, controller: Controller) extends HServer {
       } catch {
         case ServerError(n) => n
         case e: ParseError => <error><message>{ e.getMessage }</message></error>
-        case _ => <error><message>error translating query</message></error>
+        case e => <error><message>error translating query : {e.getMessage()}</message></error>
       }
       XmlResponse(resp).act(tk)
     }
   }
+
+  private def ParserResponse : HLet = new HLet {
+    def act(tk : HTalk) {
+      val text = tk.req.param("text").getOrElse(throw ServerError(<error><message>found no text to parse</message></error>))
+      val save = tk.req.param("save").map(_ == "true").getOrElse(false) //if save parameter is "true" then save otherwise don't
+      tk.req.query.split("\\?").toList match {
+        case strDPath :: strThy :: Nil =>
+          val dpath = DPath(URI(strDPath))
+          val mpath = dpath ? LocalPath(strThy :: Nil)
+          val ctrl = new Controller(controller.report)
+          val reader = new TextReader(controller, ctrl.add)
+          val res = reader.readDocument(text, dpath)(controller.termParser.apply)
+          res._2.toList match {
+            case Nil => //no error -> parsing successful
+              try {
+                val mod = ctrl.memory.content.getModule(mpath)
+                val nset = DPath(URI("http://cds.omdoc.org/foundations/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
+                val rb = new presentation.XMLBuilder()
+                val module = if(save) {
+                  controller.get(mpath)
+                } else {
+                  mod
+                }
+                controller.presenter(module, presentation.GlobalParams(rb, nset))
+                val thyXML = rb.get()
+                val response = new collection.mutable.HashMap[String,Any]()
+                response("success") = "true"                                      
+                val sdiff = controller.detectChanges(List(mod))
+                save match {
+                  case false => //just detecting refinements
+                    val refs = controller.detectRefinements(sdiff)
+                    response("info") = JSONArray(refs)
+                    response("pres") =  thyXML.toString
+                  case true => //updating and returning list of done updates
+                    val pchanges = tk.req.param("pchanges").map(_.split("\n").toList).getOrElse(Nil)       
+                    val boxedPaths = controller.update(sdiff, pchanges)
+
+                    def invPaths(p : Path, parents : Set[Path] = Nil.toSet) : Set[Path] = {
+                    println("calling for path " + p + " with parents " + parents.mkString(", "))  
+                    p match {
+                      case d : DPath => 
+                        controller.getDocument(d).getItems.flatMap(x => invPaths(x.target, parents + d)).toSet
+                      case m : MPath => 
+                        val affected = boxedPaths exists {cp => cp.parent match {
+                          case gn : GlobalName => gn.module.toMPath == m
+                          case mp : MPath => mp == p 
+                          case _ => false
+                        }}
+                        if (affected)
+                          parents + p
+                        else 
+                          Nil.toSet
+                      case _ => Nil.toSet
+                    }}
+                    response("pres") = JSONArray(invPaths(controller.getBase).map(_.toString).toList)
+                }
+                JsonResponse(JSONObject(response.toMap)).act(tk)
+              }  catch {
+                case e : Throwable =>
+                  TextResponse(e.toString).act(tk)
+              }
+            case l => //parsing failed -> returning errors 
+              val response = new collection.mutable.HashMap[String,Any]()
+              response("success") = "false"
+              response("info") = JSONArray(Nil)
+              response("pres") = l.map(e => (<p>{e.toString}</p>).toString).mkString("")
+              JsonResponse(JSONObject(response.toMap)).act(tk)
+          }
+        case _ => throw ServerError(<error><message> invalid theory name in query : {tk.req.query}</message></error>)
+      }
+    }
+  }
+
 
   /** Response when the first path component is :mmt */
   private def MmtResponse: HLet = new HLet {
@@ -189,8 +310,8 @@ class Server(val port: Int, controller: Controller) extends HServer {
         Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, controller.getBase, controller.getHome) match {
           case DefaultGet(p) => p match {
             case frontend.Present(_, _) => tk.req.header("Accept") match {
-              case Some("text/xml") => false // TODO both false?
-              case _ => false // TODO both false?
+              case Some("text/xml") => false
+              case _ => false // TODO could be determined based on the presentation style
             }
             case ToNode(_) | Deps(_) => false
             case ToString(_) => true
@@ -207,22 +328,10 @@ class Server(val port: Int, controller: Controller) extends HServer {
         else
           XmlResponse(node).act(tk)
       } catch {
-        case e: Error => XmlResponse(<div>{ "get error:\n\n" + e.msg }</div>).act(tk)
+        case e: Error =>
+           val ns = utils.xml.namespace("html")
+           XmlResponse(<div xmlns={ns}>{e.msg.split("\\n").map(s => <p>{s}</p>)}</div>).act(tk)
       }
-    }
-  }
-
-  /**
-   * A text response that the server sends back to the browser
-   * @param text the message that is sent in the HTTP body
-   */
-  private def TextResponse(text: String): HLet = new HLet {
-    def act(tk: HTalk) {
-      val out = text.getBytes("UTF-8")
-      tk.setContentLength(out.size) // if not buffered
-        .setContentType("text/plain; charset=utf8")
-        .write(out)
-        .close
     }
   }
 
@@ -258,13 +367,27 @@ class Server(val port: Int, controller: Controller) extends HServer {
   }
 
   /**
+   * A text response that the server sends back to the browser
+   * @param text the message that is sent in the HTTP body
+   */
+  private def TextResponse(text: String): HLet = new HLet {
+    def act(tk: HTalk) {
+      val out = text.getBytes("UTF-8")
+      checkCORS(tk).setContentLength(out.size) // if not buffered
+        .setContentType("text/plain; charset=utf8")
+        .write(out)
+        .close
+    }
+  }
+
+  /**
    * An XML response that the server sends back to the browser
    * @param node the XML message that is sent in the HTTP body
    */
   private def XmlResponse(node: scala.xml.Node): HLet = new HLet {
     def act(tk: HTalk) {
       val out: Array[Byte] = node.toString.getBytes("UTF-8")
-      tk.setContentLength(out.size) // if not buffered
+      checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("text/xml; charset=utf8")
         .write(out)
         .close
@@ -278,7 +401,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
   private def JsonResponse(json: JSONType): HLet = new HLet {
     def act(tk: HTalk) {
       val out: Array[Byte] = json.toString.getBytes("UTF-8")
-      tk.setContentLength(out.size) // if not buffered
+      checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("application/json; charset=utf8")
         .write(out)
         .close
@@ -290,7 +413,10 @@ class Server(val port: Int, controller: Controller) extends HServer {
     log(action.toString)
     val ret: scala.xml.Node = action match {
       case frontend.DefaultGet(p) => frontend.Respond(p, "").get(controller)
-      case a: frontend.Respond => a.get(controller)
+	  case GetAction(a: frontend.ToWindow) =>
+	     a.make(controller)
+		 <done action={a.toString}/>
+      case GetAction(a: frontend.Respond) => a.get(controller)
       case a => <error action={ a.toString }/>
     }
     log("done")
@@ -329,6 +455,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
                 </item>
             }
           }</root>
+        case _ => throw ImplementationError("only children of documents and modules can be taken")
       }
     }
   }

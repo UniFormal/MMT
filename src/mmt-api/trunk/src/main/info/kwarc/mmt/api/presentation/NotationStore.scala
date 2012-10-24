@@ -50,14 +50,20 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
      def getDefault(key : NotationKey) : Option[Notation] = {
          log("looking in defaults for key " + key)
          val not = key.path flatMap {
-	         case _ : DPath => None
 	         case p : MPath => try {sets(p).get(key)} catch {case _ => None}
-	         case p : GlobalName =>
-	            //get default notation, ...
-	            defaults.get(key) orElse
+	         case p : GlobalName if key.role.bracketable =>
+	           //get default notation, ...
+	           //defaults.get(key)
+	           lib.getO(p) match {
+	             case Some(c : symbols.Constant) => 
+	               c.not orElse 
                    //... otherwise, if symbol arose from structure, get notation from preimage
                    (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role))))
-	      }
+	               
+	             case _ => None
+	           }
+	         case _ => None
+	     }
          if (not.isDefined) log("found")
          not
       }
@@ -89,7 +95,7 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
            //to find the default notation highNot, we use keys without a path and try some roles in order
            val roles : List[Role] = r match {
               case Role_application(None) => 
-                 mem.ontology.getType(p) match {
+                mem.ontology.getType(p) match {
                     case Some(ontology.IsConstant(rl)) => List(Role_application(rl), r) // application of constants may differ depending on their role, if given 
                     case _ => List(r)
                  }

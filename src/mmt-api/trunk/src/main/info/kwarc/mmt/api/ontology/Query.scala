@@ -12,6 +12,8 @@ case object PathType extends QueryBaseType
 case object ObjType extends QueryBaseType
 /** queries returning arbitrary XML */
 case object XMLType extends QueryBaseType
+/** queries returning arbitrary strings */
+case object StringType extends QueryBaseType
 
 /** the types of the query language */
 sealed abstract class QueryType
@@ -34,7 +36,7 @@ object Elem1 {
 }
 object ESet1 {
    def unapply(t: QueryType) : Option[QueryBaseType] = t match {
-      case Elem(List(b)) => Some(b)
+      case ESet(List(b)) => Some(b)
       case _ => None
    }
 }
@@ -190,7 +192,7 @@ object Query {
     *  throws an exception if the query is ill-formed
     */
    def infer(q: Query)(implicit context: List[QueryBaseType]) : QueryType = q match {
-      case Bound(i) => try {Elem(context(i))} catch {case _ => throw ParseError("illegal variable index: " + i)}
+      case Bound(i) => try {Elem(context(i-1))} catch {case _ => throw ParseError("illegal variable index: " + i)}
       case ThePath(_) => Elem(PathType)
       case TheObject(_) => Elem(ObjType)
       case Component(of, _) =>
@@ -212,7 +214,7 @@ object Query {
          infer(to) match {
             case Elem1(PathType) => ESet(PathType)
             case ESet1(PathType) => ESet(PathType)
-            case _ => throw ParseError("illegal query: " + q)
+            case t => throw ParseError("ill-typed query: " + to + " expected path or set of paths, found " + t)
          }
       case ThePaths(_*) => ESet(PathType)
       case TheObjects(_*) => ESet(ObjType)
@@ -262,11 +264,15 @@ object Query {
       case Present(c,s) => infer(c) match {
          case Elem1(PathType) => Elem(XMLType)
          case Elem1(ObjType) => Elem(XMLType)
+         case ESet1(PathType) => ESet(XMLType)
+         case ESet1(ObjType) => ESet(XMLType)
+         case _ => throw ParseError("illegal query " + q)
       }
    }
    /** parses a query; infer must be called to sure well-formedness */
    def parse(n: Node) : Query = n match {
       case <individual/> => ThePath(Path.parse(xml.attr(n, "uri")))
+      case <concept/> => AllThatAre(Unary.parse(xml.attr(n, "name")))
       case <component>{o}</component> => Component(parse(o), xml.attr(n, "index"))
       case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
       case <type>{o}</type> => InferedType(parse(o), Path.parseM(xml.attr(n, "meta"), utils.mmt.mmtbase))

@@ -1,0 +1,4 @@
+archive add C:\other\ombase
+log console
+log file test.log
+log+ checker

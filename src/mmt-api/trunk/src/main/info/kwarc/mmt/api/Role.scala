@@ -28,6 +28,7 @@ case object Role_Pattern             extends Role(false, "Pattern")
 case object Role_Instance            extends Role(false, "Instance")
 case object Role_ConAss              extends Role(false, "ConAss")
 case object Role_StrAss              extends Role(false, "StrAss")
+case object Role_PatAss              extends Role(false, "PatAss")
 case object Role_Open                extends Role(false, "Open")
 case object Role_Include             extends Role(false, "Include")
 case object Role_StrToplevel         extends Role(false, "Toplevel")
@@ -43,17 +44,12 @@ case class  Role_application(role: Option[String]) extends Role(true,  "applicat
 case object Role_attribution         extends Role(true,  "attribution")
 case object Role_binding             extends Role(true,  "binding")
 case object Role_value               extends Role(false, "value")
+case object Role_reference           extends Role(false, "reference")
 case object Role_foreign             extends Role(false, "foreign")
 case object Role_index               extends Role(false, "index")
 case object Role_context             extends Role(false, "context")
 case object Role_substitution        extends Role(false, "substitution")
 case object Role_termsub             extends Role(false, "termsub")
-case object Role_seqsub              extends Role(false, "seqsub")
-case object Role_SeqVariable         extends Role(false, "SeqVariable")
-case object Role_SeqVariableRef      extends Role(false, "seqvariable")
-case object Role_seqsubst            extends Role(false, "seqsubst")
-case object Role_sequpto             extends Role(false, "sequpto")
-case object Role_seqitemlist         extends Role(false, "seqitemlist")
 case object Role_ObjToplevel         extends Role(false, "toplevel")
 case class  Role_Fragment(kind : String) extends Role(false, "fragment:" + kind)
 
@@ -75,7 +71,6 @@ object Role {
       case "Constant" => Role_Constant(None)
       case s if s.startsWith("Constant:") => Role_Constant(Some(s.substring(9)))
       case "Variable" => Role_Variable
-      case "SeqVariable" => Role_SeqVariable
       case "Include" => Role_Include
       case "DefinedStructure" => Role_DefinedStructure
       case "Alias" => Role_Alias
@@ -83,6 +78,7 @@ object Role {
       case "Instance" => Role_Instance
       case "ConAss" => Role_ConAss
       case "StrAss" => Role_StrAss
+      case "PatAss" => Role_PatAss
       case "Open" => Role_Open
       case "Notation" => Role_Notation
       case "Toplevel" => Role_StrToplevel
@@ -96,17 +92,21 @@ object Role {
       case s if s.startsWith("application:") => Role_application(Some(s.substring(12)))
       case "attribution" => Role_attribution
       case "binding" => Role_binding
-      case "seqsubst" => Role_seqsubst
-      case "seqvariable" => Role_SeqVariableRef
-      case "sequpto" => Role_sequpto
-      case "seqitemlist" => Role_seqitemlist
-      case "index" => Role_index
+      case "reference" => Role_reference
       case "substitution" => Role_substitution
       case "termsub" => Role_termsub
-      case "seqsub" => Role_seqsub
       case "context" => Role_context
       case "toplevel" => Role_ObjToplevel
       case "value" => Role_value
+
+      case "index" => Role_index
+      case "seqsub" => Role_termsub //TODO fix seqsub
+      case "seqsubst" => Role_termsub //TODO fix seqsub
+      case "seqitemlist" => Role_termsub //TODO fix seqitemlist
+      case "seqvariable" => Role_termsub //TODO fix seqvariable
+      case "SeqVariable" => Role_termsub //TODO fix seqvariable
+      case "sequpto" => Role_termsub //TODO fix sequpto
+
       case s if s.startsWith("fragment:") => Role_Fragment(s.substring(9))
       case s => throw ParseError("illegal role: " + s)
    }

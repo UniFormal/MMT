@@ -124,7 +124,7 @@ function getClassArray(elem) {
    return classes.split(/\s+/);
 }
 
-// the following functions f add functionality to jQuery and can be used as $(...).f
+// the following functions $.fn.f add functionality to jQuery and can be used as $(...).f
 // contrary to the built-in jQuery analogues, these work for 'pref:name' attributes and math elements
 /** add a class cl to all matched elements */
 $.fn.addMClass = function(cl){
@@ -183,10 +183,11 @@ $.fn.filterMAttr = function(attr, value) {
 //bind all document events to the respective functions
 function keyPress(key){
     for (x in loadedModules) {
-        loadedModules[x][2].keyPressed(key);
+	console.log(loadedModules[x])
+        //loadedModules[x][2].keyPressed(key);
     }
 }
-document.onkeypress = keyPress;
+//document.onkeypress = keyPress;
 
 /**
  * cmClear() - clears the context Menu

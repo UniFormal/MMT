@@ -9,6 +9,7 @@ import scala.collection.mutable.{HashSet}
 /** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
 trait BaseType
 case class XMLResult(node: scala.xml.Node) extends BaseType
+case class StringResult(string: String) extends BaseType
 
 /** wrapper type for the result of a query */
 sealed abstract class QueryResult {
@@ -25,7 +26,7 @@ case class ElemResult(l: List[BaseType]) extends QueryResult {
 /** result of a set query */
 case class ESetResult(h : HashSet[List[BaseType]]) extends QueryResult {
    def toNode : scala.xml.Node =
-      <results>{h map {x => ElemResult(x).toNode}}</results>
+      <results size={h.size.toString}>{h map {x => ElemResult(x).toNode}}</results>
 }
 
 /** evaluates a query expression to a query result */
@@ -93,8 +94,8 @@ class Evaluator(controller: Controller) {
          evaluateESet(of) foreach {
             case List(o) => o match { 
                case OMBINDC(`free`, cont, _, obj) =>
-                 res += List(found.infer(obj, cont)(lup))
-               case t: Term => res += List(found.infer(t, Context())(lup))
+                 res += List(found.inference(obj, cont)(lup))
+               case t: Term => res += List(found.inference(t, Context())(lup))
                case o => throw GetError("object exists but is not a term: " + o)
             }
             case _ => throw ImplementationError("ill-typed query")
@@ -127,7 +128,9 @@ class Evaluator(controller: Controller) {
       case Unifies(wth) => empty //TODO empty for now
       case Related(to, by) =>
          val res = empty
-         rs.query(evaluateElemPath(to), by)(res += _)
+         evaluateESet(to) foreach {p =>
+           rs.query(p.head.asInstanceOf[Path], by)(res += _)  // p has type List(Path) by precondition
+         }
          res
       case Closure(of) =>
          evaluateESet(of) match { 

@@ -6,8 +6,7 @@ import objects._
 import utils._
 import presentation.{StringLiteral,Omitted}
 
-abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name) {
-}
+abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
 /**
  * A Theory represents an MMT theory.<p>
  * 
@@ -17,10 +16,11 @@ abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name) {
  * @param name the name of the theory
  * @param meta the path of the optional meta-theory
  */
-class DeclaredTheory(doc : DPath, name : LocalPath, val meta : Option[MPath])
+class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
       extends Theory(doc, name) with DeclaredModule[Symbol] {
    def role = Role_DeclaredTheory
-   def components = StringLiteral(name.flat) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   override def compNames = List(("name", 0), ("meta",1))
    override def toString = path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
    <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
@@ -34,7 +34,7 @@ class DeclaredTheory(doc : DPath, name : LocalPath, val meta : Option[MPath])
     </theory>
 }
 
-class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends Theory(doc, name) with DefinedModule[TheoryObj] {
+class DefinedTheory(doc : DPath, name : LocalPath, val df : Term) extends Theory(doc, name) with DefinedModule {
    def role = Role_DefinedTheory
    def components = StringLiteral(name.flat) :: innerComponents
    override def toString = path + innerString
@@ -43,19 +43,4 @@ class DefinedTheory(doc : DPath, name : LocalPath, val df : TheoryObj) extends T
         {getMetaDataNode}
         {innerNodes}
     </theory>
-}
-
-object Theory {
-   def meta(thy: TheoryObj)(implicit lib: Lookup) : Option[MPath] = thy match {
-      case OMMOD(p) => lib.getTheory(p) match {
-         case t: DeclaredTheory => t.meta
-         case t: DefinedTheory => meta(t.df)
-      }
-      case TEmpty(mt) => mt
-      case TUnion(l,r) =>
-         val lm = meta(l)
-         val rm = meta(r)
-         if (lm == rm) lm
-         else None
-   }
 }

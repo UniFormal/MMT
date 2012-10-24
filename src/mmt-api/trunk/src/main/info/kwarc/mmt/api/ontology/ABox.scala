@@ -25,14 +25,17 @@ class RelStore(report : frontend.Report) {
    def getType(p: Path) : Option[Unary] = types.get(p)
    /** retrieves all Relation declarations */
    def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
-   
+
+   def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
+   def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
+
    /** adds a declaration */
    def +=(d : RelationalElement) {
       log(d.toString)
       d match {
         case Relation(dep, subj, obj) =>                  
            subjects += ((dep, obj), subj)
-           objects += ((subj, dep), obj)
+           objects += ((subj, dep), obj)           
            dependencies += ((subj, obj), dep)
         case Individual(p, tp) =>
            types(p) = tp
@@ -42,7 +45,7 @@ class RelStore(report : frontend.Report) {
    
    /** deletes a path from the relation library */
    def deleteSubj(subj : Path) {
-     // currently implementation is quite ugly, restructuring might me useful
+     // currently implementation is quite ugly, restructuring might be useful
      val sd = subjects.flatMap(x => x._2.flatMap(y => if (y == subj) List((x._1,y)) else Nil))
      sd.map(p => subjects -= (p._1,p._2))
      val od = objects.flatMap(x => x._2.flatMap(y => if (x._1._1 == subj) List((x._1,y)) else Nil))
@@ -55,7 +58,10 @@ class RelStore(report : frontend.Report) {
      val id = individuals.flatMap(x => x._2.flatMap(y => if (y == subj) List((x._1,y)) else Nil))
      id.map(p => individuals -= (p._1,p._2))     
    }
-   
+
+
+  /*
+
    /** renames a path from the relation library */
    def renameSubj(old : Path, nw : Path) {
 	 // currently implementation is quite ugly, restructuring might me useful
@@ -77,8 +83,9 @@ class RelStore(report : frontend.Report) {
      id.map(p => individuals += (p._1,nw))     
      
    }
-   
-   
+
+   */
+
    
    def queryList(start : Path, q : RelationExp) : List[Path] = {
       var ps : List[Path] = Nil

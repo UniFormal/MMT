@@ -24,7 +24,7 @@ object LocalParams {
    val objectTop = LocalParams(Nil, Position.Init, true, Precedence.neginfinite, Nil)
 }
 /** This class stores information about a bound variable.
- * @param decel the variable declaration
+ * @param decl the variable declaration
  * @param binder the path of the binder (if atomic)
  * @param declpos the position of the variable declaration 
  */
@@ -86,7 +86,11 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
             val key = NotationKey(Some(s.path), s.role)
             val notation = controller.get(gpar.nset, key)
             render(notation.pres, s.contComponents, List(0), gpar, lpar)
-         case o: Obj =>
+         case o1: Obj =>
+            val o = o1 match {
+               case o1: Term => controller.pragmatic.pragmaticHead(o1)
+               case _ => o1
+            }
             //default values
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar
@@ -96,7 +100,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
             o match {
                //for binders, change newlpar to remember VarData for rendering the bound variables later 
                case OMBINDC(binder,context,_,_) =>
-                  val pOpt = binder match {case OMID(b) => Some(b) case _ => None}
+                  val pOpt = binder match {case OMS(b) => Some(b) case _ => None}
                   val vds = context.zipWithIndex.map {
                       case (v, i) => VarData(v, pOpt, newlpar.pos + (i+1))
                   }
@@ -105,16 +109,16 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
                case OMV(name) =>
                   newlpar.context.reverse.zipWithIndex.find(_._1.name == name) match {
                      case Some((VarData(_, binder, pos), i)) =>
-                        comps = List(StringLiteral(name), StringLiteral(i.toString), StringLiteral(pos.toString))
+                        comps = List(StringLiteral(name.toString), StringLiteral(i.toString), StringLiteral(pos.toString))
                         key = NotationKey(binder, o.role)
                      case None =>
-                       comps = List(StringLiteral(name), Omitted, Omitted) // free variable
+                       comps = List(StringLiteral(name.toString), Omitted, Omitted) // free variable
                   }
                // one more binder
-               case SeqSubst(_, name, _) =>
+/*               case SeqSubst(_, name, _) =>
                   val vd = VarData(TermVarDecl(name, None, None), Some(utils.mmt.ellipsis), lpar.pos + 1)
                   newlpar = newlpar.copy(context = newlpar.context ::: List(vd))
-               case _ =>
+*/               case _ =>
             }
             val notation = controller.get(gpar.nset, key)
             //log("looked up notation: " + notation)
@@ -289,7 +293,7 @@ class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.fr
 		              case _ => throw PresentationError("no foundation found")
 		           }
 		           val found = controller.extman.getFoundation(meta).getOrElse(throw PresentationError("no foundation found"))
-		           val tp = try {found.infer(o, lpar.asContext)(controller.globalLookup)}
+		           val tp = try {found.inference(o, lpar.asContext)(controller.globalLookup)}
 		                  catch {case _ => OMID(utils.mmt.mmtbase ? "dummy" ? "error")}
 		           present(tp, gpar, lpar)
 		        case c => throw PresentationError("cannot infer type of " + c)
