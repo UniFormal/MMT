@@ -61,7 +61,7 @@ class TptpTwelfCompiler extends Compiler {
     val flags : String = "-flf -d- -q2"
     val cmd : String = "tcsh " + tptp2Xpath + tptp2xcomp + " " + flags + " " + in.toString()
   
-    log("about to run!!!")
+//    log("about to run!!!")
 //     check if file already exists, overwrite!  
     // check if output target dir exists, if not, create dirs
     var outf : java.io.File = new java.io.File(outDir.toString())
