@@ -138,6 +138,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          }
          else if (flat.startsWith("%view", i))
            i = crawlView(i)
+//         else if (flat.startsWith("%spec", i))
+           //TODO read logic spec
          else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) // unknown top-level %-declaration => ignore it
            i = skipAfterDot(i)
          else if (flat.startsWith("%.", i))  // this marks the end of file; ignore everything after
