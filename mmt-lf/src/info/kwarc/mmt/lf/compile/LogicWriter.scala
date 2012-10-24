@@ -47,12 +47,7 @@ class LogicWriter() {
     
     val fs = FileSys(lname)
     decs.reverse foreach { x => split(x,fs)  }
-//    println(fs.toString)
-    
     val cont : List[String] = Haskell.prog(decs)
-    
-    decs foreach {x => println(x)}
-    
     write( fs, ldir)
     
   }
@@ -78,8 +73,8 @@ class LogicWriter() {
     var pre_main = List("module " + " " + lname + "." + "Logic_" + lname + " where\n\n")
     pre_main ++= imports
     pre_main ++= List("import " + lname + "." + "AS_BASIC_" + lname + "\n\n")
-    //pre_main ++= InsLanguage(lname).print
-    //pre_main ++= InsCategory(lname).print
+    pre_main ++= InsLanguage(lname).print
+    pre_main ++= InsCategory(lname).print
     File.write(fw,pre_main.mkString)
     fw = File(basic)
     var pre_basic = "module " + " " + lname + "." + "AS_BASIC_" + lname + " where\n\n" 
@@ -125,13 +120,16 @@ case class InsLanguage(lname : String) extends CLASS {
 
 case class InsCategory(lname : String) extends CLASS {
   val name = lname.head.toUpperCase + lname.substring(1)
-  def print : List[String] = List(start + "Category" + sign + morph + " where ",
-		  "ide = ()",
-		  "dom = ()",
-		  "com = ()",
-		  "inInclusion = ()",
-		  "legal_mor = ()",
-		  "composeMorphisms = ()"
+  val ide = "()"
+  val dom = "()"
+  val com = "()"
+  def print : List[String] = List(start + " Category " + sign + " " + morph + " where ",
+		  "ide = " + ide,
+		  "dom = " + dom,
+		  "com = " + com
+//		  "inInclusion = ()",
+//		  "legal_mor = ()",
+//		  "composeMorphisms = ()"
       ) map {x => x + "\n"}
 }
 
