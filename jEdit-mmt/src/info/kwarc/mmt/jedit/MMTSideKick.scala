@@ -49,10 +49,10 @@ class MMTDeclAsset(val elem : StructuralElement, name: String, reg: SourceRegion
 
 /* node in the sidekick outline tree: terms */ 
 class MMTTermAsset(val parent: ContentPath, val path: Option[Path], name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
-  path.map(p =>
-    setShortDescription(path.toPath)
+  path map {case p =>
+    setShortDescription(p.toPath)
     setLongDescription(p.toPath)
-  )
+  }
   def getScope = Some(OMID(parent))
 }
 
