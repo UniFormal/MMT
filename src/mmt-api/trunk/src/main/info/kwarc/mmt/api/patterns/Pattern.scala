@@ -10,19 +10,19 @@ import utils._
 import scala.io.Source
 
 
-class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, val body : Context) extends Symbol {
+class Pattern(val home: TheoryObj, val name : LocalName, val params: Context, val con : Context) extends Symbol {
    def toNode =
      <pattern name={name.flat}>
    		{if (! params.isEmpty)
    		   <parameters>{params.toNode}</parameters>
    		else Nil}
-   	   <declarations>{body.toNode}</declarations>
+   	   <declarations>{con.toNode}</declarations>
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
-   override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("bodyBegin",params.length + 1)) 
-   def components = OMID(path) :: params ::: body
+   override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("conBegin",params.length + 1)) 
+   def components = OMID(path) :: params ::: con
    override def toString = 
-     "Pattern for " + name.flat + " " + params.toString + " " + body.toString
+     "Pattern for " + name.flat + " " + params.toString + " " + con.toString
 }
 
 class Instance(val home : TheoryObj, val name : LocalName, val pattern : GlobalName, val matches : Substitution) extends Symbol {
@@ -42,11 +42,11 @@ object Instance {
    */
   def elaborate(inst: Instance, normalize: Boolean)(implicit lup: Lookup, report: Report): List[Constant] = {  
     	val pt : Pattern = lup.getPattern(inst.pattern)
-      pt.body.map {
+      pt.con.map {
     	  case TermVarDecl(n,tp,df,at @ _*) =>
           def auxSub(x : Term) = {
-     	        val names = pt.body.map(d => d.name)
-     	        val subs = pt.body map {d => d.name / OMID(inst.home % (inst.name / d.name))}
+     	        val names = pt.con.map(d => d.name)
+     	        val subs = pt.con map {d => d.name / OMID(inst.home % (inst.name / d.name))}
       	     val xsub = x ^ (inst.matches ++ Substitution(subs : _*))
       	     if (normalize) SeqNormalize.normalizeTerm(xsub) else xsub
           }

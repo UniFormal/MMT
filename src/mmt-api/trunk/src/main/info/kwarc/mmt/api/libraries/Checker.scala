@@ -390,7 +390,7 @@ class FoundChecker(foundation : Foundation, report: Report) extends ModuleChecke
             }
             ContentReconstructed(a :: flat, deps)
          case p : Pattern =>
-            val paths = checkContext(p.home, p.params ++ p.body)
+            val paths = checkContext(p.home, p.params ++ p.con)  
             val deps = IsPattern(p.path) :: paths.map(HasOccurrenceOfInDefinition(p.path, _))
             ContentSuccess(deps)
          case i : Instance => 
