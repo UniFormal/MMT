@@ -84,6 +84,13 @@ object xml {
       src.asInstanceOf[scala.io.BufferedSource].close
       output(0)
    }
+   def get(url: java.net.URL): Node = {
+      val conn = url.openConnection()
+      val src = scala.io.Source.fromInputStream(conn.getInputStream(), "UTF-8")
+      val output = scala.xml.parsing.ConstructingParser.fromSource(src, false).document()
+      src.asInstanceOf[scala.io.BufferedSource].close
+      output(0)
+   }
    
    /**
     * Checks whether an XML element has illegal attribute keys.

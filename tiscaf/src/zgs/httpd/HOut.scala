@@ -64,7 +64,7 @@ final private class HIdentOut(aliveReq : Boolean,
     }
     else if (resp.getHeader("content-length").isEmpty) {
       stream.dispose
-      error("Content-Length is not set")
+      sys.error("Content-Length is not set")
     }
     
     writeSessionCookie

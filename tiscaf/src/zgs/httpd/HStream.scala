@@ -67,5 +67,5 @@ final private class HStream(peer : HPeer) {
     }
   }
   
-  private def throwError(msg : String) = { dispose; error(msg) }
+  private def throwError(msg : String) = { dispose; sys.error(msg) }
 }

@@ -8,14 +8,30 @@ import info.kwarc.mmt.api.utils._
 
  */
 class Shell() extends {
-   val controller = new Controller
+   lazy val controller = new Controller
+   private var shell = true
 
-   def main(args : Array[String]) : Unit = {
+   def main(a : Array[String]) : Unit = {
+      var args = a.toList
+      args match {
+         // send command to existing instance listening at a port, and quit
+         case "-send" :: port :: rest =>
+            val uri = (URI("http", "localhost:" + port) / ":admin") ? rest.mkString("", " ", "") 
+            val ret = utils.xml.get(uri.toJava.toURL)
+            println(ret.toString)
+            sys.exit
+         // execute command line arguments but do not read from standard input
+         case "-noshell" :: rest =>
+            shell = false
+            args = rest
+         // default behavior: execute command line arguments, read further commands from standard input
+         case _ =>
+      }
       val command = args.mkString("", " ", "")
       try {
          controller.handleLine(command)
          val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-         while (true) {
+         while (shell) {
             val command = Input.readLine()
             controller.handleLine(command)
          }
@@ -33,16 +49,3 @@ class Shell() extends {
 
 /** A shell, the default way to run MMT as an application */
 object Run extends Shell()
-
-object RunWeb {
-  val controller = new Controller
-
-  def main(args : Array[String]) : Unit = {
-    val command = args.mkString("", " ", "")
-    try {
-      controller.handleLine(command)
-    } catch {
-      case e => controller.cleanup; throw e
-    }
-  }
-}

@@ -9,7 +9,7 @@ protected object HResolver {
     override def chunked   = false
     override def buffered  = false 
     override def gzip      = false
-    def resolve(req : HReqHeaderData) = error("not used")
+    def resolve(req : HReqHeaderData) = sys.error("not used")
     val hLet = new let.ErrLet(HStatus.NotFound)
   }
   

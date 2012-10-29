@@ -34,6 +34,10 @@ trait HServer {
 
   protected def onError(e : Throwable) : Unit = e.printStackTrace
 
+  //FR: make message handling overridable to avoid printing
+  protected def onMessage(s:String): Unit = {println(s)}
+
+
   // override if you want more elaborated shutdown procedure (and replace zgs.httpd.HStop)
   protected def startStopListener : Unit = zgs.sync.Sync.spawn {
     val serverSocket = new java.net.ServerSocket(stopPort)
@@ -41,21 +45,21 @@ trait HServer {
     val ar = new Array[Byte](256)
     dataSocket.getInputStream.read(ar)
     if (new String(ar, "ISO-8859-1") startsWith("stop")) { dataSocket.close; serverSocket.close; stop }
-    else println(name + ": invalid stop sequence")
+    else onMessage(name + ": invalid stop sequence")
     dataSocket.close; serverSocket.close; stop 
   }
 
   //-------------------------- user API ---------------------------------
   
-  final def start : Unit = synchronized { 
+  final def start : Unit = synchronized {
     if (stopped.get) {
       plexer.start
       ports.foreach { port => plexer.addServer(peerFactory, port) }
       //startStopListener
       stopped.set(false)
-      println(name + " server was started on port(s) " + ports.mkString(", "))
+      onMessage(name + " server was started on port(s) " + ports.mkString(", "))
     }
-    else error("the server is already started")
+    else sys.error("the server is already started")
   }
   
   final def stop : Unit = synchronized {
@@ -65,15 +69,15 @@ trait HServer {
       Thread.sleep(interruptTimeoutMillis)
       talksExe.shutdownNow 
       plexer.stop
-      println(name + " server stopped")
+      onMessage(name + " server stopped")
     }
-    else error("the server is already stopped")
+    else sys.error("the server is already stopped")
   }
   
   //--------------------------- internals -------------------------------
   
   // nothing must be started in init, so using few objects and lazy vals
-
+  
   private lazy val talksExe = new zgs.sync.SyncExe(talkPoolSize, talkQueueSize, "Talks")
   
   private val connTimeoutMillis : Long = connectionTimeoutSeconds * 1000
