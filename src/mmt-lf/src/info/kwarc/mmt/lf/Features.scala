@@ -6,3 +6,11 @@ object LFHOAS extends pragmatics.HOAS {
    val apply = Apply.path
    val lambda = Lambda.path
 }
+
+object OldLFHOAS extends pragmatics.HOAS {
+   val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "lf" / "lf.omdoc")
+   val theory = lfbase ? "lf"
+   val apply = theory ? "@"
+   val lambda = theory ? "lambda"
+}
+
