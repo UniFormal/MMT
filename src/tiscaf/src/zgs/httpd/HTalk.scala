@@ -126,7 +126,7 @@ final class HTalk(private val app : HApp,
   
   private def checkHead = if (out.isDefined && out.get.isHeaded) {
     stream.dispose
-    error("header is already sent")
+    sys.error("header is already sent")
   }
 
   private def getOut : HOut = out.getOrElse {

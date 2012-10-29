@@ -24,6 +24,9 @@ class Server(val port: Int, controller: Controller) extends HServer {
   override def writeBufSize = 16 * 1024
   override def tcpNoDelay = true // make this false if you have extremely frequent requests
   override def startStopListener = {} // prevents tiscaf from creating a "stop" listener
+  override def onMessage(s: String) {
+     controller.report("tiscaf", s)
+  }
   protected def ports = List(port) // port to listen to
   protected def apps = List(new RequestHandler) // RequestHandler is defined below
   protected def talkPoolSize = 4

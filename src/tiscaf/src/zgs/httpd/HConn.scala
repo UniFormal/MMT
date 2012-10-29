@@ -81,7 +81,7 @@ final private[httpd] class HConn(
     case _          => None
   }
 
-  def headerData : HReqHeaderData = header.getOrElse(error("HReqHeaderData isn't defined yet"))
+  def headerData : HReqHeaderData = header.getOrElse(sys.error("HReqHeaderData isn't defined yet"))
   
   def octets : Option[Array[Byte]] = octetStream
 
@@ -201,7 +201,7 @@ final private[httpd] class HConn(
     if (HSess.count(app) > app.maxSessionsCount)
       try {
         new zgs.httpd.let.ErrLet(HStatus.ServiceUnavailable) act(tk)
-        error("too many sessions for HApp " + app.getClass.getName)
+        sys.error("too many sessions for HApp " + app.getClass.getName)
       } catch { case e => onError(e) }
     else {
       trackConnection(app, tk)

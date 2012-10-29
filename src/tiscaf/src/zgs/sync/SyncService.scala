@@ -5,8 +5,8 @@ trait SyncService {
 
   //------------------------- to override ----------------
   
-  protected def doProduce(what : Any) : Any = error("doProduce is not overriden")
-  protected def doConsume(what : Any) : Unit = error("doConsume is not overriden")
+  protected def doProduce(what : Any) : Any = sys.error("doProduce is not overriden")
+  protected def doConsume(what : Any) : Unit = sys.error("doConsume is not overriden")
   
   protected def hookOrder : Int = 0
   protected def name = "SyncService"
