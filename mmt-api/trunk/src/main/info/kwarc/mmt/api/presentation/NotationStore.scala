@@ -56,7 +56,8 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
 	           //defaults.get(key)
 	           lib.getO(p) match {
 	             case Some(c : symbols.Constant) => 
-	               c.not orElse 
+	               c.not orElse
+	               defaults.get(key) orElse // TODO this line is temporary to handle old content
                    //... otherwise, if symbol arose from structure, get notation from preimage
                    (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role))))
 	               
