@@ -62,9 +62,13 @@ object PropositionParser {
 	 * @return   the translated node
 	 */
 	def parseProposition(n : scala.xml.Node) : MizProposition = {
-		val nr = (n \ "@propnr").text.toInt
-		new MizProposition(nr, parseFormula(n.child(0)))	
+		val propnr = (n \ "@propnr").text.toInt
+		val nr = try {
+		  Some((n \ "@nr").text.toInt)
+		} catch {
+		  case _ => None
+		}
+		new MizProposition(nr, propnr, parseFormula(n.child(0)))	
 	}
-	
 
 }

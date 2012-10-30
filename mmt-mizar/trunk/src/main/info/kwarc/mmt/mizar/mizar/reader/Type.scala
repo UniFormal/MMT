@@ -19,15 +19,8 @@ object TypeParser {
 		val t = new MizTyp(aid, kind, absnr, vid, n.child.filter(x => x.label == "Cluster").map(parseCluster).toList, n.child.filter(x => x.label == "Term").map(parseTerm).toList, None)
 		t.setName(ParsingController.resolveDef(aid, "M", absnr))
 		t
-	}
+	} 
 
-	def parseRef(n : scala.xml.Node) : MizRef = {
-		val nr : Int = (n \ "@nr").text.toInt
-		val kind : String = (n \ "@kind").text
-		val aid : String = (n \ "@aid").text
-		val absnr : Int = (n \ "@absnr").text.toInt
-		new MizRef(nr, kind, aid, absnr)
-	}
 	
 	/**
 	 * Format: ( Var | LocusVar | FreeVar | LambdaVar | Const | InfConst | Num | Func | PrivFunc | Fraenkel | QuaTrm | It | ErrorTrm )

@@ -13,15 +13,19 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._
 
 
-
 object Mizar {
-	val baseURI = URI("http", "oaff.mathweb.org") / "mml" 
+	val mmlBase = URI("http", "oaff.mathweb.org") / "MML" 
 
-	val MizarTh = DPath(URI("http", "latin.omdoc.org") / "foundations"/ "mizar") ? "mizar-curry"
-	val MizarPatternsTh = DPath(URI("http", "latin.omdoc.org") / "foundations"/ "mizar") ? "mizar-patterns"
-	val HiddenTh = DPath(URI("http", "latin.omdoc.org") / "foundations" / "mizar") ? "HIDDEN"
-	//val TarskiTh = DPath(utils.mmt.baseURI.resolve("set_theories/mizar/mizar_tarski.omdoc")) ? "Tarski"
+	private val mizarBase =  DPath(URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
+	val MizarTh = mizarBase ? "mizar-curry"
+	val MizarPatternsTh = mizarBase ? "mizar-patterns"
+	val HiddenTh = mizarBase ? "HIDDEN"
+    val MizarInformal = mizarBase ? "mizar-informal"
 	
+    def by : Term = OMID(MizarInformal ? "by")
+    def from : Term = OMID(MizarInformal ? "from")
+    
+    
 	def constant(name : String) : Term = {
 		name match {
 			case "M1" => OMID(HiddenTh ? name)
@@ -79,13 +83,13 @@ object Mizar {
 
 
 object MMTUtils {
-	
+  
 	def getTheoryPath(aid : String) : MPath = {
 	  if (aid == TranslationController.currentAid)
 	    TranslationController.currentTheory
 	  else aid match {
 	  	case "HIDDEN" => Mizar.HiddenTh
-	  	case _ =>  DPath(Mizar.baseURI) ? aid
+	  	case _ =>  DPath(Mizar.mmlBase / TranslationController.currentVersion.toString) ? aid
 	  }
 	}
 	
@@ -93,7 +97,12 @@ object MMTUtils {
 		getTheoryPath(aid) ? (aid + "_" + kind+ "_" + absnr.toString)
 		
 	}
+	
 	def getPath(aid : String, name : String) : GlobalName = {
+		getTheoryPath(aid) ? name
+	}
+	
+	def getPath(aid : String, name : LocalName) : GlobalName = {
 		getTheoryPath(aid) ? name
 	}
 	

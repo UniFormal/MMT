@@ -5,7 +5,9 @@ import scala.collection.mutable._
 /**
  * Trait for all Mizar classes
  */
-trait MizAny
+trait MizAny {
+  var sreg : Option[SourceRegion] = None
+}
 
 /**
  * Class for Parser errors
@@ -21,12 +23,12 @@ object ParsingController {
 	//var definitions : LinkedList[XMLDefinition] = new LinkedList()
 	var elems : LinkedList[MizAny] = new LinkedList()
 	var definiens : LinkedList[XMLDefiniens] = new LinkedList()
-	//val deftheorems : List[MizDefTheorem]
+	var deftheorems : LinkedList[MizDefTheorem] = new LinkedList()
 	//var currentDefBlock : Option[XMLDefinitionBlock] = None
 	//var currentArticle : Option[MizArticle] = None
 	var currentAid = ""
 	
-		/*
+    /*
 	def setArticle(aid : String) {
 		currentArticle = Some(new MizArticle(aid, Nil))
 		currentAid = aid
@@ -35,8 +37,6 @@ object ParsingController {
 	def addToArticle(el : MizAny) : Unit = {
 			elems = elems :+ el
 	}
-
-	
 	
 	def addDefiniens(d : XMLDefiniens)  = {
 		definiens = definiens :+ d
@@ -46,98 +46,151 @@ object ParsingController {
 		elems = elems ++ db.defs 
 	}
 	
+	def addDefTheorem(dt : MizDefTheorem) = deftheorems :+= dt
+	
 	def buildArticle() : MizArticle = {
-		val art = new MizArticle(currentAid, Nil)
-		elems.map(x => {
-			x match {
-				case d : XMLDefinition =>
-					buildDefinitions(d, art) 
-				case _ =>
-					art.addElem(x)
-			
-			}
-		})
-		
-		elems = new LinkedList()
-		definiens = new LinkedList()
-		art
+	  val art = new MizArticle(currentAid, Nil)
+	  elems.map({
+	    case d : XMLDefinition =>
+	      art.addElem(buildDefinition(d, art)) 
+	    case x =>
+	      art.addElem(x)
+	  })
+	  
+	  elems = new LinkedList()
+	  definiens = new LinkedList()
+	  deftheorems = new LinkedList()
+	  art
 	}
 	
-	def buildDefinitions(d : XMLDefinition, art : MizArticle) :  Unit =  {
-			val df = definiens.find(x => (d.nr == x.absconstrnr && d.kind == x.constrkind && d.aid == x.constraid))  match {
-				case Some(dfn) => {
-					dfn
-				}
-
-				case None => d match {
-				case rd : XMLRedefinition => {
-					new XMLIsDefiniens(d.aid, d.nr : Int, d.aid, d.kind, d.nr,Nil, Some(new MizFunc(rd.constraid, d.kind, rd.constrabsnr, rd.argTypes.zipWithIndex.map(x => new MizLocusVar(x._2 + 1)))))//TODO check
-				}
-					case _ => println("Err in Controller -> buildDefinitions : no definiens found for definition")
-				} 
-			}
-
-			val opArgs = d.resolveArgs()
-			opArgs match {
-			case Some(args) => {
-				d.kind match {
-				case "R"  => {
-					val p = df match { 
-					case di  : XMLIsDefiniens => 								
-					new MizPredIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, di.cases, di.term)
-					case dm: XMLMeansDefiniens => 								
-					new MizPredMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, dm.cases, dm.form)
-					}
-					art.addElem(p)
-				}
-				case "K" | "O" => {
-					d.retType match {
-					case Some(rt) => {
-						val f = df match { 
-						case di  : XMLIsDefiniens => 								
-						new MizFuncIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.kind, d.nr, args, rt, di.cases, di.term)
-						case dm: XMLMeansDefiniens => 								
-						new MizFuncMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.kind, d.nr, args, rt, dm.cases, dm.form)
-						}
-						art.addElem(f)
-					}
-					case None => println("Err in Controller -> buildDefinitions : Func with no return type")
-					}
-
-				}
-				case "M"  => {
-					val m = df match { 
-					case di  : XMLIsDefiniens => 								
-					new MizModeIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, d.retType, di.cases, di.term)
-					case dm: XMLMeansDefiniens => 								
-					new MizModeMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, d.retType, dm.cases, dm.form)
-					}
-					art.addElem(m)
-				}
-				case "V"  => {
-					d.retType match {
-					case Some(rt) => {
-						val f = df match { 
-						case di  : XMLIsDefiniens => 								
-						new MizAttrIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, rt, di.cases, di.term)
-						case dm: XMLMeansDefiniens => 								
-						new MizAttrMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, rt, dm.cases, dm.form)
-						}
-						art.addElem(f)
-					}
-					case None => println("Err in Controller -> buildDefinitions : Attribute with no return type")
-					}
-				}
-				case _  => {
-					println("Err in Controller -> buildDefinitions : def kind not supported yet : " + d.kind)
-				}
-
-				}
-			}
-			case None => println("Err in Controller -> buildDefinitions : unable to parse arg names")
-			}
-
+	def buildDefinition(d : XMLDefinition, art : MizArticle) : MizDefinition = {
+	  val df = definiens.find(x => (x.constraid == d.constraid && x.constrkind == d.constrkind && x.absconstrnr == d.absconstrnr))
+	  d.setDefiniens(df)	  
+	  val (matchedDts, unmatchedDts) = deftheorems.partition(x => ( x.constraid == d.constraid &&
+	      		                                       x.constrkind == d.constrkind &&
+	      		                                       x.constrnr == d.constrnr))
+	  deftheorems = unmatchedDts //removing used deftheorems
+	  val dts = matchedDts.toList //matched def theorems will be added to the constructed definition
+	  
+	  //println(d.constraid + d.constrkind + d.absconstrnr + dts)
+	  
+	  val args = d.args.getOrElse(throw new Error("Controller.buildDefinition : no args found"))
+	  val prefix = d.isRedef match {
+	    case true => "Redef_" + d.kind + d.patternNr + "_" + d.constraid + "_"
+	    case false => ""
+	  }
+	  
+	  d.definiens match {
+	    case Some(di : XMLIsDefiniens) => 
+	      d.constrkind match {
+	        case "R" => new MizPredIsDef(d.name, d.constraid, d.absconstrnr, args, di.cases, di.term, dts, prefix)
+	        case "K"|"O" => new MizFuncIsDef(d.name, d.constraid, d.constrkind, d.absconstrnr, args, d.retType, di.cases, di.term, dts, prefix)
+	        case "M" => new MizModeIsDef(d.name, d.constraid, d.absconstrnr, args, d.retTypeO, di.cases, di.term, dts, prefix)
+	        case "V" => new MizAttrIsDef(d.name, d.constraid, d.absconstrnr, args, d.retType, di.cases, di.term, dts, prefix)
+	      }
+	    case Some(dm : XMLMeansDefiniens) =>
+	      d.constrkind match {
+	        case "R" => new MizPredMeansDef(d.name, d.constraid, d.absconstrnr, args, dm.cases, dm.form, dts, prefix)
+	        case "K"|"O" => new MizFuncMeansDef(d.name, d.constraid, d.constrkind, d.absconstrnr, args, d.retType, dm.cases, dm.form, dts, prefix)
+	        case "M" => new MizModeMeansDef(d.name, d.constraid, d.absconstrnr, args, d.retTypeO, dm.cases, dm.form, dts, prefix)
+	        case "V" => new MizAttrMeansDef(d.name, d.constraid, d.absconstrnr, args, d.retType, dm.cases, dm.form, dts, prefix)
+	      }
+	    case None => //expandable mode  
+	      if (d.isExp) {
+	        new MizExpMode(d.name, d.constraid, d.absconstrnr, args, d.getExpansion, dts)
+	      } else if (d.isSuperfluous) {//superfluous redefinition
+	        val args = d.args.getOrElse(throw new Error("Controller.buildDefinition for superfluous def and no args found")).map(_._2)
+	        
+	        //constructing definiens
+	        val vars = for ((tp,i) <- args.zipWithIndex) yield new MizLocusVar(i + 1)
+	        val term = new MizFunc(d.constraid, d.constrkind, d.absconstrnr, vars)
+	        val df = new XMLIsDefiniens(d.aid, 0, d.constraid, d.constrkind, d.absconstrnr, Nil, Some(term), args)
+	        definiens :+= df //adding reconstructed definiens
+	        buildDefinition(d, art) //re-calling build	        
+	      } else {
+	        throw new Error("Controller.buildDefinition no definiens found, and not expandable mode" + d.constraid + d.constrkind + d.absconstrnr)
+	      }
+	  }
 	}
+	
+	
+	/*
+	def buildDefinition(d : XMLDefinition, art : MizArticle) :  Unit =  {
+	  val df = definiens.find(x => (d.nr == x.absconstrnr && d.kind == x.constrkind && d.aid == x.constraid))  match {
+	    case Some(dfn) => dfn
+	    case None => d match {
+	      case rd : XMLRedefinition => {
+	        throw new Error("Err in Controller -> buildDefinitions : no definiens found for definition " + d.kind + d.nr)
+	        new XMLIsDefiniens(d.aid, d.nr : Int, d.aid, d.kind, d.nr,Nil, 
+	            Some(new MizFunc(rd.constraid, d.kind, rd.constrabsnr, 
+	                rd.argTypes.zipWithIndex.map(x => new MizLocusVar(x._2 + 1)))), Nil)//TODO check
+		  }
+	      case _ => throw new Error("Err in Controller -> buildDefinitions : no definiens found for definition " + d.kind + d.nr)
+	    }
+	  }
+	  
+	  val dts = deftheorems.filter(x => (x.constrkind == d.kind && x.constrnr == d.relnr && x.constraid == d.aid)).toList
+	  
+	  val opArgs = d.resolveArgs()
+	  opArgs match {
+	    case Some(args) => {
+	      d.kind match {
+	        case "R"  => {
+	          val p = df match {
+	            case di  : XMLIsDefiniens =>
+	              new MizPredIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, di.cases, di.term, dts)
+	            case dm: XMLMeansDefiniens =>
+	              new MizPredMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, dm.cases, dm.form, dts)
+	          }
+	          p.sreg = d.sreg
+	          art.addElem(p)
+	        }
+	        case "K" | "O" => 
+	          val rt = d.retType.getOrElse(MizXML.set)
+	              //throw new Error("Err in Controller -> buildDefinitions : Func with no return type " + d.kind + d.nr)
+	          val f = df match {
+	            case di  : XMLIsDefiniens =>
+	              new MizFuncIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.kind, d.nr, args, rt, di.cases, di.term, dts)
+	            case dm: XMLMeansDefiniens =>
+	              new MizFuncMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.kind, d.nr, args, rt, dm.cases, dm.form, dts)
+	          }
+	          f.sreg = d.sreg
+	          art.addElem(f)
+	        case "M"  => {
+	          val m = df match {
+	            case di  : XMLIsDefiniens =>
+	              new MizModeIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, d.retType, di.cases, di.term, dts)
+	            case dm: XMLMeansDefiniens =>
+	              new MizModeMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, d.retType, dm.cases, dm.form, dts)
+	          }
+	          m.sreg = d.sreg
+	          art.addElem(m)
+	        }
+	        case "V"  => {
+	          d.retType match {
+	            case Some(rt) => {
+	              if (args.last._2 != rt) {throw new Error("Ahaaaa")}
+	            }
+	            case None => //throw new Error("Err in Controller -> buildDefinitions : Attribute with no return type " + d.kind + d.nr)
+	          }
+	          val rt = args.last._2
+	          val f = df match {
+	            case di  : XMLIsDefiniens =>
+	              new MizAttrIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, rt, di.cases, di.term, dts)
+	            case dm: XMLMeansDefiniens =>
+	              new MizAttrMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, rt, dm.cases, dm.form, dts)
+	          }
+	          f.sreg = d.sreg
+	          art.addElem(f)
+	        }
+	        case _  => throw new Error("Err in Controller -> buildDefinitions : def kind not supported yet : " + d.kind)	
+	      }
+	    }
+	    case None => throw new Error("Err in Controller -> buildDefinitions : unable to parse arg names" + d.kind + d.nr)
+	  }
+	}
+	*/
+	
 	
 	/*
 	def addIsDefiniens(d : XMLIsDefiniens) : Unit = {

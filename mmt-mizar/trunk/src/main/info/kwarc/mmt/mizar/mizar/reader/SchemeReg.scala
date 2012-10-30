@@ -5,20 +5,24 @@ import info.kwarc.mmt.mizar.mizar.objects._
 
 object SchemeRegReader {
 	def parseRegistrationBlock(n : Node) = {
-		n.child.filter(x => (x.label == "Registration")).map(parseRegistration)
+	    val start = UtilsReader.parseSourceRef(n)
+	    val end = UtilsReader.parseSourceRef(n.child.last)
+	    val sreg = Some(SourceRegion(start,end))
+		val registrations = n.child.filter(_.label == "Registration").map(parseRegistration)
+		registrations foreach {reg => 
+	      reg.sreg = sreg
+	      ParsingController.addToArticle(reg)
+	    }
 	}
 
-	def parseRegistration(n : Node) = {
+	def parseRegistration(n : Node) : MizRegistration = {
 		val c = n.child(0) //cluster
 		val cluster : MizClusterDef = c.label match {
 			case "RCluster" => parseRCluster(c)
 			case "FCluster" => parseFCluster(c)
 			case "CCluster" => parseCCluster(c)
 		}
-		
-		
-		val reg = new MizRegistration(cluster)
-		ParsingController.addToArticle(reg)
+		new MizRegistration(cluster)
 	}
 
 	def parseRCluster(n : Node) : MizRCluster = {
@@ -30,7 +34,6 @@ object SchemeRegReader {
 		val cluster = TypeParser.parseCluster(n.child(2))
 
 		new MizRCluster(aid, nr, args, typ, cluster)
-		
 	}
 
 	def parseFCluster(n : Node) : MizFCluster = {
@@ -81,8 +84,11 @@ object SchemeRegReader {
 		val premises = parseSchemePremises(n.child(nr - 4))
 		val prop = PropositionParser.parseProposition(n.child(nr-3))
 		val sch = new MizSchemeDef(snr, args, premises, prop)
+	    //setting source region
+	    val start = UtilsReader.parseSourceRef(n)
+	    val end = UtilsReader.parseSourceRef(n.child.last)
+	    val sreg = Some(SourceRegion(start, end))
+	    sch.sreg = sreg
 	    ParsingController.addToArticle(sch)
 	}
-	
-
 }

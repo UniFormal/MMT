@@ -28,4 +28,4 @@ class MizErrorFrm() extends MizFormula
 /**
  * Class For Propositions
  */
-class MizProposition(val nr : Int, val form : MizFormula) extends MizAny
+class MizProposition(val nr : Option[Int], val propnr : Int, val form : MizFormula) extends MizAny

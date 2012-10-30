@@ -12,13 +12,10 @@ class MizArticle(val title : String, var elems : List[MizAny]) {
 }
 
 class MizNotation(val aid : String, val kind : String, val nr : Int, val relnr : Int, val constrAid : String, val constrAbsnr : Int, val antonymic : Boolean) extends MizAny
-class MizJustifiedTheorem(val aid : String, val nr : Int, val prop : MizProposition) extends MizAny
+class MizJustifiedTheorem(val aid : String, val nr : Int, val prop : MizProposition, val just : MizJustification) extends MizAny
 class MizLemma(val prop : MizProposition) extends MizAny
-class MizSet(val nr : Int, val constnr : Int, val term : MizTerm, val typ : MizTyp) extends MizAny
-class MizConsider(val nr : Int, val constnr : Int, val prop : MizProposition, val typs : List[MizTyp], val props : List[MizProposition]) extends MizAny
-class MizReconsider(val nr : Int, val constnr : Int, val terms: List[(MizTyp,MizTerm)], val prop : MizProposition) extends MizAny
 
-class XMLDefinitionBlock(val defs : List[XMLDefinition])
+class XMLDefinitionBlock(val defs : List[XMLDefinition]) extends MizAny
 
 
 
@@ -38,17 +35,53 @@ trait MizFuncDef extends MizDefinition
 trait MizPredDef extends MizDefinition
 trait MizAttrDef extends MizDefinition
 
-//Def Classes
-class MizModeIsDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], val retType : Option[MizTyp], val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm]) extends MizIsDef with MizModeDef
-class MizFuncIsDef(val name : Option[String], val aid : String, val kind : String, val absnr : Int, val args : List[(Option[String],MizTyp)], val retType : MizTyp, val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm]) extends MizIsDef with MizFuncDef
-class MizPredIsDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)],val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm]) extends MizIsDef with MizPredDef
-class MizAttrIsDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], val retType : MizTyp, val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm]) extends MizIsDef with MizAttrDef
+//Def Classes 
+class MizModeIsDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)],
+    val retType : Option[MizTyp], val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm],
+    val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizIsDef with MizModeDef
 
-class MizModeMeansDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], val retType : Option[MizTyp], val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula]) extends MizMeansDef with MizModeDef 
-class MizFuncMeansDef(val name : Option[String], val aid : String, val kind : String,  val absnr : Int, val args : List[(Option[String],MizTyp)], val retType : MizTyp, val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula]) extends MizMeansDef with MizFuncDef
-class MizPredMeansDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula]) extends MizMeansDef with MizPredDef
-class MizAttrMeansDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], val retType : MizTyp, val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula]) extends MizMeansDef with MizAttrDef
+class MizFuncIsDef(val name : Option[String], val aid : String, val kind : String, val absnr : Int, val args : List[(Option[String],MizTyp)], 
+    val retType : MizTyp, val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm],
+    val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizIsDef with MizFuncDef
 
+class MizPredIsDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)],
+    val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm],
+    val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizIsDef with MizPredDef
+  
+class MizAttrIsDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], 
+    val retType : MizTyp, val cases : List[(MizTerm,MizFormula)], val term : Option[MizTerm],
+    val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizIsDef with MizAttrDef
+
+class MizModeMeansDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], 
+	val retType : Option[MizTyp], val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula],
+	val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizMeansDef with MizModeDef 
+
+class MizFuncMeansDef(val name : Option[String], val aid : String, val kind : String,  val absnr : Int, val args : List[(Option[String],MizTyp)], 
+    val retType : MizTyp, val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula],
+    val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizMeansDef with MizFuncDef
+
+class MizPredMeansDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], 
+    val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula],
+    val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizMeansDef with MizPredDef
+
+class MizAttrMeansDef(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)], 
+    val retType : MizTyp, val cases : List[(MizFormula,MizFormula)], val form : Option[MizFormula],
+    val dts : List[MizDefTheorem], val prefix : String) 
+  extends MizMeansDef with MizAttrDef
+
+class MizExpMode(val name : Option[String], val aid : String, val absnr : Int, val args : List[(Option[String],MizTyp)],
+    val exp : MizTyp, val dts : List[MizDefTheorem]) 
+  extends MizDefinition
+
+  
+  
 //StructDef
 class MizField(val aid : String, val kind : String, val absnr : Int)
 class MizSelector(val aid : String, val absnr : Int, val mType : MizTyp, val retType : Option[MizTyp])
