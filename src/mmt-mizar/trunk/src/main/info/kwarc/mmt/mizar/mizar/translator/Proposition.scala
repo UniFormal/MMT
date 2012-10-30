@@ -44,6 +44,6 @@ object PropositionTranslator {
 	}
 	
 	def translateProposition(prop : MizProposition) : Term = {
-		translateFormula(prop.form)
+	  translateFormula(prop.form)	
 	}
 }

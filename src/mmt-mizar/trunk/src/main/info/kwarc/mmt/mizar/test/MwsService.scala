@@ -22,6 +22,20 @@ class MwsService() extends QueryTransformer {
      applyImplicitInferences(q)
   }
 
+  private def removeLFApp(n : scala.xml.Node) : scala.xml.Node = n match {
+    case <m:apply><csymbol>{x}</csymbol>{s @ _*}</m:apply> => 
+      if (x.toString == "http://cds.omdoc.org/foundational?LF?@")
+        <m:apply>{s.map(removeLFApp)}</m:apply>
+      else {
+        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(removeLFApp) : _*)
+      }
+    case _ =>  
+      if (n.child.length == 0)
+        n
+      else
+        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(removeLFApp(_)) : _*)
+  }
+  
   def applyInferences(f : scala.xml.Node, args : List[scala.xml.Node]) : List[scala.xml.Node] = (f.toString, args) match {
     case ("HIDDEN?R1", a :: b :: Nil) => 
       if (!(a.label == "qvar" && b.label == "qvar")) {
@@ -49,7 +63,6 @@ class MwsService() extends QueryTransformer {
       	new scala.xml.Elem(q.prefix, q.label, q.attributes, q.scope, l : _*))
     }
   }
-  
   
   def makeQVars(n : scala.xml.Node, evars : List[String], uvars : List[String]) : scala.xml.Node = n match {
     case <m:apply><m:apply><csymbol>{s}</csymbol>{a1}</m:apply><m:bvar><m:apply>{zz}<m:ci>{v}</m:ci>{a}{b}</m:apply></m:bvar>{body}</m:apply> =>
@@ -84,7 +97,7 @@ class MwsService() extends QueryTransformer {
     case <csymbol>{p}</csymbol> => 
         val firstq = p.toString.indexOf('?')
         <csymbol>{p.toString.substring(firstq + 1)}</csymbol>
-    case _ =>    
+    case _ => 
       if (n.child.length == 0)
           n
       else
@@ -94,8 +107,8 @@ class MwsService() extends QueryTransformer {
   def parseQuery(n : scala.xml.Node, aid : String, mmlversion : String) : scala.xml.Node = {
     TranslationController.query = true
     TranslationController.currentAid = aid
-    TranslationController.currentTheory = DPath(Mizar.baseURI) ? TranslationController.currentAid
-	
+    TranslationController.currentVersion = mmlversion.toInt
+    
     var nr = n.child.length
     val qvars = n.child.slice(0, nr - 1)
     qvars.map(x => TranslationController.addQVarBinder())
@@ -116,7 +129,7 @@ class MwsService() extends QueryTransformer {
     	  mmtq.toCML
     }
     TranslationController.clearVarContext()
-    val q = makeQVars(cml, Nil, Nil)
+    val q = makeQVars(removeLFApp(cml), Nil, Nil)
     <mws:expr>{q}</mws:expr>
   }
   

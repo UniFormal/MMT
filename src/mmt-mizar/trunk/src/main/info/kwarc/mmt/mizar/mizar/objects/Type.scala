@@ -49,9 +49,15 @@ class MizTyp(val aid : String, val kind : String, val absnr: Int, val vid : Stri
 	def setName(n : Option[String]) {
 		name = n
 	}
+	
+	def ==(that : MizTyp) = this.aid == that.aid && 
+					        this.kind == that.kind && 
+					        this.absnr == that.absnr && 
+					        this.vid == that.vid &&
+					        this.clusters.length == that.clusters.length &&
+					        this.terms.length == that.terms.length
+					        
+	def !=(that : MizTyp) = !(==(that))				        
 }
 
-/**
- * Class for Refs
- */
-class MizRef(val nr : Int, val kind : String, val aid : String, val absnr : Int)
+

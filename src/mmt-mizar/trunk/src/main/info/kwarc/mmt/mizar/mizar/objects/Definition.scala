@@ -10,13 +10,14 @@ package info.kwarc.mmt.mizar.mizar.objects
 
 //utils
 
-class XMLDefinition(val aid : String, val kind : String, val nr : Int, val argTypes: List[MizTyp], val retType : Option[MizTyp]) extends MizAny {
-	var prop : MizProposition = null
+class OldXMLDefinition(val aid : String, val kind : String, val nr : Int, val relnr : Int, val argTypes: List[MizTyp], 
+    val retType : Option[MizTyp]) extends MizAny {
+//	var prop : MizProposition = null
 	var premises : List[MizLet] = Nil
 	
-	def setProp(p : MizProposition) {
-		prop = p
-	}
+//	def setProp(p : MizProposition) {
+//		prop = p
+//	}
 	
 	def setPremises(p : List[MizLet]) = {
 		premises = p
@@ -33,23 +34,148 @@ class XMLDefinition(val aid : String, val kind : String, val nr : Int, val argTy
 	}
 }
 
+class OldXMLRedefinition(aid : String,  kind : String, nr : Int, relnr : Int, argTypes : List[MizTyp], retType : Option[MizTyp], 
+    val constraid : String, val constrabsnr : Int) 
+  extends OldXMLDefinition(aid, kind, nr, relnr, argTypes, retType)
 
-class XMLRedefinition( aid : String,  kind : String, nr : Int, argTypes : List[MizTyp], retType : Option[MizTyp], val constraid : String, val constrabsnr : Int) 
-	extends XMLDefinition(aid, kind, nr, argTypes, retType)
 
-class XMLConstructor(val aid : String, val kind : String, val nr : Int, val argTypes: List[MizTyp], val retType: Option[MizTyp]) extends MizAny {
-	
+class XMLDefinition(val kind : String, val constr : Option[XMLConstructor],
+    val pattern : Option[XMLPattern], val isRedef : Boolean, val isExp : Boolean)
+  extends MizAny {
+  
+  var definiens : Option[XMLDefiniens] = None
+  var premises : List[MizLet] = Nil
+  
+  def setDefiniens(df : Option[XMLDefiniens]) = definiens = df
+  
+  private def resolveArgs(argTypes : List[MizTyp]) : Option[List[(Option[String],MizTyp)]] = {
+    val namedVars = premises.flatMap(x => x.types)
+    if (namedVars.length == argTypes.length) {
+      val names = namedVars.map(l => ParsingController.resolveVar(l.vid))
+      Some(names.zip(argTypes))			
+    } else {
+      None
+    }
+  }
+  
+  def args = {
+    val tmpArgs = constr match {
+      case Some(c) => c.argTypes
+      case None => pattern match {
+        case Some(s) => s.argTypes
+        case None => definiens match { 
+          case Some(df) => df.args.init //all elements except last
+          case None => throw new Error("XMLDefinition.args for definition with no definiens and no pattern")
+        }
+      }
+    }
+    resolveArgs(tmpArgs)
+  }
+  
+  def retType = constr match {
+    case Some(c) => c.retType match {
+      case Some(rt) => rt
+      case None => throw new Error("XMLDefinition.retType for definition with constructor with no return type")
+    }
+    case None => definiens match {
+      case Some(df) => df.args.last
+      case None => throw new Error("XMLDefinition.retType for definition with no constructor and no definiens")
+    }
+  }
+  
+  def retTypeO = {
+    try {
+      Some(retType)
+    } catch {
+      case _ => None
+    }
+  }
+  
+  
+  def name = ParsingController.resolveDef(constraid, constrkind, absconstrnr)
+  
+  
+  def isSuperfluous : Boolean = constr match {
+    case Some(c) => c.superfluous
+    case None => false
+  }
+  
+  val constraid = constr match {
+    case Some(c) => c.aid
+    case None => pattern match {
+      case Some(p) => p.constraid
+      case None => throw new Error("XMLDefinition.constraid in def without constructor and pattern")
+    }
+  }
+  
+  val constrkind = constr match {
+    case Some(c) => c.kind
+    case None => pattern match {
+      case Some(p) => p.constrkind
+      case None => kind
+    }
+  }
+  
+  val absconstrnr = constr match {
+    case Some(c) => c.nr
+    case None => pattern match {
+      case Some(p) => p.absconstrnr
+      case None => throw new Error("XMLDefinition.absconstrnr in def without constructor and pattern")
+    }
+  }  
+  
+  val constrnr = constr match {
+    case Some(c) => c.relnr
+    case None => pattern match {
+      case Some(p) => p.constrnr
+      case None => throw new Error("XMLDefinition.constrnr in def without constructor and pattern")
+    }
+  }
+  
+  def getExpansion : MizTyp = pattern match {
+    case Some(p) => p.exp match {
+      case Some(t) => t
+      case None => throw new Error("XMLDefinition.getExpansion but pattern has no expansion")
+    }
+    case None => throw new Error("XMLDefinition.getExpansion but no pattern found")
+  }
+  
+  
+  def patternNr = pattern match {
+    case Some(p) => p.nr
+    case None => throw new Error("XMLDefinition.patternNr but not pattern found")
+  }
+  
+  def aid = pattern match {
+    case Some(p) => p.aid
+    case None => definiens match {
+      case Some(d) => d.constraid
+      case None => throw new Error("XMLDefinition.aid in def without pattern and definiens")
+    }
+  }
 }
 
-class XMLDefTheorem(val kind : String, val nr : Int, val constrkind : String, val constrnr : Int, val prop : MizProposition)
+class XMLPattern(val aid : String, val kind : String, val nr : Int, val constrnr : Int, val antonymic : Boolean,
+    val constraid : String, val constrkind : String, val absconstrnr : Int, val argTypes : List[MizTyp], val exp : Option[MizTyp])
 
-class XMLDefiniens(val aid : String, val nr : Int, val constraid : String, val constrkind : String, val absconstrnr : Int)
+class XMLConstructor(val aid : String, val kind : String, val nr : Int, val relnr: Int, 
+    val superfluous : Boolean, val argTypes: List[MizTyp], val retType: Option[MizTyp]) 
+  extends MizAny
 
-class XMLIsDefiniens(aid : String, nr : Int, constraid : String, constrkind : String, absconstrnr : Int, val cases : List[(MizTerm, MizFormula)], val term : Option[MizTerm]) 
-	extends XMLDefiniens(aid,nr, constraid, constrkind, absconstrnr)
 
-class XMLMeansDefiniens( aid : String,  nr : Int,  constraid : String,  constrkind : String,  absconstrnr : Int, val cases : List[(MizFormula, MizFormula)], val form : Option[MizFormula]) 
-	extends XMLDefiniens(aid,nr, constraid, constrkind, absconstrnr)
+
+class MizDefTheorem(val constraid : String, val kind : String, val nr : Int, val constrkind : String, val constrnr : Int, val prop : MizProposition)
+
+class XMLDefiniens(val aid : String, val nr : Int, val constraid : String, 
+    val constrkind : String, val absconstrnr : Int, val args : List[MizTyp])
+
+class XMLIsDefiniens(aid : String, nr : Int, constraid : String, constrkind : String, absconstrnr : Int, 
+    val cases : List[(MizTerm, MizFormula)], val term : Option[MizTerm], args : List[MizTyp]) 
+  extends XMLDefiniens(aid,nr, constraid, constrkind, absconstrnr, args)
+
+class XMLMeansDefiniens( aid : String,  nr : Int,  constraid : String,  constrkind : String,  absconstrnr : Int,
+    val cases : List[(MizFormula, MizFormula)], val form : Option[MizFormula], args : List[MizTyp]) 
+  extends XMLDefiniens(aid,nr, constraid, constrkind, absconstrnr, args)
 
 trait XMLDefMeaning
 

@@ -17,7 +17,22 @@ import info.kwarc.mmt.lf._
 //import scala.xml._
 
 class MizarCompiler extends Compiler {
-	var lib : List[String] = "HIDDEN" :: Nil
+	val lib : collection.mutable.Map[Int,List[String]] = new collection.mutable.HashMap[Int,List[String]]
+	def addToLib(version : Int, article : String) {
+	  if (!lib.contains(version)) {
+	    lib(version) = "HIDDEN" :: Nil //default initialization
+	  }
+	  lib(version) ::= article
+	}
+	
+	def isInLib(version : Int, article : String) : Boolean = {
+	  if (lib.contains(version)) {
+	    lib(version).contains(article)
+	  } else {
+	    article == "HIDDEN"
+	  }
+	}
+	
 
 	def parseVocabularies(n : scala.xml.Node) : List[String] = {
 		n.child.filter(x => (x.label == "Vocabulary")).map(parseVocabulary).toList 
@@ -38,8 +53,8 @@ class MizarCompiler extends Compiler {
 	
 	
 	def printArticle(mml : String, version : Int, aid : String) {
-		val docPath = mml + "/compiled/"  + aid + ".omdoc" 
-		val base = Mizar.baseURI / version.toString
+		val docPath = mml + "/compiled/" + version + "/" + aid + ".omdoc"
+		val base = Mizar.mmlBase / version.toString
 		val pp = new scala.xml.PrettyPrinter(100,2)
 	
 		val th = TranslationController.controller.get(new DPath(base) ? aid)
@@ -111,7 +126,7 @@ def compileLibrary(files : List[File]) : List[SourceError] = {
 def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 	val name = aid.toLowerCase()
 	//println("attempting to translate article " + name)
-	if (!lib.contains(aid)) {
+	if (!isInLib(version, aid)) {
 		//files
 		val xmlabs = mml + "/export/" + version.toString + "/" + name + ".xmlabs" //TODO perhaps replace
 		val dcx = mml + "/export/" + version.toString + "/" + name + ".dcx"
@@ -127,6 +142,9 @@ def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 		fv.map(s => translateArticle(mml, version, s))	
 
 		println("Translating article " +  name) //TODO use logger
+		TranslationController.currentBase = mml
+        TranslationController.currentVersion = version
+        TranslationController.currentAid = aid
 
 		UtilsReader.parseSymbols(getNode(dcx))
 		UtilsReader.parseSymbols(getNode(idx))
@@ -135,30 +153,26 @@ def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 		ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int,Tuple2[Int,Int]]
 		ParsingController.attributes(aid) = new scala.collection.mutable.HashMap[Int,Int]
 
+		//sets TranslationController.currentAid as article.title
 		ArticleParser.parseArticle(getNode(xmlabs))
 		val article = ParsingController.buildArticle()
-
-
-		TranslationController.currentAid = article.title
-
-		val path = new DPath(Mizar.baseURI / version.toString)
+		
+		val path = TranslationController.currentDocument
 		val d = new Document(path)
 		
 		TranslationController.add(d)
-		TranslationController.currentDocument = d.path
 
-		val th = new DeclaredTheory(d.path, LocalPath(article.title :: Nil), Some(Mizar.MizarPatternsTh)) //None		
+		val th = new DeclaredTheory(TranslationController.currentDocument, TranslationController.localPath, Some(Mizar.MizarPatternsTh))	
 
 		TranslationController.add(th)
 		fv.map(x => {if (x != "HIDDEN" && !TranslationController.controller.library.imports(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
 			TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x) , th.path))
 		})
-		
 		//TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))
-		TranslationController.currentTheory  = th.path
 		
 		TranslationController.controller.add(MRef(d.path, th.path, true))
 		ArticleTranslator.translateArticle(article)
+	    TranslationController.clearConstContext()
 		ParsingController.dictionary.clear()
 		//TranslationController.controller.presenter(TranslationController.controller.get(new DPath(new xml.URI(article.title))), GlobalParams(ConsoleWriter, new DPath(new xml.URI("foundations/lf/ascii.omdoc")) ? "ascii" ))
 		
@@ -172,7 +186,7 @@ def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 		//println("ai : " + TranslationController.ai)
 		
 		printArticle(mml, version, article.title)
-		lib = aid :: lib
+		addToLib(version, aid)
 	} 
 }
 }

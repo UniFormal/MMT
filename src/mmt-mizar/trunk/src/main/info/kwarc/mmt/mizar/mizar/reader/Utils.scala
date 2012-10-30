@@ -27,5 +27,12 @@ object UtilsReader {
 		val formatnr = (n \ "@nr").text.toInt
 		ParsingController.dictionary.addFormatnr(kind, symbolnr, formatnr)
 	}
+	
+	
+	def parseSourceRef(n : Node) : SourceRef = {
+	  val line = (n \ "@line").text.toInt
+	  val col = (n \ "@col").text.toInt
+	  SourceRef(line, col)
+	}
 
 }

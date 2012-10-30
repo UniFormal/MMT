@@ -38,6 +38,7 @@ object SchemeRegTranslator {
 		val pattern = RegPatterns.MizExistentialReg
 		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 		TranslationController.clearLocusVarContext()
+		TranslationController.addSourceRef(i, rc)
 		TranslationController.add(i)
 	}
 	
@@ -58,6 +59,7 @@ object SchemeRegTranslator {
 		
 		TranslationController.clearLocusVarContext()
 
+		TranslationController.addSourceRef(i, fc)
 		TranslationController.add(i)
 
 	}
@@ -79,6 +81,7 @@ object SchemeRegTranslator {
 		val pattern = RegPatterns.MizConditionalReg
 		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 		TranslationController.clearLocusVarContext()
+		TranslationController.addSourceRef(i, cc)
 		TranslationController.add(i)
 	}
 	
@@ -118,6 +121,7 @@ object SchemeRegTranslator {
 	    			  ("prop" / prop)
 	    val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 	    TranslationController.clearLocusVarContext()
+	    TranslationController.addSourceRef(i, s)
 	    TranslationController.add(i)
 	  }
 	}

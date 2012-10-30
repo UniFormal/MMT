@@ -25,32 +25,48 @@ object ArticleTranslator {
 	
 	private def transArtElems(e : MizAny) : Unit = {
 		e match {	
-			case j : MizJustifiedTheorem => translateJustifiedTheorem(j)
-				TranslationController.theorems += 1
-			case m : MizModeMeansDef =>DefinitionTranslator.translateModeMeansDef(m)
-				TranslationController.defs += 1
-			case m : MizModeIsDef =>DefinitionTranslator.translateModeIsDef(m)	
-				TranslationController.defs += 1
-			case p : MizPredMeansDef =>DefinitionTranslator.translatePredMeansDef(p)
-				TranslationController.defs += 1
-			case p : MizPredIsDef =>DefinitionTranslator.translatePredIsDef(p)
-				TranslationController.defs += 1
-			case f : MizFuncMeansDef => DefinitionTranslator.translateFuncMeansDef(f)
-				TranslationController.defs += 1
-			case f : MizFuncIsDef => DefinitionTranslator.translateFuncIsDef(f)
-				TranslationController.defs += 1
-			case a : MizAttrMeansDef => DefinitionTranslator.translateAttrMeansDef(a)
-				TranslationController.defs += 1
-			case a : MizAttrIsDef => DefinitionTranslator.translateAttrIsDef(a)
-				TranslationController.defs += 1
-			case s : MizStructDef => DefinitionTranslator.translateStructDef(s)
-				TranslationController.defs += 1
-			case n : MizNotation => translateNotation(n)
-				TranslationController.notations += 1
-			case r : MizRegistration => SchemeRegTranslator.translateRegistration(r)
-				TranslationController.regs += 1
-			case s : MizSchemeDef => SchemeRegTranslator.translateScheme(s)
-				TranslationController.schemes += 1
+			case j : MizJustifiedTheorem => 
+			  translateJustifiedTheorem(j)
+			  TranslationController.theorems += 1
+			case m : MizModeMeansDef => 
+			  DefinitionTranslator.translateModeMeansDef(m)
+			  TranslationController.defs += 1
+			case m : MizModeIsDef => 
+			  DefinitionTranslator.translateModeIsDef(m)	
+			  TranslationController.defs += 1
+			case p : MizPredMeansDef =>
+			  DefinitionTranslator.translatePredMeansDef(p)
+			  TranslationController.defs += 1
+			case p : MizPredIsDef => 
+			  DefinitionTranslator.translatePredIsDef(p)
+			  TranslationController.defs += 1
+			case f : MizFuncMeansDef =>
+			  DefinitionTranslator.translateFuncMeansDef(f)
+			  TranslationController.defs += 1
+			case f : MizFuncIsDef => 
+			  DefinitionTranslator.translateFuncIsDef(f)
+			  TranslationController.defs += 1
+			case a : MizAttrMeansDef => 
+			  DefinitionTranslator.translateAttrMeansDef(a)
+			  TranslationController.defs += 1
+			case a : MizAttrIsDef => 
+			  DefinitionTranslator.translateAttrIsDef(a)
+			  TranslationController.defs += 1
+			case m : MizExpMode => 
+			  DefinitionTranslator.translateExpMode(m)
+			  TranslationController.defs += 1
+			case s : MizStructDef => 
+			  DefinitionTranslator.translateStructDef(s)
+			  TranslationController.defs += 1
+			case n : MizNotation => 
+			  translateNotation(n)
+			  TranslationController.notations += 1
+			case r : MizRegistration => 
+			  SchemeRegTranslator.translateRegistration(r)
+			  TranslationController.regs += 1
+			case s : MizSchemeDef => 
+			  SchemeRegTranslator.translateScheme(s)
+			  TranslationController.schemes += 1
 			case l : MizLemma => translateLemma(l)
 			case s : MizSet => translateSet(s)
 			case c : MizConsider => translateConsider(c)
@@ -62,9 +78,9 @@ object ArticleTranslator {
 	def translateSet(s : MizSet) = {
 	  val tm = TypeTranslator.translateTerm(s.term)
 	  val tp = TypeTranslator.translateTyp(s.typ)
-	  val name = "C" + s.constnr
-	  val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), Some(tm), None, None)
-	  TranslationController.add(c)
+	  val name = TranslationController.addGlobalConst(s.constnr, "C")
+	  val c = new Constant(OMMOD(TranslationController.currentTheory), name, Some(tp), Some(tm), None, None)
+	  TranslationController.add(c) 
 	}
 	
 	def translateConsider(c : MizConsider) = {
@@ -73,21 +89,21 @@ object ArticleTranslator {
 	  val ex_c = new Constant(OMMOD(TranslationController.currentTheory), LocalName("ex_prop_" + startnr), Some(ex_prop), None, None, None)
 	  TranslationController.add(ex_c)
 	  val typs = c.typs.map(TypeTranslator.translateTyp)
-	  val props = c.props.map(PropositionTranslator.translateProposition)
-
+	  
 	  var i : Int = 0
 	  while (i < typs.length) {
-	    val name = "C" + (startnr + i).toString
-	    val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(typs(i)), None, None, None)
+	    val name = TranslationController.addGlobalConst(startnr + i, "C")
+	    println(name)
+	    val const = new Constant(OMMOD(TranslationController.currentTheory), name, Some(typs(i)), None, None, None)
 	    TranslationController.add(const)
 	    i += 1
 	  }
 	  
-	  
+	  val props = c.props.map(PropositionTranslator.translateProposition)
 	  i = 0
 	  while (i < props.length) {
 	    val name = "prop_" + startnr + "_" + i
-	    val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(props(i)), None, None, None)
+	    val const = new Constant(OMMOD(TranslationController.currentTheory), name, Some(props(i)), None, None, None)
 	    TranslationController.add(const)
 	    i += 1
 	  }
@@ -101,8 +117,8 @@ object ArticleTranslator {
 	  
 	  var i : Int = 0
 	  while (i < tms.length) {
-	    val name = "C" + (startnr + i).toString
-	    val c = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tms(i)._1), Some(tms(i)._2), None, None)
+	    val name = TranslationController.addGlobalConst(startnr + i, "C")
+	    val c = new Constant(OMMOD(TranslationController.currentTheory), name, Some(tms(i)._1), Some(tms(i)._2), None, None)
 	    TranslationController.add(c)
 	    
 	    val propname = name + "_prop"
@@ -119,23 +135,31 @@ object ArticleTranslator {
 		}
 		val name = "N" + n.kind + n.nr 
 		val nt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None, None, None)
+		TranslationController.addSourceRef(nt, n)
 		TranslationController.add(nt)
 	}
 	
 	def translateJustifiedTheorem(j : MizJustifiedTheorem) {
 	    val name = "T" + j.nr
+	    TranslationController.addGlobalProp(j.prop.nr, name)
+	    println(name)
 		val tp = Mizar.compact(Mizar.proof(PropositionTranslator.translateProposition(j.prop)))
+		val df = Mizar.compact(JustificationTranslator.translateJustification(j.just))
 		
-		val jt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None, None, None)
+		val jt = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), Some(df), None, None)
 		
+	    TranslationController.addSourceRef(jt, j)
 		TranslationController.add(jt)
 	}
 	
 	def translateLemma(l : MizLemma) {
-	  val name = "Lm" + l.prop.nr
+	  val name = "Lm" + l.prop.propnr
+	  TranslationController.addGlobalProp(l.prop.nr, name)
 	  val matches = ("prop" / PropositionTranslator.translateProposition(l.prop))
 	  val pattern = artPatterns.Lemma
 	  val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
+	  
+	  TranslationController.addSourceRef(i, l)
 	  TranslationController.add(i)
 	}
 	

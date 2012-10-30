@@ -26,93 +26,59 @@ object ArticleParser{
 	 * @param n a child of article
 	 */
 	def parseArticleChildren(n : Node) : Unit =  n.label match {
-		case "JustifiedTheorem" => {
+		case "JustifiedTheorem" =>
 			parseJustifiedTheorem(n)
-		}
-		case "DefinitionBlock" => {
+		case "DefinitionBlock" =>
 			parseDefinitionBlock(n)
-		}
-		case "DefTheorem" => {
+		case "DefTheorem" =>
 			parseDefTheorem(n)
-		}
-		case "Definiens" => {
+		case "Definiens" =>
 			parseDefiniens(n)
-		}
-		case "NotationBlock" => {
+		case "NotationBlock" =>
 			parseNotationBlock(n)
-		}
-		
-		case "SchemeBlock" => {
+		case "SchemeBlock" =>
 		    SchemeRegReader.parseSchemeBlock(n)
-		}
-		
 		case "Proposition" => 
 		  parseLemma(n)
 		case "RegistrationBlock" => 
 		  SchemeRegReader.parseRegistrationBlock(n)
 		case "Set" => 
-		  parseSet(n)
+		  ParsingController.addToArticle(JustificationParser.parseSet(n))
 		case "Consider" =>
-		  parseConsider(n)
+		  ParsingController.addToArticle(JustificationParser.parseConsider(n))
 		case "Reconsider" => 
-		  parseReconsider(n)
+		  ParsingController.addToArticle(JustificationParser.parseReconsider(n))
 		case "Proof" | "By" | "Now" |"Section" | "Reservation" | "DefPred" |"DefFunc"| "IterEquality" | "From" => None
 		case _ => {
 			println("TODO: " + n.label)
 		}
 	}
 	
-	def parseSet(n : scala.xml.Node) : Unit = {
-	  val nr = (n \ "@nr").text.toInt
-	  val constnr = (n \ "@constnr").text.toInt
-	  val tm = TypeParser.parseTerm(n.child(0))
-	  val tp = TypeParser.parseTyp(n.child(1))
-	  val s = new MizSet(nr, constnr, tm, tp)
-	  ParsingController.addToArticle(s)
-	}
-	
-	def parseConsider(n : scala.xml.Node) : Unit = {
-	  val nr = (n \ "@nr").text.toInt
-	  val constnr = (n \ "@constnr").text.toInt
-	  val prop = PropositionParser.parseProposition(n.child(0))
-	  val typs = n.child.slice(2, n.child.length).filter(_.label == "Typ").map(TypeParser.parseTyp).toList
-	  val props = n.child.slice(2, n.child.length).filter(_.label == "Proposition").map(PropositionParser.parseProposition).toList
-	  
-	  val c = new MizConsider(nr, constnr, prop, typs, props)
-	  ParsingController.addToArticle(c)
-	}
-	
-	def parseReconsider(n : scala.xml.Node) : Unit = {
-	  val nr = (n \ "@nr").text.toInt
-	  val constnr = (n \ "@constnr").text.toInt
-	  
-	  val len = n.child.length
-	  var terms : List[(MizTyp,MizTerm)] = Nil
-	  var i : Int = 0;
-	  while (i < len - 2) {
-	    terms =  (TypeParser.parseTyp(n.child(i)), TypeParser.parseTerm(n.child(i+1))) :: terms
-	    i += 2
-	  }
-	  val prop = PropositionParser.parseProposition(n.child(len - 2))
-	  val r = new MizReconsider(nr, constnr, terms, prop)
-	  ParsingController.addToArticle(r)
-	}
-	
-/**
+    /**
 	 * parseJustifiedTheorem
 	 * Format: JustifiedTheorem -> (Proposition, Justification)
 	 * @param n the node being parsed
 	 * @return the translated node
 	 */
 	def parseJustifiedTheorem(n : scala.xml.Node) : Unit = {
-			
-	        val aid = (n \ "@aid").text
-	        val nr = (n \ "@nr").text.toInt
-	        val prop : MizProposition = PropositionParser.parseProposition(n.child(0))
-			//val just : MizJustification = JustificationParser.parseJustification(n.child(1))
+	  val aid = (n \ "@aid").text
+	  val nr = (n \ "@nr").text.toInt
+	  val propNode = n.child(0)
+	  val prop : MizProposition = PropositionParser.parseProposition(propNode)
+	  val just : MizJustification = JustificationParser.parseJustification(n.child(1))
 
-			val j = new MizJustifiedTheorem(aid, nr, prop)
-			ParsingController.addToArticle(j)
+	  val j = new MizJustifiedTheorem(aid, nr, prop, just)
+	  // position of proposition inside justified theorem happens to be the
+	  // end of the proposition instead of beginning. possibly a bug in mizxml but we can use it
+	  val end = UtilsReader.parseSourceRef(propNode)
+	  // jts don't have source refs in version 1132 but do in 1147, must check for that
+	  val start = try {
+	    UtilsReader.parseSourceRef(n)
+	  } catch {
+	    case e => end
+	  }
+	  j.sreg = Some(SourceRegion(start, end))
+	  ParsingController.addToArticle(j)
 	}
 
 	/**
@@ -124,29 +90,33 @@ object ArticleParser{
 	def parseDefinitionBlock(n : Node) : Unit = {
 		var assumptions : List[MizLet] = Nil
 		var defs : List[XMLDefinition] = Nil
-		var i : Int = 0
 		var nSeq = n.child
-		while (i < nSeq.length) {
-			nSeq(i).label match {
-				case "Let" => assumptions = ReasoningParser.parseLet(nSeq(i)) :: assumptions
+		val start = UtilsReader.parseSourceRef(n)
+		val end : SourceRef = UtilsReader.parseSourceRef(n.child.last)
+		val sreg = Some(SourceRegion(start,end))
+		nSeq foreach { node => 
+			node.label match {
+				case "Let" => assumptions = JustificationParser.parseLet(node) :: assumptions
 				case "Definition" => {
-					DefinitionParser.parseDefinition(nSeq(i)) match {
+					DefinitionParser.parseDefinition(node) match {
 						case d : XMLDefinition => {
-							d.setPremises(assumptions)
-							d.resolveArgs()
+							d.premises = assumptions
+							//TODO d.resolveArgs() 
+							d.sreg = sreg
 							defs = d :: defs
 						}
 						case s : MizStructDef => {
-						  ParsingController.addToArticle(s)//TODO
+						  s.sreg = sreg
+						  ParsingController.addToArticle(s)
 						}
 						case _ => None
 					}	
 				}
 				case _ => None 
 			}
-			i = i + 1
-		}
-		val dt = new XMLDefinitionBlock(defs)
+		}		
+		val dt = new XMLDefinitionBlock(defs.reverse)
+		dt.sreg = Some(SourceRegion(start,end))
 		ParsingController.addDefinitionBlock(dt)
 	}
 
@@ -158,14 +128,19 @@ object ArticleParser{
 	 * @return   the translated node
 	 */
 	def parseDefTheorem(n : scala.xml.Node) : Unit =  {
-		val kind : String = (n \ "@kind").text
-		val nr : Int = (n \ "@nr").text.toInt
-		val constrkind : String = (n \ "@constrkind").text
-	    //val constrnr : Int = (n \ "@constrnr").text.toInt
-		val d = new XMLDefTheorem(kind, nr, constrkind, 0, PropositionParser.parseProposition(n.child(0)))
-		//ParsingController.buildDefinition(d)
-		d
+		try {
+	      val kind : String = (n \ "@kind").text
+		  val nr : Int = (n \ "@nr").text.toInt
+		  val constrkind : String = (n \ "@constrkind").text
+	      val constrnr : Int = (n \ "@constrnr").text.toInt
+	      val constraid : String = (n \ "@aid").text
+		  val d = new MizDefTheorem(constraid, kind, nr, constrkind, constrnr, PropositionParser.parseProposition(n.child(0)))
+		  ParsingController.addDefTheorem(d)
+		} catch {
+		  case e : java.lang.NumberFormatException => None // means cancelled definition, can be ignored
+		}
 	}
+	
 	/**
 	 * parseDefiniens
 	 * Format: Typ*, Essentials, Formula, ? DefMeaning
@@ -178,15 +153,16 @@ object ArticleParser{
 		val constraid = (n \ "@constraid").text
 		val constrkind = (n \ "@constrkind").text
 		val absconstrnr = (n \ "@absconstrnr").text.toInt
+		val args = n.child.filter(_.label=="Typ").map(TypeParser.parseTyp).toList
 		
 		val pair = parseDefMeaning(n.child(n.child.length - 1))
-		pair._1 	match {
+		pair._1 match {
 			case Some(eDef) => 
-				val d = new XMLIsDefiniens(aid, nr, constraid, constrkind, absconstrnr, eDef._1, eDef._2)
+				val d = new XMLIsDefiniens(aid, nr, constraid, constrkind, absconstrnr, eDef._1, eDef._2, args)
 				ParsingController.addDefiniens(d)
 			case None => pair._2 match {
 				case Some(mDef) => 
-				val d = new XMLMeansDefiniens(aid, nr, constraid, constrkind, absconstrnr, mDef._1, mDef._2)
+				val d = new XMLMeansDefiniens(aid, nr, constraid, constrkind, absconstrnr, mDef._1, mDef._2, args)
 				ParsingController.addDefiniens(d)
 				case None => None
 			}
@@ -223,10 +199,18 @@ object ArticleParser{
 
 	
 	def parseNotationBlock(n : Node) {
-		n.child.filter(x => x.label == "Pattern").map(parseNotationPattern)
+	    val start = UtilsReader.parseSourceRef(n)
+	    val end = UtilsReader.parseSourceRef(n.child.last)
+	    val sreg = Some(SourceRegion(start,end))
+	    
+	    var notations = n.child.filter(_.label == "Pattern").map(parseNotationPattern)
+	    notations foreach {not => 
+	      not.sreg = sreg 
+	      ParsingController.addToArticle(not)
+	    }
 	}
 	
-	def parseNotationPattern(n : Node) {
+	def parseNotationPattern(n : Node) : MizNotation = {
 		val aid = (n \ "@aid").text
 		val kind = (n \ "@kind").text
 		val constrAid = (n \ "@constraid").text
@@ -240,13 +224,14 @@ object ArticleParser{
 		val relnr = (n \ "@relnr").text.toInt
 		
 		ParsingController.dictionary.addPattern(kind, formatnr, aid)
-		
-		val not = new MizNotation(aid, kind, nr, relnr, constrAid, absconstrnr, antonymic)
-		ParsingController.addToArticle(not)
+		new MizNotation(aid, kind, nr, relnr, constrAid, absconstrnr, antonymic)
 	}
 	
 	def parseLemma(n : scala.xml.Node) = {
+	  val start = UtilsReader.parseSourceRef(n)
+	  val sreg = Some(SourceRegion(start,start)) //no end position for lemma (proposition)
 	  val l = new MizLemma(PropositionParser.parseProposition(n))
+	  l.sreg = sreg
 	  ParsingController.addToArticle(l)
 	}
 }

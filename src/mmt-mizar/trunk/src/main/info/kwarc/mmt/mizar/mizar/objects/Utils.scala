@@ -1,5 +1,17 @@
 package info.kwarc.mmt.mizar.mizar.objects
 
+object MizXML {
+  def set : MizTyp = new MizTyp("HIDDEN", "M", 1,"", new MizCluster(Nil) :: new MizCluster(Nil) :: Nil, Nil, None)
+}
+
+/**
+ * Represents a reference to the .miz source file
+ * @param line source line
+ * @param col source column 
+ */
+case class SourceRef(line : Int, col : Int)
+
+case class SourceRegion(start : SourceRef, end : SourceRef)
 
 class Symbol(val kind : String, val symbolnr : Int, val name : String) {
   var aid : Option[String] = None
