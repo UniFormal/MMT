@@ -122,6 +122,8 @@ object MMTUtils {
 			Pi(LocalName("x"), SeqMap(Mizar.any, LocalName("i"), OMI(argNr)), body)
 	}
 	
+	def tmparr(t1 : Term, t2 : Term) : Term = Apply(Mizar.constant("TeST"),Apply(t1, t2))
+	
 	def argTypes(args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     Arrow( 
 	  	         SeqMap(Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i"))), LocalName("i"), OMV(argNr)),
@@ -129,7 +131,7 @@ object MMTUtils {
 	}
 	
 	def argTypes(args : String, types : List[Term], argNr : Int, body : Term) : Term = {
-	  	     Arrow( 
+	  	     tmparr( 
 	  	         SeqMap(Mizar.be(Index(OMV(args), OMV("i")),Index(Sequence(types : _*),OMV("i"))), LocalName("i"), OMI(argNr)),
 	         	 body)
 	}

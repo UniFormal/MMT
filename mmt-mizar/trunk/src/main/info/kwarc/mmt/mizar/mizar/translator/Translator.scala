@@ -172,7 +172,11 @@ def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 		
 		TranslationController.controller.add(MRef(d.path, th.path, true))
 		ArticleTranslator.translateArticle(article)
-	    TranslationController.clearConstContext()
+	    
+		printArticle(mml, version, article.title)
+		addToLib(version, aid)
+		
+		TranslationController.clear()
 		ParsingController.dictionary.clear()
 		//TranslationController.controller.presenter(TranslationController.controller.get(new DPath(new xml.URI(article.title))), GlobalParams(ConsoleWriter, new DPath(new xml.URI("foundations/lf/ascii.omdoc")) ? "ascii" ))
 		
@@ -185,8 +189,6 @@ def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 		//println("am : " + TranslationController.am)
 		//println("ai : " + TranslationController.ai)
 		
-		printArticle(mml, version, article.title)
-		addToLib(version, aid)
-	} 
+	}
 }
 }

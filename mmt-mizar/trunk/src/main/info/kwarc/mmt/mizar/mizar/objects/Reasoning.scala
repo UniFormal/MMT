@@ -43,11 +43,14 @@ class MizConsider(val nr : Int, val constnr : Int, val prop : MizProposition, va
     val typs : List[MizTyp], val props : List[MizProposition]) extends MizAuxiliaryItem
 class MizReconsider(val nr : Int, val constnr : Int, val terms: List[(MizTyp,MizTerm)], 
     val prop : MizProposition, val just : MizJustification) extends MizAuxiliaryItem
-class MizDefFunc(val argTypes : List[MizTyp], val term : MizTerm, val typ : MizTyp) extends MizAuxiliaryItem
-class MizDefPred(val argTypes : List[MizTyp], val form : MizFormula) extends MizAuxiliaryItem
+class MizDefFunc(val nr : Int, val argTypes : List[MizTyp], val term : MizTerm, val typ : MizTyp) extends MizAuxiliaryItem
+class MizDefPred(val nr : Int, val argTypes : List[MizTyp], val form : MizFormula) extends MizAuxiliaryItem
 
 trait MizJustifiedProposition extends MizAuxiliaryItem
-class MizNow(val nr : Option[Int], val reasoning : MizReasoning) extends MizJustifiedProposition
+class MizNow(val nr : Option[Int], val reasoning : MizReasoning, val blockThesis : MizBlockThesis) extends MizJustifiedProposition
 class MizIterEquality(val nr : Option[Int], val term : MizTerm, val iterSteps : List[MizIterStep]) extends MizJustifiedProposition
 class MizIterStep(val term : MizTerm, val inf : MizInference) 
 class MizPropWithJust(val prop : MizProposition, val just : MizJustification) extends MizJustifiedProposition
+
+class MizThesis(val form : MizFormula)
+class MizBlockThesis(val theses : List[MizThesis], val form : MizFormula)

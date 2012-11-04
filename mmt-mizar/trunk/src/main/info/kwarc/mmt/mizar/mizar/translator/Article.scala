@@ -13,6 +13,8 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.objects._
 import objects.Conversions._
+import info.kwarc.mmt.lf.Arrow
+import info.kwarc.mmt.lf.Lambda
 
 
 
@@ -71,8 +73,63 @@ object ArticleTranslator {
 			case s : MizSet => translateSet(s)
 			case c : MizConsider => translateConsider(c)
 			case r : MizReconsider => translateReconsider(r)
+			case n : MizNow => translateNow(n)
+			case i : MizIterEquality => translateIterEquality(i)
+			case f : MizDefFunc => translateDefFunc(f)
+			case p : MizDefPred => translateDefPred(p)
 			case _ => println(e)
 		}
+	}
+	
+	def translateDefFunc(f : MizDefFunc) = {
+	  val name = TranslationController.addGlobalConst(f.nr, "DF")
+	  val tp = Arrow(f.argTypes.map(x => Mizar.any), Mizar.any)
+	  
+	  val con = f.argTypes map {t => 
+	    val name = TranslationController.getFreeVar()
+	      TranslationController.addLocusVarBinder(OMV(name))
+	    val tp = TypeTranslator.translateTyp(t)
+	    VarDecl(name, Some(tp), None)
+	  }
+	  val df = Lambda(Context(con :_*), TypeTranslator.translateTerm(f.term))
+	  
+	  val c = new Constant(OMMOD(TranslationController.currentTheory), name, Some(tp), Some(df), None, None)
+	  TranslationController.add(c)	  	  
+	}
+	
+	def translateDefPred(p : MizDefPred) = {
+	  val name = TranslationController.addGlobalConst(p.nr, "DP")
+	  val tp = Arrow(p.argTypes.map(x => Mizar.any), Mizar.any)
+	  
+	  val con = p.argTypes map {t => 
+	    val name = TranslationController.getFreeVar()
+	      TranslationController.addLocusVarBinder(OMV(name))
+	    val tp = TypeTranslator.translateTyp(t)
+	    VarDecl(name, Some(tp), None)
+	  }
+	  val df = Lambda(Context(con :_*), PropositionTranslator.translateFormula(p.form))
+	  
+	  val c = new Constant(OMMOD(TranslationController.currentTheory), name, Some(tp), Some(df), None, None)
+	  TranslationController.add(c)
+	}
+	
+	def translateIterEquality(i : MizIterEquality) = {
+	  val name = TranslationController.getLmName(i.nr)
+	  TranslationController.addGlobalProp(i.nr, name)
+	  val terms = (i.term :: i.iterSteps.map(_.term)).map(TypeTranslator.translateTerm)
+	  val form = Mizar.apply(Mizar.constant("eq"), terms :_*)
+	  val tp = Mizar.proof(form)
+	  val c = new Constant(OMMOD(TranslationController.currentTheory), name, Some(form), None, None, None)
+	  TranslationController.add(c)	  
+	}
+	
+	
+	def translateNow(n : MizNow) = {
+	  val form = PropositionTranslator.translateFormula(n.blockThesis.form) //TODO add justification
+	  val name = TranslationController.getLmName(n.nr)
+	  TranslationController.addGlobalProp(n.nr, name)
+	  val c = new Constant(OMMOD(TranslationController.currentTheory), name, Some(form), None, None, None)
+	  TranslationController.add(c)
 	}
 	
 	def translateSet(s : MizSet) = {
@@ -152,13 +209,12 @@ object ArticleTranslator {
 		TranslationController.add(jt)
 	}
 	
-	def translateLemma(l : MizLemma) {
-	  val name = "Lm" + l.prop.propnr
+	def translateLemma(l : MizLemma) = {
+	  val name = TranslationController.getLmName(l.prop.nr)
 	  TranslationController.addGlobalProp(l.prop.nr, name)
 	  val matches = ("prop" / PropositionTranslator.translateProposition(l.prop))
 	  val pattern = artPatterns.Lemma
 	  val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
-	  
 	  TranslationController.addSourceRef(i, l)
 	  TranslationController.add(i)
 	}

@@ -29,7 +29,7 @@ object ArticleParser{
 		case "JustifiedTheorem" =>
 			parseJustifiedTheorem(n)
 		case "DefinitionBlock" =>
-			parseDefinitionBlock(n)
+			parseDefinitionBlock(n, ParsingController.defBlockCounter)
 		case "DefTheorem" =>
 			parseDefTheorem(n)
 		case "Definiens" =>
@@ -42,13 +42,9 @@ object ArticleParser{
 		  parseLemma(n)
 		case "RegistrationBlock" => 
 		  SchemeRegReader.parseRegistrationBlock(n)
-		case "Set" => 
-		  ParsingController.addToArticle(JustificationParser.parseSet(n))
-		case "Consider" =>
-		  ParsingController.addToArticle(JustificationParser.parseConsider(n))
-		case "Reconsider" => 
-		  ParsingController.addToArticle(JustificationParser.parseReconsider(n))
-		case "Proof" | "By" | "Now" |"Section" | "Reservation" | "DefPred" |"DefFunc"| "IterEquality" | "From" => None
+		case "Set" | "Consider" | "Reconsider" | "Now" | "DefPred" |"DefFunc"| "IterEquality" => 
+		  ParsingController.addToArticle(JustificationParser.parseAuxiliaryItem(n))		
+		case "Proof" | "By" | "From" | "Reservation" |"Section"  => None
 		case _ => {
 			println("TODO: " + n.label)
 		}
@@ -87,7 +83,7 @@ object ArticleParser{
 	 * @param n the node being parsed
 	 * @return the translated node
 	 */
-	def parseDefinitionBlock(n : Node) : Unit = {
+	def parseDefinitionBlock(n : Node, defBlockNr : Int) : Unit = {
 		var assumptions : List[MizLet] = Nil
 		var defs : List[XMLDefinition] = Nil
 		var nSeq = n.child
@@ -98,7 +94,7 @@ object ArticleParser{
 			node.label match {
 				case "Let" => assumptions = JustificationParser.parseLet(node) :: assumptions
 				case "Definition" => {
-					DefinitionParser.parseDefinition(node) match {
+					DefinitionParser.parseDefinition(node, defBlockNr) match {
 						case d : XMLDefinition => {
 							d.premises = assumptions
 							//TODO d.resolveArgs() 
@@ -133,8 +129,8 @@ object ArticleParser{
 		  val nr : Int = (n \ "@nr").text.toInt
 		  val constrkind : String = (n \ "@constrkind").text
 	      val constrnr : Int = (n \ "@constrnr").text.toInt
-	      val constraid : String = (n \ "@aid").text
-		  val d = new MizDefTheorem(constraid, kind, nr, constrkind, constrnr, PropositionParser.parseProposition(n.child(0)))
+	      val aid : String = (n \ "@aid").text
+		  val d = new MizDefTheorem(aid, kind, nr, constrkind, constrnr, PropositionParser.parseProposition(n.child(0)))
 		  ParsingController.addDefTheorem(d)
 		} catch {
 		  case e : java.lang.NumberFormatException => None // means cancelled definition, can be ignored
