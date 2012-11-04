@@ -39,7 +39,7 @@ class OldXMLRedefinition(aid : String,  kind : String, nr : Int, relnr : Int, ar
   extends OldXMLDefinition(aid, kind, nr, relnr, argTypes, retType)
 
 
-class XMLDefinition(val kind : String, val constr : Option[XMLConstructor],
+class XMLDefinition(val defBlockNr : Int, val kind : String, val constr : Option[XMLConstructor],
     val pattern : Option[XMLPattern], val isRedef : Boolean, val isExp : Boolean)
   extends MizAny {
   
@@ -153,18 +153,29 @@ class XMLDefinition(val kind : String, val constr : Option[XMLConstructor],
       case None => throw new Error("XMLDefinition.aid in def without pattern and definiens")
     }
   }
+  
+  def defaid = (isRedef, constr) match {
+    case (true, Some(c)) => c.redefaid.getOrElse(throw new Error("XMLDefinition.defaid for no constructor and no redefaid"))
+    case _ => constraid
+  }
+  
+  def defnr = (isRedef, constr) match {
+    case (true, Some(c)) => c.absredefnr.getOrElse(throw new Error("XMLDefinition.defnr for no constructor and no redefnr"))
+    case _ => absconstrnr
+  }
 }
 
 class XMLPattern(val aid : String, val kind : String, val nr : Int, val constrnr : Int, val antonymic : Boolean,
     val constraid : String, val constrkind : String, val absconstrnr : Int, val argTypes : List[MizTyp], val exp : Option[MizTyp])
 
 class XMLConstructor(val aid : String, val kind : String, val nr : Int, val relnr: Int, 
-    val superfluous : Boolean, val argTypes: List[MizTyp], val retType: Option[MizTyp]) 
+    val superfluous : Boolean, val argTypes: List[MizTyp], val retType: Option[MizTyp],
+    val redefaid : Option[String], val absredefnr : Option[Int]) 
   extends MizAny
 
 
 
-class MizDefTheorem(val constraid : String, val kind : String, val nr : Int, val constrkind : String, val constrnr : Int, val prop : MizProposition)
+class MizDefTheorem(val aid : String, val kind : String, val nr : Int, val constrkind : String, val constrnr : Int, val prop : MizProposition)
 
 class XMLDefiniens(val aid : String, val nr : Int, val constraid : String, 
     val constrkind : String, val absconstrnr : Int, val args : List[MizTyp])

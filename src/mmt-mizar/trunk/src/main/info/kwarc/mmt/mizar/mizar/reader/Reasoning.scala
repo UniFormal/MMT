@@ -141,7 +141,8 @@ object JustificationParser {
     } catch {
       case e : java.lang.NumberFormatException => None
     }
-    new MizNow(nr, parseReasoning(reasoning))
+    val blockThesis = parseBlockThesis(n.child.last)
+    new MizNow(nr, parseReasoning(reasoning), blockThesis)
   }
   
   def parseIterEquality(n : Node) : MizIterEquality = {
@@ -198,15 +199,37 @@ object JustificationParser {
   }
 
   def parseDefFunc(n : Node) : MizDefFunc = {
+    val nr = try {
+      (n \ "@nr").text.toInt
+    } catch {
+      case e => throw e
+    }
     val args = n.child(0).child.map(TypeParser.parseTyp).toList
     val tm = TypeParser.parseTerm(n.child(1))
     val tp = TypeParser.parseTyp(n.child(2))
-    new MizDefFunc(args, tm, tp)
+    new MizDefFunc(nr, args, tm, tp)
   }
   
   def parseDefPred(n : Node) : MizDefPred = {
     val args = n.child(0).child.map(TypeParser.parseTyp).toList
     val form = PropositionParser.parseFormula(n.child(1))
-    new MizDefPred(args, form)
+    val nr = try {
+      (n \ "@nr").text.toInt
+    } catch {
+      case e => throw e
+    }
+    new MizDefPred(nr, args, form)
   }
+  
+  def parseBlockThesis(n : Node) : MizBlockThesis = {
+   val theses = n.child.init.map(parseThesis).toList
+   val form = PropositionParser.parseFormula(n.child.last)
+   new MizBlockThesis(theses, form)
+  }
+  
+  def parseThesis(n : Node) : MizThesis = {
+    val form = PropositionParser.parseFormula(n.child.head)
+    new MizThesis(form)
+  }
+  
 }

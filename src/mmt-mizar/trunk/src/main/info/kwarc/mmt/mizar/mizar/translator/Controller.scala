@@ -39,6 +39,7 @@ object TranslationController {
 	def currentTheory : MPath = currentDocument ? localPath
 	def currentSource = currentBase + "/source/" + currentVersion.toInt + "/" + currentAid + "/miz"
 	
+	var anonConstNr = 0
 	var defs = 0
 	var theorems = 0
 	var notations = 0
@@ -51,6 +52,22 @@ object TranslationController {
 	var constContext : mutable.HashMap[Int,Term] = mutable.HashMap()
 	//deftheorems, lemmas, assume and others 
 	var propContext : mutable.HashMap[Int,Term] = mutable.HashMap()
+	
+	def clear() = {
+     constContext = mutable.HashMap()
+     propContext = mutable.HashMap()
+     controller.clear
+     anonConstNr = 0
+    }
+    
+    def getLmName(nrO : Option[Int]) : String = nrO match {
+      case Some(nr) => 
+        "Lm" + nr
+      case None => 
+        anonConstNr += 1
+        "AnonLm" + anonConstNr
+    }
+	
 	
 	def addSourceRef(mmtEl : metadata.HasMetaData, mizEl : MizAny) = mizEl.sreg match {
       case None => None
@@ -70,8 +87,9 @@ object TranslationController {
 	}
 		
 	def resolveLocusVar(nr : Int) : Term = {
-		locusVarContext(locusVarContext.length - nr)
-		//Index(SeqVar("y"), OMI(nr - 1))
+	  assert (locusVarContext.length >= nr,"TranslationController.resolveLocusVar " +
+	  		"for number " + nr +" which is over the size of context " + locusVarContext)
+	  locusVarContext(locusVarContext.length - nr)
 	}
 	
 	def addLocalProp(nrO : Option[Int]) : LocalName = nrO match {
@@ -89,7 +107,13 @@ object TranslationController {
 	  case _ => None
 	}
 	
-	def resolveProp(nr : Int) : Term = propContext(nr)
+	def resolveProp(nr : Int) : Term = try {
+	  propContext(nr)
+	} catch {
+	  case _ => 
+	    println(propContext)
+	    throw new java.lang.Error("propContext lookup failed for " + nr)
+	}
 	
 	def addGlobalConst(nr : Int, kind : String) : LocalName = {
 	  val name = LocalName(kind + nr)

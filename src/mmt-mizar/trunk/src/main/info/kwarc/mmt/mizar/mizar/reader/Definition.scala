@@ -3,9 +3,9 @@ package info.kwarc.mmt.mizar.mizar.reader
 import info.kwarc.mmt.mizar.mizar.objects._
 import scala.xml._
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.objects.Text
 
 object DefinitionParser {
-  
 	def parseField(n : Node) : MizField = {
 	  val aid = (n \ "@aid").text
 	  val kind = (n \ "@kind").text
@@ -20,7 +20,7 @@ object DefinitionParser {
 	    throw ImplementationError("Parsing Error: Structure with no fields ")
 	}
     
-	def parseDefinition(n : Node) : MizAny = {
+	def parseDefinition(n : Node, defBlockNr : Int) : MizAny = {
 	  val kind = (n \ "@kind").text
 	  val isRedef = ((n \ "@redefinition").text == "true")
 	  val isExp = ((n \ "@expandable").text == "true")
@@ -32,12 +32,11 @@ object DefinitionParser {
 	      val pattern = n.child.find(_.label == "Pattern").map(parsePattern) getOrElse {
 	        throw ImplementationError("Definition Reader -> parseDefinition, missing pattern in def with no constructor")
 	      }
-	      new XMLDefinition(kind, None, Some(pattern), isRedef, isExp)
-	      
+	      new XMLDefinition(defBlockNr, kind, None, Some(pattern), isRedef, isExp)	      
 	    case 1 => //normal definition
 	      val constr = parseConstructor(nCons.head)
 	      val patternO = n.child.find(_.label == "Pattern").map(parsePattern)
-	      new XMLDefinition(kind, Some(constr), patternO, isRedef, isExp)
+	      new XMLDefinition(defBlockNr, kind, Some(constr), patternO, isRedef, isExp)
 	      
 	    case nrCon if nrCon >= 3 => //structure definition
 	      val xmlattr = parseConstructor(nCons(0))
@@ -162,11 +161,20 @@ object DefinitionParser {
 		val relnr = (n \ "@relnr").text.toInt
 		val retType = n.child.find(x => x.label == "Typ")
 		val superfluous = (n \ "@superfluous").text != ""
-		
-		retType  match {
-			case Some(rt) => new XMLConstructor(aid, kind, nr, relnr, superfluous, n.child.filter(x => x.label == "ArgTypes").flatMap(x => x.child.map(TypeParser.parseTyp)).toList, Some(TypeParser.parseTyp(rt)))
-			case None => new XMLConstructor(aid, kind, nr, relnr, superfluous, n.child.filter(x => x.label == "ArgTypes").flatMap(x => x.child.map(TypeParser.parseTyp)).toList, None)
+		val absredefnrO = try {
+		  Some((n \ "@absredefnr").text.toInt)
+		} catch {
+		  case _ => None
 		}
+		val redefaid = (n \ "@redefaid").text
+		val redefaidO = if (redefaid == "") None else Some(redefaid) 
+		val args =  n.child.filter(x => x.label == "ArgTypes").flatMap(x => x.child.map(TypeParser.parseTyp)).toList  
+		val retTypeO = retType match {
+			case Some(rt) => Some(TypeParser.parseTyp(rt))
+			case None => None
+		}
+		new XMLConstructor(aid, kind, nr, relnr, superfluous,args, retTypeO, redefaidO, absredefnrO)
+
 	}
 	
 }
