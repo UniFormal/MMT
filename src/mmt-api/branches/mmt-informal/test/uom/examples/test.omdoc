@@ -1,0 +1,45 @@
+<omdoc xmlns="http://omdoc.org/ns" base="http://cds.omdoc.org/unsorted/uom.omdoc">
+   <theory name="lists">
+     <constant name="elem"/>
+     <constant name="list"/>
+     <constant name="nil"/>
+     <constant name="cons"/>
+     
+     <constant name="append">
+       <definition>
+         <OMOBJ>
+           <OMFOREIGN>
+             def append(l: Term, m: Term) : Term = {
+               l match {
+                 case this.nil => m;
+                 case OMA(this.cons, List(this.elem, rest)) => 
+                    OMA(this.cons, List(this.elem,  append(rest, m)) );
+                 case _ => throw new Exception("malformed term");
+               }
+             }
+           </OMFOREIGN>
+         </OMOBJ>
+       </definition>
+     </constant>
+   </theory>
+
+   <theory name="lists_ext">
+     <include from="?lists"/>
+
+     <constant name="append_many">
+       <definition>
+         <OMOBJ>
+           <OMFOREIGN>
+             def append_many(l: Term*) : Term = {
+               val lists = new org.omdoc.cds.unsorted.uom.omdoc.lists;
+               l.toList match {
+                 case Nil => lists.nil
+                 case hd :: tl => lists.append(hd, append_many(tl : _*))
+               }
+             }
+           </OMFOREIGN>
+         </OMOBJ>
+       </definition>
+     </constant>
+   </theory>
+</omdoc>

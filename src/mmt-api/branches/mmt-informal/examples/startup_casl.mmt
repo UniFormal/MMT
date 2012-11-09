@@ -1,0 +1,51 @@
+local
+catalog ../locutor.xml
+tntbase ../ombase.xml
+base http://cds.omdoc.org/
+//file regression.mmt
+
+log+ debug
+log+ reader
+log+ presenter
+log+ controller
+log+ library
+//log+ notations
+base http://cds.omdoc.org/
+
+casl/Numbers.omdoc present logics/casl/mathml.omdoc?mathml write Numbers.xhtml
+//surely works
+
+casl/Algebra_I.omdoc present logics/casl/mathml.omdoc?mathml write Algebra_I.xhtml
+// add error: content element contains ill-formed object: ill-formed constant reference: http://cds.omdoc.org/casl/Algebra_I.omdoc?ConstructField?%()%over_1:__*__ not found
+
+casl/Algebra_II.omdoc present logics/casl/mathml.omdoc?mathml write Algebra_II.xhtml
+// add error: open of non-existing constant
+
+casl/CharactersAndStrings.omdoc present logics/casl/mathml.omdoc?mathml write CharactersAndStrings.xhtml
+
+casl/Graphs.omdoc present logics/casl/mathml.omdoc?mathml write Graphs.xhtml
+// add error: a statement name with prefix Graph already exists
+
+casl/Interval.omdoc present logics/casl/mathml.omdoc?mathml write Interval.xhtml
+//might work -- fatal
+
+casl/LinearAlgebra_II.omdoc present logics/casl/mathml.omdoc?mathml write LinearAlgebra_II.omdoc
+//add error: content element contains ill-formed object: ill-formed constant reference: http://cds.omdoc.org/casl/Algebra_I.omdoc?ConstructField?%()%over_1:__*__ not found
+
+casl/LinearAlgebra_I.omdoc present logics/casl/mathml.omdoc?mathml write LinearAlgebra_I.omdoc
+//add error: open of non-existing constant
+
+casl/MachineNumbers.omdoc present logics/casl/mathml.omdoc?mathml write MachineNumbers.xhtml
+//add error: a statement name with prefix Int already exists
+
+casl/RelationsAndOrders.omdoc present logics/casl/mathml.omdoc?mathml write RelationsAndOrders.xhtml
+//add error: a statement name with prefix ExtBooleanAlgebra already exists
+
+casl/SimpleDatatypes.omdoc present logics/casl/mathml.omdoc?mathml write SimpleDatatypes.xhtml
+//add error: a statement name with prefix ExtBooleanAlgebra already exists
+
+casl/StructuredDatatypes.omdoc present logics/casl/mathml.omdoc?mathml write StructuredDatatypes.xhtml
+//add error: a statement name with prefix GenerateBag already exists
+
+exit
+

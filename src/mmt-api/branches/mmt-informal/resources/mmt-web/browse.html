@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
+<head>
+   <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jobad.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jobad/jqcontextmenu.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
+ <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+  <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
+
+  <script src="script/codemirror2/lib/codemirror.js"></script>
+  <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css">
+  <script src="script/codemirror2/mode/lf/lf.js"></script>
+
+  <script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
+  <script type="text/javascript" src="/script/jquery/jqcontextmenu.js"></script>
+  <script type="text/javascript" src="/script/tree/jquery.hotkeys.js"></script>
+  <script type="text/javascript" src="/script/tree/jquery.jstree.js"></script>
+  <script type="text/javascript" src="/script/jobad/service.js"></script>
+  <script type="text/javascript" src="/script/jobad/latin.js"></script>
+  <script type="text/javascript" src="/script/jobad/mathml.js"></script>
+  <script type="text/javascript" src="/script/jobad/folding.js"></script>
+  
+  <script type="text/javascript">
+    $(function () {
+       $("#pathtree").jstree({
+           "core" : {"animation": 0},
+           "xml_data" : {
+              "ajax" : {
+                 "url" : "/:tree",
+                 "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
+              },
+              "xsl" : "nest"
+           },
+           "themes" : {"theme" : "classic", "icons" : false},
+           "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
+       });
+   });
+   var graphWindow = null;
+   function openGraph(focus) {
+      var graphWindow = window.open("/graph.html");
+   };
+   
+
+  </script>
+</head>
+
+<body>
+
+   <div style="width:100%">
+     
+    <div id="top">
+      <div id="title">The MMT Web Server</div>
+      <div id="menu_bar">
+        <span class="pagelink"><a href="">Browser</a></span>
+        <span class="pagelink"><a href="/search.html">Search</a></span>
+        <span class="pagelink"><a href="javascript:openGraph('')">Graph View</a></span>
+        <span class="pagelink"><a href="/uom.html">Universal Machine</a></span>
+        <span class="pagelink"><a href="/admin.html" target="_blank">Administration</a></span>
+      </div>
+    </div>
+   
+    <div id="styleselector">
+      Style: <span id="currentstyle"/><br/>
+      <!--<input type="text" size="20" id="inputstyle"></input><button onclick="javascript:setStyle($('#inputstyle').val())">set</button> -->
+    </div>
+    
+    <div id="breadcrumbs">
+      <div></div>
+    </div>
+
+    <div id="sidebar">
+       <div id="pathtree"></div>
+    </div>
+    
+    
+    <div id="main">
+       <div></div>
+    </div>
+
+   </div>
+
+</body>
+
+</html>

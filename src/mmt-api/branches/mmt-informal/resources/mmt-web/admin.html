@@ -1,0 +1,35 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xhtml="http://www.w3.org/1999/xhtml">
+<head>
+  <link rel="stylesheet" type="text/css" href="/css/admin.css"/>
+  <script type="text/javascript" src="/script/jquery/jquery-1.4.2.js"/>
+  <script type="text/javascript">
+   function run(command) {
+      $.ajax({ 'url': '/:admin?' + command,
+               'success': function(data) {
+                  var op = $('#output') 
+                  op.append(data.firstChild)
+                  op[0].scrollTop = op[0].scrollHeight;
+               }
+           });
+   };
+</script>
+</head>
+
+<body>
+
+<div id="localcommands">
+  <button onclick="$('#output').children().remove()">clear console</button>
+</div>
+
+<div id="output" style="position:fixed;top:5%;bottom:95%;overflow: auto">
+</div>
+
+<div id="remotecommands">
+   <input type="text" size="200" id="inputcommand"/><button onclick="javascript:run($('#inputcommand').val())" style="margin-right:3%">run</button>
+   <button onclick="javascript:run('clear')">clear</button>
+   <button onclick="javascript:run('printAll')">print all</button>
+   <button onclick="javascript:run('exit')">exit</button>
+</div>
+
+</body>
+</html>

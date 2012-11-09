@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:svg="http://www.w3.org/2000/svg" xml:lang="en-ca">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      <title>MMT Search</title>
+      <link rel="stylesheet" type="text/css" href="css/search.css" />  
+      <link rel="stylesheet" type="text/css" href="css/mmt.css" />  
+      <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+      <script type="text/javascript" src="script/search/tAutoResize.js"></script>
+      <!--- <script type="text/javascript" src="js/main.js"></script> -->
+      <script type="text/javascript" src="script/search/search.js"></script>
+   </head>
+   
+   <body>
+      
+
+      <section>
+         <div id="searchHolder">
+            <span id="searchWrapper">
+               <h1 id="title">
+                  <b>Flat</b><b><span>Search</span> <span style="color:red">DEMO</span></b>
+               </h1> 
+	       <span style="font-size:15px; font-style:italic; color:green;">
+		 Example queries: *
+	       </span>
+	       <br/>
+	       <span style="font-size:15px; font-style:italic; color:green;">
+		 (X + Y) + Z == ?q
+	       </span>
+	       <br/>
+	       <span style="font-size:15px; font-style:italic; color:green;">
+	          - (- X) == ?q
+	       </span>
+	       <br/>
+	       <span style="font-size:10px; font-style:italic; color:green;">
+	          Variables that start with "?" are converted to MWS query variables, the rest are literal.
+	       </span>
+	       <!--<span style="font-size:15px; font-style:italic; color:green;"></span>-->
+               <textarea cols="69" placeholder="Type query here" id="searchQuery"></textarea>
+               
+	       <a href="javascript:void(0)" class="button orange" id="search">Search</a>
+               
+	       <div id="resultWrapper" style="display:none">
+		  
+                 
+               </div>
+	       
+            </span>
+         </div>
+      </section>
+
+      <footer>
+         MMT + MWS Search
+      </footer>
+      
+   </body>
+</html>

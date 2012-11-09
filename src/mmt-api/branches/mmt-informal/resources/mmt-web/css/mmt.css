@@ -1,0 +1,78 @@
+span.omdoc-operator {
+    margin-left: 5px;
+    margin-right: 5px;
+    font-weight: bold;
+    color: #0000FF;
+}
+
+span.omdoc-definiens {
+}
+
+span.omdoc-type {
+}
+
+math {
+    color: blue;
+    font-weight: bold;
+}
+
+mo {
+    color: black;
+    font-weight: normal;
+}
+
+mo.symdecl {
+     color: #000000;
+}
+
+mi {
+    color:green;
+    font-weight: normal;
+}
+
+.math-selected {
+    background: silver;
+}
+
+.math-occurrence {
+    background: silver;
+}
+
+.reconstructed mo, .implicit-arg mo, .implicit-binder mo,
+.reconstructed mi, .implicit-arg mi, .implicit-binder mi,
+.reconstructed, .implicit-arg, .implicit-binder {
+   color : gray;
+}
+.reconstructed-hidden, .implicit-arg-hidden, .implicit-binder-hidden{
+   display: none;
+}
+
+div.omdoc-view
+{
+   border-style: none
+}
+div.omdoc-theory
+{
+   border-style: none
+}
+
+span.operator {
+   color: blue;
+   font-weight: bold;
+}
+
+span.keyword {
+   color: black;
+   font-weight: bold;
+   cursor: pointer;
+   padding-left: 3px;
+   padding-right : 3px;
+}
+
+span.keyword:hover {
+   background: #d3d3d3;
+}
+
+span.keyword:active {
+  cursor: progress;
+}
