@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api
-import info.kwarc.mmt.api.presentation._
+import presentation._
 import scala.xml.Node
 
 /** 
@@ -9,16 +9,10 @@ import scala.xml.Node
 trait StructuralElement extends Content with metadata.HasMetaData {
    /** the MMT URI of the element */
    def path : Path
+   /** the governingPath required by content is the path */
+   def governingPath = Some(path)
    /** the containing knowledge item, a URL if none */
    def parent : Path
-   /** XML representation */
-   def toNode : Node
-   /** the role, the non-terminal in the MMT grammar producing this item */  
-   def role : Role
-   /** the components are an abstract definition of the children of a knowledge item */
-   def components : List[Content]
-   def compNames : List[(String,Int)] = Nil
-   def contComponents = ContentComponents(components, compNames, Some(path))
    /** If a StructuralElement has been generated (as opposed to being physically present in the document),
     * this gives its origin.
     * The origin must be set by overriding the field when creating the ContentElement. 
@@ -39,8 +33,7 @@ trait StructuralElement extends Content with metadata.HasMetaData {
  * These are the core MMT items such as modules, and symbols.
  * This includes virtual knowledge items.
  */
-trait ContentElement extends StructuralElement {
-}
+trait ContentElement extends StructuralElement
 
 /**
  * A PresentationElement is any knowledge item element that is used to represent notations.
@@ -75,4 +68,13 @@ trait RelationalElement {
 trait Content {
    /** XML representation */
    def toNode : Node
+   /** the role, the non-terminal in the MMT grammar producing this item */  
+   def role : Role
+   def governingPath : Option[Path]
+   /** the components are an abstract definition of the children of a content item */
+   def components : List[Content]
+   /** content items may provide short names for their components, Nil by default */
+   def compNames : List[(String,Int)] = Nil
+   /** this ContentComponents object permits accessing components by name */
+   def contComponents = ContentComponents(components, compNames, governingPath)
 }

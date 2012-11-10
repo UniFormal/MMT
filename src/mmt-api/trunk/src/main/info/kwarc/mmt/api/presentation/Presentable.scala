@@ -7,8 +7,17 @@ abstract class PresentationData
 /** a content expression provides a key that yields a notation, which is rendered in the context of some components */
 case class ByNotation(key : NotationKey, components : ContentComponents, lpar : LocalParams) extends PresentationData
 
-/** some literal values that IsLiteral may use */
-abstract class Literal extends Content
+/** instances of Literal are not so much content items themselves but the
+ *  terminal symbols that are produced when rendering content items
+ *  Thus, they are the leafs of the concrete syntax tree. */
+abstract class Literal extends Content {
+   /** Nil */
+   def components = Nil
+   /** None */
+   def governingPath = None
+   /** role is null */
+   def role = null
+}
 case class StringLiteral(s : String) extends Literal {
    def toNode = scala.xml.Text(s)
 }
