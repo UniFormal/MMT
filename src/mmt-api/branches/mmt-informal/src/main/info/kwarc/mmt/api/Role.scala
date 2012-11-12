@@ -13,6 +13,7 @@ abstract class Role(val bracketable : Boolean, override val toString : String, c
 case object Role_Document            extends Role(false, "Document")
 case object Role_DRef                extends Role(false, "DRef")
 case object Role_MRef                extends Role(false, "MRef")
+case object Role_Narration           extends Role(false, "Narration")
 case object Role_DeclaredTheory      extends Role(false, "Theory", ("name", 0), ("meta", 1))
 case object Role_DefinedTheory       extends Role(false, "Theory", ("name", 0), ("definiens", 1))
 case object Role_View                extends Role(false, "View", ("name", 0), ("from", 1), ("to", 2))
@@ -59,6 +60,7 @@ object Role {
    /** parses a role from a string */
    def parse(s : String) = s match {
       case "Document" => Role_Document
+      case "Narration" => Role_Narration
       case "DRef" => Role_DRef
       case "MRef" => Role_MRef
       case "Theory" => Role_DeclaredTheory
@@ -98,15 +100,7 @@ object Role {
       case "context" => Role_context
       case "toplevel" => Role_ObjToplevel
       case "value" => Role_value
-
       case "index" => Role_index
-      case "seqsub" => Role_termsub //TODO fix seqsub
-      case "seqsubst" => Role_termsub //TODO fix seqsub
-      case "seqitemlist" => Role_termsub //TODO fix seqitemlist
-      case "seqvariable" => Role_termsub //TODO fix seqvariable
-      case "SeqVariable" => Role_termsub //TODO fix seqvariable
-      case "sequpto" => Role_termsub //TODO fix sequpto
-
       case s if s.startsWith("fragment:") => Role_Fragment(s.substring(9))
       case s => throw ParseError("illegal role: " + s)
    }

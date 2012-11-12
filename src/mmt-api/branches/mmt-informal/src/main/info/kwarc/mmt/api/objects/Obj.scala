@@ -62,8 +62,8 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
             }
       }
    def head : Option[ContentPath]
-   def role : Role
-   def components : List[Content]
+   /** the governing path required by Content is the head, if any */
+   def governingPath = head
    def toCML: Node
 }
 
@@ -325,9 +325,9 @@ case class OMFOREIGN(node : Node) extends Term {
    private[objects] def freeVars_ = Nil
    def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{Node}</m:apply>
 }
-/*
- * OpenMath values are integers, floats, and strings (we omit byte arrays); we add URIs
- *
+/** OpenMath literals
+ *  integers, floats, and strings (we omit byte arrays)
+ *  we add URIs
  */
 abstract class OMLiteral extends Term {
    def head = None
@@ -340,32 +340,39 @@ abstract class OMLiteral extends Term {
    def ^(sub : Substitution) = this
    private[objects] def freeVars_ = Nil
 }
+
+/** An integer literal */
 case class OMI(value : BigInt) extends OMLiteral {
    def tag = "OMI"
    def toCML = <m:cn>{value}</m:cn>
 }
+
+/** A float literal */
 case class OMF(value : Double) extends OMLiteral {
    def tag = "OMF"
    override def toNodeID(pos : Position) = <om:OMF dec={value.toString}/> % pos.toIDAttr
    def toCML = <m:cn>{value}</m:cn>
 
 }
+
+/** A string literal */
 case class OMSTR(value : String) extends OMLiteral {
    def tag = "OMSTR"
    def toCML = <m:cn>{value}</m:cn>
 }
+
+/** A literal object representing a URI (not part of the OpenMath standard) */
 case class OMURI(value: URI) extends OMLiteral {
    def tag = "OMURI"
    def toCML = <m:cn>{value}</m:cn>
 
 }
 
-case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
+//TODO: could this be merged with presentation.Literal?
+/** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
+case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
    def role = Role_value
-   def components = tokens
-   override def toString = tokens.map(_.toString).mkString("", " ", "")
-   def toNodeID(pos : Position) = <om:OMSF>{tokens.map(_.toNode)}</om:OMSF>
    def ^(sub : Substitution) = {
       val newtokens = tokens map {
          case Formal(t) => Formal(t ^ sub)
@@ -375,7 +382,6 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term {
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
    def toCML = <m:apply><csymbol>OMSemiFormal</csymbol>tokens.map(_.toCML)</m:apply>
-
 }
 
 object OMSemiFormal {
@@ -507,7 +513,8 @@ object Obj {
   def toPathEncoding(t: Term) = "[" + toPathEncodingAux(t) + "]"
   private def toPathEncodingAux(t: Term): String = t match {
      case OMA(fun, args) => (fun::args).map(toPathEncodingAux).mkString("(", sepString, ")")
-     case OMID(p) => p.toPath 
+     case OMID(p) => p.toPath
+     case _ => throw ImplementationError("path encoding only available for theory expressions")
   }
   private object MPathEncodedOMA {
       def unapply(s: String): Option[(Path,List[String])] =

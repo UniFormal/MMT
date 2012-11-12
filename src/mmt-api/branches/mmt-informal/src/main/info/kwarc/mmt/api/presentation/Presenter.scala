@@ -37,13 +37,19 @@ case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Positi
  * @param c the presented expression
  */
 case class StrToplevel(c: Content) extends Content {
+   def components = List(c)
+   def role = c.role
+   def governingPath = c.governingPath
    def toNode = c.toNode
 }
 /** A special presentable object that is wrapped around the math objects encountered during presentation
  * @param c the presented object
- * @param pos the position of the object
+ * @param opath the position of the object (if known)
  */
 case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
+   def components = List(c)
+   def role = c.role
+   def governingPath = c.governingPath
    def toNode = c.toNode
 }
 
@@ -51,7 +57,7 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
  * @param controller the controller storing all information about MMT expressions and notations
  * @param report the logging handler
  */
-class Presenter(controller : frontend.Controller, report : info.kwarc.mmt.api.frontend.Report) { 
+class Presenter(controller : frontend.Controller, report : frontend.Report) { 
    private def log(s : => String) = report("presenter", s)
    private var nextID : Int = 0 // the next available id (for generating unique ids)
    /** the main presentation method
