@@ -231,7 +231,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                log("assignment for " + name + " found")
                val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(a, "domain", base)
                rest.child match {
-                  case List(<value>{t}</value>) =>
+                  case <value>{t}</value> :: Nil =>
                      val tg = Obj.parseTerm(t, base)
                      val m = new DefLinkAssignment(link, name, from, tg)
                      add(m, md)

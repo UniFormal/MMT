@@ -6,7 +6,6 @@ import objects._
 import utils._
 import presentation.{StringLiteral,Omitted}
 
-abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
 /**
  * A Theory represents an MMT theory.<p>
  * 

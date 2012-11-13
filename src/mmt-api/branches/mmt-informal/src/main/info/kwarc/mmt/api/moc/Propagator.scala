@@ -141,6 +141,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
       case t : DefinedTheory => cpaths += CPath(mod.path, DefComponent)
       case v : DeclaredView => cpaths = cpaths + CPath(mod.path, DomComponent) + CPath(mod.path, CodComponent)
       case v : DefinedView => cpaths = cpaths + CPath(mod.path, DomComponent) + CPath(mod.path, CodComponent) + CPath(mod.path, DefComponent) 
+      case s : SFModule => cpaths 
     }
     
     cpaths
@@ -160,6 +161,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
       case a : ConstantAssignment => new HashSet[Path]() + dec.path + CPath(a.path, DefComponent)
       case d : DefLinkAssignment => new HashSet[Path]() + dec.path + CPath(d.path, DefComponent)
       case a : Alias => new HashSet[Path]() + dec.path + CPath(a.path, ForPathComponent)
+      case s : SFDeclaration => new HashSet[Path]() + s.path
     } 
   }
   

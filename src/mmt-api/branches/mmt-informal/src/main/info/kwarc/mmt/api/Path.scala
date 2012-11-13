@@ -138,6 +138,9 @@ case class LocalPath(fragments : List[String]) {
    def toPath : String = fragments.map(xml.encodeURI).mkString("", "/", "")
    override def toString = flat
 }
+object LocalPath {
+  lazy val Anon = LocalPath(List())
+}
 
 /**
  * A LocalName represents a local MMT symbol-level declarations (relative to a module).

@@ -72,10 +72,10 @@ object Differ {
     case (None, Some(n)) => false
     case (Some(o), Some(n)) => o == n
   }
-
- // recursing inside objects not useful now, but may be in the future
- /*   
-  private def _fullType(o : Obj) : List[String] = o.toNode.label :: o.toNode.attributes.toString :: Nil
+ 
+  // recursing inside objects not useful now, but may be in the future
+  /*   
+   private def _fullType(o : Obj) : List[String] = o.toNode.label :: o.toNode.attributes.toString :: Nil
 	
 	private def compareObjects(o : Obj, n : Obj, pos : Position = Position(Nil)) : List[Position] = {
 	  if (o == n) Nil
@@ -182,39 +182,49 @@ object Differ {
 	  new StrictDiff(changes)
 	}
 	
-	/**
+  /**
    * compares two definitional link assignments 
    * @param old the first assignment
    * @param nw the second assignment
    * @return the (strict) diff representing the difference between old and nw 
    */
 	private def compareDefLinkAssignments(old : DefLinkAssignment, nw : DefLinkAssignment) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-    if (old.target != nw.target) {
-      changes = UpdateComponent(old.path, DefComponent, Some(old.target), Some(nw.target)) :: changes
-    }
-
+      var changes : List[StrictChange] = Nil
+      if (old.target != nw.target) {
+        changes = UpdateComponent(old.path, DefComponent, Some(old.target), Some(nw.target)) :: changes
+      }
 	  new StrictDiff(changes)
 	}
 	
-	/**
+  /**
    * compares two aliases 
    * @param old the first alias
    * @param nw the second alias
    * @return the (strict) diff representing the difference between old and nw 
    */
 	private def compareAliases(old : Alias, nw : Alias) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-    if (old.forpath != nw.forpath) {
-      changes = UpdateComponent(old.path, ForPathComponent, Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
-    }
-
+      var changes : List[StrictChange] = Nil
+      if (old.forpath != nw.forpath) {
+        changes = UpdateComponent(old.path, ForPathComponent, Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
+      }
 	  new StrictDiff(changes)
 	}
 	
-	/**
+  /**
+   * compares two semi-formal declarations 
+   * @param old the first semi-formal decl
+   * @param nw the second semi-formal decl
+   * @return the (strict) diff representing the difference between old and nw 
+   */
+	private def compareSFDeclarations(old : SFDeclaration, nw : SFDeclaration) : StrictDiff = {
+      var changes : List[StrictChange] = Nil
+      if (old.tokens != nw.tokens || old.path != nw.path) {
+        changes = DeleteDeclaration(old) :: AddDeclaration(nw) :: changes
+      } 
+	  new StrictDiff(changes)
+	}
+	
+   /**
    * compares two declarations 
    * @param old the first declaration
    * @param nw the second declaration
@@ -236,6 +246,8 @@ object Differ {
         compareDefLinkAssignments(o,n)
       case (o : Alias, n : Alias) =>
         compareAliases(o,n)
+      case (o : SFDeclaration, n : SFDeclaration) => 
+        compareSFDeclarations(o,n)
     }
   }
   
@@ -247,6 +259,7 @@ object Differ {
   private def _declarations(m : Module) : List[Declaration] = {
     m.components.flatMap(x => x match {
       case d : Declaration => List(d)
+      case FormalDeclaration(d) => List(d) //for semi formal modules (SFModule)
       case _ => Nil
     })
   }
@@ -277,66 +290,58 @@ object Differ {
     val oldch : List[StrictChange] = unmatchedold.map(x => DeleteDeclaration(x))
     val newch : List[StrictChange] = unmatchednew.map(x => AddDeclaration(x))
 
-	  //comparing declaration pairs to see how (if at all) they were updated over the two versions
-	  val updates : List[StrictChange] = matched.flatMap(x => compareDeclarations(x._1,x._2).changes)
-	  val innerChanges = new StrictDiff(updates ++ oldch ++ newch)
+	//comparing declaration pairs to see how (if at all) they were updated over the two versions
+	val updates : List[StrictChange] = matched.flatMap(x => compareDeclarations(x._1,x._2).changes)
+	val innerChanges = new StrictDiff(updates ++ oldch ++ newch)
 	  
-	  (old,nw) match {
-	    case (o : DeclaredTheory, n : DeclaredTheory) =>
+	(old,nw) match {
+	  case (o : DeclaredTheory, n : DeclaredTheory) =>
         var changes : List[StrictChange] = Nil
-
         (o.meta, n.meta) match {
-	    	  case (None,None) => None
-	    	  case (None,Some(p)) => changes = UpdateComponent(o.path, DomComponent, None, Some(OMMOD(p))) :: changes
-	    	  case (Some(p),None) => changes = UpdateComponent(o.path, DomComponent, Some(OMMOD(p)), None) :: changes
-	    	  case (Some(op),Some(np)) =>
+          case (None,None) => None
+          case (None,Some(p)) => changes = UpdateComponent(o.path, DomComponent, None, Some(OMMOD(p))) :: changes
+          case (Some(p),None) => changes = UpdateComponent(o.path, DomComponent, Some(OMMOD(p)), None) :: changes
+          case (Some(op),Some(np)) =>
             if (op != np) {
 	    	      changes = UpdateComponent(o.path, DomComponent, Some(OMMOD(op)), Some(OMMOD(np))) :: changes
             }
         }
-
-	      new StrictDiff(changes) ++ innerChanges
-
-	    case (o : DefinedTheory, n : DefinedTheory) =>
+        new StrictDiff(changes) ++ innerChanges
+	  case (o : DefinedTheory, n : DefinedTheory) =>
         var changes : List[StrictChange] = Nil
-
-	      if (o.df != n.df) {
+	    if (o.df != n.df) {
 	        changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
         }
-
-	      new StrictDiff(changes) ++ innerChanges
-	      
-	    case (o : DeclaredView, n : DeclaredView) =>
+	    new StrictDiff(changes) ++ innerChanges 
+	  case (o : DeclaredView, n : DeclaredView) =>
         var changes : List[StrictChange] = Nil
-
         if (o.from != n.from) {
           changes = UpdateComponent(o.path, DomComponent, Some(o.from), Some(n.from)) :: changes
         }
-
         if (o.to != n.to) {
           changes = UpdateComponent(o.path, CodComponent, Some(o.to), Some(n.to)) :: changes
         }
-
-        new StrictDiff(changes)  ++ innerChanges
-
-	    case (o : DefinedView, n : DefinedView) =>
+        new StrictDiff(changes) ++ innerChanges
+	  case (o : DefinedView, n : DefinedView) =>
         var changes : List[StrictChange] = Nil
-
         if (o.from != n.from) {
           changes = UpdateComponent(o.path, DomComponent, Some(o.from), Some(n.from)) :: changes
         }
-
         if (o.to != n.to) {
           changes = UpdateComponent(o.path, CodComponent, Some(o.to), Some(n.to)) :: changes
         }
-
         if (o.df != n.df) {
           changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
         }
-
-	      new StrictDiff(changes)  ++ innerChanges
+        new StrictDiff(changes) ++ innerChanges
+	  case (o : SFModule, n : SFModule) => 
+	    var changes : List[StrictChange] = Nil
+	    if (o.tokens != n.tokens || o.path != n.path) {
+	      changes = DeleteModule(o) :: AddModule(n) :: changes
+	    }
+	    new StrictDiff(changes)
 	  }
-	}	
+	}
 	
 	/**
 	 * compares two libraries

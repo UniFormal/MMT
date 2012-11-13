@@ -1,11 +1,28 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
-import presentation._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.presentation._
 
-trait SemiFormalObject extends Content {
-   def freeVars : List[LocalName]
+
+trait SemiFormalModule extends Content {
    def governingPath = None
-   def role = Role_value
+   def role = Role_value  
+}
+
+case class FormalDeclaration(decl : Declaration) extends SemiFormalModule {
+  def components = List(decl)
+  def toNode = decl.toNode
+}
+
+trait SemiFormalDecl extends SemiFormalModule
+
+case class FormalComponent(comp : Obj) extends SemiFormalDecl {
+  def components = List(comp)
+  def toNode = comp.toNode
+}
+
+trait SemiFormalObject extends SemiFormalModule {
+     def freeVars : List[LocalName]
 }
 
 case class Text(format: String, obj: String) extends SemiFormalObject {
@@ -20,6 +37,7 @@ case class XMLNode(obj: scala.xml.Node) extends SemiFormalObject {
    override def toString = obj.toString
    def freeVars : List[LocalName] = Nil
 }
+
 case class Formal(obj: Term) extends SemiFormalObject {
    def components = List(obj)
    def toNode = obj.toNode

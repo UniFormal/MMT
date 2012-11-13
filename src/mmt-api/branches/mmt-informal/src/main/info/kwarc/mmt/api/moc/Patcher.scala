@@ -100,6 +100,7 @@ object Patcher {
                                 "compName = " + comp +  "\n" +
                                 "newComp = " + nw.toString + "\n" +
                                 "(Likely caused by mismatched diff and patcher implementations)")
+ 
   }
   
 
