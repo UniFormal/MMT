@@ -21,131 +21,114 @@ class LogicWriter() {
    case class LogicWriterError(msg : String) extends java.lang.Throwable(msg)
    
    // a holder for classification to files
-   private case class FileSys(logicName : String, var basic : List[DECL] = Nil,var sign : List[DECL] = Nil, var morphism : List[DECL] = Nil, var tools : List[DECL] = Nil)
-   private def split(d : DECL, fs : FileSys) : FileSys = {
-     d match {
-     	case d : ADT => fs.basic ::= d
-     	case d : ADTRec => fs.basic ::= d//l map {x => split(x,fs)} 
-     	case d : TYPEDEF => if (d.name == "sigs") fs.basic ::= d else fs.basic ::= d
-     	case d : FUNCTION => fs.tools ::= d 
-     	case d : FUNCTIONRec => fs.tools ::= d
-     	case d : RECORD => if (d.name == "theo") fs.basic ::= d else fs.basic ::= d
-     	case d : EXCEPTION => fs.basic ::= d
-     	case _ => 
-     }
-     fs
-   }
+//   private case class FileSys(logicName : String, var basic : List[DECL] = Nil,var sign : List[DECL] = Nil, var morphism : List[DECL] = Nil, var tools : List[DECL] = Nil)
+//   private def split(d : DECL, fs : FileSys) : FileSys = {
+//     d match {
+//     	case d : ADT => fs.basic ::= d
+//     	case d : ADTRec => fs.basic ::= d//l map {x => split(x,fs)} 
+//     	case d : TYPEDEF => if (d.name == "sigs") fs.basic ::= d else fs.basic ::= d
+//     	case d : FUNCTION => fs.tools ::= d 
+//     	case d : FUNCTIONRec => fs.tools ::= d
+//     	case d : RECORD => if (d.name == "theo") fs.basic ::= d else fs.basic ::= d
+//     	case d : EXCEPTION => fs.basic ::= d
+//     	case _ => 
+//     }
+//     fs
+//   }
   /*
    * splits logic to files
    * figure out what part of logic syntax a declaration is --> compile an appropriate file name --> write declaration to file
    */
-  def compile(decs : List[DECL], lname : String, dir : String) : Unit = {
+   /**
+    * ls - logic syntax
+    * lname - logic name
+    * dir - Hets main directory
+    */
+  def compile(ls : LogicSyntax, lname : String, hetsdir : String) : Unit = {
     
-    val ldir = dir + "/" + lname
+    val ldir = hetsdir + "/" + lname
     val mod = new java.io.File(ldir)
     if (!mod.exists()) { if (!mod.mkdirs()) throw LogicWriterError("logic directory " + mod.toString() + " could not be created, must quit") } 
     
-    val fs = FileSys(lname)
-    decs.reverse foreach { x => split(x,fs)  }
-    val cont : List[String] = Haskell.prog(decs)
-    write( fs, ldir)
+    val comp = new Compiler(ls)
+    val decls = comp.get
+    val labels = comp.getLabels
     
+    val decls_l = decls.zip(labels)
+
+    // crawl through templates instead?
+    val templdir = "/home/aivaras/Hets-src/MMT/newLogicTemplates/" 
+    
+    comp.getLabels.distinct foreach { x =>
+    	val dd = decls_l mapPartial { 
+    	  case (d,y) => if (x == y) Some(d) else  None
+    	}
+    	// pick the corresponding template file
+    	val (templ,fname) : (java.io.File,String) = x match {
+    	  case "sig" => (new java.io.File(templdir + "/" + "Sign.hs"),"Sign.hs")
+    	  case "tree" => (new java.io.File(templdir + "/" + "GTools.hs"),"GTools.hs")
+    	  case "basic" => (new java.io.File(templdir + "/" + "AS.hs"),"AS_BASIC_" + lname + ".hs")
+    	  case "mor" => (new java.io.File(templdir + "/" + "Morphism.hs"),"Morphism.hs")
+    	  case "funs" => (new java.io.File(templdir + "/" + "Tools.hs"),"Tools.hs")
+    	}
+    	write(ldir,lname :: Haskell.prog(dd),fname, templ)
+    }
+    val mainLName = "Logic_" + lname + ".hs"
+    val tempL = new java.io.File(templdir + "/" + "Logic.hs")
+    write(ldir, List(lname), mainLName, tempL)
   }
   
   /*
    * takes a list of DECLarations and an output file name, writes declarations to a file
    */
-  def write(fs : FileSys, logdir : String) : Unit = {    
-	val lname = fs.logicName
-	val main = logdir + "/" + "Logic_" + lname + ".hs"
-	val sign = logdir + "/" + "Sign.hs"
-	val basic = logdir + "/" + "AS_BASIC_" + lname + ".hs"
-	val morphism = logdir + "/" + "Morphism.hs"
-	val tools = logdir + "/" + "Tools.hs"
-	//import qualified Data.Map as Map 
-	val imports : List[String]= List("Logic.Logic"/*,"Common.Id","Common.Map","Common.ProofTree"*/,"qualified Data.Map as Map") map {x => "import " + x + "\n"}
+   /**
+    * logdir - output directory
+    * cont - generated code
+    * filename - destination of generated code file name
+    * templ - template file
+    */
+  def write(logdir : String, cont : List[String], filename : String, templ : java.io.File) = {
     
-	val importSign = ""//"import " + lname + ".Sign\n"
-	val importBasic = "import " + lname + ".AS_BASIC_" + lname + "\n"
-	
-    // write 
-    var fw = File(main)
-    var pre_main = List("module " + " " + lname + "." + "Logic_" + lname + " where\n\n")
-    pre_main ++= imports
-    pre_main ++= List("import " + lname + "." + "AS_BASIC_" + lname + "\n\n")
-    pre_main ++= InsLanguage(lname).print
-    pre_main ++= InsCategory(lname).print
-    File.write(fw,pre_main.mkString)
-    fw = File(basic)
-    var pre_basic = "module " + " " + lname + "." + "AS_BASIC_" + lname + " where\n\n" 
-    File.write(fw,pre_basic + importSign + (fs.basic map {x => Haskell.decl(x) + "\n"} mkString))
-    fw = File(sign)
-    var pre_sign = "module " + " " + lname + "." + "Sign" + " where\n\n"
-    File.write(fw,pre_sign + importBasic + (fs.sign map {x => Haskell.decl(x)} mkString))
-    fw = File(morphism)
-    File.write(fw,fs.morphism map {x => Haskell.decl(x)} mkString)
-    fw = File(tools)
-    File.write(fw,fs.tools map {x => Haskell.decl(x)} mkString)
+    println("reading template " + templ.toString())
+    val templdir = "/home/aivaras/Hets-src/MMT/newLogicTemplates/"
+    val file = File(new java.io.File(logdir + "/" + filename))    
+    println("writing to " + file.toString())
+    
+    val src = scala.io.Source.fromFile(templ).mkString
+//    println(src)
+    val lname = cont.head
+    val logic : List[String] = cont.tail
+    File.write(file,src.replaceAll("""<LogicName>""", lname).replaceAll("""<insert>""",logic.mkString))
+//    fillTemplate(new java.io.File(logdir + "/" + filename), cont)
   }
   
-//  private val preamble = "module " 
-}
+  /** takes a file and content, fills in the content of the file, returns error list (unfilled tags) */
+  def fillTemplate(template : java.io.File, cont : List[String]) : List[LogicWriterError] = {
+    var errList = Nil
+    val tag = """<[\w]*>""".r
+	   // read logic template file
+       //TODO local, make global!
+    val lname = cont(0) // assume first element is logic name
+	   // replace tags with names 
 
-sealed abstract class CLASS() {
-//  val name = lname.head.toUpperCase + lname.substring(1)
-  var start = "instance "
-  var sign = "()"
-  var form = "()"
-  var morph = "()" //// source, target, propMap
-  var symb = "()"
-  var basic_spec = "()"  
-  var symb_items = "()"
-  var symb_map_items = "()"
+    var logic : List[String] = cont.tail
+    File.ReadLineWise(File(template))(x => logic ++= List(x) )
+    val filled = logic map   {
+    		x => val q = x //replaceAll("""<LogicName>""", lname) replaceAll("""<insert>""","logic.mkString")// replaceAll("<ptree>","") replaceAll("<sign>","") replaceFirst("<fun","")
+//    		errList = errList ::: (tag findAllIn filled)
+//    		q map { y => 
+//    		  errList = errList ::: (tag findAllIn y.toString()).toList
+//    		}
+    		q
+    }
+//    println(filled.mkString("\n"))
+    File.write(File(template),filled.mkString("\n"))	
     
+	   // write file
+    //TODO regex match any remaining <tags>, give list as errors
     
-  var className = "()"
-  var args : List[String] = List() // list of instance arguments
-  var funs : List[String] = List() // list of function declarations in a class to be implemented
-  var impl : List[String] = List() // list of implementations
-}
-case class InsLanguage(lname : String) extends CLASS {
-  className = "Language"
+    Nil map {x => LogicWriterError("tag not matched: " + x)}
     
-  val name = lname.head.toUpperCase + lname.substring(1)
-  var description = "no decription" 
-  def apply(descr : String) = { description = descr}
-  def print : List[String] = List("data " + name + " = " + name + " deriving Show", 
-    start + name + " where\n" + "description _ = " + "\"" + description + "\"") map {x => x + "\n"}
-}
-
-case class InsCategory(lname : String) extends CLASS {
-  val name = lname.head.toUpperCase + lname.substring(1)
-  val ide = "()"
-  val dom = "()"
-  val com = "()"
-  def print : List[String] = List(start + " Category " + sign + " " + morph + " where ",
-		  "ide = " + ide,
-		  "dom = " + dom,
-		  "com = " + com
-//		  "inInclusion = ()",
-//		  "legal_mor = ()",
-//		  "composeMorphisms = ()"
-      ) map {x => x + "\n"}
-}
-
-case class InsSyntax(lname : String) extends CLASS {
-  val name = lname.head.toUpperCase + lname.substring(1)
-  def print : List[String] =  List (
-    start + "lname",
-    basic_spec,
-    symb_items,
-    symb_map_items,
-    "where",
-    ""
-  )
-}
-
-case class InsSentences(lname : String) extends CLASS {
-  val name = lname.head.toUpperCase + lname.substring(1)
+  }
   
 }
