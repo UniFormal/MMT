@@ -3,7 +3,19 @@ package info.kwarc.mmt.lf.compile
 abstract class Program {
    /** stores the list of declarations in reverse declaration-order */
    private var decls : List[DECL] = Nil
-   //TODO for hets specific compiler - have separate lists of declarations for a logic file system?
+   /** stores the list of labels for Hets file structure */
+   private var labels : List[String] = Nil
+   
+   def addTag(key : String) = { 
+     labels = labels map { x => x match { 
+       case "?" => key
+       case q => q
+     } 
+     }
+   }
+   
+   def getLabels() : List[String] = labels.reverse
+   
    /** adds a declaration
     *  merges consecutive ADT's and FUNCTION's into ADTRec and FUNCTIONRec
     */
@@ -13,14 +25,15 @@ abstract class Program {
          case (a: ADT, (b: ADT) :: tl) => ADTRec(List(b,a)) :: tl
          case (f: FUNCTION, FUNCTIONRec(fs) :: tl) => FUNCTIONRec(fs ::: List(f)) :: tl
          case (f: FUNCTION, (g: FUNCTION) :: tl) => FUNCTIONRec(List(g,f)) :: tl
-         case _ => d :: decls
+         case _ => { labels = "?" :: labels; d :: decls}
       }
    }
+   
    /** returns the list of declarations in declaration-order
     *  consecutive ADT's and FUNCTION's are merged into ADTRec and FUNCTIONRec
     */
    def get : List[DECL] = decls.reverse
-
+   
    /** a helper object for conveniently adding declarations via
     *  val declare(names: Seq[ID]) = (d: DECL)
     *  This adds d to the list of declarations and binds names to the ID's declared by d.
@@ -39,6 +52,7 @@ abstract class Program {
              case e: EXCEPTION => List(e.name)
              case _ => null
           }
+//          ct += 1
           if (s == null) None else Some(s.map(ID(_)))
        }
    }

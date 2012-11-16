@@ -215,7 +215,7 @@ object Test {
 //	 val name : String = "Propositional"
 	   
 	 val lw = new LogicWriter
-	 lw.compile(l, theoName, dir)
+	 lw.compile(ls, theoName, dir)
 	 
 //	 println(theo.toString)
     

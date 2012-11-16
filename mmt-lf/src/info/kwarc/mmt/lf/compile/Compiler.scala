@@ -24,8 +24,9 @@ class Compiler(log: LogicSyntax) extends Program {
    def argsToStringWithID(args: List[CatRef]) = args.foldLeft(" of id")(_ + " * " + _)
 
    //auxiliary types for ids for better readability
-   val declare(id) = "id" typedef ID("string")
+   val declare(id) = "id" typedef ID("string")  
    val declare(vrb) = "var" typedef ID("int")
+   
    
    // the categories
    val cats = log.cats map {case Category(c, cons) =>
@@ -48,27 +49,33 @@ class Compiler(log: LogicSyntax) extends Program {
       val declare(_*) = p adt (p of (id, argsToEXP(args) /*: _**/))
    }
    // the labeled union type of all declaration types
-   //TODO arguments of CONS should not be declared as ALIST for decls
    val ofdecls = log.decls map {case Declaration(p, _) =>
       CONS(p + "_decl", List(p))
    }
    val declare(decl, _*) = "decl" adt(ofdecls : _*)
-
+   addTag("basic")
    // the type of signatures
    val declare(sigs) = "sigs" typedef LIST(decl)
+   
    // the type of theories
    //TODO find axiom declaration - should take a single declaration, not a list?
    val declare(theo, sign, axioms) =
-     "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))
+     "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))  
+   addTag("sig")
    
    //TODO Basic_spec  = Basic_spec [Decl]
    val declare(basic_spec) = "basic_spec" typedef LIST(decl) 
+   addTag("basic")
    // declare morphism
    val declare(morphism,source,target) = "morphism" record ("source" ::: sigs, "target" ::: sigs)
+   addTag("mor")
    // symbols
-   val declare(symb,sname) = "symb" record ("sname" ::: id)  
+   val declare(symb,sname) = "symb" record ("sname" ::: id)
+   addTag("basic")
      
    val declare(error) = "error" exception
+   
+   addTag("basic")
    
    // parse tree
    val declare(tree, varr, app, bind, tbind) = "tree" adt (
@@ -77,6 +84,7 @@ class Compiler(log: LogicSyntax) extends Program {
        CONS("bind",List(id,id,ID(""))),
        CONS("tbind",List(id,id,ID(""),ID("")))
    )
+   addTag("tree")
    
    // the functions that map parse trees to expressions
    
@@ -158,10 +166,12 @@ class Compiler(log: LogicSyntax) extends Program {
           ID("instance")("i", "p", "args") ==> declfrompt
        )
    }
+   
    // functions that parse signatures and theories
    val declare(sign_from_pt) = "sign_from_pt" function sigs <-- ("sg" :: "parse.sign") =|= {case sg =>
       MAP(sg, decl_from_pt)
    }
+   
    val declare(axiom_from_pt) = "axiom_from_pt" function log.form <-- ("ax" :: "parse.tree") =|= {case ax =>
       parse(log.form, ax)
    }
@@ -194,10 +204,11 @@ class Compiler(log: LogicSyntax) extends Program {
    // a function that maps declarations to LF instance declarations
    val declare(decl_to_lf) =
      "decl_to_lf" function "lf.decl" <-- ("d" :: decl) == {"d" Match (
-        log.decls map {case Declaration(p, args) =>
-           ID(p + "_decl")("n", varlist(args)) ==> lf.instance(p, "n", recvarlist(args)) 
+        log.decls map {case Declaration(p, args) => {
+           ID(p + "_decl")("n", varlist(args)) ==> lf.instance(p, "n", recvarlist(args)) } 
         } :_*
      )}
+   
 
    // functions that map signatures and theories to LF signatures
    val declare(sign_to_lf) = "sign_to_lf" function "lf.sign" <-- ("sg" :: sigs) == {
@@ -209,4 +220,6 @@ class Compiler(log: LogicSyntax) extends Program {
    val declare(theo_to_lf) = "theo_to_lf" function "lf.sign" <-- ("th" :: theo) =|= {case th => 
        sign_to_lf(th __ sign) ::: MAP(th __ axioms, axiom_to_lf)
    }
+   addTag("funs")
+   
 }
