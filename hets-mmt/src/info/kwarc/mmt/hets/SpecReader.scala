@@ -1,3 +1,10 @@
+/**
+ * This is a logic specification file reading wrapper:
+ * Main -> filename.hets -> SpecReader(filename) -> mmt.backend.TextReader -> Logic in internal MMT language
+ * 
+ * created by Aivaras:
+ * a.jakubauskas@jacobs-university.de
+*/
 package info.kwarc.mmt.hets
 
 import info.kwarc.mmt.api._

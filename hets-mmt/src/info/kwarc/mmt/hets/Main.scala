@@ -1,3 +1,12 @@
+/**
+ * This is the main wrapper class for MMT.
+ * It imports main MMT class, parses twelf/spec files upon invocation, calls '
+ * logic translation->abstract syntax->concrete syntax->Hets style logic definition' 
+ *   pipeline
+ * 
+ * created by Aivaras:
+ * a.jakubauskas@jacobs-university.de
+ */
 package info.kwarc.mmt.hets
 
 
@@ -28,12 +37,10 @@ import info.kwarc.mmt.api.frontend._ // for report
 import scala.sys.process._
 
 //TODO implementation
-/*	should be able to read in twelf files
- * twelf++ (typecheck and pattern match) the read files
- * 
- * read in pattern instance specification file (we have a logic + patterns already)
- * check the specifications, give sensible error messages if does not pass
- * 
+/*	+ should be able to read in twelf files
+ *  + twelf++ (typecheck and pattern match) the read files
+ *  - read in pattern instance specification file (we have a logic + patterns already)
+ *  - check the specifications, give sensible error messages if does not pass
  */
 case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg)
 
@@ -53,6 +60,16 @@ object Main {
          val flag = args(0)
          println("flag: " + flag)
          val filename = args(1) // take first argument - file name of the source
+         
+         //tokenize/split, [space] as separator
+         val argl = args.toList
+         
+         if (argl contains "-newLogic") {
+           
+         }
+         
+         //TODO filter out [flags], filename
+         //TODO have a foreach match flag --> actions
          
          val fl = File(new java.io.File(filename))
          if (!(new java.io.File(filename).exists())) {
@@ -88,14 +105,19 @@ object Main {
          println("translating " + thname + " to logic syntax")
          val ls = tls.translateTheory(theo)
          println("compiling pseudo-code")
-         val c = new Compiler(ls)
-         val l = c.get
+//         val c = new Compiler(ls)
+//         val l = c.get
          
          val dir : String = "/home/aivaras/Hets-src/"
          
          val lw = new LogicWriter
          println("writing to files in " + dir + thname)
-         lw.compile(l, thname, dir)
+//         lw.compile(ls, thname, dir)
+         
+//         println(c.compare)
+         
+//         println(c.getFileMap("test"))
+                  
          
          
        } // <------------ end of main
