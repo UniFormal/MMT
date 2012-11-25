@@ -324,7 +324,7 @@ sealed trait NotationElement {
  */
 sealed abstract class Argument(val pos : Int) extends NotationElement
 
-case class StdArg(override val pos : Int) extends Argument(pos) {
+case class StdArg(p : Int) extends Argument(p) {
   def matches(tk : Token, isBinder : Boolean = false, tolerant : Boolean = false) : Boolean = isBinder match { 
     case true =>
       tk match {
@@ -345,7 +345,7 @@ case class StdArg(override val pos : Int) extends Argument(pos) {
     <std-arg>{pos}</std-arg>
 }
 
-case class SeqArg(override val pos : Int, delimiter : Delimiter) extends Argument(pos) {
+case class SeqArg(p : Int, delimiter : Delimiter) extends Argument(p) {
   override def toString = (pos + 1).toString + "/" + delimiter.toString 
 
   def toNode = 
