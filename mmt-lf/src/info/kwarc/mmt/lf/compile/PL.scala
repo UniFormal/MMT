@@ -1,3 +1,8 @@
+/**
+ * abstract syntax for propositional logic with some basic patterns
+ * 
+ * created by Aivaras Jakubauskas a.jakubauskas@jacobs-university.de
+ */
 package info.kwarc.mmt.lf.compile
 
 import info.kwarc.mmt.lf.compile._
