@@ -1,3 +1,14 @@
+/**
+ * Concrete syntax compiler
+ * Takes an abstract syntax (LogicSyntax)
+ * Produces concrete pseudo-code (a list of declarations)
+ * 
+ * created by Florian Rabe
+ *
+ * modifications: added a list of labels (strings) that is constructed along with the declarations
+ * modified by Aivaras:
+ * a.jakubauskas@jacobs-university.de
+ */
 package info.kwarc.mmt.lf.compile
 
 object Compiler {
@@ -46,7 +57,8 @@ class Compiler(log: LogicSyntax) extends Program {
    val decls = log.decls map {case Declaration(p, args) =>
      // datatype p = p of a1 ... an
      //TODO must be converted to a sequence!
-      val declare(_*) = p adt (p of (id, argsToEXP(args) /*: _**/))
+//      val q = p of (id, argsToEXP(args) : _*)
+      val declare(_*) = p adt (p of (id, argsToEXP(args)) ) 
    }
    // the labeled union type of all declaration types
    val ofdecls = log.decls map {case Declaration(p, _) =>
@@ -58,12 +70,10 @@ class Compiler(log: LogicSyntax) extends Program {
    val declare(sigs) = "sigs" typedef LIST(decl)
    
    // the type of theories
-   //TODO find axiom declaration - should take a single declaration, not a list?
    val declare(theo, sign, axioms) =
      "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))  
    addTag("sig")
    
-   //TODO Basic_spec  = Basic_spec [Decl]
    val declare(basic_spec) = "basic_spec" typedef LIST(decl) 
    addTag("basic")
    // declare morphism

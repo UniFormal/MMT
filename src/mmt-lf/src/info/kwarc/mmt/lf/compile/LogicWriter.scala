@@ -1,3 +1,8 @@
+/**
+ * takes an abstract logic syntax, produces concrete syntax declarations via Compiler, then translates those to haskell code via Haskell and writes the declarations to their according files in Hets-like file collection 
+ * 
+ * created by Aivaras Jakubauskas a.jakubauskas@jacobs-university.de
+ */
 package info.kwarc.mmt.lf.compile
 
 import info.kwarc.mmt.lf.compile._

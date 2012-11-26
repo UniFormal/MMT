@@ -1,3 +1,8 @@
+/**
+ * concrete syntax
+ * 
+ * created by Florian Rabe
+ */
 package info.kwarc.mmt.lf.compile
 
 /** a type (family) with constructors; possible type arguments are erased */

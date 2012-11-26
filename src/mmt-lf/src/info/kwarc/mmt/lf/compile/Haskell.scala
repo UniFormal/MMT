@@ -1,3 +1,12 @@
+/**
+ * Concrete syntax translator to a specific (Haskell) programming language
+ * takes pseudo-language declarations, produces Haskell declarations
+ * 
+ * created by Florian Rabe
+ * 
+ * modified by Aivaras:
+ * a.jakubauskas@jacobs-university.de
+ */
 package info.kwarc.mmt.lf.compile
 
 case class Unsupported(msg: String) extends java.lang.Throwable 
