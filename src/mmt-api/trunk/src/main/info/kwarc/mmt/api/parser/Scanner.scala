@@ -338,6 +338,9 @@ sealed abstract class Marker
 case class Delim(s: String) extends Marker with Found {
    override def toString = s
 }
+case class SecDelim(s: String, wsAllowed: Boolean = true) extends Marker with Found {
+   override def toString = (if (wsAllowed) "" else "_") + s
+}
 /** @param n absolute value is the argument position, negative iff it is in the binding scope */
 case class Arg(n: Int) extends Marker {
    override def toString = n.toString
@@ -439,7 +442,7 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
    }
    /** move a delimiter from left to found */
    private def deleteDelim {
-      found ::= left.head.asInstanceOf[Delim]
+      found ::= left.head.asInstanceOf[Found]
       left = left.tail
    }
    /** pick all available Token's as Arg(n) */
@@ -536,6 +539,14 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
                        case _ => // impossible
                     }
                  }
+         case (Nil, SecDelim(s, wsAllowed) :: _) =>
+             if (s == currentToken.word && (wsAllowed || ! currentToken.whitespaceBefore) && numCurrentTokens == 0) {
+                onApply {
+                   deleteDelim
+                }
+             } else {
+                false //abort
+             }
          case (ns, Delim(s) :: _) if s == currentToken.word => ns match {
             case Nil =>
                onApply {
