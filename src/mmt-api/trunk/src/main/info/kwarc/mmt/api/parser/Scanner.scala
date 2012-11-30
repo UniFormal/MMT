@@ -13,6 +13,11 @@ case class Token(word: String, first:Int, whitespaceBefore: Boolean) extends Tok
 }
 
 object TokenList {
+   import java.lang.Character._
+   val marks = List(COMBINING_SPACING_MARK, ENCLOSING_MARK, NON_SPACING_MARK)
+   val numbers = List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER, OTHER_NUMBER)
+   val connectors = List(CONNECTOR_PUNCTUATION)
+   def isLetter(c: Char) = c.isLetter || (marks contains c)
    // a simple tokenizer that splits Token's at white space
    def apply(s: String) : TokenList = {
       val l = s.length
@@ -21,8 +26,9 @@ object TokenList {
       var current = "" // previously read prefix of the current Token
       var tokens: List[Token] = Nil // previously read Token's in reverse order
       while (i < l) {
+         val c = s(i) 
          // whitespace always breaks Token's
-         if (s(i).isWhitespace) {
+         if (c.isWhitespace) {
             tokens ::= Token(current, i-current.length, whitespace)
             current = ""
             whitespace = true
@@ -31,7 +37,7 @@ object TokenList {
                i += 1
             }
          } else {
-            current = current + s(i)
+            current += c
          }
          //go to next Char
          i += 1
