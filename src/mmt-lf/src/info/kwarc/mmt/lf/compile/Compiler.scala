@@ -56,9 +56,7 @@ class Compiler(log: LogicSyntax) extends Program {
    // the declarations
    val decls = log.decls map {case Declaration(p, args) =>
      // datatype p = p of a1 ... an
-     //TODO must be converted to a sequence!
-//      val q = p of (id, argsToEXP(args) : _*)
-      val declare(_*) = p adt (p of (id, argsToEXP(args)) ) 
+      val declare(_*) = p adt (p of ((id :: argsToEXP(args) ) : _*) )   
    }
    // the labeled union type of all declaration types
    val ofdecls = log.decls map {case Declaration(p, _) =>
@@ -169,7 +167,7 @@ class Compiler(log: LogicSyntax) extends Program {
               ERROR("error", STRING("bad number of arguments, expected " + args.length))
            ),
            rest
-        )
+        )      
    }
    val declare(decl_from_pt) = "decl_from_pt" function decl <-- ("d" :: "parse.decl") =|= {case d =>
        d Match (
