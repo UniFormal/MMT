@@ -26,9 +26,9 @@ class MyList[A](l : List[A]) {
       var in : List[(B, A)] = l.map(x => (f(x), x))      
       var out : List[(B, List[A])] = Nil
       def add(e : (B,A), found: List[(B, List[A])], todo: List[(B, List[A])]) {todo match {
-        case Nil => out = (e._1,List(e._2)) :: found
+        case Nil => out ::= (e._1,List(e._2))
         case hd :: tl => if (hd._1 == e._1)
-           out = found ::: (hd._1, e._2 :: hd._2) :: todo
+           out = found ::: (hd._1, e._2 :: hd._2) :: tl
         else add(e, hd :: found, tl) 
       }}
       in foreach {add(_, Nil, out)}
