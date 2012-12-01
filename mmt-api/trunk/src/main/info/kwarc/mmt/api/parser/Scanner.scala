@@ -14,35 +14,69 @@ case class Token(word: String, first:Int, whitespaceBefore: Boolean) extends Tok
 
 object TokenList {
    import java.lang.Character._
-   val marks = List(COMBINING_SPACING_MARK, ENCLOSING_MARK, NON_SPACING_MARK)
+   val marks = List()
    val numbers = List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER, OTHER_NUMBER)
    val connectors = List(CONNECTOR_PUNCTUATION)
    def isLetter(c: Char) = c.isLetter || (marks contains c)
    // a simple tokenizer that splits Token's at white space
    def apply(s: String) : TokenList = {
       val l = s.length
-      var whitespace = true //there was a whitespace before the current Token
-      var i = 0  // position of net Char in s
+      // lexing state
+      var i = 0        // position of net Char in s
       var current = "" // previously read prefix of the current Token
-      var tokens: List[Token] = Nil // previously read Token's in reverse order
+      var connect = false // current.last.getType == CONNECTOR_PUNCTUATION
+      var whitespace = true //there was a whitespace before the current Token
+      var tokens : List[Token] = Nil // Token's found so far in reverse order
+      // the lexing loop
       while (i < l) {
-         val c = s(i) 
-         // whitespace always breaks Token's
+         val c = s(i) // current Char
+         val tp = c.getType // current Char's type
+         // whitespace always starts a new Token, 
          if (c.isWhitespace) {
-            tokens ::= Token(current, i-current.length, whitespace)
-            current = ""
+            if (current != "") {
+               tokens ::= Token(current, i-current.length, whitespace)
+               current = ""
+            } 
             whitespace = true
-            //skip subsequent whitespace
-            while (i+1<l && s(i+1).isWhitespace) {
-               i += 1
-            }
          } else {
-            current += c
+            // we are in a multi-character Token
+            tp match {
+               // after a connector, everything continues the Token
+               case _ if connect =>
+                  current += c
+                  connect = false
+               // letters, marks, and numbers continue the Token
+               case _ if c.isLetter =>
+                  current += c
+               case COMBINING_SPACING_MARK | ENCLOSING_MARK | NON_SPACING_MARK =>
+                  current += c
+               case DECIMAL_DIGIT_NUMBER | LETTER_NUMBER | OTHER_NUMBER =>
+                  current += c
+               // connectors are remembered
+               case CONNECTOR_PUNCTUATION =>
+                  current += c
+                  connect = true
+               // everything else:
+               case _ =>
+                  // end previous Token, if any
+                  if (current != "") {
+                     tokens ::= Token(current, i-current.length, whitespace)
+                     current = ""
+                     whitespace = false
+                  }
+                  // look ahead: if a connector follows, start a multi-character Token
+                  // otherwise, create a single-character Token
+                  if (i < l-1 && s(i+1).getType == CONNECTOR_PUNCTUATION) {
+                     current += c
+                  } else {
+                     tokens ::= Token(c.toString, i, whitespace)
+                  }
+            }
+            whitespace = false
          }
-         //go to next Char
          i += 1
       }
-      //add the last Token if any
+      //add the last Token, if any
       if (current != "")
          tokens ::= Token(current, i-current.length, whitespace)
       new TokenList(tokens.reverse)
@@ -88,40 +122,25 @@ class TokenList(private var tokens: List[TokenListElem]) {
     */
    def reduce(an: ActiveNotation): (Int,Int) = {
       val found = an.getFound
-      var numReducedTokens = 0
       var newTokens : List[TokenListElem] = Nil
       def doFoundArg(fa: FoundArg) {fa match {case FoundArg(sl, n) =>
-            val len = sl.length
-            numReducedTokens += len
-            if (len == 1) {
+            if (sl.length == 1) {
                newTokens ::= tokens(sl.start)
             } else {
                newTokens ::= new UnscannedList(new TokenList(sl.toList))
             }
       }}
       found foreach {
-         case _:Delim =>
-            numReducedTokens += 1
+         case _:FoundDelim =>
          case fa: FoundArg =>
             doFoundArg(fa)
          case FoundSeqArg(n, args) =>
             args foreach doFoundArg
-            numReducedTokens += args.length-1
          case FoundVar(n, vr, tpOpt) =>
             doFoundArg(vr)
-            numReducedTokens += 1
             tpOpt foreach doFoundArg
       }
-      val from = found.head match {
-         case _: Delim => an.firstToken
-         case FoundArg(slice,_) => slice.start
-         case FoundSeqArg(_, args) => args match {
-            case Nil => an.firstToken
-            case fa::_ => fa.slice.start
-         }
-         case FoundVar(_, vr, _) => vr.slice.start
-      }
-      val to = from + numReducedTokens
+      val (from,to) = an.fromTo
       val matched = new MatchedList(newTokens.reverse, an)
       tokens = tokens.take(from) ::: matched :: tokens.drop(to)
       (from,to)
@@ -136,6 +155,14 @@ case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
    def length = next - start
 }
 
+object ActiveNotation {
+   type Applicability = Int
+   val Applicable = 1
+   val NotApplicable = 0
+   val Abort = -1
+}
+import ActiveNotation._
+
 /** scans a TokenList against some notations
  * @param tl the TokenList to scan
  * matched notations are applied to tl, i.e., tl always holds the current TokenList 
@@ -143,7 +170,7 @@ case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
 class Scanner(val tl: TokenList) {
    /** logging */
    private def log(s: => String) {
-      //println(toString); println(s); println
+      println(toString); println(s); println
    }
    override def toString = {
       "token list: " + tl + "\n" +
@@ -190,17 +217,20 @@ class Scanner(val tl: TokenList) {
     *   the first n active notations are closable
     *   b after closing the first n notations, there is an active notation left and it is applicable   
     */
-   private def checkActive(ans: List[ActiveNotation], closable: Int) : (Int, Boolean) = ans match {
-      case Nil => (closable, false)
+   private def checkActive(ans: List[ActiveNotation], closable: Int) : (Int, Applicability) = ans match {
+      case Nil => (closable, NotApplicable)
       case an::rest => 
-         if (an.applicable(currentToken)) {
-            (closable, true)
-         } else {
-            if (an.closable) {
-               checkActive(rest, closable + 1)
-            } else {
-               (closable, false)
-            }
+         an.applicable(currentToken, currentIndex) match {
+            case Applicable =>
+               (closable, Applicable)
+            case Abort =>
+               (closable, Abort)
+            case NotApplicable =>
+               if (an.closable == Applicable) {
+                  checkActive(rest, closable + 1)
+               } else {
+                  (closable, NotApplicable)
+               }
          }
    }
    /** applies the first active notation (precondition: must be applicable) */
@@ -242,15 +272,15 @@ class Scanner(val tl: TokenList) {
           resetPicker
           an.close
        }
+       active = active.tail
        log("closed current notation, found: " + an)
        val (from,to) = tl.reduce(an)
-       log("reduced from " + from + " to " + to)
        val numReducedTokens = to - from
-       active = active.tail
        // the closed notation reduces to 1 additional Token that is shifted in the surrounding group 
        currentIndex -= numReducedTokens - 1
        numTokens -= numReducedTokens - 1
-   }
+       log("reduced from (inclusive) " + from + " to (inclusive) " + (to-1))
+  }
    /** close as many active notations as possible
     * @return true if all notations were closed
     */
@@ -258,7 +288,7 @@ class Scanner(val tl: TokenList) {
       active match {
          case Nil => true
          case hd::_ =>
-            if (hd.closable) {
+            if (hd.closable == Applicable) {
                closeFirst(true)
                closeAllPossible
             } else
@@ -275,6 +305,7 @@ class Scanner(val tl: TokenList) {
    /** tail-recursively going through the Token's */
    @tailrec
    private def next {
+      var goToNextToken = true
       tl(currentIndex) match {
          case ml: MatchedList =>
             ml.scan(notations)
@@ -287,11 +318,19 @@ class Scanner(val tl: TokenList) {
             //determine if/how an active notation is applicable
             val (closable, anyActiveApplicable) = checkActive(active, 0)
             log("closable: " + closable + ", next applicable: " + anyActiveApplicable)
-            if (anyActiveApplicable) {
-               //close the first active notations that are closable, then apply the next one 
-               Range(0,closable) foreach {_ => closeFirst(true)}
-               applyFirst(false)
-            } else {
+            anyActiveApplicable match {
+               case Abort =>
+                  log("aborting")
+                  //drop innermost notations up to and including the one to be aborted (= active(closable+1))
+                  currentIndex = active(closable).firstToken + 1
+                  active = active.drop(closable+1)
+                  goToNextToken = false
+                  //numCurrentTokens must be reset as well
+               case Applicable => 
+                  //close the first active notations that are closable, then apply the next one 
+                  Range(0,closable) foreach {_ => closeFirst(true)}
+                  applyFirst(false)
+               case NotApplicable =>
                   //determine if a new notation can be opened 
                   val applicable = notations filter {a => a.applicable(currentToken)}
                   applicable match {
@@ -302,7 +341,7 @@ class Scanner(val tl: TokenList) {
                         log("opening notation at " + currentToken)
                         val an = hd.open(this, currentIndex)
                         active ::= an
-                        an.applicable(currentToken) //true by invariant but must be called for precondition of apply
+                        an.applicable(currentToken, currentIndex) //true by invariant but must be called for precondition of apply
                         applyFirst(true)
                      case Nil =>
                         //move one token forward
@@ -311,22 +350,25 @@ class Scanner(val tl: TokenList) {
                   }
             }
       }
-      currentIndex += 1
-      //check if there is next token left
-      if (currentIndex < numTokens)
-        //continue with the next token
-        next
-      else {
-         //close remaining notations
-         val allClosed = closeAllPossible
-         if (! allClosed) {
-            log("backtracking")
-            //active notations left, but no further tokens left -> backtracking
-            currentIndex = active.head.firstToken + 1
-            //numCurrentTokens must be reset as well
-            active = active.tail
+      if (goToNextToken) {
+         currentIndex += 1
+         //check if there is next token left
+         if (currentIndex < numTokens) {
             next
+         } else {
+            //close remaining notations
+            val allClosed = closeAllPossible
+            if (! allClosed) {
+               log("backtracking")
+               //active notations left, but no further tokens left -> backtracking
+               currentIndex = active.head.firstToken + 1
+               active = active.tail
+               //TODO numCurrentTokens must be reset as well
+               next
+            }
          }
+      } else {
+         next
       }
    }
    /** scans for some notations and applies matches to tl
@@ -341,30 +383,34 @@ class Scanner(val tl: TokenList) {
 }
 
 sealed abstract class Marker
-case class Delim(s: String) extends Marker with Found {
+sealed abstract class Delimiter extends Marker {
+   val s: String
+}
+case class Delim(s: String) extends Delimiter {
    override def toString = s
 }
-case class SecDelim(s: String, wsAllowed: Boolean = true) extends Marker with Found {
+case class SecDelim(s: String, wsAllowed: Boolean = true) extends Delimiter {
    override def toString = (if (wsAllowed) "" else "_") + s
 }
+
 /** @param n absolute value is the argument position, negative iff it is in the binding scope */
 case class Arg(n: Int) extends Marker {
    override def toString = n.toString
+   def by(s:String) = SeqArg(n,Delim(s))
 }
 /** @param n absolute value is the argument position, negative iff it is in the binding scope
  *  @param sep the delimiter between elements of the sequence 
  */
 case class SeqArg(n: Int, sep: Delim) extends Marker {
-   override def toString = n.toString + "/" + sep
+   override def toString = n.toString + sep + "..."
 }
 case class Var(n: Int, key: Delim) extends Marker {
-   override def toString = n.toString + key + "K"
+   override def toString = n.toString + key + "_"
 }
-/*
+//TODO: currently not parsed
 case class SeqVar(n: Int, key: Delim, sep: Delim) extends Marker {
-   override def toString = "V" + n + key + "K/" + sep
+   override def toString = Var(n,key).toString + sep + "..."
 }
-*/
 
 /**
  * helper object 
@@ -381,22 +427,41 @@ object Arg {
    def split(ms: List[Marker]) = splitAux(Nil,ms)
 }
 
-sealed trait Found
+object NotationConversions {
+   implicit def fromInt(n:Int) = Arg(n)
+   implicit def fromString(s:String) = Delim(s)
+}
+
+sealed abstract class Found {
+   /** @return start (inclusive) and end (exclusive) of this Token, None if length 0 */
+   def fromTo: Option[(Int, Int)]
+}
+case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
+   override def toString = "D:" + delim
+   def fromTo = Some((pos, pos+1))
+} 
 case class FoundArg(slice: TokenSlice, n: Int) extends Found {
    override def toString = n.toString + ":" + slice.toString
+   def fromTo = Some((slice.start,slice.next))
 }
 case class FoundSeqArg(n: Int, args: List[FoundArg]) extends Found {
    override def toString = n.toString + args.map(_.toString).mkString(":(", " ", ")")
+   def fromTo = if (args.isEmpty) None else Some((args.head.slice.start, args.last.slice.next))
 }
 case class FoundVar(n: Int, vr: FoundArg, tp: Option[FoundArg]) extends Found {
-   override def toString = vr.toString + ":" + tp.toString
+   override def toString = vr.toString + ":" + tp.map(_.toString).getOrElse("_")
+   def fromTo = if (tp.isEmpty) vr.fromTo else Some((vr.slice.start, tp.get.slice.next))
+}
+case class FoundSeqVar(n: Int, vrs: List[FoundVar]) extends Found {
+   override def toString = n.toString + ":" + vrs.map(_.toString).mkString("(", " ", ")")
+   def fromTo = if (vrs.isEmpty) None else Some((vrs.head.fromTo.get._1, vrs.last.fromTo.get._2))
 }
 
-class Notation(val name: String, val markers: List[Marker]) {
+class Notation(val name: String, val markers: List[Marker], val priority: Int) {
    override def toString = "Notation for " + name + ": " + markers.map(_.toString).mkString(" ") 
    // the first delimiter of this notation
    private val firstDelimString : Option[String] = markers mapFind {
-      case Delim(s) => Some(s)
+      case d: Delimiter => Some(d.s)
       case SeqArg(_, Delim(s)) => Some(s)
       case _ => None
    }
@@ -412,16 +477,37 @@ class Notation(val name: String, val markers: List[Marker]) {
 }
 
 object Notation {
-   def apply(name: String)(ms: Any*): Notation = {
+   def apply(name: String, priority: Int)(ms: Any*): Notation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
-         case s: String => Delim(s)
+         case "" => throw ParseError("not a valid marker")
+         case s: String if s.endsWith("...") =>
+            var i = 0
+            while (s(i).isDigit) {i+=1}
+            val n = s.substring(0,i).toInt
+            val rem = s.substring(i,s.length-3)
+            val p = rem.indexOf("_")
+            if (p == -1)
+               SeqArg(n, Delim(rem))
+            else {
+               val key = rem.substring(0,p)
+               val sep = rem.substring(p+1)
+               SeqVar(n, Delim(key), Delim(sep))
+            }
+         case s: String if s.endsWith("_") =>
+            var i = 0
+            while (s(i).isDigit) {i+=1}
+            val n = s.substring(0,i).toInt
+            val d = s.substring(i,s.length-1)
+            Var(n, Delim(d))
+         case s:String => Delim(s)
          case m: Marker => m
-         case _ => throw ParseError("not a valid marker")
+         case m => throw ParseError("not a valid marker" + m)
       }
-      new Notation(name, markers)
+      new Notation(name, markers, priority)
    }
 }
+
 
 /** An ActiveNotation is a notation whose firstDelimToken has been scanned
  *  An ActiveNotation maintains state about the found and still-expected markers
@@ -436,6 +522,14 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
    private var found : List[Found] = Nil
    /** all found tokens */
    def getFound = found.reverse
+   /** @return start (inclusive) and end (exclusive) of this notation
+    * only well-defined if the notation is closed
+    */
+   def fromTo : (Int, Int) = {
+      val from = found.reverse.mapFind {f => f.fromTo map(_._1)}.get
+      val to   = found.mapFind {f => f.fromTo map(_._2)}.get
+      (from,to)
+   }
    /** the markers that are still expected */
    private var left : List[Marker] = markers
    /** the number of tokens that are part of the current argument(s),
@@ -447,8 +541,8 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
       left = left.drop(n)
    }
    /** move a delimiter from left to found */
-   private def deleteDelim {
-      found ::= left.head.asInstanceOf[Found]
+   private def deleteDelim(index: Int) {
+      found ::= FoundDelim(index, left.head.asInstanceOf[Delimiter])
       left = left.tail
    }
    /** pick all available Token's as Arg(n) */
@@ -486,9 +580,9 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
    private var remember : Unit => Unit = null
    
    /** stores an operation in remember for later execution */
-   private def onApply(act: => Unit): Boolean = {
+   private def onApply(act: => Unit): Applicability = {
       remember = _ => act
-      true
+      Applicable
    }
    
    private def inSeqArg(n: Int) = found match {
@@ -504,8 +598,34 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
    * @return true if the notation can be applied at this point
    * i.e., currentToken is (one of the) delimiter(s) expected next and currentTokens matches the currently expected arguments
    */
-  def applicable(currentToken: Token): Boolean = {
+  def applicable(currentToken: Token, currentIndex: Int): Applicability = {
       Arg.split(left) match {
+         case (ns, Delim(s) :: _) if s == currentToken.word => ns match {
+            case Nil =>
+               onApply {
+                  deleteDelim(currentIndex)
+               }
+            case List(n) =>
+               onApply {
+                  PickAll(n)
+                  delete(1)
+                  deleteDelim(currentIndex)
+               }
+            case _ if ns.length == numCurrentTokens =>
+               onApply {
+                  PickSingles(ns)
+                  delete(numCurrentTokens)
+                  deleteDelim(currentIndex)
+               }
+         }
+         case (Nil, SecDelim(s, wsAllowed) :: _) =>
+             if (s == currentToken.word && (wsAllowed || ! currentToken.whitespaceBefore) && numCurrentTokens == 0) {
+                onApply {
+                   deleteDelim(currentIndex)
+                }
+             } else {
+                Abort
+             }
          case (Nil, SeqArg(n, Delim(s)) :: _) if s == currentToken.word =>
               onApply {
                  PickAllSeq(n)
@@ -515,16 +635,16 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
                  onApply {
                     PickAllSeq(n)
                     delete(1)
-                    deleteDelim
+                    deleteDelim(currentIndex)
                  }
               } else if (! inSeqArg(n) && numCurrentTokens == 0) {
                  onApply {
                     SeqDone(n)
                     delete(1)
-                    deleteDelim
+                    deleteDelim(currentIndex)
                  }
               } else
-                 false //abort?
+                 NotApplicable //abort?
          case (Nil, Var(n, Delim(s)) :: _) if ! inVar(n) && s == currentToken.word =>
               if (numCurrentTokens == 1) {
                  onApply {
@@ -532,7 +652,7 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
                     found ::= FoundVar(n, vr, None)
                  }
               } else {
-                 false //abort
+                 NotApplicable //abort
               }
          case (Nil, Var(n, _) :: Delim(s) :: _) if inVar(n) && s == currentToken.word =>
                  onApply {
@@ -541,37 +661,11 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
                           val fa = FoundArg(scanner.pick(numCurrentTokens), n)
                           found = FoundVar(n, vr, Some(fa)) :: tail
                           delete(1)
-                          deleteDelim
+                          deleteDelim(currentIndex)
                        case _ => // impossible
                     }
                  }
-         case (Nil, SecDelim(s, wsAllowed) :: _) =>
-             if (s == currentToken.word && (wsAllowed || ! currentToken.whitespaceBefore) && numCurrentTokens == 0) {
-                onApply {
-                   deleteDelim
-                }
-             } else {
-                false //abort
-             }
-         case (ns, Delim(s) :: _) if s == currentToken.word => ns match {
-            case Nil =>
-               onApply {
-                  deleteDelim
-               }
-            case List(n) =>
-               onApply {
-                  PickAll(n)
-                  delete(1)
-                  deleteDelim
-               }
-            case _ if ns.length == numCurrentTokens =>
-               onApply {
-                  PickSingles(ns)
-                  delete(numCurrentTokens)
-                  deleteDelim
-               }
-         }
-         case _ => false
+         case _ => NotApplicable
       }
    }
    /**
@@ -591,7 +685,7 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
     * @return true if the notation can close
     * i.e., the current arguments can be the last arguments of the notation with no further delimiter expected
     */
-   def closable : Boolean = {
+   def closable : Applicability = {
       Arg.split(left) match {
          case (Nil, SeqArg(n, Delim(s)) :: Nil) =>
               if (inSeqArg(n) && numCurrentTokens > 0) {
@@ -605,10 +699,10 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
                     delete(1)
                  }
               } else
-                 false
+                 NotApplicable
          case (Nil, Var(_,_) :: _) =>
             // we can never close if we are waiting for a variable
-            false
+            NotApplicable
          case (List(n), Nil) =>
             // one argument taking all available Token's
             onApply {
@@ -622,7 +716,7 @@ class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: I
                 PickSingles(ns)
                 delete(ns.length)
              }
-         case _ => false
+         case _ => NotApplicable
       }
    }
    /**
