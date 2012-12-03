@@ -27,9 +27,10 @@ case class ConstantSymbol(pattern: String, name: String, arguments: List[CatRef]
 /** a bound variable */
 case object VariableSymbol extends Constructor
 /** a constructor for formulas, i.e. true : bool, false : bool */
-case class Constructor0(name : String) extends Constructor
+//case class Constructor0(name : String) extends Constructor
 //TODO remove this, use connective with 0 args instead, detect on theory2logicsyn level
-
+// wildcard symbol
+case class WildCard extends Constructor
 
 /** a pragmatic declaration with some argument types */
 case class Declaration(pattern: String, arguments: List[CatRef])
