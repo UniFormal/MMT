@@ -42,13 +42,14 @@ class Compiler(log: LogicSyntax) extends Program {
    // the categories
    val cats = log.cats map {case Category(c, cons) =>
       val cases = cons map {
+         case Connective(n,Nil) => CONS(n,Nil)
          case Connective(n, args) => CONS(n, argsToEXP(args))
          case Binder(n, argOpt, bound, scope) =>
             val arg : List[EXP] = argOpt match {case Some(a) => List(a) case None => Nil}
             CONS(n, arg ::: List(vrb, (scope:EXP)))
          case ConstantSymbol(p, n, args) => CONS(p + "_" + n, id :: argsToEXP(args))
          case VariableSymbol => CONS(c + "_var", List(vrb))
-         case Constructor0(n) => CONS(n, Nil)
+//         case Constructor0(n) => CONS(n, Nil)
       }
       val declare(_*) = c adt (cases :_*)
    }
@@ -195,6 +196,7 @@ class Compiler(log: LogicSyntax) extends Program {
    val tolffuncs = log.cats map {case Category(c, cons) =>
       val declare(_) =
         c + "_to_lf" function "lf.exp" <-- ("x" :: c) == {"x" Match( cons map {
+          case Connective(n, Nil) => CASE(APPLY(n, varlist(Nil) : _*), lf.app(n,recvarlist(Nil)))
           case Connective(n, args) => CASE(APPLY(n, varlist(args) : _*), lf.app(n,recvarlist(args)))
           case Binder(n, Some(a), bound, scope) =>
             val lambda = lf.lam("v", lf.app(bound.target, List(tolf(a, "a"))), tolf(scope, "s"))
@@ -203,7 +205,7 @@ class Compiler(log: LogicSyntax) extends Program {
             ID(n)("v","s") ==> lf.app(n, List(lf.lam("v", bound.target, tolf(scope, "s"))))
           case ConstantSymbol(p, n, args) =>
             ID(p + "_" + n)("i", varlist(args)) ==> lf.qapp("i", n, recvarlist(args))
-          case Constructor0(n) => CASE(APPLY(n, varlist(Nil) : _*), lf.app(n,recvarlist(Nil)))  
+//          case Constructor0(n) => CASE(APPLY(n, varlist(Nil) : _*), lf.app(n,recvarlist(Nil)))  
           case VariableSymbol =>
             ID(c + "_var")("n") ==> lf.variable("n")
         }  :  _*) }
