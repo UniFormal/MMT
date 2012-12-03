@@ -17,6 +17,7 @@ abstract class Constructor
 /** a connective declared in a logic with some argument types
  * we assume that the LF types of all connectives are of the form a1 -> ... an -> c where ai, c are atomic
  */
+/** also works as a constructor for formulas, i.e. true : bool, false : bool, has no args in that case */
 case class Connective(name: String, arguments: List[CatRef]) extends Constructor
 /** a binder with some argument types and a typed bound variable
  * we assume that the LF types of all binders are of the form {x:a} (b x -> s) -> c or (b -> s) -> c where a, b, s, c are atomic
@@ -26,10 +27,7 @@ case class Binder(name: String, argument: Option[CatRef], bound: CatRef, scope: 
 case class ConstantSymbol(pattern: String, name: String, arguments: List[CatRef]) extends Constructor
 /** a bound variable */
 case object VariableSymbol extends Constructor
-/** a constructor for formulas, i.e. true : bool, false : bool */
-//case class Constructor0(name : String) extends Constructor
-//TODO remove this, use connective with 0 args instead, detect on theory2logicsyn level
-// wildcard symbol
+/** wildcard symbol */ //TODO to be used in generating last error case in functions?
 case class WildCard extends Constructor
 
 /** a pragmatic declaration with some argument types */
