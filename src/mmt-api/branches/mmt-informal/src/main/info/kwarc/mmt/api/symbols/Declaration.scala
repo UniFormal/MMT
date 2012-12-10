@@ -38,7 +38,7 @@ abstract class Assignment extends Declaration {
    //val target : Obj
 }
 
-class SFDeclaration(val home : Term, val tokens : List[SemiFormalDecl]) extends Declaration {
+class SFDeclaration(val home : Term, val tokens : List[SFDeclElem]) extends Declaration {
   val name = LocalName.Anon
   lazy val mpath = home.toMPath
   def components = home :: tokens.flatMap(_.components)

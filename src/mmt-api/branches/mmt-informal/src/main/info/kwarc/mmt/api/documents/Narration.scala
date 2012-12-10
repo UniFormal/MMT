@@ -6,7 +6,7 @@ import objects._
  * such as sentences and paragraphs.
  * The tokens it contains are words, sentences, or mathematical objects. 
  */
-class Narration(val tokens: List[SemiFormalObject]) extends DocumentItem with SemiFormalObjectList {
+class Narration(val tokens: List[SFDocElem]) extends DocumentItem with SFContentElemList {
    def governingPath = None
    def role = Role_Narration
    def toNode = <omtext>{tokens map (_.toNode)}</omtext>

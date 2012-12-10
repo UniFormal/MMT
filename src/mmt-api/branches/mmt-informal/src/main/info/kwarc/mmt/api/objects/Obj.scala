@@ -370,7 +370,7 @@ case class OMURI(value: URI) extends OMLiteral {
 
 //TODO: could this be merged with presentation.Literal?
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
-case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
+case class OMSemiFormal(tokens: List[SFObjectElem]) extends Term with SFContentElemList {
    def head = None
    def role = Role_value
    def ^(sub : Substitution) = {
@@ -385,7 +385,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
 }
 
 object OMSemiFormal {
-  def apply(tokens: SemiFormalObject*) : OMSemiFormal = OMSemiFormal(tokens.toList)
+  def apply(tokens: SFObjectElem*) : OMSemiFormal = OMSemiFormal(tokens.toList)
 }
 
 /** provides apply/unapply methods for constructing and pattern-matching a function that is may or may not be applied to arguments

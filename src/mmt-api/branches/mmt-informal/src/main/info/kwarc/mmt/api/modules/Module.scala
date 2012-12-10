@@ -39,7 +39,7 @@ trait ModuleDefiniens {
    protected def innerComponents = List(df)
 }
 
-class SFModule(parent : DPath, val tokens : List[SemiFormalModule]) extends Module(parent, LocalPath.Anon) {
+class SFModule(parent : DPath, val tokens : List[SFModuleElem]) extends Module(parent, LocalPath.Anon) {
   def components = presentation.StringLiteral(parent.toPath) :: tokens.flatMap(_.components)
   def role = Role_SFModule
   def toNode = <SFModule parent={parent.toPath}>{tokens.map(_.toNode)}</SFModule>
