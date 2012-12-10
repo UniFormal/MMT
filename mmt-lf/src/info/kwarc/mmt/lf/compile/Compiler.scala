@@ -147,7 +147,7 @@ class Compiler(log: LogicSyntax) extends Program {
       val varcase = if (cons.exists(_ == VariableSymbol)) APPLY(c + "_var", "n")
           else ERROR("error", STRING("variables not allowed here"))
 
-      val declare(_) = c + "_from_pt" function c <-- ("x" :: "parse.tree") == {
+      val declare(_) = c + "_from_pt" function c <-- ("x" :: "Generic.Tree") == {
         "x" Match (
             ID("parse.app")("n", "args") ==> appcase,
             ID("parse.bind")("n", "v", "s") ==> bindcase,
@@ -170,24 +170,24 @@ class Compiler(log: LogicSyntax) extends Program {
            rest
         )      
    }
-   val declare(decl_from_pt) = "decl_from_pt" function decl <-- ("d" :: "parse.decl") =|= {case d =>
+   val declare(decl_from_pt) = "decl_from_pt" function decl <-- ("d" :: "Generic.Decl") =|= {case d =>
        d Match (
-          ID("instance")("i", "p", "args") ==> declfrompt
+          ID("Decl")("i", "p", "args") ==> declfrompt
        )
    }
    
    // functions that parse signatures and theories
-   val declare(sign_from_pt) = "sign_from_pt" function sigs <-- ("sg" :: "parse.sign") =|= {case sg =>
+   val declare(sign_from_pt) = "sign_from_pt" function sigs <-- ("sg" :: "Generic.Sign") =|= {case sg =>
       MAP(sg, decl_from_pt)
    }
    
-   val declare(axiom_from_pt) = "axiom_from_pt" function log.form <-- ("ax" :: "parse.tree") =|= {case ax =>
+   val declare(axiom_from_pt) = "axiom_from_pt" function log.form <-- ("ax" :: "Generic.Tree") =|= {case ax =>
       parse(log.form, ax)
    }
-   val declare(theo_from_pt) = "theo_from_pt" function theo <-- ("th" :: "parse.theo") =|= {case th => 
+   val declare(theo_from_pt) = "theo_from_pt" function theo <-- ("th" :: "Generic.Theo") =|= {case th => 
        theo("sign" ::: sign_from_pt(th __ sign), "axioms" ::: MAP(th __ axioms, axiom_from_pt))
    }
-
+/*
    def tolf(c: CatRef, e: EXP) = APPLY(c.target + "_to_lf", e)
    def varlist(args: List[CatRef]) : List[EXP] = (args.zipWithIndex map {case (c,i) => ID("x" + i)})
    def recvarlist(args: List[CatRef]) : List[EXP] = args.zipWithIndex map {case (c,i) => tolf(c, "x" + i)}
@@ -195,7 +195,7 @@ class Compiler(log: LogicSyntax) extends Program {
    // the functions that map expressions to LF
    val tolffuncs = log.cats map {case Category(c, cons) =>
       val declare(_) =
-        c + "_to_lf" function "lf.exp" <-- ("x" :: c) == {"x" Match( cons map {
+        c + "_to_lf" function "LF.EXP" <-- ("x" :: c) == {"x" Match( cons map {
           case Connective(n, Nil) => CASE(APPLY(n, varlist(Nil) : _*), lf.app(n,recvarlist(Nil)))
           case Connective(n, args) => CASE(APPLY(n, varlist(args) : _*), lf.app(n,recvarlist(args)))
           case Binder(n, Some(a), bound, scope) =>
@@ -205,7 +205,6 @@ class Compiler(log: LogicSyntax) extends Program {
             ID(n)("v","s") ==> lf.app(n, List(lf.lam("v", bound.target, tolf(scope, "s"))))
           case ConstantSymbol(p, n, args) =>
             ID(p + "_" + n)("i", varlist(args)) ==> lf.qapp("i", n, recvarlist(args))
-//          case Constructor0(n) => CASE(APPLY(n, varlist(Nil) : _*), lf.app(n,recvarlist(Nil)))  
           case VariableSymbol =>
             ID(c + "_var")("n") ==> lf.variable("n")
         }  :  _*) }
@@ -213,7 +212,7 @@ class Compiler(log: LogicSyntax) extends Program {
    
    // a function that maps declarations to LF instance declarations
    val declare(decl_to_lf) =
-     "decl_to_lf" function "lf.decl" <-- ("d" :: decl) == {"d" Match (
+     "decl_to_lf" function "LF.BASIC_ITEM" <-- ("d" :: decl) == {"d" Match (
         log.decls map {case Declaration(p, args) => {
            ID(p + "_decl")("n", varlist(args)) ==> lf.instance(p, "n", recvarlist(args)) } 
         } :_*
@@ -221,15 +220,16 @@ class Compiler(log: LogicSyntax) extends Program {
    
 
    // functions that map signatures and theories to LF signatures
-   val declare(sign_to_lf) = "sign_to_lf" function "lf.sign" <-- ("sg" :: sigs) == {
+   val declare(sign_to_lf) = "sign_to_lf" function "LF.Sign" <-- ("sg" :: sigs) == {
       MAP("sg", decl_to_lf) 
    }
-   val declare(axiom_to_lf) = "axiom_to_lf" function "lf.decl" <-- ("ax" :: log.form) == {
+   val declare(axiom_to_lf) = "axiom_to_lf" function "LF.BASIC_ITEM" <-- ("ax" :: log.form) == {
       lf.decl("_", tolf(log.form, "ax"))
    }
-   val declare(theo_to_lf) = "theo_to_lf" function "lf.sign" <-- ("th" :: theo) =|= {case th => 
+   val declare(theo_to_lf) = "theo_to_lf" function "LF.Sign" <-- ("th" :: theo) =|= {case th => 
        sign_to_lf(th __ sign) ::: MAP(th __ axioms, axiom_to_lf)
    }
+   */
    addTag("funs")
    
 }
