@@ -181,19 +181,6 @@ class Presenter(controller : frontend.Controller, report : frontend.Report) {
 			      recurse(value)
 			      gpar.rh.attributeEnd
 		      }
-		      if (comps.length > 0) {
-		        comps(0) match {
-		          case s : StructuralElement => //TODO this should be called less often
-                  gpar.rh.attributeStart("","id")
-                  gpar.rh.apply(s.path.toPath)
-                  gpar.rh.attributeEnd
-		          case OMID(path) => 
-                  gpar.rh.attributeStart("","id")
-                  gpar.rh.apply(path.toPath)
-                  gpar.rh.attributeEnd
-		          case _ => 
-		        }
-		      }
 		      children.foreach(recurse)
 		      gpar.rh.elementEnd
 		  case PList(items) =>
