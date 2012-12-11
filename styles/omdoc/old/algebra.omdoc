@@ -1,0 +1,752 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<omdoc base="http://cds.omdoc.org/math/algebra/algebra.omdoc" xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">
+   <theory name="monoid" meta="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc?fol">
+      <constant name="unit">
+         <type>
+            <om:OMOBJ>
+               <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+            </om:OMOBJ>
+         </type>
+      </constant>
+
+      <constant name="comp">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+      <notation for="??comp" role="application" fixity="inter" associativity="none" precedence="100"/>
+
+      <constant name="unit-left" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                           <om:OMA>
+                              <om:OMS name="comp"/>
+                              <om:OMS name="unit"/>
+                              <om:OMV name="x"/>
+                           </om:OMA>
+                           <om:OMV name="x"/>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+      <constant name="unit-right" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                           <om:OMA>
+                              <om:OMS name="comp"/>
+                              <om:OMV name="x"/>
+                              <om:OMS name="unit"/>
+                           </om:OMA>
+                           <om:OMV name="x"/>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+      <constant name="assoc" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                           <om:OMBIND>
+                              <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                              <om:OMBVAR>
+                                 <om:OMATTR>
+                                    <om:OMATP>
+                                       <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="y"/>
+                                 </om:OMATTR>
+                              </om:OMBVAR>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                                 <om:OMBIND>
+                                    <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                                    <om:OMBVAR>
+                                       <om:OMATTR>
+                                          <om:OMATP>
+                                             <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                             <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                          </om:OMATP>
+                                          <om:OMV name="z"/>
+                                       </om:OMATTR>
+                                    </om:OMBVAR>
+                                    <om:OMA>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                       <om:OMA>
+                                          <om:OMS name="comp"/>
+                                          <om:OMA>
+                                             <om:OMS name="comp"/>
+                                             <om:OMV name="x"/>
+                                             <om:OMV name="y"/>
+                                          </om:OMA>
+                                          <om:OMV name="z"/>
+                                       </om:OMA>
+                                       <om:OMA>
+                                          <om:OMS name="comp"/>
+                                          <om:OMV name="x"/>
+                                          <om:OMA>
+                                             <om:OMS name="comp"/>
+                                             <om:OMV name="y"/>
+                                             <om:OMV name="z"/>
+                                          </om:OMA>
+                                       </om:OMA>
+                                    </om:OMA>
+                                 </om:OMBIND>
+                              </om:OMA>
+                           </om:OMBIND>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </theory>
+   <theory name="group" meta="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc?fol">
+      <structure name="mon" from="?/monoid"/>
+      <constant name="inv">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+      <!-- inv-left : true forall [x] exists [y] y comp x eq unitMonoid. -->
+      <constant name="inv-left" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="exists"/>
+                           <om:OMBIND>
+                              <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                              <om:OMBVAR>
+                                 <om:OMATTR>
+                                    <om:OMATP>
+                                       <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="y"/>
+                                 </om:OMATTR>
+                              </om:OMBVAR>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                 <om:OMA>
+                                    <om:OMS name="mon/comp"/>
+                                    <om:OMV name="y"/>
+                                    <om:OMV name="x"/>
+                                 </om:OMA>
+                                 <om:OMS name="mon/unit"/>
+                              </om:OMA>
+                           </om:OMBIND>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+      <!-- inv-right : true forall [x] exists [y] x comp y eq unitMonoid. -->
+      <constant name="inv-right" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="exists"/>
+                           <om:OMBIND>
+                              <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                              <om:OMBVAR>
+                                 <om:OMATTR>
+                                    <om:OMATP>
+                                       <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="y"/>
+                                 </om:OMATTR>
+                              </om:OMBVAR>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                 <om:OMA>
+                                    <om:OMS name="mon/comp"/>
+                                    <om:OMV name="x"/>
+                                    <om:OMV name="y"/>
+                                 </om:OMA>
+                                 <om:OMS name="mon/unit"/>
+                              </om:OMA>
+                           </om:OMBIND>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </theory>
+   <theory name="commgroup" meta="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc?fol">
+      <structure name="grp" from="?/group"/>
+      <!--comm : true forall [x] forall [y] x comp y eq y comp x. -->
+      <constant name="comm" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                           <om:OMBIND>
+                              <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                              <om:OMBVAR>
+                                 <om:OMATTR>
+                                    <om:OMATP>
+                                       <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="y"/>
+                                 </om:OMATTR>
+                              </om:OMBVAR>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                 <om:OMA>
+                                    <om:OMS name="grp/mon/comp"/>
+                                    <om:OMV name="y"/>
+                                    <om:OMV name="x"/>
+                                 </om:OMA>
+                                 <om:OMA>
+                                    <om:OMS name="grp/mon/comp"/>
+                                    <om:OMV name="x"/>
+                                    <om:OMV name="y"/>
+                                 </om:OMA>
+                              </om:OMA>
+                           </om:OMBIND>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </theory>
+   <theory name="ring" meta="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc?fol">
+      <structure name="mult" from="?/monoid"/>
+      <structure name="add" from="?/commgroup"/>
+      <!--   0 : add/grp/mon/unit.   -->
+      <constant name="0">
+         <definition>
+            <om:OMOBJ>
+               <om:OMS name="add/grp/mon/unit"/>
+            </om:OMOBJ>
+         </definition>
+      </constant>
+      <!--   1 : mult/mon/unit.   -->
+      <constant name="1">
+         <definition>
+            <om:OMOBJ>
+               <om:OMS name="mult/unit"/>
+            </om:OMOBJ>
+         </definition>
+      </constant>
+      <!--   + : add/grp/mon/comp.   -->
+      <constant name="+">
+         <definition>
+            <om:OMOBJ>
+               <om:OMS name="add/grp/mon/comp"/>
+            </om:OMOBJ>
+         </definition>
+      </constant>
+      <!--  * : mult/mon/comp.   -->
+      <constant name="*">
+         <definition>
+            <om:OMOBJ>
+               <om:OMS name="mult/comp"/>
+            </om:OMOBJ>
+         </definition>
+      </constant>
+      <!--  distrib-left : true forall [x] forall[y] forall[z] x * ( y + z ) eq (x * y) + (x * z).  -->
+      <constant name="distrib-left" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                           <om:OMBIND>
+                              <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                              <om:OMBVAR>
+                                 <om:OMATTR>
+                                    <om:OMATP>
+                                       <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="y"/>
+                                 </om:OMATTR>
+                              </om:OMBVAR>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                                 <om:OMBIND>
+                                    <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                                    <om:OMBVAR>
+                                       <om:OMATTR>
+                                          <om:OMATP>
+                                             <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                             <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                          </om:OMATP>
+                                          <om:OMV name="z"/>
+                                       </om:OMATTR>
+                                    </om:OMBVAR>
+                                    <om:OMA>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                       <om:OMA>
+                                          <om:OMS name="*"/>
+                                          <om:OMV name="x"/>
+                                          <om:OMA>
+                                             <om:OMS name="+"/>
+                                             <om:OMV name="y"/>
+                                             <om:OMV name="z"/>
+                                          </om:OMA>
+                                       </om:OMA>
+                                       <om:OMA>
+                                          <om:OMS name="+"/>
+                                          <om:OMA>
+                                             <om:OMS name="*"/>
+                                             <om:OMV name="x"/>
+                                             <om:OMV name="y"/>
+                                          </om:OMA>
+                                          <om:OMA>
+                                             <om:OMS name="*"/>
+                                             <om:OMV name="x"/>
+                                             <om:OMV name="z"/>
+                                          </om:OMA>
+                                       </om:OMA>
+                                    </om:OMA>
+                                 </om:OMBIND>
+                              </om:OMA>
+                           </om:OMBIND>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+      <!--  distrib-right : true forall [x] forall[y] forall[z] ( y + z ) * x eq (y * x) + (z * x).  -->
+      <constant name="distrib-right" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                           <om:OMBIND>
+                              <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                              <om:OMBVAR>
+                                 <om:OMATTR>
+                                    <om:OMATP>
+                                       <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="y"/>
+                                 </om:OMATTR>
+                              </om:OMBVAR>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                                 <om:OMBIND>
+                                    <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                                    <om:OMBVAR>
+                                       <om:OMATTR>
+                                          <om:OMATP>
+                                             <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                             <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                          </om:OMATP>
+                                          <om:OMV name="z"/>
+                                       </om:OMATTR>
+                                    </om:OMBVAR>
+                                    <om:OMA>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                       <om:OMA>
+                                          <om:OMS name="*"/>
+                                          <om:OMA>
+                                             <om:OMS name="+"/>
+                                             <om:OMV name="y"/>
+                                             <om:OMV name="z"/>
+                                          </om:OMA>
+                                          <om:OMV name="x"/>
+                                       </om:OMA>
+                                       <om:OMA>
+                                          <om:OMS name="+"/>
+                                          <om:OMA>
+                                             <om:OMS name="*"/>
+                                             <om:OMV name="y"/>
+                                             <om:OMV name="x"/>
+                                          </om:OMA>
+                                          <om:OMA>
+                                             <om:OMS name="*"/>
+                                             <om:OMV name="z"/>
+                                             <om:OMV name="x"/>
+                                          </om:OMA>
+                                       </om:OMA>
+                                    </om:OMA>
+                                 </om:OMBIND>
+                              </om:OMA>
+                           </om:OMBIND>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </theory>
+   <theory name="commring" meta="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc?fol">
+      <structure name="rng" from="?/ring"/>
+      <!--comm-rng : true forall [x] forall [y] x * y eq y * x. -->
+      <constant name="comm-rng" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                           <om:OMBIND>
+                              <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                              <om:OMBVAR>
+                                 <om:OMATTR>
+                                    <om:OMATP>
+                                       <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                       <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="y"/>
+                                 </om:OMATTR>
+                              </om:OMBVAR>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                 <om:OMA>
+                                    <om:OMS name="rng/*"/>
+                                    <om:OMV name="x"/>
+                                    <om:OMV name="y"/>
+                                 </om:OMA>
+                                 <om:OMA>
+                                    <om:OMS name="rng/*"/>
+                                    <om:OMV name="y"/>
+                                    <om:OMV name="x"/>
+                                 </om:OMA>
+                              </om:OMA>
+                           </om:OMBIND>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </theory>
+   <theory name="field" meta="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc?fol">
+      <structure name="commrng" from="?/commring"/>
+      <constant name="inv-mult">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+      <!-- inv-field : true forall [x] ( (not x) eq 0 ) exists [y] x comp y eq unit.  -->
+      <constant name="inv-field" role="axiom">
+         <type>
+            <om:OMOBJ>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="true"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR>
+                           <om:OMATTR>
+                              <om:OMATP>
+                                 <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x"/>
+                           </om:OMATTR>
+                        </om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="imp"/>
+                           <om:OMA>
+                              <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="not"/>
+                              <om:OMA>
+                                 <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                                 <om:OMV name="x"/>
+                                 <om:OMS name="commrng/rng/0"/>
+                              </om:OMA>
+                           </om:OMA>
+                           <om:OMA>
+                              <om:OMS base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc" module="fol" name="eq"/>
+                              <om:OMA>
+                                 <om:OMS name="commrng/rng/*"/>
+                                 <om:OMA><om:OMS name="inv-mult"/><om:OMV name="x"/></om:OMA>
+                                 <om:OMV name="x"/>
+                              </om:OMA>
+                              <om:OMS name="commrng/rng/1"/>
+                           </om:OMA>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMOBJ>
+         </type>
+      </constant>
+   </theory>
+
+<style name="latex">
+   <include from="http://cds.omdoc.org/logics/first-order/fol/latex.omdoc?latex"/>
+
+   <!-- MONOID  -->
+   <notation for="?monoid?unit" role="constant">
+      <text value="\mathop{e}"/>
+   </notation>
+   <notation for="?monoid?comp" role="constant">
+      <text value="\circ "/>
+   </notation>
+   <!-- GROUP  -->
+   <notation for="?group?inv" role="application">
+      <text value="{"/>
+      <component index="1"/>
+      <text value="}"/>
+      <text value="^{-1}"/>
+   </notation>
+   <!-- COMMGROUP  -->
+   <notation for="?commgroup?grp/inv" role="constant">
+      <text value="-"/>
+   </notation>
+   <notation for="?commgroup?grp/mon/unit" role="constant">
+      <text value="0"/>
+   </notation>
+   <notation for="?commgroup?grp/mon/comp" role="constant">
+      <text value="+"/>
+   </notation>
+   <!-- RING  -->
+   <notation for="?ring?mult/comp" role="constant">
+      <text value="* "/>
+   </notation>
+   <notation for="?ring?mult/unit" role="constant">
+      <text value="1"/>
+   </notation>
+   <!-- FIELD  -->
+   <notation for="?field?inv-mult" role="application">
+      <text value="{"/>
+      <component index="1"/>
+      <text value="}"/>
+      <text value="^{-1}"/>
+   </notation>
+
+</style>
+
+<style name="mathml">
+   <include from="http://cds.omdoc.org/logics/first-order/fol/mathml.omdoc?mathml"/>
+
+   <!-- MONOID  -->
+   <notation for="?monoid?unit" role="constant" inherit="yes">
+      <text value="e"/>
+   </notation>
+   <notation for="?monoid?comp" role="constant" inherit="yes">
+      <text value="&#x2218;"/>
+   </notation>
+   <!-- GROUP  -->
+   <notation for="?group?inv" role="application">
+       <element name="msup">
+         <component index="1"/>
+         <element name="mn"><text value="-1"/></element>
+       </element>
+   </notation>
+   <!-- COMMGROUP  -->
+   <notation for="?commgroup?grp/inv" role="constant" inherit="yes">
+      <text value="-"/>
+   </notation>
+   <notation for="?commgroup?grp/mon/unit" role="constant" inherit="yes">
+      <text value="0"/>
+   </notation>
+   <notation for="?commgroup?grp/mon/comp" role="constant" inherit="yes">
+      <text value="+"/>
+   </notation>
+   <!-- RING  -->
+   <notation for="?ring?mult/comp" role="constant" inherit="yes">
+      <text value="&#x00b7;"/>
+   </notation>
+   <notation for="?ring?mult/unit" role="constant" inherit="yes">
+      <text value="1"/>
+   </notation>
+   <!-- FIELD  -->
+   <notation for="?field?inv-mult" role="application">
+       <element name="msup">
+         <component index="1"/>
+         <element name="mn"><text value="-1"/></element>
+       </element>
+   </notation>
+
+</style>
+
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
