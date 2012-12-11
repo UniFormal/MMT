@@ -10,7 +10,7 @@ var notstyle = 'http://cds.omdoc.org/foundations/lf/mathml.omdoc?twelf';  // har
 
 function setStyle(style) {
    notstyle = style;
-    $('#currentstyle').text(style.split("?").pop());
+   $('#currentstyle').text(style.split("?").pop());
 }
 
 /**

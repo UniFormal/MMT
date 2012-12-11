@@ -83,9 +83,9 @@ var cmenu;
 //creating the context menu
 $(document).ready(function(){
 	$('body').append('<ul id="JOBADcontextMenu" class="jqcontextmenu"></ul>');
-    cmenu = $(document).addcontextmenu('JOBADcontextMenu');
-    cmClear();
-    if (location.hash != "") {
+   cmenu = $(document).addcontextmenu('JOBADcontextMenu');
+   cmClear();
+   if (location.hash != "") {
         //handle highlighting
         var t = document.getElementById(location.hash.split('#')[1]);
         if (t) {
