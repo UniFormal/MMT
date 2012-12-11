@@ -20,8 +20,8 @@ folding.contextMenuEntries = function(target){
                 else {//folded version -- return unfold
                     var result = document.evaluate('//mathml:maction[@actiontype="folding"]', $(target).closest("maction")[0], nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);//FIXME ask for maction only
                     if (result.snapshotLength > 1) 
-                        return [['Un<u>F</u>old', 'foldOut()'], ['Unfold <u>A</u>ll', 'unfoldAll()']];
-                    return [['Un<u>F</u>old', 'foldOut()']];
+                        return [['Un<u>f</u>old', 'foldOut()'], ['Unfold <u>A</u>ll', 'unfoldAll()']];
+                    return [['Un<u>f</u>old', 'foldOut()']];
                 }
             }
             else {
