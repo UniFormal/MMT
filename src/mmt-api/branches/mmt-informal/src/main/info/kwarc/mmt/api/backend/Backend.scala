@@ -165,12 +165,13 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
    def localBase = URI(scheme + "://" + authority + prefix) 
    def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
-      val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
+      val suffix = Storage.getSuffix(localBase,uri)
+      val target = new java.io.File(base, suffix)
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
           val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern
-          val prefix = if (target != base) target.getName + "/" else ""
-          Storage.virtDoc(entries, prefix)
+          val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
+          Storage.virtDoc(entries, relativePrefix)
         } else throw BackendError(path)
       cont(uri, N)
    }
