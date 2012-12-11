@@ -616,9 +616,9 @@ function setLatinDialog(content, title){
 	   dialog_init();
   	   var dia = $("#latin-dialog");
   	}
-	dia.dialog('option', 'title', title);
+	dia[0].dialog('option', 'title', title);
 	dia[0].replaceChild(content, dia[0].firstChild);
-	dia.dialog('open');
+	dia[0].dialog('open');
 }
 
 function dialog_init(){
