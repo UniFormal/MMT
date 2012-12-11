@@ -37,7 +37,7 @@
     <path id="scalac.classpath">
         <pathelement location="${scala.dir}/scala-library.jar"/>
         <pathelement location="${scala.dir}/scala-compiler.jar"/>
-        <pathelement location="${tiscaf}"/>
+        <pathelement location="${deploy}/lib/tiscaf.jar"/>
         <pathelement location="${build.main}"/>
     </path>
     <path id="scaladoc.classpath">
@@ -51,7 +51,7 @@
         <tstamp />
     </target>
 
-    <target name="build" depends="jar,docs"/>
+    <target name="build" depends="jar"/>
 
     <target name="compile" depends="init">
         <mkdir dir="${build.main}"/>
@@ -73,7 +73,7 @@
     <target name="docs" depends="scaladoc"/>
 
     <target name="scaladoc" depends="init">
-		  <delete dir="${apidocs}"/>
+        <delete dir="${apidocs}"/>
         <mkdir dir="${apidocs}"/>
         <scaladoc
             destdir="${apidocs}"
@@ -83,6 +83,9 @@
             srcdir="${src.main}">
             <include name="**/*.scala"/>
         </scaladoc>
+        <copy todir="${deploy}/${prj}/apidocs">
+            <fileset dir="${apidocs}" includes="**/*"/>
+        </copy>
     </target>
 
     <target name="jar-standalone" depends="compile">
@@ -106,10 +109,7 @@
          </one-jar>
     </target>
     
-    <target name="deploy" depends="jar,jar-standalone,docs">
-        <copy todir="${deploy}/${prj}/apidocs">
-            <fileset dir="${apidocs}" includes="**/*"/>
-        </copy>
+    <target name="deploy" depends="jar,jar-standalone">
         <copy todir="${deploy}/${prj}">
 			   <fileset file="readme.txt"/>
 			   <fileset file="${build}/${jar-standalone}"/>

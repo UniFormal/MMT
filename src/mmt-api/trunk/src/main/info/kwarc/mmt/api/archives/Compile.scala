@@ -11,7 +11,6 @@ trait CompilableArchive extends WritableArchive {
     private val compiledTimestamps = new Timestamps(root / sourceDim, root / "META-INF" / "timestamps" / sourceDim)
     /** apply all compilation steps, e.g., from "source" into "compiled" */
     def produceCompiled(in : List[String] = Nil) {
-       println("CompSteps : " + compsteps)
        //reset errors
        compsteps match {
           case Some(CompilationStep(from, _ , compiler) :: _) => 
@@ -28,12 +27,12 @@ trait CompilableArchive extends WritableArchive {
             if (compErrors.getOrElse(inPath, Nil) == Nil) {
               val errors = compiler.compile(inFile, outFile)
               compErrors(inPath) = errors
-              if (!errors.isEmpty)
+              if (! errors.isEmpty)
                 log(errors.mkString("errors follow\n", "\n", "\n"))
+              compiledTimestamps.set(inPath)
             }
           }
         }
-        //TODO set timestamps
     }
     /** deletes all files produced in the compilation chain */
     def deleteCompiled(in: List[String] = Nil) {

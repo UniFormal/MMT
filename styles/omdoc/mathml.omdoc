@@ -93,7 +93,7 @@
       </arg>
     </fragment>
   </notation>
-
+<!-- TODO: this must become a special case of structures -->
   <notation role="Include">
     <element name="tr">
       <element name="td">

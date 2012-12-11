@@ -16,17 +16,14 @@ log+ server
 //log+ presenter
 //log+ lf
 
-mathpath fs http://cds.omdoc.org/foundations ../../../lib/foundations
-mathpath fs http://cds.omdoc.org/omdoc ../../../lib/omdoc
-http://cds.omdoc.org/foundations/lf/lf.omdoc
-plugin info.kwarc.mmt.lf.OldLFPlugin
+mathpath fs http://cds.omdoc.org/styles ../../../styles
+plugin info.kwarc.mmt.lf.Plugin
 foundation info.kwarc.mmt.lf.LFF
 
 file ../../paths.mmt
 
 importer info.kwarc.mmt.api.backend.MMTCompiler
 archive add ../../../theories
-plugin info.kwarc.mmt.lf.Plugin
 
 //log+ backend
 //archive mmt clean
