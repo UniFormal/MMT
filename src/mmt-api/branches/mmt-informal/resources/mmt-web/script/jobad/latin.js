@@ -6,7 +6,7 @@
 // scheme + authority of the server
 var catalog;
 // notation style, null if none
-var notstyle = 'http://cds.omdoc.org/foundations/lf/mathml.omdoc?twelf';  // hard-coding a default style for LF content
+var notstyle = 'http://cds.omdoc.org/styles/lf/mathml.omdoc?twelf';  // hard-coding a default style for LF content
 
 function setStyle(style) {
    notstyle = style;
