@@ -574,7 +574,7 @@ function Qindividual(p) {return XMLElem1('individual', 'uri', p);}
 function Qcomponent(o, c) {return XMLElem1('component', 'index', c, o);}
 function Qsubobject(o, p) {return XMLElem1('subobject', 'position', p, o);}
 function Qtype(o,meta) {return XMLElem1('type', 'meta', meta, o);}
-function QtypeLF(o) {return Qtype(o, 'http://cds.omdoc.org/foundations/lf/lf.omdoc?lf');}
+function QtypeLF(o) {return Qtype(o, 'http://cds.omdoc.org/foundations?LF');}
 function Qpresent(o) {return XMLElem1('present', 'style', notstyle, o);}
 
 /** sends type inference query to server for the currentComponent and currentPosition */
