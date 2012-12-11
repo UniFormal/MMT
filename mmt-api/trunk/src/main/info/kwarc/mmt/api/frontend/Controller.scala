@@ -411,7 +411,7 @@ class Controller extends ROController {
 	      case PrintAll => report("response", "\n" + library.toString)
          case Compare(p,r) => //TODO
          case WindowClose(w) => winman.deleteWindow(w)
-         case WindowPosition(w,x,y) => winman.getWindow(w).move(x,y)
+         case WindowPosition(w,x,y) => winman.getWindow(w).setLocation(x,y)
          case BrowserAction(c) => c match {
             case "on" => winman.openBrowser
             case "off" => winman.closeBrowser

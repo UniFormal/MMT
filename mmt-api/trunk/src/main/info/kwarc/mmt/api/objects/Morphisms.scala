@@ -86,7 +86,31 @@ object Morph {
            }
      }
    }
-   
+/*
+   /** restricts a well-formed morphism to a domain */
+   def restrict(from: Term, m: Term)(implicit lib: Lookup) : Term = m 
+   m match {     case OMMOD(p) =>       val l = lib.getLink(p)
+         if (TheoryExp.equal(l.from, from))
+            OMMOD(p)
+         else from match {
+            case OMMOD(t) =>
+               lib.getO(p ? MorphismStep(OMIDENT(from))) match {
+                  case Some(d: DefLinkAssignment) => d.target
+                  case _ => OMMOD(p)
+               }
+            case _ => OMMOD(p)
+         }
+      case OMDL(h,n) =>
+      case OMIDENT(t) => OMIDENT(from)
+      case Morph.Empty => Morph.Empty
+      case OMCOMP(ms) => ms match {
+         case Nil => OMCOMP()
+         case hd::tl => OMCOMP(restrict(from, hd) :: tl)
+      }
+      case MUnion(ms) =>
+         MUnion(ms) //TODO: from must be included into MUnion(ms') for ms' <= ms
+   }*/
+      
    /** checks equality of two morphisms using the simplify method; sound but not complete */
    def equal(a: Term, b: Term): Boolean = simplify(a) == simplify(b)
 }

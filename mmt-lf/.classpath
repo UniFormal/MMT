@@ -5,7 +5,5 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/lfcatalog"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
-	<classpathentry kind="lib" path="/mmt-api/build/mmt-api.jar"/>
-	<classpathentry kind="lib" path="/home/aivaras/TPTP/MMT/deploy/mmt/mmt-api.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
