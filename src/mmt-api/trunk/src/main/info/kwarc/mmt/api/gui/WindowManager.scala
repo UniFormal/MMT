@@ -27,7 +27,7 @@ class WindowManager(val controller: Controller) {
    private var browser: Option[JFrame] = None
    def openBrowser {
       val b = new Browser(this)
-      b.paint
+      //b.paint
       browser = Some(b)
    }
    def closeBrowser {

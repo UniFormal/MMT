@@ -5,33 +5,45 @@ import frontend._
 import archives._
 import documents._
 import modules._
+import objects._ 
 import utils.MyList._
 
 import javax.swing._
 import tree._
 import event._
 
-abstract class MMTNode(val path: Path) {
-   override def toString = path.last
+abstract class MMTNode {
    def children: List[MMTNode]
 }
 
-class ControllerNode(controller: Controller) {
-   def label = "MMT"
+class ControllerNode(controller: Controller) extends MMTNode {
+   override def toString = "MMT"
    def children = controller.backend.getArchives.map(a =>
       new PathNode(DPath(a.narrationBase), controller)
     )
 }
 
-class StructuralElementNode(val se: StructuralElement, controller: Controller) extends MMTNode(se.path) {
-   lazy val children = se.components.mapPartial {
-      case r: XRef => Some(new PathNode(r.target, controller))
-      case e: StructuralElement => Some(new StructuralElementNode(e, controller))
-      case _ => None
+class StructuralElementNode(val se: StructuralElement, controller: Controller) extends MMTNode {
+   override def toString = se.path.last
+   lazy val children = se.components mapPartial {
+      case r: XRef =>
+         Some(new PathNode(r.target, controller))
+      case o: Obj =>
+         Some(new ObjNode(o))
+      case e: StructuralElement =>
+         Some(new StructuralElementNode(e, controller))
+      case _ =>
+         None
    }
 }
 
-class PathNode(path: Path, controller: Controller) extends MMTNode(path) {
+class ObjNode(obj: Obj) extends MMTNode {
+   override def toString = obj.toString
+   def children = Nil
+}
+
+class PathNode(path: Path, controller: Controller) extends MMTNode {
+   override def toString = path.last
    private var seNode: Option[StructuralElementNode] = None
    def children = {seNode match {
       case None =>
@@ -44,8 +56,11 @@ class PathNode(path: Path, controller: Controller) extends MMTNode(path) {
 
 class MMTTreeModel(controller: Controller) extends TreeModel {
 
-   def addTreeModelListener(l: TreeModelListener) {}
-   def removeTreeModelListener(l: TreeModelListener) {}
+   private var listeners: List[TreeModelListener] = Nil
+   def addTreeModelListener(l: TreeModelListener) {listeners ::= l}
+   def removeTreeModelListener(l: TreeModelListener) {
+     listeners = listeners.filter(_ != l)
+   }
 
    def getChild(parent: Object, index: Int) = parent match {
       case n: MMTNode => n.children(index)
@@ -62,7 +77,7 @@ class MMTTreeModel(controller: Controller) extends TreeModel {
    def getRoot = new ControllerNode(controller)
    
    def isLeaf(node: Object) = node match {
-      case seNode : StructuralElementNode => seNode.se.isInstanceOf[Module]
+      case seNode : StructuralElementNode => seNode.children.isEmpty
       case _ => false
    }
    
