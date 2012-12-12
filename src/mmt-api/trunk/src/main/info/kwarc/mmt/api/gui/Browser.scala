@@ -12,7 +12,9 @@ import frontend._
 class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
    private val controller = wm.controller
    private val textArea = new JTextArea()
+   private val tree = new JTree(new MMTTreeModel(controller))
    add(textArea)
+   add(tree)
    /* private val paintButton = new JButton("repaint")
    paintButton.addEventListener()
    add(paintButton) */
