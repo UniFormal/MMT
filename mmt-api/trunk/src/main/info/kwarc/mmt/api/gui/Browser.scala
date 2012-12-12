@@ -12,43 +12,18 @@ import frontend._
 class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
    private val controller = wm.controller
    private val textArea = new JTextArea()
+   private val tabbed = new JTabbedPane()
    private val tree = new JTree(new MMTTreeModel(controller))
-   add(textArea)
-   add(tree)
-   /* private val paintButton = new JButton("repaint")
-   paintButton.addEventListener()
-   add(paintButton) */
+   tabbed.addTab("Tree", null, tree, "the content tree")
+   private val logpane = LogPane(controller)
+   tabbed.addTab("Log", null, logpane, "configure logging options")
+   private val bepane = new BackendPane(controller.backend)
+   tabbed.addTab("Backend", null, bepane, "current backends")
+   add(tabbed)
    addWindowListener(new WindowAdapter {
       override def windowClosed(e: WindowEvent) {wm.closeBrowser} 
    })
    setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
    setVisible(true)
-   def paint {
-      var s : String = ""
-      s += "logging\n"
-      s += controller.report.groups.toList.mkString("\t", ", ", "\n")
-      s += "\nbackend\n"
-      controller.backend.getStores foreach {
-         case a: Archive =>
-            s += "\tarchive " + a.id + " " + a.rootString + "\n"
-         case l: LocalCopy =>
-            s += "\tmathpath " + l.localBase + " " + l.base + "\n"
-         case r: SVNRepo =>
-            s += r.toString //TODO better printing
-      }
-      s += "\ndocuments\n" 
-      controller.docstore.getDocuments foreach {d =>
-         s += "\t" + d.path.toString + "\n"
-         d.getItems foreach {i =>
-            s += "\t\t" + i.target.toString + "\n"
-         }
-      }
-      s += "\nmodules\n" 
-      controller.library.getModules foreach {m =>
-         s += "\t" + m.path.toString + "\n"
-      }
-      
-      textArea.setText(s)
-      pack()
-   }
+   pack()
 }
