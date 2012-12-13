@@ -43,6 +43,10 @@ class Report {
    def clear {mem = Nil; rec = false}
 }
 
+object Report {
+   val groups = List("user", "error", "controller", "extman", "library", "archive", "backend")
+}
+
 abstract class ReportHandler(val id: String) {
    def apply(ind: String, group: String, msg: String)
 }
