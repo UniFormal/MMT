@@ -13,12 +13,16 @@ class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
    private val controller = wm.controller
    private val textArea = new JTextArea()
    private val tabbed = new JTabbedPane()
-   private val tree = new JTree(new MMTTreeModel(controller))
+   
+   private val tree = new TreePane(controller)
    tabbed.addTab("Tree", null, tree, "the content tree")
+
    private val logpane = LogPane(controller)
    tabbed.addTab("Log", null, logpane, "configure logging options")
+
    private val bepane = new BackendPane(controller.backend)
    tabbed.addTab("Backend", null, bepane, "current backends")
+   
    add(tabbed)
    addWindowListener(new WindowAdapter {
       override def windowClosed(e: WindowEvent) {wm.closeBrowser} 

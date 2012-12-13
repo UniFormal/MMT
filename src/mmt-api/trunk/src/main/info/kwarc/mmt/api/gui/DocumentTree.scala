@@ -12,6 +12,8 @@ import javax.swing._
 import tree._
 import event._
 
+import java.awt.event.{MouseAdapter,MouseEvent}
+
 abstract class MMTNode {
    def children: List[MMTNode]
 }
@@ -25,11 +27,11 @@ class ControllerNode(controller: Controller) extends MMTNode {
 
 class StructuralElementNode(val se: StructuralElement, controller: Controller) extends MMTNode {
    override def toString = se.path.last
-   lazy val children = se.components mapPartial {
+   lazy val children = se.components.mapPartial[MMTNode] {
       case r: XRef =>
          Some(new PathNode(r.target, controller))
       case o: Obj =>
-         Some(new ObjNode(o))
+         None //Some(new ObjNode(o))
       case e: StructuralElement =>
          Some(new StructuralElementNode(e, controller))
       case _ =>
@@ -37,21 +39,15 @@ class StructuralElementNode(val se: StructuralElement, controller: Controller) e
    }
 }
 
-class ObjNode(obj: Obj) extends MMTNode {
+class ObjNode(val obj: Obj) extends MMTNode {
    override def toString = obj.toString
    def children = Nil
 }
 
 class PathNode(path: Path, controller: Controller) extends MMTNode {
    override def toString = path.last
-   private var seNode: Option[StructuralElementNode] = None
-   def children = {seNode match {
-      case None =>
-         val se = controller.get(path)
-         seNode = Some(new StructuralElementNode(se, controller))
-         children
-      case Some(seNode) => seNode.children
-   }}
+   lazy val seNode = new StructuralElementNode(controller.get(path), controller)
+   def children = seNode.children
 }
 
 class MMTTreeModel(controller: Controller) extends TreeModel {
@@ -82,4 +78,36 @@ class MMTTreeModel(controller: Controller) extends TreeModel {
    }
    
    def valueForPathChanged(path: TreePath, newValue: Object) {}
+}
+
+class TreePane(controller: Controller) extends JPanel {
+   private val style = DPath(utils.mmt.baseURI / "styles" / "lf" / "mathml.omdoc") ? "twelf"
+   setLayout(new BoxLayout(this, BoxLayout.X_AXIS))
+   private val tree = new JTree(new MMTTreeModel(controller))
+   tree.setRootVisible(false)
+   val ml = new MouseAdapter() {
+      override def mousePressed(e: MouseEvent) {
+         val path = tree.getPathForLocation(e.getX, e.getY)
+         if (path == null) return
+         val node = path.getLastPathComponent.asInstanceOf[MMTNode]
+         if (e.getClickCount == 1) {
+            val se = node match {
+               case seNode: StructuralElementNode => seNode.se
+               case pn: PathNode => pn.seNode.se
+               case _ => null
+            }
+            if (se != null) {
+               val rb = new presentation.XMLBuilder
+               controller.presenter(se, presentation.GlobalParams(rb, style))
+               content.loadContent(rb.get)
+            }
+         }
+      }
+   }
+   tree.addMouseListener(ml)
+   private val scrollTree = new JScrollPane(tree)
+   scrollTree.setPreferredSize(new java.awt.Dimension(300,700))
+   private val content = new FXPanel
+   add(scrollTree)
+   add(content)
 }
