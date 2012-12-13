@@ -30,23 +30,24 @@ archive add ../../../theories
 //archive mmt source-structure
 //archive mmt compile
 //archive mmt content
-archive mmt relational
-archive mmt notation
+//archive mmt relational
+//archive mmt notation
 //archive mmt check
 //archive mmt validate
 
 //archive latin clean
 //archive latin compile
 //archive latin content
-archive latin relational
+//archive latin relational
 //archive latin check
-archive latin notation
+//archive latin notation
 //archive latin enrich
 //archive latin mws-enriched
 //archive latin content logics
 
 //mws http://localhost:6284
-server on 8080
+//server on 8080
+browser on
 base http://docs.omdoc.org/mmt
 
 //importer info.kwarc.mmt.mizar.test.MwsService
