@@ -93,6 +93,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
               controller.report.clear
               Some(XmlResponse(Util.div("error: " + e.msg)))
           }
+        case ":change" :: _ => Some(ChangeResponse)
         case ":uom" :: _ => Some(UomResponse)
         case ":search" :: _ => Some(MwsResponse)
         case ":parse" ::_ => Some(ParserResponse)
@@ -221,6 +222,21 @@ class Server(val port: Int, controller: Controller) extends HServer {
         case e => <error><message>error translating query : {e.getMessage()}</message></error>
       }
       XmlResponse(resp).act(tk)
+    }
+  }
+  
+  private def ChangeResponse : HLet = new HLet {
+    def act(tk : HTalk) {
+      try {
+        val bodyString = bodyAsString(tk)
+        val bodyXML = Utility.trim(XML.loadString(bodyString))
+        val reader = new moc.DiffReader(controller)
+        val diff = reader(bodyXML)
+        moc.Patcher.patch(diff, controller)
+        TextResponse("Success").act(tk)
+      } catch {
+        case e => TextResponse("Failed " + e.getMessage + "\n\n" + e.getStackTraceString).act(tk) 
+      }
     }
   }
 

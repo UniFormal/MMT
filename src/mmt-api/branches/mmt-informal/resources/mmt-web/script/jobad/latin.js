@@ -235,110 +235,6 @@ function latin_navigate(uri) {
     ajaxReplaceIn(bcurl, 'breadcrumbs');
 }
 
-/**
- * parses and evaluates the formula F inside a jobad:conditional attribute
- * F ::= and(F,F) | or(F,F) | not(F) | p = V | p < V | p > V  
- * @param {Object} str - F (string)
- * @param {Object} arr - enviroment mapping symbols p to values V (boolean, string, or integer)
- */
-function cond_parse(str, arr){
-	if (str.substr(0, 3) == "and") {
-		var p = str.substring(4, str.length - 1);
-		var bracket = 0, poz = 0;
-		for (var i = 0; i < p.length; i++) {
-			if (p.charAt(i) == '(') 
-				bracket++;
-			else 
-				if (p.charAt(i) == ')') 
-					bracket--;
-				else 
-					if (p.charAt(i) == ',' && bracket == 0) {
-						poz = i;
-						break;
-					}
-		}
-		return (cond_parse(p.substring(0, poz), arr) && cond_parse(p.substring(poz + 1), arr));
-	}
-	else 
-		if (str.substr(0, 2) == "or") {
-			var p = str.substring(3, str.length - 1);
-			var bracket = 0, poz = 0;
-			for (var i = 0; i < p.length; i++) {
-				if (p.charAt(i) == '(') 
-					bracket++;
-				else 
-					if (p.charAt(i) == ')') 
-						bracket--;
-					else 
-						if (p.charAt(i) == ',' && bracket == 0) {
-							poz = i;
-							break;
-						}
-			}
-			return (cond_parse(p.substring(0, poz), arr) || cond_parse(p.substring(poz + 1), arr));
-		}
-		else 
-			if (str.substr(0, 3) == "not") {
-				var p = str.substring(4, str.length - 1);
-				return (!(cond_parse(p, arr)));
-			}
-			else 
-				if (str.substr(0, 4).toLowerCase() == "true") {
-					return true;
-				}
-				else 
-					if (str.substr(0, 5).toLowerCase() == "false") {
-						return false;
-					}
-					else
-					   // atomic formulas
-						if (str.indexOf('=') != -1) {
-							var prop = str.split('=')[0];
-							var val = str.split('=')[1];
-							if (arr[prop] == null) 
-								return false; // undefined formulas go to false, should log a warning here
-							else 
-								if (arr[prop] == val) 
-									return true;
-								else 
-									return false;
-						}
-						else 
-							if (str.indexOf('<') != -1) {
-								var prop = str.split('<')[0];
-								var val = str.split('<')[1];
-								if (arr[prop] == null) 
-									return false;
-								else 
-									if (arr[prop] < val) 
-										return true;
-									else 
-										return false;
-							}
-							else 
-								if (str.indexOf('>') != -1) {
-									//same as before
-									var prop = str.split('>')[0];
-									var val = str.split('>')[1];
-									if (arr[prop] == null) 
-										return false;
-									else 
-										if (arr[prop] > val) 
-											return true;
-										else 
-											return false;
-								}
-}
-
-// for initialization: wrap all jobad:conditional elements in mactions
-function createMactions(root) {
-   $(root).find('[jobad:conditional]').filter(function(){
-      return (geTagName(this.parent) !== 'maction');
-   }).each(function(){
-      createMactionElement(null, 'conditional', this);
-   });
-}
-
 var visibKeys = ["implicit", "reconstructed", "elevel"];
 function setKeys(elems, con){
    elems.each(function(index, elem){
@@ -574,7 +470,7 @@ function Qindividual(p) {return XMLElem1('individual', 'uri', p);}
 function Qcomponent(o, c) {return XMLElem1('component', 'index', c, o);}
 function Qsubobject(o, p) {return XMLElem1('subobject', 'position', p, o);}
 function Qtype(o,meta) {return XMLElem1('type', 'meta', meta, o);}
-function QtypeLF(o) {return Qtype(o, 'http://cds.omdoc.org/foundations/lf/lf.omdoc?lf');}
+function QtypeLF(o) {return Qtype(o, 'http://cds.omdoc.org/foundations?LF');}
 function Qpresent(o) {return XMLElem1('present', 'style', notstyle, o);}
 
 /** sends type inference query to server for the currentComponent and currentPosition */
@@ -637,3 +533,108 @@ loadedModules.push(latinMod);
 
 // initialize display
 $(latin.init);
+
+/**
+ * parses and evaluates the formula F inside a jobad:conditional attribute
+ * F ::= and(F,F) | or(F,F) | not(F) | p = V | p < V | p > V  
+ * @param {Object} str - F (string)
+ * @param {Object} arr - enviroment mapping symbols p to values V (boolean, string, or integer)
+ */
+/* commented out to see if they are needed; can probably be deleted
+function cond_parse(str, arr){
+	if (str.substr(0, 3) == "and") {
+		var p = str.substring(4, str.length - 1);
+		var bracket = 0, poz = 0;
+		for (var i = 0; i < p.length; i++) {
+			if (p.charAt(i) == '(') 
+				bracket++;
+			else 
+				if (p.charAt(i) == ')') 
+					bracket--;
+				else 
+					if (p.charAt(i) == ',' && bracket == 0) {
+						poz = i;
+						break;
+					}
+		}
+		return (cond_parse(p.substring(0, poz), arr) && cond_parse(p.substring(poz + 1), arr));
+	}
+	else 
+		if (str.substr(0, 2) == "or") {
+			var p = str.substring(3, str.length - 1);
+			var bracket = 0, poz = 0;
+			for (var i = 0; i < p.length; i++) {
+				if (p.charAt(i) == '(') 
+					bracket++;
+				else 
+					if (p.charAt(i) == ')') 
+						bracket--;
+					else 
+						if (p.charAt(i) == ',' && bracket == 0) {
+							poz = i;
+							break;
+						}
+			}
+			return (cond_parse(p.substring(0, poz), arr) || cond_parse(p.substring(poz + 1), arr));
+		}
+		else 
+			if (str.substr(0, 3) == "not") {
+				var p = str.substring(4, str.length - 1);
+				return (!(cond_parse(p, arr)));
+			}
+			else 
+				if (str.substr(0, 4).toLowerCase() == "true") {
+					return true;
+				}
+				else 
+					if (str.substr(0, 5).toLowerCase() == "false") {
+						return false;
+					}
+					else
+					   // atomic formulas
+						if (str.indexOf('=') != -1) {
+							var prop = str.split('=')[0];
+							var val = str.split('=')[1];
+							if (arr[prop] == null) 
+								return false; // undefined formulas go to false, should log a warning here
+							else 
+								if (arr[prop] == val) 
+									return true;
+								else 
+									return false;
+						}
+						else 
+							if (str.indexOf('<') != -1) {
+								var prop = str.split('<')[0];
+								var val = str.split('<')[1];
+								if (arr[prop] == null) 
+									return false;
+								else 
+									if (arr[prop] < val) 
+										return true;
+									else 
+										return false;
+							}
+							else 
+								if (str.indexOf('>') != -1) {
+									//same as before
+									var prop = str.split('>')[0];
+									var val = str.split('>')[1];
+									if (arr[prop] == null) 
+										return false;
+									else 
+										if (arr[prop] > val) 
+											return true;
+										else 
+											return false;
+								}
+}
+// for initialization: wrap all jobad:conditional elements in mactions
+function createMactions(root) {
+   $(root).find('[jobad:conditional]').filter(function(){
+      return (geTagName(this.parent) !== 'maction');
+   }).each(function(){
+      createMactionElement(null, 'conditional', this);
+   });
+}
+*/

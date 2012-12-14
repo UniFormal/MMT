@@ -10,6 +10,7 @@
         <pathelement location="lib/tiscaf.jar"/>
         <pathelement location="lib/tntbase-plugin-api.jar"/>
         <pathelement location="lib/svnkit.jar"/>
+    	<pathelement location="lib/jfxrt.jar"/>
         <pathelement location="${build.main}"/>
     </path>
     <path id="scaladoc.classpath">

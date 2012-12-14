@@ -110,7 +110,7 @@ case class MPath(parent : DPath, name : LocalPath) extends ContentPath {
 case class GlobalName(module: Term, name: LocalName) extends ContentPath {
    def doc = utils.mmt.mmtbase
    def ^! = if (name.length == 1) module.toMPath else GlobalName(module, name.init)
-   def last = name.last.toPath
+   def last = if (name.isAnonymous) "_" else name.last.toPath
    def apply(args: List[Term]) : Term = OMA(OMID(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
    /** true iff the parent is a named module and each include step is a named module or structure */

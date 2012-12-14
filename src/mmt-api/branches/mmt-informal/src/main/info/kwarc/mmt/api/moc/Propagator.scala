@@ -85,7 +85,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     var impacts = new mutable.HashMap[Path, mutable.HashSet[ContentChange]]()
     
     //gathers impacted content items (and for each the changes that impact them)
-    diff.changes map { c => 
+    diff.contentChanges map { c => 
       affectedPaths(c).flatMap(p => dependsOn(p)) map { p => 
         if (! impacts.isDefinedAt(p)) {
           impacts(p) = new mutable.HashSet[ContentChange]()

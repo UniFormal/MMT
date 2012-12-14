@@ -23,7 +23,10 @@ class Report {
 
    private var handlers : List[ReportHandler] = Nil
    /** adds a ReportHandler */
-   def addHandler(h: ReportHandler) {handlers ::= h}
+   def addHandler(h: ReportHandler) {
+      handlers ::= h
+      log("report", "logging to " + h)
+   }
    /** removes all ReportHandlers with a certain id */
    def removeHandler(id: String) {handlers = handlers.filter(_.id != id)}
 
@@ -38,6 +41,10 @@ class Report {
    def record {rec = true}
    def recall = mem
    def clear {mem = Nil; rec = false}
+}
+
+object Report {
+   val groups = List("user", "error", "controller", "extman", "library", "archive", "backend")
 }
 
 abstract class ReportHandler(val id: String) {
