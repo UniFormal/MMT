@@ -30,4 +30,5 @@ class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
    setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
    setVisible(true)
    pack()
+   
 }

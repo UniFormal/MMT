@@ -124,7 +124,7 @@ class Controller extends ROController {
      println("pchanges : " + pChanges.changes)
      val propDiff = pChanges ++ propagator(pChanges)
      println("pdiff : " + propDiff.changes)
-     moc.Patcher.patch(propDiff, memory)
+     moc.Patcher.patch(propDiff, this)
      propagator.boxedPaths
    }
 

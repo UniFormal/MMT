@@ -11,15 +11,37 @@ import scala.collection._
 import scala.collection.immutable.HashSet
 
 
-abstract class Change {
+sealed abstract class Change {
   def toNode : Node
 }
 
+abstract class Add(val s : StructuralElement) extends Change
+abstract class Delete(val s : StructuralElement) extends Change
 
-class Diff(val changes : List[ContentChange]) {
+object Add {
+  def apply(s : StructuralElement) : Add = s match {
+    case p : PresentationElement => AddPresentation(p)
+    case d : Declaration => AddDeclaration(d)
+    case m : Module => AddModule(m)
+  }
+}
+
+object Delete {
+  def apply(s : StructuralElement) : Delete = s match {
+    case p : PresentationElement => DeletePresentation(p)
+    case d : Declaration => DeleteDeclaration(d)
+    case m : Module => DeleteModule(m)
+  }
+}
+
+class Diff(val changes : List[Change]) {
+   lazy val contentChanges = changes collect {
+     case c : ContentChange => c 
+   }
+   
    def toNode = <omdoc-diff> {changes.map(_.toNode)} </omdoc-diff>
    
-   def toNodeFlat = <omdoc-diff> {changes.flatMap(_.toNodeFlat)} </omdoc-diff>
+   def toNodeFlat = <omdoc-diff> {contentChanges.flatMap(_.toNodeFlat)} </omdoc-diff>
    
    def ++(d : Diff) = new Diff(changes ++ d.changes)
 }
@@ -35,15 +57,15 @@ sealed trait ContentChange extends Change {
     def getReferencedURIs : List[Path]
 }
 
-sealed abstract class StrictChange extends ContentChange {
+sealed trait StrictChange extends ContentChange {
   def getReferencedURI : Path
   
   def getReferencedURIs : List[Path] = List(getReferencedURI)
 }
 
-abstract class Add extends StrictChange
-abstract class Update extends StrictChange
-abstract class Delete extends StrictChange
+abstract class AddContent(s : ContentElement) extends Add(s : StructuralElement) with StrictChange
+abstract class UpdateContent extends StrictChange
+abstract class DeleteContent(s : ContentElement) extends Delete(s : StructuralElement) with StrictChange
 
 
 abstract class PragmaticChangeType {
@@ -201,7 +223,7 @@ trait ChangeModule extends ContentChange {
   def toNodeFlat : List[Node]
 }
 
-case class AddModule(m : Module) extends Add with ChangeModule {
+case class AddModule(m : Module) extends AddContent(m) with ChangeModule {
   def getReferencedURI = m.path
   def getAffectedCPaths = new HashSet[CPath]()
   def getAffectedPaths = new HashSet[ContentPath]()
@@ -215,7 +237,7 @@ case class AddModule(m : Module) extends Add with ChangeModule {
 
 }
 
-case class DeleteModule(m : Module) extends Delete with ChangeModule {
+case class DeleteModule(m : Module) extends DeleteContent(m) with ChangeModule {
   def getReferencedURI = m.path
 
   def toNode = 
@@ -237,7 +259,7 @@ trait ChangeDeclaration extends ContentChange {
 }
 
 
-case class AddDeclaration(d : Declaration) extends Add with ChangeDeclaration {
+case class AddDeclaration(d : Declaration) extends AddContent(d) with ChangeDeclaration {
   def getReferencedURI = d.path
 
   def toNode = 
@@ -248,7 +270,7 @@ case class AddDeclaration(d : Declaration) extends Add with ChangeDeclaration {
   def toNodeFlat = <change type="add" path={d.path.toPath}> {d.toNode} </change> :: Nil
 }
 
-case class DeleteDeclaration(d : Declaration) extends Delete with ChangeDeclaration {
+case class DeleteDeclaration(d : Declaration) extends DeleteContent(d) with ChangeDeclaration {
   def getReferencedURI = d.path
 
   def toNode =
@@ -264,7 +286,7 @@ case class DeleteDeclaration(d : Declaration) extends Delete with ChangeDeclarat
  */
 case class Component(c : Option[Obj])
 
-case class UpdateComponent(path : ContentPath, name : DeclarationComponent, old : Option[Obj], nw : Option[Obj]) extends Update with ContentChange {
+case class UpdateComponent(path : ContentPath, name : DeclarationComponent, old : Option[Obj], nw : Option[Obj]) extends UpdateContent with ContentChange {
 
   def getReferencedURI : CPath = CPath(path, MetaDataComponent)
 
@@ -278,7 +300,7 @@ case class UpdateComponent(path : ContentPath, name : DeclarationComponent, old 
     <change type="update" path={path.toPath} component={name.toString}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
 }
 
-case class UpdateMetadata(path : ContentPath, key : GlobalName, old: List[Obj], nw : List[Obj]) extends Update with ContentChange {
+case class UpdateMetadata(path : ContentPath, key : GlobalName, old: List[Obj], nw : List[Obj]) extends UpdateContent with ContentChange {
   def getReferencedURI :  CPath = CPath(path, MetaDataComponent) 
   def toNode =
     <metadata path={path.toPath} key={key.toPath} change="update">
@@ -291,4 +313,16 @@ case class UpdateMetadata(path : ContentPath, key : GlobalName, old: List[Obj], 
   
 }
 
+/**
+ * Presentation
+ */
 
+trait PresentationChange
+
+case class AddPresentation(p : PresentationElement) extends Add(p) with PresentationChange {
+  def toNode = <add level="pres">{p.toNode}</add>
+}
+
+case class DeletePresentation(p : PresentationElement) extends Delete(p) with PresentationChange {
+  def toNode = <delete level="pres">{p.toNode}</delete>
+}

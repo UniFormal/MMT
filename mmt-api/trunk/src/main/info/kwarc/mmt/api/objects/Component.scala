@@ -6,6 +6,22 @@ abstract class DeclarationComponent(s : String) {
    override def toString = s
 }
 
+object DeclarationComponent {
+  def apply(s : String) : DeclarationComponent = s match {
+    case "type" => TypeComponent
+    case "definition" => DefComponent
+    case "domain" => DomComponent
+    case "codomain" => CodComponent
+    case "params" => ParamsComponent
+    case "pattern-body" => PatternBodyComponent
+    case "pattern" => PatternComponent
+    case "matches" => MatchesComponent
+    case "metadata" => MetaDataComponent
+    case "forpath" => ForPathComponent
+    case s => throw ImplementationError("Invalid Declaration Component name : " + s)
+  }
+}
+
 /** type of a Constant */
 case object TypeComponent extends DeclarationComponent("type")
 /** definitiens of Constant, DefinedTheory, DefinedView, DefinedStructure; target of an Assignment */
