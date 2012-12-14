@@ -102,8 +102,8 @@ case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalEle
  * will be returned by the checker when checking a change
  * and then applied by the controller to the relstore to mantain its adequacy
  */
-
-abstract class RelationsChange extends Change
+/*
+abstract class RelationsChange
 
 /** adds a list of relations to the relstore */
 case class AddRelations(rels : List[RelationalElement]) extends RelationsChange {
@@ -129,3 +129,4 @@ case class RenameRelations(old : Path, nw : Path) extends RelationsChange {
 case class IdenticalRelations() extends RelationsChange {
   def toNode = <idrel/>
 }
+*/

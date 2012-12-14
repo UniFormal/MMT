@@ -14,7 +14,7 @@ object Patcher {
    * @param diff the diff
    * @param mem  the memory
    */
-  def patch(diff : Diff,  mem : Memory) = diff.changes foreach {ch => patchChange(ch,mem)}
+  def patch(diff : Diff,  controller : Controller) = diff.changes foreach {ch => patchChange(ch, controller)}
 
 
   /**
@@ -22,21 +22,24 @@ object Patcher {
    * @param ch the change to be applied
    * @param mem the memory representing the theory graph
    */
-  private def patchChange(ch : ContentChange, mem : Memory) {
+  private def patchChange(ch : Change, controller : Controller) {
     ch match {
-        
+      case a : Add => controller.add(a.s)
+      case d : Delete => controller.delete(d.s.path)
+      /*
       case AddModule(m) => mem.content.add(m)
       case DeleteModule(m) => mem.content.delete(m.path)
       case AddDeclaration(d) => mem.content.add(d)
       case DeleteDeclaration(d) => mem.content.delete(d.path)
+      */
       case UpdateComponent(path, comp, old, nw) =>
-        val d = mem.content.get(path)
+        val d = controller.memory.content.get(path)
         val dnew = updateComponent(d, comp, old, nw)
-        mem.content.update(dnew)
+        controller.memory.content.update(dnew)
       case UpdateMetadata(path,key,old,nw) => 
-        val md = mem.content.get(path).metadata
+        val md = controller.memory.content.get(path).metadata
         md.update(key, nw)
-      case PragmaticChange(name, diff, tp, mp, desc) => patch(diff, mem)
+      case PragmaticChange(name, diff, tp, mp, desc) => patch(diff, controller)
       
     }
 
