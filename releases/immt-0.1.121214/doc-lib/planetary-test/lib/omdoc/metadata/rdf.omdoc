@@ -1,0 +1,8 @@
+<omdoc base="http://www.w3.org/2000/01/rdf-schema">
+
+  <!-- empty name = anonymous theory -->
+  <theory>
+    <constant name="Literal"/>
+  </theory>
+
+</omdoc>

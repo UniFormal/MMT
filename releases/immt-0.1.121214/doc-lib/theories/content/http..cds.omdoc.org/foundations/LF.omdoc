@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory base="http://cds.omdoc.org/foundations" name="LF" >
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#85.7.0-334.24.1"></link>
+    </metadata>
+    <import   from="http://cds.omdoc.org/foundations?Typed">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#100.8.3-114.8.17"></link>
+      </metadata>
+    </import>
+    <constant name="pi" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#123.10.3-134.10.14"></link>
+      </metadata>
+      <notation>
+        <text-notation isBinder="true">
+          <markers>
+            <delimiter> { </delimiter>
+            <std-arg>0</std-arg>
+            <delimiter> } </delimiter>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="lambda" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#139.11.3-154.11.18"></link>
+      </metadata>
+      <notation>
+        <text-notation isBinder="true">
+          <markers>
+            <delimiter> [ </delimiter>
+            <std-arg>0</std-arg>
+            <delimiter> ] </delimiter>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="@" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#159.12.3-160.12.4"></link>
+      </metadata>
+    </constant>
+    <constant name="arrow" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#165.13.3-181.13.19"></link>
+      </metadata>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <seq-arg>
+              <pos>0</pos>
+              <delimiter> -&gt; </delimiter>
+            </seq-arg>
+          </markers>
+          <precedence> -10 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="omitted" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#199.16.3-206.16.10"></link>
+      </metadata>
+    </constant>
+    <constant name="implicit_Pi" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#211.17.3-222.17.14"></link>
+      </metadata>
+    </constant>
+    <constant name="implicit_lambda" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/lf.mmt#227.18.3-242.18.18"></link>
+      </metadata>
+    </constant>
+  </theory>
+</omdoc>

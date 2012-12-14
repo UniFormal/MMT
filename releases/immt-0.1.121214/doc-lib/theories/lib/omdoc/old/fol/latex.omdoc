@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+
+ <style name="latex" for="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc">
+   <include from="http://cds.omdoc.org/foundations/lf/latex.omdoc?latex"/>
+   
+   <notation for="?fol?top" role="constant">
+      <text value="\top"/>
+   </notation>
+   <notation for="?fol?bot" role="constant">
+      <text value="\bot"/>
+   </notation>
+   <notation for="?fol?and" role="constant">
+      <text value="\wedge"/>
+   </notation>
+   <notation for="?fol?or" role="constant">
+      <text value="\vee"/>
+   </notation>
+   <notation for="?fol?imp" role="constant">
+      <text value="\to"/>
+   </notation>
+   <notation for="?fol?not" role="constant">
+      <text value="\neg"/>
+   </notation>
+   <notation for="?fol?forall" role="constant">
+      <text value="\forall"/>
+   </notation>
+   <notation for="?fol?exists" role="constant">
+      <text value="\exists"/>
+   </notation>
+   <notation for="?fol?eq" role="constant">
+      <text value="="/>
+   </notation>
+   <notation for="?fol?existsUnique" role="constant">
+      <text value="\exists^!"/>
+   </notation>
+   <notation for="?fol?true" role="constant">
+      <text value="\vdash"/>
+   </notation>
+ </style>
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory base="http://cds.omdoc.org/fol" name="LF" >
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#77.7.0-252.18.1"></link>
+    </metadata>
+    <import   from="http://cds.omdoc.org/fol?Typed">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#92.8.3-106.8.17"></link>
+      </metadata>
+    </import>
+    <constant name="pi" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#115.10.3-126.10.14"></link>
+      </metadata>
+      <notation>
+        <text-notation isBinder="true">
+          <markers>
+            <delimiter> { </delimiter>
+            <std-arg>0</std-arg>
+            <delimiter> } </delimiter>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="lambda" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#131.11.3-146.11.18"></link>
+      </metadata>
+      <notation>
+        <text-notation isBinder="true">
+          <markers>
+            <delimiter> [ </delimiter>
+            <std-arg>0</std-arg>
+            <delimiter> ] </delimiter>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="@" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#151.12.3-152.12.4"></link>
+      </metadata>
+    </constant>
+    <constant name="arrow" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#157.13.3-169.13.15"></link>
+      </metadata>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <seq-arg>
+              <pos>0</pos>
+              <delimiter> -&gt; </delimiter>
+            </seq-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+  </theory>
+</omdoc>

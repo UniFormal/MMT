@@ -1,0 +1,4 @@
+theory http://cds.omdoc.org/foundational?Sequences
+Includes http://cds.omdoc.org/foundational?Sequences http://cds.omdoc.org/foundational?Typed
+Declares http://cds.omdoc.org/foundational?Sequences http://cds.omdoc.org/foundational?Sequences?index
+constant: http://cds.omdoc.org/foundational?Sequences?index

@@ -1,0 +1,21 @@
+<omdoc base="http://purl.org/dc/terms/">
+
+  <theory>
+    <constant name="Agent"/>
+    <constant name="AgentClass"/>
+    <constant name="BibliographicResource"/>
+
+    <!-- reference to the anonymous theory -->
+    <include from="http://www.w3.org/2000/01/rdf-schema"/>
+
+    <constant name="creator">
+      <type><OMS name="Agent"/></type>
+    </constant>
+    
+    <constant name="date">
+      <type><OMS base="http://www.w3.org/2000/01/rdf-schema" name="Literal"/></type>
+    </constant>
+
+  </theory>
+
+</omdoc>

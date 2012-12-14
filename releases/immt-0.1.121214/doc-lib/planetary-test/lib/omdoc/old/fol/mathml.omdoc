@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">
+<style name="hoas-quantifiers" for="http://cds.omdoc.org/foundations/lf/lf.omdoc">
+   <include from="mathml.omdoc?mathml"/>
+</style>
+
+ 
+<style name="math-quantifiers" for="http://cds.omdoc.org/foundations/lf/lf.omdoc">
+   <include from="mathml.omdoc?mathml"/>
+   <notation for="?lf?lambda" role="constant"/>
+   <notation for="?lf?lambda" role="binding" precedence="100">
+       <components begin="1" end="-2">
+         <body><recurse precedence="-infinity"/></body>
+         <separator><element name="mo"><text value=","/></element></separator>
+       </components>
+       <element name="mo"><text value="."/></element>
+       <component index="-1" precedence="-88"/>
+   </notation>
+   <notation for="?lf?oftype" role="attribution" precedence="0">
+       <component index="1"/>
+   </notation>
+</style>
+
+<style name="mathml" for="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc">
+
+   <include from="mathml.omdoc?math-quantifiers"/>
+   <notation for="?fol?top" role="constant" inherit="yes">
+      <text value="&#x22a4;"/>
+   </notation>
+   <notation for="?fol?bot" role="constant" inherit="yes">
+      <text value="&#x22a5;"/>
+   </notation>
+   <notation for="?fol?and" role="constant" inherit="yes">
+      <text value="&#x2227;"/>
+   </notation>
+   <notation for="?fol?or" role="constant" inherit="yes">
+      <text value="&#x2228;"/>
+   </notation>
+   <notation for="?fol?imp" role="constant" inherit="yes">
+      <text value="&#x21d2;"/>
+   </notation>
+   <notation for="?fol?not" role="constant" inherit="yes">
+      <text value="&#x00ac;"/>
+   </notation>
+   <notation for="?fol?forall" role="constant" inherit="yes">
+      <text value="&#x2200;"/>
+   </notation>
+   <notation for="?fol?exists" role="constant" inherit="yes">
+      <text value="&#x2203;"/>
+   </notation>
+   <notation for="?fol?eq" role="constant" inherit="yes">
+      <text value="="/>
+   </notation>
+   <notation for="?fol?existsUnique" role="constant" inherit="yes">
+      <text value="&#x2203;!"/>
+   </notation>
+   <notation for="?fol?true" role="constant" inherit="yes">
+      <text value="&#x22a6; "/>
+   </notation>
+
+</style>
+
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+

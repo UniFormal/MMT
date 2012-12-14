@@ -1,0 +1,21 @@
+<omdoc base="file:/./doc-lib/theories/source/sequences.mmt">
+        <theory base="http://cds.omdoc.org/foundational" name="Sequences" >
+        <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/sequences.mmt#49.2.0-105.5.1"></link></metadata>
+        <import   from="http://cds.omdoc.org/foundational?Typed">
+            <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/sequences.mmt#71.3.3-85.3.17"></link></metadata>
+            
+          </import><constant name="index" >
+       <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/sequences.mmt#90.4.3-102.4.15"></link></metadata>
+       
+       
+       <notation><text-notation isBinder="false">
+      <markers>
+        <std-arg>0</std-arg><delimiter> _2 </delimiter>
+      </markers>
+      <precedence>
+        0
+      </precedence>
+    </text-notation></notation>
+     </constant>
+      </theory>
+     </omdoc>

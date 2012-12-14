@@ -1,0 +1,10 @@
+RefersTo http://latin.omdoc.org/math?Natural?1 http://latin.omdoc.org/math?Natural?nat
+RefersTo http://latin.omdoc.org/math?Natural?+ http://cds.omdoc.org/foundations?LF?arrow
+RefersTo http://latin.omdoc.org/math?Natural?2 http://latin.omdoc.org/math?Natural?nat
+RefersTo http://latin.omdoc.org/math?Natural?+ http://latin.omdoc.org/math?Natural?nat
+RefersTo http://latin.omdoc.org/math?Natural?2 http://cds.omdoc.org/foundations?LF?@
+RefersTo http://latin.omdoc.org/math?Natural?0 http://latin.omdoc.org/math?Natural?nat
+RefersTo http://latin.omdoc.org/math?Natural?2 http://latin.omdoc.org/math?Natural?+
+RefersTo http://latin.omdoc.org/math?Natural http://cds.omdoc.org/foundations?LF
+RefersTo http://latin.omdoc.org/math?Natural?nat http://cds.omdoc.org/foundations?Typed?type
+RefersTo http://latin.omdoc.org/math?Natural?2 http://latin.omdoc.org/math?Natural?1

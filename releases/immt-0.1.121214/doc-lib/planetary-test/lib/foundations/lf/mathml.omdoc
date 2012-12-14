@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns" xmlns:m="http://www.w3.org/1998/Math/MathML">
+
+<style name="common" from="http://cds.omdoc.org/foundations/lf/lf.omdoc?lf" to="text/html">
+
+   <include from="http://cds.omdoc.org/omdoc/mathml.omdoc?xhtml"/>
+   
+   <notation for="??type" role="constant">
+     <text value="type"/>
+   </notation>
+
+   <notation for="??oftype" role="constant">
+     <text value=":"/>
+   </notation>
+
+   <notation for="??omitted" role="constant">
+     <text value="_"/>
+   </notation>
+
+   <notation for="??omitted" role="attribution">
+     <component index="1"/>
+   </notation>
+
+   <notation for="??arrow" role="constant">
+      <text value="&#x2192;"/>
+   </notation>
+   
+   <notation role="fragment:implicit_binder">
+       <element name="mrow">
+         <attribute name="class" value="implicit-binder implicit-binder-hidden"/>
+         <hole/>
+       </element>
+   </notation>
+
+   <notation role="Variable">
+    <element name="mrow">
+      <attribute prefix="jobad" name="xref">
+        <id/>
+      </attribute>
+      <element name="mi">
+         <component index="0"/>
+      </element>
+      <ifhead index="1" path="http://cds.omdoc.org/foundations/lf/lf.omdoc?lf?omitted">
+        <then>
+            <element name="mrow">
+              <attribute name="class" value="reconstructed reconstructed-hidden"/>
+              <text value=" : "/>
+              <component index="1"/>
+            </element>
+        </then>
+        <else>
+            <text value=" : "/>
+            <component index="1"/>
+        </else>
+      </ifhead>
+    </element>
+  </notation>
+
+</style>
+
+<style name="lf" from="http://cds.omdoc.org/foundations/lf/lf.omdoc?lf" to="text/html">
+
+   <include from="http://cds.omdoc.org/foundations/lf/mathml.omdoc?common"/>
+   
+   <notation for="??lambda" role="constant">
+     <text value="&#x03bb;"/>
+   </notation>
+
+   <notation for="??Pi" role="constant">
+     <text value="&#x03a0;"/>
+   </notation>
+
+   <notation for="??implicit_lambda" role="constant">
+     <text value="&#x03bb;"/>
+   </notation>
+
+   <notation for="??implicit_Pi" role="constant">
+     <text value="&#x03a0;"/>
+   </notation>
+
+   <notation role="fragment:lambda">
+     <hole/><text value="."/>
+   </notation>
+
+   <notation role="fragment:Pi">
+     <hole/><text value="."/>
+   </notation>
+
+</style>
+
+<style name="twelf" from="http://cds.omdoc.org/foundations/lf/lf.omdoc?lf" to="text/html">
+
+   <include from="http://cds.omdoc.org/foundations/lf/mathml.omdoc?common"/>
+   
+   <notation for="??lambda" role="constant">
+   </notation>
+
+   <notation for="??Pi" role="constant">
+   </notation>
+
+   <notation for="??implicit_lambda" role="constant">
+   </notation>
+
+   <notation for="??implicit_Pi" role="constant">
+   </notation>
+
+   <notation role="fragment:lambda">
+     <m:mo stretchy="false"><text value="["/></m:mo><hole/><m:mo stretchy="false"><text value="]"/></m:mo>
+   </notation>
+
+   <notation role="fragment:Pi">
+     <m:mo stretchy="false"><text value="{"/></m:mo><hole/><m:mo stretchy="false"><text value="}"/></m:mo>
+   </notation>
+
+</style>
+   
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

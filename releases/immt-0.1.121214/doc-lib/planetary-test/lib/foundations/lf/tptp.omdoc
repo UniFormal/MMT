@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+
+  <style name="tptp" from="http://cds.omdoc.org/foundations/lf/lf.omdoc" to="text/tptp">
+   <include from="http://cds.omdoc.org/omdoc/tptp.omdoc?tptp"/>
+   <include from="?lf"/>
+
+   <notation for="?lf?lambda" role="constant"/>
+   <notation for="?lf?lambda" role="binding">
+     <text value="["/><hole/><text value="]:"/>
+   </notation>
+
+   <notation for="?lf?arrow" role="constant">
+      <text value="-&gt;"/>
+   </notation>
+
+   <notation for="?lf?oftype" role="constant">
+      <text value=":"/>
+   </notation>
+
+   <notation for="?lf?oftype" role="attribution"/>
+
+  </style>
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,3 @@
+theory http://cds.omdoc.org/foundational?LFReflection
+Includes http://cds.omdoc.org/foundational?LFReflection http://cds.omdoc.org/foundational?LF
+Includes http://cds.omdoc.org/foundational?LFReflection http://cds.omdoc.org/foundational?Terms

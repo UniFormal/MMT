@@ -1,0 +1,15 @@
+%namespace "http://cds.omdoc.org/foundational".
+
+%sig Terms = {
+   %include Typed.
+   
+   refl-type # ↑ _1 2.
+   quote     # ⌜ 1 ⌝ _2.
+   eval      # ⌞ 1 ⌟ _2.
+   elim      # 1 ^2.
+}.
+
+%sig LFReflection = {
+  %include LF.
+  %include Terms.
+}.

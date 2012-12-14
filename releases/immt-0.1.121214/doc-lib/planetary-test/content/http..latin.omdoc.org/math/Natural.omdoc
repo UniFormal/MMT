@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory base="http://latin.omdoc.org/math" name="Natural" meta="http://cds.omdoc.org/foundations?LF">
+    <constant name="nat" role="type">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Typed" name="type" base="http://cds.omdoc.org/foundations"></om:OMS>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="+" role="constructor">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundations" position="0"></om:OMS>
+            <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math" position="1"></om:OMS>
+            <om:OMA position="2">
+              <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundations" position="2_0"></om:OMS>
+              <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math" position="2_1"></om:OMS>
+              <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math" position="2_2"></om:OMS>
+            </om:OMA>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="0" role="constructor">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math"></om:OMS>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="1" role="constructor">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math"></om:OMS>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="2" role="constructor">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math"></om:OMS>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="@" base="http://cds.omdoc.org/foundations" position="0"></om:OMS>
+            <om:OMS module="Natural" name="+" base="http://latin.omdoc.org/math" position="1"></om:OMS>
+            <om:OMS module="Natural" name="1" base="http://latin.omdoc.org/math" position="2"></om:OMS>
+            <om:OMS module="Natural" name="1" base="http://latin.omdoc.org/math" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+  </theory>
+</omdoc>

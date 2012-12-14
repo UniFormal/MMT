@@ -1,0 +1,5 @@
+theory http://cds.omdoc.org/foundations?Typed
+Declares http://cds.omdoc.org/foundations?Typed http://cds.omdoc.org/foundations?Typed?kind
+constant: http://cds.omdoc.org/foundations?Typed?kind
+Declares http://cds.omdoc.org/foundations?Typed http://cds.omdoc.org/foundations?Typed?type
+constant: http://cds.omdoc.org/foundations?Typed?type

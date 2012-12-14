@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath" base="http://cds.omdoc.org/omdoc/mmt.omdoc">
+
+   <theory name="mmt">
+      <constant name="hidden"/>
+      <constant name="composition"/>
+      <constant name="identity"/>
+      <constant name="morphism-application"/>
+      <constant name="type"/>
+      <constant name="definiens"/>
+   </theory>
+   
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
