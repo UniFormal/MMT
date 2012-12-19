@@ -1,0 +1,31 @@
+%namespace "http://cds.omdoc.org/foundational".
+
+%% a non-sensical declaration
+
+%sig Duh = {
+  %include LF.
+  o : type.
+  ded   : o -> type.
+  a : o.
+  b : ded a.
+
+%pattern dax = [d : o] {
+  ax : ded d. a: o.}.
+
+  abb : type.
+  baa : type.
+  %pattern bq = [f : abb ] [a : abb] {  f.  a. }.
+  %pattern bv = {   v : abb. }.  
+
+        
+   ⊦     = [x] ded x.        %prefix 0 ⊦.
+  ↯ : type = {F} ded F.
+
+%pattern prop  = {
+                                 p : o.
+               }.
+
+
+
+
+}.
