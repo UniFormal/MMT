@@ -250,6 +250,28 @@ no change management except that the deletions of scoped declarations are recurs
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#detectChanges" data-isabs="false">
+      <a id="detectChanges(List[ContentElement]):StrictDiff"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">detectChanges</span>
+        
+        <span class="params">(<span name="elems">elems: List[<a name="info.kwarc.mmt.api.ContentElement" class="extype" href="../ContentElement.html">ContentElement</a>]</span>)</span><span class="result">: <a name="info.kwarc.mmt.api.moc.StrictDiff" class="extype" href="../moc/StrictDiff.html">StrictDiff</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#detectRefinements" data-isabs="false">
+      <a id="detectRefinements(StrictDiff):List[String]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">detectRefinements</span>
+        
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.StrictDiff" class="extype" href="../moc/StrictDiff.html">StrictDiff</a></span>)</span><span class="result">: List[String]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#docstore" data-isabs="false">
       <a id="docstore:DocStore"></a>
       <h4 class="signature">
@@ -409,16 +431,16 @@ no change management except that the deletions of scoped declarations are recurs
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.ROController" class="extype" href="../frontend/ROController.html">ROController</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#globalLookup" data-isabs="false">
-      <a id="globalLookup:Lookup"></a>
+      <a id="globalLookup:Lookup { def getAllPaths(): Iterable[info.kwarc.mmt.api.MPath] }"></a>
       <h4 class="signature">
       <span class="kind">val</span>
       <span class="symbol"> 
         <span class="name">globalLookup</span>
         
-        <span class="result">: <a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="../libraries/Lookup.html">Lookup</a></span>
+        <span class="result">: <a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="../libraries/Lookup.html">Lookup</a> { def getAllPaths(): Iterable[info.kwarc.mmt.api.MPath] }</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">a lookup that load missing modules dynamically</p><div class="fullcomment"><div class="comment cmt"><p>a lookup that load missing modules dynamically</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a> → <a name="info.kwarc.mmt.api.frontend.ROController" class="extype" href="../frontend/ROController.html">ROController</a></dd></dl></div>
+      <p class="shortcomment cmt">a lookup that loads missing modules dynamically</p><div class="fullcomment"><div class="comment cmt"><p>a lookup that loads missing modules dynamically</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a> → <a name="info.kwarc.mmt.api.frontend.ROController" class="extype" href="../frontend/ROController.html">ROController</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#handle" data-isabs="false">
       <a id="handle(Action):Unit"></a>
       <h4 class="signature">
@@ -599,6 +621,17 @@ be aware that the argument may be evaluated repeatedly
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.tntplugin.TNTValidation" class="extype" href="">TNTValidation</a> → TntIntegrationPlugin</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#pragmatic" data-isabs="false">
+      <a id="pragmatic:Pragmatics"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">pragmatic</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.pragmatics.Pragmatics" class="extype" href="../pragmatics/Pragmatics.html">Pragmatics</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">pragmatic MMT features besides Patterns</p><div class="fullcomment"><div class="comment cmt"><p>pragmatic MMT features besides Patterns</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#presenter" data-isabs="false">
       <a id="presenter:Presenter"></a>
       <h4 class="signature">
@@ -610,6 +643,17 @@ be aware that the argument may be evaluated repeatedly
       </span>
       </h4>
       <p class="shortcomment cmt">the MMT rendering engine</p><div class="fullcomment"><div class="comment cmt"><p>the MMT rendering engine</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#propagator" data-isabs="false">
+      <a id="propagator:OccursInImpactPropagator"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">propagator</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.moc.OccursInImpactPropagator" class="extype" href="../moc/OccursInImpactPropagator.html">OccursInImpactPropagator</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">moc.</p><div class="fullcomment"><div class="comment cmt"><p>moc.propagator - handling change propagation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#read" data-isabs="false">
       <a id="read(File,Option[DPath]):DPath"></a>
       <h4 class="signature">
@@ -617,7 +661,7 @@ be aware that the argument may be evaluated repeatedly
       <span class="symbol"> 
         <span class="name">read</span>
         
-        <span class="params">(<span name="f">f: <span name="java.io.File" class="extype">File</span></span>, <span name="docBase">docBase: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>
+        <span class="params">(<span name="f">f: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>, <span name="docBase">docBase: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">reads a file containing a document and returns the Path of the document found in it</p><div class="fullcomment"><div class="comment cmt"><p>reads a file containing a document and returns the Path of the document found in it</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
@@ -628,10 +672,21 @@ be aware that the argument may be evaluated repeatedly
       <span class="symbol"> 
         <span class="name">readText</span>
         
-        <span class="params">(<span name="f">f: <span name="java.io.File" class="extype">File</span></span>, <span name="docBase">docBase: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>
+        <span class="params">(<span name="f">f: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>, <span name="docBase">docBase: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">reads a text/Twelf file and returns its Path</p><div class="fullcomment"><div class="comment cmt"><p>reads a text/Twelf file and returns its Path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#refiner" data-isabs="false">
+      <a id="refiner:PragmaticRefiner"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">refiner</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.moc.PragmaticRefiner" class="extype" href="../moc/PragmaticRefiner.html">PragmaticRefiner</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">moc.</p><div class="fullcomment"><div class="comment cmt"><p>moc.refiner - handling pragmatic changes in scope</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#report" data-isabs="false">
       <a id="report:Report"></a>
       <h4 class="signature">
@@ -720,6 +775,17 @@ be aware that the argument may be evaluated repeatedly
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#termParser" data-isabs="false">
+      <a id="termParser:NotationParser"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">termParser</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.parser.NotationParser" class="extype" href="../parser/NotationParser.html">NotationParser</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the MMT term parser</p><div class="fullcomment"><div class="comment cmt"><p>the MMT term parser</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#textReader" data-isabs="false">
       <a id="textReader:TextReader"></a>
       <h4 class="signature">
@@ -743,16 +809,27 @@ be aware that the argument may be evaluated repeatedly
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#uom" data-isabs="false">
-      <a id="uom:UOMServer"></a>
+      <a id="uom:UOM"></a>
       <h4 class="signature">
       <span class="kind">val</span>
       <span class="symbol"> 
         <span class="name">uom</span>
         
-        <span class="result">: <a name="info.kwarc.mmt.uom.UOMServer" class="extype" href="../../uom/UOMServer.html">UOMServer</a></span>
+        <span class="result">: <a name="info.kwarc.mmt.api.uom.UOM" class="extype" href="../uom/UOM.html">UOM</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the universal machine, a computation engine</p><div class="fullcomment"><div class="comment cmt"><p>the universal machine, a computation engine</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#update" data-isabs="false">
+      <a id="update(StrictDiff,List[String]):Set[CPath]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">update</span>
+        
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.StrictDiff" class="extype" href="../moc/StrictDiff.html">StrictDiff</a></span>, <span name="withChanges">withChanges: List[String] = <span class="symbol">Nil</span></span>)</span><span class="result">: Set[<a name="info.kwarc.mmt.api.CPath" class="extype" href="../CPath.html">CPath</a>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -795,6 +872,17 @@ be aware that the argument may be evaluated repeatedly
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#winman" data-isabs="false">
+      <a id="winman:WindowManager"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">winman</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.gui.WindowManager" class="extype" href="../gui/WindowManager.html">WindowManager</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the window manager</p><div class="fullcomment"><div class="comment cmt"><p>the window manager</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Controller#xmlReader" data-isabs="false">
       <a id="xmlReader:XMLReader"></a>
       <h4 class="signature">

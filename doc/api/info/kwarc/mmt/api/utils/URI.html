@@ -154,6 +154,7 @@
       </h4>
       <p class="shortcomment cmt">drop query, fragment, append to path
  path stays relative/absolute; but URI(_, Some(_), Nil, false, _, _) / _ turns path absolute
+ trailing empty segment of this URI is dropped when appending
 </p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.utils.URI#/" data-isabs="false">
       <a id="/(String):URI"></a>
@@ -436,6 +437,17 @@
       </span>
       </h4>
       <p class="shortcomment cmt">returns the whole path as a string (/-separated, possibly with a leading /)</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.utils.URI#pathNoTrailingSlash" data-isabs="false">
+      <a id="pathNoTrailingSlash:List[String]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">pathNoTrailingSlash</span>
+        
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[String]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">removes an empty trailing segment, which results from a trailing /</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.utils.URI#productArity" data-isabs="false">
       <a id="productArity:Int"></a>
       <h4 class="signature">

@@ -63,7 +63,18 @@
       <span class="symbol"> 
         <span class="name">TextReader</span>
         
-        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>, <span name="report">report: <a name="info.kwarc.mmt.api.frontend.Report" class="extype" href="../frontend/Report.html">Report</a></span>)</span>
+        <span class="params">(<span name="ctrl">ctrl: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TextReader#this" data-isabs="false">
+      <a id="this:TextReader"></a>
+      <h4 class="signature">
+      <span class="kind">new</span>
+      <span class="symbol"> 
+        <span class="name">TextReader</span>
+        
+        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>, <span name="cont">cont: (<a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span>
       </span>
       </h4>
       
@@ -270,27 +281,38 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TextReader#readDocument" data-isabs="false">
-      <a id="readDocument(String,DPath):(Document, LinkedList[SourceError])"></a>
+      <a id="readDocument(String,DPath)((ParsingUnit) ⇒ Term):(Document, LinkedList[SourceError])"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">readDocument</span>
         
-        <span class="params">(<span name="source">source: String</span>, <span name="dpath_">dpath_: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>)</span><span class="result">: (<a name="info.kwarc.mmt.api.documents.Document" class="extype" href="../documents/Document.html">Document</a>, <span name="scala.collection.mutable.LinkedList" class="extype">LinkedList</span>[<a name="info.kwarc.mmt.api.SourceError" class="extype" href="../SourceError.html">SourceError</a>])</span>
+        <span class="params">(<span name="source">source: String</span>, <span name="dpath_">dpath_: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>)</span><span class="params">(<span name="puCont_">puCont_: (<a name="info.kwarc.mmt.api.parser.ParsingUnit" class="extype" href="../parser/ParsingUnit.html">ParsingUnit</a>) ⇒ <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: (<a name="info.kwarc.mmt.api.documents.Document" class="extype" href="../documents/Document.html">Document</a>, <span name="scala.collection.mutable.LinkedList" class="extype">LinkedList</span>[<a name="info.kwarc.mmt.api.SourceError" class="extype" href="../SourceError.html">SourceError</a>])</span>
       </span>
       </h4>
       
     </li><li visbl="pub" name="info.kwarc.mmt.api.backend.TextReader#readDocument" data-isabs="false">
-      <a id="readDocument(Source,DPath):(Document, LinkedList[SourceError])"></a>
+      <a id="readDocument(Source,DPath)((ParsingUnit) ⇒ Term):(Document, LinkedList[SourceError])"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">readDocument</span>
         
-        <span class="params">(<span name="source">source: <span name="scala.io.Source" class="extype">Source</span></span>, <span name="dpath_">dpath_: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>)</span><span class="result">: (<a name="info.kwarc.mmt.api.documents.Document" class="extype" href="../documents/Document.html">Document</a>, <span name="scala.collection.mutable.LinkedList" class="extype">LinkedList</span>[<a name="info.kwarc.mmt.api.SourceError" class="extype" href="../SourceError.html">SourceError</a>])</span>
+        <span class="params">(<span name="source">source: <span name="scala.io.Source" class="extype">Source</span></span>, <span name="dpath_">dpath_: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>)</span><span class="params">(<span name="puCont_">puCont_: (<a name="info.kwarc.mmt.api.parser.ParsingUnit" class="extype" href="../parser/ParsingUnit.html">ParsingUnit</a>) ⇒ <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: (<a name="info.kwarc.mmt.api.documents.Document" class="extype" href="../documents/Document.html">Document</a>, <span name="scala.collection.mutable.LinkedList" class="extype">LinkedList</span>[<a name="info.kwarc.mmt.api.SourceError" class="extype" href="../SourceError.html">SourceError</a>])</span>
       </span>
       </h4>
       <p class="shortcomment cmt">crawls a file.</p><div class="fullcomment"><div class="comment cmt"><p>crawls a file.</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a LinkedList of errors that occurred during parsing</p></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Reader#report" data-isabs="false">
+      <a id="report:Report"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">report</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.frontend.Report" class="extype" href="../frontend/Report.html">Report</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.backend.Reader" class="extype" href="Reader.html">Reader</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

@@ -24,16 +24,16 @@
       <span class="symbol"> 
         <span class="name">EqualityRule</span>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends <a name="info.kwarc.mmt.api.objects.Rule" class="extype" href="Rule.html">Rule</a></span>
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A EqualityRule checks the equality of two expressions</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.api.objects.Rule" class="extype" href="Rule.html">Rule</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.lf.Eta" class="extype" href="../../lf/Eta.html">Eta</a></div>
+          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.lf.Extensionality" class="extype" href="../../lf/Extensionality$.html">Extensionality</a></div>
         </div></div>
         
 
@@ -49,7 +49,7 @@
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall out"><span>Hide All</span></li>
                 <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.api.objects.EqualityRule" class="in"><span>EqualityRule</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+                <ol id="linearization"><li name="info.kwarc.mmt.api.objects.EqualityRule" class="in"><span>EqualityRule</span></li><li name="info.kwarc.mmt.api.objects.Rule" class="in"><span>Rule</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -69,7 +69,8 @@
         <span class="params">(<span name="head">head: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>)</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">head</dt><dd class="cmt"><p>the head of the type of the two expressions
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -78,16 +79,17 @@
         <div class="values members" id="values">
               <h3>Abstract Value Members</h3>
               <ol><li visbl="pub" name="info.kwarc.mmt.api.objects.EqualityRule#apply" data-isabs="true">
-      <a id="apply(Solver)(Term,Term,Term)(Context):Boolean"></a>
+      <a id="apply(Solver)(Term,Term,Term)(Stack):Boolean"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">apply</span>
         
-        <span class="params">(<span name="solver">solver: <a name="info.kwarc.mmt.api.objects.Solver" class="extype" href="Solver.html">Solver</a></span>)</span><span class="params">(<span name="tm1">tm1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tm2">tm2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+        <span class="params">(<span name="solver">solver: <a name="info.kwarc.mmt.api.objects.Solver" class="extype" href="Solver.html">Solver</a></span>)</span><span class="params">(<span name="tm1">tm1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tm2">tm2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">solver</dt><dd class="cmt"><p>provides callbacks to the currently solved system of judgments</p></dd><dt class="param">tm1</dt><dd class="cmt"><p>the first term</p></dd><dt class="param">tm2</dt><dd class="cmt"><p>the second term</p></dd><dt class="param">tp</dt><dd class="cmt"><p>their type</p></dd><dt>returns</dt><dd class="cmt"><p>true iff the judgment holds
+</p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
     </li></ol>
             </div>
 
@@ -231,6 +233,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.EqualityRule#head" data-isabs="false">
+      <a id="head:GlobalName"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">head</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the head of the type of the two expressions
+</p><div class="fullcomment"><div class="comment cmt"><p>the head of the type of the two expressions
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.EqualityRule" class="extype" href="">EqualityRule</a> → <a name="info.kwarc.mmt.api.objects.Rule" class="extype" href="Rule.html">Rule</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -344,7 +359,9 @@
 
         
 
-        <div name="scala.AnyRef" class="parent">
+        <div name="info.kwarc.mmt.api.objects.Rule" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.objects.Rule" class="extype" href="Rule.html">Rule</a></h3>
+            </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
               <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>

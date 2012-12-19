@@ -24,18 +24,18 @@
       <span class="symbol"> 
         <span class="name">XRef</span>
         
-        <span class="result"> extends <a name="info.kwarc.mmt.api.NarrativeElement" class="extype" href="../NarrativeElement.html">NarrativeElement</a></span>
+        <span class="result"> extends <a name="info.kwarc.mmt.api.NarrativeElement" class="extype" href="../NarrativeElement.html">NarrativeElement</a> with <a name="info.kwarc.mmt.api.documents.DocumentItem" class="extype" href="DocumentItem.html">DocumentItem</a></span>
       </span>
       </h4>
       
           <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>An XRef represents a reference from a document to an external document part or module.
 An XRef is semantically equivalent to copy-pasting the referenced module.
-All documents are represented as lists of XRefs no matter whether a module is given locally or remotely.</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
+All documents are reprgesented as lists of XRefs no matter whether a module is given locally or remotely.</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.api.NarrativeElement" class="extype" href="../NarrativeElement.html">NarrativeElement</a>, <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a>, <a name="info.kwarc.mmt.api.metadata.HasMetaData" class="extype" href="../metadata/HasMetaData.html">HasMetaData</a>, <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.api.documents.DocumentItem" class="extype" href="DocumentItem.html">DocumentItem</a>, <a name="info.kwarc.mmt.api.NarrativeElement" class="extype" href="../NarrativeElement.html">NarrativeElement</a>, <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a>, <a name="info.kwarc.mmt.api.metadata.HasMetaData" class="extype" href="../metadata/HasMetaData.html">HasMetaData</a>, <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.api.documents.DRef" class="extype" href="DRef.html">DRef</a>, <a name="info.kwarc.mmt.api.documents.MRef" class="extype" href="MRef.html">MRef</a></div>
+          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.api.documents.DRef" class="extype" href="DRef.html">DRef</a>, <a name="info.kwarc.mmt.api.documents.MRef" class="extype" href="MRef.html">MRef</a>, <a name="info.kwarc.mmt.api.documents.NRef" class="extype" href="NRef.html">NRef</a></div>
         </div></div>
         
 
@@ -51,7 +51,7 @@ All documents are represented as lists of XRefs no matter whether a module is gi
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall out"><span>Hide All</span></li>
                 <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.api.documents.XRef" class="in"><span>XRef</span></li><li name="info.kwarc.mmt.api.NarrativeElement" class="in"><span>NarrativeElement</span></li><li name="info.kwarc.mmt.api.StructuralElement" class="in"><span>StructuralElement</span></li><li name="info.kwarc.mmt.api.metadata.HasMetaData" class="in"><span>HasMetaData</span></li><li name="info.kwarc.mmt.api.Content" class="in"><span>Content</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+                <ol id="linearization"><li name="info.kwarc.mmt.api.documents.XRef" class="in"><span>XRef</span></li><li name="info.kwarc.mmt.api.documents.DocumentItem" class="in"><span>DocumentItem</span></li><li name="info.kwarc.mmt.api.NarrativeElement" class="in"><span>NarrativeElement</span></li><li name="info.kwarc.mmt.api.StructuralElement" class="in"><span>StructuralElement</span></li><li name="info.kwarc.mmt.api.metadata.HasMetaData" class="in"><span>HasMetaData</span></li><li name="info.kwarc.mmt.api.Content" class="in"><span>Content</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -79,7 +79,7 @@ All documents are represented as lists of XRefs no matter whether a module is gi
         
         <div class="values members" id="values">
               <h3>Abstract Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#role" data-isabs="true">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.Content#role" data-isabs="true">
       <a id="role:Role"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -89,7 +89,7 @@ All documents are represented as lists of XRefs no matter whether a module is gi
         <span class="result">: <a name="info.kwarc.mmt.api.Role" class="extype" href="../Role.html">Role</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.XRef#toNode" data-isabs="true">
       <a id="toNode:Node"></a>
       <h4 class="signature">
@@ -100,7 +100,7 @@ All documents are represented as lists of XRefs no matter whether a module is gi
         <span class="result">: <span name="scala.xml.Node" class="extype">Node</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.XRef" class="extype" href="">XRef</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.XRef" class="extype" href="">XRef</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -186,7 +186,7 @@ All documents are represented as lists of XRefs no matter whether a module is gi
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#compNames" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#compNames" data-isabs="false">
       <a id="compNames:List[(String, Int)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -196,7 +196,7 @@ All documents are represented as lists of XRefs no matter whether a module is gi
         <span class="result">: List[(String, <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.XRef#components" data-isabs="false">
       <a id="components:List[StringLiteral]"></a>
       <h4 class="signature">
@@ -207,8 +207,8 @@ All documents are represented as lists of XRefs no matter whether a module is gi
         <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<a name="info.kwarc.mmt.api.presentation.StringLiteral" class="extype" href="../presentation/StringLiteral.html">StringLiteral</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the components are an abstract definition of the children of a knowledge item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a knowledge item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.XRef" class="extype" href="">XRef</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#contComponents" data-isabs="false">
+      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.XRef" class="extype" href="">XRef</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#contComponents" data-isabs="false">
       <a id="contComponents:ContentComponents"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -218,7 +218,7 @@ All documents are represented as lists of XRefs no matter whether a module is gi
         <span class="result">: <a name="info.kwarc.mmt.api.presentation.ContentComponents" class="extype" href="../presentation/ContentComponents.html">ContentComponents</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -288,6 +288,17 @@ All documents are represented as lists of XRefs no matter whether a module is gi
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#governingPath" data-isabs="false">
+      <a id="governingPath:Some[Path]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">governingPath</span>
+        
+        <span class="result">: <span name="scala.Some" class="extype">Some</span>[<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the governingPath required by content is the path</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath required by content is the path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -489,7 +500,9 @@ All documents are represented as lists of XRefs no matter whether a module is gi
 
         
 
-        <div name="info.kwarc.mmt.api.NarrativeElement" class="parent">
+        <div name="info.kwarc.mmt.api.documents.DocumentItem" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.documents.DocumentItem" class="extype" href="DocumentItem.html">DocumentItem</a></h3>
+            </div><div name="info.kwarc.mmt.api.NarrativeElement" class="parent">
               <h3>Inherited from <a name="info.kwarc.mmt.api.NarrativeElement" class="extype" href="../NarrativeElement.html">NarrativeElement</a></h3>
             </div><div name="info.kwarc.mmt.api.StructuralElement" class="parent">
               <h3>Inherited from <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></h3>

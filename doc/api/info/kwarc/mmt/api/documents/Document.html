@@ -65,7 +65,7 @@ The content itself is stored in the controller.
       <span class="symbol"> 
         <span class="name">Document</span>
         
-        <span class="params">(<span name="path">path: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>, <span name="inititems">inititems: List[<a name="info.kwarc.mmt.api.documents.XRef" class="extype" href="XRef.html">XRef</a>]</span>)</span>
+        <span class="params">(<span name="path">path: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>, <span name="inititems">inititems: List[<a name="info.kwarc.mmt.api.documents.DocumentItem" class="extype" href="DocumentItem.html">DocumentItem</a>]</span>)</span>
       </span>
       </h4>
       <p class="shortcomment cmt">constructs a non-empty document</p>
@@ -146,13 +146,13 @@ The content itself is stored in the controller.
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.Document#add" data-isabs="false">
-      <a id="add(XRef):Unit"></a>
+      <a id="add(DocumentItem):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">add</span>
         
-        <span class="params">(<span name="r">r: <a name="info.kwarc.mmt.api.documents.XRef" class="extype" href="XRef.html">XRef</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="i">i: <a name="info.kwarc.mmt.api.documents.DocumentItem" class="extype" href="DocumentItem.html">DocumentItem</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">adds a child at the end of the documents</p>
@@ -181,7 +181,7 @@ The content itself is stored in the controller.
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#compNames" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#compNames" data-isabs="false">
       <a id="compNames:List[(String, Int)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -191,19 +191,19 @@ The content itself is stored in the controller.
         <span class="result">: List[(String, <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.Document#components" data-isabs="false">
-      <a id="components:List[AnyRef with Content]"></a>
+      <a id="components:List[Content]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">components</span>
         
-        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[AnyRef with <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>]</span>
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the components are an abstract definition of the children of a knowledge item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a knowledge item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.Document" class="extype" href="">Document</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#contComponents" data-isabs="false">
+      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.Document" class="extype" href="">Document</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#contComponents" data-isabs="false">
       <a id="contComponents:ContentComponents"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -213,7 +213,7 @@ The content itself is stored in the controller.
         <span class="result">: <a name="info.kwarc.mmt.api.presentation.ContentComponents" class="extype" href="../presentation/ContentComponents.html">ContentComponents</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -271,7 +271,7 @@ The content itself is stored in the controller.
         <span class="result">: List[<a name="info.kwarc.mmt.api.documents.XRef" class="extype" href="XRef.html">XRef</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">returns the list of children of the document</p>
+      <p class="shortcomment cmt">returns the list of children of the document (excluding narration)</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.Document#getLocalItems" data-isabs="false">
       <a id="getLocalItems:List[XRef]"></a>
       <h4 class="signature">
@@ -305,6 +305,17 @@ The content itself is stored in the controller.
       </span>
       </h4>
       <p class="shortcomment cmt">returns the list of modules declared in the document (not user-written references)</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.documents.Document#getNarratedItems" data-isabs="false">
+      <a id="getNarratedItems:List[DocumentItem]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getNarratedItems</span>
+        
+        <span class="result">: List[<a name="info.kwarc.mmt.api.documents.DocumentItem" class="extype" href="DocumentItem.html">DocumentItem</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">returns the list of children of the document (including narration)</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#getOrigin" data-isabs="false">
       <a id="getOrigin:Origin"></a>
       <h4 class="signature">
@@ -316,6 +327,17 @@ The content itself is stored in the controller.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#governingPath" data-isabs="false">
+      <a id="governingPath:Some[Path]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">governingPath</span>
+        
+        <span class="result">: <span name="scala.Some" class="extype">Some</span>[<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the governingPath required by content is the path</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath required by content is the path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -438,7 +460,7 @@ The content itself is stored in the controller.
         <span class="result">: info.kwarc.mmt.api.Role_Document.type</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.Document" class="extype" href="">Document</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.Document" class="extype" href="">Document</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#setOrigin" data-isabs="false">
       <a id="setOrigin(Origin):Unit"></a>
       <h4 class="signature">
@@ -471,7 +493,7 @@ The content itself is stored in the controller.
         <span class="result">: <span name="scala.xml.Elem" class="extype">Elem</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.Document" class="extype" href="">Document</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.documents.Document" class="extype" href="">Document</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.Document#toNodeResolved" data-isabs="false">
       <a id="toNodeResolved(Lookup):Elem"></a>
       <h4 class="signature">

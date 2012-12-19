@@ -14,9 +14,9 @@
         </head>
         <body class="value">
       <div id="definition">
-        <img src="../../../../../lib/object_big.png" />
+        <a title="Go to companion" href="TextNotation.html"><img src="../../../../../lib/object_to_class_big.png" /></a>
         <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a>.<a name="info.kwarc.mmt.api.parser" class="extype" href="package.html">parser</a></p>
-        <h1>TextNotation</h1>
+        <h1><a title="Go to companion" href="TextNotation.html">TextNotation</a></h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -24,13 +24,13 @@
       <span class="symbol"> 
         <span class="name">TextNotation</span>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends <span name="scala.Serializable" class="extype">Serializable</span></span>
       </span>
       </h4>
       
           <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><span name="scala.Serializable" class="extype">Serializable</span>, <span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
         
 
@@ -46,7 +46,7 @@
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall out"><span>Hide All</span></li>
                 <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.api.parser.TextNotation" class="in"><span>TextNotation</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+                <ol id="linearization"><li name="info.kwarc.mmt.api.parser.TextNotation" class="in"><span>TextNotation</span></li><li name="scala.Serializable" class="in"><span>Serializable</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -245,24 +245,24 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.TextNotation#parse" data-isabs="false">
-      <a id="parse(String):Notation"></a>
+      <a id="parse(String,GlobalName):TextNotation"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">parse</span>
         
-        <span class="params">(<span name="s">s: String</span>)</span><span class="result">: <a name="info.kwarc.mmt.api.parser.Notation" class="extype" href="Notation.html">Notation</a></span>
+        <span class="params">(<span name="str">str: String</span>, <span name="conPath">conPath: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.parser.TextNotation" class="extype" href="TextNotation.html">TextNotation</a></span>
       </span>
       </h4>
       
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.TextNotation#parse" data-isabs="false">
-      <a id="parse(Node):Notation"></a>
+      <a id="parse(Node,GlobalName):TextNotation"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">parse</span>
         
-        <span class="params">(<span name="s">s: <span name="scala.xml.Node" class="extype">Node</span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.parser.Notation" class="extype" href="Notation.html">Notation</a></span>
+        <span class="params">(<span name="s">s: <span name="scala.xml.Node" class="extype">Node</span></span>, <span name="conPath">conPath: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.parser.TextNotation" class="extype" href="TextNotation.html">TextNotation</a></span>
       </span>
       </h4>
       
@@ -277,6 +277,17 @@
       </span>
       </h4>
       
+    </li><li visbl="prt" name="info.kwarc.mmt.api.parser.TextNotation#readResolve" data-isabs="false">
+      <a id="readResolve():AnyRef"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">readResolve</span>
+        
+        <span class="params">()</span><span class="result">: AnyRef</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -346,7 +357,11 @@
 
         
 
-        <div name="scala.AnyRef" class="parent">
+        <div name="scala.Serializable" class="parent">
+              <h3>Inherited from <span name="scala.Serializable" class="extype">Serializable</span></h3>
+            </div><div name="java.io.Serializable" class="parent">
+              <h3>Inherited from <span name="java.io.Serializable" class="extype">Serializable</span></h3>
+            </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
               <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>

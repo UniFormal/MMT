@@ -47,18 +47,7 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.ontology.AddRelations" data-isabs="false">
-      <a id="AddRelations:AddRelations"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="AddRelations.html"><span class="name">AddRelations</span></a>
-        
-        <span class="params">(<span name="rels">rels: List[RelationalElement]</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">adds a list of relations to the relstore</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.AllThatAre" data-isabs="false">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.ontology.AllThatAre" data-isabs="false">
       <a id="AllThatAre:AllThatAre"></a>
       <h4 class="signature">
       <span class="kind">case class</span>
@@ -170,17 +159,6 @@
       </span>
       </h4>
       <p class="comment cmt">comprehension subset of a set</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.DeleteRelations" data-isabs="false">
-      <a id="DeleteRelations:DeleteRelations"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="DeleteRelations.html"><span class="name">DeleteRelations</span></a>
-        
-        <span class="params">(<span name="p">p: Path</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">removes from the relstore all relations for which p is subject</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ESet" data-isabs="false">
       <a id="ESet:ESet"></a>
       <h4 class="signature">
@@ -292,17 +270,6 @@
       </h4>
       <p class="comment cmt">the reflexive relation restricted to a unary predicate
  This permits the restriction of a result set to elements of a certain type.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.IdenticalRelations" data-isabs="false">
-      <a id="IdenticalRelations:IdenticalRelations"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="IdenticalRelations.html"><span class="name">IdenticalRelations</span></a>
-        
-        <span class="params">()</span><span class="result"> extends RelationsChange with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">does nothing</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Individual" data-isabs="false">
       <a id="Individual:Individual"></a>
       <h4 class="signature">
@@ -512,31 +479,6 @@
       </span>
       </h4>
       <p class="comment cmt">binary relations between paths, i.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RelationsChange" data-isabs="true">
-      <a id="RelationsChange:RelationsChange"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="RelationsChange.html"><span class="name">RelationsChange</span></a>
-        
-        <span class="result"> extends Change</span>
-      </span>
-      </h4>
-      <p class="comment cmt">classes for changes to the relstore
-will be returned by the checker when checking a change
-and then applied by the controller to the relstore to mantain its adequacy
-</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.RenameRelations" data-isabs="false">
-      <a id="RenameRelations:RenameRelations"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="RenameRelations.html"><span class="name">RenameRelations</span></a>
-        
-        <span class="params">(<span name="old">old: Path</span>, <span name="nw">nw: Path</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">replaces in the relstore, in all relations for which old is subject, old with nw</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Sequence" data-isabs="false">
       <a id="Sequence:Sequence"></a>
       <h4 class="signature">
@@ -559,6 +501,17 @@ and then applied by the controller to the relstore to mantain its adequacy
       </span>
       </h4>
       <p class="comment cmt">singleton sets</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.StringResult" data-isabs="false">
+      <a id="StringResult:StringResult"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="StringResult.html"><span class="name">StringResult</span></a>
+        
+        <span class="params">(<span name="string">string: String</span>)</span><span class="result"> extends BaseType with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.StructureEdge" data-isabs="false">
       <a id="StructureEdge:StructureEdge"></a>
       <h4 class="signature">
@@ -713,17 +666,6 @@ and then applied by the controller to the relstore to mantain its adequacy
       </span>
       </h4>
       <p class="comment cmt">union of sets</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.UpdateRelations" data-isabs="false">
-      <a id="UpdateRelations:UpdateRelations"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="UpdateRelations.html"><span class="name">UpdateRelations</span></a>
-        
-        <span class="params">(<span name="rels">rels: List[RelationalElement]</span>, <span name="p">p: Path</span>)</span><span class="result"> extends RelationsChange with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">removes from the relstore all relations for which p is subject, then adds rels</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.ViewEdge" data-isabs="false">
       <a id="ViewEdge:ViewEdge"></a>
       <h4 class="signature">
@@ -1150,6 +1092,17 @@ and then applied by the controller to the relstore to mantain its adequacy
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.StringType" data-isabs="false">
+      <a id="StringType:StringType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="StringType$.html"><span class="name">StringType</span></a>
+        
+        <span class="result"> extends QueryBaseType with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">queries returning arbitrary strings</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.ontology.Unary" data-isabs="false">
       <a id="Unary:Unary"></a>
       <h4 class="signature">

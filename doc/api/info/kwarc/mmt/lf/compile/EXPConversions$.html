@@ -28,7 +28,7 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>useful implicit converions</p></div><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>useful implicit conversions</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -138,7 +138,7 @@
         <span class="params">(<span name="c">c: <a name="info.kwarc.mmt.lf.compile.CatRef" class="extype" href="CatRef.html">CatRef</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
+      <p class="shortcomment cmt">integer literals: as in Scala</p><div class="fullcomment"><div class="comment cmt"><p>integer literals: as in Scala</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -153,6 +153,17 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions#current" data-isabs="false">
+      <a id="current:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">current</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">shortcut for the special identifier that refers to the current declaration</p>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -233,6 +244,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions#listToLIST" data-isabs="false">
+      <a id="listToLIST(List[EXP]):EXP"></a>
+      <h4 class="signature">
+      <span class="kind">implicit def</span>
+      <span class="symbol"> 
+        <span class="name">listToLIST</span>
+        
+        <span class="params">(<span name="l">l: List[<a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a>]</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">lists with given elements: as in Scala</p><div class="fullcomment"><div class="comment cmt"><p>lists with given elements: as in Scala</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -266,6 +288,28 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions#stringToCONSHEAD" data-isabs="false">
+      <a id="stringToCONSHEAD(String):CONSHEAD"></a>
+      <h4 class="signature">
+      <span class="kind">implicit def</span>
+      <span class="symbol"> 
+        <span class="name">stringToCONSHEAD</span>
+        
+        <span class="params">(<span name="n">n: String</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.CONSHEAD" class="extype" href="CONSHEAD.html">CONSHEAD</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">constructors in an ADT as &quot;cons&quot; of (args)</p><div class="fullcomment"><div class="comment cmt"><p>constructors in an ADT as &quot;cons&quot; of (args)</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions#stringToDECLHEAD" data-isabs="false">
+      <a id="stringToDECLHEAD(String):DECLHEAD"></a>
+      <h4 class="signature">
+      <span class="kind">implicit def</span>
+      <span class="symbol"> 
+        <span class="name">stringToDECLHEAD</span>
+        
+        <span class="params">(<span name="n">n: String</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.DECLHEAD" class="extype" href="DECLHEAD.html">DECLHEAD</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">declarations as &quot;name&quot; keyword decl</p><div class="fullcomment"><div class="comment cmt"><p>declarations as &quot;name&quot; keyword decl</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions#stringToID" data-isabs="false">
       <a id="stringToID(String):ID"></a>
       <h4 class="signature">
@@ -299,6 +343,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions#tupleToTuple2" data-isabs="false">
+      <a id="tupleToTuple2((EXP, EXP)):EXP"></a>
+      <h4 class="signature">
+      <span class="kind">implicit def</span>
+      <span class="symbol"> 
+        <span class="name">tupleToTuple2</span>
+        
+        <span class="params">(<span name="t">t: (<a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a>, <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a>)</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">pairs: as in Scala</p><div class="fullcomment"><div class="comment cmt"><p>pairs: as in Scala</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

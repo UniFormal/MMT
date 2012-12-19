@@ -14,9 +14,9 @@
         </head>
         <body class="type">
       <div id="definition">
-        <img src="../../../../../lib/class_big.png" />
+        <a title="Go to companion" href="Compiler$.html"><img src="../../../../../lib/class_to_object_big.png" /></a>
         <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.lf" class="extype" href="../package.html">lf</a>.<a name="info.kwarc.mmt.lf.compile" class="extype" href="package.html">compile</a></p>
-        <h1>Compiler</h1>
+        <h1><a title="Go to companion" href="Compiler$.html">Compiler</a></h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -24,13 +24,13 @@
       <span class="symbol"> 
         <span class="name">Compiler</span>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends <a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a></span>
       </span>
       </h4>
       
           <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>an example backend that transforms a LogicSyntax L into the SML code that represents and validates L-theories</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
         
 
@@ -46,7 +46,7 @@
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall out"><span>Hide All</span></li>
                 <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.lf.compile.Compiler" class="in"><span>Compiler</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+                <ol id="linearization"><li name="info.kwarc.mmt.lf.compile.Compiler" class="in"><span>Compiler</span></li><li name="info.kwarc.mmt.lf.compile.Program" class="in"><span>Program</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -63,7 +63,7 @@
       <span class="symbol"> 
         <span class="name">Compiler</span>
         
-        <span class="params">(<span name="fl">fl: <a name="info.kwarc.mmt.lf.compile.FuncLang" class="extype" href="FuncLang.html">FuncLang</a></span>)</span>
+        <span class="params">(<span name="log">log: <a name="info.kwarc.mmt.lf.compile.LogicSyntax" class="extype" href="LogicSyntax.html">LogicSyntax</a></span>)</span>
       </span>
       </h4>
       
@@ -131,14 +131,40 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#apply" data-isabs="false">
-      <a id="apply(LogicSyntax):Unit"></a>
+    </li><li visbl="prt" name="info.kwarc.mmt.lf.compile.Program#add" data-isabs="false">
+      <a id="add(DECL):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">apply</span>
+        <span class="name">add</span>
         
-        <span class="params">(<span name="log">log: <a name="info.kwarc.mmt.lf.compile.LogicSyntax" class="extype" href="LogicSyntax.html">LogicSyntax</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="d">d: <a name="info.kwarc.mmt.lf.compile.DECL" class="extype" href="DECL.html">DECL</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">adds a declaration
+ merges consecutive ADT's and FUNCTION's into ADTRec and FUNCTIONRec
+</p><div class="fullcomment"><div class="comment cmt"><p>adds a declaration
+ merges consecutive ADT's and FUNCTION's into ADTRec and FUNCTIONRec
+</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Program#addTag" data-isabs="false">
+      <a id="addTag(String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">addTag</span>
+        
+        <span class="params">(<span name="key">key: String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#app" data-isabs="false">
+      <a id="app:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">app</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
       </span>
       </h4>
       
@@ -175,6 +201,72 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#axiom_from_pt" data-isabs="false">
+      <a id="axiom_from_pt:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">axiom_from_pt</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#axioms" data-isabs="false">
+      <a id="axioms:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">axioms</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#basic_spec" data-isabs="false">
+      <a id="basic_spec:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">basic_spec</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#bind" data-isabs="false">
+      <a id="bind:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">bind</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#cats" data-isabs="false">
+      <a id="cats:List[Unit]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">cats</span>
+        
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Program#check" data-isabs="false">
+      <a id="check:Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">check</span>
+        
+        <span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">checks this program</p><div class="fullcomment"><div class="comment cmt"><p>checks this program</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a></dd></dl></div>
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -190,13 +282,59 @@
               
         </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#decl" data-isabs="false">
-      <a id="decl(DECL):Unit"></a>
+      <a id="decl:ID"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
+      <span class="kind">val</span>
       <span class="symbol"> 
         <span class="name">decl</span>
         
-        <span class="params">(<span name="d">d: <a name="info.kwarc.mmt.lf.compile.DECL" class="extype" href="DECL.html">DECL</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#decl_from_pt" data-isabs="false">
+      <a id="decl_from_pt:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">decl_from_pt</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="prt" name="info.kwarc.mmt.lf.compile.Program.declare" data-isabs="false">
+      <a id="declare:declare"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Program$declare$.html"><span class="name">declare</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">a helper object for conveniently adding declarations via
+ val declare(names: Seq[ID]) = (d: DECL)
+ This adds d to the list of declarations and binds names to the ID's declared by d.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#declfrompt" data-isabs="false">
+      <a id="declfrompt:EXP"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">declfrompt</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#decls" data-isabs="false">
+      <a id="decls:List[Unit]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">decls</span>
+        
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
       
@@ -222,6 +360,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#error" data-isabs="false">
+      <a id="error:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">error</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
     </li><li visbl="prt" name="scala.AnyRef#finalize" data-isabs="false">
       <a id="finalize():Unit"></a>
       <h4 class="signature">
@@ -236,6 +385,21 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Program#get" data-isabs="false">
+      <a id="get:List[DECL]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">get</span>
+        
+        <span class="result">: List[<a name="info.kwarc.mmt.lf.compile.DECL" class="extype" href="DECL.html">DECL</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">returns the list of declarations in declaration-order
+ consecutive ADT's and FUNCTION's are merged into ADTRec and FUNCTIONRec
+</p><div class="fullcomment"><div class="comment cmt"><p>returns the list of declarations in declaration-order
+ consecutive ADT's and FUNCTION's are merged into ADTRec and FUNCTIONRec
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -247,6 +411,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Program#getLabels" data-isabs="false">
+      <a id="getLabels():List[String]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getLabels</span>
+        
+        <span class="params">()</span><span class="result">: List[String]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -258,6 +433,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#id" data-isabs="false">
+      <a id="id:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">id</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -277,6 +463,17 @@
         <a href="Compiler$lf$.html"><span class="name">lf</span></a>
         
         <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#morphism" data-isabs="false">
+      <a id="morphism:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">morphism</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
       </span>
       </h4>
       
@@ -313,6 +510,127 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#ofdecls" data-isabs="false">
+      <a id="ofdecls:List[CONS]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">ofdecls</span>
+        
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<a name="info.kwarc.mmt.lf.compile.CONS" class="extype" href="CONS.html">CONS</a>]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#parse" data-isabs="false">
+      <a id="parse(CatRef,EXP):APPLY"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">parse</span>
+        
+        <span class="params">(<span name="c">c: <a name="info.kwarc.mmt.lf.compile.CatRef" class="extype" href="CatRef.html">CatRef</a></span>, <span name="a">a: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.APPLY" class="extype" href="APPLY.html">APPLY</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#parsefuncs" data-isabs="false">
+      <a id="parsefuncs:List[Unit]"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">parsefuncs</span>
+        
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#qualIDFirst" data-isabs="false">
+      <a id="qualIDFirst(EXP):APPLY"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">qualIDFirst</span>
+        
+        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.APPLY" class="extype" href="APPLY.html">APPLY</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#qualIDSecond" data-isabs="false">
+      <a id="qualIDSecond(EXP):APPLY"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">qualIDSecond</span>
+        
+        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.APPLY" class="extype" href="APPLY.html">APPLY</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#sign" data-isabs="false">
+      <a id="sign:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">sign</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#sign_from_pt" data-isabs="false">
+      <a id="sign_from_pt:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">sign_from_pt</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#sigs" data-isabs="false">
+      <a id="sigs:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">sigs</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#sname" data-isabs="false">
+      <a id="sname:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">sname</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#source" data-isabs="false">
+      <a id="source:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">source</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#symb" data-isabs="false">
+      <a id="symb:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">symb</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -324,6 +642,50 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#target" data-isabs="false">
+      <a id="target:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">target</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#tbind" data-isabs="false">
+      <a id="tbind:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">tbind</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#theo" data-isabs="false">
+      <a id="theo:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">theo</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#theo_from_pt" data-isabs="false">
+      <a id="theo_from_pt:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">theo_from_pt</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -335,6 +697,39 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#tree" data-isabs="false">
+      <a id="tree:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">tree</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#varr" data-isabs="false">
+      <a id="varr:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">varr</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler#vrb" data-isabs="false">
+      <a id="vrb:ID"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">vrb</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -382,7 +777,9 @@
 
         
 
-        <div name="scala.AnyRef" class="parent">
+        <div name="info.kwarc.mmt.lf.compile.Program" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.lf.compile.Program" class="extype" href="Program.html">Program</a></h3>
+            </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
               <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>

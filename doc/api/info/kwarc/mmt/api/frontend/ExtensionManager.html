@@ -66,7 +66,7 @@
       <span class="symbol"> 
         <span class="name">ExtensionManager</span>
         
-        <span class="params">(<span name="report">report: <a name="info.kwarc.mmt.api.frontend.Report" class="extype" href="Report.html">Report</a></span>)</span>
+        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="Controller.html">Controller</a></span>)</span>
       </span>
       </h4>
       
@@ -155,7 +155,29 @@
         <span class="params">(<span name="cls">cls: String</span>, <span name="args">args: List[String]</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">adds a compiler, must be initialized already</p>
+      <p class="shortcomment cmt">adds an Importer and initializes it</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExtensionManager#addPlugin" data-isabs="false">
+      <a id="addPlugin(String,List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">addPlugin</span>
+        
+        <span class="params">(<span name="cls">cls: String</span>, <span name="args">args: List[String]</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExtensionManager#addPlugin" data-isabs="false">
+      <a id="addPlugin(Plugin,List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">addPlugin</span>
+        
+        <span class="params">(<span name="pl">pl: <a name="info.kwarc.mmt.api.frontend.Plugin" class="extype" href="Plugin.html">Plugin</a></span>, <span name="args">args: List[String]</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -338,6 +360,28 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExtensionManager#pragmaticStore" data-isabs="false">
+      <a id="pragmaticStore:PragmaticStore"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">pragmaticStore</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.pragmatics.PragmaticStore" class="extype" href="../pragmatics/PragmaticStore.html">PragmaticStore</a></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExtensionManager#ruleStore" data-isabs="false">
+      <a id="ruleStore:RuleStore"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">ruleStore</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.RuleStore" class="extype" href="../objects/RuleStore.html">RuleStore</a></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExtensionManager#setMWS" data-isabs="false">
       <a id="setMWS(URI):Unit"></a>
       <h4 class="signature">

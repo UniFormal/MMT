@@ -63,10 +63,10 @@
       <span class="symbol"> 
         <span class="name">DefinedView</span>
         
-        <span class="params">(<span name="doc">doc: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>, <span name="name">name: <a name="info.kwarc.mmt.api.LocalPath" class="extype" href="../LocalPath.html">LocalPath</a></span>, <span name="from">from: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="to">to: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="df">df: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span>
+        <span class="params">(<span name="doc">doc: <a name="info.kwarc.mmt.api.DPath" class="extype" href="../DPath.html">DPath</a></span>, <span name="name">name: <a name="info.kwarc.mmt.api.LocalPath" class="extype" href="../LocalPath.html">LocalPath</a></span>, <span name="from">from: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="to">to: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="df">df: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="isImplicit">isImplicit: <span name="scala.Boolean" class="extype">Boolean</span></span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">doc</dt><dd class="cmt"><p>the <code> info.kwarc.mmt.api.names.Path</code> of the parent document</p></dd><dt class="param">name</dt><dd class="cmt"><p>the name of the view</p></dd><dt class="param">from</dt><dd class="cmt"><p>the domain theory</p></dd><dt class="param">to</dt><dd class="cmt"><p>the codomain theory</p></dd><dt class="param">df</dt><dd class="cmt"><p>the definiens
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">doc</dt><dd class="cmt"><p>the <code> info.kwarc.mmt.api.names.Path</code> of the parent document</p></dd><dt class="param">name</dt><dd class="cmt"><p>the name of the view</p></dd><dt class="param">from</dt><dd class="cmt"><p>the domain theory</p></dd><dt class="param">to</dt><dd class="cmt"><p>the codomain theory</p></dd><dt class="param">df</dt><dd class="cmt"><p>the definiens</p></dd><dt class="param">isImplicit</dt><dd class="cmt"><p>true iff the link is implicit
 </p></dd></dl></div>
     </li></ol>
             </div>
@@ -157,7 +157,7 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#compNames" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#compNames" data-isabs="false">
       <a id="compNames:List[(String, Int)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -167,7 +167,7 @@
         <span class="result">: List[(String, <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.modules.Link#components" data-isabs="false">
       <a id="components:List[Content]"></a>
       <h4 class="signature">
@@ -179,7 +179,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.Link" class="extype" href="Link.html">Link</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#contComponents" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#contComponents" data-isabs="false">
       <a id="contComponents:ContentComponents"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -189,7 +189,7 @@
         <span class="result">: <a name="info.kwarc.mmt.api.presentation.ContentComponents" class="extype" href="../presentation/ContentComponents.html">ContentComponents</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.modules.DefinedView#df" data-isabs="false">
       <a id="df:Term"></a>
       <h4 class="signature">
@@ -200,9 +200,7 @@
         <span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the definiens
-</p><div class="fullcomment"><div class="comment cmt"><p>the definiens
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.DefinedView" class="extype" href="">DefinedView</a> → <a name="info.kwarc.mmt.api.modules.ModuleDefiniens" class="extype" href="ModuleDefiniens.html">ModuleDefiniens</a></dd></dl></div>
+      <p class="shortcomment cmt">the definiens</p><div class="fullcomment"><div class="comment cmt"><p>the definiens</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.DefinedView" class="extype" href="">DefinedView</a> → <a name="info.kwarc.mmt.api.modules.ModuleDefiniens" class="extype" href="ModuleDefiniens.html">ModuleDefiniens</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -239,6 +237,17 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.modules.DefinedView#from" data-isabs="false">
+      <a id="from:Term"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">from</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the domain theory</p><div class="fullcomment"><div class="comment cmt"><p>the domain theory</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.DefinedView" class="extype" href="">DefinedView</a> → <a name="info.kwarc.mmt.api.modules.Link" class="extype" href="Link.html">Link</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -272,6 +281,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#governingPath" data-isabs="false">
+      <a id="governingPath:Some[Path]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">governingPath</span>
+        
+        <span class="result">: <span name="scala.Some" class="extype">Some</span>[<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the governingPath required by content is the path</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath required by content is the path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -338,6 +358,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.modules.DefinedView#isImplicit" data-isabs="false">
+      <a id="isImplicit:Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">isImplicit</span>
+        
+        <span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">true iff the link is implicit
+</p><div class="fullcomment"><div class="comment cmt"><p>true iff the link is implicit
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.DefinedView" class="extype" href="">DefinedView</a> → <a name="info.kwarc.mmt.api.modules.Link" class="extype" href="Link.html">Link</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -394,13 +427,13 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li visbl="prt" name="info.kwarc.mmt.api.modules.View#outerComponents" data-isabs="false">
-      <a id="outerComponents:List[AnyRef with Content]"></a>
+      <a id="outerComponents:List[Content { def governingPath: Option[info.kwarc.mmt.api.ContentPath] }]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">outerComponents</span>
         
-        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[AnyRef with <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>]</span>
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a> { def governingPath: Option[info.kwarc.mmt.api.ContentPath] }]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">name, from, to, etc</p><div class="fullcomment"><div class="comment cmt"><p>name, from, to, etc</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.View" class="extype" href="View.html">View</a> → <a name="info.kwarc.mmt.api.modules.Link" class="extype" href="Link.html">Link</a></dd></dl></div>
@@ -415,6 +448,21 @@
       </span>
       </h4>
       <p class="shortcomment cmt">outerComponents as a string</p><div class="fullcomment"><div class="comment cmt"><p>outerComponents as a string</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.View" class="extype" href="View.html">View</a> → <a name="info.kwarc.mmt.api.modules.Link" class="extype" href="Link.html">Link</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ContentElement#parameters" data-isabs="false">
+      <a id="parameters:Context"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">parameters</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="../objects/Context.html">Context</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">every MMT Declaration takes a list of parameters
+empty by default, may be overridden when constructing instances
+</p><div class="fullcomment"><div class="comment cmt"><p>every MMT Declaration takes a list of parameters
+empty by default, may be overridden when constructing instances
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.ContentElement" class="extype" href="../ContentElement.html">ContentElement</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.modules.Module#parent" data-isabs="false">
       <a id="parent:DPath"></a>
       <h4 class="signature">
@@ -447,7 +495,7 @@
         <span class="result">: info.kwarc.mmt.api.Role_DefinedView.type</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.DefinedView" class="extype" href="">DefinedView</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.DefinedView" class="extype" href="">DefinedView</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#setOrigin" data-isabs="false">
       <a id="setOrigin(Origin):Unit"></a>
       <h4 class="signature">
@@ -470,6 +518,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.modules.DefinedView#to" data-isabs="false">
+      <a id="to:Term"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">to</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the codomain theory</p><div class="fullcomment"><div class="comment cmt"><p>the codomain theory</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.DefinedView" class="extype" href="">DefinedView</a> → <a name="info.kwarc.mmt.api.modules.Link" class="extype" href="Link.html">Link</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.modules.View#toNode" data-isabs="false">
       <a id="toNode:Node"></a>
       <h4 class="signature">
@@ -480,7 +539,7 @@
         <span class="result">: <span name="scala.xml.Node" class="extype">Node</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.View" class="extype" href="View.html">View</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.View" class="extype" href="View.html">View</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.modules.Link#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">

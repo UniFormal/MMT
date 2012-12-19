@@ -72,7 +72,21 @@ this is also called the pragmatic-to-strict translation
     </li></ol>
             </div>
 
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternChecker.getPatternsError" data-isabs="false">
+      <a id="getPatternsError:getPatternsError"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="PatternChecker$getPatternsError.html"><span class="name">getPatternsError</span></a>
         
+        <span class="params">(<span name="msg">msg: String</span>)</span><span class="result"> extends Throwable with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
         
         
 
@@ -143,7 +157,7 @@ this is also called the pragmatic-to-strict translation
         <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.patterns.PatternChecker" class="extype" href="">PatternChecker</a> → <a name="info.kwarc.mmt.api.libraries.Elaborator" class="extype" href="../libraries/Elaborator.html">Elaborator</a></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">e</dt><dd class="cmt"><p>the StructuralElement that is elaborated</p></dd><dt class="param">cont</dt><dd class="cmt"><p>a function that is applied to each produced StructuralElement</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.patterns.PatternChecker" class="extype" href="">PatternChecker</a> → <a name="info.kwarc.mmt.api.libraries.Elaborator" class="extype" href="../libraries/Elaborator.html">Elaborator</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -216,6 +230,28 @@ this is also called the pragmatic-to-strict translation
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternChecker#getInstance" data-isabs="false">
+      <a id="getInstance(Constant,List[Pattern]):List[Instance]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getInstance</span>
+        
+        <span class="params">(<span name="const">const: <a name="info.kwarc.mmt.api.symbols.Constant" class="extype" href="../symbols/Constant.html">Constant</a></span>, <span name="pattList">pattList: List[<a name="info.kwarc.mmt.api.patterns.Pattern" class="extype" href="Pattern.html">Pattern</a>]</span>)</span><span class="result">: List[<a name="info.kwarc.mmt.api.patterns.Instance" class="extype" href="Instance.html">Instance</a>]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternChecker#getInstance" data-isabs="false">
+      <a id="getInstance(List[Constant],List[Pattern]):List[Instance]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getInstance</span>
+        
+        <span class="params">(<span name="constList">constList: List[<a name="info.kwarc.mmt.api.symbols.Constant" class="extype" href="../symbols/Constant.html">Constant</a>]</span>, <span name="pattList">pattList: List[<a name="info.kwarc.mmt.api.patterns.Pattern" class="extype" href="Pattern.html">Pattern</a>]</span>)</span><span class="result">: List[<a name="info.kwarc.mmt.api.patterns.Instance" class="extype" href="Instance.html">Instance</a>]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternChecker#getPatterns" data-isabs="false">
       <a id="getPatterns(Term)(Int):List[Pattern]"></a>
       <h4 class="signature">
@@ -226,7 +262,8 @@ this is also called the pragmatic-to-strict translation
         <span class="params">(<span name="home">home: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="params">(<span name="n">n: <span name="scala.Int" class="extype">Int</span></span>)</span><span class="result">: List[<a name="info.kwarc.mmt.api.patterns.Pattern" class="extype" href="Pattern.html">Pattern</a>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">retrieves patterns from theory
+</p>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -283,16 +320,27 @@ this is also called the pragmatic-to-strict translation
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternChecker#patternCheck" data-isabs="false">
-      <a id="patternCheck(List[Constant],Pattern):Option[Substitution]"></a>
+      <a id="patternCheck(List[Constant],Pattern):Option[Instance]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">patternCheck</span>
         
-        <span class="params">(<span name="constants">constants: List[<a name="info.kwarc.mmt.api.symbols.Constant" class="extype" href="../symbols/Constant.html">Constant</a>]</span>, <span name="pattern">pattern: <a name="info.kwarc.mmt.api.patterns.Pattern" class="extype" href="Pattern.html">Pattern</a></span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Substitution" class="extype" href="../objects/Substitution.html">Substitution</a>]</span>
+        <span class="params">(<span name="constants">constants: List[<a name="info.kwarc.mmt.api.symbols.Constant" class="extype" href="../symbols/Constant.html">Constant</a>]</span>, <span name="pattern">pattern: <a name="info.kwarc.mmt.api.patterns.Pattern" class="extype" href="Pattern.html">Pattern</a></span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.patterns.Instance" class="extype" href="Instance.html">Instance</a>]</span>
       </span>
       </h4>
       
+    </li><li visbl="prt" name="info.kwarc.mmt.api.libraries.Elaborator#rewrite" data-isabs="false">
+      <a id="rewrite(Term)(HashMap[Path, Term]):Term"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">rewrite</span>
+        
+        <span class="params">(<span name="t">t: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="rules">rules: <span name="scala.collection.immutable.HashMap" class="extype">HashMap</span>[<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>, <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>]</span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Elaborator" class="extype" href="../libraries/Elaborator.html">Elaborator</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

@@ -28,13 +28,13 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A Solver is used to solve a system of constraints given as judgments about Term's
-by applying typing rules to validate the judgments.
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A Solver is used to solve a system of constraints about Term's given as judgments.
 The judgments may contain unknown variables (also called meta-variables or logic variables);
 variables may represent any MMT term, i.e., object language terms, types, etc.;
 the solution is a Substitution that provides a closed Term for every unknown variable.
-(Higher-order abstract syntax should be used for problem where the solutions are not closed.)
-Unsolvable constraints are delayed and reactivated if solving other constraints provides further information.</p></div><div class="toggleContainer block">
+(Higher-order abstract syntax should be used to represent unknown terms with free variables as closed function terms.)
+The Solver decomposes the judgments individually by applying typing rules, collecting (partial) solutions along the way and possibly delaying unsolvable judgments.
+Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -69,12 +69,12 @@ Unsolvable constraints are delayed and reactivated if solving other constraints 
       <span class="symbol"> 
         <span class="name">Solver</span>
         
-        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>, <span name="unknowns">unknowns: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>)</span>
+        <span class="params">(<span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>, <span name="theory">theory: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="unknowns">unknowns: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">controller</dt><dd class="cmt"><p>used for looking up Foundation's and Constant's. No changes are made to controller.</p></dd><dt class="param">unknowns</dt><dd class="cmt"><p>the list of all unknown variables with their types in dependency order;
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">controller</dt><dd class="cmt"><p>an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.</p></dd><dt class="param">unknowns</dt><dd class="cmt"><p>the list of all unknown variables including their types and listed in dependency order;
   unknown variables may occur in the types of later unknowns.
-Use: create a new instance for every problem, call apply on all constraints, then call getSolution
+Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.
 </p></dd></dl></div>
     </li></ol>
             </div>
@@ -150,9 +150,9 @@ Use: create a new instance for every problem, call apply on all constraints, the
         <span class="params">(<span name="j">j: <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">applies this Solver to one constraint
- this method can be called multiple times to solve a system of constraints</p><div class="fullcomment"><div class="comment cmt"><p>applies this Solver to one constraint
- this method can be called multiple times to solve a system of constraints</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>false only if the constraints are unsatisfiable; true if constraints have been resolved or delayed
+      <p class="shortcomment cmt">applies this Solver to one Judgement
+ This method can be called multiple times to solve a system of constraints.</p><div class="fullcomment"><div class="comment cmt"><p>applies this Solver to one Judgement
+ This method can be called multiple times to solve a system of constraints.</p></div><dl class="paramcmts block"><dt class="param">j</dt><dd class="cmt"><p>the Judgement</p></dd><dt>returns</dt><dd class="cmt"><p>false if the Judgment is definitely not provable; true if it has been proved or delayed
 </p></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
@@ -166,35 +166,52 @@ Use: create a new instance for every problem, call apply on all constraints, the
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#checkEquality" data-isabs="false">
-      <a id="checkEquality(Term,Term,Option[Term])(Context):Boolean"></a>
+      <a id="checkEquality(Term,Term,Option[Term])(Stack):Boolean"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">checkEquality</span>
         
-        <span class="params">(<span name="tm1">tm1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tm2">tm2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tpOpt">tpOpt: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="con">con: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+        <span class="params">(<span name="tm1">tm1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tm2">tm2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tpOpt">tpOpt: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">handles an EqualityConstraint by recursively applying rules and solving variables where applicable,
- delays a constraint if unsolved variables preclude further processing</p><div class="fullcomment"><div class="comment cmt"><p>handles an EqualityConstraint by recursively applying rules and solving variables where applicable,
- delays a constraint if unsolved variables preclude further processing</p></div><dl class="paramcmts block"><dt class="param">tpOpt</dt><dd class="cmt"><p>if empty, tm1 and tm2 may be ill-typed; if non-empty, they must also type-check at that type</p></dd><dt>returns</dt><dd class="cmt"><p>false only if the judgment does not hold; true if it holds or constraint have been delayed
+      <p class="shortcomment cmt">proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.</p><div class="fullcomment"><div class="comment cmt"><p>proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.</p></div><dl class="paramcmts block"><dt class="param">tm1</dt><dd class="cmt"><p>the first term</p></dd><dt class="param">tm2</dt><dd class="cmt"><p>the second term</p></dd><dt class="param">tpOpt</dt><dd class="cmt"><p>their type; if given it is used as guidance for the selection of Rule's
+  The well-typedness of tm1 and tm2 is neither assumed nor guaranteed;
+  however, if tpOpt is given and the terms are well-typed, they must type-check against tpOpt.</p></dd><dt>returns</dt><dd class="cmt"><p>false if the Judgment is definitely not provable; true if the it has been proved or delayed</p><p>This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
 </p></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#checkMorphism" data-isabs="false">
+      <a id="checkMorphism(Term,Term)(Stack):Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">checkMorphism</span>
+        
+        <span class="params">(<span name="mor">mor: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="from">from: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#checkTyping" data-isabs="false">
-      <a id="checkTyping(Term,Term)(Context):Boolean"></a>
+      <a id="checkTyping(Term,Term)(Stack):Boolean"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">checkTyping</span>
         
-        <span class="params">(<span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+        <span class="params">(<span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">proves a TypingConstraint by recursively applying rules and solving variables where applicable,
- delays a constraint if unsolved variables preclude further processing
- checkTyping(tm, tp)(con) solves the judgment con |- tm : tp</p><div class="fullcomment"><div class="comment cmt"><p>proves a TypingConstraint by recursively applying rules and solving variables where applicable,
- delays a constraint if unsolved variables preclude further processing
- checkTyping(tm, tp)(con) solves the judgment con |- tm : tp</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>false only if the judgment does not hold; true if it holds or constraint have been delayed
-</p></dd></dl></div>
+      <p class="shortcomment cmt">proves a Typing Judgement by recursively applying TypingRule's and InferenceRule's.</p><div class="fullcomment"><div class="comment cmt"><p>proves a Typing Judgement by recursively applying TypingRule's and InferenceRule's. Takes reflection into account, so it needs frames</p></div></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#checkUniverse" data-isabs="false">
+      <a id="checkUniverse(Term)(Stack):Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">checkUniverse</span>
+        
+        <span class="params">(<span name="univ">univ: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -209,6 +226,17 @@ Use: create a new instance for every problem, call apply on all constraints, the
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#controller" data-isabs="false">
+      <a id="controller:Controller"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">controller</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">an MMT controller that is used to look up Rule's and Constant's.</p><div class="fullcomment"><div class="comment cmt"><p>an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -245,17 +273,6 @@ Use: create a new instance for every problem, call apply on all constraints, the
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#foundStore" data-isabs="false">
-      <a id="foundStore:FoundationStore"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">foundStore</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.objects.FoundationStore" class="extype" href="FoundationStore.html">FoundationStore</a></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -313,16 +330,16 @@ Use: create a new instance for every problem, call apply on all constraints, the
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#inferType" data-isabs="false">
-      <a id="inferType(Term)(Context):Option[Term]"></a>
+      <a id="inferType(Term)(Stack):Option[Term]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">inferType</span>
         
-        <span class="params">(<span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>
+        <span class="params">(<span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">infers the type of a term</p><div class="fullcomment"><div class="comment cmt"><p>infers the type of a term</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the inferred type, if inference succeeded
+      <p class="shortcomment cmt">infers the type of a term by applying InferenceRule's</p><div class="fullcomment"><div class="comment cmt"><p>infers the type of a term by applying InferenceRule's</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt>returns</dt><dd class="cmt"><p>the inferred type, if inference succeeded</p><p>This method should not be called by users (instead, call apply to a typing judgement with an unknown type). It is only public because it serves as a callback for Rule's.
 </p></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -368,6 +385,18 @@ Use: create a new instance for every problem, call apply on all constraints, the
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#simplify" data-isabs="false">
+      <a id="simplify(Term)(Stack):Term"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">simplify</span>
+        
+        <span class="params">(<span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">applies ComputationRule's until no further rules are applicable.</p><div class="fullcomment"><div class="comment cmt"><p>applies ComputationRule's until no further rules are applicable.</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt>returns</dt><dd class="cmt"><p>the simplified Term</p><p>This method should not be called by users. It is only public because it serves as a callback for Rule's.
+</p></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -379,7 +408,7 @@ Use: create a new instance for every problem, call apply on all constraints, the
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -389,7 +418,7 @@ Use: create a new instance for every problem, call apply on all constraints, the
         <span class="params">()</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a string representation of the current state</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Solver" class="extype" href="">Solver</a> → AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

@@ -47,123 +47,28 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.parser.ArgMk" data-isabs="false">
-      <a id="ArgMk:ArgMk"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="ArgMk.html"><span class="name">ArgMk</span></a>
-        
-        <span class="params">(<span name="pos">pos: Int</span>)</span><span class="result"> extends Marker with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">An Argument Marker is a marker that represents an argument for the operator encoded by the notation.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Assoc" data-isabs="true">
-      <a id="Assoc:Assoc"></a>
-      <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="Assoc.html"><span class="name">Assoc</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Association of a notation is used during parsing to deal with consecutive, (partially) overlapping occurrences of the same notation
-e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.AssocLeft" data-isabs="false">
-      <a id="AssocLeft:AssocLeft"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="AssocLeft.html"><span class="name">AssocLeft</span></a>
-        
-        <span class="params">()</span><span class="result"> extends Assoc with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Left Association means the left-most occurrence has priority
-e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.AssocNone" data-isabs="false">
-      <a id="AssocNone:AssocNone"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="AssocNone.html"><span class="name">AssocNone</span></a>
-        
-        <span class="params">()</span><span class="result"> extends Assoc with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">None Association means consecutive (partially) overlapping occurrences of the same notation are not accepted
-e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.AssocRight" data-isabs="false">
-      <a id="AssocRight:AssocRight"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="AssocRight.html"><span class="name">AssocRight</span></a>
-        
-        <span class="params">()</span><span class="result"> extends Assoc with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Right Association means the right-most occurrence has priority
-e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.AssocSeq" data-isabs="false">
-      <a id="AssocSeq:AssocSeq"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="AssocSeq.html"><span class="name">AssocSeq</span></a>
-        
-        <span class="params">()</span><span class="result"> extends Assoc with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Sequence Association means the (several) consecutive notations are treated as one operator with more (all found) arguments
-e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.BindLeft" data-isabs="false">
-      <a id="BindLeft:BindLeft"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="BindLeft.html"><span class="name">BindLeft</span></a>
-        
-        <span class="params">()</span><span class="result"> extends Binding with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Left Binding means this notation when matched will take the all arguments in the left side of it and treat them as one expression
-</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.BindRight" data-isabs="false">
-      <a id="BindRight:BindRight"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="BindRight.html"><span class="name">BindRight</span></a>
-        
-        <span class="params">()</span><span class="result"> extends Binding with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Right Binding means this notation when matched will take the all arguments in the right side of it and treat them as one expression
-e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Binder" data-isabs="false">
-      <a id="Binder:Binder"></a>
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.parser.Argument" data-isabs="true">
+      <a id="Argument:Argument"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="Binder.html"><span class="name">Binder</span></a>
+        <a href="Argument.html"><span class="name">Argument</span></a>
         
-        <span class="result"> extends Operator</span>
+        <span class="result"> extends NotationElement</span>
       </span>
       </h4>
-      <p class="comment cmt">a binder is a operator that aditionally binds some context to some body</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Binding" data-isabs="true">
-      <a id="Binding:Binding"></a>
+      <p class="comment cmt">An Argument Marker is a marker that represents an argument for the operator encoded by the notation.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Delimiter" data-isabs="false">
+      <a id="Delimiter:Delimiter"></a>
       <h4 class="signature">
-      <span class="kind">trait</span>
+      <span class="kind">case class</span>
       <span class="symbol"> 
-        <a href="Binding.html"><span class="name">Binding</span></a>
+        <a href="Delimiter.html"><span class="name">Delimiter</span></a>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="params">(<span name="value">value: String</span>)</span><span class="result"> extends NotationElement with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">Binding is the property of a notation of eagerly seizing an entire chunk of markers as one argument and parse them afterwards.</p>
+      <p class="comment cmt">A String Marker is a marker that represents a fixed part of a notation.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.ExpTk" data-isabs="false">
       <a id="ExpTk:ExpTk"></a>
       <h4 class="signature">
@@ -187,29 +92,18 @@ e.</p>
       </h4>
       <p class="comment cmt">Class for grammars
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Marker" data-isabs="true">
-      <a id="Marker:Marker"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.NotationElement" data-isabs="true">
+      <a id="NotationElement:NotationElement"></a>
       <h4 class="signature">
       <span class="kind">trait</span>
       <span class="symbol"> 
-        <a href="Marker.html"><span class="name">Marker</span></a>
+        <a href="NotationElement.html"><span class="name">NotationElement</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">A Marker is an element of a notation
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Notation" data-isabs="false">
-      <a id="Notation:Notation"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Notation.html"><span class="name">Notation</span></a>
-        
-        <span class="params">(<span name="mrks">mrks: List[Marker]</span>, <span name="props">props: NotationProperties</span>)</span><span class="result"> extends HasMetaData with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">A notation is a list of markers which represent either strings to be matched or argument positions to be filled.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.NotationMatch" data-isabs="false">
       <a id="NotationMatch:NotationMatch"></a>
       <h4 class="signature">
@@ -221,17 +115,17 @@ e.</p>
       </span>
       </h4>
       <p class="comment cmt">A class representing a match of a notation in a list of tokens</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.NotationProperties" data-isabs="false">
-      <a id="NotationProperties:NotationProperties"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.NotationParser" data-isabs="false">
+      <a id="NotationParser:NotationParser"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
+      <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="NotationProperties.html"><span class="name">NotationProperties</span></a>
+        <a href="NotationParser.html"><span class="name">NotationParser</span></a>
         
-        <span class="params">(<span name="precedence">precedence: Precedence</span>, <span name="assoc">assoc: Assoc</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="result"> extends TermParser</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Generic Parser Class</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Operator" data-isabs="false">
       <a id="Operator:Operator"></a>
       <h4 class="signature">
@@ -255,28 +149,28 @@ e.</p>
       </h4>
       <p class="comment cmt">Pair separators are delimiters that must match with each other and delimit a sub-expression
 They may be nested and tokenization does check for well-formedness with respect to pair separators matching and nesting</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Parser" data-isabs="false">
-      <a id="Parser:Parser"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.ParserContext" data-isabs="false">
+      <a id="ParserContext:ParserContext"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="Parser.html"><span class="name">Parser</span></a>
+        <a href="ParserContext.html"><span class="name">ParserContext</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <p class="comment cmt">Generic Parser Class</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Precedence" data-isabs="false">
-      <a id="Precedence:Precedence"></a>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.ParsingUnit" data-isabs="false">
+      <a id="ParsingUnit:ParsingUnit"></a>
       <h4 class="signature">
       <span class="kind">case class</span>
       <span class="symbol"> 
-        <a href="Precedence.html"><span class="name">Precedence</span></a>
+        <a href="ParsingUnit.html"><span class="name">ParsingUnit</span></a>
         
-        <span class="params">(<span name="value">value: Int</span>)</span><span class="result"> extends Product with Serializable</span>
+        <span class="params">(<span name="component">component: CPath</span>, <span name="scope">scope: Term</span>, <span name="context">context: Context</span>, <span name="term">term: String</span>)</span><span class="result"> extends Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">Precedence of a notation is used for resolving ambiguities during parsing.</p>
+      <p class="comment cmt">a ParsingUnit represents a term that is to be parsed</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Separator" data-isabs="true">
       <a id="Separator:Separator"></a>
       <h4 class="signature">
@@ -289,6 +183,17 @@ They may be nested and tokenization does check for well-formedness with respect 
       </h4>
       <p class="comment cmt">trait for the separators (or delimiters) used during tokenization
 </p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.SeqArg" data-isabs="false">
+      <a id="SeqArg:SeqArg"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="SeqArg.html"><span class="name">SeqArg</span></a>
+        
+        <span class="params">(<span name="p">p: Int</span>, <span name="delimiter">delimiter: Delimiter</span>)</span><span class="result"> extends Argument with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.SingSep" data-isabs="false">
       <a id="SingSep:SingSep"></a>
       <h4 class="signature">
@@ -333,17 +238,17 @@ They may be nested and tokenization does check for well-formedness with respect 
       </span>
       </h4>
       <p class="comment cmt">region in a source block</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.StrMk" data-isabs="false">
-      <a id="StrMk:StrMk"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.StdArg" data-isabs="false">
+      <a id="StdArg:StdArg"></a>
       <h4 class="signature">
       <span class="kind">case class</span>
       <span class="symbol"> 
-        <a href="StrMk.html"><span class="name">StrMk</span></a>
+        <a href="StdArg.html"><span class="name">StdArg</span></a>
         
-        <span class="params">(<span name="value">value: String</span>)</span><span class="result"> extends Marker with Product with Serializable</span>
+        <span class="params">(<span name="p">p: Int</span>)</span><span class="result"> extends Argument with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">A String Marker is a marker that represents a fixed part of a notation.</p>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.StrTk" data-isabs="false">
       <a id="StrTk:StrTk"></a>
       <h4 class="signature">
@@ -355,6 +260,17 @@ They may be nested and tokenization does check for well-formedness with respect 
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.TermParser" data-isabs="true">
+      <a id="TermParser:TermParser"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="TermParser.html"><span class="name">TermParser</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">a TermParser parses Term's.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.TermTk" data-isabs="false">
       <a id="TermTk:TermTk"></a>
       <h4 class="signature">
@@ -366,6 +282,17 @@ They may be nested and tokenization does check for well-formedness with respect 
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.TextNotation" data-isabs="false">
+      <a id="TextNotation:TextNotation"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="TextNotation.html"><span class="name">TextNotation</span></a>
+        
+        <span class="params">(<span name="markers">markers: List[NotationElement]</span>, <span name="precedence">precedence: Int</span>, <span name="isBinder">isBinder: Boolean</span>, <span name="conPath">conPath: GlobalName</span>)</span><span class="result"> extends Notation with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A notation is a list of markers which represent either strings to be matched or argument positions to be filled.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Token" data-isabs="true">
       <a id="Token:Token"></a>
       <h4 class="signature">
@@ -376,7 +303,7 @@ They may be nested and tokenization does check for well-formedness with respect 
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.TokenProperties" data-isabs="false">
       <a id="TokenProperties:TokenProperties"></a>
       <h4 class="signature">
@@ -395,7 +322,18 @@ They may be nested and tokenization does check for well-formedness with respect 
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.parser.LFGrammar" data-isabs="false">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.parser.DefaultParser" data-isabs="false">
+      <a id="DefaultParser:DefaultParser"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="DefaultParser$.html"><span class="name">DefaultParser</span></a>
+        
+        <span class="result"> extends TermParser</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A default parser that parses any string into an OMSemiFormal object.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.LFGrammar" data-isabs="false">
       <a id="LFGrammar:LFGrammar"></a>
       <h4 class="signature">
       <span class="kind">object</span>
@@ -469,7 +407,18 @@ They may be nested and tokenization does check for well-formedness with respect 
       <span class="symbol"> 
         <a href="TextNotation$.html"><span class="name">TextNotation</span></a>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.test" data-isabs="false">
+      <a id="test:test"></a>
+      <h4 class="signature">
+      <span class="kind">package</span>
+      <span class="symbol"> 
+        <a href="test/package.html"><span class="name">test</span></a>
+        
+        
       </span>
       </h4>
       

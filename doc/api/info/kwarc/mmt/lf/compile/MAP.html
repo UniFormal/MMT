@@ -24,7 +24,7 @@
       <span class="symbol"> 
         <span class="name">MAP</span>
         
-        <span class="params">(<span name="list">list: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>, <span name="fun">fun: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>)</span><span class="result"> extends <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
+        <span class="params">(<span name="l">l: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>, <span name="fun">fun: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>)</span><span class="result"> extends <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
       </span>
       </h4>
       
@@ -63,7 +63,7 @@
       <span class="symbol"> 
         <span class="name">MAP</span>
         
-        <span class="params">(<span name="list">list: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>, <span name="fun">fun: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>)</span>
+        <span class="params">(<span name="l">l: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>, <span name="fun">fun: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>)</span>
       </span>
       </h4>
       
@@ -109,6 +109,94 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#*" data-isabs="false">
+      <a id="*(EXP):PROD"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">*</span>
+        
+        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.PROD" class="extype" href="PROD.html">PROD</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">product types: A1 * .</p><div class="fullcomment"><div class="comment cmt"><p>product types: A1 * ... * An</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#**" data-isabs="false">
+      <a id="**(EXP):TIMES"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">**</span>
+        
+        <span class="params">(<span name="right">right: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.TIMES" class="extype" href="TIMES.html">TIMES</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">multiplication: a ** b</p><div class="fullcomment"><div class="comment cmt"><p>multiplication: a ** b</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#+" data-isabs="false">
+      <a id="+(EXP):STRINGCONCAT"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">+</span>
+        
+        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.STRINGCONCAT" class="extype" href="STRINGCONCAT.html">STRINGCONCAT</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">concatenation of strings: s + s'</p><div class="fullcomment"><div class="comment cmt"><p>concatenation of strings: s + s'</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#++" data-isabs="false">
+      <a id="++(EXP):PLUS"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">++</span>
+        
+        <span class="params">(<span name="right">right: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.PLUS" class="extype" href="PLUS.html">PLUS</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">addition: a ++ b</p><div class="fullcomment"><div class="comment cmt"><p>addition: a ++ b</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#::" data-isabs="false">
+      <a id="::(String):ARG"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">::</span>
+        
+        <span class="params">(<span name="n">n: String</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.ARG" class="extype" href="ARG.html">ARG</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">variable declarations: n :: A</p><div class="fullcomment"><div class="comment cmt"><p>variable declarations: n :: A</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#:::" data-isabs="false">
+      <a id=":::(String):FIELD"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">:::</span>
+        
+        <span class="params">(<span name="n">n: String</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.FIELD" class="extype" href="FIELD.html">FIELD</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">field declarations: n ::: A</p><div class="fullcomment"><div class="comment cmt"><p>field declarations: n ::: A</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#:::" data-isabs="false">
+      <a id=":::(EXP):CONCAT"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">:::</span>
+        
+        <span class="params">(<span name="l">l: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.CONCAT" class="extype" href="CONCAT.html">CONCAT</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">concatenation of lists: l ::: l'</p><div class="fullcomment"><div class="comment cmt"><p>concatenation of lists: l ::: l'</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#&lt;--" data-isabs="false">
+      <a id="&lt;--(ARG*):FUNCTYPE"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">&lt;--</span>
+        
+        <span class="params">(<span name="args">args: <a name="info.kwarc.mmt.lf.compile.ARG" class="extype" href="ARG.html">ARG</a>*</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.FUNCTYPE" class="extype" href="FUNCTYPE.html">FUNCTYPE</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">function types: return &lt;-- (x1 :: A1, .</p><div class="fullcomment"><div class="comment cmt"><p>function types: return &lt;-- (x1 :: A1, ... xn :: An)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#==" data-isabs="false">
       <a id="==(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -141,29 +229,40 @@
         <span class="params">(<span name="right">right: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.EQUAL" class="extype" href="EQUAL.html">EQUAL</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#==&gt;" data-isabs="false">
-      <a id="==&gt;(EXP):CASE"></a>
+      <p class="shortcomment cmt">equality predicate: e === e'</p><div class="fullcomment"><div class="comment cmt"><p>equality predicate: e === e'</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#Match" data-isabs="false">
+      <a id="Match(CASE*):MATCH"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">==&gt;</span>
+        <span class="name">Match</span>
         
-        <span class="params">(<span name="body">body: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.CASE" class="extype" href="CASE.html">CASE</a></span>
+        <span class="params">(<span name="cases">cases: <a name="info.kwarc.mmt.lf.compile.CASE" class="extype" href="CASE.html">CASE</a>*</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.MATCH" class="extype" href="MATCH.html">MATCH</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#INDEX" data-isabs="false">
-      <a id="INDEX(EXP):AT"></a>
+      <p class="shortcomment cmt">pattern matching: a Match (pattern1 |&gt; case1, .</p><div class="fullcomment"><div class="comment cmt"><p>pattern matching: a Match (pattern1 |&gt; case1, ..., patternN |&gt; caseN)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#__" data-isabs="false">
+      <a id="__(ID):SELECT"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">INDEX</span>
+        <span class="name">__</span>
         
-        <span class="params">(<span name="index">index: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.AT" class="extype" href="AT.html">AT</a></span>
+        <span class="params">(<span name="f">f: <a name="info.kwarc.mmt.lf.compile.ID" class="extype" href="ID.html">ID</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.SELECT" class="extype" href="SELECT.html">SELECT</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+      <p class="shortcomment cmt">accessing fields of a record: r <u> n</u></p><div class="fullcomment"><div class="comment cmt"><p>accessing fields of a record: r <u> n</u></p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#__" data-isabs="false">
+      <a id="__(Int):PROJ"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">__</span>
+        
+        <span class="params">(<span name="i">i: <span name="scala.Int" class="extype">Int</span></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.PROJ" class="extype" href="PROJ.html">PROJ</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">projections: a <u> n</u></p><div class="fullcomment"><div class="comment cmt"><p>projections: a <u> n</u></p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -175,6 +274,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#at" data-isabs="false">
+      <a id="at(EXP):AT"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">at</span>
+        
+        <span class="params">(<span name="index">index: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.AT" class="extype" href="AT.html">AT</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">accessing elements of lists: l <u> n</u></p><div class="fullcomment"><div class="comment cmt"><p>accessing elements of lists: l <u> n</u></p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.MAP#canEqual" data-isabs="false">
       <a id="canEqual(Any):Boolean"></a>
       <h4 class="signature">
@@ -280,17 +390,50 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.MAP#list" data-isabs="false">
-      <a id="list:EXP"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.MAP#l" data-isabs="false">
+      <a id="l:EXP"></a>
       <h4 class="signature">
       <span class="kind">val</span>
       <span class="symbol"> 
-        <span class="name">list</span>
+        <span class="name">l</span>
         
         <span class="result">: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#length" data-isabs="false">
+      <a id="length:LENGTH"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">length</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.LENGTH" class="extype" href="LENGTH.html">LENGTH</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">length of a list: l.</p><div class="fullcomment"><div class="comment cmt"><p>length of a list: l.length</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#list" data-isabs="false">
+      <a id="list:LIST"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">list</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.lf.compile.LIST" class="extype" href="LIST.html">LIST</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">type of lists: a.</p><div class="fullcomment"><div class="comment cmt"><p>type of lists: a.list</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#map" data-isabs="false">
+      <a id="map(String):MAP"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">map</span>
+        
+        <span class="params">(<span name="f">f: String</span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.MAP" class="extype" href="">MAP</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">map over a list: l map f</p><div class="fullcomment"><div class="comment cmt"><p>map over a list: l map f</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -432,6 +575,17 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP#|" data-isabs="false">
+      <a id="|(EXP):TUPLE"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">|</span>
+        
+        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.lf.compile.TUPLE" class="extype" href="TUPLE.html">TUPLE</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">tuples: a1 | .</p><div class="fullcomment"><div class="comment cmt"><p>tuples: a1 | ... | an</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></dd></dl></div>
     </li></ol>
             </div>
 

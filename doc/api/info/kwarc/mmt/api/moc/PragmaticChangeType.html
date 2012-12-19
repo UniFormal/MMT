@@ -28,9 +28,12 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+        </div><div class="toggleContainer block">
+          <span class="toggle">Known Subclasses</span>
+          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.api.moc.pragmaticAlphaRename" class="extype" href="pragmaticAlphaRename$.html">pragmaticAlphaRename</a>, <a name="info.kwarc.mmt.api.moc.pragmaticRename" class="extype" href="pragmaticRename$.html">pragmaticRename</a></div>
         </div></div>
         
 
@@ -63,7 +66,7 @@
       <span class="symbol"> 
         <span class="name">PragmaticChangeType</span>
         
-        <span class="params">(<span name="name">name: String</span>, <span name="matches">matches: (<a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a>) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>, <span name="termProp">termProp: (<a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a>) ⇒ (<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>) ⇒ <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="modProp">modProp: (<a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a>) ⇒ (<a name="info.kwarc.mmt.api.modules.Module" class="extype" href="../modules/Module.html">Module</a>) ⇒ <a name="info.kwarc.mmt.api.moc.StrictDiff" class="extype" href="StrictDiff.html">StrictDiff</a></span>)</span>
+        <span class="params">()</span>
       </span>
       </h4>
       
@@ -72,10 +75,68 @@
 
         
         
+        <div class="values members" id="values">
+              <h3>Abstract Value Members</h3>
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#description" data-isabs="true">
+      <a id="description(Diff):String"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">description</span>
         
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>)</span><span class="result">: String</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#matches" data-isabs="true">
+      <a id="matches(Diff):Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">matches</span>
+        
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#modProp" data-isabs="true">
+      <a id="modProp(Diff)(Module):StrictDiff"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">modProp</span>
+        
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>)</span><span class="params">(<span name="mod">mod: <a name="info.kwarc.mmt.api.modules.Module" class="extype" href="../modules/Module.html">Module</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.moc.StrictDiff" class="extype" href="StrictDiff.html">StrictDiff</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#name" data-isabs="true">
+      <a id="name:String"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">name</span>
+        
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#termProp" data-isabs="true">
+      <a id="termProp(Diff)(Term):Term"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">termProp</span>
+        
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>)</span><span class="params">(<span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li></ol>
+            </div>
 
         <div class="values members" id="values">
-              <h3>Value Members</h3>
+              <h3>Concrete Value Members</h3>
               <ol><li visbl="pub" name="scala.AnyRef#!=" data-isabs="false">
       <a id="!=(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -226,46 +287,24 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#make" data-isabs="false">
-      <a id="make(Diff):Option[PragmaticChange]"></a>
+      <a id="make(StrictDiff):Option[PragmaticChange]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">make</span>
         
-        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.moc.PragmaticChange" class="extype" href="PragmaticChange.html">PragmaticChange</a>]</span>
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.StrictDiff" class="extype" href="StrictDiff.html">StrictDiff</a></span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.moc.PragmaticChange" class="extype" href="PragmaticChange.html">PragmaticChange</a>]</span>
       </span>
       </h4>
       
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#matches" data-isabs="false">
-      <a id="matches:(Diff) ⇒ Boolean"></a>
+      <a id="matches(Set[ContentChange]):Boolean"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
+      <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">matches</span>
         
-        <span class="result">: (<a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a>) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#modProp" data-isabs="false">
-      <a id="modProp:(Diff) ⇒ (Module) ⇒ StrictDiff"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">modProp</span>
-        
-        <span class="result">: (<a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a>) ⇒ (<a name="info.kwarc.mmt.api.modules.Module" class="extype" href="../modules/Module.html">Module</a>) ⇒ <a name="info.kwarc.mmt.api.moc.StrictDiff" class="extype" href="StrictDiff.html">StrictDiff</a></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#name" data-isabs="false">
-      <a id="name:String"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">name</span>
-        
-        <span class="result">: String</span>
+        <span class="params">(<span name="chSet">chSet: <span name="scala.collection.Set" class="extype">Set</span>[<a name="info.kwarc.mmt.api.moc.ContentChange" class="extype" href="ContentChange.html">ContentChange</a>]</span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
       </span>
       </h4>
       
@@ -313,17 +352,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType#termProp" data-isabs="false">
-      <a id="termProp:(Diff) ⇒ (Term) ⇒ Term"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">termProp</span>
-        
-        <span class="result">: (<a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a>) ⇒ (<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>) ⇒ <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">

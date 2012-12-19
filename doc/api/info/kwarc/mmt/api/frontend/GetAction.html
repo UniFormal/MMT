@@ -28,8 +28,15 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Objects of type GetAction represent commands that</p><ul><li>retrieve knowledge items in abstract/internal syntax (see MakeAbstract)</li><li>post-process them to obtain concrete/external syntax (see MakeConrete)</li><li>then output the concrete form in various ways (see Output).
-</li></ul></div><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Objects of type GetAction represent commands that</p><ul><li>retrieve knowledge items in abstract/internal syntax</li><li>post-process them to obtain concrete/external syntax</li><li>then output the concrete form in various ways.</li></ul></div><dl class="paramcmts block"><dt class="param">o</dt><dd class="cmt"><p>the instance of Output that executes all three steps.</p><p> The concrete syntax is described by the following grammar:
+ ABSTRACT [CONCRETE] [OUTPUT]
+ where
+ ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
+ CONCRETE ::= xml | present URI | text | deps
+ OUTPUT   ::= write FILE | print | window | respond
+ The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
+ the instances of MakeAbstract, MakeConcrete, and Output.
+</p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span name="scala.Serializable" class="extype">Serializable</span>, <span name="java.io.Serializable" class="extype">Serializable</span>, <span name="scala.Product" class="extype">Product</span>, <span name="scala.Equals" class="extype">Equals</span>, <a name="info.kwarc.mmt.api.frontend.Action" class="extype" href="Action.html">Action</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -67,7 +74,15 @@
         <span class="params">(<span name="o">o: <a name="info.kwarc.mmt.api.frontend.Output" class="extype" href="Output.html">Output</a></span>)</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">o</dt><dd class="cmt"><p>the instance of Output that executes all three steps.</p><p> The concrete syntax is described by the following grammar:
+ ABSTRACT [CONCRETE] [OUTPUT]
+ where
+ ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
+ CONCRETE ::= xml | present URI | text | deps
+ OUTPUT   ::= write FILE | print | window | respond
+ The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
+ the instances of MakeAbstract, MakeConcrete, and Output.
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -291,7 +306,15 @@
         <span class="result">: <a name="info.kwarc.mmt.api.frontend.Output" class="extype" href="Output.html">Output</a></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">the instance of Output that executes all three steps.</p><div class="fullcomment"><div class="comment cmt"><p>the instance of Output that executes all three steps.</p><p> The concrete syntax is described by the following grammar:
+ ABSTRACT [CONCRETE] [OUTPUT]
+ where
+ ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
+ CONCRETE ::= xml | present URI | text | deps
+ OUTPUT   ::= write FILE | print | window | respond
+ The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
+ the instances of MakeAbstract, MakeConcrete, and Output.
+</p></div></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.GetAction#productArity" data-isabs="false">
       <a id="productArity:Int"></a>
       <h4 class="signature">

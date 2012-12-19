@@ -47,40 +47,7 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.lf.ApplyTerm" data-isabs="false">
-      <a id="ApplyTerm:ApplyTerm"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="ApplyTerm.html"><span class="name">ApplyTerm</span></a>
-        
-        <span class="result"> extends InferenceRule</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.Beta" data-isabs="false">
-      <a id="Beta:Beta"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Beta.html"><span class="name">Beta</span></a>
-        
-        <span class="result"> extends ComputationRule</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.Eta" data-isabs="false">
-      <a id="Eta:Eta"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Eta.html"><span class="name">Eta</span></a>
-        
-        <span class="result"> extends EqualityRule</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.LFError" data-isabs="false">
+              <ol><li visbl="pub" name="info.kwarc.mmt.lf.LFError" data-isabs="false">
       <a id="LFError:LFError"></a>
       <h4 class="signature">
       <span class="kind">case class</span>
@@ -102,47 +69,25 @@
       </span>
       </h4>
       <p class="comment cmt">The LF foundation.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.LambdaTerm" data-isabs="false">
-      <a id="LambdaTerm:LambdaTerm"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.OldLFPlugin" data-isabs="false">
+      <a id="OldLFPlugin:OldLFPlugin"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="LambdaTerm.html"><span class="name">LambdaTerm</span></a>
+        <a href="OldLFPlugin.html"><span class="name">OldLFPlugin</span></a>
         
-        <span class="result"> extends InferenceRule</span>
+        <span class="result"> extends Plugin</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.PiTerm" data-isabs="false">
-      <a id="PiTerm:PiTerm"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.Plugin" data-isabs="false">
+      <a id="Plugin:Plugin"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="PiTerm.html"><span class="name">PiTerm</span></a>
+        <a href="Plugin.html"><span class="name">Plugin</span></a>
         
-        <span class="result"> extends InferenceRule</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.PiType" data-isabs="false">
-      <a id="PiType:PiType"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PiType.html"><span class="name">PiType</span></a>
-        
-        <span class="result"> extends TypingRule</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.Solve" data-isabs="false">
-      <a id="Solve:Solve"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Solve.html"><span class="name">Solve</span></a>
-        
-        <span class="result"> extends SolutionRule</span>
+        <span class="result"> extends Plugin</span>
       </span>
       </h4>
       
@@ -158,6 +103,17 @@
       </h4>
       <p class="comment cmt">Utility for starting the catalog and calling the Twelf compiler
 </p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.TypedPlugin" data-isabs="false">
+      <a id="TypedPlugin:TypedPlugin"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="TypedPlugin.html"><span class="name">TypedPlugin</span></a>
+        
+        <span class="result"> extends Plugin</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
         
@@ -175,7 +131,9 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">provides apply/unapply methods for application of a term to a single argument
+the unapply method transparently handles associativity (currying) of application
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.ApplySpine" data-isabs="false">
       <a id="ApplySpine:ApplySpine"></a>
       <h4 class="signature">
@@ -186,7 +144,20 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">provides apply/unapply methods for application of a term to a list of arguments
+the unapply method transparently handles associativity (currying) of application
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.ApplyTerm" data-isabs="false">
+      <a id="ApplyTerm:ApplyTerm"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="ApplyTerm$.html"><span class="name">ApplyTerm</span></a>
+        
+        <span class="result"> extends InferenceRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the type inference rule f : Pi x:A.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.Arrow" data-isabs="false">
       <a id="Arrow:Arrow"></a>
       <h4 class="signature">
@@ -197,18 +168,64 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.lf.Const" data-isabs="false">
-      <a id="Const:Const"></a>
+      <p class="comment cmt">provides apply/unapply methods for simple function type formation
+the unapply method does not match a dependent function type, even if the variable does not occur
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.Beta" data-isabs="false">
+      <a id="Beta:Beta"></a>
       <h4 class="signature">
       <span class="kind">object</span>
       <span class="symbol"> 
-        <a href="Const$.html"><span class="name">Const</span></a>
+        <a href="Beta$.html"><span class="name">Beta</span></a>
+        
+        <span class="result"> extends ComputationRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the beta-reduction rule s : A  ---&gt;  (lambda x:A.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.ExpandArrow" data-isabs="false">
+      <a id="ExpandArrow:ExpandArrow"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="ExpandArrow$.html"><span class="name">ExpandArrow</span></a>
+        
+        <span class="result"> extends ComputationRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A simplification rule that implements A -&gt; B = Pi x:A.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.Extensionality" data-isabs="false">
+      <a id="Extensionality:Extensionality"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Extensionality$.html"><span class="name">Extensionality</span></a>
+        
+        <span class="result"> extends EqualityRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the extensionality rule (equivalent to Eta) x:A|-f x = g x  ---&gt;  f = g  : Pi x:A.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.FunType" data-isabs="false">
+      <a id="FunType:FunType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="FunType$.html"><span class="name">FunType</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">apply/unapply methods that curry and uncurry, e.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.Initial" data-isabs="false">
+      <a id="Initial:Initial"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Initial$.html"><span class="name">Initial</span></a>
+        
+        <span class="result"> extends AtomicEqualityRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">This rule implements equality in the initial model.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.LF" data-isabs="false">
       <a id="LF:LF"></a>
       <h4 class="signature">
@@ -217,6 +234,17 @@
         <a href="LF$.html"><span class="name">LF</span></a>
         
         <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.LFHOAS" data-isabs="false">
+      <a id="LFHOAS:LFHOAS"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="LFHOAS$.html"><span class="name">LFHOAS</span></a>
+        
+        <span class="result"> extends Feature with HOAS</span>
       </span>
       </h4>
       
@@ -230,6 +258,30 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
+      <p class="comment cmt">provides apply/unapply methods for lambda abstraction
+for example, it permits constructing and pattern-matching terms as Lambda(variable-name, type, scope)
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.LambdaTerm" data-isabs="false">
+      <a id="LambdaTerm:LambdaTerm"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="LambdaTerm$.html"><span class="name">LambdaTerm</span></a>
+        
+        <span class="result"> extends InferenceRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the type inference rule x:A|-t:B  ---&gt;  lambda x:A.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.OldLFHOAS" data-isabs="false">
+      <a id="OldLFHOAS:OldLFHOAS"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="OldLFHOAS$.html"><span class="name">OldLFHOAS</span></a>
+        
+        <span class="result"> extends Feature with HOAS</span>
+      </span>
+      </h4>
       
     </li><li visbl="pub" name="info.kwarc.mmt.lf.Pi" data-isabs="false">
       <a id="Pi:Pi"></a>
@@ -237,6 +289,52 @@
       <span class="kind">object</span>
       <span class="symbol"> 
         <a href="Pi$.html"><span class="name">Pi</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">provides apply/unapply methods for dependent function type formation
+the unapply method also matches a simple function type
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.PiTerm" data-isabs="false">
+      <a id="PiTerm:PiTerm"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="PiTerm$.html"><span class="name">PiTerm</span></a>
+        
+        <span class="result"> extends InferenceRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the type inference rule x:A:type|-B:U  ---&gt;  Pi x:A.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.PiType" data-isabs="false">
+      <a id="PiType:PiType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="PiType$.html"><span class="name">PiType</span></a>
+        
+        <span class="result"> extends TypingRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the type checking rule x:A|-f x:B  ---&gt;  f : Pi x:A.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.Solve" data-isabs="false">
+      <a id="Solve:Solve"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Solve$.html"><span class="name">Solve</span></a>
+        
+        <span class="result"> extends SolutionRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.Test" data-isabs="false">
+      <a id="Test:Test"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Test$.html"><span class="name">Test</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>
@@ -253,6 +351,17 @@
       </span>
       </h4>
       <p class="comment cmt">helper methods for Twelf</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.Typed" data-isabs="false">
+      <a id="Typed:Typed"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Typed$.html"><span class="name">Typed</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.Univ" data-isabs="false">
       <a id="Univ:Univ"></a>
       <h4 class="signature">
@@ -263,7 +372,42 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">provides apply/unapply methods for a universes
+   in particular, Univ(1), Univ(2) are type and kind, respectively
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.UnivTerm" data-isabs="false">
+      <a id="UnivTerm:UnivTerm"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="UnivTerm$.html"><span class="name">UnivTerm</span></a>
+        
+        <span class="result"> extends InferenceRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the type inference rule type:kind</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.UniverseKind" data-isabs="false">
+      <a id="UniverseKind:UniverseKind"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="UniverseKind$.html"><span class="name">UniverseKind</span></a>
+        
+        <span class="result"> extends UniverseRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the rule that makes kind a valid universe</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.UniverseType" data-isabs="false">
+      <a id="UniverseType:UniverseType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="UniverseType$.html"><span class="name">UniverseType</span></a>
+        
+        <span class="result"> extends UniverseRule</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the rule that makes type a valid universe</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile" data-isabs="false">
       <a id="compile:compile"></a>
       <h4 class="signature">

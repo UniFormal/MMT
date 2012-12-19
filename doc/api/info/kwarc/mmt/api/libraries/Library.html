@@ -212,7 +212,7 @@ The well-formedness of the objects in the declarations is not guaranteed.
         <span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">forgets everything</p>
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -344,13 +344,13 @@ The well-formedness of the objects in the declarations is not guaranteed.
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Library#getDeclarationsInScope" data-isabs="false">
-      <a id="getDeclarationsInScope(MPath):List[Content]"></a>
+      <a id="getDeclarationsInScope(Term):List[Content]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">getDeclarationsInScope</span>
         
-        <span class="params">(<span name="th">th: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>)</span><span class="result">: List[<a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>]</span>
+        <span class="params">(<span name="mod">mod: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: List[<a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Library" class="extype" href="">Library</a> → <a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
@@ -421,6 +421,17 @@ The well-formedness of the objects in the declarations is not guaranteed.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Library#getModules" data-isabs="false">
+      <a id="getModules:List[Module]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getModules</span>
+        
+        <span class="result">: List[<a name="info.kwarc.mmt.api.modules.Module" class="extype" href="../modules/Module.html">Module</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">retrieves all modules in any order</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Lookup#getO" data-isabs="false">
       <a id="getO(Path):Option[ContentElement]"></a>
       <h4 class="signature">
@@ -441,6 +452,17 @@ The well-formedness of the objects in the declarations is not guaranteed.
         <span class="name">getPattern</span>
         
         <span class="params">(<span name="path">path: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>, <span name="msg">msg: (<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>) ⇒ String = <span class="symbol">defmsg</span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.patterns.Pattern" class="extype" href="../patterns/Pattern.html">Pattern</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Lookup#getPatternAssignment" data-isabs="false">
+      <a id="getPatternAssignment(GlobalName,(Path) ⇒ String):PatternAssignment"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">getPatternAssignment</span>
+        
+        <span class="params">(<span name="path">path: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>, <span name="msg">msg: (<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>) ⇒ String = <span class="symbol">defmsg</span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.patterns.PatternAssignment" class="extype" href="../patterns/PatternAssignment.html">PatternAssignment</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
@@ -520,33 +542,7 @@ The well-formedness of the objects in the declarations is not guaranteed.
         <span class="params">(<span name="from">from: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="to">to: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Checks whether a theory (&quot;from&quot;) is included into another (&quot;to&quot;), transitive, reflexive</p><div class="fullcomment"><div class="comment cmt"><p>Checks whether a theory (&quot;from&quot;) is included into another (&quot;to&quot;), transitive, reflexive</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Library" class="extype" href="">Library</a> → <a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Library#importsTo" data-isabs="false">
-      <a id="importsTo(Term):Iterator[Term]"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">importsTo</span>
-        
-        <span class="params">(<span name="to">to: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: Iterator[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">iterator over all includes into a theory (including the meta-theory)
-a new iterator is needed once this has been traversed
-</p><div class="fullcomment"><div class="comment cmt"><p>iterator over all includes into a theory (including the meta-theory)
-a new iterator is needed once this has been traversed
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Library" class="extype" href="">Library</a> → <a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Lookup#importsToFlat" data-isabs="false">
-      <a id="importsToFlat(Term,HashSet[Term]):HashSet[Term]"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">importsToFlat</span>
-        
-        <span class="params">(<span name="to">to: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="found">found: <span name="scala.collection.mutable.HashSet" class="extype">HashSet</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>] = <span class="symbol">new HashSet[Term]</span></span>)</span><span class="result">: <span name="scala.collection.mutable.HashSet" class="extype">HashSet</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
+      <p class="shortcomment cmt">Checks whether a theory (&quot;from&quot;) is included into another (&quot;to&quot;), transitive, reflexive</p>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -678,7 +674,35 @@ a new iterator is needed once this has been traversed
         <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.api.ContentElement" class="extype" href="../ContentElement.html">ContentElement</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">updates a ContentElement by deleting and adding it</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Library#visible" data-isabs="false">
+      <a id="visible(Term):HashSet[Term]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">visible</span>
+        
+        <span class="params">(<span name="to">to: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: <span name="scala.collection.mutable.HashSet" class="extype">HashSet</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">visible theories (implicit imports and views)
+as visibleVia but dropping the implicit morphisms
+</p><div class="fullcomment"><div class="comment cmt"><p>visible theories (implicit imports and views)
+as visibleVia but dropping the implicit morphisms
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Library" class="extype" href="">Library</a> → <a name="info.kwarc.mmt.api.libraries.Lookup" class="extype" href="Lookup.html">Lookup</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Library#visibleVia" data-isabs="false">
+      <a id="visibleVia(Term):HashSet[(Term, Term)]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">visibleVia</span>
+        
+        <span class="params">(<span name="to">to: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="result">: <span name="scala.collection.mutable.HashSet" class="extype">HashSet</span>[(<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>, <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>)]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">visible theories (implicit imports and views)</p><div class="fullcomment"><div class="comment cmt"><p>visible theories (implicit imports and views)</p></div><dl class="paramcmts block"><dt class="param">to</dt><dd class="cmt"><p>the theory</p></dd><dt>returns</dt><dd class="cmt"><p>all pairs (theory,via) such that theory is visible in to
+transitive and reflexive
+</p></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

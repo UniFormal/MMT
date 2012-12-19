@@ -202,6 +202,17 @@
       </h4>
       <p class="shortcomment cmt">Compile a Twelf file to OMDoc</p><div class="fullcomment"><div class="comment cmt"><p>Compile a Twelf file to OMDoc</p></div><dl class="paramcmts block"><dt class="param">in</dt><dd class="cmt"><p>the input Twelf file</p></dd><dt class="param">out</dt><dd class="cmt"><p>the file in which to put the generated OMDoc
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.Twelf" class="extype" href="">Twelf</a> → <a name="info.kwarc.mmt.api.backend.Compiler" class="extype" href="../api/backend/Compiler.html">Compiler</a></dd></dl></div>
+    </li><li visbl="prt" name="info.kwarc.mmt.api.backend.Importer#controller" data-isabs="false">
+      <a id="controller:Controller"></a>
+      <h4 class="signature">
+      <span class="kind">var</span>
+      <span class="symbol"> 
+        <span class="name">controller</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../api/frontend/Controller.html">Controller</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.backend.Importer" class="extype" href="../api/backend/Importer.html">Importer</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.Twelf#destroy" data-isabs="false">
       <a id="destroy:Unit"></a>
       <h4 class="signature">
@@ -289,13 +300,13 @@ but they must clean up after themselves in this method
       </h4>
       <p class="shortcomment cmt">source file names that the compiler is able to process</p><div class="fullcomment"><div class="comment cmt"><p>source file names that the compiler is able to process</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.lf.Twelf" class="extype" href="">Twelf</a> → <a name="info.kwarc.mmt.api.backend.Compiler" class="extype" href="../api/backend/Compiler.html">Compiler</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.Twelf#init" data-isabs="false">
-      <a id="init(Report,List[String]):Unit"></a>
+      <a id="init(Controller,List[String]):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">init</span>
         
-        <span class="params">(<span name="rep">rep: <a name="info.kwarc.mmt.api.frontend.Report" class="extype" href="../api/frontend/Report.html">Report</a></span>, <span name="args">args: List[String]</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="con">con: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../api/frontend/Controller.html">Controller</a></span>, <span name="args">args: List[String]</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">creates and intializes a Catalog
@@ -424,6 +435,17 @@ first argument is the location of the twelf-server script
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.backend.Compiler#unregister" data-isabs="false">
+      <a id="unregister(Archive,String):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">unregister</span>
+        
+        <span class="params">(<span name="arch">arch: <a name="info.kwarc.mmt.api.archives.Archive" class="extype" href="../api/archives/Archive.html">Archive</a></span>, <span name="dim">dim: String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">unregisters an archive with this compiler</p><div class="fullcomment"><div class="comment cmt"><p>unregisters an archive with this compiler</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.backend.Compiler" class="extype" href="../api/backend/Compiler.html">Compiler</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.Twelf#unsafe" data-isabs="false">
       <a id="unsafe:Boolean"></a>
       <h4 class="signature">

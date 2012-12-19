@@ -24,11 +24,14 @@
       <span class="symbol"> 
         <span class="name">LoggingOff</span>
         
-        <span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends <a name="info.kwarc.mmt.api.frontend.Action" class="extype" href="Action.html">Action</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
+        <span class="params">(<span name="group">group: String</span>)</span><span class="result"> extends <a name="info.kwarc.mmt.api.frontend.Action" class="extype" href="Action.html">Action</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>switch off logging for a certain group</p></div><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>switch off logging for a certain group
+concrete syntax: log- group:STRING
+Some of the available groups are documented in Report. Generally, plugins may use their own groups.
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span name="scala.Serializable" class="extype">Serializable</span>, <span name="java.io.Serializable" class="extype">Serializable</span>, <span name="scala.Product" class="extype">Product</span>, <span name="scala.Equals" class="extype">Equals</span>, <a name="info.kwarc.mmt.api.frontend.Action" class="extype" href="Action.html">Action</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -63,7 +66,7 @@
       <span class="symbol"> 
         <span class="name">LoggingOff</span>
         
-        <span class="params">(<span name="s">s: String</span>)</span>
+        <span class="params">(<span name="group">group: String</span>)</span>
       </span>
       </h4>
       
@@ -214,6 +217,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.LoggingOff#group" data-isabs="false">
+      <a id="group:String"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">group</span>
+        
+        <span class="result">: String</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.LoggingOff#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -313,17 +327,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.frontend.LoggingOff" class="extype" href="">LoggingOff</a> → Product</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.LoggingOff#s" data-isabs="false">
-      <a id="s:String"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">s</span>
-        
-        <span class="result">: String</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

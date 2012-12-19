@@ -144,27 +144,27 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Checker#check" data-isabs="false">
-      <a id="check(Path)((RelationalElement) ⇒ Unit,(StructuralElement) ⇒ Unit):Unit"></a>
+      <a id="check(Path)((RelationalElement) ⇒ Unit,(ValidationUnit) ⇒ Unit):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">check</span>
         
-        <span class="params">(<span name="p">p: <a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="reCont">reCont: (<a name="info.kwarc.mmt.api.RelationalElement" class="extype" href="../RelationalElement.html">RelationalElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>, <span name="seCont">seCont: (<a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="p">p: <a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="reCont">reCont: (<a name="info.kwarc.mmt.api.RelationalElement" class="extype" href="../RelationalElement.html">RelationalElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>, <span name="unitCont">unitCont: (<a name="info.kwarc.mmt.api.objects.ValidationUnit" class="extype" href="../objects/ValidationUnit.html">ValidationUnit</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
       
     </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Checker#check" data-isabs="false">
-      <a id="check(StructuralElement)((RelationalElement) ⇒ Unit,(StructuralElement) ⇒ Unit):Unit"></a>
+      <a id="check(StructuralElement)((RelationalElement) ⇒ Unit,(ValidationUnit) ⇒ Unit):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">check</span>
         
-        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="reCont">reCont: (<a name="info.kwarc.mmt.api.RelationalElement" class="extype" href="../RelationalElement.html">RelationalElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>, <span name="seCont">seCont: (<a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="reCont">reCont: (<a name="info.kwarc.mmt.api.RelationalElement" class="extype" href="../RelationalElement.html">RelationalElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>, <span name="unitCont">unitCont: (<a name="info.kwarc.mmt.api.objects.ValidationUnit" class="extype" href="../objects/ValidationUnit.html">ValidationUnit</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">checks a StructuralElement</p><div class="fullcomment"><div class="comment cmt"><p>checks a StructuralElement</p></div><dl class="paramcmts block"><dt class="param">e</dt><dd class="cmt"><p>the element to check</p></dd><dt class="param">reCont</dt><dd class="cmt"><p>a continuation called on all RelationalElement's produced while checking objects</p></dd><dt class="param">seCont</dt><dd class="cmt"><p>a continuation called on the reconstructed element (possibly the same as e)
+      <p class="shortcomment cmt">checks a StructuralElement</p><div class="fullcomment"><div class="comment cmt"><p>checks a StructuralElement</p></div><dl class="paramcmts block"><dt class="param">e</dt><dd class="cmt"><p>the element to check</p></dd><dt class="param">reCont</dt><dd class="cmt"><p>a continuation called on all RelationalElement's produced while checking objects</p></dd><dt class="param">unitCont</dt><dd class="cmt"><p>a continuation called on every validation unit
 </p></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Checker#checkContext" data-isabs="false">
       <a id="checkContext(Term,Context,Context)((Path) ⇒ Unit):Context"></a>
@@ -201,7 +201,7 @@ if context is valid, then this succeeds iff context ++ con is valid
         <span class="params">(<span name="home">home: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>, <span name="subs">subs: <a name="info.kwarc.mmt.api.objects.Substitution" class="extype" href="../objects/Substitution.html">Substitution</a></span>, <span name="from">from: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="../objects/Context.html">Context</a></span>, <span name="to">to: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="../objects/Context.html">Context</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="pCont">pCont: (<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.Substitution" class="extype" href="../objects/Substitution.html">Substitution</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Checks structural well-formedness of a substitution relative to a home theory.</p><div class="fullcomment"><div class="comment cmt"><p>Checks structural well-formedness of a substitution relative to a home theory.</p></div><dl class="paramcmts block"><dt class="param">home</dt><dd class="cmt"><p>the home theory</p></dd><dt class="param">subs</dt><dd class="cmt"><p>the substitution</p></dd><dt class="param">from</dt><dd class="cmt"><p>the context in which the substituting terms live</p></dd><dt>returns</dt><dd class="cmt"><p>the reconstructed substitution
+      <p class="shortcomment cmt">Checks structural well-formedness of a substitution relative to a home theory.</p><div class="fullcomment"><div class="comment cmt"><p>Checks structural well-formedness of a substitution relative to a home theory.</p></div><dl class="paramcmts block"><dt class="param">home</dt><dd class="cmt"><p>the home theory</p></dd><dt class="param">subs</dt><dd class="cmt"><p>the substitution</p></dd><dt class="param">from</dt><dd class="cmt"><p>the context declaring the variables to be substituted</p></dd><dt class="param">to</dt><dd class="cmt"><p>the context in which the substituting terms live</p></dd><dt>returns</dt><dd class="cmt"><p>the reconstructed substitution
 </p></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Checker#checkTerm" data-isabs="false">
       <a id="checkTerm(Term,Term)((Path) ⇒ Unit):Term"></a>
@@ -355,6 +355,17 @@ if context is valid, then this succeeds iff context ++ con is valid
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Checker#printStatistics" data-isabs="false">
+      <a id="printStatistics():Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">printStatistics</span>
+        
+        <span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

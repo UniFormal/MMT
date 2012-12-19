@@ -14,9 +14,9 @@
         </head>
         <body class="type">
       <div id="definition">
-        <a title="Go to companion" href="Propagator$.html"><img src="../../../../../lib/class_to_object_big.png" /></a>
+        <img src="../../../../../lib/class_big.png" />
         <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a>.<a name="info.kwarc.mmt.api.moc" class="extype" href="package.html">moc</a></p>
-        <h1><a title="Go to companion" href="Propagator$.html">Propagator</a></h1>
+        <h1>Propagator</h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -28,12 +28,12 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>The generic propagator class that simply acts as a diff enricher</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.api.moc.FoundationalPropagator" class="extype" href="FoundationalPropagator.html">FoundationalPropagator</a></div>
+          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.api.moc.FoundationalImpactPropagator" class="extype" href="FoundationalImpactPropagator.html">FoundationalImpactPropagator</a>, <a name="info.kwarc.mmt.api.moc.ImpactPropagator" class="extype" href="ImpactPropagator.html">ImpactPropagator</a>, <a name="info.kwarc.mmt.api.moc.NullPropagator" class="extype" href="NullPropagator.html">NullPropagator</a>, <a name="info.kwarc.mmt.api.moc.OccursInImpactPropagator" class="extype" href="OccursInImpactPropagator.html">OccursInImpactPropagator</a>, <a name="info.kwarc.mmt.api.moc.StructuralImpactPropagator" class="extype" href="StructuralImpactPropagator.html">StructuralImpactPropagator</a></div>
         </div></div>
         
 
@@ -66,10 +66,11 @@
       <span class="symbol"> 
         <span class="name">Propagator</span>
         
-        <span class="params">(<span name="memory">memory: <a name="info.kwarc.mmt.api.frontend.ROMemory" class="extype" href="../frontend/ROMemory.html">ROMemory</a></span>)</span>
+        <span class="params">(<span name="mem">mem: <a name="info.kwarc.mmt.api.frontend.ROMemory" class="extype" href="../frontend/ROMemory.html">ROMemory</a></span>)</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">mem</dt><dd class="cmt"><p>the memory containing the current theory graph
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -87,7 +88,8 @@
         <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="shortcomment cmt">The main propagation function</p><div class="fullcomment"><div class="comment cmt"><p>The main propagation function</p></div><dl class="paramcmts block"><dt class="param">diff</dt><dd class="cmt"><p>the diff</p></dd><dt>returns</dt><dd class="cmt"><p>the generated propagation diff
+</p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
     </li></ol>
             </div>
 
@@ -148,6 +150,20 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Propagator#apply" data-isabs="false">
+      <a id="apply(Diff):Diff"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">apply</span>
+        
+        <span class="params">(<span name="diff">diff: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.moc.Diff" class="extype" href="Diff.html">Diff</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">default application of propagators is to propagate
+(i.</p><div class="fullcomment"><div class="comment cmt"><p>default application of propagators is to propagate
+(i.e. apply directly calls propagate)</p></div><dl class="paramcmts block"><dt class="param">diff</dt><dd class="cmt"><p>the diff</p></dd><dt>returns</dt><dd class="cmt"><p>the generated propagation diff
+</p></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -159,6 +175,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Propagator#boxedPaths" data-isabs="false">
+      <a id="boxedPaths:Set[CPath]"></a>
+      <h4 class="signature">
+      <span class="kind">var</span>
+      <span class="symbol"> 
+        <span class="name">boxedPaths</span>
+        
+        <span class="result">: <span name="scala.collection.immutable.Set" class="extype">Set</span>[<a name="info.kwarc.mmt.api.CPath" class="extype" href="../CPath.html">CPath</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">paths made invalid by the propagation
+</p>
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">

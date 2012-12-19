@@ -54,7 +54,18 @@
       <span class="symbol"> 
         <a href="Add.html"><span class="name">Add</span></a>
         
-        <span class="result"> extends StrictChange</span>
+        <span class="result"> extends Change</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.AddContent" data-isabs="true">
+      <a id="AddContent:AddContent"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="AddContent.html"><span class="name">AddContent</span></a>
+        
+        <span class="result"> extends Add with StrictChange</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
@@ -65,7 +76,7 @@
       <span class="symbol"> 
         <a href="AddDeclaration.html"><span class="name">AddDeclaration</span></a>
         
-        <span class="params">(<span name="d">d: Declaration</span>)</span><span class="result"> extends Add with ChangeDeclaration with Product with Serializable</span>
+        <span class="params">(<span name="d">d: Declaration</span>)</span><span class="result"> extends AddContent with ChangeDeclaration with Product with Serializable</span>
       </span>
       </h4>
       
@@ -76,7 +87,18 @@
       <span class="symbol"> 
         <a href="AddModule.html"><span class="name">AddModule</span></a>
         
-        <span class="params">(<span name="m">m: Module</span>)</span><span class="result"> extends Add with ChangeModule with Product with Serializable</span>
+        <span class="params">(<span name="m">m: Module</span>)</span><span class="result"> extends AddContent with ChangeModule with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.AddPresentation" data-isabs="false">
+      <a id="AddPresentation:AddPresentation"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddPresentation.html"><span class="name">AddPresentation</span></a>
+        
+        <span class="params">(<span name="p">p: PresentationElement</span>)</span><span class="result"> extends Add with PresentationChange with Product with Serializable</span>
       </span>
       </h4>
       
@@ -90,7 +112,7 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.ChangeDeclaration" data-isabs="true">
       <a id="ChangeDeclaration:ChangeDeclaration"></a>
       <h4 class="signature">
@@ -145,7 +167,18 @@
       <span class="symbol"> 
         <a href="Delete.html"><span class="name">Delete</span></a>
         
-        <span class="result"> extends StrictChange</span>
+        <span class="result"> extends Change</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.DeleteContent" data-isabs="true">
+      <a id="DeleteContent:DeleteContent"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="DeleteContent.html"><span class="name">DeleteContent</span></a>
+        
+        <span class="result"> extends Delete with StrictChange</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
@@ -156,7 +189,7 @@
       <span class="symbol"> 
         <a href="DeleteDeclaration.html"><span class="name">DeleteDeclaration</span></a>
         
-        <span class="params">(<span name="d">d: Declaration</span>)</span><span class="result"> extends Delete with ChangeDeclaration with Product with Serializable</span>
+        <span class="params">(<span name="d">d: Declaration</span>)</span><span class="result"> extends DeleteContent with ChangeDeclaration with Product with Serializable</span>
       </span>
       </h4>
       
@@ -167,7 +200,18 @@
       <span class="symbol"> 
         <a href="DeleteModule.html"><span class="name">DeleteModule</span></a>
         
-        <span class="params">(<span name="m">m: Module</span>)</span><span class="result"> extends Delete with ChangeModule with Product with Serializable</span>
+        <span class="params">(<span name="m">m: Module</span>)</span><span class="result"> extends DeleteContent with ChangeModule with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.DeletePresentation" data-isabs="false">
+      <a id="DeletePresentation:DeletePresentation"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="DeletePresentation.html"><span class="name">DeletePresentation</span></a>
+        
+        <span class="params">(<span name="p">p: PresentationElement</span>)</span><span class="result"> extends Delete with PresentationChange with Product with Serializable</span>
       </span>
       </h4>
       
@@ -182,17 +226,72 @@
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.FoundationalPropagator" data-isabs="false">
-      <a id="FoundationalPropagator:FoundationalPropagator"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.DiffReader" data-isabs="false">
+      <a id="DiffReader:DiffReader"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="FoundationalPropagator.html"><span class="name">FoundationalPropagator</span></a>
+        <a href="DiffReader.html"><span class="name">DiffReader</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.FoundationalImpactPropagator" data-isabs="false">
+      <a id="FoundationalImpactPropagator:FoundationalImpactPropagator"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="FoundationalImpactPropagator.html"><span class="name">FoundationalImpactPropagator</span></a>
+        
+        <span class="result"> extends ImpactPropagator</span>
+      </span>
+      </h4>
+      <p class="comment cmt">The foundational impact propagator is an impact propagator
+that marks impacted items by surrounding them with error terms so that
+after the error terms are replaced with valid ones the validity of the entire
+theory graph is ensured
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.ImpactPropagator" data-isabs="true">
+      <a id="ImpactPropagator:ImpactPropagator"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="ImpactPropagator.html"><span class="name">ImpactPropagator</span></a>
         
         <span class="result"> extends Propagator</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">An impact propagator is a special propagator that generates changes based on an
+abstract dependency relation (given by the method <i>dependsOn</i>) and on a
+propagation function (<i>propFunc</i>) to be applied to impacted content items.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.NullPropagator" data-isabs="false">
+      <a id="NullPropagator:NullPropagator"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="NullPropagator.html"><span class="name">NullPropagator</span></a>
+        
+        <span class="result"> extends Propagator</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An example of a (trivial and useless) propagator
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.OccursInImpactPropagator" data-isabs="false">
+      <a id="OccursInImpactPropagator:OccursInImpactPropagator"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="OccursInImpactPropagator.html"><span class="name">OccursInImpactPropagator</span></a>
+        
+        <span class="result"> extends ImpactPropagator</span>
+      </span>
+      </h4>
+      <p class="comment cmt">The occurs-in impact propagator is an impact propagator based on the occurs-in (refers-to) relation
+that marks impacted items by surrounding them with error terms so that
+after the error terms are replaced with valid ones the validity of the entire
+theory graph is ensured
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChange" data-isabs="false">
       <a id="PragmaticChange:PragmaticChange"></a>
       <h4 class="signature">
@@ -200,11 +299,11 @@
       <span class="symbol"> 
         <a href="PragmaticChange.html"><span class="name">PragmaticChange</span></a>
         
-        <span class="params">(<span name="name">name: String</span>, <span name="diff">diff: Diff</span>, <span name="termProp">termProp: (Term) ⇒ Term</span>, <span name="modProp">modProp: (Module) ⇒ StrictDiff</span>)</span><span class="result"> extends Change with ContentChange with Product with Serializable</span>
+        <span class="params">(<span name="name">name: String</span>, <span name="diff">diff: StrictDiff</span>, <span name="termProp">termProp: (Term) ⇒ Term</span>, <span name="modProp">modProp: (Module) ⇒ StrictDiff</span>, <span name="description">description: String</span>)</span><span class="result"> extends Change with ContentChange with Product with Serializable</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticChangeType" data-isabs="true">
       <a id="PragmaticChangeType:PragmaticChangeType"></a>
       <h4 class="signature">
       <span class="kind">class</span>
@@ -214,7 +313,30 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PragmaticRefiner" data-isabs="false">
+      <a id="PragmaticRefiner:PragmaticRefiner"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="PragmaticRefiner.html"><span class="name">PragmaticRefiner</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.PresentationChange" data-isabs="true">
+      <a id="PresentationChange:PresentationChange"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="PresentationChange.html"><span class="name">PresentationChange</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Presentation
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Propagator" data-isabs="true">
       <a id="Propagator:Propagator"></a>
       <h4 class="signature">
@@ -225,18 +347,18 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="comment cmt">The generic propagator class that simply acts as a diff enricher</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.StrictChange" data-isabs="true">
       <a id="StrictChange:StrictChange"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
+      <span class="kind">trait</span>
       <span class="symbol"> 
         <a href="StrictChange.html"><span class="name">StrictChange</span></a>
         
         <span class="result"> extends Change with ContentChange</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.StrictDiff" data-isabs="false">
       <a id="StrictDiff:StrictDiff"></a>
       <h4 class="signature">
@@ -248,17 +370,19 @@
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Update" data-isabs="true">
-      <a id="Update:Update"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.StructuralImpactPropagator" data-isabs="false">
+      <a id="StructuralImpactPropagator:StructuralImpactPropagator"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
-        <a href="Update.html"><span class="name">Update</span></a>
+        <a href="StructuralImpactPropagator.html"><span class="name">StructuralImpactPropagator</span></a>
         
-        <span class="result"> extends StrictChange</span>
+        <span class="result"> extends ImpactPropagator</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+      <p class="comment cmt">The structural impact propagator is an impact propagator
+that ensures the totality of views
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.UpdateComponent" data-isabs="false">
       <a id="UpdateComponent:UpdateComponent"></a>
       <h4 class="signature">
@@ -266,7 +390,29 @@
       <span class="symbol"> 
         <a href="UpdateComponent.html"><span class="name">UpdateComponent</span></a>
         
-        <span class="params">(<span name="path">path: ContentPath</span>, <span name="name">name: String</span>, <span name="old">old: Option[Obj]</span>, <span name="nw">nw: Option[Obj]</span>)</span><span class="result"> extends Update with ContentChange with Product with Serializable</span>
+        <span class="params">(<span name="path">path: ContentPath</span>, <span name="name">name: DeclarationComponent</span>, <span name="old">old: Option[Obj]</span>, <span name="nw">nw: Option[Obj]</span>)</span><span class="result"> extends UpdateContent with ContentChange with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.UpdateContent" data-isabs="true">
+      <a id="UpdateContent:UpdateContent"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="UpdateContent.html"><span class="name">UpdateContent</span></a>
+        
+        <span class="result"> extends Change with StrictChange</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.UpdateMetadata" data-isabs="false">
+      <a id="UpdateMetadata:UpdateMetadata"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="UpdateMetadata.html"><span class="name">UpdateMetadata</span></a>
+        
+        <span class="params">(<span name="path">path: ContentPath</span>, <span name="key">key: GlobalName</span>, <span name="old">old: List[Obj]</span>, <span name="nw">nw: List[Obj]</span>)</span><span class="result"> extends UpdateContent with ContentChange with Product with Serializable</span>
       </span>
       </h4>
       
@@ -277,7 +423,29 @@
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.moc.Differ" data-isabs="false">
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.moc.Add" data-isabs="false">
+      <a id="Add:Add"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Add$.html"><span class="name">Add</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Delete" data-isabs="false">
+      <a id="Delete:Delete"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Delete$.html"><span class="name">Delete</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Differ" data-isabs="false">
       <a id="Differ:Differ"></a>
       <h4 class="signature">
       <span class="kind">object</span>
@@ -287,7 +455,8 @@
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">the differ object contains methods for detecting the changes between two MMT content items (modules/declarations/objects)
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Main" data-isabs="false">
       <a id="Main:Main"></a>
       <h4 class="signature">
@@ -310,25 +479,25 @@
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.Propagator" data-isabs="false">
-      <a id="Propagator:Propagator"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.pragmaticAlphaRename" data-isabs="false">
+      <a id="pragmaticAlphaRename:pragmaticAlphaRename"></a>
       <h4 class="signature">
       <span class="kind">object</span>
       <span class="symbol"> 
-        <a href="Propagator$.html"><span class="name">Propagator</span></a>
+        <a href="pragmaticAlphaRename$.html"><span class="name">pragmaticAlphaRename</span></a>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends PragmaticChangeType</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.SamplePragmaticChanges" data-isabs="false">
-      <a id="SamplePragmaticChanges:SamplePragmaticChanges"></a>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.moc.pragmaticRename" data-isabs="false">
+      <a id="pragmaticRename:pragmaticRename"></a>
       <h4 class="signature">
       <span class="kind">object</span>
       <span class="symbol"> 
-        <a href="SamplePragmaticChanges$.html"><span class="name">SamplePragmaticChanges</span></a>
+        <a href="pragmaticRename$.html"><span class="name">pragmaticRename</span></a>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends PragmaticChangeType</span>
       </span>
       </h4>
       

@@ -58,6 +58,17 @@
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.InstanceCompiler" data-isabs="false">
+      <a id="InstanceCompiler:InstanceCompiler"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="InstanceCompiler.html"><span class="name">InstanceCompiler</span></a>
+        
+        <span class="result"> extends Compiler</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.InstanceElaborator" data-isabs="false">
       <a id="InstanceElaborator:InstanceElaborator"></a>
       <h4 class="signature">
@@ -93,6 +104,39 @@ this is also called the pragmatic-to-strict translation
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternAbs" data-isabs="false">
+      <a id="PatternAbs:PatternAbs"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="PatternAbs.html"><span class="name">PatternAbs</span></a>
+        
+        <span class="params">(<span name="params">params: Context</span>, <span name="body">body: PatternExpression</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternApp" data-isabs="false">
+      <a id="PatternApp:PatternApp"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="PatternApp.html"><span class="name">PatternApp</span></a>
+        
+        <span class="params">(<span name="pattern">pattern: PatternExpression</span>, <span name="args">args: Substitution</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternAssignment" data-isabs="false">
+      <a id="PatternAssignment:PatternAssignment"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="PatternAssignment.html"><span class="name">PatternAssignment</span></a>
+        
+        <span class="result"> extends Assignment</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternChecker" data-isabs="false">
       <a id="PatternChecker:PatternChecker"></a>
       <h4 class="signature">
@@ -106,6 +150,50 @@ this is also called the pragmatic-to-strict translation
       <p class="comment cmt">elaborates Instance declarations
 this is also called the pragmatic-to-strict translation
 </p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternController" data-isabs="false">
+      <a id="PatternController:PatternController"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="PatternController.html"><span class="name">PatternController</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternExpression" data-isabs="true">
+      <a id="PatternExpression:PatternExpression"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="PatternExpression.html"><span class="name">PatternExpression</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternFrag" data-isabs="false">
+      <a id="PatternFrag:PatternFrag"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="PatternFrag.html"><span class="name">PatternFrag</span></a>
+        
+        <span class="params">(<span name="body">body: Context</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternSym" data-isabs="false">
+      <a id="PatternSym:PatternSym"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="PatternSym.html"><span class="name">PatternSym</span></a>
+        
+        <span class="params">(<span name="path">path: GlobalName</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
         
@@ -113,12 +201,34 @@ this is also called the pragmatic-to-strict translation
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.patterns.Test" data-isabs="false">
-      <a id="Test:Test"></a>
+              <ol><li visbl="pub" name="info.kwarc.mmt.api.patterns.CompTest" data-isabs="false">
+      <a id="CompTest:CompTest"></a>
       <h4 class="signature">
       <span class="kind">object</span>
       <span class="symbol"> 
-        <a href="Test$.html"><span class="name">Test</span></a>
+        <a href="CompTest$.html"><span class="name">CompTest</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.Functor" data-isabs="false">
+      <a id="Functor:Functor"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Functor$.html"><span class="name">Functor</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternTest" data-isabs="false">
+      <a id="PatternTest:PatternTest"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="PatternTest$.html"><span class="name">PatternTest</span></a>
         
         <span class="result"> extends AnyRef</span>
       </span>

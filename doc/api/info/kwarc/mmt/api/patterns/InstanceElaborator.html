@@ -143,9 +143,8 @@ this is also called the pragmatic-to-strict translation
         <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a>) ⇒ <span name="scala.Unit" class="extype">Unit</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">returns the elaboration of an instance
-</p><div class="fullcomment"><div class="comment cmt"><p>returns the elaboration of an instance
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.patterns.InstanceElaborator" class="extype" href="">InstanceElaborator</a> → <a name="info.kwarc.mmt.api.libraries.Elaborator" class="extype" href="../libraries/Elaborator.html">Elaborator</a></dd></dl></div>
+      <p class="shortcomment cmt">returns the elaboration of an instance</p><div class="fullcomment"><div class="comment cmt"><p>returns the elaboration of an instance</p></div><dl class="paramcmts block"><dt class="param">e</dt><dd class="cmt"><p>the StructuralElement that is elaborated
+</p></dd><dt class="param">cont</dt><dd class="cmt"><p>a function that is applied to each produced StructuralElement</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.patterns.InstanceElaborator" class="extype" href="">InstanceElaborator</a> → <a name="info.kwarc.mmt.api.libraries.Elaborator" class="extype" href="../libraries/Elaborator.html">Elaborator</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -296,6 +295,17 @@ this is also called the pragmatic-to-strict translation
       </span>
       </h4>
       
+    </li><li visbl="prt" name="info.kwarc.mmt.api.libraries.Elaborator#rewrite" data-isabs="false">
+      <a id="rewrite(Term)(HashMap[Path, Term]):Term"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">rewrite</span>
+        
+        <span class="params">(<span name="t">t: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="rules">rules: <span name="scala.collection.immutable.HashMap" class="extype">HashMap</span>[<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>, <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a>]</span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../objects/Term.html">Term</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.libraries.Elaborator" class="extype" href="../libraries/Elaborator.html">Elaborator</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

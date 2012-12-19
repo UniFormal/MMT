@@ -54,7 +54,7 @@
       <span class="symbol"> 
         <a href="Archive.html"><span class="name">Archive</span></a>
         
-        <span class="result"> extends WritableArchive with CompilableArchive with IndexedArchive with ScalaArchive with ZipArchive</span>
+        <span class="result"> extends WritableArchive with CompilableArchive with ValidatedArchive with IndexedArchive with ScalaArchive with ZipArchive</span>
       </span>
       </h4>
       <p class="comment cmt">archive management</p>
@@ -97,6 +97,17 @@
       <span class="kind">trait</span>
       <span class="symbol"> 
         <a href="IndexedArchive.html"><span class="name">IndexedArchive</span></a>
+        
+        <span class="result"> extends WritableArchive</span>
+      </span>
+      </h4>
+      <p class="comment cmt">This trait adds indexing operations to Archive's</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.MMTArchive" data-isabs="true">
+      <a id="MMTArchive:MMTArchive"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="MMTArchive.html"><span class="name">MMTArchive</span></a>
         
         <span class="result"> extends WritableArchive</span>
       </span>
@@ -157,6 +168,17 @@
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.ValidatedArchive" data-isabs="true">
+      <a id="ValidatedArchive:ValidatedArchive"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="ValidatedArchive.html"><span class="name">ValidatedArchive</span></a>
+        
+        <span class="result"> extends WritableArchive</span>
+      </span>
+      </h4>
+      <p class="comment cmt">This trait adds validation operations to Archive's</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive" data-isabs="true">
       <a id="WritableArchive:WritableArchive"></a>
       <h4 class="signature">

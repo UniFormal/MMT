@@ -23,7 +23,7 @@
       <span class="kind">class</span>
       <span class="symbol"> 
         <span class="name">FuncLang</span>
-        
+        <span class="tparams">[<span name="A">A</span>]</span>
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
@@ -60,7 +60,7 @@
         <div class="members" id="constructors">
               <h3>Instance Constructors</h3>
               <ol><li visbl="pub" name="info.kwarc.mmt.lf.compile.FuncLang#this" data-isabs="false">
-      <a id="this:FuncLang"></a>
+      <a id="this:FuncLang[A]"></a>
       <h4 class="signature">
       <span class="kind">new</span>
       <span class="symbol"> 
@@ -78,24 +78,24 @@
         <div class="values members" id="values">
               <h3>Abstract Value Members</h3>
               <ol><li visbl="pub" name="info.kwarc.mmt.lf.compile.FuncLang#decl" data-isabs="true">
-      <a id="decl(DECL):String"></a>
+      <a id="decl(DECL):A"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">decl</span>
         
-        <span class="params">(<span name="d">d: <a name="info.kwarc.mmt.lf.compile.DECL" class="extype" href="DECL.html">DECL</a></span>)</span><span class="result">: String</span>
+        <span class="params">(<span name="d">d: <a name="info.kwarc.mmt.lf.compile.DECL" class="extype" href="DECL.html">DECL</a></span>)</span><span class="result">: A</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.FuncLang#exp" data-isabs="true">
-      <a id="exp(EXP):String"></a>
+      <a id="exp(EXP):A"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">exp</span>
         
-        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: String</span>
+        <span class="params">(<span name="e">e: <a name="info.kwarc.mmt.lf.compile.EXP" class="extype" href="EXP.html">EXP</a></span>)</span><span class="result">: A</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
@@ -286,6 +286,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.FuncLang#prog" data-isabs="false">
+      <a id="prog(List[DECL]):List[A]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">prog</span>
+        
+        <span class="params">(<span name="ds">ds: List[<a name="info.kwarc.mmt.lf.compile.DECL" class="extype" href="DECL.html">DECL</a>]</span>)</span><span class="result">: List[A]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

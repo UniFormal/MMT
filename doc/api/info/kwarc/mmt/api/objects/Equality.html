@@ -24,7 +24,7 @@
       <span class="symbol"> 
         <span class="name">Equality</span>
         
-        <span class="params">(<span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>, <span name="t1">t1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t2">t2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t">t: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>)</span><span class="result"> extends <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
+        <span class="params">(<span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>, <span name="t1">t1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t2">t2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t">t: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>)</span><span class="result"> extends <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
       </span>
       </h4>
       
@@ -67,7 +67,7 @@ context |- t1 = t2       if t = None
       <span class="symbol"> 
         <span class="name">Equality</span>
         
-        <span class="params">(<span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>, <span name="t1">t1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t2">t2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t">t: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>)</span>
+        <span class="params">(<span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>, <span name="t1">t1: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t2">t2: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="t">t: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>)</span>
       </span>
       </h4>
       
@@ -171,17 +171,6 @@ context |- t1 = t2       if t = None
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Equality#context" data-isabs="false">
-      <a id="context:Context"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">context</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -339,6 +328,17 @@ context |- t1 = t2       if t = None
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Equality" class="extype" href="">Equality</a> → Product</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Equality#stack" data-isabs="false">
+      <a id="stack:Stack"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">stack</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Equality" class="extype" href="">Equality</a> → <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

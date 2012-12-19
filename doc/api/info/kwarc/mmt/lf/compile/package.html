@@ -57,7 +57,7 @@
         <span class="params">(<span name="name">name: String</span>, <span name="constructors">constructors: List[CONS]</span>)</span><span class="result"> extends DECL with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">abstract data type</p>
+      <p class="comment cmt">abstract data types: name -&gt; id%%(args) | .</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.ADTRec" data-isabs="false">
       <a id="ADTRec:ADTRec"></a>
       <h4 class="signature">
@@ -80,6 +80,17 @@
       </span>
       </h4>
       <p class="comment cmt">a list</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.ANY" data-isabs="false">
+      <a id="ANY:ANY"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ANY.html"><span class="name">ANY</span></a>
+        
+        <span class="params">()</span><span class="result"> extends EXP with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.APPLY" data-isabs="false">
       <a id="APPLY:APPLY"></a>
       <h4 class="signature">
@@ -120,7 +131,7 @@
       <span class="symbol"> 
         <a href="AT.html"><span class="name">AT</span></a>
         
-        <span class="params">(<span name="list">list: EXP</span>, <span name="index">index: EXP</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
+        <span class="params">(<span name="l">l: EXP</span>, <span name="index">index: EXP</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
       </span>
       </h4>
       <p class="comment cmt">element of a list at a given index</p>
@@ -137,6 +148,17 @@
       <p class="comment cmt">a binder with some argument types and a typed bound variable
 we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -&gt; c or (b -&gt; s) -&gt; c where a, b, s, c are atomic
 </p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.BuiltinType" data-isabs="false">
+      <a id="BuiltinType:BuiltinType"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="BuiltinType.html"><span class="name">BuiltinType</span></a>
+        
+        <span class="params">(<span name="e">e: EXP</span>)</span><span class="result"> extends Type with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.CASE" data-isabs="false">
       <a id="CASE:CASE"></a>
       <h4 class="signature">
@@ -170,6 +192,18 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
       </span>
       </h4>
       <p class="comment cmt">auxiliary class for constructors of an ADT</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.CONSHEAD" data-isabs="false">
+      <a id="CONSHEAD:CONSHEAD"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="CONSHEAD.html"><span class="name">CONSHEAD</span></a>
+        
+        <span class="params">(<span name="name">name: String</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">auxiliary class for constructors of an ADT as
+ f of (&quot;x&quot; :: &quot;type&quot;, .</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.CatRef" data-isabs="false">
       <a id="CatRef:CatRef"></a>
       <h4 class="signature">
@@ -210,7 +244,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
       <span class="symbol"> 
         <a href="Compiler.html"><span class="name">Compiler</span></a>
         
-        <span class="result"> extends AnyRef</span>
+        <span class="result"> extends Program</span>
       </span>
       </h4>
       <p class="comment cmt">an example backend that transforms a LogicSyntax L into the SML code that represents and validates L-theories</p>
@@ -224,8 +258,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="params">(<span name="name">name: String</span>, <span name="arguments">arguments: List[CatRef]</span>)</span><span class="result"> extends Constructor with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">a connective declared in a logic with some argument types
-we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
+      <p class="comment cmt">also works as a constructor for formulas, i.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.ConstantSymbol" data-isabs="false">
       <a id="ConstantSymbol:ConstantSymbol"></a>
       <h4 class="signature">
@@ -248,6 +281,17 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">constructor for a Category</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Context" data-isabs="false">
+      <a id="Context:Context"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Context.html"><span class="name">Context</span></a>
+        
+        <span class="params">(<span name="vars">vars: List[(String, Type)]</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.DECL" data-isabs="true">
       <a id="DECL:DECL"></a>
       <h4 class="signature">
@@ -259,6 +303,18 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">declarations of a simple functional language</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.DECLHEAD" data-isabs="false">
+      <a id="DECLHEAD:DECLHEAD"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="DECLHEAD.html"><span class="name">DECLHEAD</span></a>
+        
+        <span class="params">(<span name="name">name: String</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">auxiliary class for constructing DECL's as
+   name keyword arguments</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Declaration" data-isabs="false">
       <a id="Declaration:Declaration"></a>
       <h4 class="signature">
@@ -332,7 +388,7 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       <span class="symbol"> 
         <a href="FUNCTION.html"><span class="name">FUNCTION</span></a>
         
-        <span class="params">(<span name="name">name: String</span>, <span name="args">args: List[ARG]</span>, <span name="ret">ret: EXP</span>, <span name="body">body: EXP</span>)</span><span class="result"> extends DECL with Product with Serializable</span>
+        <span class="params">(<span name="name">name: String</span>, <span name="args">args: ARG*</span>, <span name="ret">ret: EXP</span>, <span name="body">body: EXP</span>)</span><span class="result"> extends DECL with Product with Serializable</span>
       </span>
       </h4>
       <p class="comment cmt">function definition</p>
@@ -347,17 +403,50 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">a group of mutually recursive functions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.FUNCTYPE" data-isabs="false">
+      <a id="FUNCTYPE:FUNCTYPE"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="FUNCTYPE.html"><span class="name">FUNCTYPE</span></a>
+        
+        <span class="params">(<span name="args">args: List[ARG]</span>, <span name="ret">ret: EXP</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">auxiliary class for function types</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.FUNCVALUE" data-isabs="false">
+      <a id="FUNCVALUE:FUNCVALUE"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="FUNCVALUE.html"><span class="name">FUNCVALUE</span></a>
+        
+        <span class="params">(<span name="args">args: List[ARG]</span>, <span name="ret">ret: EXP</span>, <span name="body">body: EXP</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">auxiliary class for anonymous functions</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.FuncLang" data-isabs="true">
-      <a id="FuncLang:FuncLang"></a>
+      <a id="FuncLang:FuncLang[A]"></a>
       <h4 class="signature">
       <span class="kind">class</span>
       <span class="symbol"> 
         <a href="FuncLang.html"><span class="name">FuncLang</span></a>
-        
+        <span class="tparams">[<span name="A">A</span>]</span>
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">a simple functional language represented as transformation functions from declarations and expressions to strings</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.FunctionalType" data-isabs="false">
+      <a id="FunctionalType:FunctionalType"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="FunctionalType.html"><span class="name">FunctionalType</span></a>
+        
+        <span class="params">(<span name="args">args: List[EXP]</span>, <span name="ret">ret: EXP</span>)</span><span class="result"> extends Type with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.ID" data-isabs="false">
       <a id="ID:ID"></a>
       <h4 class="signature">
@@ -368,7 +457,9 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
         <span class="params">(<span name="name">name: String</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">identifiers</p>
+      <p class="comment cmt">identifiers
+the empty identifier ID(&quot;&quot;) is reserved: it refers to the current declaration, which is useful in recursive ADT and FUNCTION definitions
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.IF" data-isabs="false">
       <a id="IF:IF"></a>
       <h4 class="signature">
@@ -398,7 +489,7 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       <span class="symbol"> 
         <a href="LENGTH.html"><span class="name">LENGTH</span></a>
         
-        <span class="params">(<span name="list">list: EXP</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
+        <span class="params">(<span name="l">l: EXP</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
       </span>
       </h4>
       <p class="comment cmt">length of a list</p>
@@ -424,6 +515,17 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">a logic syntax consists of some categories (one of which is the category of formulas) and declarations</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.LogicWriter" data-isabs="false">
+      <a id="LogicWriter:LogicWriter"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="LogicWriter.html"><span class="name">LogicWriter</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.MAP" data-isabs="false">
       <a id="MAP:MAP"></a>
       <h4 class="signature">
@@ -431,7 +533,7 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       <span class="symbol"> 
         <a href="MAP.html"><span class="name">MAP</span></a>
         
-        <span class="params">(<span name="list">list: EXP</span>, <span name="fun">fun: ID</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
+        <span class="params">(<span name="l">l: EXP</span>, <span name="fun">fun: ID</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
       </span>
       </h4>
       <p class="comment cmt">map over a list</p>
@@ -446,6 +548,17 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">pattern matching</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.PLUS" data-isabs="false">
+      <a id="PLUS:PLUS"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="PLUS.html"><span class="name">PLUS</span></a>
+        
+        <span class="params">(<span name="left">left: EXP</span>, <span name="right">right: EXP</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">addition</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.PROD" data-isabs="false">
       <a id="PROD:PROD"></a>
       <h4 class="signature">
@@ -468,6 +581,17 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">projection out of a product</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Program" data-isabs="true">
+      <a id="Program:Program"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Program.html"><span class="name">Program</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.RECORD" data-isabs="false">
       <a id="RECORD:RECORD"></a>
       <h4 class="signature">
@@ -478,7 +602,7 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
         <span class="params">(<span name="name">name: String</span>, <span name="fields">fields: List[FIELD]</span>)</span><span class="result"> extends DECL with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">record type declaration (only named record types are permitted)</p>
+      <p class="comment cmt">record type declaration: RECORD(n) <sup> c1 :: A1 </sup> .</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.SELECT" data-isabs="false">
       <a id="SELECT:SELECT"></a>
       <h4 class="signature">
@@ -512,6 +636,28 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">concatenation of strings</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.SyntaxError" data-isabs="false">
+      <a id="SyntaxError:SyntaxError"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="SyntaxError.html"><span class="name">SyntaxError</span></a>
+        
+        <span class="params">(<span name="msg">msg: String</span>)</span><span class="result"> extends Throwable with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.TIMES" data-isabs="false">
+      <a id="TIMES:TIMES"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="TIMES.html"><span class="name">TIMES</span></a>
+        
+        <span class="params">(<span name="left">left: EXP</span>, <span name="right">right: EXP</span>)</span><span class="result"> extends EXP with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">multiplication</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.TUPLE" data-isabs="false">
       <a id="TUPLE:TUPLE"></a>
       <h4 class="signature">
@@ -534,6 +680,28 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       <p class="comment cmt">type definition</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Theory2LogicSyntax" data-isabs="false">
+      <a id="Theory2LogicSyntax:Theory2LogicSyntax"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Theory2LogicSyntax.html"><span class="name">Theory2LogicSyntax</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Type" data-isabs="true">
+      <a id="Type:Type"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Type.html"><span class="name">Type</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Unsupported" data-isabs="false">
       <a id="Unsupported:Unsupported"></a>
       <h4 class="signature">
@@ -545,6 +713,17 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.WildCard" data-isabs="false">
+      <a id="WildCard:WildCard"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="WildCard.html"><span class="name">WildCard</span></a>
+        
+        <span class="params">()</span><span class="result"> extends Constructor with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">wildcard symbol</p>
     </li></ol>
             </div>
         
@@ -552,7 +731,51 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions" data-isabs="false">
+              <ol><li visbl="pub" name="info.kwarc.mmt.lf.compile.BOOLS" data-isabs="false">
+      <a id="BOOLS:BOOLS"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="BOOLS$.html"><span class="name">BOOLS</span></a>
+        
+        <span class="result"> extends EXP with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">type of booleans</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Compiler" data-isabs="false">
+      <a id="Compiler:Compiler"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Compiler$.html"><span class="name">Compiler</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.DECL" data-isabs="false">
+      <a id="DECL:DECL"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="DECL$.html"><span class="name">DECL</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An incomplete type checker for expressions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXP" data-isabs="false">
+      <a id="EXP:EXP"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="EXP$.html"><span class="name">EXP</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An incomplete type checker for expressions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.EXPConversions" data-isabs="false">
       <a id="EXPConversions:EXPConversions"></a>
       <h4 class="signature">
       <span class="kind">object</span>
@@ -562,7 +785,18 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
         <span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <p class="comment cmt">useful implicit converions</p>
+      <p class="comment cmt">useful implicit conversions</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.ErrorType" data-isabs="false">
+      <a id="ErrorType:ErrorType"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="ErrorType$.html"><span class="name">ErrorType</span></a>
+        
+        <span class="result"> extends Type with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Haskell" data-isabs="false">
       <a id="Haskell:Haskell"></a>
       <h4 class="signature">
@@ -570,10 +804,43 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       <span class="symbol"> 
         <a href="Haskell$.html"><span class="name">Haskell</span></a>
         
-        <span class="result"> extends FuncLang</span>
+        <span class="result"> extends FuncLang[String]</span>
       </span>
       </h4>
       <p class="comment cmt">Haskell as an implementation of a FuncLang</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.INTS" data-isabs="false">
+      <a id="INTS:INTS"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="INTS$.html"><span class="name">INTS</span></a>
+        
+        <span class="result"> extends EXP with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">type of integers</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.KindOfTypes" data-isabs="false">
+      <a id="KindOfTypes:KindOfTypes"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="KindOfTypes$.html"><span class="name">KindOfTypes</span></a>
+        
+        <span class="result"> extends Type with Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.PL" data-isabs="false">
+      <a id="PL:PL"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="PL$.html"><span class="name">PL</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.SFOL" data-isabs="false">
       <a id="SFOL:SFOL"></a>
       <h4 class="signature">
@@ -592,10 +859,43 @@ we assume that the LF types of all connectives are of the form a1 -&gt; .</p>
       <span class="symbol"> 
         <a href="SML$.html"><span class="name">SML</span></a>
         
-        <span class="result"> extends FuncLang</span>
+        <span class="result"> extends FuncLang[String]</span>
       </span>
       </h4>
       <p class="comment cmt">SML as an implementation of a FuncLang</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.STRINGS" data-isabs="false">
+      <a id="STRINGS:STRINGS"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="STRINGS$.html"><span class="name">STRINGS</span></a>
+        
+        <span class="result"> extends EXP with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">type of strings</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.Test" data-isabs="false">
+      <a id="Test:Test"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Test$.html"><span class="name">Test</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.TestProgram" data-isabs="false">
+      <a id="TestProgram:TestProgram"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="TestProgram$.html"><span class="name">TestProgram</span></a>
+        
+        <span class="result"> extends Program</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An example program</p>
     </li><li visbl="pub" name="info.kwarc.mmt.lf.compile.VariableSymbol" data-isabs="false">
       <a id="VariableSymbol:VariableSymbol"></a>
       <h4 class="signature">

@@ -69,17 +69,6 @@
       </span>
       </h4>
       <p class="comment cmt">add catalog entries for a set of local copies, based on a file in Locutor registry syntax</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddCatalog" data-isabs="false">
-      <a id="AddCatalog:AddCatalog"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="AddCatalog.html"><span class="name">AddCatalog</span></a>
-        
-        <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt">add catalog entries for a set of local copies, based on a file in Locutor registry syntax</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddFoundation" data-isabs="false">
       <a id="AddFoundation:AddFoundation"></a>
       <h4 class="signature">
@@ -90,7 +79,7 @@
         <span class="params">(<span name="cls">cls: String</span>, <span name="args">args: List[String]</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">registers a foundation</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddImporter" data-isabs="false">
       <a id="AddImporter:AddImporter"></a>
       <h4 class="signature">
@@ -113,6 +102,39 @@
       </span>
       </h4>
       <p class="comment cmt">add MathWebSearch as a web service</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddMathPathFS" data-isabs="false">
+      <a id="AddMathPathFS:AddMathPathFS"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddMathPathFS.html"><span class="name">AddMathPathFS</span></a>
+        
+        <span class="params">(<span name="uri">uri: URI</span>, <span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">add catalog entry for a local directory</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddMathPathSVN" data-isabs="false">
+      <a id="AddMathPathSVN:AddMathPathSVN"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddMathPathSVN.html"><span class="name">AddMathPathSVN</span></a>
+        
+        <span class="params">(<span name="uri">uri: URI</span>, <span name="rev">rev: Int</span>, <span name="user">user: Option[String]</span>, <span name="password">password: Option[String]</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">add catalog entry for a remote SVN repository</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddPlugin" data-isabs="false">
+      <a id="AddPlugin:AddPlugin"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="AddPlugin.html"><span class="name">AddPlugin</span></a>
+        
+        <span class="params">(<span name="cls">cls: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">adds a Plugin</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.AddReportHandler" data-isabs="false">
       <a id="AddReportHandler:AddReportHandler"></a>
       <h4 class="signature">
@@ -145,7 +167,7 @@
         <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file</p>
+      <p class="comment cmt">add a catalog entry for an MMT-aware database such as TNTBase</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ArchiveBuild" data-isabs="false">
       <a id="ArchiveBuild:ArchiveBuild"></a>
       <h4 class="signature">
@@ -168,6 +190,17 @@
       </span>
       </h4>
       <p class="comment cmt">builds a dimension in a previously opened archive</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.BrowserAction" data-isabs="false">
+      <a id="BrowserAction:BrowserAction"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="BrowserAction.html"><span class="name">BrowserAction</span></a>
+        
+        <span class="params">(<span name="command">command: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">send a browser command</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Check" data-isabs="false">
       <a id="Check:Check"></a>
       <h4 class="signature">
@@ -233,7 +266,9 @@
         <span class="params">(<span name="pres">pres: MakeConcrete</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">execute the Controller-specific default Action associated with a presentable element</p>
+      <p class="comment cmt">execute the Controller-specific default Action associated with a presentable element
+the case where OUTPUT is not specifified
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Deps" data-isabs="false">
       <a id="Deps:Deps"></a>
       <h4 class="signature">
@@ -266,7 +301,9 @@
         <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">load a file containing commands and execute them, fails on first error if any</p>
+      <p class="comment cmt">load a file containing commands and execute them, fails on first error if any
+concrete syntax: file file:FILE
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ExtensionManager" data-isabs="false">
       <a id="ExtensionManager:ExtensionManager"></a>
       <h4 class="signature">
@@ -311,6 +348,17 @@
       </span>
       </h4>
       <p class="comment cmt">Objects of type GetAction represent commands that</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Graph" data-isabs="false">
+      <a id="Graph:Graph"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="Graph.html"><span class="name">Graph</span></a>
+        
+        <span class="params">(<span name="target">target: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.LoggingOff" data-isabs="false">
       <a id="LoggingOff:LoggingOff"></a>
       <h4 class="signature">
@@ -318,10 +366,12 @@
       <span class="symbol"> 
         <a href="LoggingOff.html"><span class="name">LoggingOff</span></a>
         
-        <span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+        <span class="params">(<span name="group">group: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">switch off logging for a certain group</p>
+      <p class="comment cmt">switch off logging for a certain group
+concrete syntax: log- group:STRING
+Some of the available groups are documented in Report.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.LoggingOn" data-isabs="false">
       <a id="LoggingOn:LoggingOn"></a>
       <h4 class="signature">
@@ -329,10 +379,12 @@
       <span class="symbol"> 
         <a href="LoggingOn.html"><span class="name">LoggingOn</span></a>
         
-        <span class="params">(<span name="s">s: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+        <span class="params">(<span name="group">group: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">switch on logging for a certain group</p>
+      <p class="comment cmt">switch on logging for a certain group
+concrete syntax: log+ group:STRING
+Some of the available groups are documented in Report.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.MakeAbstract" data-isabs="true">
       <a id="MakeAbstract:MakeAbstract"></a>
       <h4 class="signature">
@@ -390,6 +442,19 @@
       </span>
       </h4>
       <p class="comment cmt">represents the final post-processing phase, which outputs concrete syntax</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Plugin" data-isabs="true">
+      <a id="Plugin:Plugin"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Plugin.html"><span class="name">Plugin</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">the base class of all MMT plugins
+plugins are identified by a string giving the Java-style URI of the respective instance of this class
+e.</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Present" data-isabs="false">
       <a id="Present:Present"></a>
       <h4 class="signature">
@@ -441,10 +506,12 @@
       <span class="symbol"> 
         <a href="Read.html"><span class="name">Read</span></a>
         
-        <span class="params">(<span name="f">f: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+        <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">read a knowledge item</p>
+      <p class="comment cmt">read a file containing MMT in OMDoc syntax
+concrete syntax: read file:FILE
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ReadText" data-isabs="false">
       <a id="ReadText:ReadText"></a>
       <h4 class="signature">
@@ -452,10 +519,12 @@
       <span class="symbol"> 
         <a href="ReadText.html"><span class="name">ReadText</span></a>
         
-        <span class="params">(<span name="f">f: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+        <span class="params">(<span name="file">file: File</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">read a Twelf file</p>
+      <p class="comment cmt">read a file containing MMT in text syntax
+concrete syntax: readText file:FILE
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Report" data-isabs="false">
       <a id="Report:Report"></a>
       <h4 class="signature">
@@ -501,7 +570,7 @@
         <span class="params">(<span name="port">port: Int</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">start server</p>
+      <p class="comment cmt">start up the HTTP server</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.SetBase" data-isabs="false">
       <a id="SetBase:SetBase"></a>
       <h4 class="signature">
@@ -512,7 +581,9 @@
         <span class="params">(<span name="base">base: Path</span>)</span><span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">set the current base path</p>
+      <p class="comment cmt">set the current base path
+concrete syntax: base base:URI
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Shell" data-isabs="false">
       <a id="Shell:Shell"></a>
       <h4 class="signature">
@@ -568,6 +639,44 @@
       </span>
       </h4>
       
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ToWindow" data-isabs="false">
+      <a id="ToWindow:ToWindow"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="ToWindow.html"><span class="name">ToWindow</span></a>
+        
+        <span class="params">(<span name="pres">pres: MakeConcrete</span>, <span name="window">window: String</span>)</span><span class="result"> extends Output with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">displays content in a window</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.WindowClose" data-isabs="false">
+      <a id="WindowClose:WindowClose"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="WindowClose.html"><span class="name">WindowClose</span></a>
+        
+        <span class="params">(<span name="window">window: String</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">close a window with a given ID
+See ToWindow on how to open windows
+concrete syntax: window window:STRING close
+</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.WindowPosition" data-isabs="false">
+      <a id="WindowPosition:WindowPosition"></a>
+      <h4 class="signature">
+      <span class="kind">case class</span>
+      <span class="symbol"> 
+        <a href="WindowPosition.html"><span class="name">WindowPosition</span></a>
+        
+        <span class="params">(<span name="window">window: String</span>, <span name="x">x: Int</span>, <span name="y">y: Int</span>)</span><span class="result"> extends Action with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">position a window with a given ID
+See ToWindow on how to open windows
+concrete syntax: window window:STRING position x:INT y:INT</p>
     </li></ol>
             </div>
         
@@ -597,7 +706,9 @@ This object provides a combinator parser for Actions that is used when commands 
         <span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">clear the state</p>
+      <p class="comment cmt">clear the state
+concrete syntax: clear
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.ConsoleHandler" data-isabs="false">
       <a id="ConsoleHandler:ConsoleHandler"></a>
       <h4 class="signature">
@@ -619,7 +730,9 @@ This object provides a combinator parser for Actions that is used when commands 
         <span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">exit</p>
+      <p class="comment cmt">release all resources and exit
+concrete syntax: exit
+</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Local" data-isabs="false">
       <a id="Local:Local"></a>
       <h4 class="signature">
@@ -630,7 +743,8 @@ This object provides a combinator parser for Actions that is used when commands 
         <span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">add a catalog entry that makes the file system accessible via file: URIs</p>
+      <p class="comment cmt">add a catalog entry for the local file system
+All URIs of the form file:///SUFFIX are mapped to SUFFIX</p>
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.NoAction" data-isabs="false">
       <a id="NoAction:NoAction"></a>
       <h4 class="signature">
@@ -664,6 +778,17 @@ This object provides a combinator parser for Actions that is used when commands 
       </span>
       </h4>
       <p class="comment cmt">print all loaded knowledge items to STDOUT in XML syntax</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Report" data-isabs="false">
+      <a id="Report:Report"></a>
+      <h4 class="signature">
+      <span class="kind">object</span>
+      <span class="symbol"> 
+        <a href="Report$.html"><span class="name">Report</span></a>
+        
+        <span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.frontend.Run" data-isabs="false">
       <a id="Run:Run"></a>
       <h4 class="signature">
@@ -685,7 +810,9 @@ This object provides a combinator parser for Actions that is used when commands 
         <span class="result"> extends Action with Product with Serializable</span>
       </span>
       </h4>
-      <p class="comment cmt">shut down server</p>
+      <p class="comment cmt">shut down the web server
+concrete syntax: server off
+</p>
     </li></ol>
             </div>
 

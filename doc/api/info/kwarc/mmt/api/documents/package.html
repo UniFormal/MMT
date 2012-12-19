@@ -80,6 +80,17 @@
       </span>
       </h4>
       <p class="comment cmt">A Document represents an MMT document.</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.documents.DocumentItem" data-isabs="true">
+      <a id="DocumentItem:DocumentItem"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="DocumentItem.html"><span class="name">DocumentItem</span></a>
+        
+        <span class="result"> extends Content</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.MRef" data-isabs="false">
       <a id="MRef:MRef"></a>
       <h4 class="signature">
@@ -91,6 +102,28 @@
       </span>
       </h4>
       <p class="comment cmt">reference to a module</p>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.documents.NRef" data-isabs="false">
+      <a id="NRef:NRef"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="NRef.html"><span class="name">NRef</span></a>
+        
+        <span class="result"> extends XRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.documents.Narration" data-isabs="false">
+      <a id="Narration:Narration"></a>
+      <h4 class="signature">
+      <span class="kind">class</span>
+      <span class="symbol"> 
+        <a href="Narration.html"><span class="name">Narration</span></a>
+        
+        <span class="result"> extends DocumentItem with SemiFormalObjectList</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="info.kwarc.mmt.api.documents.RODocStore" data-isabs="true">
       <a id="RODocStore:RODocStore"></a>
       <h4 class="signature">
@@ -109,7 +142,7 @@
       <span class="symbol"> 
         <a href="XRef.html"><span class="name">XRef</span></a>
         
-        <span class="result"> extends NarrativeElement</span>
+        <span class="result"> extends NarrativeElement with DocumentItem</span>
       </span>
       </h4>
       <p class="comment cmt">An XRef represents a reference from a document to an external document part or module.</p>

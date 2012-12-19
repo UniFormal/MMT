@@ -32,9 +32,6 @@
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
-        </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="info.kwarc.mmt.api.parser.Binder" class="extype" href="Binder.html">Binder</a></div>
         </div></div>
         
 
@@ -67,7 +64,18 @@
       <span class="symbol"> 
         <span class="name">Operator</span>
         
-        <span class="params">(<span name="name">name: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>, <span name="notation">notation: <a name="info.kwarc.mmt.api.parser.Notation" class="extype" href="Notation.html">Notation</a></span>)</span>
+        <span class="params">(<span name="name">name: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>, <span name="not">not: <a name="info.kwarc.mmt.api.parser.TextNotation" class="extype" href="TextNotation.html">TextNotation</a></span>)</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Operator#this" data-isabs="false">
+      <a id="this:Operator"></a>
+      <h4 class="signature">
+      <span class="kind">new</span>
+      <span class="symbol"> 
+        <span class="name">Operator</span>
+        
+        <span class="params">(<span name="name">name: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>, <span name="notation">notation: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.parser.TextNotation" class="extype" href="TextNotation.html">TextNotation</a>]</span>)</span>
       </span>
       </h4>
       
@@ -182,17 +190,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Operator#extend" data-isabs="false">
-      <a id="extend(Notation):Operator"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">extend</span>
-        
-        <span class="params">(<span name="not">not: <a name="info.kwarc.mmt.api.parser.Notation" class="extype" href="Notation.html">Notation</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.parser.Operator" class="extype" href="">Operator</a></span>
-      </span>
-      </h4>
-      
     </li><li visbl="prt" name="scala.AnyRef#finalize" data-isabs="false">
       <a id="finalize():Unit"></a>
       <h4 class="signature">
@@ -229,17 +226,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Operator#isBinder" data-isabs="false">
-      <a id="isBinder:Boolean"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">isBinder</span>
-        
-        <span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -274,13 +260,13 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Operator#notation" data-isabs="false">
-      <a id="notation:Notation"></a>
+      <a id="notation:Option[TextNotation]"></a>
       <h4 class="signature">
       <span class="kind">val</span>
       <span class="symbol"> 
         <span class="name">notation</span>
         
-        <span class="result">: <a name="info.kwarc.mmt.api.parser.Notation" class="extype" href="Notation.html">Notation</a></span>
+        <span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.parser.TextNotation" class="extype" href="TextNotation.html">TextNotation</a>]</span>
       </span>
       </h4>
       
@@ -306,6 +292,17 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.parser.Operator#precedence" data-isabs="false">
+      <a id="precedence:Int"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">precedence</span>
+        
+        <span class="result">: <span name="scala.Int" class="extype">Int</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -335,7 +332,7 @@
       <span class="symbol"> 
         <span class="name">toString</span>
         
-        <span class="params">(<span name="args">args: List[<a name="info.kwarc.mmt.api.objects.Formal" class="extype" href="../objects/Formal.html">Formal</a>]</span>)</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
+        <span class="params">(<span name="args">args: List[<a name="info.kwarc.mmt.api.objects.Formal" class="extype" href="../objects/Formal.html">Formal</a>]</span>)</span><span class="result">: String</span>
       </span>
       </h4>
       

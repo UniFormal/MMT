@@ -134,6 +134,17 @@ These cases are distinguished by which subtrait of Link is mixed in.
       </span>
       </h4>
       <p class="shortcomment cmt">innerComponents as a string</p><div class="fullcomment"><div class="comment cmt"><p>innerComponents as a string</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.Link" class="extype" href="../modules/Link.html">Link</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.modules.Link#isImplicit" data-isabs="true">
+      <a id="isImplicit:Boolean"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">isImplicit</span>
+        
+        <span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.Link" class="extype" href="../modules/Link.html">Link</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.symbols.Declaration#name" data-isabs="true">
       <a id="name:LocalName"></a>
       <h4 class="signature">
@@ -145,7 +156,7 @@ These cases are distinguished by which subtrait of Link is mixed in.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.symbols.Declaration" class="extype" href="Declaration.html">Declaration</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#role" data-isabs="true">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#role" data-isabs="true">
       <a id="role:Role"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -155,7 +166,7 @@ These cases are distinguished by which subtrait of Link is mixed in.
         <span class="result">: <a name="info.kwarc.mmt.api.Role" class="extype" href="../Role.html">Role</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -241,7 +252,7 @@ These cases are distinguished by which subtrait of Link is mixed in.
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#compNames" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#compNames" data-isabs="false">
       <a id="compNames:List[(String, Int)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -251,7 +262,7 @@ These cases are distinguished by which subtrait of Link is mixed in.
         <span class="result">: List[(String, <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.modules.Link#components" data-isabs="false">
       <a id="components:List[Content]"></a>
       <h4 class="signature">
@@ -263,7 +274,7 @@ These cases are distinguished by which subtrait of Link is mixed in.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.modules.Link" class="extype" href="../modules/Link.html">Link</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#contComponents" data-isabs="false">
+    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#contComponents" data-isabs="false">
       <a id="contComponents:ContentComponents"></a>
       <h4 class="signature">
       <span class="kind">def</span>
@@ -273,7 +284,7 @@ These cases are distinguished by which subtrait of Link is mixed in.
         <span class="result">: <a name="info.kwarc.mmt.api.presentation.ContentComponents" class="extype" href="../presentation/ContentComponents.html">ContentComponents</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -343,6 +354,17 @@ These cases are distinguished by which subtrait of Link is mixed in.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.StructuralElement#governingPath" data-isabs="false">
+      <a id="governingPath:Some[Path]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">governingPath</span>
+        
+        <span class="result">: <span name="scala.Some" class="extype">Some</span>[<a name="info.kwarc.mmt.api.Path" class="extype" href="../Path.html">Path</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the governingPath required by content is the path</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath required by content is the path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -443,13 +465,13 @@ These cases are distinguished by which subtrait of Link is mixed in.
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li visbl="prt" name="info.kwarc.mmt.api.symbols.Structure#outerComponents" data-isabs="false">
-      <a id="outerComponents:List[AnyRef with Content]"></a>
+      <a id="outerComponents:List[Content { def governingPath: Option[info.kwarc.mmt.api.ContentPath] }]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">outerComponents</span>
         
-        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[AnyRef with <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>]</span>
+        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a> { def governingPath: Option[info.kwarc.mmt.api.ContentPath] }]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">computes induced symbols, compare the corresponding method in <code> info.kwarc.mmt.api.symbols.StructureAssignment</code></p><div class="fullcomment"><div class="comment cmt"><p>computes induced symbols, compare the corresponding method in <code> info.kwarc.mmt.api.symbols.StructureAssignment</code></p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the induced symbol
@@ -461,10 +483,25 @@ These cases are distinguished by which subtrait of Link is mixed in.
       <span class="symbol"> 
         <span class="name">outerString</span>
         
-        <span class="result">: <span name="java.lang.String" class="extype">String</span></span>
+        <span class="result">: String</span>
       </span>
       </h4>
       <p class="shortcomment cmt">outerComponents as a string</p><div class="fullcomment"><div class="comment cmt"><p>outerComponents as a string</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.symbols.Structure" class="extype" href="">Structure</a> → <a name="info.kwarc.mmt.api.modules.Link" class="extype" href="../modules/Link.html">Link</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.ContentElement#parameters" data-isabs="false">
+      <a id="parameters:Context"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">parameters</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="../objects/Context.html">Context</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">every MMT Declaration takes a list of parameters
+empty by default, may be overridden when constructing instances
+</p><div class="fullcomment"><div class="comment cmt"><p>every MMT Declaration takes a list of parameters
+empty by default, may be overridden when constructing instances
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.ContentElement" class="extype" href="../ContentElement.html">ContentElement</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.symbols.Declaration#parent" data-isabs="false">
       <a id="parent:MPath"></a>
       <h4 class="signature">
@@ -530,7 +567,7 @@ These cases are distinguished by which subtrait of Link is mixed in.
         <span class="result">: <span name="scala.xml.Node" class="extype">Node</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.symbols.Structure" class="extype" href="">Structure</a> → <a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../StructuralElement.html">StructuralElement</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.symbols.Structure" class="extype" href="">Structure</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
     </li><li visbl="pub" name="info.kwarc.mmt.api.modules.Link#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">

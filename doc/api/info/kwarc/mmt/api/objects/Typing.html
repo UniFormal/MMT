@@ -24,7 +24,7 @@
       <span class="symbol"> 
         <span class="name">Typing</span>
         
-        <span class="params">(<span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>, <span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="result"> extends <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
+        <span class="params">(<span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>, <span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="result"> extends <a name="info.kwarc.mmt.api.objects.WFJudgement" class="extype" href="WFJudgement.html">WFJudgement</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
       </span>
       </h4>
       
@@ -32,7 +32,7 @@
 context |- tm : tp
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span name="scala.Serializable" class="extype">Serializable</span>, <span name="java.io.Serializable" class="extype">Serializable</span>, <span name="scala.Product" class="extype">Product</span>, <span name="scala.Equals" class="extype">Equals</span>, <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><span name="scala.Serializable" class="extype">Serializable</span>, <span name="java.io.Serializable" class="extype">Serializable</span>, <span name="scala.Product" class="extype">Product</span>, <span name="scala.Equals" class="extype">Equals</span>, <a name="info.kwarc.mmt.api.objects.WFJudgement" class="extype" href="WFJudgement.html">WFJudgement</a>, <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
         
 
@@ -48,7 +48,7 @@ context |- tm : tp
                 <span class="filtertype">Inherited</span>
                 <ol><li class="hideall out"><span>Hide All</span></li>
                 <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.api.objects.Typing" class="in"><span>Typing</span></li><li name="scala.Serializable" class="in"><span>Serializable</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.Product" class="in"><span>Product</span></li><li name="scala.Equals" class="in"><span>Equals</span></li><li name="info.kwarc.mmt.api.objects.Judgement" class="in"><span>Judgement</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+                <ol id="linearization"><li name="info.kwarc.mmt.api.objects.Typing" class="in"><span>Typing</span></li><li name="scala.Serializable" class="in"><span>Serializable</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.Product" class="in"><span>Product</span></li><li name="scala.Equals" class="in"><span>Equals</span></li><li name="info.kwarc.mmt.api.objects.WFJudgement" class="in"><span>WFJudgement</span></li><li name="info.kwarc.mmt.api.objects.Judgement" class="in"><span>Judgement</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
               </div>
           <div id="visbl">
               <span class="filtertype">Visibility</span>
@@ -65,7 +65,7 @@ context |- tm : tp
       <span class="symbol"> 
         <span class="name">Typing</span>
         
-        <span class="params">(<span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>, <span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span>
+        <span class="params">(<span name="stack">stack: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>, <span name="tm">tm: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="tp">tp: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span>
       </span>
       </h4>
       
@@ -169,17 +169,6 @@ context |- tm : tp
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Typing#context" data-isabs="false">
-      <a id="context:Context"></a>
-      <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">context</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -337,6 +326,17 @@ context |- tm : tp
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Typing" class="extype" href="">Typing</a> → Product</dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Typing#stack" data-isabs="false">
+      <a id="stack:Stack"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">stack</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.Stack" class="extype" href="Stack.html">Stack</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Typing" class="extype" href="">Typing</a> → <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -423,6 +423,17 @@ context |- tm : tp
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Typing#wfo" data-isabs="false">
+      <a id="wfo:Term"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">wfo</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Typing" class="extype" href="">Typing</a> → <a name="info.kwarc.mmt.api.objects.WFJudgement" class="extype" href="WFJudgement.html">WFJudgement</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -453,6 +464,8 @@ context |- tm : tp
               <h3>Inherited from <span name="scala.Product" class="extype">Product</span></h3>
             </div><div name="scala.Equals" class="parent">
               <h3>Inherited from <span name="scala.Equals" class="extype">Equals</span></h3>
+            </div><div name="info.kwarc.mmt.api.objects.WFJudgement" class="parent">
+              <h3>Inherited from <a name="info.kwarc.mmt.api.objects.WFJudgement" class="extype" href="WFJudgement.html">WFJudgement</a></h3>
             </div><div name="info.kwarc.mmt.api.objects.Judgement" class="parent">
               <h3>Inherited from <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="Judgement.html">Judgement</a></h3>
             </div><div name="scala.AnyRef" class="parent">

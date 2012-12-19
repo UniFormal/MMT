@@ -28,7 +28,7 @@
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>This trait adds indexing operations to Archive's</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a>, <a name="info.kwarc.mmt.api.archives.ROArchive" class="extype" href="ROArchive.html">ROArchive</a>, <a name="info.kwarc.mmt.api.backend.Storage" class="extype" href="../backend/Storage.html">Storage</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -519,13 +519,13 @@ a storage may send more content than the path references, e.g., the whole file o
       </h4>
       
     </li><li visbl="pub" name="info.kwarc.mmt.api.archives.IndexedArchive#readRelational" data-isabs="false">
-      <a id="readRelational(List[String],Controller):Unit"></a>
+      <a id="readRelational(List[String],Controller,String):Unit"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">readRelational</span>
         
-        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+        <span class="params">(<span name="in">in: List[String] = <span class="symbol">Nil</span></span>, <span name="controller">controller: <a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../frontend/Controller.html">Controller</a></span>, <span name="kd">kd: String</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
       
@@ -548,6 +548,17 @@ a storage may send more content than the path references, e.g., the whole file o
         <span class="name">sourceDim</span>
         
         <span class="result">: String</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
+    </li><li visbl="pub" name="info.kwarc.mmt.api.archives.WritableArchive#sourceDir" data-isabs="false">
+      <a id="sourceDir:File"></a>
+      <h4 class="signature">
+      <span class="kind">val</span>
+      <span class="symbol"> 
+        <span class="name">sourceDir</span>
+        
+        <span class="result">: <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../utils/File.html">File</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="WritableArchive.html">WritableArchive</a></dd></dl></div>
