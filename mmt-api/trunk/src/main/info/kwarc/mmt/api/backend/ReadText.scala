@@ -138,8 +138,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          }
          else if (flat.startsWith("%view", i))
            i = crawlView(i)
-//         else if (flat.startsWith("%spec", i))
+         else if (flat.startsWith("%spec", i)) {
            //TODO read logic spec
+//           throw TextParseError(toPos(i), "reading spec!")
+           i = crawlSpec(i)
+         }
          else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) // unknown top-level %-declaration => ignore it
            i = skipAfterDot(i)
          else if (flat.startsWith("%.", i))  // this marks the end of file; ignore everything after
@@ -864,7 +867,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   }
 
   // parse a parameter list [param_1]...[param_n]
-  // does not work, since expects [param_1 param_2 ... does not expect ]!
   private def crawlParameterList(start: Int, theory: MPath) : Pair[Context, Int] = {
      var parameterContext = Context()
      var i = start
@@ -1190,6 +1192,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         // read pattern declaration
         i = crawlPatternDeclaration(i, parent)
       }
+      //TODO
+      else if (flat.startsWith("%pattern", i)) {
+        // read pattern instance
+        //i = crawlInstanceDeclaration(i, parent)
+      }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
       }
@@ -1457,7 +1464,188 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   /** returns the top-level dpath of the current module */
   private def getCurrentDPath : DPath = currentNS.map(uri => DPath(uri)).getOrElse(dpath)
+  
+  //TODO
+  /** Reads a logic specification.
+    * @param start the position of the initial '%'
+    * @return position after the block
+    * @throws SourceError for syntactical errors */
+  // * should read spec name (do we store it?)
+  // * read include reference to the  home theory (load it?)
+  // * parse instance declarations, create Instance objects, add to home theory?
+  private def crawlSpec(start: Int) : Int =
+  {
+    val oldComment = keepComment
+    var i = skipws(crawlKeyword(start, "%spec"))
+
+    // read the name
+    val (specName, positionAfter) = crawlIdentifier(i)
+    i = skipwscomments(positionAfter)   // jump over identifier
+    val tpath = getCurrentDPath ? specName
+    var meta : Option[MPath] = None
+    
+    // <-------- ':' ?
+    if (flat.codePointAt(i) == ':') {
+       i = expectNext(i, ":") + 1
+       i = skipwscomments(i)
+       val (mtId, positionAfterMeta) = crawlIdentifier(i)
+       val mtTerm = moduleToAbsoluteURI(i, mtId)
+       mtTerm match {
+          case OMMOD(mt) => meta = Some(mt)
+          case _ => errors :+ TextParseError(toPos(i), "could not read meta-theory")
+       }
+       i = positionAfterMeta
+    }
+    i = expectNext(i, "=")
+    i += 1    // jump over "="
+    i = skipws(i)
+    
+    var theory : Theory = null
+        
+    if (flat.codePointAt(i) == '{') {
+       // It's a DeclaredTheory
+       i = expectNext(i, "{")
+       // <-----------  how to manage specs in controller?
+       // add the (empty, for now) theory to the controller
+       val declTheory = new DeclaredTheory(tpath.parent, tpath.name, meta)
+       theory = declTheory
+       add(theory)
+//        read the theory body
+       i = crawlSpecBody(i, declTheory)
+    }
+    //TODO drop this?
+//    else {
+//      // It's a DefinedTheory
+//      val (theoryExp, positionAfter) = crawlTerm(i, Nil, Nil, tpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
+//      i = positionAfter
+//      theory = new DefinedTheory(tpath.parent, tpath.name, theoryExp)
+//      add(theory)
+//      if (meta.isDefined) {
+//         errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(warning = true)
+//      }
+//    }
+
+    val endsAt = expectNext(i, ".")
+
+    // add the semantic comment and source reference
+    addSemanticComment(theory, oldComment)
+    addSourceRef(theory, start, endsAt)
+
+    // add the link to this theory to the narrative document
+    add(MRef(dpath, theory.path, true)) //TODO is it true or false ?
+    return endsAt + 1
+  }
+  
+   /** Reads a theory body
+    * @param start the position of the opening {
+    * @param parent the enclosing DeclaredTheory
+    * @return the position after the closing }
+    * @throws SourceError for syntactical errors */
+  private def crawlSpecBody(start: Int, parent: DeclaredTheory) : Int =
+  {
+    var i = start + 1       // jump over '{'
+    keepComment = None          // reset the last semantic comment stored
+    i = skipwscomments(i)       // check whether there is a new semantic comment
+    var foundMeta = false
+    
+    // parent theorem
+    var thm : Term = null
+    
+    while (i < flat.length) {
+      if (flat.startsWith("%include", i)) {
+        val q = flat.substring(i)
+        // read include declaration        
+//        i = crawlIncludeDeclaration(i, parent)
+        i = crawlKeyword(i, "%include")
+        i = skipws(i)
+        val (importName, positionAfter) = crawlIdentifier(i)    // read import name
+        thm = moduleToAbsoluteURI(i, importName)
+        i = positionAfter
+        i = expectNext(i, ".") + 1
+      }
+      else if (flat.startsWith("%instance", i)) {
+        // read pattern instance
+        i = crawlInstanceDeclaration(i, parent, thm)
+      }
+      else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
+        i = skipAfterDot(i)
+      }
+      else if (flat.codePointAt(i) == '}')    // end of signature body
+        return i + 1
+      else
+        throw TextParseError(toPos(i), "unknown declaration in signature body")
+      keepComment = None          // reset the last semantic comment stored
+      i = skipwscomments(i)       // check whether there is a new semantic comment
+    }
+    return i
+  }
+  
+  /** reads a instance declaration.
+     * @param start the position of the initial % from %instance
+     * @param parent the parent theory
+     * @return position after the block/
+     * @throws SourceError for syntactical errors */
+  
+  /** expected instance declaration syntax
+   *  example:
+   *   %instance 	prop 					prop1 				p
+   *   keyword		local URI of pattern	instance name		argument list
+   */
+   private def crawlInstanceDeclaration(start: Int, parent: Theory, from : Term) : Int =
+   {
+     //var domain : Option[Term] = None
+     //var isImplicit : Boolean = false
+
+     val oldComment = keepComment
+
+     var i = skipws(crawlKeyword(start, "%instance"))
+
+     // parse the name of the pattern
+     val (name, positionAfter) = crawlIdentifier(i)
+     i = positionAfter
+     i = skipwscomments(i)
+     val patternMPath = parent.path / name //TODO is that the correct local URI of the pattern?
+
+     
+     // parent theorem not in controller by default, have to read it as well
+     val pc = new patterns.PatternChecker(controller)
+     val pl = pc.getPatterns(from)(1)
+     
+     // parse instance name
+     val (nameI, positionAfterI) = crawlIdentifier(i)
+     i = positionAfter
+     i = skipwscomments(i)
+     val instanceMPath = parent.path / nameI     
+
+     val (parameterContext, posAfter) = crawlParameterList(i, patternMPath)
+     i = posAfter
+     
+     // parse the pattern body
+//     val (body, posAfterPatternBody) = crawlPatternBody(i, patternMPath, parameterContext)
+//     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
+
+     val endsAt = expectNext(i, ".")
+
+//     // add the semantic comment and source reference
+//     addSemanticComment(pattern, oldComment)
+//     addSourceRef(pattern, start, endsAt)
+
+//     // add the pattern instance to the parent theory
+//     add(instance)
+     
+     /** class Instance(val home : Term, 
+      * 				val name : LocalName, 
+      * 				val pattern : GlobalName, 
+      * 				val matches : Substitution)
+      */
+     return endsAt + 1
+   }
+
+  
 }
+
+
+
 
 
 object TextReader {
