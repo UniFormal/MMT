@@ -231,24 +231,18 @@ object TextNotation {
   
   /** String parsing methods */
    def parse(str : String, conPath : GlobalName) : TextNotation = {
-    val isBinder = str.charAt(0) == '#'
-    val s = if (isBinder) {
-      str.substring(1)
-    } else { 
-      str
-    }
-    
-    s.split(",").toList match {
+    str.split(",").toList match {
       case not :: prec :: Nil =>        
         val priority = prec.toInt        
-        new TextNotation(conPath, parseMarkers(not), priority) 
+        apply(conPath, priority)(not.split(" ") :_*)
       case not :: Nil => 
-        new TextNotation(conPath, parseMarkers(not), 0)
+        apply(conPath, 0)(not.split(" ") :_*)
       case _ =>
-        throw ParseError("Invalid notation declaration : " + s)
+        throw ParseError("Invalid notation declaration : " + str)
     }
   }
-  
+   
+  /*
   private def parseMarkers(not : String) : List[Marker] = {
     val tokens = not.split(" ").filter(_ != "").toList
     val markers = tokens map {tk =>
@@ -270,6 +264,8 @@ object TextNotation {
     }
     markers
   }
+  */
+   
   /** Presenting methods*/
     //TODO add logging instead of print
   def present(con : Content, operators : List[TextNotation]) : String = {
