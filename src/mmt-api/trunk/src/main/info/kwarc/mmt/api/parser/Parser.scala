@@ -80,7 +80,9 @@ class NotationParser(controller : Controller) extends TermParser {
    */
   def makeTerm(tk : TokenListElem) : Term = tk match {
     case Token(word, _, _) => OMSemiFormal(Text("unknown", word))
-    case ml : MatchedList => ml.tokens match {
+    case ml : MatchedList => 
+      println(ml.an.getFound)
+      ml.tokens match {
       case Nil => OMID(ml.an.notation.name)
       case _ => OMA(OMID(ml.an.notation.name), ml.tokens.map(makeTerm))
     }

@@ -68,7 +68,7 @@ class ParserContext {
  * Generic Parser Class
  * @param grammar the grammar used for parsing
  */
-class NotationParser(grammar : Grammar, controller: Controller) extends TermParser {
+class OldNotationParser(grammar : Grammar, controller: Controller) extends TermParser {
   var str : String = ""
 
   private var tolerant : Boolean = false
