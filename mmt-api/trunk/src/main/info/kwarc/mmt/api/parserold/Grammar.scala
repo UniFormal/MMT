@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.parser
+package info.kwarc.mmt.api.parserold
 
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.{LocalPath, DPath, MPath}
@@ -154,7 +154,7 @@ object LFGrammar {
 
 
   private def makeOperator(c : Constant) : Operator = c.not match {
-      case Some(not) => new Operator(c.path, not)
+      case Some(not) => new Operator(c.path, TextNotation(Nil, 0, false, c.path))//c.not)
       case None => new Operator(c.path, None)
   }
 

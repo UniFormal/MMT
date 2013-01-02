@@ -5,10 +5,10 @@ import backend._
 import modules._
 import symbols._
 import objects._
-import parser._
 import ontology._
 import utils._
 import utils.FileConversion._
+import info.kwarc.mmt.api.parser.{ParsingUnit,DefaultParser}
 
 trait MMTArchive extends WritableArchive {
    /** parses and loads an archive */ 

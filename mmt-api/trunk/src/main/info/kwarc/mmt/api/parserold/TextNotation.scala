@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.parser
+package info.kwarc.mmt.api.parserold
 
 import scala.Int
 import info.kwarc.mmt.api.metadata.HasMetaData
@@ -183,7 +183,6 @@ object TextNotation {
     markers
   }
   
-
   //TODO add logging instead of print
   def present(con : Content, operators : List[Operator]) : String = {
     println("current con : " + con.toString)
@@ -276,10 +275,14 @@ object TextNotation {
       }
 
     case OMBINDC(OMID(p), context, None, body) =>
+      println(t.toNode)
       val tmpargs = context.variables collect {
-        case VarDecl(s, _, _) => s :: Nil //TODO handle var type and def
+        case VarDecl(s, _, _, _*) => s :: Nil //TODO handle var type and def
       }
+      println("context : " + context.variables)
+      println("tmpargs : " + tmpargs)
       val args = tmpargs.flatten
+      
       operators.find(op => op.name == p) match {
         case None => presentTerm(body, operators) //assuming implicit binder
         case Some(op) =>

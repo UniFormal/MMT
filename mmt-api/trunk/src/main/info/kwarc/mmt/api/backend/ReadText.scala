@@ -5,12 +5,9 @@ import documents._
 import modules._
 import parser._
 import patterns.Pattern
-
-//import presentation._
 import objects._
 import symbols._
 import utils._
-
 import scala.collection.mutable._
 
 // TODO second phase should update from fields in structures, as well as all aliases with the correct references. Currently aliases point to originatingLink?name

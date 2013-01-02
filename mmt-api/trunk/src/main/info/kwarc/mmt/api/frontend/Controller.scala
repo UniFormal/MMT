@@ -74,7 +74,7 @@ class Controller extends ROController {
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(this)
    /** the MMT term parser */
-   val termParser = new parser.NotationParser(parser.LFGrammar.grammar, this)
+   val termParser = new parser.NotationParser(this)
    /** the MMT parser (text/Twelf syntax) */
    val textReader = new TextReader(this)
    /** the catalog maintaining all registered physical storage units */

@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.parser.test
+package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import utils.MyList._
 
@@ -87,9 +87,9 @@ object TokenList {
  * invariant: tokens.length == an.getFound.length
  * TokenSlice's in an.getFound are invalid 
  */
-class MatchedList(var tokens: List[TokenListElem], an: ActiveNotation) extends TokenListElem {
+class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) extends TokenListElem {
    override def toString = tokens.map(_.toString).mkString("{" + an.notation.name + " ", " ", " " + an.notation.name + "}")
-   def scan(nots: List[Notation]) {
+   def scan(nots: List[TextNotation]) {
       tokens = tokens map {
          case ml: MatchedList =>
             ml.scan(nots)
@@ -105,7 +105,8 @@ class MatchedList(var tokens: List[TokenListElem], an: ActiveNotation) extends T
       }
    }
 }
-class UnscannedList(tl: TokenList) extends TokenListElem {
+
+class UnscannedList(val tl: TokenList) extends TokenListElem {
    val scanner = new Scanner(tl)
    override def toString = "{ " + tl.toString + " }"
 }
@@ -116,6 +117,8 @@ class TokenList(private var tokens: List[TokenListElem]) {
    def update(n: Int, t: TokenListElem) {
       tokens = tokens.take(n) ::: t :: tokens.drop(n+1)
    }
+   def getTokens = tokens
+   
    /**
     * @param an the notation to reduce
     * @return the slice reduced into 1 Token 
@@ -161,6 +164,7 @@ object ActiveNotation {
    val NotApplicable = 0
    val Abort = -1
 }
+
 import ActiveNotation._
 
 /** scans a TokenList against some notations
@@ -180,7 +184,7 @@ class Scanner(val tl: TokenList) {
       } mkString("", "\n", "") )
    }
    /** the notations to scan for */
-   private var notations: List[Notation] = Nil
+   private var notations: List[TextNotation] = Nil
    /** the number of Token's currently in tl */
    private var numTokens = tl.length
    def length = numTokens
@@ -374,7 +378,7 @@ class Scanner(val tl: TokenList) {
    /** scans for some notations and applies matches to tl
     * @param nots the notations to scan for
     */
-   def scan(nots: List[Notation]) {
+   def scan(nots: List[TextNotation]) {
       log("scanning " + tl)
       notations = nots
       currentIndex = 0
@@ -382,50 +386,6 @@ class Scanner(val tl: TokenList) {
    }
 }
 
-sealed abstract class Marker
-sealed abstract class Delimiter extends Marker {
-   val s: String
-}
-case class Delim(s: String) extends Delimiter {
-   override def toString = s
-}
-case class SecDelim(s: String, wsAllowed: Boolean = true) extends Delimiter {
-   override def toString = (if (wsAllowed) "" else "_") + s
-}
-
-/** @param n absolute value is the argument position, negative iff it is in the binding scope */
-case class Arg(n: Int) extends Marker {
-   override def toString = n.toString
-   def by(s:String) = SeqArg(n,Delim(s))
-}
-/** @param n absolute value is the argument position, negative iff it is in the binding scope
- *  @param sep the delimiter between elements of the sequence 
- */
-case class SeqArg(n: Int, sep: Delim) extends Marker {
-   override def toString = n.toString + sep + "..."
-}
-case class Var(n: Int, key: Delim) extends Marker {
-   override def toString = n.toString + key + "_"
-}
-//TODO: currently not parsed
-case class SeqVar(n: Int, key: Delim, sep: Delim) extends Marker {
-   override def toString = Var(n,key).toString + sep + "..."
-}
-
-/**
- * helper object 
- */
-object Arg {
-   private def splitAux(ns: List[Int], ms: List[Marker]) : (List[Int], List[Marker]) = ms match {
-      case Arg(n) :: rest => splitAux(n :: ns, rest)
-      case rest => (ns.reverse, rest)
-   }
-   /** splits a List[Marker] into
-    *  a List[Int] (possibly Nil) that corresponds to a List[Arg]
-    * and the remaining List[Marker]
-    */
-   def split(ms: List[Marker]) = splitAux(Nil,ms)
-}
 
 object NotationConversions {
    implicit def fromInt(n:Int) = Arg(n)
@@ -457,62 +417,12 @@ case class FoundSeqVar(n: Int, vrs: List[FoundVar]) extends Found {
    def fromTo = if (vrs.isEmpty) None else Some((vrs.head.fromTo.get._1, vrs.last.fromTo.get._2))
 }
 
-class Notation(val name: String, val markers: List[Marker], val priority: Int) {
-   override def toString = "Notation for " + name + ": " + markers.map(_.toString).mkString(" ") 
-   // the first delimiter of this notation
-   private val firstDelimString : Option[String] = markers mapFind {
-      case d: Delimiter => Some(d.s)
-      case SeqArg(_, Delim(s)) => Some(s)
-      case _ => None
-   }
-   /** @return firstDelimToken == next */
-   def applicable(next: Token): Boolean = {
-      firstDelimString == Some(next.word)
-   }
-   /** creates a new ActiveNotation with this notation's markers */
-   def open(scanner: Scanner, firstToken: Int): ActiveNotation = {
-      val an = new ActiveNotation(scanner, this, firstToken)
-      an
-   }
-}
-
-object Notation {
-   def apply(name: String, priority: Int)(ms: Any*): Notation = {
-      val markers : List[Marker] = ms.toList map {
-         case i: Int => Arg(i)
-         case "" => throw ParseError("not a valid marker")
-         case s: String if s.endsWith("...") =>
-            var i = 0
-            while (s(i).isDigit) {i+=1}
-            val n = s.substring(0,i).toInt
-            val rem = s.substring(i,s.length-3)
-            val p = rem.indexOf("_")
-            if (p == -1)
-               SeqArg(n, Delim(rem))
-            else {
-               val key = rem.substring(0,p)
-               val sep = rem.substring(p+1)
-               SeqVar(n, Delim(key), Delim(sep))
-            }
-         case s: String if s.endsWith("_") =>
-            var i = 0
-            while (s(i).isDigit) {i+=1}
-            val n = s.substring(0,i).toInt
-            val d = s.substring(i,s.length-1)
-            Var(n, Delim(d))
-         case s:String => Delim(s)
-         case m: Marker => m
-         case m => throw ParseError("not a valid marker" + m)
-      }
-      new Notation(name, markers, priority)
-   }
-}
 
 
 /** An ActiveNotation is a notation whose firstDelimToken has been scanned
  *  An ActiveNotation maintains state about the found and still-expected markers
  */
-class ActiveNotation(scanner: Scanner, val notation: Notation, val firstToken: Int) {
+class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToken: Int) {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers
 
    override def toString = found.reverse.mkString("", " ", "")
