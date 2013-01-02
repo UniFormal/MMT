@@ -51,8 +51,10 @@ object ParsingError {
 /**
  * Default implementation for a notation based parser
  */
-class NotationParser(controller : Controller) extends TermParser {
-    
+class NotationParser(controller : Controller) extends TermParser with Logger {
+  val report = controller.report
+  val logPrefix = "parser"  
+  
   /**
    * builds parsers notation context based on content in the controller 
    * and the scope (base path) of the parsing unit
@@ -94,20 +96,20 @@ class NotationParser(controller : Controller) extends TermParser {
     val qnotations = buildNotations(pu.scope)    
     
     //logging
-    println("Started parsing " + pu.term + " with operators : ")
+    log("Started parsing " + pu.term + " with operators : ")
     qnotations.map(o => println(o.toString))
     
     //scanning
-    val sc = new Scanner(TokenList(pu.term))
+    val sc = new Scanner(TokenList(pu.term), controller.report)
     qnotations reverseMap {
          case (priority,nots) => sc.scan(nots)
     }
-    println("#####   scanning finished   #####")
-    println(sc.tl)
+    log("#####   scanning finished   #####")
+    log(sc.tl.toString)
     
     //structuring
     val tm = makeTerm(sc.tl)
-    println("##### term :"  + tm.toNode)
+    log("##### term :"  + tm.toNode)
     tm
   }
 }

@@ -18,7 +18,6 @@ object TokenList {
    val numbers = List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER, OTHER_NUMBER)
    val connectors = List(CONNECTOR_PUNCTUATION)
    def isLetter(c: Char) = c.isLetter || (marks contains c)
-   // a simple tokenizer that splits Token's at white space
    def apply(s: String) : TokenList = {
       val l = s.length
       // lexing state
@@ -107,7 +106,7 @@ class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) exten
 }
 
 class UnscannedList(val tl: TokenList) extends TokenListElem {
-   val scanner = new Scanner(tl)
+   var scanner: Scanner = null
    override def toString = "{ " + tl.toString + " }"
 }
 
@@ -171,10 +170,11 @@ import ActiveNotation._
  * @param tl the TokenList to scan
  * matched notations are applied to tl, i.e., tl always holds the current TokenList 
  */
-class Scanner(val tl: TokenList) {
+class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.Logger {
    /** logging */
-   private def log(s: => String) {
-      println(toString); println(s); println
+   val logPrefix = "scanner"
+   private def logWithState(s: => String) {
+      log(toString); log(s); log("")
    }
    override def toString = {
       "token list: " + tl + "\n" +
@@ -315,6 +315,7 @@ class Scanner(val tl: TokenList) {
             ml.scan(notations)
             advance
          case ul: UnscannedList =>
+            if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, report) //initialize scanner if necessary
             ul.scanner.scan(notations)
             advance
          case t : Token =>
