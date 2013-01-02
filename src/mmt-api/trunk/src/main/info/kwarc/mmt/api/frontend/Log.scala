@@ -2,6 +2,18 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import utils._
 
+/** extended by all classes that use the logging aspect */
+trait Logger {
+   val report: Report
+   val logPrefix: String
+   protected def log(s : => String) = report(logPrefix, s)
+   protected def logGroup[A](a:A) {
+      report.indent
+      try {a}
+      finally {report.unindent}
+   }
+}
+
 /** Instances of Report handle all output to the user */
 class Report {
    /** output is categorized, the elements of group determine which categories are considered
