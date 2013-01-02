@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.parser
+
 import info.kwarc.mmt.api._
-import utils._
+import info.kwarc.mmt.api.utils._
 
 /** region in a source block
  * @param start inclusive start position

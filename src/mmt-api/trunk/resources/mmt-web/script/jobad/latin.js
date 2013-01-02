@@ -39,7 +39,6 @@ function load(elem) {
    return res.firstChild;
 }
 
-
 function edit() {
     var path = currentElement
     var comp = currentComponent
@@ -49,68 +48,72 @@ function edit() {
     if (arr.length >= 2) {
     	url = "/:mmt?" + arr[0] + "?" + arr[1] + "?" ;
     	if (arr.length == 3) {
-    		url += arr[2];
-    		if (comp != "" && comp != "name") {
-    			url += " component " + comp
-    		}
+    	    url += arr[2];
+    	    if (comp != "" && comp != "name") {
+    		url += " component " + comp
+    	    }
     	}
     	url += "?text";    
     	function cont(data) {
-    		console.log(path);
-    		console.log(comp);
-    		var math = null;
-    		$("math").each(function(i,v) {
-    			if($(v).attr("jobad:owner") == path && $(v).attr("jobad:component") == comp) {
-    				math = $(v).parent();
-    			} 
-    		});
-    		
-    		if (math == null) {
-    			return false;
-    		}
-    		var spres = data.split("\n"); 
-    		var rows = spres.length;
-    		var columns = 20;
-    		var i;
-    		for (i = 0; i < spres.length; ++i) {
-    			if (spres[i].length > columns)
-    				columns = spres[i].length
-    		}
+    	    console.log(path);
+    	    console.log(comp);
+    	    var math = null;
+    	    $("math").each(function(i,v) {
+    		if($(v).attr("jobad:owner") == path && $(v).attr("jobad:component") == comp) {
+    		    math = $(v).parent();
+    		} 
+    	    });
     	    
-    		math.html('<textarea rows="' + rows +'" cols="' + columns + '\">' + data + '</textarea>');
+    	    if (math == null) {
+    		return false;
+    	    }
+    	    var spres = data.split("\n"); 
+    	    var rows = spres.length;
+    	    var columns = 20;
+    	    var i;
+    	    for (i = 0; i < spres.length; ++i) {
+    		if (spres[i].length > columns)
+    		    columns = spres[i].length
+    	    }
+    	    
+    	    math.html('<textarea rows="' + rows +'" cols="' + columns + '\">' + data + '</textarea>');
     	    console.log(math);
-	        console.log(math.parent());
-	        math.parent().append('<button id="save" style="width:20px;height:20px" onClick=compileText("' + path + '", "true")> Save </button>');   			
- //   			"<div class=\"parser-info\" style=\"padding-bottom:5px;\"></div>" + 
- //   			"<button id=\"compile\" onClick=compileText(\"" + path + "\",\"false\") class=\"ui-button ui-widget ui-state-default\"" +
- // 			"role=\"button\">Compile</button>" + 
- //  			"<button id=\"save\" onClick=compileText(\"" + path + "\",\"true\") disabled=\"true\" class=\"ui-button ui-widget ui-state-disabled ui-state-default ui-corner-all ui-button-text-only\"" +
- //   			"role=\"button\" aria-disabled=\"false\">Save</button>" + 
- //   			"<div class=\"parser-response\" style=\"padding-top:5px;\"></div> + "
- //				"");
-    		
- 			math.parent().find("button").button({
- 				icons: {
- 					primary: "ui-icon-disk"
- 				},
- 				text: false
- 			});
- 			
-    		var textarea = math.find("textarea")[0];
-    		
-    		mycm = CodeMirror.fromTextArea(textarea);
-    		mycm.setOption('onChange', function() {
-    				var save = $("#save");
-    				save.attr("disabled", "disabled");
-    				save.addClass("ui-state-disabled")
-    		});
+	    console.log(math.parent());
+	    math.parent().append('<button id="save" style="width:20px;height:20px" onClick=\'compileText(\"' + path + '\", \"true\")\'> Save </button>');   	
+	    //   			"<div class=\"parser-info\" style=\"padding-bottom:5px;\"></div>" + 
+	    //   			"<button id=\"compile\" onClick=compileText(\"" + path + "\",\"false\") class=\"ui-button ui-widget ui-state-default\"" +
+	    // 			"role=\"button\">Compile</button>" + 
+	    //  			"<button id=\"save\" onClick=compileText(\"" + path + "\",\"true\") disabled=\"true\" class=\"ui-button ui-widget ui-state-disabled ui-state-default ui-corner-all ui-button-text-only\"" +
+	    //   			"role=\"button\" aria-disabled=\"false\">Save</button>" + 
+	    //   			"<div class=\"parser-response\" style=\"padding-top:5px;\"></div> + "
+	    //				"");
+    	    
+           /** broken jquery ui stuff -- to fix later
+ 	    math.parent().find("button").button({
+ 		icons: {
+ 		    primary: "ui-icon-disk"
+ 		},
+ 		text: false
+ 	    });
+ 	    */
+
+    	    var textarea = math.find("textarea")[0];
+    	    
+    	    mycm = CodeMirror.fromTextArea(textarea);
+	    /*
+    	    mycm.setOption('onChange', function() {
+    		var save = $("#save");
+    		save.attr("disabled", "disabled");
+    		save.addClass("ui-state-disabled")
+    	    });
+	    */
     	}
     	$.ajax({
-    			'type' : 'get',
-    			'url' : url,
-    			'dataType' : 'text',
-    			'success' : cont,
-    			'async' : false
+    	    'type' : 'get',
+    	    'url' : url,
+    	    'dataType' : 'text',
+    	    'success' : cont,
+    	    'async' : false
     	});	
     }
 }
@@ -121,7 +124,8 @@ var invalidPaths = [];
 function compileText(mod, save) {
     mycm.save();
     var id = "div#" + RegExp.escape(mod);   
-    var text = $(id + " textarea").val()//.replace(/[#]/g, "\\$&");
+    var text = mycm.getValue();//$(id + " textarea").val()//.replace(/[#]/g, "\\$&");
+    console.log("text:" + text);
     var checkedPchanges = $(id + " :checkbox").map(function(value, index) {
 	if ($(this).attr("checked")) {
 	    return $(this).attr("value");

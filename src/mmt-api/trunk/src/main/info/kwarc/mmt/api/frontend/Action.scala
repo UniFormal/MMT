@@ -290,17 +290,14 @@ case class ToText(c : MakeAbstract) extends MakeConcrete {
       case _ => None
     }
     
-    val decs = home.map(controller.memory.content.getDeclarationsInScope(_) collect {
-      case c : Constant => new Operator(c.path, c.not)
-    }).getOrElse(Nil) ::: LFGrammar.grammar.operators
-    
+    val notations = home.map(h => DefaultParser.getNotations(controller, h)).getOrElse(Nil)   
     con match {
       case d : DeclaredTheory =>
-        rb(TextNotation.present(d, decs))
+        rb(TextNotation.present(d, notations))
       case c : Constant =>
-        rb(TextNotation.present(c, decs))
+        rb(TextNotation.present(c, notations))
       case t : Term => 
-        rb(TextNotation.present(con, decs))
+        rb(TextNotation.present(con, notations))
       case _ => //TODO add support for other content types
         rb(c.make(controller).toString)
     }
