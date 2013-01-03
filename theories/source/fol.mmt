@@ -11,7 +11,7 @@
    pi # { 1:_ } -2.
    lambda # [ 1:_ ] -2.
    @.
-   arrow # 1/->.
+   arrow # 1→….
    
   %% %pattern type = {a: type.}.
 
@@ -22,16 +22,16 @@
   %include LF.
   bool : type.
   univ : type.
-  and : bool -> bool -> bool # 1 ∧ 2.
-  or : bool -> bool -> bool # 1 ∨ 2.
-  impl : bool -> bool -> bool # 1 ⇒ 2.
-  equiv : bool -> bool -> bool = [x][y] (x ⇒ y) ∧ (y ⇒ x) # 1 ⇔ 2.
+  and : bool → bool → bool # 1 ∧ 2.
+  or : bool → bool → bool # 1 ∨ 2.
+  impl : bool → bool → bool # 1 ⇒ 2.
+  equiv : bool → bool → bool = [x:bool][y:bool] (x ⇒ y) ∧ (y ⇒ x) # 1 ⇔ 2.
 }.
 
 %sig FOLExt = {
  %include FOL.
  zero : univ.
- succ : univ -> univ.
- tstor : bool -> bool -> bool = [x][y] x ∨ y.
- tsteqv : bool -> bool -> bool = [x][y] x ⇔ y.
+ succ : univ → univ.
+ tstor : bool → bool → bool = [x:bool][y:bool] x ∨ y.
+ tsteqv : bool → bool → bool = [x:bool][y:bool] x ⇔ y.
 }.
