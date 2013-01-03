@@ -94,34 +94,75 @@ object NotationConversions {
    implicit def fromString(s:String) = Delim(s)
 }
 
-class TextNotation(val name: GlobalName, val markers: List[Marker], val priority: Int) extends presentation.Notation {
-  val wrap = false 
-  val oPrec = Some(presentation.Precedence.integer(priority))
+sealed abstract class NotationType
+case object OMSNotation extends NotationType
+/** type of notations for applications
+ * @param concretePositions the positions of the arguments in the concrete syntax
+ * ordered according to the abstract syntax
+ */ 
+case class OMANotation(concretePositions: List[Int]) extends NotationType
+case class OMBINDNotation(vars: List[Int], scope: Int) extends NotationType
 
-  //TODO add other cases & check presentation
-  lazy val pres = {  
-    val tokens = markers map {
-      case Delim(s) => presentation.Fragment("constant", presentation.Text(name.toPath), presentation.Text(s))
-      case Arg(p) => presentation.Component(presentation.NumberedIndex(p + 1),oPrec.map(_.weaken))
-      case SeqArg(p,sep) => presentation.Iterate(presentation.NumberedIndex(1),
+class TextNotation(val name: GlobalName, val markers: List[Marker], val priority: Int) extends presentation.Notation {
+   val wrap = false 
+   val oPrec = Some(presentation.Precedence.integer(priority))
+
+   def getType = {
+      val arguments = markers mapPartial {
+         case Arg(n) if n > 0 => Some(n)
+         case SeqArg(n,_) if n > 0 => Some(n)
+         case _ => None
+      }
+      val boundVars = markers mapPartial {
+         case Var(n, _) => Some(n)
+         case SeqVar(n, _, _) => Some(n)
+         case _ => None
+      }
+      val scopes = markers mapPartial {
+         case Arg(n) if n < 0 => Some(-n)
+         case _ => None
+      }
+      if (arguments == Nil && boundVars == Nil && scopes == Nil)
+         Some(OMSNotation)
+      else if (arguments != Nil && boundVars == Nil && scopes == Nil) {
+         val order = arguments.zipWithIndex.sortBy(_._1).map(_._2) 
+         Some(OMANotation(order))
+      } else if (arguments == Nil && boundVars != Nil && scopes.length == 1)
+         Some(OMBINDNotation(boundVars, scopes(0)))
+      else
+         None
+   }
+   
+   //TODO add other cases & check presentation
+   lazy val pres = {  
+     val tokens = markers map {
+       case Delim(s) => presentation.Fragment("constant", presentation.Text(name.toPath), presentation.Text(s))
+       case Arg(p) => presentation.Component(presentation.NumberedIndex(p + 1),oPrec.map(_.weaken))
+       case SeqArg(p,sep) => presentation.Iterate(presentation.NumberedIndex(1),
     		  									 presentation.NumberedIndex(-1),
     		  									 presentation.OpSep() + presentation.Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + presentation.OpSep(),
     		  									 oPrec.map(_.weaken))
-    }
-    /*
-    if (isBinder) {
-      presentation.PList(tokens) + presentation.Component(presentation.NumberedIndex(-1),None)
-    } else {
-      presentation.PList(tokens)
-    }
-    */
-    presentation.PList(tokens)
-  }
-  val key = presentation.NotationKey(Some(name), Role_Notation)
-  val nset = name.module.toMPath
-  
+     }
+     /*
+     if (isBinder) {
+       presentation.PList(tokens) + presentation.Component(presentation.NumberedIndex(-1),None)
+     } else {
+       presentation.PList(tokens)
+     }
+     */
+     presentation.PList(tokens)
+   }
+   val key = presentation.NotationKey(Some(name), Role_Notation)
+   val nset = name.module.toMPath
   
    override def toString = "Notation for " + name + ": " + markers.map(_.toString).mkString(" ")
+   def toNode = 
+     <text-notation>
+      <name>{name}</name>
+         <markers>{markers.map(_.toNode)}</markers>
+       <priority>{priority}</priority>
+     </text-notation>
+
    // the first delimiter of this notation
    private val firstDelimString : Option[String] = markers mapFind {
       case d: Delimiter => Some(d.s)
@@ -137,13 +178,6 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val priority
       val an = new ActiveNotation(scanner, this, firstToken)
       an
    }
-   
-   def toNode = 
-     <text-notation>
-	   <name>{name}</name>
-   	   <markers>{markers.map(_.toNode)}</markers>
-       <priority>{priority}</priority>
-     </text-notation>
 }
 
 object TextNotation {
