@@ -13,7 +13,7 @@ import tree._
 import event._
 
 import java.awt.BorderLayout
-import java.awt.event.{ActionListener,ActionEvent,MouseAdapter,MouseEvent}
+import java.awt.event.{MouseAdapter,MouseEvent}
 
 abstract class MMTNode {
    def children: List[MMTNode]
@@ -91,12 +91,12 @@ class TreePane(controller: Controller) extends JPanel {
 
    val items = List(Item("text", "text"), Item("XML", "xml"), Item("rendered", "pres"))
    val styleTextArea = new JTextField(style.toPath, 30)
-   private val buttons = new RadioButtonPanel(items : _*)(id => {
+   private val buttons = Swing.RadioButtonPanel(items : _*){id =>
       mode = id
       if (mode == "pres")
          try {style = Path.parseM(styleTextArea.getText, style)}
          catch {case _ => styleTextArea.setText("error: " + styleTextArea.getText)}
-   })
+   }
    
    buttons.add(styleTextArea)
    add(buttons, BorderLayout.NORTH)

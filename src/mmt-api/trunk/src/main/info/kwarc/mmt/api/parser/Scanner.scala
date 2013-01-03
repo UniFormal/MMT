@@ -6,18 +6,32 @@ import scala.annotation.tailrec
 
 case class Ambiguous() extends java.lang.Throwable
 
+/** the type of objects that may occur in a [[info.kwarc.mmt.api.parser.TokenList]] */
 trait TokenListElem
 
+/** A Token is the basic TokenListElem
+ * @param word the characters making up the Token (excluding whitespace)
+ * @param first the index of the first character (starting from 0)
+ * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
+ */
 case class Token(word: String, first:Int, whitespaceBefore: Boolean) extends TokenListElem {
    override def toString = word //+ "@" + first.toString
 }
 
+/** helper object */
 object TokenList {
    import java.lang.Character._
-   val marks = List()
-   val numbers = List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER, OTHER_NUMBER)
-   val connectors = List(CONNECTOR_PUNCTUATION)
-   def isLetter(c: Char) = c.isLetter || (marks contains c)
+   /** the Tokenizer
+    * @param the string to tokenize
+    * @return the resulting TokenList
+    * 
+    * tokens are sequences of letters or individual other Unicode characters
+    * 
+    * whitespace separates Tokens and is never part of a Token
+    * 
+    * connectors connect the preceding and the succeeding Tokens into a single Token;
+    * the connector is part of the Token
+    */
    def apply(s: String) : TokenList = {
       val l = s.length
       // lexing state
@@ -83,7 +97,12 @@ object TokenList {
 }
 
 /**
+ * A MatchedList is a TokenListElem resulting by reducing a sublist using a notation
+ * @param tokens the TokenListElem's that were reduced
+ * @param an the notation used for reduction (which stores the information about how the notation matched the tokens)
+ * 
  * invariant: tokens.length == an.getFound.length
+ * 
  * TokenSlice's in an.getFound are invalid 
  */
 class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) extends TokenListElem {
@@ -93,7 +112,7 @@ class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) exten
          case ml: MatchedList =>
             ml.scan(nots)
             ml
-         case ul: UnscannedList =>
+         case ul: UnmatchedList =>
             ul.scanner.scan(nots)
             if (ul.scanner.length == 1)
                ul.scanner.tl(0)
@@ -105,19 +124,30 @@ class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) exten
    }
 }
 
-class UnscannedList(val tl: TokenList) extends TokenListElem {
+/**
+ * An UnmatchedList is a TokenListElem resulting by reducing a sublist without using a notation
+ * 
+ * Other notations have determined that this sublist must be parsed into a subtree, but it is
+ * not known (yet) which notation should be used.
+ * 
+ * @param tokens the TokenListElem's that are to be reduced
+ */
+class UnmatchedList(val tl: TokenList) extends TokenListElem {
    var scanner: Scanner = null
    override def toString = "{ " + tl.toString + " }"
 }
 
+/** A TokenList is a wrapper for a mutable list of TokenListElem with a few special methods for parsing
+ * 
+ * @param tokens the underlying list
+ * 
+ * TokenListElem's are always indexed starting from 0.
+ */
 class TokenList(private var tokens: List[TokenListElem]) {
+   /** returns a Token in a given position */
    def apply(n: Int) = tokens(n)
+   /** returns a sublist of elements */
    def apply(from: Int, to: Int) = tokens.slice(from, to)
-   def update(n: Int, t: TokenListElem) {
-      tokens = tokens.take(n) ::: t :: tokens.drop(n+1)
-   }
-   def getTokens = tokens
-   
    /**
     * @param an the notation to reduce
     * @return the slice reduced into 1 Token 
@@ -129,7 +159,7 @@ class TokenList(private var tokens: List[TokenListElem]) {
             if (sl.length == 1) {
                newTokens ::= tokens(sl.start)
             } else {
-               newTokens ::= new UnscannedList(new TokenList(sl.toList))
+               newTokens ::= new UnmatchedList(new TokenList(sl.toList))
             }
       }}
       found foreach {
@@ -147,20 +177,40 @@ class TokenList(private var tokens: List[TokenListElem]) {
       tokens = tokens.take(from) ::: matched :: tokens.drop(to)
       (from,to)
    }
+   /** the length of the list */
    def length = tokens.length
    override def toString = tokens.mkString("", " ", "") 
 }
 
+/** A reference to a sublist of a TokenList that does not copy the element
+ * @param tokens the underlying TokenList
+ * @param start the first Token (inclusive)
+ * @param next the last Token (exclusive)
+ */
 case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
    override def toString = tokens(start, next).mkString(""," ","")
+   /** derefences the TokenSlice and returns the list */
    def toList = tokens(start,next)
+   /** the length of the slice */
    def length = next - start
 }
 
+/** a helper object */
 object ActiveNotation {
+   /** a type to express the result of testing whether a notation is applicable
+    * 
+    * essentially, a Notation is applicable if the next Token matches the next Delimiter it expects
+    */
    type Applicability = Int
+   /** a value of type Applicability expressing that the notation is applicable */
    val Applicable = 1
+   /** a value of type Applicability expressing that the notation is not applicable now
+    * (but may be applicable later if the current Token is shifted)
+    */
    val NotApplicable = 0
+   /** a value of type Applicability expressing that the notation cannot be applied anymore
+    * (and parsing should backtrack)
+    */
    val Abort = -1
 }
 
@@ -314,7 +364,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
          case ml: MatchedList =>
             ml.scan(notations)
             advance
-         case ul: UnscannedList =>
+         case ul: UnmatchedList =>
             if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, report) //initialize scanner if necessary
             ul.scanner.scan(notations)
             advance
@@ -387,37 +437,52 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
    }
 }
 
-
-object NotationConversions {
-   implicit def fromInt(n:Int) = Arg(n)
-   implicit def fromString(s:String) = Delim(s)
-}
-
+/** Objects of type Found represent [[info.kwarc.mmt.api.parser.TokenSlice]]s that were found in the input
+ *  
+ *  The subclasses correspond to the subclasses of Marker.
+ */
 sealed abstract class Found {
    /** @return start (inclusive) and end (exclusive) of this Token, None if length 0 */
    def fromTo: Option[(Int, Int)]
 }
+/** represents a [[info.kwarc.mmt.api.parser.Delimiter]] that was found */
 case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
    override def toString = "D:" + delim
    def fromTo = Some((pos, pos+1))
-} 
+}
+/** represents a [[info.kwarc.mmt.api.parser.Arg]] that was found
+ * @param slice the TokenSlice where it was found 
+ * @param n the number of the Arg
+ */
 case class FoundArg(slice: TokenSlice, n: Int) extends Found {
    override def toString = n.toString + ":" + slice.toString
    def fromTo = Some((slice.start,slice.next))
 }
+/** represents an [[info.kwarc.mmt.api.parser.SeqArg]] that was found
+ * @param n the number of the SeqArg
+ * @param args the arguments that were found 
+ */
 case class FoundSeqArg(n: Int, args: List[FoundArg]) extends Found {
    override def toString = n.toString + args.map(_.toString).mkString(":(", " ", ")")
    def fromTo = if (args.isEmpty) None else Some((args.head.slice.start, args.last.slice.next))
 }
+/** represents a [[info.kwarc.mmt.api.parser.Var]] that was found
+ * @param n the number of the Var
+ * @param vr the found variable
+ * @param tp the found type, if provided 
+ */
 case class FoundVar(n: Int, vr: FoundArg, tp: Option[FoundArg]) extends Found {
    override def toString = vr.toString + ":" + tp.map(_.toString).getOrElse("_")
    def fromTo = if (tp.isEmpty) vr.fromTo else Some((vr.slice.start, tp.get.slice.next))
 }
+/** represents an [[info.kwarc.mmt.api.parser.SeqVar]] that was found
+ * @param n the number of the SeqVar
+ * @param vrs the variables that were found 
+ */
 case class FoundSeqVar(n: Int, vrs: List[FoundVar]) extends Found {
    override def toString = n.toString + ":" + vrs.map(_.toString).mkString("(", " ", ")")
    def fromTo = if (vrs.isEmpty) None else Some((vrs.head.fromTo.get._1, vrs.last.fromTo.get._2))
 }
-
 
 
 /** An ActiveNotation is a notation whose firstDelimToken has been scanned
