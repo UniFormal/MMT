@@ -405,7 +405,7 @@ class Checker(controller: Controller) {
     * @param home the home theory
     * @param subs the substitution
     * @param from the context declaring the variables to be substituted
-    * @param from the context in which the substituting terms live
+    * @param to the context in which the substituting terms live
     * @return the reconstructed substitution
     */
    def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit pCont: Path => Unit) : Substitution = {

@@ -69,8 +69,10 @@ class FXPanel extends JFXPanel {
    
    /** a wrapper around engine.loadContent, runs on the FX application thread */
    def loadContent(html: scala.xml.Node) {
+      val page = <html><body>{html}</body></html>
+      //println(page.toString)
       wrap {
-         engine.loadContent(html.toString)
+         engine.loadContent(page.toString)
       }
    }
    

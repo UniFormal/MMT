@@ -98,7 +98,7 @@ class TreePane(controller: Controller) extends JPanel {
             }
             if (se != null) {
                val rb = new presentation.XMLBuilder
-               controller.presenter(se, presentation.GlobalParams(rb, style))
+               controller.presenter(presentation.StrToplevel(se), presentation.GlobalParams(rb, style))
                content.loadContent(rb.get)
             }
          }

@@ -30,6 +30,8 @@ class Shell() extends {
       val command = args.mkString("", " ", "")
       try {
          controller.handleLine(command)
+         if (shell)
+            println("This is the MMT shell\nSee https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.frontend.Action for the available commands\n\n")
          val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
          while (shell) {
             val command = Input.readLine()

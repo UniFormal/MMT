@@ -6,8 +6,8 @@ import objects._
 import utils.MyList._
 
 /** a possible completion
- * @parent theory from which the resolved symbol is imported
- * @completion name of the completed symbol 
+ * @param parent theory from which the resolved symbol is imported
+ * @param completion name of the completed symbol 
  */
 case class Completion(parent: Path, completion: LocalName)
 
