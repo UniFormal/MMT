@@ -115,6 +115,7 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val priority
 }
 
 object TextNotation {
+  
    def apply(name: GlobalName, priority: Int)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
@@ -233,13 +234,24 @@ object TextNotation {
    def parse(str : String, conPath : GlobalName) : TextNotation = {
     str.split(",").toList match {
       case not :: prec :: Nil =>        
-        val priority = prec.toInt        
-        apply(conPath, priority)(not.split(" ") :_*)
+        val priority = prec.toInt
+        parseNot(not, priority, conPath)
       case not :: Nil => 
-        apply(conPath, 0)(not.split(" ") :_*)
+        parseNot(not, 0, conPath)
       case _ =>
         throw ParseError("Invalid notation declaration : " + str)
     }
+  }
+   
+  private def parseNot(str : String, priority : Int, conPath : GlobalName) : TextNotation = {
+    val protoMks = str.split(" ") map {s =>
+      try {
+        s.toInt
+      } catch {
+        case e => s
+      }
+    }
+    apply(conPath, priority)(protoMks :_*)
   }
    
   /*
