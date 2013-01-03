@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
+import frontend._
 import objects._
 import objects.Conversions._
 import utils._
@@ -57,8 +58,8 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
  * @param controller the controller storing all information about MMT expressions and notations
  * @param report the logging handler
  */
-class Presenter(controller : frontend.Controller, report : frontend.Report) { 
-   private def log(s : => String) = report("presenter", s)
+class Presenter(controller : Controller, val report : frontend.Report) extends Logger { 
+   val logPrefix = "presenter"
    private var nextID : Int = 0 // the next available id (for generating unique ids)
    /** the main presentation method
     * @param c the presented expressions

@@ -476,7 +476,7 @@ case class ToFile(pres : MakeConcrete, file : java.io.File) extends Output {
    def make(controller : Controller) {
       val rb = new presentation.FileWriter(file)
       pres.make(controller, rb)
-      rb.file.close
+      rb.done
    }
    override def toString = pres + " write " + file
 }

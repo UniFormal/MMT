@@ -18,7 +18,7 @@ class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
    tabbed.addTab("Tree", null, tree, "the content tree")
 
    private val logpane = LogPane(controller)
-   tabbed.addTab("Log", null, logpane, "configure logging options")
+   tabbed.addTab("Log (still buggy)", null, logpane, "configure logging options")
 
    private val bepane = new BackendPane(controller.backend)
    tabbed.addTab("Backend", null, bepane, "current backends")

@@ -44,7 +44,7 @@ class Report {
 
    protected var ind : String = ""
    /** increase indentation */
-   def indent {ind = ind + "  "}
+   def indent {ind += "  "}
    /** decrease indentation */
    def unindent {ind = ind.substring(2)}
 

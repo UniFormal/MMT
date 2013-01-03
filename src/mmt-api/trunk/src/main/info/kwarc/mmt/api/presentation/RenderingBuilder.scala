@@ -3,7 +3,9 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml._
 
-/** A RenderingHandler collects output generated during presentation */
+/** A RenderingHandler collects output generated during presentation
+ * @tparam A the return type, possibly Unit
+ */
 abstract class RenderingHandler {
    /** output a string */
    def apply(s : String)
@@ -26,6 +28,15 @@ abstract class RenderingHandler {
    def attributeEnd()
    /** end the current element */
    def elementEnd()
+   /** releases all resources, empty by default */
+   def done {}
+}
+
+trait RenderingResult[A] extends RenderingHandler {
+   /** releases all resources and returns the result of building */
+   def get: A
+   /** releases all resources without returning a result */
+   override def done {get} 
 }
 
 /** collects the output as text, XML is converted to a string, does not specify what to do with that string */
@@ -82,17 +93,26 @@ object ConsoleWriter extends TextHandler {
 }
 
 /** writes text output to a file */
-class FileWriter(val filename : java.io.File) extends TextHandler with utils.FileWriter {
+class FileWriter(val filename : java.io.File) extends TextHandler {
+   private val file = utils.FileWriter(filename)
 	def write(s : String) {
 	  file.print(s)
-	  }
+	}
+   override def done {file.close}
+}
+
+/** writes text output to a StringBuilder */
+class StringBuilder extends TextHandler with RenderingResult[String] {
+   private var sb = new scala.collection.mutable.StringBuilder(5000)
+   def write(s: String) {sb.append(s)}
+   def get = sb.result
 }
 
 /** excpetion thrown by XML builder if methods are called that would lead to ill-formed XML */
 case object XMLError extends java.lang.Throwable
 
 /** collects the output as XML and stores it in memory */
-class XMLBuilder extends RenderingHandler {
+class XMLBuilder extends RenderingHandler with RenderingResult[Node] {
    private var preamble = ""
    private var state : List[Elem] = Nil
    private var inAttribute : Option[(String,String)] = None
