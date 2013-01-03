@@ -239,7 +239,7 @@ sealed abstract class Found {
 }
 /** represents a [[info.kwarc.mmt.api.parser.Delimiter]] that was found */
 case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
-   override def toString = "D:" + delim
+   override def toString = delim.toString
    def fromTo = Some((pos, pos+1))
 }
 /** represents a [[info.kwarc.mmt.api.parser.Arg]] that was found

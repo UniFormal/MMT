@@ -308,7 +308,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         i += 1
       else if (isIdentifierPartCharacter(c)) { // identifier
         val (id, posAfter) = crawlIdentifier(i) // also finds identifiers that contain . 
-        if (delimiters contains id) // these ends the term  if they occur anywhere outside a bracketed block and are not part of a larger identifier
+        if (delimiters contains id) // these end the term  if they occur anywhere outside a bracketed block and are not part of a larger identifier
           return computeReturnValue
         i = posAfter
       }
