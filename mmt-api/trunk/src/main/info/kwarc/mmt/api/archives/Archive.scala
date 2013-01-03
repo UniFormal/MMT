@@ -204,7 +204,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
         file.getParentFile.mkdirs
         val fs = new presentation.FileWriter(file)
         frontend.Present(Get(mpath),style).make(controller, fs)
-        fs.file.close()
+        fs.done
       }
       log("done:  [CONT -> PRES]        -> " + inFile)
     }
