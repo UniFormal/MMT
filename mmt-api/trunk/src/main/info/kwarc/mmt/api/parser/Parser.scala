@@ -69,7 +69,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
    * transforms a TokenList (from scanner) to a MMT Term by using parser dictionary 
    */
   def makeTerm(tl : TokenList) : Term = {
-    val tms = tl.getTokens.map(makeTerm)
+    val tms : List[Term] = Nil // tl.getTokens.map(makeTerm)
     tms match {
       case Nil => throw ImplementationError("Parser->makeTerm : Empty token list")
       case hd :: Nil => hd
@@ -88,7 +88,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
       case Nil => OMID(ml.an.notation.name)
       case _ => OMA(OMID(ml.an.notation.name), ml.tokens.map(makeTerm))
     }
-    case ul : UnscannedList => makeTerm(ul.tl)
+    case ul : UnmatchedList => makeTerm(ul.tl)
   }
   
   def apply(pu : ParsingUnit) : Term = {    

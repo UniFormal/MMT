@@ -7,40 +7,64 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 
+/** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {
   def toNode : scala.xml.Node
   override def toString : String
 }
 
+/** Markers that are delimiters */
 sealed abstract class Delimiter extends Marker {
    val s: String
 }
+
+/** a delimiter
+ * @param s the delimiting String
+ */
 case class Delim(s: String) extends Delimiter {
    override def toString = s
    def toNode = <delim>{s}</delim>
 }
+/** a delimiter
+ * @param s the delimiting String
+ */
 case class SecDelim(s: String, wsAllowed: Boolean = true) extends Delimiter {
    override def toString = (if (wsAllowed) "" else "_") + s
    def toNode = <sec-delim wsAllowed={wsAllowed.toString}>{s}</sec-delim>
 }
 
-/** @param n absolute value is the argument position, negative iff it is in the binding scope */
+/** an argument
+ * @param n absolute value is the argument position, negative iff it is in the binding scope
+ */
 case class Arg(n: Int) extends Marker {
    override def toString = n.toString
    def by(s:String) = SeqArg(n,Delim(s))
    def toNode = <arg>{n}</arg>
 }
-/** @param n absolute value is the argument position, negative iff it is in the binding scope
- *  @param sep the delimiter between elements of the sequence 
+
+/** a sequence argument 
+ * @param n absolute value is the argument position, negative iff it is in the binding scope
+ * @param sep the delimiter between elements of the sequence 
  */
 case class SeqArg(n: Int, sep: Delim) extends Marker {
    override def toString = n.toString + sep + "..."
    def toNode = <seq-arg>{n}{sep.toNode}</seq-arg>
 }
+
+/** a variable binding 
+ * @param n the number of the variable
+ * @param key the delimiter between the variable name and its type 
+ */
 case class Var(n: Int, key: Delim) extends Marker {
    override def toString = n.toString + key + "_"
    def toNode = <var>{n}{key.toNode}</var>
 }
+
+/** a sequence variable binding 
+ * @param n the number of the sequence variable
+ * @param key the delimiter between the variable name and its type
+ * @param sep the delimiter between two consecutive variable bindings 
+ */
 //TODO: currently not parsed
 case class SeqVar(n: Int, key: Delim, sep: Delim) extends Marker {
    override def toString = Var(n,key).toString + sep + "..."
@@ -60,6 +84,14 @@ object Arg {
     * and the remaining List[Marker]
     */
    def split(ms: List[Marker]) = splitAux(Nil,ms)
+}
+
+/** defines some implicit conversions to produce Markers */
+object NotationConversions {
+   /** integers are converted to argument markers */
+   implicit def fromInt(n:Int) = Arg(n)
+   /** strings are converted to delimiters */
+   implicit def fromString(s:String) = Delim(s)
 }
 
 class TextNotation(val name: GlobalName, val markers: List[Marker], val priority: Int) extends presentation.Notation {

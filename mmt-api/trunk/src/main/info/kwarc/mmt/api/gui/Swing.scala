@@ -3,22 +3,32 @@ import javax.swing._
 
 import java.awt.event.{ActionListener,ActionEvent}
 
+/** a label-id pair, used e.g., to label and identify a GUI item */
 case class Item(label: String, id: String)
 
-class RadioButtonPanel(val items: Item*)(action: String => Unit) extends JPanel {
-   setLayout(new BoxLayout(this, BoxLayout.X_AXIS))
-   val al = new ActionListener {
-      def actionPerformed(e: ActionEvent) {
-         action(e.getActionCommand)
+object Swing {
+   /** a JPanel containing a list of horizontal radio buttons
+    * that hides the boilerplate Java code
+    * @param items the label-id pairs of the buttons
+    * @action the function to be called when a button is selected, takes the button's id as its argument
+    * @return the JPanel
+    */
+   def RadioButtonPanel(items: Item*)(action: String => Unit) : JPanel = {
+      val jp = new JPanel 
+      jp.setLayout(new BoxLayout(jp, BoxLayout.X_AXIS))
+      val al = new ActionListener {
+         def actionPerformed(e: ActionEvent) {
+            action(e.getActionCommand)
+         }
       }
+      val bg = new ButtonGroup
+      items foreach {case Item(l,i) =>
+         val b = new JRadioButton(l)
+         b.setActionCommand(i)
+         b.addActionListener(al)
+         jp.add(b)
+         bg.add(b)
+      }
+      jp
    }
-   val bg = new ButtonGroup
-   items foreach {case Item(l,i) =>
-      val b = new JRadioButton(l)
-      b.setActionCommand(i)
-      b.addActionListener(al)
-      add(b)
-      bg.add(b)
-   }
-   
 }
