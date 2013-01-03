@@ -25,16 +25,17 @@ object Action extends RegexParsers {
    private def comment = "//.*"r
    private def action = controller | shell | getaction
 
-   private def controller = log | local | mathpath | archive | tntbase | importer | foundation | plugin | mws | server | windowaction | execfile
+   private def controller = log | mathpath | archive | importer | foundation | plugin | mws | server | windowaction | execfile
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
-   private def local = "local" ^^ {case _ => Local}
-   private def mathpath = "mathpath" ~> (mathpathFS | mathpathSVN)
+   private def mathpath = "mathpath" ~> (mathpathLocal | mathpathFS | mathpathSVN | mathpathTNT)
+     private def mathpathLocal = "local" ^^ {case _ => Local}
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
+     private def mathpathTNT = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def archive = archopen | archdim | archmar | archpres | svnarchopen
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
@@ -51,7 +52,6 @@ object Action extends RegexParsers {
      private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
-   private def tntbase = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
    private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
    private def foundation = "foundation" ~> str ~ (str *) ^^ {case f ~ args => AddFoundation(f, args)}
    private def plugin = "plugin" ~> str ^^ {case s => AddPlugin(s)}
@@ -114,83 +114,200 @@ object Action extends RegexParsers {
    }
 }
 
-/** Objects of type Action represent commands that can be executed by a Controller. */
+/** Objects of type Action represent commands that can be executed by a Controller.
+ * In particular, these are the commands available in the MMT shell.
+ * The semantics of Actions is implemented in Controller.handle, which must contain one case for every Action.
+ * 
+ * Each subclass documents its concrete syntax and its semantics (relative to an instance "controller" of Controller).
+ * The syntax uses the following basic data types:
+ *  FILE a /-separated file name, relative to controller.home
+ *  URI a URI, relative to controller.base
+ *  INT an integer
+ *  STRING a non-empty string without whitespace
+ *  CLASS a string representing a Java-style URI of a class, e.g., info.kwarc.mmt.api.frontend.Action
+ *  [TYPE] for optional arguments
+ *  TYPE* for whitespace-separated lists of arguments
+ * If such a type is listed as id:TYPE, then id is the name of the constructor argument of the Action, into which the concrete argument is parsed.
+ */
 sealed abstract class Action
 
 case class Compare(p : Path, r : Int) extends Action{override def toString = "diff " + p.toPath + ":" + r.toString}
-/** add a log handler */
+
+/** add a log handler
+ * @param the log handler
+ * concrete syntax:
+ *  log file FILE
+ *  or
+ *  log console
+ */
 case class AddReportHandler(h : ReportHandler) extends Action {
    override def toString = "log " + h.toString
  }
-/** switch on logging for a certain group */
-case class LoggingOn(s : String) extends Action {override def toString = "log+ " + s}
-/** switch off logging for a certain group */
-case class LoggingOff(s : String) extends Action {override def toString = "log- " + s}
-/** set the current base path */
+
+/** switch on logging for a certain group
+ * concrete syntax: log+ group:STRING
+ * Some of the available groups are documented in Report. Generally, plugins may use their own groups. 
+ */
+case class LoggingOn(group : String) extends Action {override def toString = "log+ " + group}
+/** switch off logging for a certain group
+ * concrete syntax: log- group:STRING
+ * Some of the available groups are documented in Report. Generally, plugins may use their own groups. 
+ */
+case class LoggingOff(group : String) extends Action {override def toString = "log- " + group}
+
+/** set the current base path
+ * concrete syntax: base base:URI
+ */
 case class SetBase(base : Path) extends Action {override def toString = "base " + base}
-/** load a file containing commands and execute them, fails on first error if any */
+
+/** load a file containing commands and execute them, fails on first error if any
+ * concrete syntax: file file:FILE
+ */
 case class ExecFile(file : File) extends Action {override def toString = "file " + file}
-/** read a knowledge item */
+
 case class Graph(target : File) extends Action {override def toString = "graph " + target}
-/** read a knowledge item */
-case class Read(f : File) extends Action {override def toString = "read " + f}
-/** read a Twelf file */
-case class ReadText(f : File) extends Action {override def toString = "readText " + f}
+
+/** read a file containing MMT in OMDoc syntax
+ * concrete syntax: read file:FILE
+ */
+case class Read(file : File) extends Action {override def toString = "read " + file}
+
+/** read a file containing MMT in text syntax
+ * concrete syntax: readText file:FILE
+ */
+case class ReadText(file : File) extends Action {override def toString = "readText " + file}
+
 /** check a knowledge item */
 case class Check(p : Path) extends Action {override def toString = "check " + p}
-/** add a catalog entry that makes the file system accessible via file: URIs */
-case object Local extends Action {override def toString = "local"}
-/** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddMathPathFS(uri: URI, file : File) extends Action {override def toString = "mathpath local " + uri + " " + file}
+
+/** add a catalog entry for the local file system
+ * All URIs of the form file:///SUFFIX are mapped to SUFFIX
+ * 
+ * concrete syntax: mathpath local
+ */
+case object Local extends Action {override def toString = "mathpath local"}
+
+/** add catalog entry for a local directory
+ * @param uri the logical identifier of the directory
+ * @param file the physical identifeir of the directory
+ * All URIs of the form uri/SUFFIX are mapped to file/SUFFIX
+ * 
+ * concrete syntax: mathpath fs uri:URI file:FILE
+ */
+case class AddMathPathFS(uri: URI, file : File) extends Action {override def toString = "mathpath fs " + uri + " " + file}
+
+/** add catalog entry for a remote SVN repository
+ * @param uri URI the remote URI
+ * @param rev the revision to use, -1 for head
+ * @param user user name to use, if any
+ * @param password password to use if any
+ * All URIs of the form uri/SUFFIX are looked in the repository
+ * 
+ * concrete syntax: mathpath svn uri:URI rev:INT user:[STRING] password:[STRING]
+ */
 case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Option[String]) extends Action {
    override def toString = "mathpath svn " + uri +
       (if (rev == -1) "" else " " + rev) +
       (user.map(" " + _).getOrElse("") + password.map(" " + _).getOrElse(""))
 }
-/** add a catalog entry for an MMT-aware database such as TNTBase, based on a configuration file */
+
+/** add a catalog entry for an MMT-aware database such as TNTBase
+ *  @param file the configuration file for TNTBase access
+ *  Mapping as specified by the configuration file.
+ *  
+ *  concrete syntax: mathpath tntbase file:FILE
+ */
 case class AddTNTBase(file : File) extends Action {override def toString = "tntbase " + file}
+
+/** adds a Plugin
+ * @param cls the id of the class extending info.kwarc.mmt.api.frontend.Plugin
+ * 
+ * The plugin is instantiated using reflection.
+ * The respective class must be on the Java class path before this Plugin is added. 
+ *
+ * concrete syntax: plugin cls:CLASS
+ */  
+case class AddPlugin(cls: String) extends Action {override def toString = "plugin " + cls}
+
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
  * @param args a list of arguments that will be passed to the compiler's init method
+ * 
+ * concrete syntax: importer cls:CLASS args:STRING*
  */
 case class AddImporter(cls: String, args: List[String]) extends Action {override def toString = "importer " + cls + args.mkString(" ", " ", "")}
 
+/** registers a foundation
+ * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
+ * @param args a list of arguments that will be passed to the compiler's init method
+ * 
+ * concrete syntax: foundation cls:CLASS args:STRING*
+ */
 case class AddFoundation(cls: String, args: List[String]) extends Action {override def toString = "foundation " + cls + args.mkString(" ", " ", "")}
-
-case class AddPlugin(cls: String) extends Action {override def toString = "plugin " + cls}
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
+
 /** add a SVN Archive */
 case class AddSVNArchive(url : String,  rev : Int) extends Action {override def toString = "SVN archive add " + url + "@" + rev}
+
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(id: String, dim: String, in : List[String], params: List[MPath] = Nil) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
+
 /** builds a dimension in a previously opened archive */
 case class ArchiveMar(id: String, file: File) extends Action {override def toString = "archive " + id + " mar " + file}
+
 /** add MathWebSearch as a web service */
 case class AddMWS(uri: URI) extends Action {override def toString = "mws " + uri}
+
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends Action
+
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
-/** shut down server */
-case object ServerOff extends Action {override def toString = "server off"}
-/** start server */
+
+/** start up the HTTP server
+ * @param port the port to listen to
+ * concrete syntax: server on port:INT
+ * 
+ * See info.kwarc.mmt.api.web.Server for the supported HTTP requests.
+ * tiscaf.jar must be on the Java classpath before executing this Action.
+ */
 case class ServerOn(port: Int) extends Action {override def toString = "server on " + port}
-/** clear the state */
+
+/** shut down the web server
+ * concrete syntax: server off
+ */
+case object ServerOff extends Action {override def toString = "server off"}
+
+/** clear the state
+ * concrete syntax: clear
+ */
 case object Clear extends Action {override def toString = "clear"}
-/** exit */
+
+/** release all resources and exit
+ * concrete syntax: exit
+ */
 case object Exit extends Action {override def toString = "exit"}
+
 /** do nothing */
 case object NoAction extends Action {override def toString = ""}
-/** close a window with a give ID */
+
+/** close a window with a given ID
+ * See ToWindow on how to open windows
+ * concrete syntax: window window:STRING close
+ */
 case class WindowClose(window: String) extends Action {
   override def toString = "window " + window + " close"  
 }
-/** position a window with a give ID */
+
+/** position a window with a given ID
+ * See ToWindow on how to open windows
+ * concrete syntax: window window:STRING position x:INT y:INT */
 case class WindowPosition(window: String, x:Int, y: Int) extends Action {
   override def toString = "window " + window + " position " + x + " " + y  
 }
+
 /** send a browser command
  * @param command on or off
  */
@@ -199,16 +316,28 @@ case class BrowserAction(command: String) extends Action {
 }
 
 /** Objects of type GetAction represent commands that
- *  - retrieve knowledge items in abstract/internal syntax (see MakeAbstract)
- *  - post-process them to obtain concrete/external syntax (see MakeConrete)
- *  - then output the concrete form in various ways (see Output).
+ *  - retrieve knowledge items in abstract/internal syntax
+ *  - post-process them to obtain concrete/external syntax
+ *  - then output the concrete form in various ways.
+ *  @param o the instance of Output that executes all three steps.
+ *  
+ *  The concrete syntax is described by the following grammar:
+ *  ABSTRACT [CONCRETE] [OUTPUT]
+ *  where
+ *  ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
+ *  CONCRETE ::= xml | present URI | text | deps
+ *  OUTPUT   ::= write FILE | print | window | respond
+ *  The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
+ *  the instances of MakeAbstract, MakeConcrete, and Output.
  */ 
 case class GetAction(o: Output) extends Action {
    /** implement the Action using the provided Controller */
    def make(controller : Controller) = o.make(controller)
 }
 
-/** execute the Controller-specific default Action associated with a presentable element */
+/** execute the Controller-specific default Action associated with a presentable element
+ * the case where OUTPUT is not specifified
+ */
 case class DefaultGet(pres : MakeConcrete) extends Action {
    override def toString = pres.toString
 }
@@ -216,6 +345,8 @@ case class DefaultGet(pres : MakeConcrete) extends Action {
 /** represent retrieval operations that return content elements
  *  These objects become Action commands by wrapping them in post-processing steps.
  *  see the children of MakePresentation
+ *  
+ *  concrete syntax: 
  */
 abstract class MakeAbstract {
    def make(controller : Controller) : Content
