@@ -84,7 +84,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
                //in all other cases, we don't know
                OMSemiFormal(Text("unknown", word))
          case ml : MatchedList =>
-            log(ml.an.toString)
+            log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
             // compute the names of all bound variables, in abstract syntax order
             val newBVars: List[String] = found.mapPartial {
@@ -113,7 +113,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
                case FoundSeqArg(n, fas) =>
                   // a sequence argument, so take as many TokenListElement as the sequence has elements
                   val toks = ml.tokens.slice(i, i+fas.length)
-                  args ::= (n, OMA(null, toks.map(t => makeTerm(t, boundVars))))
+                  args = args ::: toks.map(t => (n,makeTerm(t, boundVars)))
                   i += fas.length
                case FoundVar(n, pos, name, tpOpt) =>
                   // a variable declaration, so take one optional TokenListElement for the type
@@ -128,7 +128,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
             val head = OMID(ml.an.notation.name)
             //construct a Term according to args, vars, and scopes
             //this includes sorting args and vars according to the abstract syntax
-            if (vars == Nil && scopes == Nil) {
+            val result = if (vars == Nil && scopes == Nil) {
                if (args == Nil)
                   //no args, vars, scopes --> OMID
                   head
@@ -147,7 +147,9 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
             } else
                   //not all combinations correspond to Terms
                   //this should only happen for ill-formed notations
-                  null
+                  throw ParseError("ill-formed notation")
+            log("result: " + result)
+            result
          case ul : UnmatchedList =>
             if (ul.tl.length == 1)
                // process the single TokenListElement
@@ -160,7 +162,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
                - a semi-formal subterm consists of multiple text Tokens 
               Consequently, it is not obvious how to proceed.
              */
-             null 
+             throw ParseError("unmatched list: " + ul.tl)
       }
    }
   
@@ -168,25 +170,27 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
     //gathering notations in scope
     val qnotations = buildNotations(pu.scope)    
     
-    //logging
     log("Started parsing " + pu.term + " with operators : ")
-    qnotations.map(o => println(o.toString))
+    logGroup {
+       qnotations.map(o => log(o.toString))
+    }
     
     //scanning
     val sc = new Scanner(TokenList(pu.term), controller.report)
     qnotations reverseMap {
          case (priority,nots) => sc.scan(nots)
     }
-    log("#####   scanning finished   #####")
-    log(sc.tl.toString)
+    log("#####   scan result: " + sc.tl.toString)
     
     //structuring
     sc.tl.length match {
-       case 1 =>        
-          val tm = makeTerm(sc.tl(0), Nil)
-          log("##### term :"  + tm.toNode)
+       case 1 =>
+          val tm = logGroup {
+             makeTerm(sc.tl(0), Nil)
+          }
+          log("##### parse result: "  + tm.toNode)
           tm
-       case _ => null
+       case _ => throw ParseError("unmatched list: " + sc.tl)
     }
   }
 }

@@ -7,7 +7,7 @@ trait Logger {
    val report: Report
    val logPrefix: String
    protected def log(s : => String) = report(logPrefix, s)
-   protected def logGroup[A](a:A) {
+   protected def logGroup[A](a: => A) : A = {
       report.indent
       try {a}
       finally {report.unindent}

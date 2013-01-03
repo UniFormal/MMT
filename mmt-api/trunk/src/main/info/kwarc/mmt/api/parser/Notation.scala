@@ -47,7 +47,7 @@ case class Arg(n: Int) extends Marker {
  * @param sep the delimiter between elements of the sequence 
  */
 case class SeqArg(n: Int, sep: Delim) extends Marker {
-   override def toString = n.toString + sep + "..."
+   override def toString = n.toString + sep + "…"
    def toNode = <seq-arg>{n}{sep.toNode}</seq-arg>
 }
 
@@ -67,7 +67,7 @@ case class Var(n: Int, key: Delim) extends Marker {
  */
 //TODO: currently not parsed
 case class SeqVar(n: Int, key: Delim, sep: Delim) extends Marker {
-   override def toString = Var(n,key).toString + sep + "..."
+   override def toString = Var(n,key).toString + sep + "…"
    def toNode = <seq-var>{n}{key.toNode}{sep.toNode}</seq-var>
 }
 
@@ -186,11 +186,11 @@ object TextNotation {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case "" => throw ParseError("not a valid marker")
-         case s: String if s.endsWith("...") =>
+         case s: String if s.endsWith("…") =>
             var i = 0
             while (s(i).isDigit) {i+=1}
             val n = s.substring(0,i).toInt
-            val rem = s.substring(i,s.length-3)
+            val rem = s.substring(i,s.length-1)
             val p = rem.indexOf("_")
             if (p == -1)
                SeqArg(n, Delim(rem))
@@ -310,11 +310,11 @@ object TextNotation {
   }
    
   private def parseNot(str : String, priority : Int, conPath : GlobalName) : TextNotation = {
-    val protoMks = str.split(" ") map {s =>
+    val protoMks = str.split("\\s") map {s =>
       try {
         s.toInt
       } catch {
-        case e => s
+        case _ => s
       }
     }
     apply(conPath, priority)(protoMks :_*)
