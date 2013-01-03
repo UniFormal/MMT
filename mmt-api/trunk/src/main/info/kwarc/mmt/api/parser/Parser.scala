@@ -64,11 +64,12 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
    /**
     * builds parsers notation context based on content in the controller 
     * and the scope (base path) of the parsing unit
+    * returned list is sorted (in increasing order) by priority
     */
    def buildNotations(scope : Term) : List[(Int,List[TextNotation])] = {
       val notations = TermParser.getNotations(controller, scope)  
-      val qnotations = notations.groupBy(x => x.priority)
-      qnotations.toList
+      val qnotations = notations.groupBy(x => x.priority).toList
+      qnotations.sortWith((p1,p2) => p1._1 < p2._1)
    } 
   
    /**
