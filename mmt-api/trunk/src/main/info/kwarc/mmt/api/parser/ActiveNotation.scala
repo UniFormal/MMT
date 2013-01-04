@@ -10,7 +10,7 @@ import ActiveNotation._
 class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToken: Int) {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers
 
-   override def toString = found.reverse.mkString("", " ", "")
+   override def toString = notation.name.toPath + " " + found.reverse.mkString("", " ", "")
    private val markers = notation.markers
 
    /** the markers that have been found in the token list */

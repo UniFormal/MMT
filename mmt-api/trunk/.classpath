@@ -8,6 +8,5 @@
 	<classpathentry exported="true" kind="lib" path="lib/tiscaf.jar"/>
 	<classpathentry kind="lib" path="lib/svnkit.jar"/>
 	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/lfcatalog"/>
 	<classpathentry kind="output" path="build/main"/>
 </classpath>

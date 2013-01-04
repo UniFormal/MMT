@@ -169,19 +169,12 @@ case class Token(word: String, first:Int, whitespaceBefore: Boolean) extends Tok
  */
 class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation, val first: Int, val last: Int) extends TokenListElem {
    override def toString = tokens.map(_.toString).mkString("{" + an.notation.name + " ", " ", " " + an.notation.name + "}")
-   def scan(nots: List[TextNotation]) {
+   /** removes the redundant UnmatchedList wrapper around a single MatchedList in this list */
+   def flatten {
       tokens = tokens map {
-         case ml: MatchedList =>
-            ml.scan(nots)
-            ml
-         case ul: UnmatchedList =>
-            ul.scanner.scan(nots)
-            if (ul.scanner.length == 1 && ul.scanner.isInstanceOf[MatchedList])
-               ul.scanner.tl(0)
-            else
-               ul
-         case t: Token =>
-            throw ImplementationError("single Token in MatchedList") // impossible if produced by TokenList.reduce
+         case ul: UnmatchedList if ul.tl.length == 1 && ul.tl(0).isInstanceOf[MatchedList] =>
+            ul.scanner.tl(0)
+         case t => t
       }
    }
 }
