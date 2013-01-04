@@ -22,10 +22,10 @@ class Report {
    /** logs a message if logging is switched on for the group */
    def apply(group : => String, msg : => String) : Unit =
 	   if (groups.contains(group) || groups.contains("*")) log(group, msg)
-   /** outputs an error (catgory "error") */
+   /** outputs an error (category "error") */
    def apply(e : Error) {
 	   apply("error", e.msg)
-	   apply("error", "\n" + e.stackTrace)
+	   apply("debug", "\n" + e.stackTrace)
 	}
    /** definitely logs a message */
    private def log(group : => String, msg : => String) {

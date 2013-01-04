@@ -148,17 +148,30 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
         case hd::_ => hd.numCurrentTokens += 1
       }
    }
+   def scanRecursively(t: TokenListElem) {
+      t match {
+         case ml: MatchedList =>
+            ml.tokens foreach scanRecursively
+            ml.flatten
+         case ul: UnmatchedList => 
+            if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, report) //initialize scanner if necessary
+            ul.scanner.scan(notations)
+         case t: Token =>
+            // impossible in MatchedList produced by TokenList.reduce, not called for UnmatchedList or Token
+            throw ImplementationError("single Token in MatchedList")
+      }
+   }
+   
    /** tail-recursively going through the Token's */
    @tailrec
    private def next {
       var goToNextToken = true
       tl(currentIndex) match {
          case ml: MatchedList =>
-            ml.scan(notations)
+            scanRecursively(ml)
             advance
          case ul: UnmatchedList =>
-            if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, report) //initialize scanner if necessary
-            ul.scanner.scan(notations)
+            scanRecursively(ul)
             advance
          case t : Token =>
             currentToken = t
@@ -225,6 +238,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
       log("scanning " + tl)
       notations = nots
       currentIndex = 0
+      numCurrentTokens = 0
       next
    }
 }

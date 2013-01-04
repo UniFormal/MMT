@@ -65,7 +65,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   
   /** errors that occur during parsing */
    object TextParseError {
-     def apply(pos: SourcePosition, s : String) = SourceError("parser", SourceRef(dpath.uri, pos.toRegion), s)
+     def apply(pos: SourcePosition, s : String) = SourceError("structure-parser", SourceRef(dpath.uri, pos.toRegion), s)
    }
 
   // ------------------------------- document level -------------------------------
@@ -324,10 +324,10 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          puCont(pu)  
       } catch {
          case e: ParseError =>
-            errors = errors :+ TextParseError(toPos(start), e.getMessage)
+            errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
             DefaultParser(pu)
-         case e =>
-            errors = errors :+ TextParseError(toPos(start), e.getMessage)
+         case e: Error =>
+            errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
             DefaultParser(pu)
       }
       addSourceRef(obj, start, i - 1)
