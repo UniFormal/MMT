@@ -1,4 +1,5 @@
 log console
+//log file theories.log
 //log+ extman
 log+ parser
 //log+ scanner
