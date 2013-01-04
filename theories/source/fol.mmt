@@ -8,8 +8,8 @@
 %sig LF = {
    %include Typed.
    
-   pi # { 1:_ } -2,10.
-   lambda # [ 1:_ ] -2,10.
+   pi # { 1:_ } -2,1000.
+   lambda # [ 1:_ ] -2,1000.
    @.
    arrow # 1→….
    
@@ -22,10 +22,10 @@
   %include LF.
   bool : type.
   univ : type.
-  and : bool → bool → bool # 1 ∧ 2.
-  or : bool → bool → bool # 1 ∨ 2.
-  impl : bool → bool → bool # 1 ⇒ 2.
-  equiv : bool → bool → bool = [x:bool][y:bool] (x ⇒ y) ∧ (y ⇒ x) # 1 ⇔ 2.
+  and : bool → bool → bool # 1 ∧ 2,5.
+  or : bool → bool → bool # 1 ∨ 2,5.
+  impl : bool → bool → bool # 1 ⇒ 2,10.
+  equiv : bool → bool → bool = [x:bool][y:bool] x ⇒ y ∧ y ⇒ x # 1 ⇔ 2,10.
 }.
 
 %sig FOLExt = {
