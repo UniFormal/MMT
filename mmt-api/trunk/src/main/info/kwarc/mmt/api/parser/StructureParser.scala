@@ -8,31 +8,119 @@ import objects._
 
 import scala.collection.mutable.{ListMap,HashMap}
 
+/** 
+ * This class bundles all state that is maintained by a [[info.kwarc.mmt.api.parser.StructureParser]]
+ * 
+ * @param reader the input stream, from which the parser reads
+ */
 case class ParserState(val reader: Reader) {
+   /**
+    * the namespace mapping set by
+    * {{{
+    * import prefix URI
+    * }}}
+    * commands
+    */
    val namespace = new ListMap[String,DPath]
+   /**
+    * the default namespace set by
+    * {{{
+    * namespace URI
+    * }}}
+    * commands
+    */
    var defaultNamespace: DPath = utils.mmt.mmtbase
 }
 
+/**
+ * classes implementing InDocParser may be registered with a [[info.kwarc.mmt.api.parser.StructureParser]]
+ * to extend MMT
+ */
 trait InDocParser {
+   /**
+    * Called to parse a declaration in a Document if the respective keyword has been read.
+    * @param sp the StructureParser that is calling this extension
+    * @param r the reader from which further input can be read
+    * 
+    *  the keyword but nothing else has been read already when this is called
+    */
    def apply(sp: StructureParser, r: Reader)
 }
+
+/**
+ * classes implementing InTheoryParser may be registered with a [[info.kwarc.mmt.api.parser.StructureParser]]
+ * to extend MMT
+ */
 trait InTheoryParser {
+   /**
+    * Called to parse a declaration in a Document if the respective keyword has been read.
+    * @param sp the StructureParser that is calling this extension
+    * @param r the reader from which further input can be read
+    * 
+    *  the keyword but nothing else has been read already when this is called
+    */
    def apply(sp: StructureParser, r: Reader)
 }
 
 
-// sketch of future reimplementation of TextReader
+/**
+ * A StructureParser read MMT declarations (but not objects) and
+ * defers to continuation functions for the found StructuralElement, ParsingUnits, and SourceErrors.
+ * 
+ * This class provides 3 things
+ * 
+ * 1) High-level read methods that read MMT-related entities from a stream,
+ * which implementing classes can use.
+ * These methods throw do not read more than necessary from the stream and
+ * throw [[info.kwarc.mmt.api.SourceError]] where appropriate.
+ * 
+ * 2) It maintains the parse state via an implicit argument
+ * [[info.kwarc.mmt.api.parser.ParserState]] in most functions.
+ * 
+ * 3) It leaves processing of MMT entities application-independent via high-level continuation functions. 
+ */
 abstract class StructureParser(controller: Controller) extends frontend.Logger {
    val report = controller.report
    val logPrefix = "structure-parser"
    
+   /**
+    * a table of external parsers that can parser declarations in a document, indexed by keyword
+    * 
+    *  plugins may register parsers here to extend MMT with new keywords
+    */
    val inDocParsers = new HashMap[String,InDocParser]
+   /**
+    * a table of external parsers that can parser declarations in a theory, indexed by keyword
+    * 
+    *  plugins may register parsers here to extend MMT with new keywords
+    */
    val inTheoryParsers = new HashMap[String,InTheoryParser]
    
+   /**
+    * A continuation function called on every StructuralElement that was found
+    * 
+    * For grouping elements (documents, modules with body), this is called on the empty element first
+    * and then on each child.
+    */
    def seCont(se: StructuralElement): Unit
+   /**
+    * A continuation function called on every ParsingUnit that was found
+    * 
+    * Objects are opaque to the parser, and parsing is deferred via this function.
+    */
    def puCont(pu: ParsingUnit): Term
+   /**
+    * A continuation function called on every error that was found
+    * 
+    * Error handling is very lenient and will recover wherever possible.
+    */
    def errorCont(err: SourceError): Unit
    
+   /** the main interface function
+    * 
+    * @param r a Reader holding the input stream
+    * @param dpath the MMT URI of the stream
+    */
    def apply(r: Reader, dpath: DPath) {
       val state = new ParserState(r)
       state.defaultNamespace = dpath
@@ -44,9 +132,13 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       log("end " + dpath)
    }
 
+   /** convenience function to create SourceError's */
    private def makeError(reg: SourceRegion, s: String) =
       SourceError("structure-parser", SourceRef(null, reg), s)
    
+   /** read a LocalName from the stream
+    * @throws SourceError iff ill-formed or empty
+    */
    def readName(implicit state: ParserState) : LocalName = {
       val (s, reg) = state.reader.readToken
       if (s == "")
@@ -56,6 +148,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
    }
+   /** read a LocalPath from the stream
+    * @throws SourceError iff ill-formed or empty
+    */
    def readLocalPath(implicit state: ParserState) : LocalPath = {
       val (s, reg) = state.reader.readToken
       if (s == "")
@@ -65,6 +160,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
    }
+   /** read a DPath from the stream
+    * @throws SourceError iff ill-formed or empty
+    */
    def readDPath(base: Path)(implicit state: ParserState) : DPath = {
       val (s, reg) = state.reader.readToken
       if (s == "")
@@ -74,7 +172,10 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
    }
-   def readMPath(base: Path)(implicit state: ParserState) : MPath = {
+   /** read a MPath from the stream
+    * @throws SourceError iff ill-formed or empty
+    */
+  def readMPath(base: Path)(implicit state: ParserState) : MPath = {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
@@ -83,7 +184,10 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
    }
-   def readSPath(base: MPath)(implicit state: ParserState) : GlobalName = {
+  /** read a GlobalName from the stream
+    * @throws SourceError iff ill-formed or empty
+    */
+  def readSPath(base: MPath)(implicit state: ParserState) : GlobalName = {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
@@ -92,6 +196,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
    }
+   /** the main loop for reading declarations that can occur in documents
+    * @param doc the containing Document (must be in the controller already)
+    */
    private def readInDocument(doc: Document)(implicit state: ParserState) {
       if (state.reader.endOfDocument) return
       val (keyword, reg) = state.reader.readToken
@@ -172,19 +279,29 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       readInDocument(doc) // compiled code is not actually tail-recursive
    }
    
-   def readInTheory(thy: DeclaredTheory, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
+   /** the main loop for reading declarations that can occur in a theory
+    * @param thy the containing theory (must be in the controller already)
+    * @param patterns the patterns of the meta-theory (precomputed in readInDocument)
+    * 
+    * this function handles one declaration if possible, then calls itself recursively
+    */
+   private def readInTheory(thy: DeclaredTheory, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
+      //this case occurs if lower methods have already read the GS marker
       if (state.reader.endOfModule) return
       try {
          val (keyword, reg) = state.reader.readToken
          keyword match {
+            //this case occurs if we read the GS or marker
             case "" =>
                if (state.reader.endOfModule) {
                   return
                } else
                   throw makeError(reg, "keyword expected, within theory " + thy).copy(fatal = true)
+            //Constant
             case "constant" =>
                val name = readName
                readConstant(name, thy.path)
+            //PlainInclude
             case "include" =>
                val from = readMPath(thy.path)
                if (! state.reader.endOfDeclaration) {
@@ -194,9 +311,11 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                }
                val incl = PlainInclude(from, thy.path)
                seCont(incl)
+            //Pattern
             case "pattern" =>
                val name = readName
                //TODO
+            //Instance
             case "instance" =>
                val name = readName
                thy.meta match {
@@ -238,14 +357,22 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       readInTheory(thy, patterns) // compiled code is not actually tail-recursive
    }
    
+   /** reads the components of a [[info.kwarc.mmt.api.symbols.Constant]]
+    * @param name the name of the constant
+    * @param the containing [[info.kwarc.mmt.api.modules.DeclaredTheory]]
+    */
    private def readConstant(name: LocalName, tpath: MPath)(implicit state: ParserState) {
       val cpath = tpath ? name
+      //initialize all components as omitted
       var tp : Option[Term] = None
       var df : Option[Term] = None
       var nt : Option[TextNotation] = None
+      // every iteration reads one delimiter and one object
+      // : TYPE or = DEFINIENS or # NOTATION 
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
          if (! List(":","=","#").contains(delim)) {
+            // error handling
             if (delim == "") {
                if (! state.reader.endOfDeclaration)
                   errorCont(makeError(treg, "expected ':' or '=' or '#'"))
@@ -260,6 +387,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val tm = puCont(ParsingUnit(cpath $ c, OMMOD(tpath), Context(), obj))
                Some(tm)
             }
+            // the main part, which branches based on the delimiter
             delim match {
                case ":" =>
                   if (tp.isDefined)
@@ -286,7 +414,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       
    }
    
-   def readInView(view: MPath)(implicit state: ParserState) {
+   private def readInView(view: MPath)(implicit state: ParserState) {
       
    }
    
@@ -294,7 +422,14 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    //def readInStyle(style: MPath)(implicit state: ParserState) {}
 }
 
+/**
+ * An implementation of the continuation functions in StructureParser with reasonable defaults.
+ */
 class StructureAndObjectParser(controller: Controller) extends StructureParser(controller) {
+   /**
+    * parsing units are parsed by the termParser of the controller
+    * if that fails, the [[info.kwarc.mmt.api.parser.DefaultParser]] is used
+    */
    def puCont(pu: ParsingUnit): Term = {
       val obj = try {
          controller.termParser(pu)  
@@ -305,15 +440,24 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
       }
       obj
    }
+   /**
+    * structural elements are added to controller
+    */
    def seCont(se: StructuralElement) {
       log(se.toString)
       controller.add(se)
    }
    private var errors: List[SourceError] = Nil
+   /**
+    * errors are reported and stored
+    */
    def errorCont(err: SourceError) {
       errors ::= err
       report(err)
    }
+   /** returns all errors since the last reset, in order of occurrence */
    def getErrors = errors.reverse
+   /** resets the error list */
+   def resetErrors {errors = Nil}
 }
 

@@ -11,24 +11,47 @@ import utils._
  * 
  * PU1 and PU2 (ASCII decimal 145, 146) are used to escape in/out of other formats
  * content between balanced PU1 and PU2 is skipped
+ * 
  */
-// this is meant to be used in a future reimplementation of the TextReader
+// This class generally uses integers (0 to 65535 and -1 for end-of-file) to represent characters.  
 class Reader(jr: java.io.BufferedReader) {
    import Reader._
    
-   private var lastDelimiter: Int = 65536 //invalid Char
+   /** the delimiter that terminated the previous read operation */
+   private var lastDelimiter: Int = 65536 // initialized as invalid Char
    
+   /**
+    * true if the last read operation hit the end of the current document
+    */
    def endOfDocument = lastDelimiter <= FS
+   /**
+    * true if the last read operation hit the end of the current module
+    */
    def endOfModule = lastDelimiter <= GS
+   /**
+    * true if the last read operation hit the end of the current declaration
+    */
    def endOfDeclaration = lastDelimiter <= RS
+   /**
+    * true if the last read operation hit the end of the current object
+    */
    def endOfObject = lastDelimiter <= US 
 
-   //current position
+   //current position (offset counts \r\n as 1 character)
    private var line : Int = 0
    private var column : Int = 0
    private var offset : Int = 0
    private var sourcePosition: SourcePosition = null
+
+   /** @return the position of the next character to be read
+    */
    def getSourcePosition = SourcePosition(offset, line, column)
+   /**
+    * sets the current position
+    * @param s a source position to overwrite the position of the next character to be read
+    * This only affects the SourceRegion returned by read operations,
+    * not the actual position in the stream.  
+    */
    def setSourcePosition(s: SourcePosition) {
       line = s.line
       column = s.column
@@ -69,6 +92,12 @@ class Reader(jr: java.io.BufferedReader) {
       c
    }
    
+   /**
+    * read everything up to and including the next delimiter
+    * @param goal the delimiters to consider
+    * @return the read string and its SourceRegion, both excluding the delimiter
+    * This respects escaping and skips delimiters occurring within well-balanced escapes.
+    */ 
    private def readUntil(goal: Int*): (String, SourceRegion) = {
        val buffer = new StringBuilder
        var level = 0
@@ -93,19 +122,19 @@ class Reader(jr: java.io.BufferedReader) {
        val end = sourcePosition
        (buffer.result.trim, SourceRegion(start, end))
    }
-   /** reads until end of current document
+   /** reads until end of current document, terminated by the ASCII character FS (decimal 28)
     */
    def readDocument = readUntil(FS)
-   /** reads until end of current module
+   /** reads until end of current module, terminated by the ASCII characters GS or FS (decimal 28-29)
     */
    def readModule = readUntil(GS,FS)
-   /** reads until end of current declaration
+   /** reads until end of current declaration, terminated by the ASCII character RS, GS, or FS (decimal 28-30)
     */
    def readDeclaration = readUntil(RS,GS,FS)
-   /** reads until end of current object
+   /** reads until end of current object, terminated by the ASCII character RS, GS, FS, or US (decimal 28-31)
     */
    def readObject = readUntil(US,RS,GS,FS)
-   /** reads until end of current whitespace-separated token
+   /** reads until end of current Token, terminated by whitespace
     */
    def readToken = readUntil(32,US,RS,GS,FS)
    
@@ -120,12 +149,17 @@ class Reader(jr: java.io.BufferedReader) {
 object Reader {
    def apply(file: File) = new Reader(File.Reader(file))
    def apply(s: String) = new Reader(new java.io.BufferedReader(new java.io.StringReader(s)))
-   //ascii codes
    //Note: 28-31 have isWhitespace == true
+   /** the ASCII character FS (decimal 28) ends MMT documents */
    val FS = 28
+   /** the ASCII character GS (decimal 29) ends MMT modules */
    val GS = 29
+   /** the ASCII character GS (decimal 30) ends MMT declaration within modules */
    val RS = 30
+   /** the ASCII character GS (decimal 31) ends MMT objects */
    val US = 31
-   val escape = 145 //PU1
-   val unescape = 146 //PU2
+   /** the ASCII character PU1 (decimal 145) begins escaped parts */
+   val escape = 145
+   /** the ASCII character PU2 (decimal 146) ends escaped parts */
+   val unescape = 146
 }
