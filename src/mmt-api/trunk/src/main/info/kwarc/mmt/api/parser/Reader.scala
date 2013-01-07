@@ -13,23 +13,32 @@ import utils._
  * content between balanced PU1 and PU2 is skipped
  */
 // this is meant to be used in a future reimplementation of the TextReader
-class Reader(val jr: java.io.Reader) {
-   private val FS = 28
-   private val GS = 29
-   private val RS = 30
-   private val US = 31
-   private val escape = 145
-   private val unescape = 146
+class Reader(jr: java.io.BufferedReader) {
+   import Reader._
+   
+   private var lastDelimiter: Int = 65536 //invalid Char
+   
+   def endOfDocument = lastDelimiter <= FS
+   def endOfModule = lastDelimiter <= GS
+   def endOfDeclaration = lastDelimiter <= RS
+   def endOfObject = lastDelimiter <= US 
 
+   //current position
    private var line : Int = 0
    private var column : Int = 0
    private var offset : Int = 0
    private var sourcePosition: SourcePosition = null
+   def getSourcePosition = SourcePosition(offset, line, column)
+   def setSourcePosition(s: SourcePosition) {
+      line = s.line
+      column = s.column
+      offset = s.offset
+   }
    private var ignoreLineFeed = false
    /** read one character
     * \n, \r, and \r\n are read as \n
     */
-   def read: Int = {
+   private def read: Int = {
       var c = jr.read
       if (c == -1)
          return c
@@ -52,7 +61,7 @@ class Reader(val jr: java.io.Reader) {
    }
    /** as read but skips initial whitespace
     */
-   def readSkipWS: Int = {
+   private def readSkipWS: Int = {
       var c:Int = 0
       do {
          c = read
@@ -60,14 +69,14 @@ class Reader(val jr: java.io.Reader) {
       c
    }
    
-   private def readUntil(goal: Int): Option[(String, SourceRegion)] = {
+   private def readUntil(goal: Int*): (String, SourceRegion) = {
        val buffer = new StringBuilder
        var level = 0
        var continue = true
        var c: Int = readSkipWS
        val start = sourcePosition
        while (continue) {
-          if (c == -1 || (c == goal && level == 0)) {
+          if (c == -1 || (goal.contains(c) && level == 0)) {
              continue = false
           } else {
              buffer.append(c.toChar)
@@ -78,33 +87,44 @@ class Reader(val jr: java.io.Reader) {
              c = read
           }
        }
-       if (c == -1) {
-          None
-       } else {
-          val end = sourcePosition
-          Some((buffer.result.trim, SourceRegion(start, end)))
-       }
+       if (level != 0)
+          {} //unbalanced escape
+       lastDelimiter = c
+       val end = sourcePosition
+       (buffer.result.trim, SourceRegion(start, end))
    }
    /** reads until end of current document
     */
    def readDocument = readUntil(FS)
    /** reads until end of current module
     */
-   def readModule = readUntil(GS)
+   def readModule = readUntil(GS,FS)
    /** reads until end of current declaration
     */
-   def readDeclaration = readUntil(RS)
+   def readDeclaration = readUntil(RS,GS,FS)
    /** reads until end of current object
     */
-   def readObject = readUntil(US)
+   def readObject = readUntil(US,RS,GS,FS)
    /** reads until end of current whitespace-separated token
     */
-   def readToken = readUntil(32)
+   def readToken = readUntil(32,US,RS,GS,FS)
+   
+   /** closes the underlying Reader */
+   def close {
+      jr.close
+   }
 }
 
 /** helper object
  */
 object Reader {
-   implicit def toJavaReader(r: Reader) = r.jr
    def apply(file: File) = new Reader(File.Reader(file))
+   def apply(s: String) = new Reader(new java.io.BufferedReader(new java.io.StringReader(s)))
+   //ascii codes
+   val FS = 28
+   val GS = 29
+   val RS = 30
+   val US = 31
+   val escape = 145 //PU1
+   val unescape = 146 //PU2
 }
