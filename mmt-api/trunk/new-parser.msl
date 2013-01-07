@@ -1,0 +1,10 @@
+log console
+//log file theories.log
+//log+ extman
+log+ structure-parser
+//log+ controller
+//log+ scanner
+base http://docs.omdoc.org/mmt
+
+read ../../../theories/source/fol.mmt-new
+exit
