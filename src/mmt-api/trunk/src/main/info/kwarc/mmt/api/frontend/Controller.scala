@@ -7,9 +7,9 @@ import objects._
 import symbols._
 import modules._
 import documents._
+import parser._
 import ontology._
 import pragmatics._
-import symbols.Constant
 import web._
 import utils._
 import utils.FileConversion._
@@ -74,8 +74,10 @@ class Controller extends ROController {
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(this)
    /** the MMT term parser */
-   val termParser = new parser.NotationParser(this)
-   /** the MMT parser (text/Twelf syntax) */
+   val termParser = new NotationParser(this)
+   /** the MMT parser (native MMT text syntax) */
+   val textParser = new StructureAndObjectParser(this)
+   /** the MMT parser (Twelf text syntax) */
    val textReader = new TextReader(this)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
@@ -235,28 +237,35 @@ class Controller extends ROController {
       backend.cleanup
       if (server.isDefined) stopServer
    }
-   /** reads a file containing a document and returns the Path of the document found in it */
+   /** reads a file containing a document and returns the Path of the document found in it
+    * the reader is chosen according to the file ending: omdoc, elf, or mmt
+    */
    def read(f: File, docBase : Option[DPath] = None) : DPath = {
-      val N = utils.xml.readFile(f)
-      val dpath = docBase.getOrElse(DPath(URI.fromJava(f.toURI)))
-      var p: DPath = null
-      xmlReader.readDocument(dpath, N) {
-         case d: Document =>
-            add(d)
-            p = d.path
-         case e => add(e)
-      }
-      p
-   }
-   /** reads a text/Twelf file and returns its Path */
-   def readText(f: File, docBase : Option[DPath] = None) : DPath = {
       val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
-      val source = scala.io.Source.fromFile(f, "UTF-8")
-      val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
-      source.close
-      if (!errorList.isEmpty)
-        log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
-      dpath
+      f.getExtension match {
+         case Some("omdoc") =>
+            val N = utils.xml.readFile(f)
+            var p: DPath = null
+            xmlReader.readDocument(dpath, N) {
+               case d: Document =>
+                  add(d)
+                  p = d.path
+               case e => add(e)
+            }
+            p
+         case Some("elf") | Some("mmt") =>
+            val source = scala.io.Source.fromFile(f, "UTF-8")
+            val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
+            source.close
+            if (!errorList.isEmpty)
+              log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
+            dpath
+         case Some("mmt-new") =>
+            textParser(Reader(f), dpath)
+            dpath
+         case Some(e) => throw ParseError("unknown file extension: " + f)
+         case None => throw ParseError("unknown document format: " + f)
+      }
    }
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
@@ -393,7 +402,6 @@ class Controller extends ROController {
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
 	      case Read(f) => read(f)
-	      case ReadText(f) => readText(f)
 	      case Graph(f) =>
 	         val tg = new TheoryGraph(depstore)
             tg.exportDot(f)

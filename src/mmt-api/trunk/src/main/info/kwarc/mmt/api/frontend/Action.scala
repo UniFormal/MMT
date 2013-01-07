@@ -61,9 +61,8 @@ object Action extends RegexParsers {
      private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
 
-   private def shell = setbase | readText | read | graph | check | printall | printallxml | clear | exit
+   private def shell = setbase | read | graph | check | printall | printallxml | clear | exit
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
-   private def readText = "readText" ~> file ^^ {f => ReadText(f)}
    private def read = "read" ~> file ^^ {f => Read(f)}
    private def graph = "graph" ~> file ^^ {f => Graph(f)}
    private def check = "check" ~> path ^^ {p => Check(p)}
@@ -171,11 +170,6 @@ case class Graph(target : File) extends Action {override def toString = "graph "
  * concrete syntax: read file:FILE
  */
 case class Read(file : File) extends Action {override def toString = "read " + file}
-
-/** read a file containing MMT in text syntax
- * concrete syntax: readText file:FILE
- */
-case class ReadText(file : File) extends Action {override def toString = "readText " + file}
 
 /** check a knowledge item */
 case class Check(p : Path) extends Action {override def toString = "check " + p}

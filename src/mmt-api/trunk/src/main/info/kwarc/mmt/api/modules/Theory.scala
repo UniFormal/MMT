@@ -21,7 +21,7 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
    override def compNames = List(("name", 0), ("meta",1))
-   override def toString = path + meta.map(" : " + _.toPath).getOrElse("") + innerString
+   override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
    <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {getMetaDataNode}

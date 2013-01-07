@@ -37,7 +37,7 @@ object TermParser {
   def getNotations(controller : Controller, scope : Term) : List[TextNotation] = {
      val includes = controller.library.visible(scope)
      val decls = includes.toList flatMap {tm => 
-       controller.globalLookup.get(tm.toMPath).components
+       controller.globalLookup.get(tm.toMPath).components //TODO: should not use .components
      }
      decls collect {
        case c : Constant => c.not match {
