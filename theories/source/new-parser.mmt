@@ -1,0 +1,32 @@
+namespace http://cds.omdoc.org/fol
+
+theory Typed =
+  kind
+  type
+
+
+theory LF =
+  include Typed
+   
+  pi # { 1:_ } -2,1000
+  lambda # [ 1:_ ] -2,1000
+  @
+  arrow # 1→…
+
+
+theory FOL : LF =
+  bool : type
+  univ : type
+  and : bool → bool → bool # 1 ∧ 2,5
+  or : bool → bool → bool # 1 ∨ 2,5
+  impl : bool → bool → bool # 1 ⇒ 2,10
+  equiv : bool → bool → bool = [x:bool][y:bool] x ⇒ y ∧ y ⇒ x # 1 ≡ 2,10
+
+
+theory FOLExt : LF =
+  include FOL
+  zero : univ
+  succ : univ → univ
+  tstor : bool → bool → bool = [x:bool][y:bool] x ∨ y
+  tsteqv : bool → bool → bool = [x:bool][y:bool] x ≡ y
+
