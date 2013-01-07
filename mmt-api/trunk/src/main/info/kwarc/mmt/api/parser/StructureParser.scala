@@ -14,15 +14,18 @@ case class ParserState(val reader: Reader) {
 }
 
 trait InDocParser {
-   def apply(controller: Controller, r: Reader)
+   def apply(sp: StructureParser, r: Reader)
 }
 trait InTheoryParser {
-   def apply(controller: Controller, r: Reader)
+   def apply(sp: StructureParser, r: Reader)
 }
 
 
 // sketch of future reimplementation of TextReader
-abstract class StructureParser(controller: Controller) {
+abstract class StructureParser(controller: Controller) extends frontend.Logger {
+   val report = controller.report
+   val logPrefix = "structure-parser"
+   
    val inDocParsers = new HashMap[String,InDocParser]
    val inTheoryParsers = new HashMap[String,InTheoryParser]
    
@@ -30,11 +33,15 @@ abstract class StructureParser(controller: Controller) {
    def puCont(pu: ParsingUnit): Term
    def errorCont(err: SourceError): Unit
    
-   def apply(r: Reader, u: utils.URI) {
+   def apply(r: Reader, dpath: DPath) {
       val state = new ParserState(r)
-      val dpath = DPath(u)
       state.defaultNamespace = dpath
-      readInDocument(dpath)(state)
+      val doc = new Document(dpath)
+      seCont(doc)
+      logGroup {
+         readInDocument(doc)(state)
+      }
+      log("end " + dpath)
    }
 
    private def makeError(reg: SourceRegion, s: String) =
@@ -44,62 +51,89 @@ abstract class StructureParser(controller: Controller) {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "name expected")
-      LocalName.parse(s)
+      try {LocalName.parse(s)}
+      catch {case e: ParseError =>
+         throw makeError(reg, "invalid identifier: " + e.getMessage)
+      }
    }
    def readLocalPath(implicit state: ParserState) : LocalPath = {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "module name expected")
-      Path.parseLocal(s).toLocalPath
+      try {Path.parseLocal(s).toLocalPath}
+      catch {case e: ParseError => 
+         throw makeError(reg, "invalid identifier: " + e.getMessage)
+      }
    }
    def readDPath(base: Path)(implicit state: ParserState) : DPath = {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      Path.parseD(s, base)
+      try {Path.parseD(s, base)}
+      catch {case e: ParseError => 
+         throw makeError(reg, "invalid identifier: " + e.getMessage)
+      }
    }
    def readMPath(base: Path)(implicit state: ParserState) : MPath = {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      Path.parseM(s, base)
+      try {Path.parseM(s, base)}
+      catch {case e: ParseError => 
+         throw makeError(reg, "invalid identifier: " + e.getMessage)
+      }
    }
    def readSPath(base: MPath)(implicit state: ParserState) : GlobalName = {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      Path.parseS(s, base)
+      try {Path.parseS(s, base)}
+      catch {case e: ParseError => 
+         throw makeError(reg, "invalid identifier: " + e.getMessage)
+      }
    }
-   def readInDocument(doc: DPath)(implicit state: ParserState) {
+   private def readInDocument(doc: Document)(implicit state: ParserState) {
+      if (state.reader.endOfDocument) return
       val (keyword, reg) = state.reader.readToken
       try {
          keyword match {
             case "" =>
-               if (state.reader.endOfDocument)
+               if (state.reader.endOfDocument) {
                   return
-               else
+               } else
                   throw makeError(reg, "keyword expected, within document " + doc).copy(fatal = true)
             case "document" =>
                val name = readLocalPath
-               val dpath = doc / name
+               val dpath = doc.path / name
                val d = new Document(dpath)
                seCont(d)
-               readInDocument(dpath)
+               val dref = DRef(doc.path, dpath)
+               seCont(dref)
+               logGroup {
+                  readInDocument(d)
+               }
+               log("end " + dpath)
             case "namespace" =>
-               val ns = readDPath(doc)
+               val ns = readDPath(doc.path)
                state.defaultNamespace = ns 
             case "import" =>
                val (n,_) = state.reader.readToken
-               val ns = readDPath(doc)
+               val ns = readDPath(doc.path)
                state.namespace(n) = ns
             //case "link" => readLink //TODO
             //case "meta" => readMetaDatum //TODO
             case "theory" =>
                val name = readLocalPath
-               val tpath = state.defaultNamespace ? name
+               val ns = state.defaultNamespace
+               val tpath = ns ? name
+               val mref = MRef(doc.path, tpath)
+               seCont(mref)
                var delim = state.reader.readToken
                if (delim._1 == "abbrev") {
-                  state.reader.readObject
+                  val (obj, reg) = state.reader.readObject
+                  val df = puCont(ParsingUnit(tpath $ DefComponent, OMMOD(tpath), Context(), obj))
+                  val thy = new DefinedTheory(ns, name, df)
+                  seCont(thy)
                } else {
                   val meta = if (delim._1 == ":") {
                      val p = readMPath(tpath)
@@ -107,11 +141,14 @@ abstract class StructureParser(controller: Controller) {
                      Some(p)
                   } else
                      None
-                  val t = new DeclaredTheory(doc, name, meta)
+                  val t = new DeclaredTheory(ns, name, meta)
                   seCont(t)
                   if (delim._1 == "=") {
                      val patterns: List[(String,GlobalName)] = Nil //Theory.getPatterns(mt)
-                     readInTheory(t, patterns)
+                     logGroup {
+                        readInTheory(t, patterns)
+                     }
+                     log("end " + tpath)
                   } else {
                      throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
                   }
@@ -119,12 +156,12 @@ abstract class StructureParser(controller: Controller) {
             case k =>
                // other keywords are treated as parser plugins
                val extParser = inDocParsers.get(k).getOrElse {
-                  throw makeError(reg, "unknown keyword")
+                  throw makeError(reg, "unknown keyword: " + k)
                }
                val (mod, mreg) = state.reader.readModule
                val reader = Reader(mod)
                reader.setSourcePosition(mreg.start)
-               extParser(controller, reader)
+               extParser(this, reader)
          }
       } catch {
          case e: SourceError =>
@@ -132,17 +169,18 @@ abstract class StructureParser(controller: Controller) {
             if (! state.reader.endOfModule)
                state.reader.readModule
       }
-      readInDocument(doc)
+      readInDocument(doc) // compiled code is not actually tail-recursive
    }
    
    def readInTheory(thy: DeclaredTheory, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
+      if (state.reader.endOfModule) return
       try {
          val (keyword, reg) = state.reader.readToken
          keyword match {
             case "" =>
-               if (state.reader.endOfModule)
+               if (state.reader.endOfModule) {
                   return
-               else
+               } else
                   throw makeError(reg, "keyword expected, within theory " + thy).copy(fatal = true)
             case "constant" =>
                val name = readName
@@ -183,7 +221,7 @@ abstract class StructureParser(controller: Controller) {
                      val (decl, reg) = state.reader.readDeclaration
                      val reader = Reader(decl)
                      reader.setSourcePosition(reg.start)
-                     parsOpt.get.apply(controller, reader)
+                     parsOpt.get.apply(this, reader)
                   } else {
                      // 3) a constant with name k
                      val name = LocalName.parse(k)
@@ -197,7 +235,7 @@ abstract class StructureParser(controller: Controller) {
             if (! state.reader.endOfDeclaration)
                state.reader.readDeclaration
       }
-      readInTheory(thy, patterns)
+      readInTheory(thy, patterns) // compiled code is not actually tail-recursive
    }
    
    private def readConstant(name: LocalName, tpath: MPath)(implicit state: ParserState) {
@@ -208,9 +246,14 @@ abstract class StructureParser(controller: Controller) {
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
          if (! List(":","=","#").contains(delim)) {
-            if (! state.reader.endOfObject)
-               state.reader.readObject
-            errorCont(makeError(treg, "expected ':' or '=' or '#', ignoring the next object"))
+            if (delim == "") {
+               if (! state.reader.endOfDeclaration)
+                  errorCont(makeError(treg, "expected ':' or '=' or '#'"))
+            } else { 
+               if (! state.reader.endOfObject)
+                  state.reader.readObject
+               errorCont(makeError(treg, "expected ':' or '=' or '#', ignoring the next object"))
+            }
          } else {
             val (obj, oreg) = state.reader.readObject
             def doComponent(c: DeclarationComponent) = {
@@ -263,10 +306,14 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
       obj
    }
    def seCont(se: StructuralElement) {
+      log(se.toString)
       controller.add(se)
    }
    private var errors: List[SourceError] = Nil
-   def errorCont(err: SourceError) {errors ::= err}
+   def errorCont(err: SourceError) {
+      errors ::= err
+      report(err)
+   }
    def getErrors = errors.reverse
 }
 

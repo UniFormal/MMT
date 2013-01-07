@@ -43,7 +43,7 @@ class Reader(jr: java.io.BufferedReader) {
       if (c == -1)
          return c
       if (ignoreLineFeed && c == '\n') {
-         c = jr.read.toChar
+         c = jr.read
       }
       ignoreLineFeed = false
       if (! c.toChar.isWhitespace)
@@ -65,7 +65,7 @@ class Reader(jr: java.io.BufferedReader) {
       var c:Int = 0
       do {
          c = read
-      } while (c != -1 && c.toChar.isWhitespace)
+      } while (! List(-1,US,RS,GS,FS).contains(c) && c.toChar.isWhitespace)
       c
    }
    
@@ -121,6 +121,7 @@ object Reader {
    def apply(file: File) = new Reader(File.Reader(file))
    def apply(s: String) = new Reader(new java.io.BufferedReader(new java.io.StringReader(s)))
    //ascii codes
+   //Note: 28-31 have isWhitespace == true
    val FS = 28
    val GS = 29
    val RS = 30
