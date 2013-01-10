@@ -3,10 +3,10 @@
 %sig PLpatt = {
   %include LF.
   bool : type.
-  or : bool -> bool -> bool # 1 ∨ 2.
-  and : bool -> bool -> bool # 1 ∧ 2.
-  not : bool -> bool # ¬ 1.
-  ded : bool -> type.
+  or : bool → bool → bool # 1 ∨ 2.
+  and : bool → bool → bool # 1 ∧ 2.
+  not : bool → bool # ¬ 1.
+  ded : bool → type # ded 1.
 
   %pattern prop = { p : bool.  }.
 

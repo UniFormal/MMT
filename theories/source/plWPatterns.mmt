@@ -5,10 +5,10 @@
 %sig PLpatt = {
   %include LF.
   o : type.
-  or : o -> o -> o # 1 ∨ 2.
-  and : o -> o -> o # 1 ∧ 2.
-  not : o -> o # ¬ 1.
-  ded : o -> type.
+  or : o → o → o # 1 ∨ 2.
+  and : o → o → o # 1 ∧ 2.
+  not : o → o # ¬ 1.
+  ded : o → type # ded 1.
 
   %pattern boolVar = {
 	p : o.
