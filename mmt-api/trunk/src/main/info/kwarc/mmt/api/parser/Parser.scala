@@ -184,10 +184,11 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
     log("#####   scan result: " + sc.tl.toString)
     
     //structuring
+    val varnames = pu.context.variables.map(_.name.toPath).toList
     sc.tl.length match {
        case 1 =>
           val tm = logGroup {
-             makeTerm(sc.tl(0), Nil)
+             makeTerm(sc.tl(0), varnames)
           }
           log("##### parse result: "  + tm.toNode)
           tm
