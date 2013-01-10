@@ -8,18 +8,16 @@
 %sig LF = {
    %include Typed.
    
-   pi ## { 1 }.
-   lambda ## [ 1 ].
+   pi # { 1:_ } -2,1000.
+   lambda # [ 1:_ ] -2,1000.
    @.
-   arrow # 1/->,-10.
-   
-   %%%% 
+   arrow # 1→….
+
    omitted.
    implicit_Pi.
    implicit_lambda.
-   %%%%
    
-   %% %pattern type = {a: type.}.
+  %% %pattern type = {a: type.}.
 
    %% %pattern constant = [a:tp] {c: a.}.
 }.
