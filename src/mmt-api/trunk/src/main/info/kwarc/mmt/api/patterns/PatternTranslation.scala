@@ -23,7 +23,7 @@ object Functor {
     val theoExp = OMA(OMS(mmt.functorapplication),List(OMMOD(view.path),OMMOD(theo.path)))
     val mp = theoExp.toMPath
     val outputTheory =  new DeclaredTheory(mp.parent,mp.name,None)
-    controller.add(Include(OMMOD(mp),view.to))
+    //controller.add(Include(OMMOD(mp),view.to)) TODO: fix
     controller.add(outputTheory)
     //val decls = lib.get(view.path)
     val decls = theo.valueList

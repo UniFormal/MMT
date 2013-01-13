@@ -78,15 +78,20 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                }
                case None => name match {
                   // no prefix of name is declared in t
-                  case MorphismStep(m) / ln => 
-                     // continue lookup in the domain of m
-                     val from = Morph.domain(m)(this)
-                     val to = Morph.codomain(m)(this)
-                     val imp = implicitGraph(to, t.toTerm) getOrElse {
-                        throw GetError("no implicit morphism from " + to + " to " + t.path)
+                  case ComplexStep(p) / ln =>
+                     get(p) match {
+                       case _: Theory =>
+                         // continue lookup in p
+                         val imp = implicitGraph(OMMOD(p), t.toTerm) getOrElse {
+                            throw GetError("no implicit morphism from " + p + " to " + t.path)
+                         }
+                         val sym = getSymbol(p ? ln, p => error("could not lookup source symbol " + p))
+                         translate(sym, imp, error) // translate the result along the implicit morphism
+                       case l: Link =>
+                         // continue lookup in domain of l
+                         val sym = getSymbol(l.from % ln)
+                         translateByLink(sym, l, error) // translate the result along the link
                      }
-                     val sym = getSymbol(from % ln, p => error("could not lookup source symbol " + p))
-                     translate(sym, OMCOMP(m, imp), error) // translate the result along m
                   case _ => throw GetError(name + " is not valid in " + t.path)
                }
             }
@@ -97,7 +102,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                case PartialLink() => get(v.from % name) match {
                   // return default assignment
                   case c:Constant => new ConstantAssignment(v.toTerm, name, OMHID)
-                  case s:Structure => new DefLinkAssignment(v.toTerm, name, s.from, Morph.Empty)
+                  case s:Structure => new DefLinkAssignment(v.toTerm, name, s.fromPath, Morph.Empty)
                   case _ => throw ImplementationError("unimplemented default assignment")
                }
             }
@@ -118,7 +123,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
             // return default assignment
             get(s.from % name) match {   
                case c:Constant => new ConstantAssignment(s.toTerm, name, OMID(s.to % (s.name / name)))
-               case d:Structure => new DefLinkAssignment(s.toTerm, name, d.from, OMDL(s.to, s.name / name))
+               case d:Structure => new DefLinkAssignment(s.toTerm, name, d.fromPath, OMDL(s.to, s.name / name))
                case _ => throw ImplementationError("unimplemented default assignment")
             }
          }
@@ -133,7 +138,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          }
       case (m @ OMIDENT(t)) % name => get(t % name) match {
          case c: Constant => new ConstantAssignment(m, name, c.toTerm)
-         case l: Structure => new DefLinkAssignment(m, name, l.from, l.toTerm)
+         case l: Structure => new DefLinkAssignment(m, name, l.fromPath, l.toTerm)
       }
       case Morph.Empty % name => throw GetError("empty morphism has no assignments")
       case MUnion(ms) % name => ms mapFind {
@@ -201,7 +206,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
           // the prefix of the new constant
           val namePrefix = l match {
              case s: Structure => s.name
-             case v: View => LocalName(MorphismStep(v.toTerm))
+             case v: View => LocalName(ComplexStep(v.path))
           }
           val newName = namePrefix / e.name
           // translate e along assigOpt
@@ -215,9 +220,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                  new Constant(l.to, newName, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
               case r: Structure => assigOpt match {
                   case Some(a: DefLinkAssignment) =>
-                      new DefinedStructure(l.to, newName, r.from, a.target, false)
+                      new DefinedStructure(l.to, newName, r.fromPath, a.target, false)
                   case None =>
-                      new DefinedStructure(l.to, newName, r.from, OMCOMP(r.toTerm, l.toTerm), false) //TODO should be a DeclaredStructure
+                      new DefinedStructure(l.to, newName, r.fromPath, OMCOMP(r.toTerm, l.toTerm), false) //TODO should be a DeclaredStructure
                   case _ =>  throw GetError("link " + l.path + " provides non-StructureAssignment for structure " + r.path)
               }
           }
@@ -289,7 +294,10 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
             exp match {
                case TheoryExp.Empty => thy 
                case TUnion(ts) =>
-                  ts foreach {t => thy.add(Include(exp, t))}
+                  ts foreach {
+                    case OMMOD(p) => thy.add(Include(exp, p))
+                    // TODO: other cases 
+                  }
                   thy
                case OMMOD(_) => throw ImplementationError("impossible case")
                case _ => throw ImplementationError("cannot materialize; (note that materializing morphisms not implemented yet)")

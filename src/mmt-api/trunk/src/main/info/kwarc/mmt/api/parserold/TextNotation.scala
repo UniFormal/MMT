@@ -195,7 +195,7 @@ object TextNotation {
 //      case OMMOD(meta : MPath) => 
 //        "%meta " + meta.doc.last + "?" + meta.name + "."
         
-      case Include(from, to) => "%include " + to.toMPath.last + "."
+      case Include(from, to) => "%include " + to.last + "."
       case c : Constant =>
         println("constant : " + operators)
         val tp = c.tp match {

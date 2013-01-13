@@ -184,14 +184,18 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          case <import>{seq @ _*}</import> =>
             log("import " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
+            val fromPath = from match {
+               case OMMOD(p) => p
+               case _ => throw ParseError("domain of structure must be atomic")
+            }
             val isImplicit = parseImplicit(s2) 
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = new DefinedStructure(thy, name, from, df, isImplicit)
+                  val s = new DefinedStructure(thy, name, fromPath, df, isImplicit)
                   add(s,md)
                case assignments =>
-                  val s = new DeclaredStructure(thy, name, from, isImplicit)
+                  val s = new DeclaredStructure(thy, name, fromPath, isImplicit)
                   add(s,md)
                   readAssignments(OMDL(thy, name), base, assignments)
             }
@@ -230,10 +234,14 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             case <import>{_*}</import> =>
                log("assignment for " + name + " found")
                val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(a, "domain", base)
+               val fromPath = from match {
+                  case OMMOD(p) => p
+                  case _ => throw ParseError("domain of imported morphism must be atomic")
+               }
                rest.child match {
                   case List(<value>{t}</value>) =>
                      val tg = Obj.parseTerm(t, base)
-                     val m = new DefLinkAssignment(link, name, from, tg)
+                     val m = new DefLinkAssignment(link, name, fromPath, tg)
                      add(m, md)
                   case c => throw ParseError("value expected: " + c)
                }

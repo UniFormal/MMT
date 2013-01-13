@@ -140,7 +140,7 @@ class Checker(controller: Controller) {
               case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
             }
             if (a.name.isAnonymous) {
-               checkMorphism(a.target, a.from, l.to)
+               checkMorphism(a.target, OMMOD(a.from), l.to)
             } else {
                val s = content.getStructure(t.path ? a.name)
                if (s.from != a.from) throw Invalid("import-assignment has bad domain: found " + a.from + " expected " + s.from) 

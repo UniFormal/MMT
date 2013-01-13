@@ -113,8 +113,8 @@ case class GlobalName(module: Term, name: LocalName) extends ContentPath {
    def last = if (name.isAnonymous) "_" else name.last.toPath
    def apply(args: List[Term]) : Term = OMA(OMID(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
-   /** true iff the parent is a named module and each include step is a named module or structure */
-   def isSimple : Boolean = module.isInstanceOf[OMID] && name.steps.forall(_.isSimple)
+   /** true iff the parent is a named module and each include step is simple */
+   def isSimple : Boolean = module.isInstanceOf[OMID] && name.steps.forall(_.isInstanceOf[SimpleStep])
    def isGeneric = (module.toMPath == mmt.mmtcd)
 }
 
@@ -160,11 +160,11 @@ case class LocalName(steps: List[LNStep]) {
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
-   def apply(step: String) : LocalName = LocalName(NamedStep(step))
+   def apply(step: String) : LocalName = LocalName(SimpleStep(step))
    /** parses a LocalName that has no []-wrapped segments */
    def parse(s:String) = {
       val ref = Path.parseLocal(s)
-      LocalName(ref.segments.map(NamedStep(_)))
+      LocalName(ref.segments.map(SimpleStep(_)))
    }
    /** parses a LocalName, complex segments are parsed relative to base */
    def parse(base: Path, s: String) = Path.parseLocal(s).toLocalName(base)
@@ -176,26 +176,16 @@ abstract class LNStep {
    override def toString = toPath
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
-   /** true iff it's a structure or module reference */
-   def isSimple : Boolean
+   def /(n: LNStep) = LocalName(this) / n
 }
 /** constant or structure declaration */
-case class NamedStep(name: String) extends LNStep {
+case class SimpleStep(name: String) extends LNStep {
    def toPath = name
-   def isSimple = true
 }
 /** an include declaration; these are unnamed and identified by the imported theory */
-case class MorphismStep(from: Term) extends LNStep {
-   def toPath = {
-      val s = from match {
-         case OMID(p) => p.toPath
-         case OMIDENT(OMMOD(p)) => p.toPath
-         case t => t.toString.replace(" ", "_") 
-      }
-      "[" + s + "]"
-   }
+case class ComplexStep(path: MPath) extends LNStep {
+   def toPath = "[" + path.toPath + "]"
    /** true iff the IncludeStep is a named module */
-   def isSimple : Boolean = from.isInstanceOf[OMID]
 }
 
 case class CPath(parent: ContentPath, component: DeclarationComponent) extends Path {
@@ -221,8 +211,8 @@ object LNEmpty {
  */
 case class LocalRef(segments : List[String], absolute : Boolean) {
    def toLocalName(base: Path) = {
-      val steps = segments map {s => if (s.startsWith("[")) MorphismStep(OMIDENT(OMMOD(Path.parseM(s.substring(1,s.length - 1), base))))
-                                     else NamedStep(s)
+      val steps = segments map {s => if (s.startsWith("[")) ComplexStep(Path.parseM(s.substring(1,s.length - 1), base))
+                                     else SimpleStep(s)
                                }
       LocalName(steps)
    }

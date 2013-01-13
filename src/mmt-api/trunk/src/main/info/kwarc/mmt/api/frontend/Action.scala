@@ -489,7 +489,7 @@ case class ToWindow(pres : MakeConcrete, window: String) extends Output {
  */
 case class Respond(pres : MakeConcrete, param : String) extends Output {
    def get(controller : Controller) : scala.xml.Node = {
-      val rb = new XMLBuilder
+      val rb = new XMLBuilder // TODO try a to-be-written StringBuilder instead of XMLBuilder for speed
       pres.make(controller, rb)
       rb.get
    }
