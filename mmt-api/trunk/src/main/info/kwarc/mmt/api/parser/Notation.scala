@@ -2,10 +2,11 @@ package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
 import NotationConversions._
-import info.kwarc.mmt.api.utils.MyList._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
+import utils.MyList._
+import modules._
+import symbols._
+import objects._
+import presentation._ 
 
 /** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {
@@ -103,9 +104,9 @@ case object OMSNotation extends NotationType
 case class OMANotation(concretePositions: List[Int]) extends NotationType
 case class OMBINDNotation(vars: List[Int], scope: Int) extends NotationType
 
-class TextNotation(val name: GlobalName, val markers: List[Marker], val priority: Int) extends presentation.Notation {
+class TextNotation(val name: GlobalName, val markers: List[Marker], val precedence: Precedence) extends Notation {
    val wrap = false 
-   val oPrec = Some(presentation.Precedence.integer(priority))
+   val oPrec = Some(precedence)
 
    def getType = {
       val arguments = markers mapPartial {
@@ -136,20 +137,13 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val priority
    //TODO add other cases & check presentation
    lazy val pres = {  
      val tokens = markers map {
-       case Delim(s) => presentation.Fragment("constant", presentation.Text(name.toPath), presentation.Text(s))
-       case Arg(p) => presentation.Component(presentation.NumberedIndex(p + 1),oPrec.map(_.weaken))
-       case SeqArg(p,sep) => presentation.Iterate(presentation.NumberedIndex(1),
-    		  									 presentation.NumberedIndex(-1),
-    		  									 presentation.OpSep() + presentation.Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + presentation.OpSep(),
+       case Delim(s) => Fragment("constant", presentation.Text(name.toPath), presentation.Text(s))
+       case Arg(p) => Component(NumberedIndex(p),oPrec.map(_.weaken))
+       case SeqArg(p,sep) => Iterate(NumberedIndex(1),
+    		  									 NumberedIndex(-1),
+    		  									 OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
     		  									 oPrec.map(_.weaken))
      }
-     /*
-     if (isBinder) {
-       presentation.PList(tokens) + presentation.Component(presentation.NumberedIndex(-1),None)
-     } else {
-       presentation.PList(tokens)
-     }
-     */
      presentation.PList(tokens)
    }
    val key = presentation.NotationKey(Some(name), Role_Notation)
@@ -157,10 +151,8 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val priority
   
    override def toString = "Notation for " + name + ": " + markers.map(_.toString).mkString(" ")
    def toNode = 
-     <text-notation>
-      <name>{name}</name>
-         <markers>{markers.map(_.toNode)}</markers>
-       <priority>{priority}</priority>
+     <text-notation name={name.toPath} priority={precedence.toString}>
+       {markers.map(_.toNode)}
      </text-notation>
 
    // the first delimiter of this notation
@@ -169,7 +161,7 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val priority
       case SeqArg(_, Delim(s)) => Some(s)
       case _ => None
    }
-   /** @return firstDelimToken == next */
+   /** @return true if first delimiter Token is next */
    def applicable(next: Token): Boolean = {
       firstDelimString == Some(next.word)
    }
@@ -209,41 +201,19 @@ object TextNotation {
          case m: Marker => m
          case m => throw ParseError("not a valid marker" + m)
       }
-      new TextNotation(name, markers, priority)
+      new TextNotation(name, markers, Precedence.integer(priority))
    }
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
-    case <text-notation>{xmlName}{xmlMarkers}{xmlPriority}</text-notation> =>
-      val name = parseName(xmlName)
-      val markers = parseMarkers(xmlMarkers)
-      val priority = parsePriority(xmlPriority)
-      new TextNotation(name, markers, priority)
-    case _ => throw ParseError("Invalid XML representation of notation in \n" + n)
-  }
-  
-  private def parseName(n : scala.xml.Node) : GlobalName = n match {
-    case <name>{value}</name> => Path.parseS(value.toString, utils.mmt.mmtbase)
-    case _ => throw ParseError("Invalid XML representation of Notation name in: \n" + n)
-  }  
-    
-   
-  private def parsePriority(n : scala.xml.Node) : Int = n match {
-    case <priority>{value}</priority> =>
-      try {
-        value.toString.toInt
-      } catch {
-        case _ => throw ParseError("Invalid XML representation of notation priority (not an integer) in: \n" + n)
-      }
-    case _ => throw ParseError("Invalid XML representation of notation priority in: \n" + n)
+    case <text-notation>{xmlMarkers @ _*}</text-notation> =>
+      val name = Path.parseS(utils.xml.attr(n,"name"), utils.mmt.mmtbase)
+      val markers = xmlMarkers.map(x => parseMarker(x)).toList
+      val precedence = Precedence.parse(utils.xml.attr(n, "precedence"))
+      new TextNotation(name, markers, precedence)
+    case _ => throw ParseError("invalid notation in \n" + n)
   }
 
-  private def parseMarkers(n : scala.xml.Node) : List[Marker] = n match {
-    case <markers>{xmlMarkers @ _*}</markers> =>
-      xmlMarkers.map(x => parseMarker(x)).toList
-    case _ => throw ParseError("Invalid XML representation of marker list in: \n" + n)
-  }
-  
   private def parseMarker(n : scala.xml.Node) : Marker = n match {
     case <delim>{value @ _*}</delim> => Delim(value.text)
     case <sec-delim>{value @ _*}</sec-delim> => SecDelim(value.text, (n \ "@wsAllowed").text == "true")
@@ -357,7 +327,7 @@ object TextNotation {
 //      case OMMOD(meta : MPath) => 
 //        "%meta " + meta.doc.last + "?" + meta.name + "."
         
-      case Include(from, to) => "%include " + to.toMPath.last + "."
+      case Include(from, to) => "%include " + to.last + "."
       case c : Constant =>
         println("constant : " + operators)
         val tp = c.tp match {

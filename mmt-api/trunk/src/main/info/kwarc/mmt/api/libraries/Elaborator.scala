@@ -111,7 +111,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
       }
     }
 
-    includes.map(p => Include(OMMOD(t.path), OMMOD(p))).toList ::: imports
+    includes.map(p => Include(OMMOD(t.path), p)).toList ::: imports
 
   }
 
@@ -121,36 +121,25 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
    */
   def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit = e match {
     case t : DeclaredTheory =>
-      val elabImports : List[DeclaredStructure] =  importsTo(t)
+      val elabImports : List[DeclaredStructure] = importsTo(t)
 
       totalImports += elabImports.length
       thys += 1
-
-
-
       var newDecs = new HashSet[Constant]()
-
       var rewriteRules = new HashMap[Path,Term]
-
-
-
       //s.home == t.path
-
       elabImports map {s =>
-        s.from match {
-          case OMMOD(p) =>
-            if (s.domain.isEmpty) { //import is an include
-            val impThy = content.get(p)
-              impThy.components collect  {
+            val p = s.fromPath
+            if (s.domain.isEmpty) { //import is essentially an include
+              val impThy = content.getTheory(p)
+              impThy.components collect {
                 case c : Constant =>
-                  val nwName = new LocalName(NamedStep(c.home.toMPath.toPath) :: Nil) / (c.name)
+                  val nwName = ComplexStep(impThy.path) / c.name
                   val nwHome = OMMOD(t.path)
-
                   rewriteRules += (c.home.toMPath ? c.name -> OMID(nwHome.toMPath ? nwName))
-
                   newDecs += c
               }
-            } else { // import is a struct defined by a link
+            } else { // import is a struct defined by assignments
               s.domain map {x =>
                 val ass = s.get(x)
                 ass match {
@@ -161,10 +150,6 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
                 }
               }
             }
-
-          case _ =>
-            None
-        }
       }
 
 
@@ -173,7 +158,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
 
       newDecs foreach {
         case c : Constant =>
-          val nwName = new LocalName(NamedStep(c.home.toMPath.toPath) :: Nil) / (c.name)
+          val nwName = c.name
           val nwHome = OMMOD(t.path)
 
           val ntp = c.tp.map(rewrite(_)(rewriteRules))

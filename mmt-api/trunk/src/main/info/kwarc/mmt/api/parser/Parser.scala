@@ -1,9 +1,10 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.frontend._
+import objects._
+import symbols._
+import frontend._
+import presentation._
 import utils.MyList._
 
 import scala.collection.immutable.{HashMap}
@@ -42,7 +43,7 @@ object TermParser {
      decls collect {
        case c : Constant => c.not match {
          case Some(not) => not 
-         case None => new TextNotation(c.path, List(Delim(c.name.toPath)), 0)
+         case None => new TextNotation(c.path, List(Delim(c.name.toPath)), presentation.Precedence.integer(0))
        }
      }
    }
@@ -50,7 +51,7 @@ object TermParser {
 
 /** A default parser that parses any string into an OMSemiFormal object. */
 object DefaultParser extends TermParser {
-   def apply(pu: ParsingUnit): Term = OMSemiFormal(Text(pu.scope.toMPath.toPath, pu.term))
+   def apply(pu: ParsingUnit): Term = OMSemiFormal(objects.Text(pu.scope.toMPath.toPath, pu.term))
 }
 
 
@@ -66,9 +67,9 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
     * and the scope (base path) of the parsing unit
     * returned list is sorted (in increasing order) by priority
     */
-   def buildNotations(scope : Term) : List[(Int,List[TextNotation])] = {
+   def buildNotations(scope : Term) : List[(Precedence,List[TextNotation])] = {
       val notations = TermParser.getNotations(controller, scope)  
-      val qnotations = notations.groupBy(x => x.priority).toList
+      val qnotations = notations.groupBy(x => x.precedence).toList
       qnotations.sortWith((p1,p2) => p1._1 < p2._1)
    } 
   
@@ -83,7 +84,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
                OMV(LocalName(word))
             else
                //in all other cases, we don't know
-               OMSemiFormal(Text("unknown", word))
+               OMSemiFormal(objects.Text("unknown", word))
          case ml : MatchedList =>
             log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound

@@ -35,7 +35,7 @@ object Names {
       if (qualifiers.isEmpty) {
          incls flatMap {i => lookIn(i, partialName)}
       } else {
-         val name = LocalName(qualifiers map NamedStep)
+         val name = LocalName(qualifiers map SimpleStep)
          lib.getO(home % name) match {
             case Some(l : Structure) => resolve(l.from, Nil, partialName)
             case Some(_) => Nil

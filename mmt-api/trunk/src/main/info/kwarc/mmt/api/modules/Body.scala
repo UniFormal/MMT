@@ -126,11 +126,11 @@ trait Body[S <: Declaration] {
       }
    }
    /** gets the unnamed declaration with a certain key */
-   def get(key: Term) : Option[S] = {
+   def get(key: MPath) : Option[S] = {
       implicits find {d => d.implicitKey == Some(key)}
    }
    /** deletes the unnamed declaration with a certain key */
-   def delete(key: Term) {
+   def delete(key: MPath) {
       get(key) match {
          case Some(d) =>  
             implicits -= d
