@@ -4,7 +4,7 @@ import metadata._
 import documents._
 import modules._
 import parser._
-import patterns.Pattern
+import patterns._
 import objects._
 import symbols._
 import utils._
@@ -1496,30 +1496,14 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     i += 1    // jump over "="
     i = skipws(i)
     
-    var theory : Theory = null
         
-    if (flat.codePointAt(i) == '{') {
-       // It's a DeclaredTheory
-       i = expectNext(i, "{")
-       // <-----------  how to manage specs in controller?
-       // add the (empty, for now) theory to the controller
-       val declTheory = new DeclaredTheory(tpath.parent, tpath.name, meta)
-       theory = declTheory
-       add(theory)
-//        read the theory body
-       i = crawlSpecBody(i, declTheory)
-    }
-    //TODO drop this?
-//    else {
-//      // It's a DefinedTheory
-//      val (theoryExp, positionAfter) = crawlTerm(i, Nil, Nil, tpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
-//      i = positionAfter
-//      theory = new DefinedTheory(tpath.parent, tpath.name, theoryExp)
-//      add(theory)
-//      if (meta.isDefined) {
-//         errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(warning = true)
-//      }
-//    }
+    i = expectNext(i, "{")
+    // <-----------  how to manage specs in controller?
+    // add the (empty, for now) theory to the controller
+    val theory = new DeclaredTheory(tpath.parent, tpath.name, meta)
+    add(theory)
+    //        read the theory body
+    i = crawlSpecBody(i, theory)
 
     val endsAt = expectNext(i, ".")
 
@@ -1561,7 +1545,12 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       }
       else if (flat.startsWith("%instance", i)) {
         // read pattern instance
-        i = crawlInstanceDeclaration(i, parent, thm)
+        i = skipws(crawlKeyword(start, "%instance"))
+        val (name, positionAfter) = crawlIdentifier(i)
+        i = positionAfter
+        i = skipwscomments(i)
+        val pattern = parent.path ? name
+        i = crawlInstanceDeclaration(i, parent.toTerm, pattern)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
@@ -1576,65 +1565,47 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     return i
   }
   
-  /** reads a instance declaration.
+    /** 
+     * reads a instance declaration.
      * @param start the position of the initial % from %instance
      * @param parent the parent theory
+     * @param pattern the pattern
      * @return position after the block/
-     * @throws SourceError for syntactical errors */
-  
-  /** expected instance declaration syntax
-   *  example:
-   *   %instance 	prop 					prop1 				p
-   *   keyword		local URI of pattern	instance name		argument list
-   */
-   private def crawlInstanceDeclaration(start: Int, parent: Theory, from : Term) : Int =
+     * @throws SourceError for syntactical errors
+     * example instance declaration syntax
+     *   (%instance pattern) name arg1 ... argn
+     *   (%pattern) name arg1 ... argn
+     */
+   private def crawlInstanceDeclaration(start: Int, parent: Term, pattern: GlobalName) : Int =
    {
      //var domain : Option[Term] = None
      //var isImplicit : Boolean = false
-
+     var i = start
      val oldComment = keepComment
-
-     var i = skipws(crawlKeyword(start, "%instance"))
-
-     // parse the name of the pattern
-     val (name, positionAfter) = crawlIdentifier(i)
-     i = positionAfter
-     i = skipwscomments(i)
-     val patternMPath = parent.path / name //TODO is that the correct local URI of the pattern?
-
-     
-     // parent theorem not in controller by default, have to read it as well
-     val pc = new patterns.PatternChecker(controller)
-     val pl = pc.getPatterns(from)(1)
-     
      // parse instance name
-     val (nameI, positionAfterI) = crawlIdentifier(i)
+     val (n, positionAfter) = crawlIdentifier(i)
+     val nameI = LocalName(n)
      i = positionAfter
      i = skipwscomments(i)
-     val instanceMPath = parent.path / nameI     
+     val instancePath = parent % nameI     
 
-     val (parameterContext, posAfter) = crawlParameterList(i, patternMPath)
-     i = posAfter
-     
-     // parse the pattern body
-//     val (body, posAfterPatternBody) = crawlPatternBody(i, patternMPath, parameterContext)
-//     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
-
+     var args : List[Term] = Nil
+     while (flat.charAt(i) != '.') {
+        val Pair(t,posAfter) = crawlTerm(i, Nil, List(","), instancePath $ DefComponent, parent)
+        args = args ::: List(t)
+        i = posAfter
+     }
      val endsAt = expectNext(i, ".")
-
 //     // add the semantic comment and source reference
 //     addSemanticComment(pattern, oldComment)
 //     addSourceRef(pattern, start, endsAt)
 
 //     // add the pattern instance to the parent theory
-//     add(instance)
+      val matches = null
+      val instance = new Instance(parent, nameI, pattern, matches)
+      add(instance)
      
-     /** class Instance(val home : Term, 
-      * 				val name : LocalName, 
-      * 				val pattern : GlobalName, 
-      * 				val matches : Substitution)
-      */
-     return endsAt + 1
+      return endsAt + 1
    }
 
   
