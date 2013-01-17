@@ -84,12 +84,12 @@ case object NegInfinite extends InfInt("-infinity") {
 /** helper object for InfInts */
 object InfInt {
    /** parses a InfInt from a string */
-   def parse(s : String) : InfInt = s match {
+   def parse(s : String) : InfInt = s.trim match {
       case "infinity" => Infinite
       case "-infinity" => NegInfinite
-      case _ =>
-         try {Finite(s.toInt)}
-         catch {case _ => throw ParseError("illegal InfInt: " + s)}
+      case i =>
+         try {Finite(i.toInt)}
+         catch {case _ => throw ParseError("illegal InfInt: " + i)}
    }
 }
 

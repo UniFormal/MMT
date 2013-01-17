@@ -768,7 +768,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   {
     var i = skipws(crawlKeyword(start, "%meta"))
     val (metaTheoryName, positionAfter) = crawlIdentifier(i)    // read meta theory name
-    parent.meta = Some(Path.parseM(moduleToAbsoluteURI(i, metaTheoryName).toString, parent.path))
+    parent.meta = moduleToAbsoluteURI(i, metaTheoryName)
     i = positionAfter
     val endsAt = expectNext(i, ".")
     return endsAt + 1
@@ -1229,11 +1229,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
        i = expectNext(i, ":") + 1
        i = skipwscomments(i)
        val (mtId, positionAfterMeta) = crawlIdentifier(i)
-       val mtTerm = moduleToAbsoluteURI(i, mtId)
-       mtTerm match {
-          case OMMOD(mt) => meta = Some(mt)
-          case _ => errors :+ TextParseError(toPos(i), "could not read meta-theory")
-       }
+       meta = moduleToAbsoluteURI(i, mtId)
        i = positionAfterMeta
     }
     i = expectNext(i, "=")

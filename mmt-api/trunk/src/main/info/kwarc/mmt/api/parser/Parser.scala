@@ -38,15 +38,19 @@ object TermParser {
   def getNotations(controller : Controller, scope : Term) : List[TextNotation] = {
      val includes = controller.library.visible(scope)
      val decls = includes.toList flatMap {tm => 
-       controller.globalLookup.get(tm.toMPath).components //TODO: should not use .components
+        controller.globalLookup.getDeclaredTheory(tm.toMPath).getConstants
      }
-     decls collect {
-       case c : Constant => c.not match {
-         case Some(not) => not 
-         case None => new TextNotation(c.path, List(Delim(c.name.toPath)), presentation.Precedence.integer(0))
+     decls.collect {case c => 
+       c.not.getOrElse { 
+          new TextNotation(c.path, List(Delim(c.name.toPath)), presentation.Precedence.integer(0))
        }
      }
    }
+  val unknown = utils.mmt.mmtcd ? "unknown"
+  def splitOffUnknowns(t: Term) = t match {
+     case OMBIND(OMID(TermParser.unknown), us, s) => (us, s)
+     case _ => (Context(), t)
+  }
 }
 
 /** A default parser that parses any string into an OMSemiFormal object. */
@@ -61,38 +65,61 @@ object DefaultParser extends TermParser {
 class NotationParser(controller : Controller) extends TermParser with Logger {
    val report = controller.report
    val logPrefix = "parser"  
+   private val prag = controller.pragmatic   
   
    /**
     * builds parsers notation context based on content in the controller 
     * and the scope (base path) of the parsing unit
     * returned list is sorted (in increasing order) by priority
     */
-   def buildNotations(scope : Term) : List[(Precedence,List[TextNotation])] = {
-      val notations = TermParser.getNotations(controller, scope)  
+   protected def buildNotations(scope : Term) : List[(Precedence,List[TextNotation])] = {
+      val notations = TextNotation.bracketNotation :: TermParser.getNotations(controller, scope)  
       val qnotations = notations.groupBy(x => x.precedence).toList
       qnotations.sortWith((p1,p2) => p1._1 < p2._1)
    } 
-  
+
+   /**
+    * declarations of the implicit variables
+    */
+   // due to the recursive processing, variables in children are always found first
+   // so adding to the front yields the right order
+   private var vardecls: List[VarDecl] = Nil
+   private var counter = 0
+   private def newArgument: OMV = {
+     val name = LocalName("") / "argument" / counter.toString
+     val tname = LocalName("") / "argumentType" / counter.toString
+     vardecls = VarDecl(tname,None,None) ::
+                VarDecl(name,Some(OMV(tname)),None) :: vardecls
+     counter += 1
+     OMV(name)
+   }
+   private def newType(name: LocalName): OMV = {
+      val tname = name / "type"
+      vardecls ::= VarDecl(tname,None,None)
+      OMV(tname)
+   }
+   
    /**
     * transforms a TokenList (usually obtained from a [[info.kwarc.mmt.api.parser.Scanner]]) to an MMT Term 
     */
-   def makeTerm(te : TokenListElem, boundVars: List[String]) : Term = {
+   private def makeTerm(te : TokenListElem, boundVars: List[LocalName]) : Term = {
       te match {
          case Token(word, _, _) =>
-            if (boundVars contains word)
+            if (boundVars contains LocalName(word))
                //single Tokens may be bound variables
                OMV(LocalName(word))
             else
                //in all other cases, we don't know
-               OMSemiFormal(objects.Text("unknown", word))
+               throw ParseError("unbound token: " + word)
+               //OMSemiFormal(objects.Text("unknown", word))
          case ml : MatchedList =>
             log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
             // compute the names of all bound variables, in abstract syntax order
-            val newBVars: List[String] = found.mapPartial {
-               case FoundVar(n,_,name,_) => Some((n,name))
+            val newBVars: List[LocalName] = found.mapPartial {
+               case FoundVar(n,_,name,_) => Some((n,LocalName(name.word)))
                case _ => None
-            }.sortBy(_._1).map(_._2.word)
+            }.sortBy(_._1).map(_._2)
             //stores the argument list in concrete syntax order, together with their position in the abstract syntax
             var args : List[(Int,Term)] = Nil 
             //stores the variable declaration list (name + type) in concrete syntax order together with their position in the abstract syntax
@@ -126,8 +153,12 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
                   }
                   vars ::= (n, name.word, t) 
             }
+            val con = ml.an.notation.name
+            // hard-coded special case for a bracketed subterm
+            if (con == utils.mmt.brackets)
+               return args(0)._2
             // the head of the produced Term
-            val head = OMID(ml.an.notation.name)
+            val head = OMID(con)
             //construct a Term according to args, vars, and scopes
             //this includes sorting args and vars according to the abstract syntax
             val result = if (vars == Nil && scopes == Nil) {
@@ -136,16 +167,42 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
                   head
                else {
                   // no vars, scopes --> OMA
-                  val orderedArgs = args.sortBy(_._1).map(_._2)
-                  OMA(head, orderedArgs)
+                  val orderedArgs = args.sortBy(_._1)
+                  var finalArgs : List[Term] = Nil
+                  orderedArgs.foreach {case (i,arg) =>
+                     // add implicit arguments as needed
+                     while (i > finalArgs.length + 1) {
+                        //generate fresh meta-variable
+                        val metaVar = newArgument
+                        val implArg = if (boundVars == Nil)
+                           metaVar
+                        else {
+                           //under a binder, apply meta-variable to all bound variables
+                           prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
+                        }
+                        finalArgs ::= implArg
+                     }
+                     finalArgs ::= arg
+                  }
+                  prag.strictApplication(con.module.toMPath, head, finalArgs.reverse)
                }
             } else if (args == Nil && vars != Nil && scopes.length == 1) {
                   // no args, some vars, and 1 scope --> OMBIND
                   val orderedVars = vars.sortBy(_._1).map {
-                     case (_, name, tp) => VarDecl(LocalName(name), tp, None)
+                     case (_, name, tp) =>
+                        //replace omitted type with meta-variable
+                        val vname = LocalName(name)
+                        val metaVar = tp.getOrElse(newType(vname)) 
+                        val finalTp = if (boundVars == Nil)
+                           metaVar
+                        else {
+                           //under a binder, apply meta-variable to all bound variables
+                           prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
+                        }
+                        VarDecl(vname, Some(finalTp), None)
                   }
                   val context = Context(orderedVars : _*)
-                  OMBIND(head, context, scopes(0)._2)
+                  prag.strictBinding(con.module.toMPath, head, context, scopes(0)._2)
             } else
                   //not all combinations correspond to Terms
                   //this should only happen for ill-formed notations
@@ -170,29 +227,34 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
   
   def apply(pu : ParsingUnit) : Term = {    
     //gathering notations in scope
-    val qnotations = buildNotations(pu.scope)    
-    
-    log("Started parsing " + pu.term + " with operators : ")
+    val qnotations = buildNotations(pu.scope)
+    // reset generated variables
+    vardecls = Nil
+    log("parsing: " + pu.term)
+    /*log("notations:")
     logGroup {
        qnotations.map(o => log(o.toString))
-    }
+    }*/
     
     //scanning
     val sc = new Scanner(TokenList(pu.term), controller.report)
     qnotations reverseMap {
          case (priority,nots) => sc.scan(nots)
     }
-    log("#####   scan result: " + sc.tl.toString)
+    log("scan result: " + sc.tl.toString)
     
     //structuring
-    val varnames = pu.context.variables.map(_.name.toPath).toList
+    val varnames = pu.context.variables.map(_.name).toList
     sc.tl.length match {
        case 1 =>
           val tm = logGroup {
              makeTerm(sc.tl(0), varnames)
           }
-          log("##### parse result: "  + tm.toNode)
-          tm
+          log("parse result: "  + tm.toString)
+          if (vardecls == Nil)
+             tm
+          else
+             OMBIND(OMID(TermParser.unknown), Context(vardecls: _*),tm)
        case _ => throw ParseError("unmatched list: " + sc.tl)
     }
   }

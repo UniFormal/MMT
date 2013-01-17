@@ -168,7 +168,10 @@ case class Token(word: String, first:Int, whitespaceBefore: Boolean) extends Tok
  * TokenSlice's in an.getFound are invalid. 
  */
 class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation, val first: Int, val last: Int) extends TokenListElem {
-   override def toString = tokens.map(_.toString).mkString("{" + an.notation.name + " ", " ", " " + an.notation.name + "}")
+   override def toString = if (tokens.isEmpty)
+     "{" + an.notation.name.last + "}"
+   else
+     tokens.map(_.toString).mkString("{" + an.notation.name.last + " ", " ", " " + an.notation.name.last + "}")
    /** removes the redundant UnmatchedList wrapper around a single MatchedList in this list */
    def flatten {
       tokens = tokens map {
@@ -189,7 +192,7 @@ class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation, val f
  */
 class UnmatchedList(val tl: TokenList) extends TokenListElem {
    var scanner: Scanner = null
-   override def toString = "{ " + tl.toString + " }"
+   override def toString = "{unmatched " + tl.toString + " unmatched}"
    def first = tl(0).first
    def last = tl(tl.length - 1).last
 }

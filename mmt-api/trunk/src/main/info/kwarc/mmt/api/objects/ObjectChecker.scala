@@ -24,18 +24,24 @@ class DelayedConstraint(val constraint: Judgement) {
 
 /**
  * A Solver is used to solve a system of constraints about Term's given as judgments.
+ * 
  * The judgments may contain unknown variables (also called meta-variables or logic variables);
  * variables may represent any MMT term, i.e., object language terms, types, etc.;
  * the solution is a Substitution that provides a closed Term for every unknown variable.
  * (Higher-order abstract syntax should be used to represent unknown terms with free variables as closed function terms.) 
+ * 
  * The Solver decomposes the judgments individually by applying typing rules, collecting (partial) solutions along the way and possibly delaying unsolvable judgments.
+ * If the unknown variables are untyped and rules require a certain type, the Solver adds the type.
+ * 
  * Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
+ * 
  * @param controller an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.
  * @param unknowns the list of all unknown variables including their types and listed in dependency order;
  *   unknown variables may occur in the types of later unknowns.
+ * 
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
-class Solver(val controller: Controller, theory: Term, unknowns: Context) {
+class Solver(val controller: Controller, theory: Term, unknowns: Context) extends Logger {
    /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
    private var solution : Context = unknowns
    /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
@@ -51,10 +57,10 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
     */
    def getSolution : Option[Substitution] = if (delayed.isEmpty) solution.toSubstitution else None
 
-   /** shortcut the controller's report instance for logging */ 
-   private val report = controller.report
-   /** shortcut for the log function; in the MMT shell, call "log+ object-checker" to activate logging for this component */
-   private def log(s: => String) = report("object-checker", s)
+   /** for Logger */ 
+   val report = controller.report
+   /** prefix used when logging */ 
+   val logPrefix = "object-checker"
    /** shortcut for the global Lookup of the controller; used to lookup Constant's */
    private val content = controller.globalLookup
    /** shortcut for the RuleStore of the controller; used to retrieve Rule's */
@@ -92,12 +98,14 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
       res
    }
    /** registers the solution for a variable
+    * 
     * If a solution exists already, their equality is checked.
-    * @param solve the solved variable
-    * @param the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable
+    * @param name the solved variable
+    * @param value the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable
     * @return true unless the solution differs from an existing one
     */
    private def solve(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
+      log("solving " + name + " as " + value)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
          checkEquality(value, solved.df.get, solved.tp) //TODO
@@ -107,6 +115,24 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
          true
       }
    }
+   /** registers the solved type for a variable
+    * 
+    * If a type exists already, their equality is checked.
+    * @param name the variable
+    * @param value the type; must not contain object variables, but may contain meta-variables that are declared before the solved variable
+    * @return true unless the type differs from an existing one
+    */
+   private def solveType(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
+      val (left, solved :: right) = solution.span(_.name != name)
+      if (solved.tp.isDefined)
+         checkEquality(value, solved.tp.get, None) //TODO
+      else {
+         solution = left ::: solved.copy(tp = Some(value)) :: right
+         //no need to register this in newsolutions
+         true
+      }
+   }
+   
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
     *  @param j the Judgement
@@ -141,7 +167,11 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
      val res = tm match {
        // the foundation-independent cases
        case OMV(x) => (unknowns ++ stack.context)(x).tp match {
-         case None => false //untyped variable type-checks against nothing
+         case None =>
+            if (unknowns.isDeclared(x))
+              solveType(x, tp) //TODO: check for occurrences of bound variables?
+            else
+              false //untyped variable type-checks against nothing
          case Some(t) => checkEquality(t, tp, None)
        }
        case OMS(p) =>
@@ -256,6 +286,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
      res
    }
    
+   case object Delay extends java.lang.Throwable
+   
    /** proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.
     * @param tm1 the first term
     * @param tm2 the second term
@@ -273,7 +305,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
       // identical terms
       if (tm1 == tm2) return true
       // solve an unknown
-      val solved = tryToSolve(tm1, tm2) || tryToSolve(tm2, tm1)
+      val solved = try {tryToSolve(tm1, tm2) || tryToSolve(tm2, tm1)}
+                   catch {case Delay => delay(Equality(stack,tm1,tm2,tpOpt))}
       if (solved) return true
 
       // use the type for foundation-specific equality reasoning
@@ -320,8 +353,18 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
    private def tryToSolve(tm1: Term, tm2: Term)(implicit stack: Stack): Boolean = {
       tm1 match {
          //foundation-independent case: direct solution of an unknown variable
-         case OMV(m) if unknowns.isDeclared(m) && tm2.freeVars.isEmpty => //forall {v => context.isDeclaredBefore(v,m)}
-            solve(m, tm2)
+         case OMV(m) if unknowns.isDeclared(m) =>
+            val fvs = tm2.freeVars
+            if (fvs.isEmpty)
+               solve(m, tm2)
+            else if (fvs.forall(unknowns.isDeclared(_))) //forall {v => context.isDeclaredBefore(v,m)}
+               // delay until other meta-variables are solved
+               // TODO: registering solution in terms of preceding meta-variables might save time
+               throw Delay
+            else
+               false // meta-variable solution has free variable --> type error
+                     // TODO: need to simplify tm2 in case free variable disappears
+               
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendages(h,_) :: _) if unknowns.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
             ruleStore.solutionRules.get(h) match {
@@ -407,3 +450,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
    }
 }
 
+//TODO
+//types of unknowns should be omittable
+//tryToSolve should get type argument; should solve type as well if possible
+//solved variables should be fully simplified
+//equality judgment should be solved by simplification if no other rule is available
+//equality freeness rule should provide type if known to avoid re-inference

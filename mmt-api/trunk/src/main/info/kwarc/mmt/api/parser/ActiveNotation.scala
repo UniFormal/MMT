@@ -141,6 +141,20 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
                  }
               } else
                  NotApplicable //abort?
+         // variable without type: x t | rest
+         case (Nil, Var(n, Delim(s)) :: Delim(t) :: _) if ! inVar(n) && s != currentToken.word && t == currentToken.word =>
+              if (numCurrentTokens == 1) {
+                 onApply {
+                    val vr = scanner.pick(1)
+                    val name = vr.toList(0).asInstanceOf[Token]
+                    found ::= FoundVar(n, vr.start, name, None)
+                    delete(1)
+                    deleteDelim(currentIndex)
+                 }
+              } else {
+                 NotApplicable //abort
+              }
+         // variable with type: x s | type rest
          case (Nil, Var(n, Delim(s)) :: _) if ! inVar(n) && s == currentToken.word =>
               if (numCurrentTokens == 1) {
                  onApply {
@@ -151,6 +165,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
               } else {
                  NotApplicable //abort
               }
+         // type of variable: type s | rest
          case (Nil, Var(n, _) :: Delim(s) :: _) if inVar(n) && s == currentToken.word =>
                  onApply {
                     found match {

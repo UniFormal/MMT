@@ -16,7 +16,7 @@ import presentation.{NotationProperties, StringLiteral, Omitted}
  * @param rl the role of the constant
  */
 class Constant(val home : Term, val name : LocalName,
-               val tp : Option[Term], val df : Option[Term], val rl : Option[String], val not: Option[TextNotation]) extends Symbol {
+               var tp : Option[Term], var df : Option[Term], val rl : Option[String], val not: Option[TextNotation]) extends Symbol {
   def toTerm = OMID(path)
 
   def role = Role_Constant(rl)
