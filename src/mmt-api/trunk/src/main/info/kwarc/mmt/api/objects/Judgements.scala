@@ -15,7 +15,7 @@ abstract class Judgement {
 
 /** A WFJudgment defines well-formed objects */
 abstract class WFJudgement extends Judgement {
-   val wfo: Obj
+   val wfo: Term
 }
 
 /** represents an equality judgement, optionally at a type

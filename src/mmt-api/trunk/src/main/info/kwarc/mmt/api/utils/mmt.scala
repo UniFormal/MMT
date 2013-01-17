@@ -8,6 +8,7 @@ object mmt {
    def mmtsymbol(name : String) = mmtcd ? name
    val mmttype = mmtsymbol("type")
    val mmtdef = mmtsymbol("definiens")
+   val brackets = mmtsymbol("brackets")
    val identity = mmtsymbol("identity")
    val composition = mmtsymbol("composition")
    val morphismapplication = mmtsymbol("morphismapplication")
@@ -32,7 +33,7 @@ object mmt {
    val plus = mmtsymbol("plus")
    val minus = mmtsymbol("minus")
    val times = mmtsymbol("times")*/
-   val explmorph = mmtsymbol("explicit morphism")
+   val explmorph = mmtsymbol("explicitmorphism")
    val functorapplication = mmtsymbol("functorapplication")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }

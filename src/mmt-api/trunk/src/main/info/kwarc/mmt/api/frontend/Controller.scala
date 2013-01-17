@@ -69,6 +69,8 @@ class Controller extends ROController {
 
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
+   /** pragmatic MMT features besides Patterns */
+   val pragmatic = new Pragmatics(this)
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
@@ -83,8 +85,6 @@ class Controller extends ROController {
    val backend = new Backend(extman, report)
    /** the checker for the validation of ContentElement's and objects */
    val checker = new Checker(this)
-   /** pragmatic MMT features besides Patterns */
-   val pragmatic = new Pragmatics(this)
    /** the MMT rendering engine */
    val presenter = new presentation.Presenter(this, report)
    /** the query engine */
@@ -407,7 +407,7 @@ class Controller extends ROController {
             tg.exportDot(f)
 	      case Check(p) =>
 	         try {
-	            checker.check(p)( _ => (), _ => ())
+	            checker.check(p)( _ => (), _ => None)
 	            log("check succeeded")
 	         } catch {
 	          case e: Error =>

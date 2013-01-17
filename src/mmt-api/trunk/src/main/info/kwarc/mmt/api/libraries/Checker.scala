@@ -52,7 +52,7 @@ class Checker(controller: Controller) {
     * @param unitCont a continuation called on every validation unit
     */ 
    //TODO: currently the reconstructed element is always e
-   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
+   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Option[Term]) {
       val path = e.path
       log("checking " + path)
       implicit val rel = (p: Path) => reCont(RefersTo(path, p))
@@ -103,16 +103,28 @@ class Checker(controller: Controller) {
             checkTheory(s.from)
             checkMorphism(s.df, s.from, s.home)
          case c : Constant =>
-            c.tp map {t => 
-               checkTerm(c.home, t)
-               OMMOD.unapply(c.home) foreach {p => unitCont(ValidationUnit(c.path $ TypeComponent, Universe(Stack(p), t)))}
-            }
-            c.df map {d => 
-               checkTerm(c.home, d)
-               OMMOD.unapply(c.home) foreach {p =>
-                  c.tp foreach {tp => unitCont(ValidationUnit(c.path $ DefComponent, Typing(Stack(p), d, tp)))}
+            val tRR = c.tp flatMap {t => 
+               val (unknowns,tU) = parser.TermParser.splitOffUnknowns(t)
+               val tR = checkTerm(c.home, unknowns, tU)
+               OMMOD.unapply(c.home) flatMap {p =>
+                  val j = Universe(Stack(p), tR)
+                  unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
                }
             }
+            c.tp = tRR
+            val dRR:Option[Term] = c.df flatMap {d => 
+               val (unknowns,dU) = parser.TermParser.splitOffUnknowns(d)
+               val dR = checkTerm(c.home, unknowns, dU)
+               OMMOD.unapply(c.home) flatMap {p =>
+                  tRR match {
+                    case None => Some(dU)
+                    case Some(tp) =>
+                      val j = Typing(Stack(p), dU, tp)
+                      unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+                  }
+               }
+            }
+            c.df = dRR
             /*
             val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
             c.tp map {t =>
@@ -175,7 +187,7 @@ class Checker(controller: Controller) {
       }
    }
    
-   def check(p: Path)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
+   def check(p: Path)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Option[Term]) {
       check(controller.get(p))
    }
 

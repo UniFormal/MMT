@@ -21,10 +21,10 @@ trait ValidatedArchive extends WritableArchive {
          val mpath = Archive.ContentPathToMMTPath(inPath)
          val rels = new HashSet[RelationalElement]
          def reCont(r : RelationalElement) = {
-           rels += r
-           controller.memory.ontology += r
+            rels += r
+            controller.memory.ontology += r
          }
-         controller.checker.check(mpath)(reCont, _ => ())
+         controller.checker.check(mpath)(reCont, _ => None)
          val relFile = (relDir / inPath).setExtension("occ")
          relFile.getParentFile.mkdirs
          val relFileHandle = File.Writer(relFile)
@@ -36,13 +36,19 @@ trait ValidatedArchive extends WritableArchive {
    /** checks modules in content structurally and then validates all ValidationUnits */
     def validate(in: List[String] = Nil, controller: Controller) {
 
-      def validateUnit(v: ValidationUnit) {
-         val solver = new Solver(controller, v.judgement.stack.theory, Context())
-         val result = solver(v.judgement)
-         if (result && solver.getSolution.isDefined)
+      def validateUnit(v: ValidationUnit) : Option[Term] = {
+         log("validation unit " + v.component + ": " + v.judgement)
+         val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
+         val result = logGroup{solver(v.judgement)}
+         val solution = solver.getSolution
+         if (result && solution.isDefined) {
             log("validated " + v.component)
-         else
+            log("solution: " + solution.get.toString)
+            Some(v.judgement.wfo ^ solution.get)
+         } else {
             log("errors while validating " + v.component)
+            None
+         }
       }
        
       traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>

@@ -4,6 +4,7 @@ import symbols._
 import libraries._
 import objects._
 import utils._
+import utils.MyList._
 import presentation.{StringLiteral,Omitted}
 
 abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
@@ -20,6 +21,29 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
       extends Theory(doc, name) with DeclaredModule[Symbol] {
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   /** convenience method to obtain all constants */
+   def getConstants:List[Constant] = valueList.mapPartial {
+      case c: Constant => Some(c)
+      case _ => None
+   }
+   /** convenience method to obtain all included theories (including a possible meta-theory) */
+   def getIncludes:List[MPath] = {
+     val incls = valueList.mapPartial {
+        case s:Structure if s.name.isAnonymous => Some(s.fromPath)
+        case _ => None
+     }
+     meta.toList ::: incls
+   }   
+   /** convenience method to obtain all named structures */
+   def getNamedStructures:List[Structure] = valueList.mapPartial {
+      case s: Structure if ! s.name.isAnonymous => Some(s)
+      case _ => None
+   }   
+   /** convenience method to obtain all patterns */
+   def getPatterns:List[patterns.Pattern] = valueList.mapPartial {
+      case p: patterns.Pattern => Some(p)
+      case _ => None
+   }
    override def compNames = List(("name", 0), ("meta",1))
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =

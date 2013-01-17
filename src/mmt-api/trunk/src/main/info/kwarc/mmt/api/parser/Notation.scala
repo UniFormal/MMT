@@ -151,7 +151,7 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
   
    override def toString = "Notation for " + name + ": " + markers.map(_.toString).mkString(" ")
    def toNode = 
-     <text-notation name={name.toPath} priority={precedence.toString}>
+     <text-notation name={name.toPath} precedence={precedence.toString}>
        {markers.map(_.toNode)}
      </text-notation>
 
@@ -173,8 +173,7 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
 }
 
 object TextNotation {
-  
-   def apply(name: GlobalName, priority: Int)(ms: Any*): TextNotation = {
+   def apply(name: GlobalName, prec: Precedence)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case "" => throw ParseError("not a valid marker")
@@ -201,8 +200,14 @@ object TextNotation {
          case m: Marker => m
          case m => throw ParseError("not a valid marker" + m)
       }
-      new TextNotation(name, markers, Precedence.integer(priority))
+      new TextNotation(name, markers, prec)
    }
+   
+   /** 
+    * a special Notation for utils.mmt.brackets
+    * matches ( 1 ) with infinite precedence
+    */
+   val bracketNotation = new TextNotation(utils.mmt.brackets, List(Delim("("),Arg(1),Delim(")")), Precedence.infinite)
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
@@ -266,20 +271,20 @@ object TextNotation {
     
   }
   
-  /** String parsing methods */
+   /** String parsing methods */
    def parse(str : String, conPath : GlobalName) : TextNotation = {
-    str.split(",").toList match {
-      case not :: prec :: Nil =>        
-        val priority = prec.toInt
-        parseNot(not, priority, conPath)
+    str.split("prec").toList match {
+      case not :: p :: Nil =>        
+        val prec = Precedence.parse(p)
+        parseNot(not, prec, conPath)
       case not :: Nil => 
-        parseNot(not, 0, conPath)
+        parseNot(not, Precedence.integer(0), conPath)
       case _ =>
         throw ParseError("Invalid notation declaration : " + str)
     }
   }
    
-  private def parseNot(str : String, priority : Int, conPath : GlobalName) : TextNotation = {
+  private def parseNot(str : String, prec : Precedence, conPath : GlobalName) : TextNotation = {
     val protoMks = str.split("\\s") map {s =>
       try {
         s.toInt
@@ -287,7 +292,7 @@ object TextNotation {
         case _ => s
       }
     }
-    apply(conPath, priority)(protoMks :_*)
+    apply(conPath, prec)(protoMks :_*)
   }
    
   /*

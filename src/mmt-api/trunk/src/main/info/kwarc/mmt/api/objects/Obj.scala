@@ -179,7 +179,7 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
       val subN = sub ++ alpha
       OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subN), body ^ subN)
    }
-   private[objects] def freeVars_ = (body.freeVars ::: condition.map(_.freeVars_).getOrElse(Nil)).filter(x => context.isDeclared(x))      
+   private[objects] def freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: (body.freeVars ::: condition.map(_.freeVars_).getOrElse(Nil)).filterNot(x => context.isDeclared(x))      
    def toCML = condition match {
      case Some(cond) => <m:apply>{binder.toCML}{context.toCML}<m:condition>{cond.toCML}</m:condition>{body.toCML}</m:apply>
      case None => <m:apply>{binder.toCML}{context.toCML}{body.toCML}</m:apply>
