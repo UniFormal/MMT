@@ -332,7 +332,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
     */
   def add(e : ContentElement) {
     (e.path, e) match {
-      case doc : DPath => throw ImplementationError("addtion of document to library impossible")
+      case (_, doc : DPath) => throw ImplementationError("addtion of document to library impossible")
       case (doc ? mod, m : Module) =>
          modules(doc ? mod) = m
       case (par % ln, _) =>

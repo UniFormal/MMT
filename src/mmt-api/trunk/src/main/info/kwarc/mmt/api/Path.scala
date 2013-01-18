@@ -76,7 +76,7 @@ case class DPath(uri : URI) extends Path {
 /**
  * A path to a module or symbol
  */
-trait ContentPath extends Path {
+sealed trait ContentPath extends Path {
    /** checks if the path is a generic MMT path */
    def isGeneric : Boolean
    def $(comp: DeclarationComponent) = CPath(this, comp)

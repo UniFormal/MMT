@@ -1481,11 +1481,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
        i = expectNext(i, ":") + 1
        i = skipwscomments(i)
        val (mtId, positionAfterMeta) = crawlIdentifier(i)
-       val mtTerm = moduleToAbsoluteURI(i, mtId)
-       mtTerm match {
-          case OMMOD(mt) => meta = Some(mt)
-          case _ => errors :+ TextParseError(toPos(i), "could not read meta-theory")
-       }
+       meta = moduleToAbsoluteURI(i, mtId)
        i = positionAfterMeta
     }
     i = expectNext(i, "=")

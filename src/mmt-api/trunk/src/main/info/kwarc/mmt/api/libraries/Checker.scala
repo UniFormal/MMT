@@ -155,7 +155,7 @@ class Checker(controller: Controller) {
                checkMorphism(a.target, OMMOD(a.from), l.to)
             } else {
                val s = content.getStructure(t.path ? a.name)
-               if (s.from != a.from) throw Invalid("import-assignment has bad domain: found " + a.from + " expected " + s.from) 
+               if (s.fromPath != a.from) throw Invalid("import-assignment has bad domain: found " + a.from + " expected " + s.from) 
                checkMorphism(a.target, s.from, l.to)
             }
          case p : Pattern =>
