@@ -87,9 +87,8 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
    private var counter = 0
    private def newArgument: OMV = {
      val name = LocalName("") / "argument" / counter.toString
-     val tname = LocalName("") / "argumentType" / counter.toString
-     vardecls = VarDecl(tname,None,None) ::
-                VarDecl(name,Some(OMV(tname)),None) :: vardecls
+     //val tname = LocalName("") / "argumentType" / counter.toString
+     vardecls = VarDecl(name,None,None) :: vardecls
      counter += 1
      OMV(name)
    }
