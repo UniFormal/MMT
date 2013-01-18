@@ -46,8 +46,8 @@ archive add ../../../theories
 //archive latin content logics
 
 //mws http://localhost:6284
-//server on 8080
-browser on
+server on 8080
+//browser on
 base http://docs.omdoc.org/mmt
 
 //importer info.kwarc.mmt.mizar.test.MwsService

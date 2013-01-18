@@ -47,6 +47,7 @@ trait ValidatedArchive extends WritableArchive {
             Some(v.judgement.wfo ^ solution.get)
          } else {
             log("errors while validating " + v.component)
+            log(solver.toString)
             None
          }
       }
