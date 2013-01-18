@@ -90,17 +90,36 @@ object Extensionality extends EqualityRule(Pi.path) {
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
  */ 
 object Beta extends ComputationRule(Apply.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
-      case Apply(Lambda(x,a,t), s) =>
-         solver.checkTyping(s, a)
-         Some(t ^ (x / s))
-      //using ApplySpine here also normalizes curried application by merging them into a single one
-      case ApplySpine(f, args) =>
-         // simplify f recursively to see if it becomes a Lambda
-         val fS = solver.simplify(f)
-         if (f != fS) apply(solver)(ApplySpine(fS,args : _*))
-         else None
-      case _ => None
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = {
+      var reduced = false // remembers if there was a reduction
+      // auxiliary recursive function to beta-reduce as often as possible
+      // returns Some(reducedTerm) or None if no reduction
+      def reduce(f: Term, args: List[Term]): Option[Term] = (f,args) match {
+         case (Lambda(x,a,t), s :: rest) => 
+            solver.checkTyping(s, a) //TODO what if false?
+            reduced = true
+            reduce(t ^ (x / s), rest)
+         case (f, Nil) =>
+            //all arguments were used
+            //only possible if there was a reduction, so no need for 'if (reduced)'
+            Some(f)
+         case _ => 
+            // simplify f recursively to see if it becomes a Lambda
+            val fS = solver.simplify(f)
+            if (f != fS) reduce(fS, args)
+            else {
+              //no more reduction possible
+              if (reduced)
+                Some(ApplySpine(f,args : _*))
+              else
+                None
+            }
+      }
+      tm match {
+         //using ApplySpine here also normalizes curried application by merging them into a single one
+         case ApplySpine(f, args) => reduce(f, args)
+         case _ => None
+      }
    }
 }
 
