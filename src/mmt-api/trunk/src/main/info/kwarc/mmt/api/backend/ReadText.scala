@@ -325,10 +325,10 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       } catch {
          case e: ParseError =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
-            DefaultParser(pu)
+            DefaultObjectParser(pu)
          case e: Error =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
-            DefaultParser(pu)
+            DefaultObjectParser(pu)
       }
       addSourceRef(obj, start, i - 1)
       Pair(obj, i)
@@ -656,7 +656,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = new Constant(cpath.module, cpath.name, constantType, constantDef, None, constantNotation)
+    val constant = new Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
@@ -670,6 +670,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     * @return position after the block, i.e. ideally on the '.'
     * @throws SourceError for syntactical errors
     * note: if link's domain is not yet known (link.from == null), the alias points to link.toMorph ? name */
+  //TODO: the whole method should be removed and parsing of aliases changed
+  //this affects backwards compatibility with Twelf though
+  //for now, all found aliases are ignored
   private def crawlOpen(start: Int, link: Link) : Int =
   {
     var i = crawlKeyword(start, "%open")
@@ -710,6 +713,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       else // otherwise, the alias is simply the old name
         newLocalName = LocalName(ref)
 
+      /*
       // construct the alias
       val alias = new Alias(link.to, newLocalName, refGlobalName)
 
@@ -719,6 +723,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
       // add to controller
       add(alias)
+      */
     }
     return i
   }
@@ -1072,7 +1077,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // add the constant assignment to the controller
-    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, term)
+    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, None, term)
     add(constantAssignment)
 
     // add semantic comment and source references

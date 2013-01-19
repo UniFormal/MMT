@@ -11,7 +11,7 @@ import presentation._
   * @param name the name of the instantiated symbol
   * @param target the term assigned to the symbol 
   */                                            // TODO term
-class ConstantAssignment(val home : Term, val name : LocalName, val target : Term) extends Assignment {
+class ConstantAssignment(val home : Term, val name : LocalName, val alias: Option[LocalName], val target : Term) extends Assignment {
    def toNode = <constant name={name.toPath}>{getMetaDataNode}{target.toOBJNode}</constant>
    override def toString = name + " |-> " + target.toString 
    def components = List(StringLiteral(name.toPath), target)
@@ -26,6 +26,7 @@ class ConstantAssignment(val home : Term, val name : LocalName, val target : Ter
    * @param target the morphism assigned to the symbol 
    */
 class DefLinkAssignment(val home : Term, val name : LocalName, val from: MPath, val target : Term) extends Assignment {
+   val alias = None
    override def implicitKey = Some(from)
    def toNode = <import name={if (name.isAnonymous) null else name.toPath} domain={from.toPath}>
                      {getMetaDataNode}
@@ -34,13 +35,6 @@ class DefLinkAssignment(val home : Term, val name : LocalName, val from: MPath, 
    override def toString = (if (name.isAnonymous) "import " else name + " |-> ") + target.toString 
    def components = List(StringLiteral(name.toPath), target)
    def role = info.kwarc.mmt.api.Role_StrAss
-}
-
-class Open(val home : Term, val name : LocalName, val as : Option[String]) extends Assignment {
-   def toNode = <open name={name.toPath} as={as.getOrElse(null)}>{getMetaDataNode}</open>
-   override def toString = "open " + name.toPath + as.map(" " + _).getOrElse("")
-   def components = List(StringLiteral(name.toPath), as.map(StringLiteral(_)).getOrElse(Omitted))
-   def role = info.kwarc.mmt.api.Role_Open
 }
 
 /*

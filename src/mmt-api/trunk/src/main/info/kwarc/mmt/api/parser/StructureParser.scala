@@ -366,12 +366,13 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       //initialize all components as omitted
       var tp : Option[Term] = None
       var df : Option[Term] = None
+      var al : Option[LocalName] = None
       var nt : Option[TextNotation] = None
       // every iteration reads one delimiter and one object
       // : TYPE or = DEFINIENS or # NOTATION 
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
-         if (! List(":","=","#").contains(delim)) {
+         if (! List(":","=","#","@").contains(delim)) {
             // error handling
             if (delim == "") {
                if (! state.reader.endOfDeclaration)
@@ -400,14 +401,23 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   else
                      df = doComponent(DefComponent)
                case "#" =>
-                  val notString = obj
-                  val notation = TextNotation.parse(notString, cpath)
-                  nt = Some(notation)
+                  if (nt.isDefined)
+                     errorCont(makeError(oreg, "notation of this constant already given, ignored"))
+                  else {
+                     val notString = obj
+                     val notation = TextNotation.parse(notString, cpath)
+                     nt = Some(notation)
+                  }
+               case "@" =>
+                  if (al.isDefined)
+                     errorCont(makeError(oreg, "alias of this constant already given, ignored"))
+                  else
+                     al = Some(LocalName.parse(obj))
                //TODO read metadata
             }
          }
       }
-      val c = new Constant(OMMOD(tpath), name, tp, df, None, nt)
+      val c = new Constant(OMMOD(tpath), name, al, tp, df, None, nt)
       seCont(c)
    }
    private def readInstance(name: LocalName, pattern: GlobalName)(implicit state: ParserState) {
@@ -436,7 +446,7 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
       } catch {
          case e: SourceError =>
             errorCont(e)
-            DefaultParser(pu)
+            DefaultObjectParser(pu)
       }
       obj
    }

@@ -15,8 +15,9 @@ import presentation.{NotationProperties, StringLiteral, Omitted}
  * @param df the optional definiens
  * @param rl the role of the constant
  */
-class Constant(val home : Term, val name : LocalName,
+class Constant(val home : Term, val name : LocalName, val alias: Option[LocalName],
                var tp : Option[Term], var df : Option[Term], val rl : Option[String], val not: Option[TextNotation]) extends Symbol {
+  override val alternativeName = alias
   def toTerm = OMID(path)
 
   def role = Role_Constant(rl)
@@ -25,12 +26,11 @@ class Constant(val home : Term, val name : LocalName,
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))
   
   def toNode =
-     <constant name={name.toPath} role={rl.getOrElse(null)}>
+     <constant name={name.toPath} alias={alias.map(_.toPath).getOrElse(null)} role={rl.getOrElse(null)}>
        {getMetaDataNode}
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
        {if (not.isDefined) <notation>{not.get.toNode}</notation> else Nil}
      </constant>
-  override def toString = name.toString + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
-  
+  override def toString = name.toString + alias.map(" @ " + _) + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
 }

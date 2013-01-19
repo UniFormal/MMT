@@ -22,10 +22,11 @@ import objects.Conversions._
   //Names that are prefixes of other names in the same body are permitted.
   //  This works well for links, for theories it is questionable. Refusing declaration with non-primitive names might be forbidden.
   //  When retrieving, more specific entries overrule the more general ones.
-class Checker(controller: Controller) {
+class StructureChecker(controller: Controller) extends Logger {
    private val extman = controller.extman
    private lazy val content = controller.globalLookup
-   private def log(msg: => String) {controller.report("checker", msg)}
+   val report = controller.report
+   val logPrefix = "checker"
 
    private var nrThys : Int = 0
    private var nrViews : Int = 0
@@ -51,8 +52,7 @@ class Checker(controller: Controller) {
     * @param reCont a continuation called on all RelationalElement's produced while checking objects
     * @param unitCont a continuation called on every validation unit
     */ 
-   //TODO: currently the reconstructed element is always e
-   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Option[Term]) {
+   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
       val path = e.path
       log("checking " + path)
       implicit val rel = (p: Path) => reCont(RefersTo(path, p))
@@ -63,21 +63,12 @@ class Checker(controller: Controller) {
          }
          case t: DeclaredTheory =>
             nrThys += 1
-
             nrIncls += controller.memory.content.visible(OMMOD(t.path)).size
-
-            //t.components collect {
-            //  case s : Structure => nrIncls += 1
-            //}
-
-            t.components collect {
-              case c : Constant => nrDecls += 1
-            }
-
+            nrDecls += t.getConstants.length
             t.meta map {mt =>
               checkTheory(OMMOD(mt))
             }
-            tryForeach(t.valueListNG) {
+            tryForeach(t.getPrimitiveDeclarations) {
                d => check(d)
             }
          case t: DefinedTheory =>
@@ -87,7 +78,7 @@ class Checker(controller: Controller) {
             checkTheory(v.from)
             checkTheory(v.to)
 
-            tryForeach(v.valueListNG) {
+            tryForeach(v.getPrimitiveDeclarations) {
                d => check(d)
             }
          case v: DefinedView =>
@@ -96,35 +87,31 @@ class Checker(controller: Controller) {
             checkMorphism(v.df, v.from, v.to)
          case s: DeclaredStructure =>
             checkTheory(s.from)
-            tryForeach(s.valueListNG) {
+            tryForeach(s.getPrimitiveDeclarations) {
                d => check(d)
             }
          case s: DefinedStructure =>
             checkTheory(s.from)
             checkMorphism(s.df, s.from, s.home)
          case c : Constant =>
-            val tRR = c.tp flatMap {t => 
-               val (unknowns,tU) = parser.TermParser.splitOffUnknowns(t)
+            c.tp foreach {t => 
+               val (unknowns,tU) = parser.AbstractObjectParser.splitOffUnknowns(t)
                val tR = checkTerm(c.home, unknowns, tU)
-               OMMOD.unapply(c.home) flatMap {p =>
+               OMMOD.unapply(c.home) foreach {p =>
                   val j = Universe(Stack(p), tR)
                   unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
                }
             }
-            c.tp = tRR
-            val dRR:Option[Term] = c.df flatMap {d => 
-               val (unknowns,dU) = parser.TermParser.splitOffUnknowns(d)
+            c.df foreach {d => 
+               val (unknowns,dU) = parser.AbstractObjectParser.splitOffUnknowns(d)
                val dR = checkTerm(c.home, unknowns, dU)
-               OMMOD.unapply(c.home) flatMap {p =>
-                  tRR match {
-                    case None => Some(dU)
-                    case Some(tp) =>
-                      val j = Typing(Stack(p), dU, tp)
+               OMMOD.unapply(c.home) foreach {p =>
+                  c.tp foreach {tp =>
+                      val j = Typing(Stack(p), dR, tp)
                       unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
                   }
                }
             }
-            c.df = dRR
             /*
             val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
             c.tp map {t =>
@@ -187,7 +174,7 @@ class Checker(controller: Controller) {
       }
    }
    
-   def check(p: Path)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Option[Term]) {
+   def check(p: Path)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
       check(controller.get(p))
    }
 
@@ -348,9 +335,6 @@ class Checker(controller: Controller) {
                                 throw Invalid("ill-formed constant reference").setCausedBy(e)
                     }
             ce match {
-               case a : Alias =>
-                  if (! content.hasImplicit(a.home, home))
-                     throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
                case c : Constant =>
                   if (! content.hasImplicit(c.home, home))
                      throw Invalid("constant " + ce.path + " is not imported into home theory " + home)

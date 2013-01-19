@@ -32,6 +32,8 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
      "Pattern for " + name.toString + {if (params.variables.toList.isEmpty) "" else  {" [ " + params.toString + " ]" }} + " { " + body.toString + " }"
 }
 
+//TODO: these should Term, not a separate class
+//that requires properly using Contexts as objects
 sealed abstract class PatternExpression {
   def toOBJNode = toString //TODO case by case in the case classes
 }

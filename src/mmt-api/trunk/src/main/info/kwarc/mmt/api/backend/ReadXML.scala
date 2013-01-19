@@ -140,16 +140,6 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
    }
    def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
       val thy = OMMOD(tpath)
-      def doCon(name : LocalName, t : Option[Node], d : Option[Node], xmlNotation : Option[Node], r : String, md: Option[MetaData]) {
-         log("constant " + name.toString + " found")
-         val tp = t.map(Obj.parseTerm(_, base))
-         val df = d.map(Obj.parseTerm(_, base))
-         val notation = xmlNotation.map(TextNotation.parse(_, tpath ? name))
-         val rl = if (r == "") None else Some(r)
-         val c = new Constant(thy, name, tp, df, rl, notation)  //TODO parse <notation>
-         add(c,md)
-      }
-
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
     	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
@@ -160,27 +150,44 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
     	  val p = new Pattern(thy, name, pr, cn)
     	  add(p, md)
       }
-      for (s <- symbols; name = LocalName.parse(xml.attr(s,"name"))) {
+      for (s <- symbols) {
+         val name = LocalName.parse(xml.attr(s,"name"))
+         val alias = xml.attr(s, "alias") match {
+            case "" => None
+            case a => Some(LocalName.parse(a))
+         }
          val (s2, md) = MetaData.parseMetaDataChild(s, base) 
+         def doCon(t : Option[Node], d : Option[Node], xmlNotation : Option[Node]) {
+            log("constant " + name.toString + " found")
+            val tp = t.map(Obj.parseTerm(_, base))
+            val df = d.map(Obj.parseTerm(_, base))
+            val notation = xmlNotation.map(TextNotation.parse(_, tpath ? name))
+            val rl = xml.attr(s,"role") match {
+               case "" => None
+               case r => Some(r)
+            }
+            val c = new Constant(thy, name, alias, tp, df, rl, notation)  //TODO parse <notation>
+            add(c,md)
+         }
          s2 match {
          case <constant><type>{t}</type><definition>{d}</definition><notation>{n}</notation></constant> =>
-             doCon(name,Some(t),Some(d), Some(n), xml.attr(s,"role"), md)
+            doCon(Some(t),Some(d), Some(n))
          case <constant><type>{t}</type><definition>{d}</definition></constant> =>
-            doCon(name,Some(t),Some(d), None, xml.attr(s,"role"), md)
+            doCon(Some(t),Some(d), None)
          case <constant><definition>{d}</definition><type>{t}</type></constant> =>
-            doCon(name,Some(t),Some(d), None, xml.attr(s,"role"), md)
+            doCon(Some(t),Some(d), None)
          case <constant><type>{t}</type></constant> =>
-            doCon(name,Some(t),None, None, xml.attr(s,"role"), md)
+            doCon(Some(t),None, None)
          case <constant><type>{t}</type><notation>{n}</notation></constant> =>
-           doCon(name,Some(t),None, Some(n), xml.attr(s,"role"), md)
+           doCon(Some(t),None, Some(n))
          case <constant><definition>{d}</definition></constant> =>
-            doCon(name,None,Some(d), None, xml.attr(s,"role"), md)
+            doCon(None,Some(d), None)
          case <constant><definition>{d}</definition><notation>{n}</notation></constant> =>
-            doCon(name,None,Some(d), Some(n), xml.attr(s,"role"), md)
+            doCon(None,Some(d), Some(n))
          case <constant><notation>{n}</notation></constant> =>
-            doCon(name,None, None, Some(n), xml.attr(s,"role"), md)
+            doCon(None, None, Some(n))
          case <constant/> =>
-            doCon(name,None,None,None,xml.attr(s,"role"), md)
+            doCon(None,None,None)
          case <import>{seq @ _*}</import> =>
             log("import " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
@@ -200,9 +207,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                   readAssignments(OMDL(thy, name), base, assignments)
             }
          case <alias/> =>
-            val forpath = Path.parseS(xml.attr(s, "for"), base)
-            log("found alias " + name + " for " + forpath)
-            add(new Alias(thy, name, forpath), md)
+            //TODO: remove this case when Twelf exports correctly
+            log("warning: ignoring deprecated alias declaration")
          case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols
             readNotations(tpath, base, s)
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
@@ -225,11 +231,15 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
       for (amd <- assignments) {
          val (a, md) = MetaData.parseMetaDataChild(amd, base) 
          val name = LocalName.parse(base, xml.attr(a, "name"))
+         val alias = xml.attr(amd, "alias") match {
+            case "" => None
+            case al => Some(LocalName.parse(al))
+         }
          a match {
             case <constant>{t}</constant> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseTerm(t, base)
-               val m = new ConstantAssignment(link, name, tg)
+               val m = new ConstantAssignment(link, name, alias, tg)
                add(m, md)
             case <import>{_*}</import> =>
                log("assignment for " + name + " found")
@@ -246,10 +256,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                   case c => throw ParseError("value expected: " + c)
                }
             case <open/> =>
-               log("open for " + name + " found")
-               val as = xml.attr(a, "as") match {case "" => None case a => Some(a)}
-               val m = new Open(link, name, as)
-               add(m, md)
+               //TODO: remove this case when Twelf exports correctly
+               log("warning: ignoring deprecated 'open' declaration")
             case scala.xml.Comment(_) =>
             case _ => throw ParseError("assignment expected: " + a)
          }
