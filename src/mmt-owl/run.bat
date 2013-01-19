@@ -8,7 +8,9 @@
 
 : java -Xmx1024m -cp ../mmt-api/branches/next-version/build/mmt-api.jar;../../deploy/lib/*;../../deploy/lfcatalog/*;../../deploy/mmt/*;mmt-owl.jar;lib/owlapi-bin.jar info.kwarc.mmt.api.frontend.Run
 
-java -Xmx1024m -cp ../../deploy/lib/*;../mmt-api/branches/next-version/build/mmt-api.jar;../../src/lfcatalog/trunk/build/lfcatalog.jar;../../src/mmt-lf/mmt-lf.jar;lib/owlapi-bin.jar;mmt-owl.jar info.kwarc.mmt.api.frontend.Run
+:java -Xmx1024m -cp ../../deploy/lib/*;../mmt-api/branches/next-version/build/mmt-api.jar;../../src/lfcatalog/trunk/build/lfcatalog.jar;../../src/mmt-lf/mmt-lf.jar;lib/owlapi-bin.jar;mmt-owl.jar info.kwarc.mmt.owl.MoCinOWL older.owl current.owl
 
+:java -Xmx1024m -cp ../../deploy/lib/*;../mmt-api/branches/next-version/build/mmt-api.jar;../../src/lfcatalog/trunk/build/lfcatalog.jar;../../src/mmt-lf/mmt-lf.jar;lib/owlapi-bin.jar;mmt-owl.jar info.kwarc.mmt.api.frontend.Run
 
+java -Xmx1024m -cp ../../deploy/lib/*;../../deploy/mmt/*;../../deploy/lfcatalog/lfcatalog.jar;lib/owlapi-bin.jar;mmt-owl.jar info.kwarc.mmt.api.frontend.Run
 
