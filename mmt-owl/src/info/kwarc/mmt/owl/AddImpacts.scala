@@ -10,17 +10,46 @@ import info.kwarc.mmt.lf._
 import org.semanticweb.owlapi.model._
 import scala.collection._
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.utils.URI
 
 class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory){
 	
     /**
     * identifies impacts of a changed constant
-    * @param a path of a changed constant
+    * @param path a path of a changed constant
     * @return paths of constants that are impacted by the changed constant
     */
 	def dependsOn(path : Path) : Set[Path] = {
 	    var impacts = new mutable.HashSet[Path]()
-	    var whichTerm : Term = null
+	    //memory.ontology.query(path,ToSubject(RefersTo)) (p => impacts += p)
+	    //impacts
+	//}
+	    val gname = path match {
+	 			 case CPath(parent: GlobalName, comp) => parent
+	 			 case gn: GlobalName => gn
+	    }
+	 
+	    val whichConstant = memory.content.getConstant(gname)
+	    val isApplication = whichConstant.tp match{
+	    					case Some(OMS(_)) => false
+	    					case Some(_) => true
+	    					case None => false //throw Exception("Not a Term!")
+	    }
+	    if(isApplication)
+	     memory.ontology.query(path,ToObject(RefersTo)) (p => impacts += p) //axiom
+	    else
+	      memory.ontology.query(path,ToSubject(RefersTo)) (p => impacts += p) //entity
+	    /*whichTerm match{
+	    case OMS(s) =>  memory.ontology.query(path,ToSubject(RefersTo)) (p => impacts += p) //entity
+	    case _ =>   memory.ontology.query(path,ToObject(RefersTo)) (p => impacts += p) //axiom 
+	    }	         			
+ 	    */
+	    println("impacts" + impacts)
+	    impacts 
+	    
+	}	 
+	
+/*	    var whichTerm : Term = null
 	    path match { 
        	case  CPath(parent : GlobalName, comp) =>   
        	      val whichConstant = memory.content.getConstant(parent)
@@ -36,21 +65,39 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory){
 	    }	         			
  	    impacts 
 	}
-
+*/
     /**
     * adds an impact of each change to an impacted constant; adds metadata to an impacted constant
-    * @param path of an impacted constant, changes that have impacts on the constant
+    * @param path path of an impacted constant
+    * @param changes changes that have impacts on the constant
     * @return None
     */
-	def propFunc(path : Path, changes : Set[ContentChange]) = { //: Option[StrictChange] 
-		path match {
-	    case CPath(parent : GlobalName, comp) => 
-		 	 val impactedConstant = memory.content.getConstant(parent) 
-			 val mdatum = changes.map(c => setMetaDatum(impactedConstant, c))
-			 impactedConstant.metadata.add(mdatum.toList:_*)
-			 None
-		case _ => None
-		}
+	def propFunc(path : Path, changes : Set[ContentChange]) = {
+	    println("path: "+ path + "changes" + changes)
+	    val logic = DPath(URI("http","latin.omdoc.org") / "logics")
+	    if (logic <= path.doc)
+	      Nil
+	    else {
+	        path match {
+		    case parent : GlobalName =>
+			//case CPath(parent : GlobalName, comp) => 
+			 	 val impactedConstant = memory.content.getConstant(parent)
+			 	 val md = new MetaData
+				 changes foreach {c =>
+				    val mdatum = setMetaDatum(impactedConstant, c)
+				    md.add(mdatum)
+			 	 }
+			 	 md.keys map {key =>
+			 	    val old = impactedConstant.metadata.getValues(key)
+				    val ud = UpdateMetadata(parent, key, old, md.getValues(key) ::: old)
+				    println(ud)
+				    ud
+			 	 }
+			case _ =>
+			  println("nill")
+			  Nil
+			}
+	  }
 	}
 	
 	/**
@@ -147,7 +194,7 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory){
     */
 	def setLiteralForImpactedConstantApplication(chgType : String, chgdConsName : LocalName, entityType : String) : String = {
 	  val str = chgType match { 
-	            case "delete" => "This axiom has been impacted by deleting " +  entityType + chgdConsName.toString + "." 
+	            case "delete" => "This axiom has been impacted by deleting " +  entityType + " " + chgdConsName.toString + "." 
 	            // case "add"=> "This axiom has been impacted by adding " + entityType + chgdConsName.toString + "."
 	            //case "rename" => This axiom has been impacted by renaming " + entityType + chgdConsName.toString + "." 
 	            }
