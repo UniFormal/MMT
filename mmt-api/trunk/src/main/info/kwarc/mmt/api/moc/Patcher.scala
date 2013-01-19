@@ -76,10 +76,10 @@ object Patcher {
     case (v : DefinedView,  DefComponent, Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
 
     /** Constants */
-    case (c : Constant, DefComponent, Some(s : Term)) => new Constant(c.home, c.name, c.tp, Some(s), c.rl, c.not)
-    case (c : Constant, DefComponent, None) => new Constant(c.home, c.name, c.tp, None, c.rl, c.not)
-    case (c : Constant, TypeComponent, Some(s : Term)) => new Constant(c.home, c.name, Some(s), c.df, c.rl, c.not)
-    case (c : Constant, TypeComponent, None) => new Constant(c.home, c.name, None, c.df, c.rl, c.not)
+    case (c : Constant, DefComponent, Some(s : Term)) => new Constant(c.home, c.name, c.alias, c.tp, Some(s), c.rl, c.not)
+    case (c : Constant, DefComponent, None) => new Constant(c.home, c.name, c.alias, c.tp, None, c.rl, c.not)
+    case (c : Constant, TypeComponent, Some(s : Term)) => new Constant(c.home, c.name, c.alias, Some(s), c.df, c.rl, c.not)
+    case (c : Constant, TypeComponent, None) => new Constant(c.home, c.name, c.alias, None, c.df, c.rl, c.not)
 
     /** Patterns */
     case(p : Pattern,  ParamsComponent, Some(params : Context)) => new Pattern(p.home, p.name, params, p.body)
@@ -90,13 +90,10 @@ object Patcher {
     case(i : Instance,  MatchesComponent, Some(matches : Substitution)) => new Instance(i.home, i.name, i.pattern, matches)
 
     /** ConstantAssignments */
-    case(c : ConstantAssignment, DefComponent, Some(target : Term)) => new ConstantAssignment(c.home, c.name, target)
+    case(c : ConstantAssignment, DefComponent, Some(target : Term)) => new ConstantAssignment(c.home, c.name, c.alias, target)
 
     /** DefLinkAssignments */
     case(d : DefLinkAssignment, DefComponent, Some(target : Term)) => new DefLinkAssignment(d.home, d.name, d.from, target)
-
-    /** Aliases */
-    case(a : Alias, ForPathComponent, Some(OMID(forpath : GlobalName))) => new Alias(a.home, a.name, forpath)
 
     case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +

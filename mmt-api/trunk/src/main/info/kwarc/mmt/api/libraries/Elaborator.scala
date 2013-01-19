@@ -43,7 +43,7 @@ abstract class Elaborator {
  */
 class ModuleElaborator(controller : Controller) extends Elaborator {
   private val content = controller.globalLookup
-  private val modules = controller.globalLookup.getAllPaths().map(controller.globalLookup.get(_)).toList
+  private val modules = controller.memory.content.getAllPaths.map(controller.globalLookup.get(_)).toList
 
   var totalImports : Int = 0
   var thys : Int = 0
@@ -144,7 +144,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
                 val ass = s.get(x)
                 ass match {
                   case conAss : ConstantAssignment =>
-                    val genCons = new Constant(conAss.home, conAss.name, None, Some(conAss.target), None, None)
+                    val genCons = new Constant(conAss.home, conAss.name, conAss.alias, None, Some(conAss.target), None, None)
                     newDecs += genCons
                   case _ => None
                 }
@@ -164,7 +164,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
           val ntp = c.tp.map(rewrite(_)(rewriteRules))
           val ndf = c.tp.map(rewrite(_)(rewriteRules))
 
-          val nc = new Constant(nwHome, nwName, ntp, ndf, c.rl, c.not)
+          val nc = new Constant(nwHome, nwName, c.alias, ntp, ndf, c.rl, c.not)
           nt.add(nc)
           decls += 1
         case _ => nt.add(_)
@@ -195,7 +195,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               if (p == t.path) {    // view from this theory
               val nwIndThy = new DeclaredTheory(v.to.toMPath.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
                 newDecs foreach { c =>
-                  val nc = new Constant(c.home, c.name, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
+                  val nc = new Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
                   nwIndThy.add(nc)
                   decls += 1
                 }
@@ -208,7 +208,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
 
                       val nwIndThy = new DeclaredTheory(t.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
                         newDecs foreach { c =>
-                          val nc = new Constant(c.home, c.name, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
+                          val nc = new Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
 
                           nwIndThy.add(nc)
                           decls += 1

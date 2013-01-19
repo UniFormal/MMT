@@ -159,7 +159,6 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
       case i : Instance => new HashSet[Path]() + dec.path + CPath(i.path, PatternComponent) + CPath(i.path, MatchesComponent)
       case a : ConstantAssignment => new HashSet[Path]() + dec.path + CPath(a.path, DefComponent)
       case d : DefLinkAssignment => new HashSet[Path]() + dec.path + CPath(d.path, DefComponent)
-      case a : Alias => new HashSet[Path]() + dec.path + CPath(a.path, ForPathComponent)
     } 
   }
   
@@ -250,9 +249,6 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
 
       /* DefLinkAssignment */
       case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
-
-      /* Aliases */
-      case (a : Alias, _) => None
     }
     chOpt.toList
     case _ => Nil  
@@ -361,9 +357,6 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
 
       /* DefLinkAssignment */
       case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
-
-      /* Aliases */
-      case (a : Alias, _) => None
     }
     chOpt.toList
     case _ => Nil  
@@ -437,7 +430,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
           changes.head match {
             //definition is deleted -> one more undefined constant -> assignment needed for it
             case UpdateComponent(cPath, DefComponent, Some(s), None) => 
-              val ca = new ConstantAssignment(mod, lname, emptyBox)
+              val ca = new ConstantAssignment(mod, lname, None, emptyBox)
               List(AddDeclaration(ca))                
            
             //definition is added -> one less undefined constant -> assignment for it no longer needed

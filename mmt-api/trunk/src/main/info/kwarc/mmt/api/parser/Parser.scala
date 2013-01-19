@@ -29,12 +29,12 @@ object ParsingError {
 
 
 /** a TermParser parses Term's. Instances are maintained by the ExtensionManager and retrieved and called by the structural parser. */
-abstract class TermParser {
+trait AbstractObjectParser {
    def apply(pu: ParsingUnit): Term
 }
 
 /** helper object */
-object TermParser {
+object AbstractObjectParser {
   def getNotations(controller : Controller, scope : Term) : List[TextNotation] = {
      val includes = controller.library.visible(scope)
      val decls = includes.toList flatMap {tm => 
@@ -48,13 +48,13 @@ object TermParser {
    }
   val unknown = utils.mmt.mmtcd ? "unknown"
   def splitOffUnknowns(t: Term) = t match {
-     case OMBIND(OMID(TermParser.unknown), us, s) => (us, s)
+     case OMBIND(OMID(AbstractObjectParser.unknown), us, s) => (us, s)
      case _ => (Context(), t)
   }
 }
 
 /** A default parser that parses any string into an OMSemiFormal object. */
-object DefaultParser extends TermParser {
+object DefaultObjectParser extends AbstractObjectParser {
    def apply(pu: ParsingUnit): Term = OMSemiFormal(objects.Text(pu.scope.toMPath.toPath, pu.term))
 }
 
@@ -62,7 +62,7 @@ object DefaultParser extends TermParser {
 /**
  * Default implementation for a notation based parser
  */
-class NotationParser(controller : Controller) extends TermParser with Logger {
+class ObjectParser(controller : Controller) extends AbstractObjectParser with Logger {
    val report = controller.report
    val logPrefix = "parser"  
    private val prag = controller.pragmatic   
@@ -73,7 +73,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
     * returned list is sorted (in increasing order) by priority
     */
    protected def buildNotations(scope : Term) : List[(Precedence,List[TextNotation])] = {
-      val notations = TextNotation.bracketNotation :: TermParser.getNotations(controller, scope)  
+      val notations = TextNotation.bracketNotation :: AbstractObjectParser.getNotations(controller, scope)  
       val qnotations = notations.groupBy(x => x.precedence).toList
       qnotations.sortWith((p1,p2) => p1._1 < p2._1)
    } 
@@ -253,7 +253,7 @@ class NotationParser(controller : Controller) extends TermParser with Logger {
           if (vardecls == Nil)
              tm
           else
-             OMBIND(OMID(TermParser.unknown), Context(vardecls: _*),tm)
+             OMBIND(OMID(AbstractObjectParser.unknown), Context(vardecls: _*),tm)
        case _ => throw ParseError("unmatched list: " + sc.tl)
     }
   }

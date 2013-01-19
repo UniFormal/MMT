@@ -415,7 +415,7 @@ case class ToText(c : MakeAbstract) extends MakeConcrete {
       case _ => None
     }
     
-    val notations = home.map(h => TermParser.getNotations(controller, h)).getOrElse(Nil)   
+    val notations = home.map(h => AbstractObjectParser.getNotations(controller, h)).getOrElse(Nil)   
     con match {
       case d : DeclaredTheory =>
         rb(TextNotation.present(d, notations))

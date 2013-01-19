@@ -31,7 +31,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator {
      		case VarDecl(n,tp,df,at @ _*) =>
      			val nname = inst.name / n
      			report("elaboration", "generating constant " + nname)
-     			val c = new Constant(inst.home,nname,tp.map(auxSub),df.map(auxSub),None,None)
+     			val c = new Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None,None)
      			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
      			cont(c)
      	} 
@@ -43,7 +43,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator {
    * elaborates all instances in a theory and inserts the elaborated constants into the containing theory
    */
   def elaborate(thy: DeclaredTheory) {
-     thy.valueList foreach {
+     thy.getDeclarations foreach {
         case i : Instance =>
            i.setOrigin(Elaborated)
            apply(i) {

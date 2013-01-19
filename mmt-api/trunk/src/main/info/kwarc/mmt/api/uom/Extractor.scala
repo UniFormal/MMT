@@ -96,7 +96,7 @@ object Extractor {
      baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
      ")"
      )
-	   t.valueList map {
+	   t.getDeclarations map {
 	      case c: Constant =>  { // handle constants here
         out.println("  val " + c.name 
               + " = OMID("+ getGlobalName(t,c)  + ")")

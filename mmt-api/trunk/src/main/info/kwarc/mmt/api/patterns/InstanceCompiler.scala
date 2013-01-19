@@ -95,19 +95,13 @@ val constTheory = patcon.controller.globalLookup.getTheory(pbbase  ? thName) mat
 case c : DeclaredTheory => c
 case _ => throw CompilationError("not a declared theory " + pbbase + "?" + thName)
 		}
-val constList : List[Constant] = constTheory.valueListNG mapPartial {
-case p : Constant => Some(p)
-case _ => None
-}
+val constList : List[Constant] = constTheory.getConstants
 // retrieve patterns    
 val pattTheory = patcon.controller.globalLookup.getTheory(tptpbase ? "THF0") match {
 case t : DeclaredTheory => t
 case _ => throw GetError("not a declared theory " + tptpbase + "?" + "THF0")      
 }        
-val pattList : List[Pattern] = pattTheory.valueListNG mapPartial {
-case p : Pattern => Some(p)
-case _ => None
-}    
+val pattList : List[Pattern] = pattTheory.getPatterns
 // get list of all Instance for the theory
 val inst =  pc.getInstance(constList, pattList)
 

@@ -23,12 +23,15 @@ object Extractor {
       }
       e match {
          case t: DeclaredModule[_] =>
-            t.valueList foreach {d => {
+            t.getDeclarations foreach {d => {
                val dec = Declares(path,d.path)
                d match {
                   case c: Constant =>
                      f(dec)
                      f(IsConstant(c.rl).apply(c.path))
+                     c.alias foreach {a =>
+                       f(IsAliasFor(c.home % a, c.path))
+                     }
                   case s: Structure =>
                      if (s.name.isAnonymous) {
                         f(Includes(t.path, TheoryExp.simplify(s.from).toMPath))
@@ -45,9 +48,6 @@ object Extractor {
                      f(dec)
                      f(IsInstance(i.path))
                      f(IsInstanceOf(i.path, i.pattern))
-                  case a: Alias =>
-                     f(IsAliasFor(a.path, a.forpath))
-                     f(dec)
                   case _: Assignment =>
                      f(dec)
                }

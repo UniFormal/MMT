@@ -31,14 +31,9 @@ class PatternChecker(controller: Controller) extends Elaborator {
                val cmeta = controller.globalLookup(m)
                cmeta match {
                  case mthy : DeclaredTheory => 
-                   val decls = mthy.valueList
-                   decls.mapPartial{
-                     case p : Pattern => 
-                       val m = p.body.variables.toList.length
-                       if (p.body.variables.toList.length == n) { 
-                         Some(p)
-                       } else None
-                     case _ => None}
+                   mthy.getPatterns.filter {p =>
+                       p.body.variables.toList.length == n 
+                   }
                  case _ => Nil //TODO
                }
              case None => Nil
@@ -250,12 +245,7 @@ object PatternTest  {
       case c : DeclaredTheory => c
       case _ => throw Error("no constants in " + pbbase + "?" + "AGT027^1")
     }
-    val constList : List[Constant] = constTheory.valueListNG mapPartial {
-      case p : Constant => Some(p)
-      case _ => None
-    }
-  
-    
+    val constList : List[Constant] = constTheory.getConstants
     //     get list of patterns from controller
     val pp = try {
       controller.globalLookup.getPattern(tptpbase ? "THF0" ? "baseType")
@@ -267,10 +257,7 @@ object PatternTest  {
       case t : DeclaredTheory => t
       case _ => throw Error("no patterns in " + tptpbase + "?" + "THF0")      
     }        
-    val pattList : List[Pattern] = pattTheory.valueListNG mapPartial {
-      case p : Pattern => Some(p)
-      case _ => None
-    }
+    val pattList : List[Pattern] = pattTheory.getPatterns
         
     
     //     <------------------------ pattern checking happens here  ------------------------------->

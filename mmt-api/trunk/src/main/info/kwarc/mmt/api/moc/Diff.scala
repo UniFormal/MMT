@@ -199,22 +199,6 @@ object Differ {
 	}
 	
 	/**
-   * compares two aliases 
-   * @param old the first alias
-   * @param nw the second alias
-   * @return the (strict) diff representing the difference between old and nw 
-   */
-	private def compareAliases(old : Alias, nw : Alias) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-    if (old.forpath != nw.forpath) {
-      changes = UpdateComponent(old.path, ForPathComponent, Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
-    }
-
-	  new StrictDiff(changes)
-	}
-	
-	/**
    * compares two declarations 
    * @param old the first declaration
    * @param nw the second declaration
@@ -234,8 +218,6 @@ object Differ {
         compareConstantAssignments(o,n)
       case (o : DefLinkAssignment, n : DefLinkAssignment) =>
         compareDefLinkAssignments(o,n)
-      case (o : Alias, n : Alias) =>
-        compareAliases(o,n)
     }
   }
   

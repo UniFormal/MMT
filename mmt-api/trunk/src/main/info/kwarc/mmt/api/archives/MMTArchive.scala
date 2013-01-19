@@ -8,7 +8,7 @@ import objects._
 import ontology._
 import utils._
 import utils.FileConversion._
-import info.kwarc.mmt.api.parser.{ParsingUnit,DefaultParser}
+import info.kwarc.mmt.api.parser.{ParsingUnit,DefaultObjectParser}
 
 trait MMTArchive extends WritableArchive {
    /** parses and loads an archive */ 
@@ -21,7 +21,7 @@ trait MMTArchive extends WritableArchive {
           val (doc, errorList) = tr.readDocument(source, DPath(narrationBase / inPath)) {pu =>
              parsingUnits(pu.component) = pu
              log("found parsing unit " + pu.component)
-             DefaultParser(pu)
+             DefaultObjectParser(pu)
           }
           source.close
           if (!errorList.isEmpty)
@@ -36,7 +36,7 @@ trait MMTArchive extends WritableArchive {
                 log("parsing " + pu.component)
                 val tp = if (cpath.component == TypeComponent) Some(tm) else c.tp
                 val df = if (cpath.component == DefComponent) Some(tm) else c.df
-                val cN = new Constant(c.home, c.name, tp, df, c.rl, c.not)
+                val cN = new Constant(c.home, c.name, c.alias, tp, df, c.rl, c.not)
                 controller.delete(c.path)
                 controller.add(cN)
              case _ =>

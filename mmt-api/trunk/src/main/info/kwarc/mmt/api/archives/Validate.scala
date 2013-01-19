@@ -24,7 +24,7 @@ trait ValidatedArchive extends WritableArchive {
             rels += r
             controller.memory.ontology += r
          }
-         controller.checker.check(mpath)(reCont, _ => None)
+         controller.checker.check(mpath)(reCont, _ => ())
          val relFile = (relDir / inPath).setExtension("occ")
          relFile.getParentFile.mkdirs
          val relFileHandle = File.Writer(relFile)
@@ -36,7 +36,7 @@ trait ValidatedArchive extends WritableArchive {
    /** checks modules in content structurally and then validates all ValidationUnits */
     def validate(in: List[String] = Nil, controller: Controller) {
 
-      def validateUnit(v: ValidationUnit) : Option[Term] = {
+      def validateUnit(v: ValidationUnit) {
          log("validation unit " + v.component + ": " + v.judgement)
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
          val result = logGroup{solver(v.judgement)}
@@ -44,7 +44,8 @@ trait ValidatedArchive extends WritableArchive {
          if (result && solution.isDefined) {
             log("validated " + v.component)
             log("solution: " + solution.get.toString)
-            Some(v.judgement.wfo ^ solution.get)
+            //TODO update component or set reconstructed term
+            //v.component, v.judgement.wfo ^ solution.get)
          } else {
             log("errors while validating " + v.component)
             log(solver.toString)

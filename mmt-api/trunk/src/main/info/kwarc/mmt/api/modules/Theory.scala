@@ -22,32 +22,32 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
    /** convenience method to obtain all constants */
-   def getConstants:List[Constant] = valueList.mapPartial {
+   def getConstants:List[Constant] = getDeclarations.mapPartial {
       case c: Constant => Some(c)
       case _ => None
    }
    /** convenience method to obtain all included theories (including a possible meta-theory) */
    def getIncludes:List[MPath] = {
-     val incls = valueList.mapPartial {
+     val incls = getDeclarations.mapPartial {
         case s:Structure if s.name.isAnonymous => Some(s.fromPath)
         case _ => None
      }
      meta.toList ::: incls
    }   
    /** convenience method to obtain all named structures */
-   def getNamedStructures:List[Structure] = valueList.mapPartial {
+   def getNamedStructures:List[Structure] = getDeclarations.mapPartial {
       case s: Structure if ! s.name.isAnonymous => Some(s)
       case _ => None
    }   
    /** convenience method to obtain all patterns */
-   def getPatterns:List[patterns.Pattern] = valueList.mapPartial {
+   def getPatterns:List[patterns.Pattern] = getDeclarations.mapPartial {
       case p: patterns.Pattern => Some(p)
       case _ => None
    }
    override def compNames = List(("name", 0), ("meta",1))
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
-   <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
+      <theory name={name.flat} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {getMetaDataNode}
         {innerNodes}
       </theory>

@@ -248,7 +248,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
                  }
                  outStream.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
                  outStream.write("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-                 thy.valueList foreach {
+                 thy.getDeclarations foreach {
                     case c: Constant =>
                        List(c.tp,c.df).map(tO => tO map { 
                           t =>

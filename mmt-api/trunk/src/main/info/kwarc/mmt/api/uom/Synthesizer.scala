@@ -49,7 +49,7 @@ object Synthesizer {
              "Synthesizer: Path does not point to a constant"
            )
          }
-	  	   val newcons = new Constant(oldcons.home, oldcons.name, oldcons.tp, Some(OMFOREIGN(scala.xml.Text(code))), None, None)
+	  	   val newcons = new Constant(oldcons.home, oldcons.name, oldcons.alias, oldcons.tp, Some(OMFOREIGN(scala.xml.Text(code))), None, None)
 	  	   controller.library.update(newcons)
 	   }
    }

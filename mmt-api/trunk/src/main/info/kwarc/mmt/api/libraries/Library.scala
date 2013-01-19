@@ -101,7 +101,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
             } catch {
                case PartialLink() => get(v.from % name) match {
                   // return default assignment
-                  case c:Constant => new ConstantAssignment(v.toTerm, name, OMHID)
+                  case c:Constant => new ConstantAssignment(v.toTerm, name, None, OMHID)
                   case s:Structure => new DefLinkAssignment(v.toTerm, name, s.fromPath, Morph.Empty)
                   case _ => throw ImplementationError("unimplemented default assignment")
                }
@@ -122,7 +122,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          } catch {case PartialLink() =>
             // return default assignment
             get(s.from % name) match {   
-               case c:Constant => new ConstantAssignment(s.toTerm, name, OMID(s.to % (s.name / name)))
+               case c:Constant => new ConstantAssignment(s.toTerm, name, None, OMID(s.to % (s.name / name)))
                case d:Structure => new DefLinkAssignment(s.toTerm, name, d.fromPath, OMDL(s.to, s.name / name))
                case _ => throw ImplementationError("unimplemented default assignment")
             }
@@ -133,11 +133,11 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          if (tl.isEmpty)
            a
          else a match {
-            case a: ConstantAssignment => new ConstantAssignment(m, a.name, a.target * OMCOMP(tl))
+            case a: ConstantAssignment => new ConstantAssignment(m, a.name, a.alias, a.target * OMCOMP(tl))
             case a: DefLinkAssignment => new DefLinkAssignment(m, a.name, a.from, OMCOMP(a.target :: tl))
          }
       case (m @ OMIDENT(t)) % name => get(t % name) match {
-         case c: Constant => new ConstantAssignment(m, name, c.toTerm)
+         case c: Constant => new ConstantAssignment(m, name, None, c.toTerm)
          case l: Structure => new DefLinkAssignment(m, name, l.fromPath, l.toTerm)
       }
       case Morph.Empty % name => throw GetError("empty morphism has no assignments")
@@ -212,12 +212,16 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
           // translate e along assigOpt
           e match {
               case c: Constant =>
-                 val newDef = assigOpt match {
-                    case Some(a: ConstantAssignment) => Some(a.target) //use assignment as definiens
-                    case None => c.df.map(_ * l.toTerm) //translate old definiens if no assignment given
+                 val (newAlias,newDef) = assigOpt match {
+                    case Some(a: ConstantAssignment) =>
+                       //use alias and target (as definiens) from assignment
+                       (a.alias,Some(a.target))
+                    case None =>
+                       //translate old alias and definiens if no assignment given
+                       (c.alias.map(namePrefix / _), c.df.map(_ * l.toTerm))
                     case _ => throw GetError("link " + l.path + " provides non-ConstantAssignment for constant " + c.path)
                  }
-                 new Constant(l.to, newName, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
+                 new Constant(l.to, newName, newAlias, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
               case r: Structure => assigOpt match {
                   case Some(a: DefLinkAssignment) =>
                       new DefinedStructure(l.to, newName, r.fromPath, a.target, false)

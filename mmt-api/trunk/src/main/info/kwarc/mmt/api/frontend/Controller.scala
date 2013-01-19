@@ -76,7 +76,7 @@ class Controller extends ROController {
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(this)
    /** the MMT term parser */
-   val termParser = new NotationParser(this)
+   val termParser = new ObjectParser(this)
    /** the MMT parser (native MMT text syntax) */
    val textParser = new StructureAndObjectParser(this)
    /** the MMT parser (Twelf text syntax) */
@@ -84,7 +84,7 @@ class Controller extends ROController {
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
    /** the checker for the validation of ContentElement's and objects */
-   val checker = new Checker(this)
+   val checker = new StructureChecker(this)
    /** the MMT rendering engine */
    val presenter = new presentation.Presenter(this, report)
    /** the query engine */
@@ -149,7 +149,6 @@ class Controller extends ROController {
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = iterate {library.preImage(p)}
       def getDeclarationsInScope(mod : Term) = iterate {library.getDeclarationsInScope(mod)}
-      def getAllPaths() = library.getAllPaths //temporary TODO remove
    }
    /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {
