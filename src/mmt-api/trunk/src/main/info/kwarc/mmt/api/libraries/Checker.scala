@@ -131,7 +131,7 @@ class StructureChecker(controller: Controller) extends Logger {
               case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
             }
             val c = content.getConstant(t.path ? a.name)
-            checkTerm(l.to, a.target)
+            a.target foreach {t => checkTerm(l.to, t)}
          case a : DefLinkAssignment =>
             val (t,l) = try {
                content.getDomain(a)

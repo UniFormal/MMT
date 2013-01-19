@@ -245,7 +245,7 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       case (i : Instance, _) => None
 
       /* ConstantAssignments */
-      case (c : ConstantAssignment, DefComponent) => makeChange(Some(c.target))
+      case (c : ConstantAssignment, DefComponent) => makeChange(c.target)
 
       /* DefLinkAssignment */
       case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
@@ -353,7 +353,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       case (i : Instance, _) => None
 
       /* ConstantAssignments */
-      case (c : ConstantAssignment, DefComponent) => makeChange(Some(c.target))
+      case (c : ConstantAssignment, DefComponent) => makeChange(c.target)
 
       /* DefLinkAssignment */
       case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
@@ -430,7 +430,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
           changes.head match {
             //definition is deleted -> one more undefined constant -> assignment needed for it
             case UpdateComponent(cPath, DefComponent, Some(s), None) => 
-              val ca = new ConstantAssignment(mod, lname, None, emptyBox)
+              val ca = new ConstantAssignment(mod, lname, None, Some(emptyBox))
               List(AddDeclaration(ca))                
            
             //definition is added -> one less undefined constant -> assignment for it no longer needed

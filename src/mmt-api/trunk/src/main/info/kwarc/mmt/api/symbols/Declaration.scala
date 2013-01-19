@@ -15,7 +15,7 @@ abstract class Declaration extends ContentElement {
    /** the containing module
     * 
     * this is almost always OMMOD(p:MPath),
-    * the main exception being generated anonymous modules
+    * the main exception are generated anonymous modules
     */
    val home : Term
    /** the local name in the containing module

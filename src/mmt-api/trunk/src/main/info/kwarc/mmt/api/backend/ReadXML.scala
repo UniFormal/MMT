@@ -239,7 +239,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             case <constant>{t}</constant> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseTerm(t, base)
-               val m = new ConstantAssignment(link, name, alias, tg)
+               val m = new ConstantAssignment(link, name, alias, Some(tg))
                add(m, md)
             case <import>{_*}</import> =>
                log("assignment for " + name + " found")
