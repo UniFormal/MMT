@@ -124,8 +124,11 @@ abstract class Lookup(val report : frontend.Report) {
       def apply(t: Term)(implicit con: Context, morph: Term) = t match {
          case OMM(arg, via) => apply(arg)(con, OMCOMP(morph, via))
          case OMID(theo % ln) =>
-           val t = getConstantAssignment(morph % ln).target
-           apply(t)
+           val aOpt = getConstantAssignment(morph % ln).target
+           aOpt match {
+              case None => t
+              case Some(t) => apply(t)
+           }
          case t => Traverser.apply(this,t)(con, morph)
       }
    }

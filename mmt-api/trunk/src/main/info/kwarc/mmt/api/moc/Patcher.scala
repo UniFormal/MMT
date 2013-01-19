@@ -90,7 +90,7 @@ object Patcher {
     case(i : Instance,  MatchesComponent, Some(matches : Substitution)) => new Instance(i.home, i.name, i.pattern, matches)
 
     /** ConstantAssignments */
-    case(c : ConstantAssignment, DefComponent, Some(target : Term)) => new ConstantAssignment(c.home, c.name, c.alias, target)
+    case(c : ConstantAssignment, DefComponent, Some(target : Term)) => new ConstantAssignment(c.home, c.name, c.alias, Some(target))
 
     /** DefLinkAssignments */
     case(d : DefLinkAssignment, DefComponent, Some(target : Term)) => new DefLinkAssignment(d.home, d.name, d.from, target)

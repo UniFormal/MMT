@@ -1077,7 +1077,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // add the constant assignment to the controller
-    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, None, term)
+    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, None, Some(term))
     add(constantAssignment)
 
     // add semantic comment and source references

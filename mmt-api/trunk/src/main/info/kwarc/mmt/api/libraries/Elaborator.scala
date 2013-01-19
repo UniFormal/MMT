@@ -144,7 +144,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
                 val ass = s.get(x)
                 ass match {
                   case conAss : ConstantAssignment =>
-                    val genCons = new Constant(conAss.home, conAss.name, conAss.alias, None, Some(conAss.target), None, None)
+                    val genCons = new Constant(conAss.home, conAss.name, conAss.alias, None, conAss.target, None, None)
                     newDecs += genCons
                   case _ => None
                 }
@@ -187,8 +187,10 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
 
               v.components collect {
                 case ca : ConstantAssignment =>
-                  println((p ? ca.name).toString + " #->#" + etaReduce(ca.target).toString)
-                  viewRewrRules += (p ? ca.name -> etaReduce(ca.target))
+                  ca.target.foreach {t =>
+                     println((p ? ca.name).toString + " #->#" + etaReduce(t).toString)
+                     viewRewrRules += (p ? ca.name -> etaReduce(t))
+                  }
               }
 
 

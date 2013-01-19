@@ -176,7 +176,7 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
-      changes = UpdateComponent(old.path, DefComponent, Some(old.target), Some(nw.target)) :: changes
+      changes = UpdateComponent(old.path, DefComponent, old.target, nw.target) :: changes
     }
 	  
 	  new StrictDiff(changes)
