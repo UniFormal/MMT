@@ -1,6 +1,5 @@
 package info.kwarc.mmt.owl
 import java.io.File
-import java.net.URI
 import info.kwarc.mmt.api._
 import utils.FileConversion._
 import info.kwarc.mmt.api.frontend._
@@ -9,6 +8,7 @@ import info.kwarc.mmt.api.moc._
 import scala.xml._
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.apibinding.OWLManager
+import info.kwarc.mmt.api.utils.URI
 
 
   //take two owl files as inputs
@@ -19,44 +19,43 @@ import org.semanticweb.owlapi.apibinding.OWLManager
   //propFunc
   object MoCinOWL {
 	def main(args: Array[String]) {
-		val controllerOlder = new Controller
-	    val controllerCurrent = new Controller
+		val controllerOld = new Controller
+	    val controllerCurr = new Controller
 
-	    controllerOlder.handle(ExecFile(new java.io.File("startup.mmt")))
-	    controllerCurrent.handle(ExecFile(new java.io.File("startup.mmt")))
-	   
-	    var olderVersion : File = null
-	    var currentVersion : File = null
-	   
+	    controllerOld.handle(ExecFile(new java.io.File("startup.mmt")))
+	    controllerCurr.handle(ExecFile(new java.io.File("startupCurrent.mmt")))
+	   	    
+	   //http://docs.omdoc.org/older.omdoc
 	    if(args.length < 1) 
-	    { println("USAGE: OLDFILE")  
+	    { println("USAGE: DocumentPath")  
 	      exit
 	    }
-	
-	    olderVersion = new File(args(0)) //has to be in the source folder
-	    currentVersion = new File(args(1)) //this should not be in the source folder; elsewhere
-	    //we need the older version in the source folder to be able to get dependency relations.
+	    
+		val dpath : DPath = new DPath(URI(args(0)))
+		
+		//we need the older version in the source folder to be able to get dependency relations.
 	    //two versions have the same ontology IRI, so they should not be in the source folder together, because we cannot compare them
-	   
-	   //transates older OWL document to MMT in compiled folder
-	   val controllerBuild = new Controller
-	   controllerBuild.handleLine("File build-test.mmt")
-	   	     
-	   //translates current OWL document to MMT
-	   val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
-	   val importer = new Import (manager, controllerCurrent)
-       val ontology : OWLOntology  = manager.loadOntologyFromOntologyDocument(currentVersion)
-	   val dpath : DPath = importer.ontologyToLF(ontology)
-	  
-	   val olderDoc : DPath  = controllerOlder.read(olderVersion)
-       val currentDoc : DPath = controllerCurrent.read(currentVersion)
+	    //olderVersion has to be in the source folder
+	    //currentVersion should not be in the source folder; elsewhere
+	    
+	    //transates older and the current OWL documents to MMT 
+	    controllerOld.handleLine("file build-test.mmt")
+	    controllerCurr.handleLine("file build-testCurrent.mmt")
+          
+	      
+	    //read mmt documents
+	    //val olderDoc : DPath  = controllerOld.read()
+        //val currentDoc : DPath = controllerCurr.read()
+	    
+        //val mpath = new MPath(dpath,new LocalPath("_"))
+        var diff = Differ.diff(controllerOld, controllerCurr, dpath, dpath)
+        val pretty = new PrettyPrinter (150, 3) 
+        println(pretty.format(diff.toNode))
+        //propagate(diff)
+     
         
-       var diff = Differ.diff(controllerOlder, controllerCurrent, olderDoc, currentDoc)
-       
-	   //propagate(diff)
-	  		
-	   
-	   
+    
+        
 	}
   
 }

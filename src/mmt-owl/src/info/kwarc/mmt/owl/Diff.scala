@@ -57,11 +57,8 @@ object Diff{
 	 else 
 		 olderVersion = new File(args(1))
 			
-	
-		
 	//val olderVersion : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDs.omdoc")
     //val currentVersion : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDsChanged.omdoc")
-	
                 
     val olderDoc : DPath  = firstController.read(olderVersion)
     val currentDoc : DPath = secondController.read(currentVersion)
