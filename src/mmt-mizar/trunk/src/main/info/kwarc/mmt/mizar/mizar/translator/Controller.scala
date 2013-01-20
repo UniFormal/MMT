@@ -189,4 +189,9 @@ object TranslationController {
 		}
 		"x" + i
 	}
+	
+	def makeConstant(n: LocalName, t: Term) =
+      new Constant(OMMOD(currentTheory), n, None, Some(t), None, None, None)
+   def makeConstant(n: LocalName, t: Term, d: Term) =
+      new Constant(OMMOD(currentTheory), n, None, Some(t), Some(d), None, None)
 }

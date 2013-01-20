@@ -107,7 +107,7 @@ object MMTUtils {
 	}
 	
 	def getPath(aid : String, name : List[String]) : GlobalName = {
-	  getTheoryPath(aid) ? LocalName(name.map(NamedStep)) 
+	  getTheoryPath(aid) ? LocalName(name.map(SimpleStep)) 
 	}
 	
 	def args(argNr : String, body : Term) : Term = {
