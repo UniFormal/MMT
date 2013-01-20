@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-mizar" default="build" basedir=".">
 
+  <property name="deploy" value="../../../deploy" />
+	
   <target name="init">
 	<!-- The variable scala.home holds the directory in which to find the scala compiler. -->
-	<property name="deploy" value="../../../deploy" />
-	<property name="build" value="build" />
-	<property name="build.main" value="${build}/main" />
-   <property name="src.main" value="src/" />
 
 	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
 	<path id="scalac.classpath">
@@ -27,23 +25,23 @@
   </target>
   
   <target name="compile" depends="init">
-        <mkdir dir="${build.main}"/>
-        <scalac destdir="${build.main}" srcdir="${src.main}" classpathref="scalac.classpath" deprecation="yes"/>
+        <mkdir dir="bin"/>
+        <scalac destdir="bin" srcdir="src" classpathref="scalac.classpath" deprecation="yes"/>
     </target>
   
   <target name="build" depends="compile">
-        <jar destfile="${build}/mmt-mizar.jar">
+        <jar destfile="${ant.project.name}.jar">
             <manifest>
-                <!-- DM TODO: this shouldn't really be here -->
+                <!-- TODO: remove this -->
                 <attribute name="Class-Path" value="${deploy}/lib/scala-library.jar ${deploy}/lfcatalog/lfcatalog.jar ${deploy}/mmt/mmt-api.jar"/>
             </manifest>
-            <fileset dir="${build.main}"/>
+            <fileset dir="bin"/>
         </jar>
     </target>
 
-   <target name="deploy" depends="init">
+   <target name="deploy" depends="build">
        <copy todir="${deploy}/mmt">
-           <fileset file="${build}/mmt-mizar.jar"/>
+           <fileset file="${ant.project.name}.jar"/>
        </copy>
    </target>
 	

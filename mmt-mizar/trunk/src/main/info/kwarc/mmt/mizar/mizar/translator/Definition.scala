@@ -20,7 +20,9 @@ import objects.Conversions._
 
 object DefinitionTranslator {
 
-  def makeMatches(args: List[Term], ret: Option[(String, Term)],
+   import TranslationController.makeConstant
+
+   def makeMatches(args: List[Term], ret: Option[(String, Term)],
     cases: List[Term], results: List[Term], default: Option[Term]): Substitution = {
     val argSubs = Sub("n", OMI(args.length)) :: Sub("args", Sequence(args: _*)) :: Nil
     val retSub = ret.map(t => Sub(t._1, t._2) :: Nil).getOrElse(Nil)
@@ -40,7 +42,7 @@ object DefinitionTranslator {
       val name = "D" + dt.nr
       TranslationController.addGlobalProp(dt.prop.nr, name)
       val tp = PropositionTranslator.translateProposition(dt.prop)
-      val const = new Constant(OMMOD(TranslationController.currentTheory), LocalName(name), Some(tp), None, None, None)
+      val const = makeConstant(LocalName(name), tp)
       TranslationController.controller.add(const)
     }
 
@@ -300,7 +302,7 @@ object DefinitionTranslator {
     val con = Context(VarDecl("x", Some(Sequence(args : _*)), None))
     val df = Lambda(con, exp)
     
-    val const = new Constant(OMMOD(TranslationController.currentTheory), name, Some(tp), Some(df), None, None)
+    val const = makeConstant(name, tp, df)
     
     TranslationController.clearLocusVarContext()
   }
