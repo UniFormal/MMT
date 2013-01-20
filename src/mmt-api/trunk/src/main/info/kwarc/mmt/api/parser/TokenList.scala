@@ -8,6 +8,7 @@ object TokenList {
    import java.lang.Character._
    /** the Tokenizer
     * @param the string to tokenize
+    * @param first the position of the first character (defaults to 0)
     * @return the resulting TokenList
     * 
     * tokens are sequences of letters or individual other Unicode characters
@@ -16,28 +17,31 @@ object TokenList {
     * 
     * connectors connect the preceding and the succeeding Tokens into a single Token;
     * the connector is part of the Token
+    * 
+    * The SourcePositions in the Tokens are only correct if all line endings contain a '\n'.
+    * (The '\n' counts when counting the offset.) 
     */
-   def apply(s: String) : TokenList = {
+   def apply(s: String, first: SourcePosition = SourcePosition(0,0,0)) : TokenList = {
       val l = s.length
       // lexing state
-      var i = 0        // position of net Char in s
+      var i = first  // position of net Char in s
       var current = "" // previously read prefix of the current Token
       var connect = false // current.last.getType == CONNECTOR_PUNCTUATION
       var whitespace = true //there was a whitespace before the current Token
       var tokens : List[Token] = Nil // Token's found so far in reverse order
       // the lexing loop
-      while (i < l) {
-         val c = s(i) // current Char
+      while (i.offset < l) {
+         val c = s(i.offset) // current Char
          val tp = c.getType // current Char's type
          // whitespace always starts a new Token, 
          if (c.isWhitespace) {
             if (current != "") {
                tokens ::= Token(current, i-current.length, whitespace)
                current = ""
-            } 
+            }
             whitespace = true
          } else {
-            // we are in a multi-character Token
+            // we are in a Token
             tp match {
                // after a connector, everything continues the Token
                case _ if connect =>
@@ -45,6 +49,9 @@ object TokenList {
                   connect = false
                // letters, marks, and numbers continue the Token
                case _ if c.isLetter =>
+                  current += c
+               // the special MMT delimiters continue a multi-character Token; using . instead of /
+               case _ if (c == '?' || c == '.') && current != "" =>
                   current += c
                case COMBINING_SPACING_MARK | ENCLOSING_MARK | NON_SPACING_MARK =>
                   current += c
@@ -64,7 +71,7 @@ object TokenList {
                   }
                   // look ahead: if a connector follows, start a multi-character Token
                   // otherwise, create a single-character Token
-                  if (i < l-1 && s(i+1).getType == CONNECTOR_PUNCTUATION) {
+                  if (i.offset < l-1 && s(i.offset+1).getType == CONNECTOR_PUNCTUATION) {
                      current += c
                   } else {
                      tokens ::= Token(c.toString, i, whitespace)
@@ -72,7 +79,7 @@ object TokenList {
             }
             whitespace = false
          }
-         i += 1
+         if (c == '\n') i = i.nl else i += 1
       }
       //add the last Token, if any
       if (current != "")
@@ -149,11 +156,12 @@ trait TokenListElem {
 
 /** A Token is the basic TokenListElem
  * @param word the characters making up the Token (excluding whitespace)
- * @param first the index of the first character (starting from 0)
+ * @param first the index of the first character
  * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
  */
-case class Token(word: String, first:Int, whitespaceBefore: Boolean) extends TokenListElem {
+case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean) extends TokenListElem {
    override def toString = word //+ "@" + first.toString
+   def first = firstPosition.offset
    def last = first + word.length - 1
 }
 
