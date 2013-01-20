@@ -124,7 +124,7 @@ class TokenList(private var tokens: List[TokenListElem]) {
             tpOpt foreach doFoundArg
       }
       val (from,to) = an.fromTo
-      val matched = new MatchedList(newTokens.reverse, an, tokens(from).first, tokens(to-1).last)
+      val matched = new MatchedList(newTokens.reverse, an)
       tokens = tokens.take(from) ::: matched :: tokens.drop(to)
       (from,to)
    }
@@ -147,12 +147,7 @@ case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
 }
 
 /** the type of objects that may occur in a [[info.kwarc.mmt.api.parser.TokenList]] */
-trait TokenListElem {
-   /** the index of this TokenListElem's first character in the input */
-   def first : Int
-   /** the index of this TokenListElem's last character in the input */
-   def last : Int
-}
+trait TokenListElem
 
 /** A Token is the basic TokenListElem
  * @param word the characters making up the Token (excluding whitespace)
@@ -161,8 +156,6 @@ trait TokenListElem {
  */
 case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean) extends TokenListElem {
    override def toString = word //+ "@" + first.toString
-   def first = firstPosition.offset
-   def last = first + word.length - 1
 }
 
 /**
@@ -175,7 +168,7 @@ case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: 
  * 
  * TokenSlice's in an.getFound are invalid. 
  */
-class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation, val first: Int, val last: Int) extends TokenListElem {
+class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) extends TokenListElem {
    override def toString = if (tokens.isEmpty)
      "{" + an.notation.name.last + "}"
    else
@@ -201,6 +194,4 @@ class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation, val f
 class UnmatchedList(val tl: TokenList) extends TokenListElem {
    var scanner: Scanner = null
    override def toString = "{unmatched " + tl.toString + " unmatched}"
-   def first = tl(0).first
-   def last = tl(tl.length - 1).last
 }

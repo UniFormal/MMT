@@ -104,10 +104,11 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    private def makeTerm(te : TokenListElem, boundVars: List[LocalName]) : Term = {
       te match {
          case Token(word, _, _) =>
-            if (boundVars contains LocalName(word))
+            val name = LocalName.parse(word.replace(".", "/"))
+            if (boundVars contains name) {
                //single Tokens may be bound variables
-               OMV(LocalName(word))
-            else
+               OMV(name)
+            } else
                //in all other cases, we don't know
                throw ParseError("unbound token: " + word)
                //OMSemiFormal(objects.Text("unknown", word))
