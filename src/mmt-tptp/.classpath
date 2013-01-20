@@ -5,10 +5,9 @@
 	<classpathentry kind="con" path="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/antlr-3.2.jar"/>
-	<classpathentry kind="lib" path="lib/antlr-runtime-3.2.jar"/>
 	<classpathentry kind="lib" path="lib/tptp-parser.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/mmt/mmt-api.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/mmt/mmt-lf.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
-	<classpathentry kind="output" path="build/main"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
