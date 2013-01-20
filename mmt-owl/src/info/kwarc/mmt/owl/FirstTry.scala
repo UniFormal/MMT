@@ -36,7 +36,7 @@ object FirstTry {
 	println(pretty.format(pdiff.toNode))
     
 	//Patcher.patch(addImpacts.propagate(diff), secondController.memory)
-	Patcher.patch(pdiff, secondController.memory)
+	Patcher.patch(pdiff, secondController)
 	
 	val doc = secondController.getDocument(currentDoc).toNodeResolved(secondController.library)
 	//println(doc.toString)

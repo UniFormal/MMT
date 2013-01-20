@@ -5,7 +5,9 @@ import objects._
 /*
 works under Scala 2.10
 to use, instantiate and import MMTContext
+*/
 
+/*
 class MMTInterpolator(controller: frontend.Controller) {
    var theory : MPath = null
    implicit class MMTContext(sc: StringContext) {
