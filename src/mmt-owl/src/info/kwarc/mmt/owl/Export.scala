@@ -66,7 +66,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	   val ontoIRI = modNameToIRI(theory.path)
 	   ontology = manager.createOntology(ontoIRI)
 	   
-	   val symbols = theory.valueListNG 
+	   val symbols = theory.getPrimitiveDeclarations 
 	   symbols.foreach {
 	   symbol => symbol match {
 	  	  	   			case symbol : Constant => constantToOWL(symbol)

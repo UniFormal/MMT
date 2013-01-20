@@ -35,37 +35,37 @@ object Test {
 
       //generic type of natural numbers in the theory Nat
       val nat = new Constant(OMID(Nat.path),
-        LocalName("nat"),
+        LocalName("nat"), None,
           Some(LF.ktype), None, None, None)
       controller.add(nat)
 
       //zero constructor in the theory Nat
       val zero = new Constant(OMID(Nat.path),
-        LocalName("zero"),
+        LocalName("zero"), None,
           Some(OMID(nat.path)), None, None, None)
       controller.add(zero)
 
       //successor constructor in the theory Nat
       val succ = new Constant(OMID(Nat.path),
-        LocalName("succ"),
+        LocalName("succ"), None,
           Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
       controller.add(succ)
 
       //reflected type of natural numbers in the theory NatR
       val nat_refl = new Constant(OMID(NatR.path),
-        LocalName("N"),
+        LocalName("N"), None,
           Some(LF.ktype), Some(ReflType(OMMOD(NatR.path), OMID(nat.path))), None, None)
       controller.add(nat_refl)
 
       //zero constructor reflected from the theory Nat down to the theory NatR
       val zero_refl = new Constant(OMID(NatR.path),
-        LocalName("0"),
+        LocalName("0"), None,
           Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(NatR.path), OMID(zero.path))), None, None)
       controller.add(zero_refl)
 
       //successor constructor reflected from the theory Nat down to the theory NatR
       val succ_refl = new Constant(OMID(NatR.path),
-        LocalName("s"),
+        LocalName("s"), None,
           Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(NatR.path), OMID(succ.path))), None, None)
       controller.add(succ_refl)
 
@@ -81,9 +81,9 @@ object Test {
       *  sigma: corresponding record for the addition morphism mapping from Nat to NatR
       */
 
-      val sigma_n = (LocalName("nat"),Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))
-      val sigma_z = (LocalName("zero"),Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))
-      val sigma_s = (LocalName("succ"),
+      val sigma_n = (nat.path,Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))
+      val sigma_z = (zero.path,Lambda(LocalName("n"),OMID(nat_refl.path),OMV(LocalName("n"))))
+      val sigma_s = (succ.path,
         Lambda(LocalName("f"),
           Arrow(OMID(nat_refl.path),OMID(nat_refl.path)),
           Lambda(LocalName("n"),
@@ -93,7 +93,7 @@ object Test {
       val sigma = Record(List(sigma_n,sigma_z, sigma_s))
 
       val add = new Constant(OMID(NatR.path),
-        LocalName("add"),
+        LocalName("add"), None,
         Some(Arrow(OMID(nat_refl.path),
           Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))),
         Some(Lambda(LocalName("m"),
