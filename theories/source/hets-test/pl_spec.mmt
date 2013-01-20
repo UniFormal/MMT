@@ -8,8 +8,7 @@
 	keyword		local URI	instance name	argument list (expression!?)
 }%
 
-%spec SP = {
-%include PLpatt.
+%spec SP : PLpatt = {
   %instance prop p1 p.
   %instance prop p2 q.
   %instance axiom a1 p and q.
