@@ -11,6 +11,7 @@ import objects._
  * 
  * The parse results are added directly to the containing element 
  */
+//TODO this could parse arbitrarily many additional keywords, e.g., @author, @param, and so on
 object MetaDataParser extends InDocParser with InTheoryParser {
    private def parse(sp: StructureParser, s: ParserState, se: StructuralElement, k: String) {
       val key = sp.readSPath(MetaDatum.keyBase)(s)

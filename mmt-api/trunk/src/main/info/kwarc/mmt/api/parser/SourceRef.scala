@@ -34,8 +34,12 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   /** inverse of SourcePosition.parse */
   override def toString = offset + "." + line + "." + column
   def twoDimString = line + "." + column
-  /** a position that is i places later in the same line */
+  /** the position that is i places later in the same line */
   def +(i: Int) = SourcePosition(offset + i, line, column + i)
+  /** the position that is i places earlier in the same line */
+  def -(i: Int) = SourcePosition(offset - i, line, column - i)
+  /** the position that is 1 places later at the beginning of the the next line */
+  def nl = SourcePosition(offset + 1, line + 1, 0)
   /** the SourceRegion of lenght 1 at this SourcePosition */
   def toRegion = SourceRegion(this, this)
 }
