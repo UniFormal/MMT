@@ -28,7 +28,7 @@ class Theory2LogicSyntax {
 	def translateTheory(theo : Theory)  : LogicSyntax = {
 	  val logsyn = theo match {
 	    case theo : DeclaredTheory => {
-	      val decList = theo.valueListNG
+	      val decList = theo.getPrimitiveDeclarations
 	      
 	      val cats = getCatRefs(decList) map { x =>
 	        getCat(decList,x)
