@@ -1,92 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="mmt-tptp" default="build" basedir=".">
+<project name="mmt-tptp" default="deploy" basedir=".">
 
-
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <!--       DISPLAY HELP                                              -->
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <target name="help">
-        <echo>
-      MMT TPTP build file
-    -------------------------------------------------------
-
-      available targets:
-
-      help        - print this message
-      build       - compile, generate jars, deploy
-      docs        - generate documentation
-
-      compile     - compile sources to build/main and build/test
-      scaladoc    - generate scaladoc in build/apidocs
-      jar         - generate build/mmt-api.jar
-      clean       - clean up the build directories
-
-    -------------------------------------------------------
-        </echo>
-    </target>
-
-    <property environment="env" />
-    <property file="build.properties" />
+	 
+	<property name="deploy" value="../../deploy"/>
+	
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
-    <path id="compile.classpath">
-        <fileset dir="${deploy}/lib">
-            <include name="**/*.jar"/>
-        </fileset>
-      <fileset dir="${deploy}/mmt">
-          <include name="**/*.jar"/>
-      </fileset>
+    <path id="scalac.classpath">
+        <pathelement location="${deploy}/lib/scala-library.jar"/>
+        <pathelement location="${deploy}/lib/scala-compiler.jar"/>
+        <pathelement location="${deploy}/lib/tiscaf.jar"/>
+    	<pathelement location="${deploy}/mmt/mmt-api.jar"/>
+    	<pathelement location="${deploy}/mmt/mmt-lf.jar"/>
+    	<pathelement location="lib/tptp-parser.jar"/>
+    	<pathelement location="lib/antlr-3.2.jar"/>
+        <pathelement location="bin"/>
     </path>
     <path id="scaladoc.classpath">
-        <path refid="compile.classpath"/>
+        <path refid="scalac.classpath"/>
     </path>
+
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
+
     <taskdef resource="scala/tools/ant/antlib.xml"
-        classpathref="compile.classpath"/>
+        classpathref="scalac.classpath"/>
 
     <target name="init">
         <tstamp />
     </target>
 
     <target name="compile" depends="init">
-        <mkdir dir="${build.main}"/>
-        <mkdir dir="${build.test}"/>
-        <scalac destdir="${build.main}" srcdir="${src.main}"
-            classpathref="compile.classpath" deprecation="yes"/>
-        <scalac destdir="${build.test}" srcdir="${src.test}"
-            classpathref="compile.classpath" deprecation="yes"/>
+        <mkdir dir="bin"/>
+        <scalac destdir="bin" srcdir="src" classpathref="scalac.classpath" deprecation="yes" unchecked="yes"/>
     </target>
 
     <target name="build" depends="compile">
-        <jar destfile="${build}/${jar}">
-            <manifest>
-            </manifest>
-            <fileset dir="${build.main}"/>
+        <jar destfile="${ant.project.name}.jar">
+            <fileset dir="bin"/>
         </jar>
     </target>
 
+	<!--
     <target name="scaladoc" depends="init">
         <mkdir dir="${apidocs}"/>
         <scaladoc
             destdir="${apidocs}"
-            doctitle="${prj.name}"
-            docversion="${prj.version}"
+            doctitle="${prj}"
+            docversion="${mmt.version}"
             sourcepath="${src.main}"
             classpathref="scaladoc.classpath"
             srcdir="${src.main}">
             <include name="**/*.scala"/>
         </scaladoc>
     </target>
-
-    <target name="deploy">
-<!--        <copy todir="${deploy}/${prj.name}/apidocs">
-            <fileset dir="${apidocs}" includes="**/*"/>
-        </copy> -->
+-->
+    <target name="deploy" depends="build">
         <copy todir="${deploy}/mmt">
-            <fileset file="${build}/${jar}"/>
+            <fileset file="${ant.project.name}.jar"/>
         </copy>
     </target>
 
     <target name="clean">
-        <delete dir="${build}" />
+        <delete dir="bin"/>
     </target>
 </project>
