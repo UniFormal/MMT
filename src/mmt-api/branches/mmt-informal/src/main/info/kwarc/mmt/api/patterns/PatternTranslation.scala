@@ -23,10 +23,10 @@ object Functor {
     val theoExp = OMA(OMS(mmt.functorapplication),List(OMMOD(view.path),OMMOD(theo.path)))
     val mp = theoExp.toMPath
     val outputTheory =  new DeclaredTheory(mp.parent,mp.name,None)
-    controller.add(Include(OMMOD(mp),view.to))
+    //controller.add(Include(OMMOD(mp),view.to)) TODO: fix
     controller.add(outputTheory)
     //val decls = lib.get(view.path)
-    val decls = theo.valueList
+    val decls = theo.getPrimitiveDeclarations
     //TODO the meta-theory of theo has to be the domain of view
     decls.map {
     //case p : Pattern => TODO
@@ -40,24 +40,24 @@ object Functor {
            }
            a.target match {
              case PatternSym(p) => 
-               //val iTE = new InstanceElaborator(controller)
-               val pt = controller.globalLookup.getPattern(p)         
-               val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
-     	       val names = lpair.unzip._1
-     	       val subs = lpair.unzip._2  
-               def auxSub(x : Term) = {
-     		      x ^ (inst.matches ++ Substitution(subs : _*))  
-               }
-     	       pt.body.map {
+                  //val iTE = new InstanceElaborator(controller)
+                  val pt = controller.globalLookup.getPattern(p)         
+                  val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
+        	       val names = lpair.unzip._1
+        	       val subs = lpair.unzip._2  
+                  def auxSub(x : Term) = {
+        		      x ^ (inst.matches ++ Substitution(subs : _*))  
+                  }
+        	       pt.body.map {
      		   case VarDecl(n,tp,df,at @ _*) =>
-     		   val nname = inst.name / n     			
-     		   val c = new Constant(theoExp,nname,tp.map(auxSub),df.map(auxSub),None,None)
-     		   controller.add(c)     		   
-               /*	
-     			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
-     			cont(c)
-     	        */
-     	
+        		   val nname = inst.name / n     			
+        		   val c = new Constant(theoExp,nname,None,tp.map(auxSub),df.map(auxSub),None,None)
+        		   controller.add(c)     		   
+                  /*	
+        			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
+        			cont(c)
+        	        */
+        	
      	       }        	       
            }       
          //case Some(t) => null//TODO Error

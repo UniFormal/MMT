@@ -128,7 +128,7 @@ object pragmaticAlphaRename extends PragmaticChangeType {
         if (con.components.length == con2.components.length) {
           var newcon = context
           var holds = con.components.zip(con2.components) forall {
-            case (VarDecl(n, tp, df), VarDecl(n2, tp2, df2)) => 
+            case (VarDecl(n, tp, df, _*), VarDecl(n2, tp2, df2, _*)) => 
               newcon += (n.toPath -> n2.toPath)
               isAlpha(tp, tp2) && isAlpha(df, df2)              
           }
@@ -138,7 +138,7 @@ object pragmaticAlphaRename extends PragmaticChangeType {
         }
       case _ => false
     }
-  }  
+  }
   
   def matches(diff : Diff) : Boolean = diff.changes match {
     case UpdateComponent(p,c, Some(t : Term), Some(t2 : Term)) :: Nil => isAlpha(t,t2)(new immutable.HashMap[String,String])

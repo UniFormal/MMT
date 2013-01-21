@@ -6,8 +6,8 @@ import objects._
 import utils.MyList._
 
 /** a possible completion
- * @parent theory from which the resolved symbol is imported
- * @completion name of the completed symbol 
+ * @param parent theory from which the resolved symbol is imported
+ * @param completion name of the completed symbol 
  */
 case class Completion(parent: Path, completion: LocalName)
 
@@ -25,7 +25,7 @@ object Names {
       get(home) match {
          case None => Nil
          case Some(t) =>
-            val names = t.valueList mapPartial {d => if (d.name.isAnonymous) None else Some(d.name)}
+            val names = t.getDeclarations mapPartial {d => if (d.name.isAnonymous) None else Some(d.name)}
             names.filter(_.toString.startsWith(partialName)).map(n => Completion(t.path, n))
       }
    }
@@ -35,7 +35,7 @@ object Names {
       if (qualifiers.isEmpty) {
          incls flatMap {i => lookIn(i, partialName)}
       } else {
-         val name = LocalName(qualifiers map NamedStep)
+         val name = LocalName(qualifiers map SimpleStep)
          lib.getO(home % name) match {
             case Some(l : Structure) => resolve(l.from, Nil, partialName)
             case Some(_) => Nil

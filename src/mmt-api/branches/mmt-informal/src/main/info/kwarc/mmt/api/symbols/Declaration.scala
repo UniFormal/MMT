@@ -5,37 +5,35 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.libraries._
 
 /**
- * Declaration unifies MMT symbols and MMT assignments. These are the named statements.
+ * Declaration unifies MMT symbols and MMT assignments.
  * 
- * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory or link, respectively
- * @param name the name of the symbol that is declared or instantiated, respectively
+ * These are the named statements living in [[info.kwarc.mmt.api.modules.Module]]s
  */
-sealed abstract class Declaration extends ContentElement {
+abstract class Declaration extends ContentElement {
+   /** the containing module */
    val parent = home.toMPath
+   /** the containing module
+    * 
+    * this is almost always OMMOD(p:MPath),
+    * the main exception are generated anonymous modules
+    */
    val home : Term
+   /** the local name in the containing module
+    * 
+    *  for symbols: the name of the symbols
+    *  
+    *  for assignments: the name of the symbols to which a value is assigned 
+    */
    val name : LocalName
+   /** an alternative name
+    * 
+    *  None by default; overridden in particular by Constant
+    */
+   val alternativeName: Option[LocalName] = None
+   /** the full MMT URI, parent ? name */
    def path = GlobalName(home, name)
    /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */ 
-   def implicitKey : Option[Term] = None
-}
-
-/**
- * A Symbol represents an MMT symbol.<p>
- * 
- * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
- */
-abstract class Symbol extends Declaration {
-   val home : Term
-}
-
-/**
- * An Assignment represents an MMT assignment.<p>
- * 
- * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent link
- */
-abstract class Assignment extends Declaration {
-   val home : Term
-   //val target : Obj
+   def implicitKey : Option[MPath] = None
 }
 
 class SFDeclaration(val home : Term, val tokens : List[SFDeclElem]) extends Declaration {

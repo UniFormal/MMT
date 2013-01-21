@@ -185,7 +185,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
              }
              val termParser = controller.termParser
              val tm = try {
-               termParser(parser.ParsingUnit(null, scope, objects.Context(), bodyAsString(tk)), true)
+               termParser(parser.ParsingUnit(null, scope, objects.Context(), bodyAsString(tk)))
              } catch {
                case e : Throwable =>
                  println(e)
@@ -255,7 +255,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
             case Nil => //no error -> parsing successful
               try {
                 val mod = ctrl.memory.content.getModule(mpath)
-                val nset = DPath(URI("http://cds.omdoc.org/foundations/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
+                val nset = DPath(URI("http://cds.omdoc.org/styles/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
                 val rb = new presentation.XMLBuilder()
                 val module = if(save) {
                   controller.get(mpath)
@@ -298,13 +298,14 @@ class Server(val port: Int, controller: Controller) extends HServer {
                 JsonResponse(JSONObject(response.toMap)).act(tk)
               }  catch {
                 case e : Throwable =>
-                  TextResponse(e.toString).act(tk)
+                  e.printStackTrace()
+                  TextResponse(e.getMessage()).act(tk)
               }
             case l => //parsing failed -> returning errors 
               val response = new collection.mutable.HashMap[String,Any]()
               response("success") = "false"
               response("info") = JSONArray(Nil)
-              response("pres") = l.map(e => (<p>{e.toString}</p>).toString).mkString("")
+              response("pres") = l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString("")
               JsonResponse(JSONObject(response.toMap)).act(tk)
           }
         case _ => throw ServerError(<error><message> invalid theory name in query : {tk.req.query}</message></error>)

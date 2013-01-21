@@ -2,6 +2,18 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import utils._
 
+/** extended by all classes that use the logging aspect */
+trait Logger {
+   val report: Report
+   val logPrefix: String
+   protected def log(s : => String) = report(logPrefix, s)
+   protected def logGroup[A](a: => A) : A = {
+      report.indent
+      try {a}
+      finally {report.unindent}
+   }
+}
+
 /** Instances of Report handle all output to the user */
 class Report {
    /** output is categorized, the elements of group determine which categories are considered
@@ -10,10 +22,10 @@ class Report {
    /** logs a message if logging is switched on for the group */
    def apply(group : => String, msg : => String) : Unit =
 	   if (groups.contains(group) || groups.contains("*")) log(group, msg)
-   /** outputs an error (catgory "error") */
+   /** outputs an error (category "error") */
    def apply(e : Error) {
 	   apply("error", e.msg)
-	   apply("error", "\n" + e.stackTrace)
+	   apply("debug", "\n" + e.stackTrace)
 	}
    /** definitely logs a message */
    private def log(group : => String, msg : => String) {
@@ -32,7 +44,7 @@ class Report {
 
    protected var ind : String = ""
    /** increase indentation */
-   def indent {ind = ind + "  "}
+   def indent {ind += "  "}
    /** decrease indentation */
    def unindent {ind = ind.substring(2)}
 

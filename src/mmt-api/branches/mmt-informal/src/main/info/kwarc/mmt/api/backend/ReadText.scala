@@ -4,13 +4,10 @@ import metadata._
 import documents._
 import modules._
 import parser._
-import patterns.Pattern
-
-//import presentation._
+import patterns._
 import objects._
 import symbols._
 import utils._
-
 import scala.collection.mutable._
 
 // TODO second phase should update from fields in structures, as well as all aliases with the correct references. Currently aliases point to originatingLink?name
@@ -68,7 +65,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   
   /** errors that occur during parsing */
    object TextParseError {
-     def apply(pos: SourcePosition, s : String) = SourceError("parser", SourceRef(dpath.uri, pos.toRegion), s)
+     def apply(pos: SourcePosition, s : String) = SourceError("structure-parser", SourceRef(dpath.uri, pos.toRegion), s)
    }
 
   // ------------------------------- document level -------------------------------
@@ -138,8 +135,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          }
          else if (flat.startsWith("%view", i))
            i = crawlView(i)
-//         else if (flat.startsWith("%spec", i))
+         else if (flat.startsWith("%spec", i)) {
            //TODO read logic spec
+//           throw TextParseError(toPos(i), "reading spec!")
+           i = crawlSpec(i)
+         }
          else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) // unknown top-level %-declaration => ignore it
            i = skipAfterDot(i)
          else if (flat.startsWith("%.", i))  // this marks the end of file; ignore everything after
@@ -308,7 +308,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         i += 1
       else if (isIdentifierPartCharacter(c)) { // identifier
         val (id, posAfter) = crawlIdentifier(i) // also finds identifiers that contain . 
-        if (delimiters contains id) // these ends the term  if they occur anywhere outside a bracketed block and are not part of a larger identifier
+        if (delimiters contains id) // these end the term  if they occur anywhere outside a bracketed block and are not part of a larger identifier
           return computeReturnValue
         i = posAfter
       }
@@ -324,11 +324,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          puCont(pu)  
       } catch {
          case e: ParseError =>
-            errors = errors :+ TextParseError(toPos(start), e.getMessage)
-            DefaultParser(pu)
-         case e =>
-            errors = errors :+ TextParseError(toPos(start), e.getMessage)
-            DefaultParser(pu)
+            errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
+            DefaultObjectParser(pu)
+         case e: Error =>
+            errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
+            DefaultObjectParser(pu)
       }
       addSourceRef(obj, start, i - 1)
       Pair(obj, i)
@@ -656,7 +656,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = new Constant(cpath.module, cpath.name, constantType, constantDef, None, constantNotation)
+    val constant = new Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
@@ -670,6 +670,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     * @return position after the block, i.e. ideally on the '.'
     * @throws SourceError for syntactical errors
     * note: if link's domain is not yet known (link.from == null), the alias points to link.toMorph ? name */
+  //TODO: the whole method should be removed and parsing of aliases changed
+  //this affects backwards compatibility with Twelf though
+  //for now, all found aliases are ignored
   private def crawlOpen(start: Int, link: Link) : Int =
   {
     var i = crawlKeyword(start, "%open")
@@ -710,6 +713,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       else // otherwise, the alias is simply the old name
         newLocalName = LocalName(ref)
 
+      /*
       // construct the alias
       val alias = new Alias(link.to, newLocalName, refGlobalName)
 
@@ -719,6 +723,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
       // add to controller
       add(alias)
+      */
     }
     return i
   }
@@ -735,25 +740,27 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     var i = crawlKeyword(start, "%include")
     i = skipws(i)
     val (importName, positionAfter) = crawlIdentifier(i)    // read import name
-    val from = moduleToAbsoluteURI(i, importName)
+    val fromOpt = moduleToAbsoluteURI(i, importName)
     i = positionAfter
-
-    // create the Include object
-    val include = Include(parent.toTerm, from)
 
     // read the optional %open statement
     i = skipwscomments(i)
-    if (flat.startsWith("%open", i))
-      i = crawlOpen(i, include)
-
-    val endsAt = expectNext(i, ".")
-
-    // add metadata and source references
-    addSemanticComment(include, oldComment)
-    addSourceRef(include, start, endsAt)
-
-    add(include)
-    return endsAt + 1
+    fromOpt match {
+      case Some(from) =>
+          // create the Include object
+          val include = Include(parent.toTerm, from)
+          if (flat.startsWith("%open", i))
+             i = crawlOpen(i, include)      
+          // add metadata and source references
+          addSemanticComment(include, oldComment)
+          val endsAt = expectNext(i, ".")
+          addSourceRef(include, start, endsAt)
+          add(include)
+          i = endsAt
+      case None => //recover from error by trying to skip include
+          i = expectNext(i, ".")
+    }
+    return i + 1
   }
 
 
@@ -766,7 +773,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   {
     var i = skipws(crawlKeyword(start, "%meta"))
     val (metaTheoryName, positionAfter) = crawlIdentifier(i)    // read meta theory name
-    parent.meta = Some(Path.parseM(moduleToAbsoluteURI(i, metaTheoryName).toString, parent.path))
+    parent.meta = moduleToAbsoluteURI(i, metaTheoryName)
     i = positionAfter
     val endsAt = expectNext(i, ".")
     return endsAt + 1
@@ -780,7 +787,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     * @throws SourceError for syntactical errors */
   private def crawlStructureDeclaration(start: Int, parent: Theory) : Int =
   {
-    var domain : Option[Term] = None
+    var domain : Option[MPath] = None
     var isImplicit : Boolean = false
 
     val oldComment = keepComment
@@ -805,7 +812,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       i += 1
       i = skipws(i)
       val (dom, positionAfterDomain) = crawlIdentifier(i)   // jump over structure domain
-      domain = Some(moduleToAbsoluteURI(i, dom))
+      domain = moduleToAbsoluteURI(i, dom)
       i = positionAfterDomain
       i = skipwscomments(i)
     }
@@ -833,7 +840,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, parent.toTerm)
         i = positionAfter
         domain match {
-          case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), morphism, isImplicit)
+          case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), morphism, isImplicit)
           //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted 
           case None => structure = new DefinedStructure(parent.toTerm, LocalName(name), null, morphism, isImplicit)
         }
@@ -845,7 +852,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       case None => throw TextParseError(toPos(start), "structure has no definiens and its domain is not specified")
       case Some(dom) =>
         // It's a DeclaredStructure with empty body
-        structure = new DeclaredStructure(parent.toTerm, LocalName(name), OMMOD(Path.parseM(dom.toString, parent.path)), isImplicit)
+        structure = new DeclaredStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), isImplicit)
         add(structure)
     }
 
@@ -864,7 +871,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   }
 
   // parse a parameter list [param_1]...[param_n]
-  // does not work, since expects [param_1 param_2 ... does not expect ]!
   private def crawlParameterList(start: Int, theory: MPath) : Pair[Context, Int] = {
      var parameterContext = Context()
      var i = start
@@ -1071,7 +1077,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // add the constant assignment to the controller
-    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, term)
+    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, None, Some(term))
     add(constantAssignment)
 
     // add semantic comment and source references
@@ -1109,7 +1115,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
     // add the structure assignment to the controller
-    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName(strName), OMSemiFormal(Text("nl", "domain of"), Formal(morphism)), morphism) //TODO using informal description of unknown domain
+    val domain = null //TODO should be domain of morphism
+    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName(strName), domain, morphism)
     add(defLinkAssignment)
 
     // add semantic comment and source references
@@ -1130,8 +1137,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val oldComment = keepComment
     val i = skipws(crawlKeyword(start, "%include"))
 
-    val domain = OMSemiFormal(Text("nl", "unknown " + i.toString)) //should be required in input, i is needed for uniqueness
-    val apath = parent.toTerm % LocalName(MorphismStep(OMIDENT(domain)))
+    val domain = utils.mmt.mmtbase ? i.toString //dummy value - should be required in input, i is needed for uniqueness
+    val apath = parent.toTerm % LocalName(ComplexStep(domain))
 
     // get the morphism
     val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.to)
@@ -1190,6 +1197,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         // read pattern declaration
         i = crawlPatternDeclaration(i, parent)
       }
+      //TODO
+      else if (flat.startsWith("%pattern", i)) {
+        // read pattern instance
+        //i = crawlInstanceDeclaration(i, parent)
+      }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
       }
@@ -1222,11 +1234,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
        i = expectNext(i, ":") + 1
        i = skipwscomments(i)
        val (mtId, positionAfterMeta) = crawlIdentifier(i)
-       val mtTerm = moduleToAbsoluteURI(i, mtId)
-       mtTerm match {
-          case OMMOD(mt) => meta = Some(mt)
-          case _ => errors :+ TextParseError(toPos(i), "could not read meta-theory")
-       }
+       meta = moduleToAbsoluteURI(i, mtId)
        i = positionAfterMeta
     }
     i = expectNext(i, "=")
@@ -1390,7 +1398,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     * @param moduleName the module name as a string
     * @return the absolute URI of the module
     * @throws SourceError if the module name has a prefix and the prefix is not a valid namespace alias, or if the module name has no prefix and the current namespace is not defined */
-  private def moduleToAbsoluteURI(start: Int, moduleName: String) : Term = {
+  private def moduleToAbsoluteURI(start: Int, moduleName: String) : Option[MPath] = {
     // the URI of the module is *not* used to compute the absolute URI of its dependencies
     // Replace dots with question marks
     val relativeURI : String = moduleName.trim().replaceAll("\\056", "?")
@@ -1400,11 +1408,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
        currentNS match {
           case None =>
              errors :+ TextParseError(toPos(start), "no current namespace defined").copy(warning = true)
-             TextReader.makeSemiFormal(moduleName)
+             None
           case Some(ns) => 
-             val t = OMMOD(DPath(ns) ? relativeURI)
-             addSourceRef(t, start, start + moduleName.length)
-             t
+             Some(DPath(ns) ? relativeURI)
        }
     } else {
        // If it has a prefix, it belongs to a different namespace, which must have been declared before in the document
@@ -1413,11 +1419,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
           // unknown prefix
           case None =>
              errors :+ TextParseError(toPos(start), "unknown namespace prefix").copy(warning = true)
-             TextReader.makeSemiFormal(moduleName)
+             None
           case Some(ns) =>
-             val t = OMMOD(DPath(ns) ? relativeURI.substring(j+1))
-             addSourceRef(t, start, start + moduleName.length)
-             t
+             Some(DPath(ns) ? relativeURI.substring(j+1))
        }
     }
   }
@@ -1457,14 +1461,162 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   /** returns the top-level dpath of the current module */
   private def getCurrentDPath : DPath = currentNS.map(uri => DPath(uri)).getOrElse(dpath)
+  
+  //TODO
+  /** Reads a logic specification.
+    * @param start the position of the initial '%'
+    * @return position after the block
+    * @throws SourceError for syntactical errors */
+  // * should read spec name (do we store it?)
+  // * read include reference to the  home theory (load it?)
+  // * parse instance declarations, create Instance objects, add to home theory?
+  private def crawlSpec(start: Int) : Int =
+  {
+    val oldComment = keepComment
+    var i = skipws(crawlKeyword(start, "%spec"))
+
+    // read the name
+    val (specName, positionAfter) = crawlIdentifier(i)
+    i = skipwscomments(positionAfter)   // jump over identifier
+    val tpath = getCurrentDPath ? specName
+    var meta : Option[MPath] = None
+    
+    // <-------- ':' ?
+    if (flat.codePointAt(i) == ':') {
+       i = expectNext(i, ":") + 1
+       i = skipwscomments(i)
+       val (mtId, positionAfterMeta) = crawlIdentifier(i)
+       meta = moduleToAbsoluteURI(i, mtId)
+       i = positionAfterMeta
+    }
+    i = expectNext(i, "=")
+    i += 1    // jump over "="
+    i = skipws(i)
+    
+        
+    i = expectNext(i, "{")
+    // <-----------  how to manage specs in controller?
+    // add the (empty, for now) theory to the controller
+    val theory = new DeclaredTheory(tpath.parent, tpath.name, meta)
+    add(theory)
+    //        read the theory body
+    i = crawlSpecBody(i, theory)
+
+    val endsAt = expectNext(i, ".")
+
+    // add the semantic comment and source reference
+    addSemanticComment(theory, oldComment)
+    addSourceRef(theory, start, endsAt)
+
+    // add the link to this theory to the narrative document
+    add(MRef(dpath, theory.path, true)) //TODO is it true or false ?
+    return endsAt + 1
+  }
+  
+   /** Reads a theory body
+    * @param start the position of the opening {
+    * @param parent the enclosing DeclaredTheory
+    * @return the position after the closing }
+    * @throws SourceError for syntactical errors */
+  private def crawlSpecBody(start: Int, parent: DeclaredTheory) : Int =
+  {
+    var i = start + 1       // jump over '{'
+    keepComment = None          // reset the last semantic comment stored
+    i = skipwscomments(i)       // check whether there is a new semantic comment
+    var foundMeta = false
+    
+    // parent theorem
+    var thm : Term = null
+    
+    while (i < flat.length) {
+      if (flat.startsWith("%include", i)) {
+        val q = flat.substring(i)
+        // read include declaration        
+//        i = crawlIncludeDeclaration(i, parent)
+        i = crawlKeyword(i, "%include")
+        i = skipws(i)
+        val (importName, positionAfter) = crawlIdentifier(i)    // read import name
+        thm = OMMOD(moduleToAbsoluteURI(i, importName).get)
+        i = positionAfter
+        i = expectNext(i, ".") + 1
+      }
+      else if (flat.startsWith("%instance", i)) {
+        // read pattern instance
+        i = skipws(crawlKeyword(start, "%instance"))
+        val (name, positionAfter) = crawlIdentifier(i)
+        i = positionAfter
+        i = skipwscomments(i)
+        val pattern = parent.path ? name
+        i = crawlInstanceDeclaration(i, parent.toTerm, pattern)
+      }
+      else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
+        i = skipAfterDot(i)
+      }
+      else if (flat.codePointAt(i) == '}')    // end of signature body
+        return i + 1
+      else
+        throw TextParseError(toPos(i), "unknown declaration in signature body")
+      keepComment = None          // reset the last semantic comment stored
+      i = skipwscomments(i)       // check whether there is a new semantic comment
+    }
+    return i
+  }
+  
+    /** 
+     * reads a instance declaration.
+     * @param start the position of the initial % from %instance
+     * @param parent the parent theory
+     * @param pattern the pattern
+     * @return position after the block/
+     * @throws SourceError for syntactical errors
+     * example instance declaration syntax
+     *   (%instance pattern) name arg1 ... argn
+     *   (%pattern) name arg1 ... argn
+     */
+   private def crawlInstanceDeclaration(start: Int, parent: Term, pattern: GlobalName) : Int =
+   {
+     //var domain : Option[Term] = None
+     //var isImplicit : Boolean = false
+     var i = start
+     val oldComment = keepComment
+     // parse instance name
+     val (n, positionAfter) = crawlIdentifier(i)
+     val nameI = LocalName(n)
+     i = positionAfter
+     i = skipwscomments(i)
+     val instancePath = parent % nameI     
+
+     var args : List[Term] = Nil
+     while (flat.charAt(i) != '.') {
+        val Pair(t,posAfter) = crawlTerm(i, Nil, List(","), instancePath $ DefComponent, parent)
+        args = args ::: List(t)
+        i = posAfter
+     }
+     val endsAt = expectNext(i, ".")
+//     // add the semantic comment and source reference
+//     addSemanticComment(pattern, oldComment)
+//     addSourceRef(pattern, start, endsAt)
+
+//     // add the pattern instance to the parent theory
+      val matches = null
+      val instance = new Instance(parent, nameI, pattern, matches)
+      add(instance)
+     
+      return endsAt + 1
+   }
+
+  
 }
+
+
+
 
 
 object TextReader {
    /** the theory in which the parsed metadata keys reside */
    def metadataBase : MPath = MetaDatum.keyBase
    /** turns a string into a semiformal term */
-   def makeSemiFormal(s: String) = OMSemiFormal(objects.Text("Twelf", s)) 
+   //def makeSemiFormal(s: String) = OMSemiFormal(objects.Text("Twelf", s)) 
    /** the "sourceRef" metadata key */
    def sourceRefKey : GlobalName = Path.parseS(xml.namespace("omdoc") + "?metadata?sourceRef", Path.empty)
 }

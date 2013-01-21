@@ -7,9 +7,9 @@ import objects._
 import symbols._
 import modules._
 import documents._
+import parser._
 import ontology._
 import pragmatics._
-import symbols.Constant
 import web._
 import utils._
 import utils.FileConversion._
@@ -69,20 +69,22 @@ class Controller extends ROController {
 
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
+   /** pragmatic MMT features besides Patterns */
+   val pragmatic = new Pragmatics(this)
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(this)
    /** the MMT term parser */
-   val termParser = new parser.NotationParser(parser.LFGrammar.grammar, this)
-   /** the MMT parser (text/Twelf syntax) */
+   val termParser = new ObjectParser(this)
+   /** the MMT parser (native MMT text syntax) */
+   val textParser = new StructureAndObjectParser(this)
+   /** the MMT parser (Twelf text syntax) */
    val textReader = new TextReader(this)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
    /** the checker for the validation of ContentElement's and objects */
-   val checker = new Checker(this)
-   /** pragmatic MMT features besides Patterns */
-   val pragmatic = new Pragmatics(this)
+   val checker = new StructureChecker(this)
    /** the MMT rendering engine */
    val presenter = new presentation.Presenter(this, report)
    /** the query engine */
@@ -147,7 +149,6 @@ class Controller extends ROController {
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
       def preImage(p : GlobalName) = iterate {library.preImage(p)}
       def getDeclarationsInScope(mod : Term) = iterate {library.getDeclarationsInScope(mod)}
-      def getAllPaths() = library.getAllPaths //temporary TODO remove
    }
    /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {
@@ -235,28 +236,35 @@ class Controller extends ROController {
       backend.cleanup
       if (server.isDefined) stopServer
    }
-   /** reads a file containing a document and returns the Path of the document found in it */
+   /** reads a file containing a document and returns the Path of the document found in it
+    * the reader is chosen according to the file ending: omdoc, elf, or mmt
+    */
    def read(f: File, docBase : Option[DPath] = None) : DPath = {
-      val N = utils.xml.readFile(f)
-      val dpath = docBase.getOrElse(DPath(URI.fromJava(f.toURI)))
-      var p: DPath = null
-      xmlReader.readDocument(dpath, N) {
-         case d: Document =>
-            add(d)
-            p = d.path
-         case e => add(e)
-      }
-      p
-   }
-   /** reads a text/Twelf file and returns its Path */
-   def readText(f: File, docBase : Option[DPath] = None) : DPath = {
       val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
-      val source = scala.io.Source.fromFile(f, "UTF-8")
-      val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
-      source.close
-      if (!errorList.isEmpty)
-        log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
-      dpath
+      f.getExtension match {
+         case Some("omdoc") =>
+            val N = utils.xml.readFile(f)
+            var p: DPath = null
+            xmlReader.readDocument(dpath, N) {
+               case d: Document =>
+                  add(d)
+                  p = d.path
+               case e => add(e)
+            }
+            p
+         case Some("elf") | Some("mmt") =>
+            val source = scala.io.Source.fromFile(f, "UTF-8")
+            val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
+            source.close
+            if (!errorList.isEmpty)
+              log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
+            dpath
+         case Some("mmt-new") =>
+            textParser(Reader(f), dpath)
+            dpath
+         case Some(e) => throw ParseError("unknown file extension: " + f)
+         case None => throw ParseError("unknown document format: " + f)
+      }
    }
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
@@ -393,13 +401,12 @@ class Controller extends ROController {
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
 	      case Read(f) => read(f)
-	      case ReadText(f) => readText(f)
 	      case Graph(f) =>
 	         val tg = new TheoryGraph(depstore)
             tg.exportDot(f)
 	      case Check(p) =>
 	         try {
-	            checker.check(p)( _ => (), _ => ())
+	            checker.check(p)( _ => (), _ => None)
 	            log("check succeeded")
 	         } catch {
 	          case e: Error =>

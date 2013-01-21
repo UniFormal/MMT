@@ -107,6 +107,7 @@ class MonoidAction(unit: GlobalName, act: GlobalName) extends DepthRule(act, uni
 /** Signs in a product
  * {{{
  * a1 ... -b ... am ---> - a1 ... b ... am
+ * }}}
  * sign must be unary
 */
 class Sign(op: GlobalName, sign: GlobalName) extends DepthRule(op, sign) {
@@ -138,7 +139,7 @@ class Involution(op: GlobalName) extends DepthRuleUnary(op, op) {
  * This rule should be used with care because its use might make other rules inapplicable.
  * @param neg negation
  * @param pred the predicate
- * @parem negpred the antonym
+ * @param negpred the antonym
  */
 class Antonym(neg: GlobalName, pred: GlobalName, negpred: GlobalName) extends DepthRuleUnary(neg, pred) {
    val applyUnary : RewriteUnary = inside => GlobalChange(negpred(inside))

@@ -23,6 +23,8 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case m: Module => m case _ => throw GetError(msg(path))}
    def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
      get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
+   def getDeclaredTheory(path : MPath, msg : Path => String = defmsg) : DeclaredTheory =
+     get(path) match {case t: DeclaredTheory => t case _ => throw GetError(msg(path))}
    def getView(path : MPath, msg : Path => String = defmsg) : View =
      get(path) match {case v: View => v case _ => throw GetError(msg(path))}
    def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
@@ -122,8 +124,11 @@ abstract class Lookup(val report : frontend.Report) {
       def apply(t: Term)(implicit con: Context, morph: Term) = t match {
          case OMM(arg, via) => apply(arg)(con, OMCOMP(morph, via))
          case OMID(theo % ln) =>
-           val t = getConstantAssignment(morph % ln).target
-           apply(t)
+           val aOpt = getConstantAssignment(morph % ln).target
+           aOpt match {
+              case None => t
+              case Some(t) => apply(t)
+           }
          case t => Traverser.apply(this,t)(con, morph)
       }
    }

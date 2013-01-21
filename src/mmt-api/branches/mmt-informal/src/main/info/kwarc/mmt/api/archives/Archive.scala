@@ -19,12 +19,13 @@ case class CompilationStep(from: String, to: String, compiler: Compiler)
 /** convenience class for traversing an Archive */
 case class Current(file: File, path: List[String])
                                                                        
-abstract class ROArchive extends Storage {
+abstract class ROArchive extends Storage with Logger {
   //def traverse(dim: String, in: List[String], filter: String => Boolean)(f: List[String] => Unit)
 
   val rootString: String
   val properties: Map[String, String]
   val report : Report
+  val logPrefix = "archive"
   
   val narrationBackend : Storage
 
@@ -71,9 +72,6 @@ abstract class WritableArchive extends ROArchive {
     /** compilation errors */
     protected val compErrors = new LinkedHashMap[List[String], List[SourceError]]
     def getErrors(l: List[String]) = compErrors.getOrElse(l, Nil)
-    
-    /** Report a message using the given report handler */
-    def log(msg: => String) = report("archive", msg)
 
     protected def deleteFile(f: File) {
        log("deleting " + f)
@@ -204,7 +202,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
         file.getParentFile.mkdirs
         val fs = new presentation.FileWriter(file)
         frontend.Present(Get(mpath),style).make(controller, fs)
-        fs.file.close()
+        fs.done
       }
       log("done:  [CONT -> PRES]        -> " + inFile)
     }
@@ -250,7 +248,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
                  }
                  outStream.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
                  outStream.write("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-                 thy.valueList foreach {
+                 thy.getDeclarations foreach {
                     case c: Constant =>
                        List(c.tp,c.df).map(tO => tO map { 
                           t =>

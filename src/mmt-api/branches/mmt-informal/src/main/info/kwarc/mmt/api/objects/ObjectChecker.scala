@@ -24,18 +24,24 @@ class DelayedConstraint(val constraint: Judgement) {
 
 /**
  * A Solver is used to solve a system of constraints about Term's given as judgments.
+ * 
  * The judgments may contain unknown variables (also called meta-variables or logic variables);
  * variables may represent any MMT term, i.e., object language terms, types, etc.;
  * the solution is a Substitution that provides a closed Term for every unknown variable.
  * (Higher-order abstract syntax should be used to represent unknown terms with free variables as closed function terms.) 
+ * 
  * The Solver decomposes the judgments individually by applying typing rules, collecting (partial) solutions along the way and possibly delaying unsolvable judgments.
+ * If the unknown variables are untyped and rules require a certain type, the Solver adds the type.
+ * 
  * Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
+ * 
  * @param controller an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.
  * @param unknowns the list of all unknown variables including their types and listed in dependency order;
  *   unknown variables may occur in the types of later unknowns.
+ * 
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
-class Solver(val controller: Controller, theory: Term, unknowns: Context) {
+class Solver(val controller: Controller, theory: Term, unknowns: Context) extends Logger {
    /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
    private var solution : Context = unknowns
    /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
@@ -50,11 +56,20 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
     * @return None if there are unresolved constraints or unsolved variables; Some(solution) otherwise 
     */
    def getSolution : Option[Substitution] = if (delayed.isEmpty) solution.toSubstitution else None
+   /**
+    * @return the current partial solution to the constraint problem
+    * This solution may contain unsolved variables, and there may be unresolved constraints. 
+    */
+   def getPartialSolution : Context = solution
+   /**
+    * @return the current list of unresolved constraints
+    */
+   def getConstraints : List[Judgement] = delayed.map(_.constraint)
 
-   /** shortcut the controller's report instance for logging */ 
-   private val report = controller.report
-   /** shortcut for the log function; in the MMT shell, call "log+ object-checker" to activate logging for this component */
-   private def log(s: => String) = report("object-checker", s)
+   /** for Logger */ 
+   val report = controller.report
+   /** prefix used when logging */ 
+   val logPrefix = "object-checker"
    /** shortcut for the global Lookup of the controller; used to lookup Constant's */
    private val content = controller.globalLookup
    /** shortcut for the RuleStore of the controller; used to retrieve Rule's */
@@ -64,7 +79,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
    override def toString = {
       "  unknowns: " + unknowns.toString + "\n" +
       "  solution: " + solution.toString + "\n" +
-      "  constraints:\n" + delayed.mkString("  ", "\n    ", "") 
+      "  constraints:\n" + delayed.mkString("  ", "\n  ", "") 
    }
    
    /** delays a constraint for future processing
@@ -92,21 +107,42 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
       res
    }
    /** registers the solution for a variable
+    * 
     * If a solution exists already, their equality is checked.
-    * @param solve the solved variable
-    * @param the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable
+    * @param name the solved variable
+    * @param value the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable
     * @return true unless the solution differs from an existing one
     */
    private def solve(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
+      log("solving " + name + " as " + value)
+      val valueS = simplify(value) 
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
-         checkEquality(value, solved.df.get, solved.tp) //TODO
+         checkEquality(valueS, solved.df.get, solved.tp) //TODO
       else {
-         solution = left ::: solved.copy(df = Some(value)) :: right
+         solution = left ::: solved.copy(df = Some(valueS)) :: right
          newsolutions = name :: newsolutions
          true
       }
    }
+   /** registers the solved type for a variable
+    * 
+    * If a type exists already, their equality is checked.
+    * @param name the variable
+    * @param value the type; must not contain object variables, but may contain meta-variables that are declared before the solved variable
+    * @return true unless the type differs from an existing one
+    */
+   private def solveType(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
+      val (left, solved :: right) = solution.span(_.name != name)
+      if (solved.tp.isDefined)
+         checkEquality(value, solved.tp.get, None) //TODO
+      else {
+         solution = left ::: solved.copy(tp = Some(value)) :: right
+         //no need to register this in newsolutions
+         true
+      }
+   }
+   
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
     *  @param j the Judgement
@@ -141,7 +177,11 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
      val res = tm match {
        // the foundation-independent cases
        case OMV(x) => (unknowns ++ stack.context)(x).tp match {
-         case None => false //untyped variable type-checks against nothing
+         case None =>
+            if (unknowns.isDeclared(x))
+              solveType(x, tp) //TODO: check for occurrences of bound variables?
+            else
+              false //untyped variable type-checks against nothing
          case Some(t) => checkEquality(t, tp, None)
        }
        case OMS(p) =>
@@ -179,7 +219,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
        case OMMOD(p) => controller.globalLookup.getTheory(p) match {
          case thdf : DefinedTheory =>  checkMorphism(mor, thdf.df)
          case thd : DeclaredTheory =>
-           val clist : List[Declaration] = thd.valueList filter (p => !p.isInstanceOf[Structure])  // list of constants in the domain theory
+           val clist : List[Declaration] = thd.getDeclarations filter (p => !p.isInstanceOf[Structure])  // list of constants in the domain theory
            //val oclist : List[Declaration] = clist.sortWith((x,y) => x.name.toString() <= y.name.toString()) //ordered list of constants in the domain theory
            mor match {
              case ExplicitMorph(rec, dom) =>
@@ -256,6 +296,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
      res
    }
    
+   case object Delay extends java.lang.Throwable
+   
    /** proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.
     * @param tm1 the first term
     * @param tm2 the second term
@@ -269,11 +311,14 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
     */
    def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack : Stack): Boolean = {
       log("equality: " + stack.context + " |- " + tm1 + " = " + tm2 + " : " + tpOpt)
+      // simplify to improve chances of equating the terms  
+      val tm1S = simplify(tm1)
+      val tm2S = simplify(tm2)
       // first, we check for some common cases where it's redundant to do induction on the type
       // identical terms
-      if (tm1 == tm2) return true
+      if (tm1S == tm2S) return true
       // solve an unknown
-      val solved = tryToSolve(tm1, tm2) || tryToSolve(tm2, tm1)
+      val solved = tryToSolve(tm1S, tm2S, tpOpt) || tryToSolve(tm2S, tm1S, tpOpt)
       if (solved) return true
 
       // use the type for foundation-specific equality reasoning
@@ -282,24 +327,24 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
       val tp = tpOpt match {
         case Some(tp) => tp
         case None =>
-           val itp = inferType(tm1) orElse inferType(tm2)
+           val itp = inferType(tm1S) orElse inferType(tm2S)
            itp.getOrElse(return false)
       }
       // try to simplify the type until an equality rule is applicable 
       limitedSimplify(tp) {tp => tp.head flatMap {h => ruleStore.equalityRules.get(h)}} match {
-         case (tpS, Some(rule)) => rule(this)(tm1, tm2, tpS)
+         case (tpS, Some(rule)) => rule(this)(tm1S, tm2S, tpS)
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
             // TorsoNormalForm is useful to inspect terms of base type
-            val tm1T = TorsoForm.fromHeadForm(tm1)
-            val tm2T = TorsoForm.fromHeadForm(tm2)
+            val tm1T = TorsoForm.fromHeadForm(tm1S)
+            val tm2T = TorsoForm.fromHeadForm(tm2S)
             val heads = tm1T.heads
             // TODO: if the torsos are constants but not equal, try to make them equal by expanding definitions
             if (tm1T.torso == tm2T.torso && heads == tm2T.heads) {
                //the two terms have the same shape, i.e., same torso and same heads
-               //we can assume heads != Nil; otherwise, tm1 == tm2 would hold
+               //we can assume heads != Nil; otherwise, tm1S == tm2S would hold
                ruleStore.atomicEqualityRules.get(heads.head) match {
-                  case Some(rule) => rule(this)(tm1, tm2, tpS)   //apply the rule for the outermost head 
+                  case Some(rule) => rule(this)(tm1S, tm2S, tpS)   //apply the rule for the outermost head 
                   case None => 
                     //default: apply congruence rules backwards, amounting to initial model semantics, i.e., check for same number and equality of arguments everywhere
                     (tm1T.apps zip tm2T.apps) forall {case (Appendages(_,args1),Appendages(_,args2)) =>
@@ -310,18 +355,31 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
                }
             } else
               //TODO: in some cases, we may conclude false right away
-              delay(Equality(stack, tm1, tm2, Some(tp)))
+              delay(Equality(stack, tm1S, tm2S, Some(tpS)))
       }
    }
 
    /** tries to solve an unknown occurring as the torso of tm1 in terms of tm2.
     * It is an auxiliary function of checkEquality because it is called twice to handle symmetry of equality.
     */
-   private def tryToSolve(tm1: Term, tm2: Term)(implicit stack: Stack): Boolean = {
+   private def tryToSolve(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack): Boolean = {
       tm1 match {
          //foundation-independent case: direct solution of an unknown variable
-         case OMV(m) if unknowns.isDeclared(m) && tm2.freeVars.isEmpty => //forall {v => context.isDeclaredBefore(v,m)}
-            solve(m, tm2)
+         case OMV(m) if unknowns.isDeclared(m) =>
+            val fvs = tm2.freeVars
+            if (fvs.isEmpty) {
+               val res = solve(m, tm2)
+               tpOpt foreach {case tp => solveType(m, tp)}
+               res
+            }
+            else if (fvs.forall(unknowns.isDeclared(_))) //forall {v => context.isDeclaredBefore(v,m)}
+               // delay until other meta-variables are solved
+               // TODO: registering solution in terms of preceding meta-variables might save time
+               delay(Equality(stack,tm1,tm2,tpOpt))
+            else
+               false // meta-variable solution has free variable --> type error
+                     // TODO: need to simplify tm2 in case free variable disappears
+               
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendages(h,_) :: _) if unknowns.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
             ruleStore.solutionRules.get(h) match {
@@ -375,7 +433,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
          }
       }
    }
-   /** applies ComputationRule's until no further rules are applicable.
+   /** applies ComputationRule's at toplevel until no further rules are applicable.
     * @param tm the term
     * @param context its context
     * @return the simplified Term
@@ -407,3 +465,6 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) {
    }
 }
 
+//TODO
+//equality judgment should be solved by simplification if no other rule is available
+//equality freeness rule should provide type if known to avoid re-inference

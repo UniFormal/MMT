@@ -26,13 +26,11 @@ case object Role_TGroup              extends Role(false, "TGroup")
 case object Role_SFDecl              extends Role(false, "SFDecl")
 case class  Role_Constant(role: Option[String])
   extends Role(false , "Constant" + (role match {case None => "" case Some(s) => ":" + s}), ("name",0), ("type",1), ("definition",2))
-case object Role_Alias               extends Role(false, "Alias")
 case object Role_Pattern             extends Role(false, "Pattern")
 case object Role_Instance            extends Role(false, "Instance")
 case object Role_ConAss              extends Role(false, "ConAss")
 case object Role_StrAss              extends Role(false, "StrAss")
 case object Role_PatAss              extends Role(false, "PatAss")
-case object Role_Open                extends Role(false, "Open")
 case object Role_Include             extends Role(false, "Include")
 case object Role_StrToplevel         extends Role(false, "Toplevel")
 case object Role_Notation            extends Role(false, "Notation")
@@ -77,13 +75,11 @@ object Role {
       case "Variable" => Role_Variable
       case "Include" => Role_Include
       case "DefinedStructure" => Role_DefinedStructure
-      case "Alias" => Role_Alias
       case "Pattern" => Role_Pattern
       case "Instance" => Role_Instance
       case "ConAss" => Role_ConAss
       case "StrAss" => Role_StrAss
       case "PatAss" => Role_PatAss
-      case "Open" => Role_Open
       case "Notation" => Role_Notation
       case "Toplevel" => Role_StrToplevel
       case "module" => Role_ModRef

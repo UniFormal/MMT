@@ -133,7 +133,7 @@ class Evaluator(controller: Controller) {
          }
          res
       case Closure(of) =>
-         evaluateESet(of) match { 
+         evaluateElemPath(of) match { 
             case p : MPath =>
                val res = empty
                rs.theoryClosure(p) foreach {res += _}

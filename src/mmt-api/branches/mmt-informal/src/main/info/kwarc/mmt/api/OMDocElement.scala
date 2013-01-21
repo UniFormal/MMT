@@ -33,7 +33,13 @@ trait StructuralElement extends Content with metadata.HasMetaData {
  * These are the core MMT items such as modules, and symbols.
  * This includes virtual knowledge items.
  */
-trait ContentElement extends StructuralElement
+trait ContentElement extends StructuralElement {
+   /** every MMT Declaration takes a list of parameters
+    * empty by default, may be overridden when constructing instances
+    */
+   //TODO use this everywhere
+   val parameters = objects.Context()
+}
 
 /**
  * A PresentationElement is any knowledge item element that is used to represent notations.

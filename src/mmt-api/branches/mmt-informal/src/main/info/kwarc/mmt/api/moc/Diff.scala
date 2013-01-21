@@ -176,7 +176,7 @@ object Differ {
     var changes : List[StrictChange] = Nil
 
     if (old.target != nw.target) {
-      changes = UpdateComponent(old.path, DefComponent, Some(old.target), Some(nw.target)) :: changes
+      changes = UpdateComponent(old.path, DefComponent, old.target, nw.target) :: changes
     }
 	  
 	  new StrictDiff(changes)
@@ -197,34 +197,21 @@ object Differ {
 	}
 	
   /**
-   * compares two aliases 
-   * @param old the first alias
-   * @param nw the second alias
-   * @return the (strict) diff representing the difference between old and nw 
-   */
-	private def compareAliases(old : Alias, nw : Alias) : StrictDiff = {
-      var changes : List[StrictChange] = Nil
-      if (old.forpath != nw.forpath) {
-        changes = UpdateComponent(old.path, ForPathComponent, Some(OMID(old.forpath)), Some(OMID(nw.forpath))) :: changes
-      }
-	  new StrictDiff(changes)
-	}
-	
-  /**
    * compares two semi-formal declarations 
-   * @param old the first semi-formal decl
-   * @param nw the second semi-formal decl
+   * @param old the semi-formal declaration
+   * @param nw the semi-formal declaration
    * @return the (strict) diff representing the difference between old and nw 
    */
 	private def compareSFDeclarations(old : SFDeclaration, nw : SFDeclaration) : StrictDiff = {
       var changes : List[StrictChange] = Nil
-      if (old.tokens != nw.tokens || old.path != nw.path) {
-        changes = DeleteDeclaration(old) :: AddDeclaration(nw) :: changes
-      } 
+      
+      if (old.home != nw.home || old.tokens != nw.tokens) {
+        changes = DeleteDeclaration(old) :: AddDeclaration(nw) :: changes 
+      }
 	  new StrictDiff(changes)
-	}
+	}	
 	
-   /**
+  /**
    * compares two declarations 
    * @param old the first declaration
    * @param nw the second declaration
@@ -244,8 +231,6 @@ object Differ {
         compareConstantAssignments(o,n)
       case (o : DefLinkAssignment, n : DefLinkAssignment) =>
         compareDefLinkAssignments(o,n)
-      case (o : Alias, n : Alias) =>
-        compareAliases(o,n)
       case (o : SFDeclaration, n : SFDeclaration) => 
         compareSFDeclarations(o,n)
     }

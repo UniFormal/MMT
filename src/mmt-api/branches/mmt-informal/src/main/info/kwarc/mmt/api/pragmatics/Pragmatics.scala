@@ -9,20 +9,25 @@ import libraries._
 class Pragmatics(controller: Controller) {
    private val ps = controller.extman.pragmaticStore
    private lazy val lup = controller.globalLookup // must be lazy due to order of class initialization
-   def strictApplication(theory: MPath, fun: Term, args: List[Term]) : Term = {
-      lup.getTheory(theory) match {
-         case d: DeclaredTheory => d.meta match {
-            case None => OMA(fun, args)
-            case Some(meta) =>
-               ps.getApplication(meta) match {
-                  case None =>
-                     strictApplication(meta, fun, args)
-                  case Some(a) =>
-                     strictApplication(meta, OMID(a.apply), fun :: args)
-               }
+   def strictApplication(theory: MPath, fun: Term, args: List[Term], includeSelf: Boolean = false) : Term = {
+      //called if we continue by trying the meta-theory
+      def tryMeta: Term = {
+         lup.getTheory(theory) match {
+            case d: DeclaredTheory => d.meta match {
+               case None => OMA(fun, args)
+               case Some(meta) => strictApplication(meta, fun, args, true)
+            }
+            case d: DefinedTheory => OMA(fun, args) //TODO what to do here?
          }
-         case d: DefinedTheory => OMA(fun, args) //TODO what to do here?
       }
+      if (includeSelf) {     
+         ps.getApplication(theory) match {
+            case Some(a) =>
+               strictApplication(theory, OMID(a.apply), fun :: args)
+            case None =>
+               tryMeta
+         }
+      } else tryMeta
    }
    def strictBinding(theory: MPath, binder: Term, context: Context, scope: Term): Term = {
       lup.getTheory(theory) match {
