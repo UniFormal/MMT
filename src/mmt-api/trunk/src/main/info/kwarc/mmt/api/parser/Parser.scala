@@ -40,10 +40,8 @@ object AbstractObjectParser {
      val decls = includes.toList flatMap {tm => 
         controller.globalLookup.getDeclaredTheory(tm.toMPath).getConstants
      }
-     decls.collect {case c => 
-       c.not.getOrElse { 
-          new TextNotation(c.path, List(Delim(c.name.toPath)), presentation.Precedence.integer(0))
-       }
+     decls.flatMap {c =>
+        c.not.toList ::: List(new TextNotation(c.path, List(Delim(c.path.last)), presentation.Precedence.integer(0)))
      }
    }
   val unknown = utils.mmt.mmtcd ? "unknown"
@@ -53,6 +51,8 @@ object AbstractObjectParser {
   }
 }
 
+//TODO: notations should not be computed separately for each ParsingUnit; they must be cached theory-wise
+
 /** A default parser that parses any string into an OMSemiFormal object. */
 object DefaultObjectParser extends AbstractObjectParser {
    def apply(pu: ParsingUnit): Term = OMSemiFormal(objects.Text(pu.scope.toMPath.toPath, pu.term))
@@ -60,7 +60,7 @@ object DefaultObjectParser extends AbstractObjectParser {
 
 
 /**
- * Default implementation for a notation based parser
+ * A notation based parser
  */
 class ObjectParser(controller : Controller) extends AbstractObjectParser with Logger {
    val report = controller.report
@@ -101,16 +101,20 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    /**
     * transforms a TokenList (usually obtained from a [[info.kwarc.mmt.api.parser.Scanner]]) to an MMT Term 
     */
-   private def makeTerm(te : TokenListElem, boundVars: List[LocalName]) : Term = {
+   private def makeTerm(te : TokenListElem, boundVars: List[LocalName])(implicit scope: Term) : Term = {
       te match {
          case Token(word, _, _) =>
             val name = LocalName.parse(word.replace(".", "/"))
             if (boundVars contains name) {
                //single Tokens may be bound variables
                OMV(name)
+            } else if (word.count(_ == '?') > 0) {
+                val p = Path.parseS(word, scope.toMPath)
+                //or identifiers
+                OMID(p)
             } else
                //in all other cases, we don't know
-               throw ParseError("unbound token: " + word)
+               throw ParseError("unbound token: " + word) //actually, this is recoverable
                //OMSemiFormal(objects.Text("unknown", word))
          case ml : MatchedList =>
             log("constructing term for notation: " + ml.an)
@@ -161,12 +165,11 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             val head = OMID(con)
             //construct a Term according to args, vars, and scopes
             //this includes sorting args and vars according to the abstract syntax
-            val result = if (vars == Nil && scopes == Nil) {
-               if (args == Nil)
+            val result = if (args == Nil && vars == Nil && scopes == Nil) {
                   //no args, vars, scopes --> OMID
                   head
-               else {
-                  // no vars, scopes --> OMA
+            } else {
+                  // order the arguments
                   val orderedArgs = args.sortBy(_._1)
                   var finalArgs : List[Term] = Nil
                   orderedArgs.foreach {case (i,arg) =>
@@ -184,10 +187,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                      }
                      finalArgs ::= arg
                   }
-                  prag.strictApplication(con.module.toMPath, head, finalArgs.reverse)
-               }
-            } else if (args == Nil && vars != Nil && scopes.length == 1) {
-                  // no args, some vars, and 1 scope --> OMBIND
+                  // order the variables
                   val orderedVars = vars.sortBy(_._1).map {
                      case (_, name, tp) =>
                         //replace omitted type with meta-variable
@@ -201,12 +201,24 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         }
                         VarDecl(vname, Some(finalTp), None)
                   }
-                  val context = Context(orderedVars : _*)
-                  prag.strictBinding(con.module.toMPath, head, context, scopes(0)._2)
-            } else
-                  //not all combinations correspond to Terms
-                  //this should only happen for ill-formed notations
-                  throw ParseError("ill-formed notation")
+                  if (orderedVars == Nil && scopes == Nil) {
+                     // no vars, scopes --> OMA
+                     prag.strictApplication(con.module.toMPath, head, finalArgs.reverse)
+                  } else if (orderedVars != Nil && scopes.length == 1) {
+                     val context = Context(orderedVars : _*)
+                     if (args == Nil) {
+                        //some vars, and 1 scope --> OMBIND
+                        prag.strictBinding(con.module.toMPath, head, context, scopes(0)._2)
+                     } else {
+                        //some args, some vars, and 1 scope --> OMBIND with OMA
+                        val binder = prag.strictApplication(con.module.toMPath, head, finalArgs.reverse)
+                        prag.strictBinding(con.module.toMPath, binder, context, scopes(0)._2)
+                     }
+                  } else
+                     //not all combinations correspond to Terms
+                     //this should only happen for ill-formed notations
+                     throw ParseError("ill-formed notation")
+               }
             log("result: " + result)
             result
          case ul : UnmatchedList =>
@@ -248,7 +260,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     sc.tl.length match {
        case 1 =>
           val tm = logGroup {
-             makeTerm(sc.tl(0), varnames)
+             makeTerm(sc.tl(0), varnames)(pu.scope)
           }
           log("parse result: "  + tm.toString)
           if (vardecls == Nil)
