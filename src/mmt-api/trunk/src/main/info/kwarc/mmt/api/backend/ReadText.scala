@@ -1530,7 +1530,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     
     while (i < flat.length) {
       if (flat.startsWith("%include", i)) {
-        val q = flat.substring(i)
         // read include declaration        
 //        i = crawlIncludeDeclaration(i, parent)
         i = crawlKeyword(i, "%include")
@@ -1542,7 +1541,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       }
       else if (flat.startsWith("%instance", i)) {
         // read pattern instance
-        i = skipws(crawlKeyword(start, "%instance"))
+        i = skipws(crawlKeyword(i, "%instance"))
         val (name, positionAfter) = crawlIdentifier(i)
         i = positionAfter
         i = skipwscomments(i)
@@ -1598,7 +1597,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 //     addSourceRef(pattern, start, endsAt)
 
 //     // add the pattern instance to the parent theory
-      val matches = null
+      val matches = Substitution()
       val instance = new Instance(parent, nameI, pattern, matches)
       add(instance)
      
