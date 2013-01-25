@@ -39,7 +39,7 @@ import scala.sys.process._
 //TODO implementation
 /*	+ should be able to read in twelf files
  *  + twelf++ (typecheck and pattern match) the read files
- *  - read in pattern instance specification file (we have a logic + patterns already)
+ *  + read in pattern instance specification file (we have a logic + patterns already)
  *  - check the specifications, give sensible error messages if does not pass
  */
 case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg)
@@ -61,63 +61,84 @@ object Main {
          println("flag: " + flag)
          val filename = args(1) // take first argument - file name of the source
          
-         //tokenize/split, [space] as separator
-         val argl = args.toList
-         
-         if (argl contains "-newLogic") {
-           
-         }
-         
-         //TODO filter out [flags], filename
-         //TODO have a foreach match flag --> actions
+         //TODO make global
+         val controller = new frontend.Controller
+         val uri = new utils.URI(None,None,List(foundational + "?" + filename))
+         controller.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
+         controller.handleLine("archive mmt source-structure")                 
          
          val fl = File(new java.io.File(filename))
          if (!(new java.io.File(filename).exists())) {
            println("File " + filename + " does not exist!")
            return
          }
+
+         val argl = args.toList
          
-         val controller = new frontend.Controller
-         val uri = new utils.URI(None,None,List(foundational + "?" + filename))
-         controller.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
-         controller.handleLine("archive mmt source-structure")
+         // =====================================================
+         if (argl contains "-newLogic") {
+           println("reading new logic")
+           println("..from file " + filename)
          
-         println("reading file " + filename)
-         val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
-         val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
-         source.close()
+           // parse mmt doc
+           val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
+           val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
+           source.close()
+           if (!err.isEmpty) {
+        	   println("errors while reading " + filename + " encountered:")
+        	   err map println
+        	   return
+           }
+           // assume theory name is the same as file name
+           val thname = filename.substring(filename.lastIndexOf("/")+1, filename.lastIndexOf("."))
+
+           
+           // ----------- RUN ----------------------------         
          
-         if (!err.isEmpty) {
-           println("errors while reading " + filename + " encountered:")
-           err map println
-           return
-         }
+           val theo =  controller.localLookup.getTheory(DPath(utils.URI("http://cds.omdoc.org/foundational")) ? thname) match {
+         		case d : DeclaredTheory => d
+         		case _ => throw TheoryLookupError("attempted retrieving not a DeclaredTheory")
+           }
+           val tls = new Theory2LogicSyntax()
+           println("translating " + thname + " to logic syntax")
+           val ls = tls.translateTheory(theo)
+           println("compiling pseudo-code")
          
-         val thname = filename.substring(filename.lastIndexOf("/")+1, filename.lastIndexOf("."))
+           val dir : String = "/home/aivaras/Hets-src/"
          
-         // ----------- RUN ----------------------------         
+       	   val lw = new LogicWriter
+       	   println("writing to files in " + dir + thname)
          
-         val theo =  controller.localLookup.getTheory(DPath(utils.URI("http://cds.omdoc.org/foundational")) ? thname) match {
-         	case d : DeclaredTheory => d
-         	case _ => throw TheoryLookupError("attempted retrieving not a DeclaredTheory")
-         }
-         val tls = new Theory2LogicSyntax()
-         println("translating " + thname + " to logic syntax")
-         val ls = tls.translateTheory(theo)
-         println("compiling pseudo-code")
-//         val c = new Compiler(ls)
-//         val l = c.get
+           lw.compile(ls, thname, dir)
          
-         val dir : String = "/home/aivaras/Hets-src/"
-         
-         val lw = new LogicWriter
-         println("writing to files in " + dir + thname)
-//         lw.compile(ls, thname, dir)
-         
-//         println(c.compare)
-         
-//         println(c.getFileMap("test"))
                   
+           println("new logic read and compiled")
+         }
+         // ========================================================
+         else if (argl contains "-readSpec") {        	
+           // parse logic spec
+           println("reading logic specification")
+           val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
+           val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
+           source.close()           
+           if (!err.isEmpty) {
+        	   println("errors while reading " + filename + " encountered:")
+        	   err map println
+        	   return
+           } else {
+             println("test")
+             println("no errors while reading")
+             println(doc.toString())
+             val th = doc.getModulesResolved(controller.localLookup) foreach {
+             	case t:DeclaredTheory => t
+             }
+             println(th.toString())
+           }
+           println("..from file " + filename)
+           
+         } else {
+           
+         }
          
          
        } // <------------ end of main
