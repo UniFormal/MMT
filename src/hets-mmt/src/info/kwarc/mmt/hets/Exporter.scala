@@ -22,10 +22,9 @@ class Exporter {
 	
 	def toNode(t : Term) = { 
 	  val out : scala.xml.Node = t match {
-			case OMV(n) => { 
-				<var name={n.toPath}> </var>				
-			}
-			case OMA(f,args) => <bind> </bind>
+			case OMV(n) => <var name={n.toPath}> </var>	
+			case OMS(s) => <app name={s.toPath}> </app>
+			case OMA(f,args) => <app name={f.toString()}> map toNode args </app>
 			case OMBIND(binder,ctx,bd) => <bind> </bind> 
 			case OMBINDC(binder,ctx,cnd,bd) => <bind> </bind>  
 	  } 
