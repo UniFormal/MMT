@@ -74,14 +74,15 @@ object SpecTest {
         	   return
            } else {
              println("no errors while reading")
-//             val q = {doc.getModulesResolved(controller.localLookup) mapPartial {
-//               case t:DeclaredTheory => Some(t)
-//               case _ => None
-//             } }.first   
-//             println(q.toString())
-             doc.getModulesResolved(controller.localLookup) foreach {
-             	case t:DeclaredTheory => println(t.toString())
-             }           
+             val q = {doc.getModulesResolved(controller.localLookup) mapPartial {
+               case t:DeclaredTheory => Some(t)
+               case _ => None
+             } }.first   
+//             println(q.components.map(x => x.toString()))
+//             doc.getModulesResolved(controller.localLookup) foreach {
+//             	case t:DeclaredTheory => println(t.toString())
+//             }      
+             ExporterTest.main("/home/aivaras/TPTP/MMT/theories/source/hets-test", q)
            }
          } else if (argl contains "-t") {
            println(".... test test ....")
