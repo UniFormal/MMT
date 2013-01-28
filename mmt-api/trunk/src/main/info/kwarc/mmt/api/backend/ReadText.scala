@@ -1574,8 +1574,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      */
    private def crawlInstanceDeclaration(start: Int, parent: Term, pattern: GlobalName) : Int =
    {
-     //var domain : Option[Term] = None
-     //var isImplicit : Boolean = false
      var i = start
      val oldComment = keepComment
      // parse instance name
@@ -1585,6 +1583,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = skipwscomments(i)
      val instancePath = parent % nameI     
 
+     
      var args : List[Term] = Nil
      while (flat.charAt(i) != '.') {
         val Pair(t,posAfter) = crawlTerm(i, Nil, List(","), instancePath $ DefComponent, parent)
@@ -1592,12 +1591,14 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         i = posAfter
      }
      val endsAt = expectNext(i, ".")
-//     // add the semantic comment and source reference
-//     addSemanticComment(pattern, oldComment)
-//     addSourceRef(pattern, start, endsAt)
-
-//     // add the pattern instance to the parent theory
-      val matches = Substitution()
+     // construct a Substitution from matches
+     //TODO check substituted variables here (static ana.) or just store them here as "???" and check later?
+     val subs = args map { x =>
+       Sub(LocalName("???"),x)
+     }
+     val matches = Substitution(subs : _*)
+     
+     // add the pattern instance to the parent theory           
       val instance = new Instance(parent, nameI, pattern, matches)
       add(instance)
      
