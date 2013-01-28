@@ -47,7 +47,7 @@ class Document(val path : DPath) extends NarrativeElement {
    def toNodeResolved(lib: Lookup) =
       <omdoc base={path.toPath}>
         {items map {
-           case r : MRef if r.isGenerated => lib.get(r.target).toNode
+           case r : MRef if !r.isGenerated => lib.get(r.target).toNode
            case r => r.toNode
         }}
      </omdoc>
