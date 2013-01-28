@@ -1,0 +1,16 @@
+<instance name="p1" pattern="prop">
+			
+		</instance>
+<instance name="p2" pattern="prop">
+			
+		</instance>
+<instance name="a1" pattern="axiom">
+			<app name="[http://cds.omdoc.org/foundations?PLpatt?or]"> 
+									<app name="true"></app><app name="false"></app> 
+								</app>
+		</instance>
+<instance name="a2" pattern="axiom">
+			<app name="[http://cds.omdoc.org/foundations?PLpatt?and]"> 
+									<app name="true"></app><app name="false"></app> 
+								</app>
+		</instance>
