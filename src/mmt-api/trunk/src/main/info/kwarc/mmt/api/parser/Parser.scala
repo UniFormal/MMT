@@ -75,6 +75,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    protected def buildNotations(scope : Term) : List[(Precedence,List[TextNotation])] = {
       val notations = TextNotation.bracketNotation :: AbstractObjectParser.getNotations(controller, scope)  
       val qnotations = notations.groupBy(x => x.precedence).toList
+//      log("notations in scope: " + qnotations)
       qnotations.sortWith((p1,p2) => p1._1 < p2._1)
    } 
 

@@ -557,6 +557,70 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    
    //TODO, text syntax for styles?
    //def readInStyle(style: MPath)(implicit state: ParserState) {}
+   
+   /** API Functions **/
+   
+   /**
+    * Reads a document from a string
+    * @param docURI the base uri (location) of the document
+    * @param docS the document string
+    */
+   def readDocument(docURI : DPath, docS : String) = {
+     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(docS)))
+     apply(r, docURI)     
+   }
+		   			
+   /**
+    * reads a module from a string
+    * @param dpath the uri of the parent document
+    * @param modS the module string
+    * @param docBaseO optionally the base uri of the containing document 
+    * @param namespace the namespace declarations found so far
+    */
+   def readModule(dpath : DPath, 
+		   	      modS : String, 
+                  docBaseO : Option[DPath] = None, 
+                  namespace : ListMap[String, DPath] = new ListMap) = {
+     //building parsing state
+     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(modS)))
+     val state = new ParserState(r)
+     docBaseO.map(state.defaultNamespace = _)
+     namespace map { p =>
+       state.namespace(p._1) = p._2
+     }
+     val doc = controller.getDocument(dpath)
+     //calling parse function
+     readInDocument(doc)(state)
+   }
+   
+   /**
+    * reads a constant from a string
+    * @param mpath the uri of the parent module
+    * @param modS the constant string
+    * @param docBaseO optionally the base uri of the containing document 
+    * @param namespace the namespace declarations found so far
+    */
+   def readConstant(mpath : MPath, 
+		   	        conS : String, 
+                    docBaseO : Option[DPath] = None, 
+                    namespace : ListMap[String, DPath] = new ListMap) = {
+     //building parsing state
+     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(conS)))
+     val state = new ParserState(r)
+     docBaseO.map(state.defaultNamespace = _)
+     namespace map { p =>
+       state.namespace(p._1) = p._2
+     }
+     
+     val thy = controller.globalLookup.getTheory(mpath) match {
+       case d : DeclaredTheory => d
+       case _ => throw ImplementationError("Expected declared theory at path" + mpath)
+     }
+     val patterns = Nil //TODO
+     //calling parse function
+     
+     readInTheory(thy, patterns)(state)
+   }
 }
 
 /**

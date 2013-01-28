@@ -1,7 +1,9 @@
 log console
-log file theories.log
+//log file theories.log
+log+ report
 log+ extman
-//log+ parser
+log+ structure-parser
+log+ parser
 //log+ scanner
 log+ archive
 //log+ object-checker
@@ -14,5 +16,5 @@ archive mmt clean
 archive mmt compile
 archive mmt content
 archive mmt validate
-//server on 8080
+server on 8080
 base http://docs.omdoc.org/mmt
