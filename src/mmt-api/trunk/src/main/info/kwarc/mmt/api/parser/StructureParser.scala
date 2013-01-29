@@ -92,7 +92,9 @@ trait InTheoryParser {
 abstract class StructureParser(controller: Controller) extends frontend.Logger {
    val report = controller.report
    val logPrefix = "structure-parser"
-   
+     
+   //this doesn't really belong here -- should be moved perhsps to controller 
+   val states = new collection.mutable.HashMap[String, SequentialReader]  
    /**
     * a table of external parsers that can parser declarations in a document, indexed by keyword
     * 
@@ -661,4 +663,36 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
    /** resets the error list */
    def resetErrors {errors = Nil}
 }
+
+
+
+class SequentialReader extends java.io.Reader {
+  var text : List[Char] = Nil
+  
+  def appendLine(line : String) = {
+    text ++= "\n".toCharArray.toList 
+    text ++= line.toCharArray().toList
+  }
+  
+  
+  def read(cbuf : Array[Char], offset : Int, len : Int) : Int = {
+    while (!ready) 
+      wait(500)
+    var i = 0
+    while (i < len && (offset + i) < text.length) {
+      cbuf(i) = text.head
+      text = text.tail
+      i += 1
+    }
+    i
+  }
+  
+  def close() = {
+    //nothing to do
+  }
+  
+  override def ready() = !text.isEmpty
+}
+
+
 
