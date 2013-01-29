@@ -97,6 +97,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
         case ":uom" :: _ => Some(UomResponse)
         case ":search" :: _ => Some(MwsResponse)
         case ":parse" ::_ => Some(ParserResponse)
+        case ":seqparse" ::_ => Some(SeqParserResponse)
         case ":mmt" :: _ => Some(MmtResponse)
         // empty path 
         case List("") | Nil => Some(resourceResponse("browse.html"))
@@ -238,6 +239,34 @@ class Server(val port: Int, controller: Controller) extends HServer {
         case e => TextResponse("Failed " + e.getMessage + "\n\n" + e.getStackTraceString).act(tk) 
       }
     }
+  }
+  
+  private def SeqParserResponse : HLet = new HLet {
+    def act(tk : HTalk) {
+      val text = bodyAsString(tk)
+      val jobname = tk.req.header("jobname").getOrElse(throw ServerError(<error><message>found no jobname for request</message></error>))
+      val dpathS = tk.req.header("dpath").getOrElse(throw ServerError(<error><message>found no dpath</message></error>))
+      val dpath = Path.parseD(dpathS, utils.mmt.mmtbase)
+      
+      if (!controller.textParser.states.isDefinedAt(jobname)) {
+        val sqr = new parser.SequentialReader
+        controller.textParser.states(jobname) = sqr
+        sqr.appendLine(text)
+        val reader = new parser.Reader(new java.io.BufferedReader(sqr))
+        val psr = new parser.StructureAndObjectParser(controller)
+        val pthread = new Thread(new Runnable {
+          def run() {
+            psr(reader, dpath)
+          }
+        })
+        pthread.start
+        TextResponse("Initiated Parsing").act(tk)
+      } else {
+        controller.textParser.states(jobname).appendLine(text)
+        TextResponse("Continuing parsing").act(tk)
+      }
+    }
+    
   }
 
   private def ParserResponse : HLet = new HLet {
