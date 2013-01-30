@@ -25,6 +25,6 @@ object Rat extends OMType {
 
 object Plus {
    def apply(x: Nat.universe*): Nat.universe = {
-      x.foldLeft(0){case (a,b) => a + b}
+      x.foldLeft[BigInt](0){case (a,b) => a + b}
    }
 }
