@@ -36,7 +36,7 @@ trait MMTArchive extends WritableArchive {
                 log("parsing " + pu.component)
                 val tp = if (cpath.component == TypeComponent) Some(tm) else c.tp
                 val df = if (cpath.component == DefComponent) Some(tm) else c.df
-                val cN = new Constant(c.home, c.name, c.alias, tp, df, c.rl, c.not)
+                val cN = Constant(c.home, c.name, c.alias, tp, df, c.rl, c.not)
                 controller.delete(c.path)
                 controller.add(cN)
              case _ =>

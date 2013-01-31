@@ -31,7 +31,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator {
      		case VarDecl(n,tp,df,at @ _*) =>
      			val nname = inst.name / n
      			report("elaboration", "generating constant " + nname)
-     			val c = new Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None,None)
+     			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None,None)
      			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
      			cont(c)
      	} 

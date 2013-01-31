@@ -656,7 +656,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = new Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
+    val constant = Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
