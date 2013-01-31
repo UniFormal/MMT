@@ -620,23 +620,25 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val cpath = parent.path ? cstName
 
     // read the optional type
-    var constantType : Option[Term] = None
+    val constantType = new TermContainer
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), cpath $ TypeComponent, parent.toTerm)
-      constantType = Some(term)
+      constantType.read = getSlice(i, posAfter - 1)
+      constantType.parsed = term
       i = posAfter
       i = skipwscomments(i)
     }
 
     // read the optional definition
-    var constantDef : Option[Term] = None
+    val constantDef = new TermContainer
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i, Nil, List("#"), cpath $ DefComponent, parent.toTerm)
-      constantDef = Some(term)
+      constantDef.read = getSlice(i, posAfter - 1)
+      constantDef.parsed = term
       i = posAfter
       i = skipwscomments(i)
     }
@@ -656,7 +658,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
+    val constant = new Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
