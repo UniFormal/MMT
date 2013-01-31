@@ -3,6 +3,7 @@
 	<classpathentry kind="src" path="src/main"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.USER_LIBRARY/MMTLib"/>
-	<classpathentry kind="output" path="build"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/deploy-wrapper"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>

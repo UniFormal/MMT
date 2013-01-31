@@ -1,123 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="lfcatalog" default="build" basedir=".">
 
+    <property name="deploy" value="../../../deploy"/>
 
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <!--       DISPLAY HELP                                              -->
-    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <target name="help">
-        <echo>
-      LF catalog build file
-    -------------------------------------------------------
-
-      available targets:
-
-      help        - print this message
-      build       - compile, generate jar, docs
-      docs        - generate documentation
-
-      compile     - compile sources to build
-      scaladoc    - generate scaladoc in build/apidocs
-      deploy      - copy jar, docs to deploy
-      jar         - generate build/lfcatalog.jar
-      clean       - clean up the build directories
-
-    -------------------------------------------------------
-        </echo>
-    </target>
-
-    <property environment="env" />
-    <property file="build.properties" />
-    
-    <!-- One-JAR ant task, for packaging all dependency JARs into the main JAR file -->
+	<!-- One-JAR ant task, for packaging all dependency JARs into the main JAR file -->
     <taskdef name="one-jar" classname="com.simontuffs.onejar.ant.OneJarTask" 
-        classpath="${lib}/one-jar-ant-task-0.97.jar" onerror="report"/>
+        classpath="lib/one-jar-ant-task-0.97.jar" onerror="report"/>
     
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <pathelement location="${scala.dir}/scala-library.jar"/>
-        <pathelement location="${scala.dir}/scala-compiler.jar"/>
+        <pathelement location="${deploy}/lib/scala-library.jar"/>
+        <pathelement location="${deploy}/lib/scala-compiler.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
-        <pathelement location="${build.main}"/>
+        <pathelement location="bin"/>
     </path>
     <path id="scaladoc.classpath">
         <path refid="scalac.classpath"/>
     </path>
     <!-- This defines the task scalac (which is similar to javac but for scala). -->
-    <taskdef resource="scala/tools/ant/antlib.xml"
-        classpathref="scalac.classpath"/>
+    <taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
 
     <target name="init">
         <tstamp />
     </target>
 
-    <target name="build" depends="jar"/>
-
     <target name="compile" depends="init">
-        <mkdir dir="${build.main}"/>
-        <scalac destdir="${build.main}" srcdir="${src.main}" classpathref="scalac.classpath" deprecation="yes"/>
+        <mkdir dir="bin"/>
+        <scalac destdir="bin" srcdir="src" classpathref="scalac.classpath" deprecation="yes"/>
     </target>
 
-    <target name="jar" depends="compile">
-        <jar destfile="${build}/${jar}">
+    <target name="build" depends="compile">
+        <jar destfile="${ant.project.name}.jar">
             <manifest>
-                <attribute name="Main-Class" value="${main.class}"/>
+                <attribute name="Main-Class" value="info.kwarc.mmt.lf.Run"/>
             </manifest>
-            <fileset dir="${build.main}"/>
-            <fileset dir="${resources}"/>
-            <zipfileset dir="${src.main}" prefix="src"/>
-            <zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
+            <fileset dir="bin"/>
+            <fileset dir="resources"/>
+            <zipfileset dir="src" prefix="src"/>
         </jar>
     </target>
 
-    <target name="docs" depends="scaladoc"/>
-
     <target name="scaladoc" depends="init">
-        <delete dir="${apidocs}"/>
-        <mkdir dir="${apidocs}"/>
+        <delete dir="apidocs"/>
+        <mkdir dir="apidocs"/>
         <scaladoc
-            destdir="${apidocs}"
-            doctitle="${prj}"
-            sourcepath="${src.main}"
+            destdir="apidocs"
+            doctitle="${ant.project.name}"
+            sourcepath="src"
             classpathref="scaladoc.classpath"
-            srcdir="${src.main}">
+            srcdir="src">
             <include name="**/*.scala"/>
         </scaladoc>
-        <copy todir="${deploy}/${prj}/apidocs">
-            <fileset dir="${apidocs}" includes="**/*"/>
-        </copy>
     </target>
 
-    <target name="jar-standalone" depends="compile">
-         <one-jar destfile="${build}/${jar-standalone}">
+    <target name="build-standalone" depends="compile">
+         <one-jar destfile="${ant.project.name}-standalone.jar">
             <!-- The main class of the jar -->
             <manifest>
-                <attribute name="One-Jar-Main-Class" value="${main.class}"/>
+                <attribute name="One-Jar-Main-Class" value="info.kwarc.mmt.lf.Run"/>
             </manifest>
             <main>
                 <!-- The main code, which will be packaged into main/main.jar -->
-                <fileset dir="${build.main}" />
-                <fileset dir="${src.main}" />
-                <fileset dir="${resources}" />
+                <fileset dir="bin"/>
+                <fileset dir="src"/>
+                <fileset dir="resources"/>
             </main>
             <!-- Jar dependencies, which will be packaged as lib/*.jar -->
             <lib>
-                <fileset file="${tiscaf}" />
-                <fileset file="${lib}/scala-library.jar" />
+                <fileset file="${deploy}/lib/tiscaf.jar" />
+                <fileset file="${deploy}/lib/scala-library.jar" />
             </lib>
-            <zipfileset dir="${lib}" includes="*.txt" prefix="doc"/>
          </one-jar>
     </target>
     
-    <target name="deploy" depends="jar,jar-standalone">
-        <copy todir="${deploy}/${prj}">
+    <target name="deploy" depends="build,build-standalone">
+        <copy todir="${deploy}/${ant.project.name}">
 			   <fileset file="readme.txt"/>
-			   <fileset file="${build}/${jar-standalone}"/>
-			   <fileset file="${build}/${jar}"/>
-		  </copy>
+			   <fileset file="${ant.project.name}-standalone.jar"/>
+			   <fileset file="${ant.project.name}.jar"/>
+		</copy>
     </target>
     
     <target name="clean">
-        <delete dir="${build}" />
+        <delete dir="bin" />
     </target>
 </project>
