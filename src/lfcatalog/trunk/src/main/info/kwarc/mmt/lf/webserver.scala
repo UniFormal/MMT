@@ -7,7 +7,6 @@ import java.io._
 import java.net._
 
 import scala.xml._
-import scala.collection.mutable._
 
 
 /** An HTTP RESTful server.
