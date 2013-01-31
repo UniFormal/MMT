@@ -43,6 +43,16 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
+   def getComponent(path: CPath, msg: Path => String = defmsg) : TermContainer = {
+      val se = getO(path.parent).getOrElse(throw GetError(msg(path.parent)))
+      (se,path.component) match {
+         case (c: Constant, TypeComponent) => c.tpC
+         case (c: Constant, DefComponent) => c.dfC
+         case (c: ConstantAssignment, DefComponent) => throw GetError("missing case")
+         case _ => throw GetError("illegal component: " + path)
+      }
+   }
+      
    /* The above methods should be polymorphic in the return type like this:
       def get[A <: ContentElement](p : Path) : A = {
          get(p) match {

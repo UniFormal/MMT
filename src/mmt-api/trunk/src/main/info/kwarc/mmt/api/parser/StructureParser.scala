@@ -433,8 +433,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    private def readConstant(name: LocalName, tpath: MPath)(implicit state: ParserState) {
       val cpath = tpath ? name
       //initialize all components as omitted
-      var tp : Option[Term] = None
-      var df : Option[Term] = None
+      val tpC = new TermContainer
+      var dfC = new TermContainer
       var al : Option[LocalName] = None
       var nt : Option[TextNotation] = None
       // every iteration reads one delimiter and one object
@@ -453,22 +453,23 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          } else {
             val (obj, oreg) = state.reader.readObject
-            def doComponent(c: DeclarationComponent) = {
+            def doComponent(c: DeclarationComponent, tc: TermContainer) = {
                val tm = puCont(ParsingUnit(cpath $ c, OMMOD(tpath), Context(), obj))
-               Some(tm)
+               tc.read = obj
+               tc.parsed = tm
             }
             // the main part, which branches based on the delimiter
             delim match {
                case ":" =>
-                  if (tp.isDefined)
+                  if (tpC.read.isDefined)
                      errorCont(makeError(oreg, "type of this constant already given, ignored"))
                   else
-                     tp = doComponent(TypeComponent)
+                     doComponent(TypeComponent, tpC)
                case "=" =>
-                  if (df.isDefined)
+                  if (dfC.read.isDefined)
                      errorCont(makeError(oreg, "definiens of this constant already given, ignored"))
                   else
-                     df = doComponent(DefComponent)
+                     doComponent(DefComponent, dfC)
                case "#" =>
                   if (nt.isDefined)
                      errorCont(makeError(oreg, "notation of this constant already given, ignored"))
@@ -486,7 +487,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          }
       }
-      val c = Constant(OMMOD(tpath), name, al, tp, df, None, nt)
+      val c = new Constant(OMMOD(tpath), name, al, tpC, dfC, None, nt)
       seCont(c)
    }
    private def readInstance(name: LocalName, pattern: GlobalName)(implicit state: ParserState) {
