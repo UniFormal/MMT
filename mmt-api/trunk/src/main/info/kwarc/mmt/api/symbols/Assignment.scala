@@ -14,7 +14,7 @@ import presentation._
   */                                            // TODO term
 class ConstantAssignment(val home : Term, val name : LocalName, val alias: Option[LocalName], val target : Option[Term]) extends Assignment {
    def toNode = <constant name={name.toPath} alias={alias.map(_.toPath).getOrElse(null)}>{getMetaDataNode :: target.toList.map(_.toOBJNode)}</constant>
-   override def toString = name + target.map(" |-> " + _.toString).getOrElse("") +
+   override def toString = name + target.map(" := " + _.toString).getOrElse("") +
                                   alias.map(" @ " + _.toString).getOrElse("")
    def components = List(StringLiteral(name.toPath), target.getOrElse(Omitted))
    def role = info.kwarc.mmt.api.Role_ConAss
@@ -33,7 +33,7 @@ class DefLinkAssignment(val home : Term, val name : LocalName, val from: MPath, 
                      {getMetaDataNode}
                      <value>{target.toOBJNode}</value>
                 </import>
-   override def toString = (if (name.isAnonymous) "import " else name + " |-> ") + target.toString 
+   override def toString = (if (name.isAnonymous) "import " else name + " := ") + target.toString 
    def components = List(StringLiteral(name.toPath), target)
    def role = info.kwarc.mmt.api.Role_StrAss
 }

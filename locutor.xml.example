@@ -1,5 +1,0 @@
-<registry>
-  <repository location="http://cds.omdoc.org/">
-    <wc location="" root="path-to-working-copy-of-http://cds.omdoc.org/"/>
-  </repository>
-</registry>

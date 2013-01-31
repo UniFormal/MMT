@@ -44,7 +44,7 @@ object Constant {
    /** factory that hides the TermContainer's
     * 
     * all arguments are as in the primary constructor, except the terms, which are wrapped in the 
-    * TermContainer factor
+    * TermContainer factory
     */
    def apply(home : Term, name : LocalName, alias: Option[LocalName], tp: Option[Term], df: Option[Term],
              rl : Option[String], not: Option[TextNotation]) =
