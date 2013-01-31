@@ -16,11 +16,15 @@ import presentation.{NotationProperties, StringLiteral, Omitted}
  * @param rl the role of the constant
  */
 class Constant(val home : Term, val name : LocalName, val alias: Option[LocalName],
-               var tp : Option[Term], var df : Option[Term], val rl : Option[String], val not: Option[TextNotation]) extends Symbol {
+               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val not: Option[TextNotation]) extends Symbol {
   override val alternativeName = alias
   def toTerm = OMID(path)
 
   def role = Role_Constant(rl)
+  
+  def tp = tpC.get
+  def df = dfC.get
+  
   override def compNames = List(("name", 0), ("type",1), ("definition", 2))
   def components = List(OMID(path), tp.getOrElse(Omitted), df.getOrElse(Omitted),
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))
@@ -33,4 +37,16 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
        {if (not.isDefined) <notation>{not.get.toNode}</notation> else Nil}
      </constant>
   override def toString = name.toString + alias.map(" @ " + _) + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
+}
+
+/** helper object */
+object Constant {
+   /** factory that hides the TermContainer's
+    * 
+    * all arguments are as in the primary constructor, except the terms, which are wrapped in the 
+    * TermContainer factor
+    */
+   def apply(home : Term, name : LocalName, alias: Option[LocalName], tp: Option[Term], df: Option[Term],
+             rl : Option[String], not: Option[TextNotation]) =
+      new Constant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not)
 }

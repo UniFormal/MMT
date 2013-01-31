@@ -166,7 +166,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                case "" => None
                case r => Some(r)
             }
-            val c = new Constant(thy, name, alias, tp, df, rl, notation)  //TODO parse <notation>
+            val c = Constant(thy, name, alias, tp, df, rl, notation)  //TODO parse <notation>
             add(c,md)
          }
          s2 match {

@@ -221,7 +221,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                  }
                  val newAlias = alias orElse c.alias.map(namePrefix / _)
                  val newDef = target orElse c.df.map(_ * l.toTerm)
-                 new Constant(l.to, newName, newAlias, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
+                 Constant(l.to, newName, newAlias, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
               case r: Structure => assigOpt match {
                   case Some(a: DefLinkAssignment) =>
                       new DefinedStructure(l.to, newName, r.fromPath, a.target, false)

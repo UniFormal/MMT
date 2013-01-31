@@ -486,7 +486,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          }
       }
-      val c = new Constant(OMMOD(tpath), name, al, tp, df, None, nt)
+      val c = Constant(OMMOD(tpath), name, al, tp, df, None, nt)
       seCont(c)
    }
    private def readInstance(name: LocalName, pattern: GlobalName)(implicit state: ParserState) {
