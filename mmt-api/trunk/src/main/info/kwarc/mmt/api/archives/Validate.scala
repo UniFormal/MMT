@@ -44,8 +44,8 @@ trait ValidatedArchive extends WritableArchive {
          if (result && solution.isDefined) {
             log("validated " + v.component)
             log("solution: " + solution.get.toString)
-            //TODO update component or set reconstructed term
-            //v.component, v.judgement.wfo ^ solution.get)
+            val tc = controller.localLookup.getComponent(v.component)
+            tc.analyzed = v.judgement.wfo ^ solution.get
          } else {
             log("errors while validating " + v.component)
             log(solver.toString)
