@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<omdoc xmlns="http://omdoc.org/ns" xmlns:h="http://www.w3.org/1999/xhtml" xmlns:m="http://www.w3.org/1998/Math/MathML">
+<omdoc xmlns="http://omdoc.org/ns" xmlns:l="http://omdoc.org/ns/literals">
 
-<style name="common">
+<style name="html5" from="http://cds.omdoc.org/" to="text/html">
 
   <notation role="Document">
   <generateid name="//fold//">
@@ -61,9 +61,9 @@
       <arg>
         <if test="present" index="1">
            <then>
-             <h:span class="keyword">
+             <l:span class="keyword">
                 <text value=" meta "/>
-             </h:span>
+             </l:span>
              <component index="1"/></then>
          </if>
       </arg>
@@ -78,9 +78,9 @@
       <arg><text value="view"/></arg>
       <arg><component index="0"/></arg>
       <arg>
-         <h:span class="operator">
+         <l:span class="operator">
             <text value=" : "/>
-         </h:span>
+         </l:span>
          <component index="1"/>
          <element name="span">
             <attribute name="class" value="operator"/>
@@ -473,35 +473,29 @@
      </element>
   </notation>
   <notation role="fragment:tree">
-    <m:mrow>
-	    <m:mfrac>
-	      <m:mrow>
+    <l:mrow>
+	    <l:mfrac>
+	      <l:mrow>
 	       <hole index="1"/>
-	      </m:mrow>
+	      </l:mrow>
 	      <compute function="infer"/>
-	    </m:mfrac>
+	    </l:mfrac>
 	    <hole index="0"/>
-    </m:mrow>
+    </l:mrow>
   </notation> 
   
   <notation role="fragment:foldee">
-    <h:table id="//fold//" class="decllist foldee" cellpadding="5px">
+    <l:table id="//fold//" class="decllist foldee" cellpadding="5px">
       <hole index="0"/>
-    </h:table>
+    </l:table>
   </notation>
   
   <notation role="fragment:folder">
-    <h:span class="keyword folder" onclick="$('#//fold//').toggle()">
+    <l:span class="keyword folder" onclick="$('#//fold//').toggle()">
       <hole index="0"/>
-    </h:span>
+    </l:span>
   </notation>
   
-</style>
-
-
-<style name="html5" from="http://cds.omdoc.org/" to="text/html">
-  <include from="styles/omdoc/mathml.omdoc?common"/>
-
   <notation role="Toplevel">
     <element name="div">
       <attribute name="xmlns" value="http://www.w3.org/1999/xhtml"/>
@@ -531,53 +525,5 @@
   </notation>
 </style>
 
-<style name="xhtml" from="http://cds.omdoc.org/" to="text/xhtml+xml">
-  <include from="styles/omdoc/mathml.omdoc?common"/>
-  
-    <notation role="Toplevel">
-    <element name="div">
-      <attribute name="xmlns" value="http://www.w3.org/1999/xhtml"/>
-      <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
-      <attribute prefix="xmlns" name="m" value="http://www.w3.org/1998/Math/MathML"/>
-      <attribute prefix="xmlns" name="h" value="http://www.w3.org/1999/xhtml"/>
-      <components/>
-    </element>
-  </notation>
- 
-  <notation role="toplevel">
-    <element name="math">
-<!--      <attribute prefix="jobad" name="property" value="elevel:integer"/>
-      <attribute prefix="jobad" name="description" value="elidability level"/>
-      <attribute prefix="jobad" name="value" value="0"/> -->
-      <attribute name="xmlns" value="http://www.w3.org/1998/Math/MathML"/>
-      <attribute prefix="xmlns" name="m" value="http://www.w3.org/1998/Math/MathML"/>
-      <attribute prefix="xmlns" name="om" value="http://www.openmath.org/OpenMath"/>
-      <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
-      <attribute prefix="jobad" name="owner"><component index="1"/></attribute>
-      <attribute prefix="jobad" name="component"><component index="2"/></attribute>
-<!--      <element name="semantics"> -->
-        <component index="0"/>
-<!--    <element name="annotation-xml">
-          <component index="1"/>
-        </element>
-      </element> -->
-    </element>
-  </notation>
-
-  <notation role="fragment:modname">
-       <hole index="0"/>
-  </notation>
-  <notation role="fragment:symname">
-   <element prefix="m" name="math">
-     <element prefix="m" name="mo">
-       <attribute name="class" value="symdecl"/>
-       <hole index="0"/>
-     </element>
-    </element>
-  </notation>
-  
-</style>
-
 </omdoc>
-
 
