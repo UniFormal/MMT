@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<omdoc xmlns="http://omdoc.org/ns" xmlns:l="http://omdoc.org/ns/literals">
+<omdoc xmlns="http://omdoc.org/ns" xmlns:l="mmt:literal">
 
 <style name="common" from="http://cds.omdoc.org/foundations?LF" to="text/html">
 
