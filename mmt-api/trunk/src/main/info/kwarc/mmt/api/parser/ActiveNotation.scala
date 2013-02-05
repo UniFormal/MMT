@@ -127,13 +127,15 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
                  PickAllSeq(n)
               }
          case (Nil, SeqArg(n, Delim(t)) :: Delim(s) :: _) if t != currentToken.word && s == currentToken.word =>
-              if (inSeqArg(n) && numCurrentTokens > 0) {
+              if (numCurrentTokens > 0) {
+                 //picks the last element of the sequence (possibly the only one)
                  onApply {
                     PickAllSeq(n)
                     delete(1)
                     deleteDelim(currentIndex)
                  }
-              } else if (! inSeqArg(n) && numCurrentTokens == 0) {
+              } else if (numCurrentTokens == 0) {
+                 //picks nothing and finds an empty sequence
                  onApply {
                     SeqDone(n)
                     delete(1)

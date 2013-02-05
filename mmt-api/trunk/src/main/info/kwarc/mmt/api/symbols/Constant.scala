@@ -36,7 +36,8 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
        {if (not.isDefined) <notation>{not.get.toNode}</notation> else Nil}
      </constant>
-  override def toString = name.toString + alias.map(" @ " + _) + tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("")
+  override def toString = name.toString + alias.map(" @ " + _).getOrElse("") +
+     tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + not.map(" # " + _).getOrElse("")
 }
 
 /** helper object */

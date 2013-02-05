@@ -5,14 +5,26 @@ import modules._
 import libraries._
 import documents._
 import symbols._
-import utils.MyList._
+import utils._
 import objects._
-import java.io._
+
+/** apply/unapply methods for the constructor Scala(code: String): Term to represent escaped Scala code in an MMT Term */
+object Scala {
+   def apply(t: String) = OMSemiFormal(Text("scala", t))
+   def unapply(t: Term) : Option[String] = t match {
+      case OMSemiFormal(List(Text("scala", t))) => Some(t)
+      case _ => None
+   }
+}
 
 case class ExtractError(s: String) extends Error(s)
 
 object Extractor {
 
+   private val base = DPath(utils.URI("http", "mmt.kwarc.info") / "openmath") ? "Base"
+   private val fun = OMID(base ? "fun")
+   private val seqfun = OMID(base ? "seqfun")
+   
    /* Create unique package name for the OMDoc document */
    def UriToPackage(str : String) : String = {
      var result = "package "
@@ -35,15 +47,10 @@ object Extractor {
      localPath = localPath.replace('/', '.')
 
      result += (localPath + "\n")
-     return result
+     result
    }
 
-   def getGlobalName(t: DeclaredTheory, c: Constant) : String = {
-//     return ( "GlobalName(OMMOD("  + "MPath(base, LocalPath(List(\n    \""
-//     + t.name + "\")))), LocalName(List(NamedStep(\"" + c.name + "\"))))"
-//     )
-       return "base ? \"" + t.name + "\" ? \"" + c.name + "\""
-   }
+   def getGlobalName(t: DeclaredTheory, c: Constant) : String = "base ? \"" + t.name + "\" ? \"" + c.name + "\""
 
    def getParameters(str : String) : Int = {
      var braces = 0
@@ -82,114 +89,81 @@ object Extractor {
      System.exit(1)
      return -2
    }
+   
+   private val imports = """
+import info.kwarc.mmt.api._ 
+import objects._
+import uom._
+"""
 
-   def doTheory(t: DeclaredTheory, out: PrintWriter) {
+   def doTheory(t: DeclaredTheory, out: java.io.PrintWriter) {
      println("Handling theory \"" + t.name  +  "\"")
      /* open and append */
-     out.println(UriToPackage(t.parent.toString) + "{")
-     out.println("class " + t.name + " {")
+     out.println(UriToPackage(t.parent.toString))
+     out.println(imports)
+     out.println("object " + t.name + " {")
      val baseUri = t.parent.uri
-//     out.println("  val base = DPath(utils.URI(\"" +
-//       t.parent.toString  + "\"))\n")
      out.println("  val base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
-     "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
-     baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
-     ")"
+        "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
+        baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
+        ")"
      )
-	   t.getDeclarations map {
-	      case c: Constant =>  { // handle constants here
-        out.println("  val " + c.name 
-              + " = OMID("+ getGlobalName(t,c)  + ")")
-
-          c.df match {
-            case Some(term) => { 
-              term match {
-                case OMFOREIGN(node) => {
-                  /* Create the block marked by start end tags  */
-                  out.println("\n  // UOM start " + c.path.toString)
-                  out.println("  "+node.text)
-                  out.println("  // UOM end\n")
-
-                  /* Create the auxilary _* block  */
-                  val params =  getParameters(node.text)
-                  out.print("  def " + c.name + "_*(l : Term*) : Term "
-                    + " = {\n    return " 
-                    + c.name + "(")
-
-                  // The parameters are of type Term*
-                  if (params == -1) { out.print("l : _*") }
-                  else {  // several parameters, none of which Term*
-                    for (i <- 0 until params-1) {
-                      out.print("l("+ i + "), ")
-                    }
-                    out.print("l("+ (params-1)  +")")
-                  }
-
-                  out.print(")\n  }\n\n"
-                  )
-
-                  /* Create the final Implementation block  */
-                  out.println("  val " + c.name 
-                    + "_** = new Implementation(\n    "
-                    + getGlobalName(t,c)
-                    + "\n    ,\n    "
-                    + c.name + "_*\n    )\n"
-                  )
-
-                }
-//                case _ => out.println("  val " + c.name 
-//              + " = OMID("+ getGlobalName(t,c)  + ")")
-                  case _ => {}
-
-              }
-            }
-//            case None => out.println("  val " + c.name 
-//              + " = OMID("+ getGlobalName(t,c)  + ")")
-              case None => {}
+	  t.getDeclarations map {
+	     case c: Constant =>
+	       // called if this Constant is an implementation
+          def funConst(args: List[Term], lastIsSeqArg: Boolean) {
+               val implemented = args.head match {
+                  case OMID(p) => "Path.parseS(\"" + p.toPath + "\")"
+               }
+               val normalArgs = if (lastIsSeqArg) args.length - 3 else args.length - 2
+               var s = (normalArgs,lastIsSeqArg) match {
+                  case (0,true)  => "Flexary"
+                  case (1,true)  => "OneAndFlexary"
+                  case (2,true)  => "TwoAndFlexary"
+                  case (1,false) => "Unary"
+                  case (2,false) => "Binary"
+                  case (3,false) => "Ternary"
+                  case _ => "Flexary"
+               }
+               out.println("  val " + c.name.last + " = " + s + "(" + implemented + ") {")
+               /* Create the block marked by start end tags  */
+               out.println("  // UOM start " + c.path.toString)
+               c.df match {
+                  case Some(Scala(code)) =>
+                     out.println("    " + code)
+                  case _ =>
+                     out.println("    null")
+               }
+               out.println("  // UOM end")
+               out.println("  }")
           }
-        }
-	      case PlainInclude(from, to) => {
-          /* handle includes here */
-          /* with the current implementation there is nothing to be done */
-
-          //out.println("  val " + from.name.flat + " = new " + from.name.flat)
-          //out.println("  " + UriToPackage(from.toString)
-          //  .substring(8)
-          //  .replace('.', '_')
-          //  .replace('?', '_')
-          //  )
-          
-        }
-	      // case s: Structure => // TODO later
+          // called otherwise
+	       def otherConst {
+               out.println("  val " + c.name + " = "+ getGlobalName(t,c))
+	       }
+	       c.tp match {
+	          case Some(term) => term match {
+	             case OMA(this.fun, args) => funConst(args, false)
+	             case OMA(this.seqfun, args) => funConst(args, true)
+	             case _ => otherConst
+	          }
+	          case _ => otherConst
+	       }
 	      case _ => 
 	   }
      println("Done with that theory\n\n")
-     out.println("}\n}\n")
+     out.println("\n}\n")
    }
 
    def doDocument(controller: Controller, dpath: DPath, outFile: File) {
       val doc = controller.getDocument(dpath)
-	   val theos : List[DeclaredTheory] =  // dereference all and keep the theories
-	  	   doc.getItems mapPartial {r => controller.get(r.target) match {
-	  	  	   case t : DeclaredTheory => Some(t)
-	  	  	   case _ => None
-	  	   }
-	   }
-
-     var out = new PrintWriter(new BufferedWriter(new FileWriter(outFile, false))); // open and overwrite
-     out.println("//Source file generated by the Universal OpenMath Machine\n")
-
-//     out.println(UriToPackage(args(1)))
-
-     /* hangle initial imports */
-     out.println("import info.kwarc.mmt.api._")
-     out.println("import info.kwarc.mmt.api.objects._")
-     out.println("import info.kwarc.mmt.uom.Implementation")
-
-     theos foreach {t => doTheory(t, out)} // handle all theories
-
-     out.close    //TODO some exception handling
-
+      var out = utils.File.Writer(outFile)
+      out.println("//Source file generated by the Universal OpenMath Machine\n")
+  	   doc.getModulesResolved(controller.globalLookup).foreach {
+  	  	   case t : DeclaredTheory => doTheory(t, out)
+  	  	   case _ => 
+  	   }
+      out.close    //TODO some exception handling
    }
 }
 

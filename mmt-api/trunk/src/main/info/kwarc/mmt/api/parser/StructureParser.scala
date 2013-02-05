@@ -31,6 +31,11 @@ class ParserState(val reader: Reader) {
     */
    var defaultNamespace: DPath = utils.mmt.mmtbase
    
+   /** all errors encountered during parsing, in reverse order */()
+   var errors : List[SourceError] = Nil
+   /** all errors encountered during parsing */()
+   def getErrors = errors.reverse
+   
    def copy(reader: Reader = reader, defaultNamespace:DPath = defaultNamespace) = {
       val s = new ParserState(reader)
       s.defaultNamespace = defaultNamespace
@@ -114,34 +119,39 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * For grouping elements (documents, modules with body), this is called on the empty element first
     * and then on each child.
     */
-   def seCont(se: StructuralElement): Unit
+   def seCont(se: StructuralElement)(implicit state: ParserState): Unit
    /**
     * A continuation function called on every ParsingUnit that was found
     * 
     * Objects are opaque to the parser, and parsing is deferred via this function.
     */
-   def puCont(pu: ParsingUnit): Term
+   def puCont(pu: ParsingUnit)(implicit state: ParserState): Term
    /**
     * A continuation function called on every error that was found
     * 
     * Error handling is very lenient and will recover wherever possible.
+    * 
+    * Default implementation adds every error to the ParserState
     */
-   def errorCont(err: SourceError): Unit
+   def errorCont(err: SourceError)(implicit state: ParserState) {
+      state.errors ::= err
+   }
    
    /** the main interface function
     * 
     * @param r a Reader holding the input stream
     * @param dpath the MMT URI of the stream
     */
-   def apply(r: Reader, dpath: DPath) {
+   def apply(r: Reader, dpath: DPath) : ParserState = {
       val state = new ParserState(r)
       state.defaultNamespace = dpath
       val doc = new Document(dpath)
-      seCont(doc)
+      seCont(doc)(state)
       logGroup {
          readInDocument(doc)(state)
       }
       log("end " + dpath)
+      state
    }
 
    /** convenience function to create SourceError's */
@@ -568,9 +578,10 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param docURI the base uri (location) of the document
     * @param docS the document string
     */
-   def readDocument(docURI : DPath, docS : String) = {
+   def readDocument(docURI : DPath, docS : String) {
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(docS)))
-     apply(r, docURI)     
+     apply(r, docURI)
+     r.close
    }
 		   			
    /**
@@ -583,7 +594,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    def readModule(dpath : DPath, 
 		   	      modS : String, 
                   docBaseO : Option[DPath] = None, 
-                  namespace : ListMap[String, DPath] = new ListMap) = {
+                  namespace : ListMap[String, DPath] = new ListMap) {
      //building parsing state
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(modS)))
      val state = new ParserState(r)
@@ -594,6 +605,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
      val doc = controller.getDocument(dpath)
      //calling parse function
      readInDocument(doc)(state)
+     r.close
    }
    
    /**
@@ -634,7 +646,7 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
     * parsing units are parsed by the termParser of the controller
     * if that fails, the [[info.kwarc.mmt.api.parser.DefaultParser]] is used
     */
-   def puCont(pu: ParsingUnit): Term = {
+   def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
       val obj = try {
          controller.termParser(pu)  
       } catch {
@@ -647,22 +659,10 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
    /**
     * structural elements are added to controller
     */
-   def seCont(se: StructuralElement) {
+   def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
       controller.add(se)
    }
-   private var errors: List[SourceError] = Nil
-   /**
-    * errors are reported and stored
-    */
-   def errorCont(err: SourceError) {
-      errors ::= err
-      report(err)
-   }
-   /** returns all errors since the last reset, in order of occurrence */
-   def getErrors = errors.reverse
-   /** resets the error list */
-   def resetErrors {errors = Nil}
 }
 
 

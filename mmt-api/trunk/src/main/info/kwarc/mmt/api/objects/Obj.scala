@@ -463,6 +463,13 @@ object Obj {
             val t = parseTerm(n, nbase)
             OMATTR(t, k.asInstanceOf[OMID], v)
          case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
+         case <OMSF>{nodes @ _*}</OMSF> =>
+            val sf = nodes.toList.map {
+               case node @ <text>{scala.xml.PCData(t)}</text> => Text(xml.attr(node, "format"), t)
+               case <node>{n}</node> => XMLNode(n)
+               case n => Formal(parseTerm(n, nbase))
+            }
+            OMSemiFormal(sf)
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s @ _*}</OMSTR> => OMSTR(s.text)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding

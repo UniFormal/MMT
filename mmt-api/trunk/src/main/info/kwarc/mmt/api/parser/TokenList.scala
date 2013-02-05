@@ -27,18 +27,41 @@ object TokenList {
       var i = first  // position of net Char in s
       var current = "" // previously read prefix of the current Token
       var connect = false // current.last.getType == CONNECTOR_PUNCTUATION
+      var escapeLevel = 0 //depth of escaping, normally 0 
       var whitespace = true //there was a whitespace before the current Token
-      var tokens : List[Token] = Nil // Token's found so far in reverse order
+      var tokens : List[TokenListElem] = Nil // Token's found so far in reverse order
+      //end the current Token
+      def endToken {
+         if (current != "") {
+            tokens ::= Token(current, i-current.length, whitespace)
+            current = ""
+            whitespace = false
+         }
+      }
       // the lexing loop
       while (i.offset < l) {
          val c = s(i.offset) // current Char
          val tp = c.getType // current Char's type
-         // whitespace always starts a new Token, 
-         if (c.isWhitespace) {
-            if (current != "") {
-               tokens ::= Token(current, i-current.length, whitespace)
+         if (c == Reader.escapeChar) {
+            // escape character: increase level
+            if (escapeLevel == 0)
+               endToken
+            escapeLevel += 1
+         } else if (c == Reader.unescapeChar) {
+            // unescape character: decrease level
+            escapeLevel -= 1
+            if (escapeLevel == 0) {
+               tokens ::= Escaped(current, i-current.length)
                current = ""
+               whitespace = false
             }
+         }
+         else if (escapeLevel > 0) {
+            // while in escape: scoop up any character
+            current += c
+         } else if (c.isWhitespace) {
+            // whitespace always starts a new Token, 
+            endToken
             whitespace = true
          } else {
             // we are in a Token
@@ -64,11 +87,7 @@ object TokenList {
                // everything else:
                case _ =>
                   // end previous Token, if any
-                  if (current != "") {
-                     tokens ::= Token(current, i-current.length, whitespace)
-                     current = ""
-                     whitespace = false
-                  }
+                  endToken
                   // look ahead: if a connector follows, start a multi-character Token
                   // otherwise, create a single-character Token
                   if (i.offset < l-1 && s(i.offset+1).getType == CONNECTOR_PUNCTUATION) {
@@ -82,8 +101,7 @@ object TokenList {
          if (c == '\n') i = i.nl else i += 1
       }
       //add the last Token, if any
-      if (current != "")
-         tokens ::= Token(current, i-current.length, whitespace)
+      endToken
       new TokenList(tokens.reverse)
    }
 }
@@ -195,3 +213,5 @@ class UnmatchedList(val tl: TokenList) extends TokenListElem {
    var scanner: Scanner = null
    override def toString = "{unmatched " + tl.toString + " unmatched}"
 }
+
+case class Escaped(text: String, firstPosition: SourcePosition) extends TokenListElem
