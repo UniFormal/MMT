@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<omdoc xmlns="http://omdoc.org/ns" xmlns:l="http://omdoc.org/ns/literals">
+<omdoc xmlns="http://omdoc.org/ns" xmlns:l="mmt:literal">
 
-<style name="html5" from="http://cds.omdoc.org/" to="text/html">
+<style name="html5">
 
   <notation role="Document">
   <generateid name="//fold//">
@@ -507,8 +507,8 @@
   <notation role="toplevel">
     <element name="math">
       <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
-      <attribute prefix="jobad" name="owner"><component index="2"/></attribute>
-      <attribute prefix="jobad" name="component"><component index="3"/></attribute>
+      <attribute prefix="jobad" name="owner"><component index="1"/></attribute>
+      <attribute prefix="jobad" name="component"><component index="2"/></attribute>
       <component index="0"/>
     </element>
   </notation>
@@ -526,4 +526,5 @@
 </style>
 
 </omdoc>
+
 
