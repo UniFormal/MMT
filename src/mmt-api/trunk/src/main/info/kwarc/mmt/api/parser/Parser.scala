@@ -117,6 +117,12 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                //in all other cases, we don't know
                throw ParseError("unbound token: " + word) //actually, this is recoverable
                //OMSemiFormal(objects.Text("unknown", word))
+         case Escaped(s,pos) =>
+            val r = Reader(s)
+            val (format,_) = r.readToken
+            val (text,_) = r.readAll
+            r.close
+            OMSemiFormal(objects.Text(format, text))
          case ml : MatchedList =>
             log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
@@ -244,10 +250,10 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     // reset generated variables
     vardecls = Nil
     log("parsing: " + pu.term)
-    /*log("notations:")
+    log("notations:")
     logGroup {
        qnotations.map(o => log(o.toString))
-    }*/
+    }
     
     //scanning
     val sc = new Scanner(TokenList(pu.term), controller.report)

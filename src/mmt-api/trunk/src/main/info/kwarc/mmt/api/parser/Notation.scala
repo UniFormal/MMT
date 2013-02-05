@@ -212,8 +212,6 @@ object TextNotation {
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
     case <text-notation>{xmlMarkers @ _*}</text-notation> =>
-      println(n)
-      println(utils.xml.attr(n, "name"))
       val name = Path.parseS(utils.xml.attr(n,"name"), utils.mmt.mmtbase)
       val markers = xmlMarkers.map(x => parseMarker(x)).toList
       val precedence = Precedence.parse(utils.xml.attr(n, "precedence"))

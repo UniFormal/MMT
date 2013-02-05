@@ -121,11 +121,8 @@ class Controller extends ROController {
    
    def update(diff : StrictDiff, withChanges : List[String] = Nil) : Set[CPath] = {     
      val changes = diff.changes     
-     println(changes)
      val pChanges = refiner(new StrictDiff(changes), Some(withChanges))
-     println("pchanges : " + pChanges.changes)
      val propDiff = pChanges ++ propagator(pChanges)
-     println("pdiff : " + propDiff.changes)
      moc.Patcher.patch(propDiff, this)
      propagator.boxedPaths
    }
@@ -375,8 +372,8 @@ class Controller extends ROController {
                case "mws" => arch.produceMWS(in, "content")
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
-               case "extract" => arch.extractScala(in, "source")
-               case "integrate" => arch.integrateScala(in, "source")
+               case "extract" => arch.extractScala(in, "content")
+               case "integrate" => arch.integrateScala(in, "content")
                case "present" => params.foreach(p => arch.producePres(Nil,p, this))
                case "close" => backend.closeArchive(id)
             }

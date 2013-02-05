@@ -18,12 +18,12 @@ class MMTCompiler extends Compiler {
         val (doc, errorList) = controller.textReader.readDocument(source, dpath)(controller.termParser.apply)
           source.close
           (doc, errorList)
-      case Some("mmt-new") => 
-        controller.textParser(parser.Reader(in), dpath)
+      case Some("mmt-new") =>
+        val r = parser.Reader(in)
+        val ps = controller.textParser(r, dpath)
+        r.close
         val doc = controller.getDocument(dpath)
-        println(doc)
-        println(doc.toNodeResolved(controller.localLookup))
-        (controller.getDocument(dpath), Nil)
+        (controller.getDocument(dpath), ps.getErrors)
       case e => throw ImplementationError("compiler not applicable to extension: " + e)    
     }
     val outFile = out.setExtension("omdoc")
