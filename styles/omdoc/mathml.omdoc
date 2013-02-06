@@ -331,6 +331,18 @@
     </element>
   </notation>
 
+  <notation role="fragment:constant">
+    <element name="mo">
+      <attribute prefix="jobad" name="xref">
+        <id/>
+      </attribute>
+      <attribute prefix="jobad" name="href">
+        <hole index="0"/>
+      </attribute>
+      <hole index="1"/>
+    </element>
+  </notation>
+
   <notation role="complex-constant">
     <element name="mrow">
       <attribute prefix="jobad" name="xref">
