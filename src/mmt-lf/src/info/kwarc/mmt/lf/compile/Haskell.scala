@@ -113,7 +113,7 @@ object Haskell extends FuncLang[String] {
    }
    def cas(c: CASE) : String = exp(c.pattern) + " -> " + exp(c.body)
    // auxiliary function: upc(string) = String
-   private def upc(string : String) : String = string.head.toUpperCase + string.substring(1)
+   private def upc(string : String) : String = string.head.toUpper + string.substring(1)
    // haskell native datatypes and checker
    private val haskellTypes : List[String] = List("Integer","Bool")//,"String","Int")
    private def haskellType(name : String) : Boolean = haskellTypes.exists( name == )

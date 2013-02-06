@@ -6,6 +6,7 @@
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
         <pathelement location="${scala.dir}/scala-library.jar"/>
+        <pathelement location="${scala.dir}/scala-reflect.jar"/>
         <pathelement location="${scala.dir}/scala-compiler.jar"/>
     </path>
     <!-- This defines the task scalac (which is similar to javac but for scala). -->

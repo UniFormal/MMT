@@ -4,9 +4,10 @@
 	<classpathentry kind="src" path="test/uom/src"/>
 	<classpathentry kind="con" path="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="../../../../deploy/lib/tntbase-plugin-api.jar"/>
-	<classpathentry kind="lib" path="../../../../deploy/lib/svnkit.jar"/>
-	<classpathentry kind="lib" path="./lib/jfxrt.jar"/>
-	<classpathentry kind="lib" path="../../../../deploy/lib/tiscaf.jar"/>
+	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/deploy-wrapper"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/svnkit.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/tntbase-plugin-api.jar"/>
 	<classpathentry kind="output" path="build/main"/>
 </classpath>

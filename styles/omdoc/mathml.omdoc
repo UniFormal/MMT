@@ -281,20 +281,6 @@
     </element>
   </notation>
 
-  <notation role="Alias"/>
-<!--    <element name="div">
-      <attribute name="class" value="omdoc-alias"/>
-      <fragment name="symname">
-        <arg><component index="0"/></arg>
-      </fragment>
-        <element name="span">
-          <attribute name="class" value="operator"/>
-          <text value=":="/>
-        </element>
-        <component index="1"/>
-    </element>
-  </notation>
--->
   <notation role="ConAss StrAss">
     <element name="tr">
       <element name="td">
@@ -308,24 +294,6 @@
           <text value="↦"/>
       </element>
       <element name="td"><component index="1"/></element>
-    </element>
-  </notation>
-
-  <notation role="Open">
-    <element name="div">
-      <attribute name="class" value="omdoc-assignment"/>
-        <text value="open "/>
-        <fragment name="symname">
-          <arg><component index="0"/></arg>
-        </fragment>
-        <if test="present" index="1">
-          <then>
-            <text value="as "/>
-            <fragment name="symname">
-              <arg><component index="1"/></arg>
-            </fragment>
-          </then>
-        </if>
     </element>
   </notation>
 
