@@ -137,12 +137,18 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
    //TODO add other cases & check presentation
    lazy val pres = {  
      val tokens = markers map {
-       case Delim(s) => Fragment("constant", presentation.Text(name.toPath), presentation.Text(s))
-       case Arg(p) => Component(NumberedIndex(p),oPrec.map(_.weaken))
+       case d : Delimiter => Fragment("constant", presentation.Text(name.toPath), presentation.Text(d.s))
+       case Arg(p) => Component(NumberedIndex(p.abs),oPrec.map(_.weaken))
        case SeqArg(p,sep) => Iterate(NumberedIndex(1),
-    		  									 NumberedIndex(-1),
-    		  									 OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
-    		  									 oPrec.map(_.weaken))
+    		  						 NumberedIndex(-1),  
+    		  						 OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
+    		  						 oPrec.map(_.weaken)) //TODO fix indexes for sequence arguments 
+       case Var(n, key) => Component(NumberedIndex(n), None) //TODO Use Key
+       case SeqVar(n, key, sep) => Iterate(
+           NumberedIndex(2),
+           NumberedIndex(-2), 
+           OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
+           oPrec.map(_.weaken))
      }
      presentation.PList(tokens)
    }
