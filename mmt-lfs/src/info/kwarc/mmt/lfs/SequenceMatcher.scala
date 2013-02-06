@@ -28,11 +28,14 @@ class SequenceMatcher(controller : Controller, var metaContext : Context) {
           case (Sequence(sq1),Sequence(sq2)) => 
             sq1.toList.zip(sq2.toList).forall {
               case (s1,s2) => 
+                /*
                 val mat = new Matcher(controller,metaContext)
                 mat(s1,s2) match {// matcher now returns Option[Substitution] instead of Boolean
                   case Some(_) => true
                   case None => false
                 }
+                */
+                false
             }         
           //TODO Other sequence cases:          
           case (OMI(s),OMI(t)) => s == t                   
