@@ -1,13 +1,15 @@
 log console
-//log file theories.log
-log+ report
-log+ extman
-log+ structure-parser
-log+ parser
+log file atheories.log
+//log+ report
+//log+ extman
+//log+ structure-parser
+//log+ parser
 //log+ scanner
-log+ archive
+//log+ archive
 log+ controller
-log+ library
+log+ presenter
+log+ notation
+//log+ library
 //log+ object-checker
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 
@@ -17,7 +19,7 @@ archive add ../../../theories
 archive mmt clean
 archive mmt compile
 archive mmt content
-archive mmt validate
+//archive mmt validate
 //archive mmt notation
 server on 8080
 base http://docs.omdoc.org/mmt
