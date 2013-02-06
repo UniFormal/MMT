@@ -251,7 +251,7 @@ object PatternTest  {
       controller.globalLookup.getPattern(tptpbase ? "THF0" ? "baseType")
     } catch {
 //      case GetError(m) => throw GetError(m)
-      case e => e.printStackTrace()
+      case e : Throwable => e.printStackTrace()
     }
     val pattTheory = controller.globalLookup.getTheory(tptpbase ? "THF0") match {
       case t : DeclaredTheory => t
@@ -269,7 +269,6 @@ object PatternTest  {
            pc.patternCheck(List(a),p) match {
              case Some(ins) => {
             	 println(a.name + " matches " + p.name)
-            	 ins.matches
             	 println("substitution: " + ins.matches.toString())
              }
              case _ =>
