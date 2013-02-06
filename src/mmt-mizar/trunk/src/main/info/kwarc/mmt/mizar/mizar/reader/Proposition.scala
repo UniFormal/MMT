@@ -66,7 +66,7 @@ object PropositionParser {
 		val nr = try {
 		  Some((n \ "@nr").text.toInt)
 		} catch {
-		  case _ => None
+		  case _ : Throwable => None
 		}
 		new MizProposition(nr, propnr, parseFormula(n.child(0)))	
 	}

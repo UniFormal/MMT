@@ -40,7 +40,7 @@ object MMTResolve {
 			      case Some(mstr) =>  ("L" + mstr) :: "strict" :: Nil
 			      case None => (kind + absnr) :: "attr" :: Nil
 			    }} catch {
-			      case _ =>  (kind + absnr) :: "attr" :: Nil
+			      case _ : Throwable =>  (kind + absnr) :: "attr" :: Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
 

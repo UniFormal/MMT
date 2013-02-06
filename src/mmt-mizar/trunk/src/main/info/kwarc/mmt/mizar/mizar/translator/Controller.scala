@@ -110,7 +110,7 @@ object TranslationController {
 	def resolveProp(nr : Int) : Term = try {
 	  propContext(nr)
 	} catch {
-	  case _ => 
+	  case _ : Throwable => 
 	    println(propContext)
 	    throw new java.lang.Error("propContext lookup failed for " + nr)
 	}

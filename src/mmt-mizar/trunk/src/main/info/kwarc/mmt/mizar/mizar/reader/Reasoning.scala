@@ -26,7 +26,7 @@ object JustificationParser {
       val absnr : Int = (n \ "@absnr").text.toInt
       new MizGlobalRef(nr, kind, aid, absnr)
     } catch {
-      case _ => new MizLocalRef(nr)
+      case _ : Throwable => new MizLocalRef(nr)
     }
   }
   
@@ -202,7 +202,7 @@ object JustificationParser {
     val nr = try {
       (n \ "@nr").text.toInt
     } catch {
-      case e => throw e
+      case e : Throwable => throw e
     }
     val args = n.child(0).child.map(TypeParser.parseTyp).toList
     val tm = TypeParser.parseTerm(n.child(1))
@@ -216,7 +216,7 @@ object JustificationParser {
     val nr = try {
       (n \ "@nr").text.toInt
     } catch {
-      case e => throw e
+      case e : Throwable => throw e
     }
     new MizDefPred(nr, args, form)
   }
