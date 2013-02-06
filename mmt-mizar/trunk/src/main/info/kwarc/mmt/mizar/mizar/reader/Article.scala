@@ -71,7 +71,7 @@ object ArticleParser{
 	  val start = try {
 	    UtilsReader.parseSourceRef(n)
 	  } catch {
-	    case e => end
+	    case e : Throwable => end
 	  }
 	  j.sreg = Some(SourceRegion(start, end))
 	  ParsingController.addToArticle(j)

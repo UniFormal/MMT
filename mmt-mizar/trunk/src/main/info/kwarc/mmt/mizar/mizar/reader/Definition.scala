@@ -164,7 +164,7 @@ object DefinitionParser {
 		val absredefnrO = try {
 		  Some((n \ "@absredefnr").text.toInt)
 		} catch {
-		  case _ => None
+		  case _ : Throwable => None
 		}
 		val redefaid = (n \ "@redefaid").text
 		val redefaidO = if (redefaid == "") None else Some(redefaid) 

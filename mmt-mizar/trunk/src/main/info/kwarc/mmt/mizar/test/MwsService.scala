@@ -27,13 +27,13 @@ class MwsService() extends QueryTransformer {
       if (x.toString == "http://cds.omdoc.org/foundational?LF?@")
         <m:apply>{s.map(removeLFApp)}</m:apply>
       else {
-        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(removeLFApp) : _*)
+        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(removeLFApp) : _*)
       }
     case _ =>  
       if (n.child.length == 0)
         n
       else
-        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(removeLFApp(_)) : _*)
+        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(removeLFApp(_)) : _*)
   }
   
   def applyInferences(f : scala.xml.Node, args : List[scala.xml.Node]) : List[scala.xml.Node] = (f.toString, args) match {
@@ -60,7 +60,7 @@ class MwsService() extends QueryTransformer {
     case _ => q.child.length match {
       case 0 => List(q)
       case _ => product[scala.xml.Node](q.child.map(applyImplicitInferences(_)).toList).map(l => 
-      	new scala.xml.Elem(q.prefix, q.label, q.attributes, q.scope, l : _*))
+      	new scala.xml.Elem(q.prefix, q.label, q.attributes, q.scope, true, l : _*))
     }
   }
   
@@ -71,7 +71,7 @@ class MwsService() extends QueryTransformer {
       } else if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for") {
     	  makeQVars(body, evars, v.toString() :: uvars) 
       } else {
-    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_, evars, uvars)) : _*)
+    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeQVars(_, evars, uvars)) : _*)
 
       }
     case <m:apply><csymbol>{c}</csymbol><m:ci>{name}</m:ci></m:apply> => 
@@ -101,7 +101,7 @@ class MwsService() extends QueryTransformer {
       if (n.child.length == 0)
           n
       else
-    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(makeQVars(_, evars, uvars)) : _*)
+    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeQVars(_, evars, uvars)) : _*)
   }
   
   def parseQuery(n : scala.xml.Node, aid : String, mmlversion : String) : scala.xml.Node = {

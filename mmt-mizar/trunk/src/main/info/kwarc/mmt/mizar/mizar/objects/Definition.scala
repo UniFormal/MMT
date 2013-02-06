@@ -87,7 +87,7 @@ class XMLDefinition(val defBlockNr : Int, val kind : String, val constr : Option
     try {
       Some(retType)
     } catch {
-      case _ => None
+      case _ : Throwable => None
     }
   }
   

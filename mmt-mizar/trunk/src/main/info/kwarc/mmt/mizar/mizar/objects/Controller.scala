@@ -130,6 +130,7 @@ object ParsingController {
 	      } else {
 	        throw new Error("Controller.buildDefinition no definiens found, and not expandable mode" + d.defaid + d.constrkind + d.defnr)
 	      }
+	    case _ => throw new Error("Controller.buildDefinition: invalid definiens found " + d.toString)
 	  }
 	}
 	

@@ -23,12 +23,12 @@ object JustificationTranslator {
   
   def translateBy(by : MizBy) : Term = {
     val refs = by.refs.map(translateRef)
-    OMA(Mizar.by, refs)
+    Mizar.apply(Mizar.by, refs : _*)
   }
   
   def translateFrom(from : MizFrom) : Term = {
     val refs = from.refs.map(translateRef)
-    OMA(Mizar.from, refs)
+    Mizar.apply(Mizar.from, refs : _*)
   }
   
   def translateRef(ref : MizRef) : Term = ref match {
@@ -54,6 +54,7 @@ object ReasoningTranslator {
     case Nil => OMHID //TODO case hd :: Nil ?
     case (hd : MizSkeletonItem) :: tl => translateSkeletonItem(hd, tl)
     case (hd : MizAuxiliaryItem) :: tl => translateAuxiliaryItem(hd, tl)
+    case _ => OMHID //TODO
   }
   
   def translateSkeletonItem(sk : MizProofItem, rest : List[MizProofItem]) : Term = sk match {
