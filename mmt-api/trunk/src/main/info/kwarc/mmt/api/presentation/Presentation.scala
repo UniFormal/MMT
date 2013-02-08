@@ -162,11 +162,11 @@ object Presentation {
    def Empty = PList(Nil)
    private def cindex(s : String) : CIndex = {
       try {NumberedIndex(s.toInt)}
-      catch {case _ => NamedIndex(s)}//throw ParseError("illegal index: " + s)}
+      catch {case _ : Throwable => NamedIndex(s)}//throw ParseError("illegal index: " + s)}
    }
    private def int(s : String) : Int = {
       try {s.toInt}
-      catch {case _ => throw ParseError("illegal index: " + s)}
+      catch {case _ : Throwable => throw ParseError("illegal index: " + s)}
    }
    private def precOpt(s : String) = s match {
       case "" => None

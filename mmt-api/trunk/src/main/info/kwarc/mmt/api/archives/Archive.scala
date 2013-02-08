@@ -100,7 +100,7 @@ abstract class WritableArchive extends ROArchive {
               if (filter(inFile.getName)) f(Current(inFile, in))
            } catch {
               case e : Error => report(e)
-              case e => throw e
+              case e : Throwable => throw e
            }
         }
     }
@@ -183,7 +183,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
 
         //controller.delete(mpath)
       } catch {
-        case e => log("ERR : " + e)
+        case e : Throwable => log("ERR : " + e)
       }
     }
     log("done:  [CONT -> FLAT]       -> " + inFile)
@@ -221,7 +221,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
       src.close
       Some(input)
       } catch {
-        case _ => None
+        case _ : Throwable => None
       }
     }
 

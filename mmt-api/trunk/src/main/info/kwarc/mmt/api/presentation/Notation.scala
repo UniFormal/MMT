@@ -213,7 +213,7 @@ object Notation {
        case "bind" => Bind
        case "tree" => Tree
        case s => try {In(s.toInt)}
-                 catch {case _ => throw ParseError("illegal fixity value: " + s)}
+                 catch {case _ : Throwable => throw ParseError("illegal fixity value: " + s)}
     }
    def parseAppSt(s: String) = s match {
        case "math" => Math
@@ -231,6 +231,6 @@ object Notation {
    def parseImp(s: String) = s match {
        case "" => 0
        case s => try {s.toInt}
-                 catch {case _ => throw ParseError("illegal number of implicit arguments: " + s)}
+                 catch {case _ : Throwable => throw ParseError("illegal number of implicit arguments: " + s)}
     }
 }

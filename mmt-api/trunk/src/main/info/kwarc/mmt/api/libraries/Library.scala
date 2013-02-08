@@ -36,7 +36,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    
    private def modulesGetNF(p : MPath) : Module =
       try {modules(p)}
-      catch {case _ => if (false) throw GetError("module does not exist: " + p)
+      catch {case _ : Throwable => if (false) throw GetError("module does not exist: " + p)
                        else     throw new frontend.NotFound(p)
             }
    def log(s : => String) = report("library", s)
@@ -316,7 +316,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                get(p.module % !(hd)) match {
                   case s : Structure => Some(s.from % tl)
                }
-            } catch {case _ => None}
+            } catch {case _ : Throwable => None}
          case !(hd) => None
          case _ => None
    }

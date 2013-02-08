@@ -27,7 +27,7 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
    private def log(s : => String) = report("notations", s)
    def get(path : MPath) : Style = {
       try {sets(path)}
-      catch {case _ => 
+      catch {case _ : Throwable => 
          log("retrieving notation set " + path)
          throw frontend.NotFound(path)
       }
@@ -45,12 +45,12 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
       log("looking up notation for " + key)
       report.indent
       val nset = try {sets(path)}
-                 catch {case _ => throw frontend.NotFound(path)}
+                 catch {case _ : Throwable => throw frontend.NotFound(path)}
      // look up key in defaults
      def getDefault(key : NotationKey) : Option[Notation] = {
          log("looking in defaults for key " + key)
          val not = key.path flatMap {
-	         case p : MPath => try {sets(p).get(key)} catch {case _ => None}
+	         case p : MPath => try {sets(p).get(key)} catch {case _ : Throwable => None}
 	         case p : GlobalName if key.role.bracketable =>
 	           //get default notation, ...
 	           //defaults.get(key)

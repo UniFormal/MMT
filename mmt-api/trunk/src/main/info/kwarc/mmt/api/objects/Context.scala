@@ -159,6 +159,7 @@ case class Substitution(subs : Sub*) extends Obj {
    def head = None
    def role : Role = Role_substitution
    def components = subs.toList
+   def isEmpty = components.isEmpty
 }
 
 /** helper object */

@@ -232,7 +232,7 @@ object TextNotation {
       try {
         Arg(value.toString.toInt)
       } catch {
-        case _ => throw ParseError("Invalid XML representation of Arg (not an integer) in: \n" + n)
+        case _ : Throwable => throw ParseError("Invalid XML representation of Arg (not an integer) in: \n" + n)
       }
     case <seq-arg>{value}{sep}</seq-arg> => 
        try {
@@ -243,7 +243,7 @@ object TextNotation {
         }
         SeqArg(nr, dlm)
       } catch {
-        case e => throw ParseError("Invalid XML representation of SeqArg in: \n" + n + " with error : \n" + e.getMessage)
+        case e : Throwable => throw ParseError("Invalid XML representation of SeqArg in: \n" + n + " with error : \n" + e.getMessage)
       }
       
     case <var>{value}{key}</var> => 
@@ -255,7 +255,7 @@ object TextNotation {
         }
         Var(nr, keyM)
       } catch {
-        case _ => throw ParseError("Invalid XML representation of Var (not an integer) in: \n" + n)
+        case _ : Throwable => throw ParseError("Invalid XML representation of Var (not an integer) in: \n" + n)
       }
     case <seq-var>{value}{key}{sep}</seq-var> => 
       try {
@@ -270,7 +270,7 @@ object TextNotation {
         }
         Var(nr, keyM)
       } catch {
-        case _ => throw ParseError("Invalid XML representation of SeqVar (not an integer) in: \n" + n)
+        case _ : Throwable => throw ParseError("Invalid XML representation of SeqVar (not an integer) in: \n" + n)
       }
     case _ => throw ParseError("Invalid XML representation of Notation Marker in: \n" + n)
       
@@ -295,7 +295,7 @@ object TextNotation {
       try {
         s.toInt
       } catch {
-        case _ => s
+        case _ : Throwable => s
       }
     }
     apply(conPath, prec)(protoMks :_*)

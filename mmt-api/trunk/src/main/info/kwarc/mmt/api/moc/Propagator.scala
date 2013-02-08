@@ -300,7 +300,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
             case _ => //TODO
           }
         } catch {
-          case _ => //TODO
+          case _ : Throwable => //TODO
         }
       }
         

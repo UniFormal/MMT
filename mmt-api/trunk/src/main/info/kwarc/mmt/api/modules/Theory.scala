@@ -44,6 +44,11 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
       case p: patterns.Pattern => Some(p)
       case _ => None
    }
+   /** convenience method to obtain all pattern instances */
+   def getInstances:List[patterns.Instance] = getDeclarations.mapPartial {
+      case p: patterns.Instance => Some(p)
+      case _ => None
+   }
    override def compNames = List(("name", 0), ("meta",1))
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =

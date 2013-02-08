@@ -95,7 +95,7 @@ class TreePane(controller: Controller) extends JPanel {
       mode = id
       if (mode == "pres")
          try {style = Path.parseM(styleTextArea.getText, style)}
-         catch {case _ => styleTextArea.setText("error: " + styleTextArea.getText)}
+         catch {case _ : Throwable => styleTextArea.setText("error: " + styleTextArea.getText)}
    }
    
    buttons.add(styleTextArea)

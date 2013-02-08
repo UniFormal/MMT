@@ -187,7 +187,7 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
       
       val revision = path.doc.version match {
         case None => rev
-        case Some(s) => try {s.toInt} catch {case _ => rev}
+        case Some(s) => try {s.toInt} catch {case _ : Throwable => rev}
       }
       val N : scala.xml.Node = repository.checkPath(target, revision) match {
         case SVNNodeKind.FILE => 

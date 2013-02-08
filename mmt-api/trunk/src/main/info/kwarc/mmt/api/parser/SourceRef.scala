@@ -58,7 +58,7 @@ object SourcePosition {
       if (parts.length == 3) {
          val (o,l,c) = try {
            (parts(0).toInt, parts(1).toInt, parts(2).toInt)
-         } catch {case e => throw ParseError("non-integer in source position " + s)}
+         } catch {case e : Throwable => throw ParseError("non-integer in source position " + s)}
          SourcePosition(o,l,c)
       }
       else throw ParseError("illegal source position: " + s)
