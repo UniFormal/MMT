@@ -105,7 +105,7 @@ class Controller extends ROController {
          val old = globalLookup.get(elem.path)
          moc.Differ.diff(old, elem).changes
        } catch {
-         case e => elem match {
+         case e : Throwable => elem match {
            case m : Module => List(AddModule(m))
            case d : Declaration => List(AddDeclaration(d))
            case _ => throw ImplementationError("Updating element not supported for " + elem.toString)
@@ -179,7 +179,7 @@ class Controller extends ROController {
       catch {
          case NotFound(p : Path) if ! previous.exists(_ == p) => retrieve(p); iterate(a, p :: previous)
          case NotFound(p : Path) => throw GetError("retrieval failed for " + p) 
-         case e => throw e
+         case e : Throwable => throw e
       }
    }
    /** retrieves a knowledge item */

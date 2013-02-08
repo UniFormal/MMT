@@ -192,7 +192,8 @@ object Query {
     *  throws an exception if the query is ill-formed
     */
    def infer(q: Query)(implicit context: List[QueryBaseType]) : QueryType = q match {
-      case Bound(i) => try {Elem(context(i-1))} catch {case _ => throw ParseError("illegal variable index: " + i)}
+      case Bound(i) => try {Elem(context(i-1))} catch {case _ : Throwable => 
+        									throw ParseError("illegal variable index: " + i)}
       case ThePath(_) => Elem(PathType)
       case TheObject(_) => Elem(ObjType)
       case Component(of, _) =>
@@ -278,7 +279,7 @@ object Query {
       case <type>{o}</type> => InferedType(parse(o), Path.parseM(xml.attr(n, "meta"), utils.mmt.mmtbase))
       case <var/> =>
          val s = xml.attr(n, "index")
-         val i = try {s.toInt} catch {case _ => throw ParseError("illegal variable index: " + s)}
+         val i = try {s.toInt} catch {case _ : Throwable => throw ParseError("illegal variable index: " + s)}
          Bound(i)
       case <related>{to}{by}</related> => Related(parse(to), RelationExp.parse(by))
       case <closure>{of}</closure> => Closure(parse(of))

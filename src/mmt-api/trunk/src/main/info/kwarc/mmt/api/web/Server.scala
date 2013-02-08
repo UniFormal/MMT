@@ -57,7 +57,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
     val bodyXML = try {
       scala.xml.XML.loadString(bodyString).head
     } catch {
-      case _ => throw ServerError(<error message="invalid XML"/>)
+      case _ : Throwable => throw ServerError(<error message="invalid XML"/>)
     }
     scala.xml.Utility.trim(bodyXML)
   }
@@ -139,7 +139,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
             val output = controller.uom.simplify(input)
             output.toNode
           } catch {
-            case e => <error>{ e.getMessage }</error>
+            case e : Throwable => <error>{ e.getMessage }</error>
           }
         case _ => <error message="illegal command"/>
       }
@@ -153,11 +153,11 @@ class Server(val port: Int, controller: Controller) extends HServer {
       val resp = try {
         //
         val offset = tk.req.header("Offset") match {
-          case Some(s) => try s.toInt catch { case _ => 0 }
+          case Some(s) => try s.toInt catch { case _ : Throwable => 0 }
           case _ => 0
         }
         val size = tk.req.header("Size") match {
-          case Some(s) => try s.toInt catch { case _ => 30 }
+          case Some(s) => try s.toInt catch { case _ : Throwable => 30 }
           case _ => 30
         }
         val query = tk.req.query
@@ -220,7 +220,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
       } catch {
         case ServerError(n) => n
         case e: ParseError => <error><message>{ e.getMessage }</message></error>
-        case e => <error><message>error translating query : {e.getMessage()}</message></error>
+        case e : Throwable => <error><message>error translating query : {e.getMessage()}</message></error>
       }
       XmlResponse(resp).act(tk)
     }
@@ -236,7 +236,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
         moc.Patcher.patch(diff, controller)
         TextResponse("Success").act(tk)
       } catch {
-        case e => TextResponse("Failed " + e.getMessage + "\n\n" + e.getStackTraceString).act(tk) 
+        case e : Throwable => TextResponse("Failed " + e.getMessage + "\n\n" + e.getStackTraceString).act(tk) 
       }
     }
   }
@@ -368,7 +368,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           case _ => false
         }
       } catch {
-        case _ => false
+        case _ : Throwable => false
       }
       try {
         val node = doGet(doc, mod, sym, act)

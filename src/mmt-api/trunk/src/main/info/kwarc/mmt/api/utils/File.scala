@@ -70,7 +70,7 @@ object File {
          try {
             proc(line)
          } catch {
-            case e => r.close; throw e 
+            case e : Throwable => r.close; throw e 
          }
       }
       r.close

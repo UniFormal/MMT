@@ -89,7 +89,7 @@ object InfInt {
       case "-infinity" => NegInfinite
       case i =>
          try {Finite(i.toInt)}
-         catch {case _ => throw ParseError("illegal InfInt: " + i)}
+         catch {case _ : Throwable => throw ParseError("illegal InfInt: " + i)}
    }
 }
 
@@ -127,7 +127,7 @@ object Precedence {
     */
    def parse(s : String) : Precedence = {
       try {Precedence(InfInt.parse(s.replace("*","")), s.endsWith("*"))}
-      catch {case _ => throw ParseError("illegal precedence: " + s)}
+      catch {case _ : Throwable => throw ParseError("illegal precedence: " + s)}
    }
    def parseOpt(s : String) : Option[Precedence] = if (s == "none") None else Some(parse(s))
 }
@@ -147,6 +147,6 @@ object Elidability {
    /** parses an elidability from a string */
    def parse(s : String) : Elidability = {
       try {Elidability(s.toInt)}
-      catch {case _ => throw ParseError("illegal elidability: " + s)}
+      catch {case _ : Throwable => throw ParseError("illegal elidability: " + s)}
    }
 }

@@ -15,7 +15,7 @@ object Position {
     *  @param s the string encoded by Position.toString */
    def parse(s: String) = {
       val l = s.split("_").toList map {
-         s => try {s.toInt} catch {case _ => throw ParseError("illegal position " + s)} 
+         s => try {s.toInt} catch {case _ : Throwable => throw ParseError("illegal position " + s)} 
       }
       Position(l)
    }

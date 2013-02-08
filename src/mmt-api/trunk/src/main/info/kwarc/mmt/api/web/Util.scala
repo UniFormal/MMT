@@ -92,7 +92,7 @@ object Util {
           (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + "/" + path
         }
         catch {
-          case _ => return null
+          case _ : Throwable => return null
         }
         //println("trying to get resource from "  + filePath)
         val file = new java.io.File(filePath)  // the file on disk

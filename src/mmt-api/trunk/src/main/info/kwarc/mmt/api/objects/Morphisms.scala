@@ -18,13 +18,13 @@ object Morph {
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.from}
       } catch {
-         case _ => throw Invalid("not a well-formed morphism: " + m)
+         case _ : Throwable => throw Invalid("not a well-formed morphism: " + m)
       }
       case OMDL(h,n) => try {
          val structure = lib.getStructure(h % n)
          structure.from
       } catch {
-         case _ => throw Invalid("not a well-formed morphism: " + m)
+         case _ : Throwable => throw Invalid("not a well-formed morphism: " + m)
       }
       case _ => throw Invalid("not a well-formed morphism: " + m)
     }
@@ -42,7 +42,7 @@ object Morph {
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.to}
       } catch {
-         case _ => throw Invalid("not a well-formed morphism: " + m)
+         case _ : Throwable => throw Invalid("not a well-formed morphism: " + m)
       }
       case OMDL(t, _ ) => t
       case _ => throw Invalid("not a well-formed morphism: " + m)

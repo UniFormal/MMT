@@ -42,7 +42,7 @@ class Shell() extends {
            controller.report(e)
            controller.cleanup
            throw e
-         case e =>
+         case e : Throwable =>
            controller.cleanup
            throw e
       }

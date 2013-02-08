@@ -91,26 +91,26 @@ class InstanceCompiler extends Compiler {
 
 //  val thName = fileName
 // retrieve constant declarations
-val constTheory = patcon.controller.globalLookup.getTheory(pbbase  ? thName) match {
-case c : DeclaredTheory => c
-case _ => throw CompilationError("not a declared theory " + pbbase + "?" + thName)
+		val constTheory = patcon.controller.globalLookup.getTheory(pbbase  ? thName) match {
+		case c : DeclaredTheory => c
+		case _ => throw CompilationError("not a declared theory " + pbbase + "?" + thName)
 		}
-val constList : List[Constant] = constTheory.getConstants
-// retrieve patterns    
-val pattTheory = patcon.controller.globalLookup.getTheory(tptpbase ? "THF0") match {
-case t : DeclaredTheory => t
-case _ => throw GetError("not a declared theory " + tptpbase + "?" + "THF0")      
-}        
-val pattList : List[Pattern] = pattTheory.getPatterns
-// get list of all Instance for the theory
-val inst =  pc.getInstance(constList, pattList)
+		val constList : List[Constant] = constTheory.getConstants
+		// retrieve patterns    
+		val pattTheory = patcon.controller.globalLookup.getTheory(tptpbase ? "THF0") match {
+		case t : DeclaredTheory => t
+		case _ => throw GetError("not a declared theory " + tptpbase + "?" + "THF0")      
+		}        
+		val pattList : List[Pattern] = pattTheory.getPatterns
+		// get list of all Instance for the theory
+		val inst =  pc.getInstance(constList, pattList)
 
-// write to output file            
-write(out.setExtension("omdoc"), fileDir, fileName, inst)
-// log errors
-if (!errors.isEmpty) errors.foreach(e => log(e.toString))
+		// write to output file            
+		write(out.setExtension("omdoc"), fileDir, fileName, inst)
+		// log errors
+		if (!errors.isEmpty) errors.foreach(e => log(e.toString))
 
-errors
+		errors
 }  
 
 def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
