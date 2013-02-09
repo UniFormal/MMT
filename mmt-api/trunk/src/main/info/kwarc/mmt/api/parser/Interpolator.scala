@@ -2,14 +2,11 @@ package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import objects._
 
-/*
-works under Scala 2.10
-to use, instantiate and import MMTContext
-*/
-
-/*
 class MMTInterpolator(controller: frontend.Controller) {
    var theory : MPath = null
+   implicit def int2OM(i: Int) = OMI(i)
+   implicit def floatt2OM(f: Double) = OMF(f)
+   
    implicit class MMTContext(sc: StringContext) {
       def mmt(ts: Term*): Term = {
          val strings = sc.parts.iterator
@@ -30,4 +27,3 @@ class MMTInterpolator(controller: frontend.Controller) {
       }
    }
 }
-*/
