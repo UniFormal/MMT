@@ -11,7 +11,11 @@ class Implementation(constantName : GlobalName, function : List[Term] => Term) e
      try {
         val res = function(args)
         res match {
-          case OMA(OMS(constantName), args) => LocalChange(args)
+          case OMA(OMS(constantName), newArgs) =>
+            if (newArgs == args)
+              NoChange
+            else
+              LocalChange(newArgs)
           case _ => GlobalChange(res)
         }
      } catch {
