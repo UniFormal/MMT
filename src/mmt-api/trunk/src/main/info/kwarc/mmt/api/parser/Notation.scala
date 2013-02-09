@@ -167,7 +167,12 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
       case SeqArg(_, Delim(s)) => Some(s)
       case _ => None
    }
-   /** @return true if first delimiter Token is next */
+   def isLeftOpen = markers.head match {
+      case _:Arg => true
+      case _:SeqArg => true
+      case _ => false
+   }
+   /** @return true if next is first delimiter Token */
    def applicable(next: Token): Boolean = {
       firstDelimString == Some(next.word)
    }

@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import objects._
 
 class MMTInterpolator(controller: frontend.Controller) {
-   var theory : MPath = null
+   var theory : MPath = utils.mmt.mmtcd
    implicit def int2OM(i: Int) = OMI(i)
    implicit def floatt2OM(f: Double) = OMF(f)
    

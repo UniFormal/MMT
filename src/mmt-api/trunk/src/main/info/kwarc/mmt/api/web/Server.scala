@@ -201,7 +201,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
                  } else {
                    n
                  }
-               case _ => new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, n.child.map(x => genQVars(x)) :_*)
+               case _ => new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(x => genQVars(x)) :_*)
              }
              val processedQuery = genQVars(tm.toCML)
              (<mws:expr>{processedQuery}</mws:expr>, Nil)

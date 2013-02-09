@@ -57,7 +57,7 @@ object MetaData {
               }
               case e => e
            }
-           (scala.xml.Elem(p,l,a,s,cs2 : _*), md)
+           (scala.xml.Elem(p,l,a,s,true,cs2 : _*), md)
         case n => (n, None)
       }
       (newnode, mdxml.map(d => parse(d, base)))

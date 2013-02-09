@@ -9,7 +9,7 @@ import ontology._
 import modules._
 
 object Util {
-   def div(n: List[Node]) : Node = xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), n :_*)
+   def div(n: List[Node]) : Node = xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), true, n :_*)
    def div(s: String) : Node = div(List(scala.xml.Text(s)))
    /*
    def link(xhtml : NodeSeq, p : Path) = {
@@ -40,7 +40,7 @@ object Util {
       // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
       //<div xmlns={utils.xml.namespace("xhtml")} xmlns:jobad={utils.xml.namespace("jobad")}>{crumbs}</div>
       xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"),
-                              NamespaceBinding("jobad", utils.xml.namespace("jobad"), TopScope)), crumbs : _*)
+                              NamespaceBinding("jobad", utils.xml.namespace("jobad"), TopScope)), true, crumbs : _*)
    }
    
    def item(p : Path, state : String, label : Option[String] = None) = 

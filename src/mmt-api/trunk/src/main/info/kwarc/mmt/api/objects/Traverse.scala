@@ -50,9 +50,7 @@ object Traverser {
 		   case OMHID => t
 		   case OMREF(uri, value, under) => OMREF(uri, value map rec, recSub(under))
 		   case OMFOREIGN(_) => t
-		   case OMI(_) => t
-		   case OMSTR(_) => t
-		   case OMF(_) => t
+		   case t: OMLiteral => t
 		   case OMSemiFormal(tokens) => 
 		      val newtokens = tokens map {
 		         case Formal(t) => Formal(rec(t))
