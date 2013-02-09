@@ -108,12 +108,17 @@ import uom._
         baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
         ")"
      )
-	  t.getDeclarations map {
+	  t.getDeclarations foreach {
 	     case c: Constant =>
 	       // called if this Constant is an implementation
           def funConst(args: List[Term], lastIsSeqArg: Boolean) {
                val implemented = args.head match {
-                  case OMID(p) => "Path.parseS(\"" + p.toPath + "\")"
+                  case OMS(p) =>
+                    val mod = p.module.toMPath
+                    val uri = mod.doc.uri
+                    (uri.authority.getOrElse("").split("\\.").toList.reverse ::: uri.path).mkString(".") + "." +
+                    mod.name.toPath.replace("/",".") + "." +
+                    p.name.toPath.replace("/",".")
                }
                val normalArgs = if (lastIsSeqArg) args.length - 3 else args.length - 2
                var s = (normalArgs,lastIsSeqArg) match {
@@ -149,6 +154,12 @@ import uom._
 	          }
 	          case _ => otherConst
 	       }
+	      case PlainInclude(from, _)  =>
+	      	val uri = from.doc.uri
+	      	out.printf("  import ")
+	      	out.printf((uri.authority.getOrElse("").split("\\.").toList.reverse ::: uri.path).mkString(".") + "." +
+                    from.name.toPath.replace("/","."))
+            out.println("._")
 	      case _ => 
 	   }
      println("Done with that theory\n\n")
