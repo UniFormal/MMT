@@ -267,7 +267,7 @@ class Presenter(controller : Controller, val report : frontend.Report) extends L
 		     render(scope, comps, ind, gpar, newlpar)
 		  case UseID(name) => lpar.ids find (_._1 == name) match {
 		      case None => throw PresentationError("undeclared ID: " + name)
-		      case Some(i) => i._2
+		      case Some(i) => gpar.rh(i._2)
 		  }
 		  case Fragment(name, args @ _*) =>
              val notation = controller.get(gpar.nset, NotationKey(None, Role_Fragment(name)))

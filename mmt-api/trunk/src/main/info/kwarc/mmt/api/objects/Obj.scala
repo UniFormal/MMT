@@ -336,7 +336,7 @@ abstract class OMLiteral extends Term {
    val value : Any
    def tag: String
    override def toString = value.toString
-   def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, scala.xml.Text(value.toString)) 
+   def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, true, scala.xml.Text(value.toString)) 
    def ^(sub : Substitution) = this
    private[objects] def freeVars_ = Nil
 }

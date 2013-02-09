@@ -110,7 +110,9 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
       if (toClose)
          closeFirst(false)
    }
-   /** closes the first active notation (precondition: must be closable) */
+   /** closes the first active notation (precondition: must be closable)
+    * @param rightOpen true if the notation may still pick from the right during a call to its close method
+    */
    private def closeFirst(rightOpen: Boolean) {
        log("closing current notation")
        val an = active.head
@@ -199,9 +201,17 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   applicable match {
                      case hd :: Nil =>
                         //open the notation and apply it
-                        /* opening a left-open notation when the current notation is closable (e.g., because it's right-open)
-                           should be an error: no unique reading for - a + b */
                         log("opening notation at " + currentToken)
+                        if (hd.isLeftOpen) {
+                           /* at this point, all active notations are right-open
+                            * thus, opening a left-open notation, leads to the ambiguity of association, e.g.,
+                            * there is no unique reading for a-b+c
+                            * closing all closable notations has the effect of associating to the left, i.e., (a-b)+c
+                            * that corresponds to the left-to-right reading convention
+                            * alternatively, one could flag an error
+                            */
+                           Range(0,closable) foreach {_ => closeFirst(true)}
+                        }
                         val an = hd.open(this, currentIndex)
                         active ::= an
                         an.applicable(currentToken, currentIndex) //true by invariant but must be called for precondition of apply

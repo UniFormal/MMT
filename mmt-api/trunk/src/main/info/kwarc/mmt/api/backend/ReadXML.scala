@@ -44,10 +44,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
            val d = new Document(location)
            add(d)
            readModules(path, Some(location), modules)
-           location
         case <mmtabox>{decls @ _*}</mmtabox> =>
            readAssertions(decls)
-           location
         case _ => throw new ParseError("document expected: " + D)
       }
    }
@@ -342,7 +340,7 @@ object XMLReader {
               } else
                  e
            }
-           (scala.xml.Elem(p,l,a,s,cs2 : _*), n)
+           (scala.xml.Elem(p,l,a,s,true,cs2 : _*), n)
        case n => (n, None)
    }
 }

@@ -202,7 +202,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
 }
 
 /** apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
- * UOM uses it to remember that a Term has been simplified already to avoid recursing it into it again 
+ * UOM uses it to remember that a Term has been simplified already to avoid recursing into it again 
  */
 object Simplified {
    private val simplifyProperty = utils.mmt.baseURI / "clientProperties" / "uom" / "simplified"
@@ -213,7 +213,7 @@ object Simplified {
    def unapply(t: Term): Option[Term] =
       t.clientProperty.get(simplifyProperty) match {
           case Some(true) => Some(t)
-          case None => None
+          case _ => None
       }
 }
 
@@ -230,7 +230,7 @@ object Changed {
    def unapply(t: Term): Option[Term] =
       t.clientProperty.get(changeProperty) match {
         case Some(true) => Some(t)
-        case None => None
+        case _ => None
       }
    def eraseMarker(t: Term) {
       t.clientProperty -= changeProperty
