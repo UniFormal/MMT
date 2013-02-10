@@ -12,8 +12,9 @@ import scala.collection.mutable.{ListMap,HashMap}
  * This class bundles all state that is maintained by a [[info.kwarc.mmt.api.parser.StructureParser]]
  * 
  * @param reader the input stream, from which the parser reads
+ * @param container the MMT URI of the input stream (used for back-references)
  */
-class ParserState(val reader: Reader) {
+class ParserState(val reader: Reader, val container: DPath) {
    /**
     * the namespace mapping set by
     * {{{
@@ -37,7 +38,7 @@ class ParserState(val reader: Reader) {
    def getErrors = errors.reverse
    
    def copy(reader: Reader = reader, defaultNamespace:DPath = defaultNamespace) = {
-      val s = new ParserState(reader)
+      val s = new ParserState(reader, container)
       s.defaultNamespace = defaultNamespace
       s
    }
@@ -142,8 +143,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param r a Reader holding the input stream
     * @param dpath the MMT URI of the stream
     */
-   def apply(r: Reader, dpath: DPath) : ParserState = {
-      val state = new ParserState(r)
+   def apply(r: Reader, dpath: DPath) : (Document,ParserState) = {
+      val state = new ParserState(r, dpath)
       state.defaultNamespace = dpath
       val doc = new Document(dpath)
       seCont(doc)(state)
@@ -151,7 +152,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          readInDocument(doc)(state)
       }
       log("end " + dpath)
-      state
+      (doc,state)
    }
 
    /** convenience function to create SourceError's */
@@ -597,7 +598,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   namespace : ListMap[String, DPath] = new ListMap) {
      //building parsing state
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(modS)))
-     val state = new ParserState(r)
+     val state = new ParserState(r, docBaseO.getOrElse(null))
      docBaseO.map(state.defaultNamespace = _)
      namespace map { p =>
        state.namespace(p._1) = p._2
@@ -621,7 +622,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                     namespace : ListMap[String, DPath] = new ListMap) = {
      //building parsing state
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(conS)))
-     val state = new ParserState(r)
+     val state = new ParserState(r, docBaseO.getOrElse(null))
      docBaseO.map(state.defaultNamespace = _)
      namespace map { p =>
        state.namespace(p._1) = p._2

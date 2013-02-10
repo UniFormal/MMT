@@ -51,8 +51,7 @@ trait IndexedArchive extends WritableArchive {
            log("[COMP ->  ]  " + inFile)
            log("[  -> NARR]     " + narrFile)
            val controller = new Controller(report)
-           val dpath = controller.read(inFile, Some(DPath(narrationBase / inPath)))
-           val doc = controller.getDocument(dpath)
+           val (doc,_) = controller.read(inFile, Some(DPath(narrationBase / inPath)))
            // write narration file
            xml.writeFile(doc.toNode, narrFile)
            doc.getModulesResolved(controller.library) foreach {mod => {
@@ -70,8 +69,7 @@ trait IndexedArchive extends WritableArchive {
     def deleteNarrCont(in:List[String] = Nil) {
        val controller = new Controller(report)
        traverse("narration", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
-          val dpath = controller.read(inFile, Some(DPath(narrationBase / inPath)))
-          val doc = controller.getDocument(dpath)
+          val (doc,_) = controller.read(inFile, Some(DPath(narrationBase / inPath)))
           //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
           doc.getItems foreach {
              case r: documents.MRef =>

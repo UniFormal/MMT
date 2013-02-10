@@ -235,30 +235,33 @@ class Controller extends ROController {
    }
    /** reads a file containing a document and returns the Path of the document found in it
     * the reader is chosen according to the file ending: omdoc, elf, or mmt
+    * @param f the input file
+    * @param docBase the base path to use for relative references
+    * @return the read Document and a list of errors that were encountered
     */
-   def read(f: File, docBase : Option[DPath] = None) : DPath = {
+   def read(f: File, docBase : Option[DPath] = None) : (Document,List[Error]) = {
       val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
       f.getExtension match {
          case Some("omdoc") =>
             val N = utils.xml.readFile(f)
-            var p: DPath = null
+            var doc: Document = null
             xmlReader.readDocument(dpath, N) {
                case d: Document =>
                   add(d)
-                  p = d.path
+                  doc = d
                case e => add(e)
             }
-            p
+            (doc, Nil)
          case Some("elf") | Some("mmt") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
             val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
             source.close
             if (!errorList.isEmpty)
               log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
-            dpath
+            (doc, errorList.toList)
          case Some("mmt-new") =>
-            textParser(Reader(f), dpath)
-            dpath
+            val (doc, state) = textParser(Reader(f), dpath)
+            (doc, state.getErrors)
          case Some(e) => throw ParseError("unknown file extension: " + f)
          case None => throw ParseError("unknown document format: " + f)
       }

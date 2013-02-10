@@ -15,7 +15,7 @@ import scala.xml.{Node,NodeSeq}
 
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
 class XMLReader(controller : frontend.Controller) extends Reader(controller) {
-   private def log(s : String) = report("reader", s)
+   val logPrefix = "reader"
    /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
       cont(e)
@@ -46,7 +46,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
            readModules(path, Some(location), modules)
         case <mmtabox>{decls @ _*}</mmtabox> =>
            readAssertions(decls)
-        case _ => throw new ParseError("document expected: " + D)
+        case _ => throw ParseError("document expected: " + D)
       }
    }
    
@@ -132,7 +132,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                  readModules(base, Some(dpath), mods)
              case (base : MPath, <notation>{_*}</notation>) =>
                  readNotations(base, base, m)
-	         case (_,_) => throw new ParseError("module level element expected: " + m)
+	         case (_,_) => throw ParseError("module level element expected: " + m)
          }}
       }
    }
