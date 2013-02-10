@@ -91,7 +91,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       node.add(child)
       mod match {
          case m: DeclaredModule[_] =>
-            m.valueListNG foreach {d => buildTree(child, d)}
+            m.getPrimitiveDeclarations foreach {d => buildTree(child, d)}
          case m: DefinedModule =>
       }
    }
@@ -100,7 +100,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
          case s: Structure => "structure " + s.name.toString
-         case a: DefLinkAssignment => "import " + a.name.toString
+         case a: DefLinkAssignment => "include " + a.name.toString
          case d: Declaration => d.role.toString + " " + d.name.toString
       }
       val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, getRegion(dec)))
@@ -158,7 +158,7 @@ class MMTSideKick extends SideKickParser("mmt") {
       val root = tree.root
       try {
          log("parsing " + path.toString + " as " + dpath.toPath)
-         val (doc,errors) = controller.textReader.readDocument(src, dpath)(controller.termParser.apply)
+         val (doc,errors) = controller.read(path, Some(dpath))
          // add narrative structure of doc to outline tree
          buildTree(root, doc)
          // register errors with ErrorList plugin
@@ -174,16 +174,20 @@ class MMTSideKick extends SideKickParser("mmt") {
                val error = new DefaultErrorSource.DefaultError(errorSource, tp, file, pos.line, pos.column, pos.column + 1, s.mainMessage)
                s.extraMessages foreach {m => error.addExtraMessage(m)}
                errorSource.addError(error)
-      }
-      tree
-      } catch {case e =>
+            case e: Error => 
+               val error = new DefaultErrorSource.DefaultError(
+                   errorSource, ErrorSource.ERROR, path.toString, 0, 0, 1, e.getMessage
+               )
+               errorSource.addError(error)
+         }
+      } catch {case e: java.lang.Throwable =>
          // other error, e.g., by the get methods in buildTree
          val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, e.getMessage)
          e.getStackTrace foreach {m => error.addExtraMessage(m.toString)}
          errorSource.addError(error)
          log(e.getMessage)
-         tree
       }
+      tree
    }
    // override def stop() 
    // override def getParseTriggers : String = ""
