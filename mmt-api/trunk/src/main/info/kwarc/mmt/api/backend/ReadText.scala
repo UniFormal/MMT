@@ -15,6 +15,8 @@ import scala.collection.mutable._
 class TextReader(controller : frontend.Controller, cont : StructuralElement => Unit) extends Reader(controller) {
   def this(ctrl : frontend.Controller) = this(ctrl, ctrl.add)
 
+  val logPrefix = "textReader"
+
   // ------------------------------- private vars -------------------------------
 
   /** array containing all the lines in the file */
@@ -1382,8 +1384,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   // ------------------------------- auxiliary methods -------------------------------
 
-
-  private def log(s : String) = report("textReader", s)
 
   /** tells the controller given as class parameter to add the StructuralElement */
   private def add(e : StructuralElement) {

@@ -16,10 +16,10 @@ trait ScalaArchive extends WritableArchive {
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
               val controller = new Controller(report)
-              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
+              val (doc,_) = controller.read(inFile, Some(DPath(narrationBase / in)))
               val outFile = (root / "scala" / in).setExtension("scala")
               outFile.getParentFile.mkdirs
-              uom.Extractor.doDocument(controller, dpath, outFile)
+              uom.Extractor.doDocument(controller, doc.path, outFile)
            } catch {
               case e: Error => report(e)
               //case e => report("error", e.getMessage)
@@ -37,10 +37,9 @@ trait ScalaArchive extends WritableArchive {
         } else if (inFile.getExtension == Some("omdoc")) {
            try {
               val controller = new Controller(report)
-              val dpath = controller.read(inFile, Some(DPath(narrationBase / in)))
+              val (doc,_) = controller.read(inFile, Some(DPath(narrationBase / in)))
               val scalaFile = (root / "scala" / in).setExtension("scala")
-              uom.Synthesizer.doDocument(controller, dpath, scalaFile)
-              val doc = controller.getDocument(dpath)
+              uom.Synthesizer.doDocument(controller, doc.path, scalaFile)
               xml.writeFile(doc.toNodeResolved(controller.library), inFile)
            } catch {
               case e: Error => report(e)
