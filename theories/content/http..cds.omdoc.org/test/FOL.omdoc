@@ -10,7 +10,9 @@
       </metadata>
       <type>
         <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
-          <om:OMS base="http://cds.omdoc.org/foundations" module="Typed" name="type"/>
+          <om:OMSF>
+            <om:text format="http://cds.omdoc.org/test?FOL"><![CDATA[type]]></om:text>
+          </om:OMSF>
         </om:OMOBJ>
       </type>
     </constant>

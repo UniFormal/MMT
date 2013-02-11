@@ -20,7 +20,7 @@ theory FOL : ?LF =
   and : bool → bool → bool # 1 ∧ 2 prec 5
   or : bool → bool → bool # 1 ∨ 2 prec 5
   impl : bool → bool → bool # 1 ⇒ 2 prec 10
-  equiv : bool → bool → bool = [x:bool][y:bool] x ⇒ y ∧ y ⇒ x # 1 ≡ 2 prec 10
+  equiv : bool → bool → bool = [x:bool][y:bool] (x ⇒ y) ∧ (y ⇒ x) # 1 ≡ 2 prec 10
 
 
 theory FOLExt : ?LF =
