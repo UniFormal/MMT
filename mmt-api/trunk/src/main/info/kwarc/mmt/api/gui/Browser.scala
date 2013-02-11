@@ -9,8 +9,18 @@ import java.awt.event._
 import info.kwarc.mmt.api._
 import frontend._
 
-class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
-   private val controller = wm.controller
+class GUIFrame(wm: WindowManager) extends JFrame("MMT") {
+   private val panel = new GUIPanel(wm.controller)
+   add(panel)
+   addWindowListener(new WindowAdapter {
+      override def windowClosed(e: WindowEvent) {wm.closeBrowser} 
+   })
+   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
+   pack()
+   setVisible(true)
+}
+
+class GUIPanel(controller: Controller) extends JPanel {
    private val textArea = new JTextArea()
    private val tabbed = new JTabbedPane()
    
@@ -24,11 +34,4 @@ class Browser(wm: WindowManager) extends JFrame("MMT Browser") {
    tabbed.addTab("Backend", null, bepane, "current backends")
    
    add(tabbed)
-   addWindowListener(new WindowAdapter {
-      override def windowClosed(e: WindowEvent) {wm.closeBrowser} 
-   })
-   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
-   setVisible(true)
-   pack()
-   
 }

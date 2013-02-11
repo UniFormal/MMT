@@ -298,12 +298,11 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
 
 }
 
-case class OMREF(uri: URI, var value: Option[Term] = None, var under: Substitution = Substitution()) extends Term {
-   def ^(sub: Substitution) = OMREF(uri, value, under ^ sub)
-   private[objects] def freeVars_ = value.map(_.freeVars_).getOrElse(Nil).filter(x => under.maps(x))
+case class OMREF(uri: URI, var value: Option[Term] = None) extends Term {
+   def ^(sub: Substitution) = this
+   private[objects] def freeVars_ = Nil
    def isDefined = value.isDefined
    def set(t: Term) {value = Some(t)}
-   def get : Option[Term] = value map (_ ^ under)
    def head = value flatMap {_.head}
    def role = Role_reference
    def components = List(StringLiteral(uri.toString), value.getOrElse(Omitted))
@@ -399,6 +398,30 @@ object OMAMaybeNil {
       case _ => Some((t, Nil))
    }
 }
+
+
+/* this may prove useful to pattern-match through OMREF elements 
+abstract class TermCompanion[A] {
+   def strictUnapply(t:Term): A
+   def unapply(t: Term): Option[A] = t match {
+      case r: OMREF => r.value map unapply
+      case t =>
+         try {Some(strictUnapply(t))}
+         catch {case e: ClassCastException => None}
+   }
+}
+
+object OMID extends TermCompanion[ContentPath] {
+   def strictUnapply(t: Term) = t.asInstanceOf[OMID].path
+}
+object OMA extends TermCompanion[(Term,List[Term])] {
+   def strictUnapply(t: Term) = {
+      val a = t.asInstanceOf[OMA]
+      (t.fun,t.args)
+   }
+}
+*/
+
 
 /**
  * Obj contains the parsing methods for objects.

@@ -52,14 +52,14 @@ abstract class ROController {
 /** A Controller is the central class maintaining all MMT knowledge items.
   * It stores all stateful entities and executes Action commands.
   */  
-class Controller extends ROController {
+class Controller extends ROController with Logger {
    def this(r: Report) {
       this()
       report_ = r
    }
    /** handles all output and log messages */
    private var report_ : Report = new Report 
-   def report = report_
+   val report = report_
    /** maintains all knowledge */
    val memory = new Memory(report)
    val depstore = memory.ontology
@@ -127,7 +127,7 @@ class Controller extends ROController {
      propagator.boxedPaths
    }
 
-   protected def log(s : => String) = report("controller", s)
+   val logPrefix = "controller"
 
    /** a lookup that uses only the current memory data structures */
    val localLookup = new Lookup(report) {
@@ -150,17 +150,17 @@ class Controller extends ROController {
    /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {
       log("retrieving " + path)
-      report.indent
-      // get, ...
-      backend.get(path) {
-        // read, ...
-        case (u,n) =>
-          xmlReader.readDocuments(DPath(u), n) {
-           // and add the content with URI path
-           e => add(e)
-        }
+      logGroup {
+         // get, ...
+         backend.get(path) {
+           // read, ...
+           case (u,n) =>
+              xmlReader.readDocuments(DPath(u), n) {
+              // and add the content with URI path
+              e => add(e)
+           }
+         }
       }
-      report.unindent
       log("retrieved " + path)
    }
    /**

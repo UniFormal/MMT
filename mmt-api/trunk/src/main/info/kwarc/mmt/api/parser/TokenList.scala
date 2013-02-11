@@ -22,7 +22,7 @@ object TokenList {
     * (The '\n' counts when counting the offset.) 
     */
    def apply(s: String, first: SourcePosition = SourcePosition(0,0,0)) : TokenList = {
-      val l = s.length
+      val l = first.offset + s.length
       // lexing state
       var i = first  // position of net Char in s
       var current = "" // previously read prefix of the current Token
@@ -40,7 +40,7 @@ object TokenList {
       }
       // the lexing loop
       while (i.offset < l) {
-         val c = s(i.offset) // current Char
+         val c = s(i.offset-first.offset) // current Char
          val tp = c.getType // current Char's type
          if (c == Reader.escapeChar) {
             // escape character: increase level
@@ -90,7 +90,7 @@ object TokenList {
                   endToken
                   // look ahead: if a connector follows, start a multi-character Token
                   // otherwise, create a single-character Token
-                  if (i.offset < l-1 && s(i.offset+1).getType == CONNECTOR_PUNCTUATION) {
+                  if (i.offset < l-1 && s(i.offset-first.offset+1).getType == CONNECTOR_PUNCTUATION) {
                      current += c
                   } else {
                      tokens ::= Token(c.toString, i, whitespace)
@@ -142,7 +142,7 @@ class TokenList(private var tokens: List[TokenListElem]) {
             tpOpt foreach doFoundArg
       }
       val (from,to) = an.fromTo
-      val matched = new MatchedList(newTokens.reverse, an)
+      val matched = new MatchedList(newTokens.reverse, an, tokens(from).firstPosition, tokens(to-1).lastPosition)
       tokens = tokens.take(from) ::: matched :: tokens.drop(to)
       (from,to)
    }
@@ -165,16 +165,36 @@ case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
 }
 
 /** the type of objects that may occur in a [[info.kwarc.mmt.api.parser.TokenList]] */
-trait TokenListElem
+trait TokenListElem {
+   def firstPosition: SourcePosition
+   def lastPosition: SourcePosition
+   def region = SourceRegion(firstPosition,lastPosition)
+}
+
+/** subtype of TokenListElem that defines some methods generally */
+abstract class PrimitiveTokenListElem(text: String, val firstPosition: SourcePosition) extends TokenListElem {
+   override def toString = text //+ "@" + first.toString
+   /** the region spanned by this Token, from first to last character */
+   val lastPosition = {
+      val length = text.length
+      SourcePosition(firstPosition.offset+length, firstPosition.line, firstPosition.column+length-1)
+   }
+}
+
 
 /** A Token is the basic TokenListElem
  * @param word the characters making up the Token (excluding whitespace)
  * @param first the index of the first character
  * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
  */
-case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean) extends TokenListElem {
-   override def toString = word //+ "@" + first.toString
-}
+case class Token(word: String, f: SourcePosition, whitespaceBefore: Boolean) extends PrimitiveTokenListElem(word,f)
+
+/** A Token is the basic TokenListElem
+ * @param word the characters making up the Token (excluding whitespace)
+ * @param first the index of the first character
+ * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
+ */
+case class Escaped(text: String, f: SourcePosition) extends PrimitiveTokenListElem(text,f)
 
 /**
  * A MatchedList is a TokenListElem resulting by reducing a sublist using a notation
@@ -186,7 +206,8 @@ case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: 
  * 
  * TokenSlice's in an.getFound are invalid. 
  */
-class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) extends TokenListElem {
+class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation,
+                  val firstPosition: SourcePosition, val lastPosition: SourcePosition) extends TokenListElem {
    override def toString = if (tokens.isEmpty)
      "{" + an.notation.name.last + "}"
    else
@@ -210,8 +231,8 @@ class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) exten
  * @param tokens the TokenList that is to be reduced
  */
 class UnmatchedList(val tl: TokenList) extends TokenListElem {
+   val firstPosition = tl(0).firstPosition
+   val lastPosition = tl(tl.length-1).lastPosition
    var scanner: Scanner = null
    override def toString = "{unmatched " + tl.toString + " unmatched}"
 }
-
-case class Escaped(text: String, firstPosition: SourcePosition) extends TokenListElem

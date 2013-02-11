@@ -46,7 +46,7 @@ trait IndexedArchive extends WritableArchive {
     private val narrContTimestamps = new Timestamps(root / compiledDim, root / "META-INF" / "timestamps" / compiledDim)
     /** Generate content, narration, notation, and relational from compiled. */
     def produceNarrCont(in : List[String] = Nil) {
-        traverse(compiledDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+        traverse(compiledDim, in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
            val narrFile = narrationDir / inPath
            log("[COMP ->  ]  " + inFile)
            log("[  -> NARR]     " + narrFile)
@@ -68,7 +68,7 @@ trait IndexedArchive extends WritableArchive {
     /** deletes content, narration, notation, and relational; argument is treated as paths in narration */
     def deleteNarrCont(in:List[String] = Nil) {
        val controller = new Controller(report)
-       traverse("narration", in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+       traverse("narration", in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
           val (doc,_) = controller.read(inFile, Some(DPath(narrationBase / inPath)))
           //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
           doc.getItems foreach {
@@ -99,7 +99,7 @@ trait IndexedArchive extends WritableArchive {
     }
     def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
        if ((root / "relational").exists) {
-          traverse("relational", in, extensionIs(kd)) {case Current(inFile, inPath) =>
+          traverse("relational", in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
              ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
           }
           //TODO this should only add implicits for the dependencies it read
@@ -113,7 +113,7 @@ trait IndexedArchive extends WritableArchive {
 
     def readNotation(in: List[String] = Nil, controller: Controller) {
        if ((root / "notation").exists) {
-          traverse("notation", in, extensionIs("not")) {case Current(inFile, inPath) =>
+          traverse("notation", in, Archive.extensionIs("not")) {case Current(inFile, inPath) =>
              val thy = Archive.ContentPathToMMTPath(inPath)
              File.ReadLineWise(inFile) {line => controller.notstore.add(presentation.Notation.parseString(line, thy))}
           }

@@ -221,7 +221,8 @@ object URI {
    def apply(scheme : String, authority : String, path : List[String], query : String) : URI =
       (URI(scheme, authority) / path) ? query
    /** returns a URI with a scheme only */
-   def scheme(s: String) = URI(Some(s), None) 
+   def scheme(s: String) = URI(Some(s), None)
+   def empty = URI(None,None)
    /** the URI "file:" */
    val file = scheme("file")
    /** returns a URI with no scheme or authority and relative path */

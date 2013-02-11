@@ -186,7 +186,8 @@ class Server(val port: Int, controller: Controller) extends HServer {
              }
              val termParser = controller.termParser
              val tm = try {
-               termParser(parser.ParsingUnit(null, scope, objects.Context(), bodyAsString(tk)))
+               val str = bodyAsString(tk)
+               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str))
              } catch {
                case e : Throwable =>
                  println(e)

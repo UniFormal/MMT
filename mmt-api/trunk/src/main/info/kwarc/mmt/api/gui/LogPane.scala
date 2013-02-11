@@ -5,7 +5,7 @@ import frontend._
 import javax.swing._
 import event._
 
-class LogPane(report: Report) extends ListModel {
+class LogPane(report: Report) extends ListModel[String] {
    def addListDataListener(l: ListDataListener){}
    def removeListDataListener(l: ListDataListener) {} 
    def getElementAt(index: Int) = {

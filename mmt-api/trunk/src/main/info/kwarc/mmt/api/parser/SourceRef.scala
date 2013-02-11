@@ -80,6 +80,10 @@ object SourceRef {
       val reg = SourceRegion.parse(u.fragment.getOrElse(""))
       SourceRef(container, reg)
    }
+   def anonymous(s: String) = {
+      val reg = SourceRegion(SourcePosition(0,0,0),SourcePosition(s.length-1,0,s.length-1))
+      SourceRef(URI.empty, reg)
+   }
    /** the theory in which the parsed metadata keys reside */
    //def metadataBase : MPath = MetaDatum.keyBase
 
