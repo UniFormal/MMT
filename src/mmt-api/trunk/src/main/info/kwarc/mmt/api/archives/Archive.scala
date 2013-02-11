@@ -84,8 +84,6 @@ abstract class WritableArchive extends ROArchive {
       */
     def MMTPathToContentPath(m: MPath) : File = contentDir / Archive.MMTPathToContentPath(m)
 
-    /** returns a functions that filters by file name extension */
-    def extensionIs(e: String) : String => Boolean = _.endsWith("." + e)  
     /** traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this */
     def traverse(dim: String, in: List[String], filter: String => Boolean, sendLog: Boolean = true)(f: Current => Unit) {
         val inFile = root / dim / in
@@ -100,7 +98,6 @@ abstract class WritableArchive extends ROArchive {
               if (filter(inFile.getName)) f(Current(inFile, in))
            } catch {
               case e : Error => report(e)
-              case e : Throwable => throw e
            }
         }
     }
@@ -194,7 +191,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
       val inFile = contentDir / in
       log("to do: [CONT -> PRES]        -> " + inFile)
 
-      traverse("content", in, extensionIs("omdoc")) { case Current(inFile, inPath) =>
+      traverse("content", in, Archive.extensionIs("omdoc")) { case Current(inFile, inPath) =>
         val outFile = (root / "presentation" / style.last / inPath).setExtension("xhtml")
         controller.read(inFile,None)
         val mpath = Archive.ContentPathToMMTPath(inPath)
@@ -231,7 +228,7 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
           case "mws-enriched" => "enriched"
           case _ => "content"
         }
-        traverse(sourceDim, in, extensionIs("omdoc")) {case Current(inFile, inPath) =>
+        traverse(sourceDim, in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
            val outFile = (root / "mws" / dim / inPath).setExtension("mws")
            log("[  -> MWS]  " + inFile + " -> " + outFile)
            val controller = new Controller
@@ -304,6 +301,8 @@ object Archive {
        val schemeString = uri.scheme.map(_ + "..").getOrElse("")
        (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(escape(m.name.flat) + ".omdoc")
     }
+    /** returns a functions that filters by file name extension */
+    def extensionIs(e: String) : String => Boolean = _.endsWith("." + e)  
 }
 
 /*

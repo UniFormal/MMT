@@ -32,6 +32,9 @@ class ParserState(val reader: Reader, val container: DPath) {
     */
    var defaultNamespace: DPath = utils.mmt.mmtbase
    
+   /** the position at which the current StructuralElement started */ 
+   var startPosition = reader.getSourcePosition
+   
    /** all errors encountered during parsing, in reverse order */()
    var errors : List[SourceError] = Nil
    /** all errors encountered during parsing */()
@@ -158,7 +161,11 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    /** convenience function to create SourceError's */
    private def makeError(reg: SourceRegion, s: String) =
       SourceError("structure-parser", SourceRef(null, reg), s)
-   
+  
+   /** the region from the start of the current structural element to the current position */
+   protected def currentSourceRegion(implicit state: ParserState) =
+      SourceRegion(state.startPosition, state.reader.getSourcePosition)
+      
    /** read a LocalName from the stream
     * @throws SourceError iff ill-formed or empty
     */
@@ -232,6 +239,13 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       else
          throw makeError(delim._2, delims.map("'" + _ + "'").mkString("" ," or ", "") + "expected")
    }
+   
+   def readParsedObject(scope: Term, context: Context = Context())(implicit state: ParserState) = {
+      val (obj, reg) = state.reader.readObject
+      val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, Context(), obj)
+      val parsed = puCont(pu)
+      (obj,parsed)
+   }
   
    /** the main loop for reading declarations that can occur in documents
     * @param doc the containing Document (must be in the controller already)
@@ -250,8 +264,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val to = readMPath(vpath)
                readDelimiter("abbrev", "=") match {
                   case "abbrev" =>
-                     val (obj, reg) = state.reader.readObject
-                     val df = puCont(ParsingUnit(vpath $ DefComponent, OMMOD(vpath), Context(), obj))
+                     val (_,df) = readParsedObject(OMMOD(vpath))
                      val thy = new DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
                      seCont(thy)
                   case "=" =>
@@ -265,6 +278,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       }
       if (state.reader.endOfDocument) return
       val (keyword, reg) = state.reader.readToken
+      state.startPosition = reg.start
       try {
          keyword match {
             case "" =>
@@ -298,8 +312,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                seCont(mref)
                var delim = state.reader.readToken
                if (delim._1 == "abbrev") {
-                  val (obj, reg) = state.reader.readObject
-                  val df = puCont(ParsingUnit(tpath $ DefComponent, OMMOD(tpath), Context(), obj))
+                  val (_,df) = readParsedObject(OMMOD(tpath))
                   val thy = new DefinedTheory(ns, name, df)
                   seCont(thy)
                } else {
@@ -370,6 +383,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       if (state.reader.endOfModule) return
       try {
          val (keyword, reg) = state.reader.readToken
+         state.startPosition = reg.start
          keyword match {
             //this case occurs if we read the GS or marker
             case "" =>
@@ -463,37 +477,40 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                errorCont(makeError(treg, "expected '@' or ':' or '=' or '#', ignoring the next object"))
             }
          } else {
-            val (obj, oreg) = state.reader.readObject
-            def doComponent(c: DeclarationComponent, tc: TermContainer) = {
-               val tm = puCont(ParsingUnit(cpath $ c, OMMOD(tpath), Context(), obj))
+            def doComponent(c: DeclarationComponent, tc: TermContainer) {
+               val (obj,tm) = readParsedObject(OMMOD(tpath))
                tc.read = obj
                tc.parsed = tm
             }
             // the main part, which branches based on the delimiter
             delim match {
                case ":" =>
-                  if (tpC.read.isDefined)
-                     errorCont(makeError(oreg, "type of this constant already given, ignored"))
-                  else
+                  if (tpC.read.isDefined) {
+                     errorCont(makeError(treg, "type of this constant already given, ignored"))
+                     state.reader.readObject
+                  } else
                      doComponent(TypeComponent, tpC)
                case "=" =>
-                  if (dfC.read.isDefined)
-                     errorCont(makeError(oreg, "definiens of this constant already given, ignored"))
-                  else
+                  if (dfC.read.isDefined) {
+                     errorCont(makeError(treg, "definiens of this constant already given, ignored"))
+                     state.reader.readObject
+                  } else
                      doComponent(DefComponent, dfC)
                case "#" =>
+                  val (notString,reg) = state.reader.readObject
                   if (nt.isDefined)
-                     errorCont(makeError(oreg, "notation of this constant already given, ignored"))
+                     errorCont(makeError(treg, "notation of this constant already given, ignored"))
                   else {
-                     val notString = obj
                      val notation = TextNotation.parse(notString, cpath)
                      nt = Some(notation)
                   }
                case "@" =>
+                  val (str,_) = state.reader.readObject
                   if (al.isDefined)
-                     errorCont(makeError(oreg, "alias of this constant already given, ignored"))
-                  else
-                     al = Some(LocalName.parse(obj))
+                     errorCont(makeError(treg, "alias of this constant already given, ignored"))
+                  else {
+                     al = Some(LocalName.parse(str))
+                  }
                //TODO read metadata
             }
          }
@@ -510,6 +527,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       if (state.reader.endOfModule) return
       try {
          val (keyword, reg) = state.reader.readToken
+         state.startPosition = reg.start
          keyword match {
             //this case occurs if we read the GS or marker
             case "" =>
@@ -524,8 +542,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             case "include" =>
                val from = readMPath(view.path)
                readDelimiter(":=")
-               val (obj, reg) = state.reader.readObject
-               val mor = puCont(ParsingUnit(view.path $ DefComponent, view.to, Context(), obj))
+               val (_,mor) = readParsedObject(view.to)
                val as = new DefLinkAssignment(view.toTerm, LocalName.Anon, from, mor)
                seCont(as)
             //Pattern
@@ -662,6 +679,7 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
     */
    def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
+      se.metadata.add(metadata.Link(SourceRef.metaDataKey, SourceRef(state.container.uri,currentSourceRegion).toURI))
       controller.add(se)
    }
 }

@@ -14,8 +14,9 @@ import scala.collection.immutable.{HashMap}
  * @param scope the theory against which to parse
  * @param context the context against which to parse
  * @param term the term to be parse
- * */
-case class ParsingUnit(component: CPath, scope: Term, context: Context, term: String)
+ * @param first the position of the first character, used for back references, 0 by default
+ */
+case class ParsingUnit(source: SourceRef, scope: Term, context: Context, term: String)
 
 /**
  * simplified construction of typical parsing errors
@@ -37,11 +38,11 @@ trait AbstractObjectParser {
 object AbstractObjectParser {
   def getNotations(controller : Controller, scope : Term) : List[TextNotation] = {
      val includes = controller.library.visible(scope)
-     val decls = includes.toList flatMap {tm => 
+     val decls = includes.toList flatMap {tm =>
         controller.globalLookup.getDeclaredTheory(tm.toMPath).getConstants
      }
      decls.flatMap {c =>
-        c.not.toList ::: List(new TextNotation(c.path, List(Delim(c.path.last)), presentation.Precedence.integer(0)))
+        c.not.toList ::: List(new TextNotation(c.path, List(Delim(c.path.last)), presentation.Precedence.neginfinite))
      }
    }
   val unknown = utils.mmt.mmtcd ? "unknown"
@@ -100,19 +101,23 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    }
    
    /**
-    * transforms a TokenList (usually obtained from a [[info.kwarc.mmt.api.parser.Scanner]]) to an MMT Term 
+    * recursively transforms a TokenListElem (usually obtained from a [[info.kwarc.mmt.api.parser.Scanner]]) to an MMT Term
+    * @param te the element to transform
+    * @param boundVars the variable names bound in the context
+    * @param pu the original ParsingUnit (constant during recursion)
     */
-   private def makeTerm(te : TokenListElem, boundVars: List[LocalName])(implicit scope: Term) : Term = {
-      te match {
+   private def makeTerm(te : TokenListElem, boundVars: List[LocalName])(implicit pu: ParsingUnit) : Term = {
+      val term = te match {
          case Token(word, _, _) =>
             val name = LocalName.parse(word.replace(".", "/"))
             if (boundVars contains name) {
                //single Tokens may be bound variables
                OMV(name)
             } else if (word.count(_ == '?') > 0) {
-                val p = Path.parseS(word, scope.toMPath)
+                val p = Path.parseS(word, pu.scope.toMPath)
                 //or identifiers
-                OMID(p)
+                val t = OMID(p)
+                t
             } else
                //in all other cases, we don't know
                throw ParseError("unbound token: " + word) //actually, this is recoverable
@@ -124,7 +129,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             r.close
             OMSemiFormal(objects.Text(format, text))
          case ml : MatchedList =>
-            log("constructing term for notation: " + ml.an)
+            //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
             // compute the names of all bound variables, in abstract syntax order
             val newBVars: List[LocalName] = found.mapPartial {
@@ -167,12 +172,13 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             val con = ml.an.notation.name
             // hard-coded special case for a bracketed subterm
             if (con == utils.mmt.brackets)
-               return args(0)._2
+               args(0)._2
+            else {
             // the head of the produced Term
             val head = OMID(con)
             //construct a Term according to args, vars, and scopes
             //this includes sorting args and vars according to the abstract syntax
-            val result = if (args == Nil && vars == Nil && scopes == Nil) {
+            if (args == Nil && vars == Nil && scopes == Nil) {
                   //no args, vars, scopes --> OMID
                   head
             } else {
@@ -197,12 +203,13 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   // order the variables
                   val orderedVars = vars.sortBy(_._1).map {
                      case (_, name, tp) =>
-                        //replace omitted type with meta-variable
                         val vname = LocalName(name)
-                        val metaVar = tp.getOrElse(newType(vname)) 
-                        val finalTp = if (boundVars == Nil)
-                           metaVar
-                        else {
+                        val finalTp = tp.getOrElse {
+                           //new meta-variable for unknown type
+                           val metaVar = newType(vname) 
+                           if (boundVars == Nil)
+                              metaVar
+                           else
                            //under a binder, apply meta-variable to all bound variables
                            prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
                         }
@@ -225,9 +232,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                      //not all combinations correspond to Terms
                      //this should only happen for ill-formed notations
                      throw ParseError("ill-formed notation")
-               }
-            log("result: " + result)
-            result
+               }}
          case ul : UnmatchedList =>
             if (ul.tl.length == 1)
                // process the single TokenListElement
@@ -242,6 +247,9 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
              */
              throw ParseError("unmatched list: " + ul.tl)
       }
+      //log("result: " + term)
+      term.metadata.add(metadata.Link(SourceRef.metaDataKey, pu.source.copy(region = te.region).toURI))
+      term
    }
   
   def apply(pu : ParsingUnit) : Term = {    
@@ -254,9 +262,11 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     logGroup {
        qnotations.map(o => log(o.toString))
     }
+    val tl = TokenList(pu.term, pu.source.region.start)
+    if (tl.length == 0) throw ParseError("no tokens found: " + pu.term)
     
     //scanning
-    val sc = new Scanner(TokenList(pu.term), controller.report)
+    val sc = new Scanner(tl, controller.report)
     qnotations reverseMap {
          case (priority,nots) => sc.scan(nots)
     }
@@ -267,7 +277,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     sc.tl.length match {
        case 1 =>
           val tm = logGroup {
-             makeTerm(sc.tl(0), varnames)(pu.scope)
+             makeTerm(sc.tl(0), varnames)(pu)
           }
           log("parse result: "  + tm.toString)
           if (vardecls == Nil)

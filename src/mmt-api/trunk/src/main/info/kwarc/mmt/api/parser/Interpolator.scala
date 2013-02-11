@@ -21,7 +21,8 @@ class MMTInterpolator(controller: frontend.Controller) {
             buf.append(strings.next)
             i += 1
         }
-        val pu = ParsingUnit(null, OMMOD(theory), sub.asContext, buf.toString) 
+        val str = buf.toString
+        val pu = ParsingUnit(SourceRef.anonymous(str), OMMOD(theory), sub.asContext, str) 
         val t = controller.termParser(pu)
         t ^ sub
       }

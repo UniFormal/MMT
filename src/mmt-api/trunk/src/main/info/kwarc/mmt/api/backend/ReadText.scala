@@ -38,7 +38,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   private var dpath : DPath = null
 
   /** input format */
-  private var format : String = null
   private var puCont : ParsingUnit => Term = null 
 
   // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
@@ -321,9 +320,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     // computes the return value. i is assumed to be the position after the end of the term
     def computeReturnValue = {
       val term = getSlice(start, i - 1)
-      val pu = ParsingUnit(component, theory, context, term)
+      val pu = ParsingUnit(getSourceRef(start, i - 1), theory, context, term)
       val obj = try {
-         puCont(pu)  
+         puCont(pu)
       } catch {
          case e: ParseError =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
@@ -332,7 +331,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
             errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
             DefaultObjectParser(pu)
       }
-      addSourceRef(obj, start, i - 1)
+      
       Pair(obj, i)
     }
 

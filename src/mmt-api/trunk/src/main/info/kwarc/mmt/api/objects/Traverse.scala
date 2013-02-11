@@ -48,7 +48,7 @@ object Traverser {
 		   case OMID(_) => t
 		   case OMV(_) => t
 		   case OMHID => t
-		   case OMREF(uri, value, under) => OMREF(uri, value map rec, recSub(under))
+		   case OMREF(uri, value) => OMREF(uri, value map rec)
 		   case OMFOREIGN(_) => t
 		   case t: OMLiteral => t
 		   case OMSemiFormal(tokens) => 
@@ -93,7 +93,7 @@ object Substitute extends Traverser[Substitution] {
 /** a Traverser that replaces all references with their resolution if available */
 object Flatten extends StatelessTraverser {
    def apply(t: Term)(implicit con : Context, init: Unit) : Term = t match {
-      case r: OMREF if (r.isDefined) => apply(r.get.get)
+      case r: OMREF if (r.isDefined) => apply(r.value.get)
       case _ => Traverser(this,t)
    }
 }

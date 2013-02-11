@@ -17,7 +17,7 @@ import scala.collection.mutable._
 trait ValidatedArchive extends WritableArchive {
    /** checks modules in content structurally and generates term-level dependency relation in .occ files */
    def check(in: List[String] = Nil, controller: Controller) {
-      traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>
+      traverse("content", in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
          val rels = new HashSet[RelationalElement]
          def reCont(r : RelationalElement) = {
@@ -53,7 +53,7 @@ trait ValidatedArchive extends WritableArchive {
          }
       }
        
-      traverse("content", in, extensionIs("omdoc")) {case Current(_, inPath) =>
+      traverse("content", in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
          controller.checker.check(mpath)(_ => (), validateUnit)
       }

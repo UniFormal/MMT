@@ -4,7 +4,9 @@ import utils.MyList._
 
 import scala.annotation.tailrec
 
-case class Ambiguous() extends java.lang.Throwable
+case class Ambiguous(notations: List[TextNotation]) extends {
+   val message = "multiple notations apply: " + notations.map(_.toString).mkString(",")
+} with Error(message)
 
 import ActiveNotation._
 
@@ -219,7 +221,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                      case Nil =>
                         //move one token forward
                         advance
-                     case _ => throw Ambiguous() //some kind of ambiguity-handling here (maybe look for next delimiter)
+                     case l => throw Ambiguous(l) //some kind of ambiguity-handling here (maybe look for next delimiter)
                   }
             }
       }

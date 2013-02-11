@@ -7,8 +7,8 @@ import utils.File
 trait Importer {
    protected var controller : Controller = null
    protected var report : Report = null
-   /** true if this compiler can compile a certain kind of source files */
-   def isApplicable(src : String): Boolean
+   /** true iff this Importer can handle input of type 'src' */
+   def isApplicable(src: String): Boolean
    /** initialization (empty by default) */
    def init(controller: Controller, args: List[String]) {
       this.controller = controller
@@ -25,8 +25,18 @@ trait Importer {
  * A Compiler transforms source files into OMDoc files
  */
 trait Compiler extends Importer {
-   /** source file names that the compiler is able to process */
-   def includeFile(n: String) : Boolean = true
+   /** source file names that the compiler is able to process
+    * 
+    * by default, true iff the Compiler is applicable to the file extension
+    */
+   def includeFile(n: String) : Boolean = {
+      val i = n.lastIndexOf(".")
+      if (i == -1) false
+      else {
+         val s = n.substring(i+1)
+         isApplicable(s)
+      }
+   }
 
    /** the compilation method
      * @param in the input file 

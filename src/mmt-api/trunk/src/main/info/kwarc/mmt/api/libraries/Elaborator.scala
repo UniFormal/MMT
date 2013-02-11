@@ -31,12 +31,10 @@ abstract class Elaborator {
     case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))
     case OME(err, args) => OME(rewrite(err), args.map(rewrite))
     case OMATTR(arg, key, value) => OMATTR(rewrite(arg), key, rewrite(value)) //TODO maybe handle key (here) & uri (below)
-    case OMREF(uri, value, under) => OMREF(uri, value.map(rewrite), Substitution(under.subs.map(s => Sub(s.name, rewrite(s.target))) :_*))
+    case OMREF(uri, value) => OMREF(uri, value.map(rewrite))
     case _ => t
   }
-
 }
-
 
 /**
  * Elaborates modules by enriching with induced statements
