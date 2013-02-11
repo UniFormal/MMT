@@ -4,7 +4,7 @@
 	<classpathentry kind="lib" path="lib/svnkit.jar"/>
 	<classpathentry kind="lib" path="lib/tiscaf.jar"/>
 	<classpathentry kind="lib" path="mmt/mmt-api.jar"/>
-	<classpathentry kind="lib" path="mmt/mmt-lf.jar"/>
+	<classpathentry kind="lib" path="mmt/mmt-lf.jar" sourcepath="/mmt-lf"/>
 	<classpathentry kind="lib" path="mmt/mmt-lfs.jar"/>
 	<classpathentry kind="lib" path="mmt/mmt-mizar.jar"/>
 	<classpathentry kind="lib" path="mmt/mmt-owl.jar"/>
