@@ -3,7 +3,7 @@ import org.gjt.sp.jedit._
 import console._
 import info.kwarc.mmt.api.frontend.ReportHandler
 
-class OutputAsReport(output: Output) extends ReportHandler(output.toString) {
+class OutputAsReport(output: Output) extends ReportHandler("jEdit console") {
    def apply(ind: String, group : String, msg : String) {
       output.print(null, ind + group + ": " + msg) // null for default color
    }

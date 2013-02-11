@@ -31,7 +31,7 @@ abstract class MMTAsset(name: String, val region: SourceRegion)
 
 /* node in the sidekick outline tree: declarations */ 
 class MMTDeclAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
-   setShortDescription(path.toPath) // status bar
+   //note: shortDescription == name, shown in tree
    setLongDescription(path.toPath)  // tool tip
    //setIcon
    def path = elem.path
@@ -50,7 +50,7 @@ class MMTDeclAsset(val elem : StructuralElement, name: String, reg: SourceRegion
 /* node in the sidekick outline tree: terms */ 
 class MMTTermAsset(val parent: ContentPath, val path: Option[Path], name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
   path map {case p =>
-    setShortDescription(p.toPath)
+    setShortDescription(p.last)
     setLongDescription(p.toPath)
   }
   def getScope = Some(OMID(parent))
@@ -69,63 +69,64 @@ class MMTSideKick extends SideKickParser("mmt") {
    private def log(msg: => String) {
       controller.report("jedit-parse", msg)
    }
-   private def getRegion(e: metadata.HasMetaData) : SourceRegion = MMTPlugin.getSourceRef(e) match {
-      case None => SourceRegion(SourcePosition(0,0,0), SourcePosition(0,0,0))
-      case Some(r) => r.region
-   }
+   private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = MMTPlugin.getSourceRef(e).map(_.region)
    /* build the sidekick outline tree: document node */
    private def buildTree(node: DefaultMutableTreeNode, doc: Document) {
-      val child = new DefaultMutableTreeNode(new MMTDeclAsset(doc, doc.path.last, getRegion(doc)))
+      val reg = getRegion(doc) getOrElse SourceRegion(SourcePosition(0,0,0),SourcePosition(0,0,0))
+      val child = new DefaultMutableTreeNode(new MMTDeclAsset(doc, doc.path.toPath, reg))
       node.add(child)
       doc.getItems foreach {
         case d: DRef =>
            buildTree(child, controller.getDocument(d.target))
         case m: MRef =>
-           buildTree(child, controller.localLookup.getModule(m.target))
+           buildTree(child, controller.localLookup.getModule(m.target), reg)
       }
    }
    /* build the sidekick outline tree: module node */
-   private def buildTree(node: DefaultMutableTreeNode, mod: Module) {
+   private def buildTree(node: DefaultMutableTreeNode, mod: Module, defaultReg: SourceRegion) {
       val keyword = mod match {case _ : Theory => "theory"; case _: modules.View => "view"}
-      val child = new DefaultMutableTreeNode(new MMTDeclAsset(mod, keyword + " " + mod.path.last, getRegion(mod)))
+      val reg = getRegion(mod) getOrElse defaultReg
+      val child = new DefaultMutableTreeNode(new MMTDeclAsset(mod, keyword + " " + mod.path.last, reg))
       node.add(child)
       mod match {
          case m: DeclaredModule[_] =>
-            m.getPrimitiveDeclarations foreach {d => buildTree(child, d)}
+            m.getPrimitiveDeclarations foreach {d => buildTree(child, d, reg)}
          case m: DefinedModule =>
       }
    }
    /* build the sidekick outline tree: declaration (in a module) node */
-   private def buildTree(node: DefaultMutableTreeNode, dec: Declaration) {
+   private def buildTree(node: DefaultMutableTreeNode, dec: Declaration, defaultReg: SourceRegion) {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
          case s: Structure => "structure " + s.name.toString
          case a: DefLinkAssignment => "include " + a.name.toString
          case d: Declaration => d.role.toString + " " + d.name.toString
       }
-      val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, getRegion(dec)))
+      val reg = getRegion(dec) getOrElse defaultReg
+      val child = new DefaultMutableTreeNode(new MMTDeclAsset(dec, label, reg))
       node.add(child)
       dec match {
          //TODO: should be done with a generic function that returns the list of components
-         case PlainInclude(from, _) => buildTree(child, dec.path, "from", OMMOD(from))
+         case PlainInclude(from, _) => buildTree(child, dec.path, "from", OMMOD(from), reg)
          case c: Constant =>
-             c.tp foreach {t => buildTree(child, dec.path, "type", t)}
-             c.df foreach {t => buildTree(child, dec.path, "definition", t)}
+             c.tp foreach {t => buildTree(child, dec.path, "type", t, reg)}
+             c.df foreach {t => buildTree(child, dec.path, "definition", t, reg)}
          case p: Pattern =>
              //TODO this is just a quick hack
-             p.params.variables foreach {vd => vd.tp foreach {t => buildTree(child, dec.path, vd.name.toString, t)}} 
-             p.body.variables foreach {vd => vd.tp foreach {t => buildTree(child, dec.path, vd.name.toString, t)}}
+             p.params.variables foreach {vd => vd.tp foreach {t => buildTree(child, dec.path, vd.name.toString, t, reg)}} 
+             p.body.variables foreach {vd => vd.tp foreach {t => buildTree(child, dec.path, vd.name.toString, t, reg)}}
          case _ => //TODO other cases, only reasonable once parser is better
       }
    }
    /* build the sidekick outline tree: component of a (module or symbol level) declaration */
-   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, component: String, t: objects.Term) {
-      val child = new DefaultMutableTreeNode(new MMTTermAsset(parent, None, component, getRegion(t)))
+   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, component: String, t: objects.Term, defaultReg: SourceRegion) {
+      val reg = getRegion(t) getOrElse defaultReg
+      val child = new DefaultMutableTreeNode(new MMTTermAsset(parent, None, component, reg))
       node.add(child)
-      buildTree(child, parent, t)
+      buildTree(child, parent, t, reg)
    }
    /* build the sidekick outline tree: (sub)term node */
-   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, t: objects.Obj) {
+   private def buildTree(node: DefaultMutableTreeNode, parent: ContentPath, t: objects.Obj, defaultReg: SourceRegion) {
       val label = t match {
          case OMV(n) => "var " + n.toString
          case OMS(p) => "con " + p.last
@@ -133,16 +134,17 @@ class MMTSideKick extends SideKickParser("mmt") {
          case v: VarDecl => "Var " + v.name
          case _ => t.role.toString
       }
+      val reg = getRegion(t) getOrElse defaultReg
       val child = t match {
-         case OMID(p) => new DefaultMutableTreeNode(new MMTTermAsset(parent, Some(p), label, getRegion(t)))
-         case t =>       new DefaultMutableTreeNode(new MMTTermAsset(parent, None, label, getRegion(t)))
+         case OMID(p) => new DefaultMutableTreeNode(new MMTTermAsset(parent, Some(p), label, reg))
+         case t =>       new DefaultMutableTreeNode(new MMTTermAsset(parent, None, label, reg))
       }
       node.add(child)
       val objComponents : List[Obj] = t.components mapPartial {
          case o: Obj => Some(o)
          case _ => None
       } 
-      objComponents foreach {c => buildTree(child, parent, c)}
+      objComponents foreach {c => buildTree(child, parent, c, reg)}
    }
    
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
