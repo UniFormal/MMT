@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE MODE SYSTEM "xmode.dtd">
+
+<MODE>
+	<PROPS>
+		<PROPERTY NAME="commentStart" VALUE="%{" />
+		<PROPERTY NAME="commentEnd" VALUE="}%" />
+		<PROPERTY NAME="lineComment" VALUE="%%" />
+		<PROPERTY NAME="wordBreakChars" VALUE=".:[]{}() " />
+		<PROPERTY NAME="tabSize" VALUE="3"/>
+		<PROPERTY NAME="indentSize" VALUE="3" />
+
+		<!-- Auto indent -->
+		<PROPERTY NAME="indentOpenBrackets" VALUE=""/>
+		<PROPERTY NAME="indentCloseBrackets" VALUE=""/>
+      <PROPERTY NAME="indentNextLines" VALUE=".*\{\s*"/>
+      <!--<PROPERTY NAME="unindentThisLine" VALUE="^\s*}\s*$"/>-->
+      <PROPERTY NAME="unindentNextLines" VALUE="^\s*\}\s*$"/>
+      
+		<!-- set this to 'true' if you want to use GNU coding style -->
+		<PROPERTY NAME="doubleBracketIndent" VALUE="false" />
+		<PROPERTY NAME="lineUpClosingBracket" VALUE="true" />
+	</PROPS>
+	<RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="FALSE" DEFAULT="NULL">
+
+		<SPAN TYPE="LITERAL1" NO_LINE_BREAK="TRUE">
+			<BEGIN>"</BEGIN>
+			<END>"</END>
+		</SPAN>
+
+		<SPAN TYPE="COMMENT4">
+		  <BEGIN>%{HIDE</BEGIN>
+		  <END>}%</END>
+		</SPAN>
+		
+		<SPAN TYPE="COMMENT4" DELEGATE="MAIN">
+		  <BEGIN>%{SHOW</BEGIN>
+		  <END>}%</END>
+		</SPAN>
+
+		<SPAN TYPE="COMMENT3" MATCH_TYPE="COMMENT4">
+		  <BEGIN>_(</BEGIN>
+		  <END>)_</END>
+		</SPAN>
+
+		<SPAN TYPE="COMMENT1">
+			<BEGIN>%{</BEGIN>
+			<END>}%</END>
+		</SPAN>
+      <SPAN TYPE="COMMENT1"><!--  DELEGATE="LFDOC" -->
+			<BEGIN>%*</BEGIN>
+			<END>*%</END>
+		</SPAN>
+		<EOL_SPAN TYPE="COMMENT1">%%</EOL_SPAN>
+
+		<SPAN TYPE="LITERAL1" DELEGATE="NESTED1">
+		  <BEGIN>(</BEGIN>
+		  <END>)</END>
+		</SPAN>
+		
+		<SEQ TYPE="OPERATOR">.</SEQ>
+		<SEQ TYPE="OPERATOR">:</SEQ>
+  		<SEQ TYPE="OPERATOR">(</SEQ>
+		<SEQ TYPE="OPERATOR">)</SEQ>
+		<SEQ TYPE="OPERATOR">[</SEQ>
+		<SEQ TYPE="OPERATOR">]</SEQ>
+		<SEQ TYPE="OPERATOR">{</SEQ>
+		<SEQ TYPE="OPERATOR">}</SEQ>
+		<KEYWORDS>
+         <OPERATOR>=</OPERATOR>
+         <OPERATOR>:=</OPERATOR>
+         <OPERATOR>-&gt;</OPERATOR>
+			<KEYWORD1>%namespace</KEYWORD1>
+			<KEYWORD1>%sig</KEYWORD1>
+			<KEYWORD1>%view</KEYWORD1>
+			<KEYWORD1>%rel</KEYWORD1>
+			<KEYWORD1>%pattern</KEYWORD1>
+			<KEYWORD1>%struct</KEYWORD1>
+			<KEYWORD1>%open</KEYWORD1>
+			<KEYWORD1>%as</KEYWORD1>
+			<KEYWORD1>%include</KEYWORD1>
+			<KEYWORD1>%meta</KEYWORD1>
+			<KEYWORD1>%implicit</KEYWORD1>
+			<KEYWORD2>%infix</KEYWORD2>
+			<KEYWORD2>%prefix</KEYWORD2>
+			<KEYWORD2>%postfix</KEYWORD2>
+ 			<LITERAL2>type</LITERAL2>
+		</KEYWORDS>
+	</RULES>
+
+	<RULES SET="NESTED1">
+		<SPAN TYPE="LITERAL2" DELEGATE="NESTED2">
+		  <BEGIN>(</BEGIN>
+		  <END>)</END>
+		</SPAN>
+		<!--<SEQ_REGEXP TYPE="LITERAL1">([A-Z]|[a-z]|[0-9])+</SEQ_REGEXP> -->
+
+		<IMPORT DELEGATE="MAIN"/>
+   </RULES>
+
+	<RULES SET="NESTED2">
+		<SPAN TYPE="LITERAL3" DELEGATE="NESTED3">
+		  <BEGIN>(</BEGIN>
+		  <END>)</END>
+		</SPAN>
+		<IMPORT DELEGATE="MAIN"/>
+   </RULES>
+
+	<RULES SET="NESTED3">
+		<SPAN TYPE="LITERAL4" DELEGATE="NESTED4">
+		  <BEGIN>(</BEGIN>
+		  <END>)</END>
+		</SPAN>
+		<IMPORT DELEGATE="MAIN"/>
+   </RULES>
+
+	<RULES SET="NESTED4">
+		<SPAN TYPE="LITERAL1" DELEGATE="NESTED1">
+		  <BEGIN>(</BEGIN>
+		  <END>)</END>
+		</SPAN>
+		<IMPORT DELEGATE="MAIN"/>
+   </RULES>
+
+	<RULES SET="LFDOC" DEFAULT="COMMENT1" IGNORE_CASE="TRUE">
+	</RULES>
+</MODE>
