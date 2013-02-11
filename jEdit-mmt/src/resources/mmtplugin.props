@@ -9,6 +9,7 @@
 
 # general plugin information
 plugin.info.kwarc.mmt.jedit.MMTPlugin.name=MMTPlugin
+plugin.info.kwarc.mmt.jedit.MMTPlugin.title=MMT
 plugin.info.kwarc.mmt.jedit.MMTPlugin.author=Florian Rabe
 plugin.info.kwarc.mmt.jedit.MMTPlugin.description=Support for editing MMT documents
 plugin.info.kwarc.mmt.jedit.MMTPlugin.longdescription=This plugin provides support for editing MMT documents, in particular LF files.
@@ -25,9 +26,9 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.2=plugin sidekick.SideKickPlugin 1.
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.3=plugin gatchan.jedit.hyperlinks.HyperlinksPlugin 1.1
 
 # labels for actions defined in actions.xml
-mmt-showinfo.label=Show info
+mmt-showinfo.label=Show Dockable
 mmt-compile.label=Compile current buffer
-mmt-show.label=show hidable parts
+mmt-show.labearl=show hidable parts
 mmt-hide.label=hide hidable parts
 mmt-hideshow.label=toggle hidable parts
 mmt-makeHidable.label=make selection hidable
@@ -42,10 +43,6 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-compile mmt-showinfo mmt-show mmt
 
 # menu items for file system browsers
 plugin.info.kwarc.mmt.jedit.MMTPlugin.browser-menu=mmt-browser-compile
-
-# MMT dockable 
-mmt-dockable.label=Dockable
-mmt-dockable.title=The MMT Dockable
 
 # options pane
 plugin.info.kwarc.mmt.jedit.MMTPlugin.option-pane=info.kwarc.mmt.jedit.MMTPlugin
