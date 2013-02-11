@@ -1,0 +1,10 @@
+theory http://cds.omdoc.org/foundations?Sequences
+Includes http://cds.omdoc.org/foundations?Sequences http://cds.omdoc.org/foundations?Typed
+Declares http://cds.omdoc.org/foundations?Sequences http://cds.omdoc.org/foundations?Sequences?empty
+constant: http://cds.omdoc.org/foundations?Sequences?empty
+Declares http://cds.omdoc.org/foundations?Sequences http://cds.omdoc.org/foundations?Sequences?concat
+constant: http://cds.omdoc.org/foundations?Sequences?concat
+Declares http://cds.omdoc.org/foundations?Sequences http://cds.omdoc.org/foundations?Sequences?ellipsis
+constant: http://cds.omdoc.org/foundations?Sequences?ellipsis
+Declares http://cds.omdoc.org/foundations?Sequences http://cds.omdoc.org/foundations?Sequences?index
+constant: http://cds.omdoc.org/foundations?Sequences?index

@@ -1,0 +1,11 @@
+theory http://cds.omdoc.org/test?FOLExt
+HasMeta http://cds.omdoc.org/test?FOLExt http://cds.omdoc.org/foundations?LF
+Includes http://cds.omdoc.org/test?FOLExt http://cds.omdoc.org/test?FOL
+Declares http://cds.omdoc.org/test?FOLExt http://cds.omdoc.org/test?FOLExt?andI
+constant: http://cds.omdoc.org/test?FOLExt?andI
+Declares http://cds.omdoc.org/test?FOLExt http://cds.omdoc.org/test?FOLExt?andEl
+constant: http://cds.omdoc.org/test?FOLExt?andEl
+Declares http://cds.omdoc.org/test?FOLExt http://cds.omdoc.org/test?FOLExt?andEr
+constant: http://cds.omdoc.org/test?FOLExt?andEr
+Declares http://cds.omdoc.org/test?FOLExt http://cds.omdoc.org/test?FOLExt?comm
+constant: http://cds.omdoc.org/test?FOLExt?comm

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory name="LF" base="http://cds.omdoc.org/fol">
+    <import from="http://cds.omdoc.org/fol?Typed"> </import>
+    <constant name="pi">
+      <notation>
+        <text-notation name="http://cds.omdoc.org/fol?LF?pi" precedence="1000">
+          <delim>{</delim>
+          <var>
+            1
+            <delim>:</delim>
+          </var>
+          <delim>}</delim>
+          <arg>-2</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="lambda">
+      <notation>
+        <text-notation name="http://cds.omdoc.org/fol?LF?lambda" precedence="1000">
+          <delim>[</delim>
+          <var>
+            1
+            <delim>:</delim>
+          </var>
+          <delim>]</delim>
+          <arg>-2</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="@"> </constant>
+    <constant name="arrow">
+      <notation>
+        <text-notation name="http://cds.omdoc.org/fol?LF?arrow" precedence="0">
+          <seq-arg>
+            1
+            <delim>→</delim>
+          </seq-arg>
+        </text-notation>
+      </notation>
+    </constant>
+  </theory>
+</omdoc>

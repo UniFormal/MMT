@@ -1,0 +1,16 @@
+theory http://cds.omdoc.org/foundations?PLpatt
+Includes http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?LF
+Declares http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?PLpatt?o
+constant: http://cds.omdoc.org/foundations?PLpatt?o
+Declares http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?PLpatt?or
+constant: http://cds.omdoc.org/foundations?PLpatt?or
+Declares http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?PLpatt?and
+constant: http://cds.omdoc.org/foundations?PLpatt?and
+Declares http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?PLpatt?not
+constant: http://cds.omdoc.org/foundations?PLpatt?not
+Declares http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?PLpatt?ded
+constant: http://cds.omdoc.org/foundations?PLpatt?ded
+Declares http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?PLpatt?boolVar
+pattern http://cds.omdoc.org/foundations?PLpatt?boolVar
+Declares http://cds.omdoc.org/foundations?PLpatt http://cds.omdoc.org/foundations?PLpatt?axiom
+pattern http://cds.omdoc.org/foundations?PLpatt?axiom

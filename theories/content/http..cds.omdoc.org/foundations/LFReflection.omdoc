@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory name="LFReflection" base="http://cds.omdoc.org/foundations">
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#182.11.0-238.14.1"/>
+    </metadata>
+    <import from="http://cds.omdoc.org/foundations?LF">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#206.12.2-217.12.13"/>
+      </metadata>
+    </import>
+    <import from="http://cds.omdoc.org/foundations?Terms">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#221.13.2-235.13.16"/>
+      </metadata>
+    </import>
+  </theory>
+</omdoc>

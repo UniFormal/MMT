@@ -1,0 +1,10 @@
+theory http://cds.omdoc.org/fol?LF
+Includes http://cds.omdoc.org/fol?LF http://cds.omdoc.org/fol?Typed
+Declares http://cds.omdoc.org/fol?LF http://cds.omdoc.org/fol?LF?pi
+constant: http://cds.omdoc.org/fol?LF?pi
+Declares http://cds.omdoc.org/fol?LF http://cds.omdoc.org/fol?LF?lambda
+constant: http://cds.omdoc.org/fol?LF?lambda
+Declares http://cds.omdoc.org/fol?LF http://cds.omdoc.org/fol?LF?@
+constant: http://cds.omdoc.org/fol?LF?@
+Declares http://cds.omdoc.org/fol?LF http://cds.omdoc.org/fol?LF?arrow
+constant: http://cds.omdoc.org/fol?LF?arrow

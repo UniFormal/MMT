@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory name="FOLExt" base="http://cds.omdoc.org/fol" meta="http://cds.omdoc.org/fol?LF">
+    <import from="http://cds.omdoc.org/fol?FOL"> </import>
+    <constant name="zero">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS base="http://cds.omdoc.org/fol" module="FOL" name="univ"/>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="succ">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/fol" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/fol" module="FOL" name="univ"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/fol" module="FOL" name="univ"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="tstor">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/fol" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+            <om:OMS position="3" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/fol" module="LF" name="lambda"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="x">
+                <type>
+                  <om:OMS position="0_1" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+                </type>
+              </om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS position="2_0" base="http://cds.omdoc.org/fol" module="LF" name="lambda"/>
+              <om:OMBVAR>
+                <om:OMV position="2_0" name="y">
+                  <type>
+                    <om:OMS position="2_0_1" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS position="2_2_0" base="http://cds.omdoc.org/fol" module="FOL" name="or"/>
+                <om:OMV position="2_2_1" name="x"/>
+                <om:OMV position="2_2_2" name="y"/>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+    <constant name="tsteqv">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/fol" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+            <om:OMS position="3" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/fol" module="LF" name="lambda"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="x">
+                <type>
+                  <om:OMS position="0_1" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+                </type>
+              </om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS position="2_0" base="http://cds.omdoc.org/fol" module="LF" name="lambda"/>
+              <om:OMBVAR>
+                <om:OMV position="2_0" name="y">
+                  <type>
+                    <om:OMS position="2_0_1" base="http://cds.omdoc.org/fol" module="FOL" name="bool"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS position="2_2_0" base="http://cds.omdoc.org/fol" module="FOL" name="equiv"/>
+                <om:OMV position="2_2_1" name="x"/>
+                <om:OMV position="2_2_2" name="y"/>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+  </theory>
+</omdoc>

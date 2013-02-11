@@ -1,0 +1,5 @@
+theory http://cds.omdoc.org/omdoc/mmt.omdoc?Errors
+Declares http://cds.omdoc.org/omdoc/mmt.omdoc?Errors http://cds.omdoc.org/omdoc/mmt.omdoc?Errors?missing
+constant: http://cds.omdoc.org/omdoc/mmt.omdoc?Errors?missing
+Declares http://cds.omdoc.org/omdoc/mmt.omdoc?Errors http://cds.omdoc.org/omdoc/mmt.omdoc?Errors?illtyped
+constant: http://cds.omdoc.org/omdoc/mmt.omdoc?Errors?illtyped

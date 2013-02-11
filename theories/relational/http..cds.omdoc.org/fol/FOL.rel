@@ -1,0 +1,14 @@
+theory http://cds.omdoc.org/fol?FOL
+HasMeta http://cds.omdoc.org/fol?FOL http://cds.omdoc.org/fol?LF
+Declares http://cds.omdoc.org/fol?FOL http://cds.omdoc.org/fol?FOL?bool
+constant: http://cds.omdoc.org/fol?FOL?bool
+Declares http://cds.omdoc.org/fol?FOL http://cds.omdoc.org/fol?FOL?univ
+constant: http://cds.omdoc.org/fol?FOL?univ
+Declares http://cds.omdoc.org/fol?FOL http://cds.omdoc.org/fol?FOL?and
+constant: http://cds.omdoc.org/fol?FOL?and
+Declares http://cds.omdoc.org/fol?FOL http://cds.omdoc.org/fol?FOL?or
+constant: http://cds.omdoc.org/fol?FOL?or
+Declares http://cds.omdoc.org/fol?FOL http://cds.omdoc.org/fol?FOL?impl
+constant: http://cds.omdoc.org/fol?FOL?impl
+Declares http://cds.omdoc.org/fol?FOL http://cds.omdoc.org/fol?FOL?equiv
+constant: http://cds.omdoc.org/fol?FOL?equiv

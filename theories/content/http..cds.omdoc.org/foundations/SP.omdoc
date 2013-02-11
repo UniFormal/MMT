@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory name="SP" base="http://cds.omdoc.org/foundations" meta="http://cds.omdoc.org/foundations?PLpatt">
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/hets-test/pl_spec.mmt#213.10.0-348.15.1"/>
+    </metadata>
+    <instance name="p1" pattern="http://cds.omdoc.org/foundations?SP?prop">
+      <om:OMBVAR></om:OMBVAR>
+    </instance>
+    <instance name="p2" pattern="http://cds.omdoc.org/foundations?SP?prop">
+      <om:OMBVAR></om:OMBVAR>
+    </instance>
+    <instance name="a1" pattern="http://cds.omdoc.org/foundations?SP?axiom">
+      <om:OMBVAR>
+        <om:OMV name="???">
+          <om:OMSF>
+            <om:text format="http://cds.omdoc.org/foundations?SP"><![CDATA[true ∨ false]]></om:text>
+          </om:OMSF>
+        </om:OMV>
+      </om:OMBVAR>
+    </instance>
+    <instance name="a2" pattern="http://cds.omdoc.org/foundations?SP?axiom">
+      <om:OMBVAR>
+        <om:OMV name="???">
+          <om:OMSF>
+            <om:text format="http://cds.omdoc.org/foundations?SP"><![CDATA[true ∧ false]]></om:text>
+          </om:OMSF>
+        </om:OMV>
+      </om:OMBVAR>
+    </instance>
+  </theory>
+</omdoc>

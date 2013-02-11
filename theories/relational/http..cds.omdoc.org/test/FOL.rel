@@ -1,0 +1,16 @@
+theory http://cds.omdoc.org/test?FOL
+HasMeta http://cds.omdoc.org/test?FOL http://cds.omdoc.org/foundations?LF
+Declares http://cds.omdoc.org/test?FOL http://cds.omdoc.org/test?FOL?bool
+constant: http://cds.omdoc.org/test?FOL?bool
+Declares http://cds.omdoc.org/test?FOL http://cds.omdoc.org/test?FOL?univ
+constant: http://cds.omdoc.org/test?FOL?univ
+Declares http://cds.omdoc.org/test?FOL http://cds.omdoc.org/test?FOL?and
+constant: http://cds.omdoc.org/test?FOL?and
+Declares http://cds.omdoc.org/test?FOL http://cds.omdoc.org/test?FOL?or
+constant: http://cds.omdoc.org/test?FOL?or
+Declares http://cds.omdoc.org/test?FOL http://cds.omdoc.org/test?FOL?impl
+constant: http://cds.omdoc.org/test?FOL?impl
+Declares http://cds.omdoc.org/test?FOL http://cds.omdoc.org/test?FOL?equiv
+constant: http://cds.omdoc.org/test?FOL?equiv
+Declares http://cds.omdoc.org/test?FOL http://cds.omdoc.org/test?FOL?ded
+constant: http://cds.omdoc.org/test?FOL?ded
