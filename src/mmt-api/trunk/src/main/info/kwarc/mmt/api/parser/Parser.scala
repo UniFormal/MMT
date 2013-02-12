@@ -237,15 +237,19 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             if (ul.tl.length == 1)
                // process the single TokenListElement
                makeTerm(ul.tl(0), boundVars)
-            else
-             /* TODO This case arises if
+            else {
+               /* TODO This case arises if
                - the Term is ill-formed
                - the matching TextNotation is missing
                - a subterm has no delimiters as in LF application
                - a semi-formal subterm consists of multiple text Tokens 
-              Consequently, it is not obvious how to proceed.
-             */
-             throw ParseError("unmatched list: " + ul.tl)
+               Consequently, it is not obvious how to proceed.
+               Current behavior: application of first to rest
+               //throw ParseError("unmatched list: " + ul.tl)
+               */
+               val terms = ul.tl.getTokens.map(makeTerm(_,boundVars))
+               prag.strictApplication(pu.scope.toMPath, terms.head, terms.tail)
+            }
       }
       //log("result: " + term)
       term.metadata.add(metadata.Link(SourceRef.metaDataKey, pu.source.copy(region = te.region).toURI))
@@ -274,17 +278,17 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     
     //structuring
     val varnames = pu.context.variables.map(_.name).toList
-    sc.tl.length match {
-       case 1 =>
-          val tm = logGroup {
-             makeTerm(sc.tl(0), varnames)(pu)
-          }
-          log("parse result: "  + tm.toString)
-          if (vardecls == Nil)
-             tm
-          else
-             OMBIND(OMID(AbstractObjectParser.unknown), Context(vardecls: _*),tm)
-       case _ => throw ParseError("unmatched list: " + sc.tl)
+    val scanned = sc.tl.length match {
+       case 1 => sc.tl(0)
+       case _ => new UnmatchedList(sc.tl)
     }
+    val tm = logGroup {
+       makeTerm(scanned, varnames)(pu)
+    }
+    log("parse result: "  + tm.toString)
+    if (vardecls == Nil)
+       tm
+    else
+       OMBIND(OMID(AbstractObjectParser.unknown), Context(vardecls: _*),tm)
   }
 }
