@@ -41,6 +41,7 @@ class MMTPlugin extends EBPlugin {
       //   controller.report("error", "could not find startup.mmt file")
       errorlist.ErrorSource.registerErrorSource(errorSource)
       // add this only after executing the startup file because the status bar is not available yet
+      // this command itself may also not be logged
       controller.report.addHandler(StatusBarLogger)
    }
    /** called by jEdit when plugin is unloaded */
@@ -101,10 +102,6 @@ class MMTPlugin extends EBPlugin {
 
 object MMTPlugin {
    def isIDChar(c: Char) = (! Character.isWhitespace(c)) && "()[]{}:.".forall(_ != c)
-   def getSourceRef(e: metadata.HasMetaData) : Option[SourceRef] = e.metadata.getLink(SourceRef.metaDataKey) match {
-      case u :: _ => Some(SourceRef.fromURI(u))
-      case Nil => None
-   }
    /** finds the id at a certain offset in a buffer
     * @param buffer a buffer
     * @param index offset in the buffer
@@ -130,8 +127,11 @@ object MMTPlugin {
    }
 }
 
-object StatusBarLogger extends ReportHandler("jedit") {
+object StatusBarLogger extends ReportHandler("jEdit") {
   def apply(ind: String, group: String, msg: String) {
-     jEdit.getActiveView.getStatus.setMessage("MMT " + group + ": " + msg)
+     val v = jEdit.getActiveView
+     if (v != null) {
+        v.getStatus.setMessage("MMT " + group + ": " + msg)
+     }
   }
 }
