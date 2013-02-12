@@ -239,8 +239,14 @@ class Controller extends ROController with Logger {
     * @param docBase the base path to use for relative references
     * @return the read Document and a list of errors that were encountered
     */
-   def read(f: File, docBase : Option[DPath] = None) : (Document,List[Error]) = {
-      val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
+   def read(f: File, docBase : Option[DPath] = None) : (Document,List[SourceError]) = {
+      // use docBase, fall back to logical document id given by an archive, fall back to file:f
+      val dpath = docBase orElse
+                  backend.resolvePhysical(f).map {
+                     case (arch, p) => DPath(arch.narrationBase / p)
+                  } getOrElse
+                  DPath(utils.FileURI(f))
+      delete(dpath)
       f.getExtension match {
          case Some("omdoc") =>
             val N = utils.xml.readFile(f)
@@ -260,7 +266,9 @@ class Controller extends ROController with Logger {
               log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
             (doc, errorList.toList)
          case Some("mmt-new") =>
-            val (doc, state) = textParser(Reader(f), dpath)
+            val r = Reader(f)
+            val (doc, state) = textParser(r, dpath)
+            r.close
             (doc, state.getErrors)
          case Some(e) => throw ParseError("unknown file extension: " + f)
          case None => throw ParseError("unknown document format: " + f)
@@ -270,7 +278,7 @@ class Controller extends ROController with Logger {
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
    /** base URL In the local system */
-   protected var home = File(".")
+   protected var home = File(System.getProperty("user.dir"))
    def getHome = home
    def setHome(h: File) {home = h}
 

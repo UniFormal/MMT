@@ -36,8 +36,8 @@ class Report {
    private var handlers : List[ReportHandler] = Nil
    /** adds a ReportHandler */
    def addHandler(h: ReportHandler) {
-      handlers ::= h
       log("report", "logging to " + h)
+      handlers ::= h
    }
    /** removes all ReportHandlers with a certain id */
    def removeHandler(id: String) {handlers = handlers.filter(_.id != id)}
@@ -61,6 +61,7 @@ object Report {
 
 abstract class ReportHandler(val id: String) {
    def apply(ind: String, group: String, msg: String)
+   override def toString = id
 }
 
 /** outputs to standard output */
@@ -69,7 +70,6 @@ object ConsoleHandler extends ReportHandler("console") {
       val m = ind + group + ": " + msg
       println(m)
    }
-   override def toString = "console"
 }
 
 /** outputs to a file */

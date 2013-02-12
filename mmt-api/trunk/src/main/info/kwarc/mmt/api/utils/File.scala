@@ -11,7 +11,7 @@ case class File(toJava: java.io.File) {
          sf
       else
          new java.io.File(toJava, s)
-      File(newfile)
+      File(newfile.getCanonicalPath)
    }
    /** appends one path segment */
    def /(s:String) : File = File(new java.io.File(toJava, s))

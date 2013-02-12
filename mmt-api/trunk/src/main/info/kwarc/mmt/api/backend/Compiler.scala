@@ -40,9 +40,10 @@ trait Compiler extends Importer {
 
    /** the compilation method
      * @param in the input file 
+     * @param dpath the base URI of the input file
      * @param out the output file without extension
      */
-   def compile(in: File, out: File) : List[SourceError]
+   def compile(in: File, dpath: Option[DPath], out: File) : List[SourceError]
 
    /** registers an archive with this compiler */
    def register(arch: Archive, dim: String) {}

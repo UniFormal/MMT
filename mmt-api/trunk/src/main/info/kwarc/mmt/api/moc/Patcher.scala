@@ -38,7 +38,7 @@ object Patcher {
         controller.memory.content.update(dnew)
       case UpdateMetadata(path,key,old,nw) => 
         val md = controller.memory.content.get(path).metadata
-        md.update(key, nw)
+        md.update(key, nw:_*)
       case PragmaticChange(name, diff, tp, mp, desc) => patch(diff, controller)
       
     }
