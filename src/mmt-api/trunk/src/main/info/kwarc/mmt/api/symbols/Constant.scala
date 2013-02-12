@@ -26,7 +26,7 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
   def df = dfC.get
   
   override def compNames = List(("name", 0), ("type",1), ("definition", 2))
-  def components = List(OMID(path), tp.getOrElse(Omitted), df.getOrElse(Omitted),
+  def components = List(StringLiteral(name.toPath), tp.getOrElse(Omitted), df.getOrElse(Omitted),
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))
   
   def toNode =
