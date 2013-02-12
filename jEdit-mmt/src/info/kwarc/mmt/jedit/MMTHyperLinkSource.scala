@@ -41,14 +41,14 @@ class MMTHyperlinkSource extends HyperlinkSource {
             val asset = SideKickParsedData.getParsedData(jEdit.getActiveView).getAssetAtOffset(caretPosition).asInstanceOf[MMTAsset]
             val elemOpt: Option[StructuralElement] = asset match {
                case a: MMTTermAsset if a.path.isDefined =>
-                  controller.localLookup.getO(a.path.get)
+                  controller.globalLookup.getO(a.path.get)
                case _ =>
                   asset.getScope flatMap {home => libraries.Names.resolve(home, id)(controller.localLookup)}
             }
             elemOpt match {
               case None => null
               case Some(elem) =>
-                val ref = MMTPlugin.getSourceRef(elem)
+                val ref = SourceRef.get(elem)
                 // we may have a ref now, but it's only useful if it's a file:URI
                 val fileRef = ref flatMap {r =>
                    val c = r.container
@@ -56,7 +56,7 @@ class MMTHyperlinkSource extends HyperlinkSource {
                    else {
                       //resolve logical document id in an archive
                       controller.backend.resolveLogical(c) map {
-                        case (archive, path) => r.copy(container = FileURI(archive.root / "source" / path)) 
+                        case (archive, path) => r.copy(container = FileURI(archive.sourceDir / path)) 
                       }
                    }
                 }
