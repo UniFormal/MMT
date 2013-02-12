@@ -6,9 +6,9 @@
 	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
         <pathelement location="${deploy}/lib/scala-library.jar"/>
-	<pathelement location="${deploy}/lib/scala-reflect.jar"/>
         <pathelement location="${deploy}/lib/scala-compiler.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
+	    <pathelement location="${deploy}/lib/scala-reflect.jar"/>
         <pathelement location="${deploy}/lib/tntbase-plugin-api.jar"/>
         <pathelement location="${deploy}/lib/svnkit.jar"/>
     	<pathelement location="lib/jfxrt.jar"/>

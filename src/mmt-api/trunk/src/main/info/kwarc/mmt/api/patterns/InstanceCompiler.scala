@@ -42,7 +42,7 @@ class InstanceCompiler extends Compiler {
     
   case class CompilationError(msg : String) extends java.lang.Throwable(msg)     
     
-  override def compile(in : File, out : File) : List[SourceError] = {
+  def compile(in : File, dpath: Option[DPath], out : File) : List[SourceError] = {
     var errors: List[SourceError] = Nil
     val fileName = in.toJava.getName
     val path = in.toJava.getPath
@@ -168,7 +168,7 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 		 val in = File(new java.io.File("/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT027^1.omdoc"))
 		 val out = File(new java.io.File("/home/aivaras/TPTP/tptp/pragmatic/Problems/AGT/AGT027^1.omdoc"))
 		 
-		 compiler.compile(in, out)
+		 compiler.compile(in, None, out)
 		 
 		 println("\nENDofCompTest")
 		 

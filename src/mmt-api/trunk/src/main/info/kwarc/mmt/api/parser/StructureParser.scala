@@ -141,6 +141,15 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       state.errors ::= err
    }
    
+   /** called at the end of a document or module, does common bureaucracy */
+   protected def end(s: StructuralElement)(implicit state: ParserState) {
+      //extend source reference until end of element
+      SourceRef.get(s) foreach {r => 
+         SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
+      }
+      log("end " + s.path)
+   }
+   
    /** the main interface function
     * 
     * @param r a Reader holding the input stream
@@ -273,7 +282,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      logGroup {
                         readInView(v)
                      }
-                     log("end " + vpath)
+                     end(v)
                }
       }
       if (state.reader.endOfDocument) return
@@ -296,7 +305,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                logGroup {
                   readInDocument(d)
                }
-               log("end " + dpath)
+               end(d)
             case "namespace" =>
                val ns = readDPath(doc.path)
                state.defaultNamespace = ns 
@@ -341,7 +350,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      logGroup {
                         readInTheory(t, patterns)
                      }
-                     log("end " + tpath)
+                     end(t)
                   } else {
                      throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
                   }
@@ -679,7 +688,7 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
     */
    def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
-      se.metadata.add(metadata.Link(SourceRef.metaDataKey, SourceRef(state.container.uri,currentSourceRegion).toURI))
+      SourceRef.update(se, SourceRef(state.container.uri,currentSourceRegion))
       controller.add(se)
    }
 }

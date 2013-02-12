@@ -25,7 +25,7 @@ trait CompilableArchive extends WritableArchive {
             log(prefix + inFile + " -> " + outFile)
             // only compile if the previous compilation step did not report errors
             if (compErrors.getOrElse(inPath, Nil) == Nil) {
-              val errors = compiler.compile(inFile, outFile)
+              val errors = compiler.compile(inFile, Some(DPath(narrationBase / inPath)), outFile)
               compErrors(inPath) = errors
               if (! errors.isEmpty)
                 log(errors.mkString("errors follow\n", "\n", "\n"))

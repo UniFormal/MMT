@@ -25,9 +25,13 @@ class MetaData {
    def delete(key: GlobalName) {
       data = data.filter(md => md.key != key)
    }
-   def update(key: GlobalName, values: List[Obj]) {
+   def update(key: GlobalName, values: Obj*) {
       delete(key)
       values map  {value => add(new MetaDatum(key, value))}
+   }
+   def update(key: GlobalName, value: URI) {
+      delete(key)
+      add(Link(key, value))
    }
    def keys = data.map(_.key).distinct
    /** get all metadata */
@@ -35,7 +39,7 @@ class MetaData {
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
    def getValues(key: GlobalName) : List[Obj] = get(key).map(_.value)
-   def getLink(key: GlobalName) : List[URI] = data.mapPartial {
+   def getLinks(key: GlobalName) : List[URI] = data.mapPartial {
       case Link(k, u) if k == key => Some(u)
       case _ => None
    }
