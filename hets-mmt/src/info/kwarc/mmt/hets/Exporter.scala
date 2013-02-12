@@ -26,15 +26,25 @@ class Exporter {
 		</instance>		  
 	}
 	
+	/**
+	 * translates OM MMT objects to simplified XML nodes
+	 */
 	def toNode(t : Term) : scala.xml.Node = { 
 	  t match {
-			case OMV(n) => <var name={n.last.toPath}/>	
-			case OMS(s) => <app name={s.last}/>
-			case OMA(f,args) => <app name={f.toMPath.last}> 
+			case OMV(n) => <var name={n.toPath}/>	
+			case OMS(s) => <app name={s.name.toPath}/>
+			case OMA(OMS(s),args) => <app name={s.name.toPath}> 
 									{args map(x => toNode(x))} 
 								</app>
-			case OMBIND(binder,ctx,bd) => <bind> </bind> 
-			case OMBINDC(binder,ctx,cnd,bd) => <bind> </bind>  
+			case OMBIND(OMS(s),ctx,bd) =>
+			  ctx.variables.toList match {
+			    case (VarDecl(v,None, None) :: Nil) =>
+			       <bind binder={s.name.toPath}> </bind> 
+			    case (VarDecl(v,Some(tp), None) :: Nil) =>
+			      <tbind binder={s.name.toPath}> </tbind> 
+			    case _ => <error/>
+			  }
+			  
 	  } 
 	  
 	}
@@ -56,13 +66,13 @@ class Exporter {
       	case p: patterns.Instance => Some(p)
       	case _ => None
 	  }
-	  val nodes = ins map { 
+	  val nodes : List[scala.xml.Node]= ins map { 
 	     insToNode(out,_)
 	  }
 	  println("writing to file: " + out.toJava.getPath())
 	  println((nodes map {x => x.toString()}).mkString)
 	  val pp = new scala.xml.PrettyPrinter(100,2)
-	  val docNode = pp.format(nodes.first)
+	  val docNode = pp.format(nodes.head)
 	  fw.write((nodes map {x => x.toString}).mkString("\n"))
 	  fw.close()
 	}
