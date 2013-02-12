@@ -28,7 +28,7 @@
     <fragment name="newline"/>
     <components begin="2" end="-1">
       <body>
-        <text value="\tb "/>
+        <fragment name="tab"/>
         <recurse/>
         <fragment name="newline"/>
       </body>
@@ -127,7 +127,7 @@
     <text value="\\&#x000a;"/>
   </notation>
   <notation role="fragment:tab">
-    <text value="\hspace{.5cm}"/>
+    <text value="  "/>
   </notation>
   
 </style>
