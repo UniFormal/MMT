@@ -117,6 +117,8 @@ class TokenList(private var tokens: List[TokenListElem]) {
    def apply(n: Int) = tokens(n)
    /** returns a sublist of elements */
    def apply(from: Int, to: Int) = tokens.slice(from, to)
+   /** returns all tokens */
+   def getTokens = tokens
    /**
     * @param an the notation to reduce
     * @return the slice reduced into 1 Token 
