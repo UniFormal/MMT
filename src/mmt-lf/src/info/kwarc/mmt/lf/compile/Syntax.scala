@@ -27,8 +27,6 @@ case class Binder(name: String, argument: Option[CatRef], bound: CatRef, scope: 
 case class ConstantSymbol(pattern: String, name: String, arguments: List[CatRef]) extends Constructor
 /** a bound variable */
 case object VariableSymbol extends Constructor
-/** wildcard symbol */ //TODO to be used in generating last error case in functions?
-case class WildCard extends Constructor
 
 /** a pragmatic declaration with some argument types */
 case class Declaration(pattern: String, arguments: List[CatRef])

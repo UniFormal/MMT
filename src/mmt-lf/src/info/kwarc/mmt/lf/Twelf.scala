@@ -66,7 +66,7 @@ class Twelf extends Compiler {
      * @param in the input Twelf file 
      * @param out the file in which to put the generated OMDoc
      */
-   def compile(in: File, out: File) : List[SourceError] = {
+   def compile(in: File, dpath: Option[DPath], out: File) : List[SourceError] = {
       File(out.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
