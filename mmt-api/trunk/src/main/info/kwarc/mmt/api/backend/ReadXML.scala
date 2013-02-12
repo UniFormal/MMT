@@ -117,10 +117,10 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	         case (_, <rel>{_*}</rel>) => Unit //ignoring logical relations, produced by Twelf, but not implemented yet
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
-			     val npath = base ? name
+			      val npath = base ? name
 		         val from = Path.parse(xml.attr(m,"from"), base)
 		         val defaults = Defaults.parse(xml.attr(m, "defaults", "use"))
-                 val to = Path.parse(xml.attr(m, "to"), utils.mmt.mimeBase)
+               val to = Path.parse(xml.attr(m, "to"), utils.mmt.mimeBase)
 		         val nset = new Style(base, name, defaults, from, to, report)
 		         add(nset, md)
 		         docParent map (dp => add(MRef(dp, npath, true)))

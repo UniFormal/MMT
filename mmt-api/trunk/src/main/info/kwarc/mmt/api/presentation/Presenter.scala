@@ -93,6 +93,8 @@ class Presenter(controller : Controller, val report : frontend.Report) extends L
             val key = NotationKey(Some(s.path), s.role)
             val notation = controller.get(gpar.nset, key)
             render(notation.pres, s.contComponents, List(0), gpar, lpar)
+         case s:SemiFormalObject =>
+            s.components.foreach(c => present(c, gpar, lpar)) //could be much better
          case o1: Obj =>
             val o = o1 match {
                case o1: Term => controller.pragmatic.pragmaticHead(o1)
@@ -121,11 +123,7 @@ class Presenter(controller : Controller, val report : frontend.Report) extends L
                      case None =>
                        comps = List(StringLiteral(name.toString), Omitted, Omitted) // free variable
                   }
-               // one more binder
-/*               case SeqSubst(_, name, _) =>
-                  val vd = VarData(TermVarDecl(name, None, None), Some(utils.mmt.ellipsis), lpar.pos + 1)
-                  newlpar = newlpar.copy(context = newlpar.context ::: List(vd))
-*/               case _ =>
+               case _ =>
             }
             val notation = controller.get(gpar.nset, key)
             //log("looked up notation: " + notation)

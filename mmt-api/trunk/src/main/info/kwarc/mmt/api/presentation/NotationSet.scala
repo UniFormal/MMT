@@ -6,10 +6,11 @@ import scala.xml.Node
 sealed abstract class Defaults(val desc : String)
 case object ImportsDefaults extends Defaults("use")
 case object IgnoresDefaults extends Defaults("ignore")
+
 object Defaults {
    def parse(s: String) : Defaults = s match {
       case "use" => ImportsDefaults
-	  case "ignore" => IgnoresDefaults
+	   case "ignore" => IgnoresDefaults
       case s => throw ParseError("illegal attribute value ('use' or 'ignore' expected): " + s)
    }
 }
