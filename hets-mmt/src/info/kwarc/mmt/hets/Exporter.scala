@@ -39,10 +39,10 @@ class Exporter {
 			case OMBIND(OMS(s),ctx,bd) =>
 			  ctx.variables.toList match {
 			    case (VarDecl(v,None, None) :: Nil) =>
-			       <bind binder={s.name.toPath}> </bind> 
+			       <bind binder={s.name.toPath} var={v.toPath}> {toNode(bd)} </bind> 
 			    case (VarDecl(v,Some(tp), None) :: Nil) =>
-			      <tbind binder={s.name.toPath}> </tbind> 
-			    case _ => <error/>
+			      <tbind binder={s.name.toPath} var={v.toPath}> {toNode(tp)} {toNode(bd)} </tbind> 
+			    case _ => <error msg="binder context does not match"/>
 			  }
 			  
 	  } 
