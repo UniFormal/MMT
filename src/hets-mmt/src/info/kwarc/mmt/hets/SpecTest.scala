@@ -77,7 +77,7 @@ object SpecTest {
              val q = {doc.getModulesResolved(controller.localLookup) mapPartial {
                case t:DeclaredTheory => Some(t)
                case _ => None
-             } }.first   
+             } }.head   
 //             println(q.components.map(x => x.toString()))
 //             doc.getModulesResolved(controller.localLookup) foreach {
 //             	case t:DeclaredTheory => println(t.toString())
