@@ -3,6 +3,83 @@
  * @author: Florian Rabe, based on previous code by Catalin David
  */
 
+
+// highlight by changing background color
+function highlight(target){
+    $(target).attr('mathbackground', 'silver'); // Firefox 2 and MathML spec
+    $(target).attr('style', 'background:silver'); // Firefox 3
+}
+
+// undo highlight
+function lowlight(target){
+    $(target).removeAttr('mathbackground');
+    $(target).removeAttr('style'); // assuming there are no other styles
+}
+
+/** helper function for the methods below: gets the classes of an element as an array */
+function getClassArray(elem) {
+   var classes = (elem.hasAttribute('class')) ? elem.getAttribute('class') : "";
+   return classes.split(/\s+/);
+}
+
+// the following functions $.fn.f add functionality to jQuery and can be used as $(...).f
+// contrary to the built-in jQuery analogues, these work for 'pref:name' attributes and math elements
+/** add a class cl to all matched elements */
+$.fn.addMClass = function(cl){
+   this.each(function(){
+      if (this.hasAttribute('class'))
+         $(this).attr('class', $(this).attr('class') + ' ' + cl);   
+      else
+         this.setAttribute('class', cl);
+   });
+   return this;
+}
+/** remove a class cl from all matched elements */
+$.fn.removeMClass = function(cl){
+   this.each(function(){
+      var classes = getClassArray(this);
+      var newclasses = classes.filter(function(elem){return (elem !== cl) && (elem !== "")});
+      var newclassesAttr = newclasses.join(' ');
+      if (newclassesAttr == "")
+         $(this).removeAttr('class');
+      else
+         this.setAttribute('class', newclassesAttr);
+   });
+   return this;
+}
+/** toggle class cl in all matched elements */
+$.fn.toggleMClass = function(cl){
+   this.each(function(){
+      var classes = getClassArray(this);
+      if (classes.indexOf(cl) == -1)
+         $(this).addMClass(cl);
+      else
+         $(this).removeMClass(cl);
+   });
+   return this;
+}
+/** keep elements that have class cl */
+$.fn.filterMClass = function(cl){
+   return this.filter(function(){
+      var classes = getClassArray(this);
+      return (classes.indexOf(cl) !== -1)
+   });
+}
+/** keep elements that have attribute attr */
+$.fn.hasMAttr = function(attr) {
+    return this.filter(function() {
+        return this.getAttribute(attr) !== undefined;
+    });
+};
+/** keep elements that have attribute attr=value */
+$.fn.filterMAttr = function(attr, value) {
+    return this.filter(function() {
+        return this.getAttribute(attr) == value;
+    });
+};
+
+
+
 // scheme + authority of the server
 var catalog;
 // notation style, null if none
@@ -18,6 +95,8 @@ function setStyle(style) {
  * act: String: action to call on MMTURI
  * present: Boolean: add presentation to action
  */
+
+
 function adaptMMTURI(uri, act, present){
 	var arr = uri.split("?");
 	var doc = (arr.length >= 1) ? arr[0] : "";
@@ -33,8 +112,12 @@ function adaptMMTURI(uri, act, present){
 function load(elem) {
    var url = adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
    var res = null;
-   function cont(data) {res = data;}
-   proxyAjax('get', url, '', cont, false, 'text/xml');
+   $.ajax({ 'url': url,
+            'dataType': 'xml',
+            'async': false,
+            'success': function cont(data) {res = data;}
+        });
+//   proxyAjax('get', url, '', cont, false, 'text/xml');
    elem.removeAttribute('jobad:load');
    return res.firstChild;
 }
@@ -409,7 +492,15 @@ var visibMenu = [
    ["edit", "edit()"],
 
 ];
+
+/** @global-field focus: holds a reference to the object that was clicked by the user */
+var focus = null;
+/** @global-field focus: true if focus is within a math object */
+var focusIsMath = false;
+
 latin.contextMenuEntries = function(target){
+        focus = target;
+        focusIsMath = ($(focus).closest('math').length !== 0);
    if (isSelected(target)) {
       setCurrentPosition(target);
       return [

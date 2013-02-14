@@ -4,6 +4,24 @@
  */
 var folding = clone(Service);
 
+/** 
+ * nsResolver - function that resolves which prefix corresponds to which namespace
+ *
+ * @param prefix : a string value of the prefix to be resolved
+ * @returns the corresponding namespace or null if prefix undefined
+ */
+// used (only) by folding
+function nsResolver(prefix){
+    var ns = {
+        'xhtml': 'http://www.w3.org/1999/xhtml',
+        'mathml': 'http://www.w3.org/1998/Math/MathML',
+        'm': 'http://www.w3.org/1998/Math/MathML',
+        'openmath': 'http://www.openmath.org/OpenMath',
+        'jobad': 'http://omdoc.org/presentation'
+    };
+    return ns[prefix] || null;
+}
+
 folding.contextMenuEntries = function(target){
 
     //is it in ML? or just document level?
