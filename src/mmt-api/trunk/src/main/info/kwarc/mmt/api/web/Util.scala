@@ -76,19 +76,20 @@ object Util {
     * If the resource is in the JAR, then the JAR must look like 
     *       jar-name.jar/some-path/resource.txt
     * If the resource is a separate file and the code is run from outside any JAR, then the folder structure must look like
-    *       compiled-folder
-    *        |--top-level-package-name/../class-files
-    *        |--some-path/resource.txt 
+    *       project-folder
+    *        |--bin
+    *        |--resources/mmt.web/ 
     * @return stream to the resource, if found, null otherwise. **The caller must close the stream after reading!**
     */
   def loadResource(path : String) : java.io.InputStream = {
     val stream = getClass.getResourceAsStream("/mmt-web/" + path)  // the file inside the JAR
-    if (false) //(stream != null)
+    if (stream != null)
         return stream
     else {
         val filePath : String = try {
+          //the folder containing the class files
           val binaryFolder : java.io.File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toString)  // e.g. .../lfcatalog/trunk/build/main
-          val resourceFolder : String = binaryFolder.getParentFile.toString + "/resources/mmt-web"  // e.g. .../lfcatalog/trunk/resources/mmt-web
+          val resourceFolder : String = binaryFolder.getParentFile.toString + "/../resources/mmt-web"  // e.g. .../lfcatalog/trunk/resources/mmt-web
           (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + "/" + path
         }
         catch {
