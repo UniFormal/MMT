@@ -5,6 +5,7 @@ import frontend._
 import backend._
 import ontology._
 import modules._
+import objects._
 import utils.URI
 import zgs.httpd._
 import zgs.httpd.let._
@@ -98,6 +99,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
         case ":search" :: _ => Some(MwsResponse)
         case ":parse" ::_ => Some(ParserResponse)
         case ":seqparse" ::_ => Some(SeqParserResponse)
+        case ":complexget" ::_ => Some(ComplexGetResponse) 
         case ":mmt" :: _ => Some(MmtResponse)
         // empty path 
         case List("") | Nil => Some(resourceResponse("browse.html"))
@@ -249,24 +251,73 @@ class Server(val port: Int, controller: Controller) extends HServer {
       val dpathS = tk.req.header("dpath").getOrElse(throw ServerError(<error><message>found no dpath</message></error>))
       val dpath = Path.parseD(dpathS, utils.mmt.mmtbase)
       
-      if (!controller.textParser.states.isDefinedAt(jobname)) {
-        val sqr = new parser.SequentialReader
-        controller.textParser.states(jobname) = sqr
+      println("received : " + jobname + " : " + text)
+      if (!controller.states.isDefinedAt(jobname)) {
+        val sqr = new parser.SeqBufReader
         sqr.appendLine(text)
-        val reader = new parser.Reader(new java.io.BufferedReader(sqr))
+        val reader = new parser.Reader(sqr)
+        val state = new parser.ParserState(reader, dpath)
+        controller.states(jobname) = state
+        
         val psr = new parser.StructureAndObjectParser(controller)
         val pthread = new Thread(new Runnable {
           def run() {
-            psr(reader, dpath)
+            psr(state, dpath)
           }
         })
         pthread.start
         TextResponse("Initiated Parsing").act(tk)
       } else {
-        controller.textParser.states(jobname).appendLine(text)
+        controller.states(jobname).reader.jr match {
+          case s : parser.SeqBufReader => s.appendLine(text)
+          case _ => throw ServerError(<error><message>found state with non-sequential reader</message></error>)
+        }
         TextResponse("Continuing parsing").act(tk)
       }
     }
+  }
+  
+  private def ComplexGetResponse : HLet = new HLet {
+    def act(tk : HTalk) {
+      val text = bodyAsString(tk)
+      val inFormat = tk.req.header("inFormat").getOrElse("mmt-new")
+      val outFormat = tk.req.header("outFormat").getOrElse("xml") //should be style eventually
+      val home = tk.req.header("home").map(Path.parse).getOrElse {
+       val jn = tk.req.header("jobname").getOrElse(throw ServerError(<error><message>found no dpath</message></error>))
+       controller.states(jn).home
+      }
+      println(home)
+      
+      def toLatex(tm : Term) : String = tm match { //TODO quite a hack, should be improved
+        case OMID(p) => p.last
+        case OMA(f, args) => toLatex(f) match {
+          case "@" => toLatex(args.head)
+          case _ => "\\" + toLatex(f) + args.map(toLatex).mkString("{","}{","}")
+        }
+        case OMBIND(b, con, body) => toLatex(b) match {
+          case "unknown" => toLatex(body) 
+          case _ => "\\" + toLatex(b) + "{" + con.variables.map(v => vToLatex(v)).mkString(", ") + "}" + "{" + toLatex(body) + "}" 
+        }
+        case OMV(n) => n.toString
+      }
+      
+      def vToLatex(v : VarDecl) : String = v match {
+        case VarDecl(a, Some(tp), None, _*) => println(tp.toNode); a.toString + " : " + toLatex(tp) 
+        case _ => v.name.toString
+      } 
+      
+      home match { 
+        case mod : MPath => 
+          val pu = new parser.ParsingUnit(new parser.SourceRef(mod.doc.uri, parser.SourceRegion.parse("0.0.0-0.0.0")), objects.OMMOD(mod), objects.Context(), text)
+          println(text)
+          val tm = controller.termParser(pu)
+          println(toLatex(tm))
+          TextResponse(toLatex(tm)).act(tk)
+        case _ => throw ServerError(<error><message>support for non-module paths not implemented yet</message></error>)
+      }
+      
+    }
+    
     
   }
 
@@ -488,7 +539,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           <root>{ doc.getItems.map { i => Util.item(i.target, "closed") } }</root>
         case p: MPath =>
           val rels: List[(String, RelationExp)] = role match {
-            case Some(IsTheory) =>
+            case Some(ontology.IsTheory) =>
               List(("meta for", -HasMeta), ("included into", -Includes),
                 ("instantiated in", -RelationExp.HasStructureFrom),
                 ("views out of", -HasDomain * HasType(IsView)), ("views into", -HasCodomain * HasType(IsView)))

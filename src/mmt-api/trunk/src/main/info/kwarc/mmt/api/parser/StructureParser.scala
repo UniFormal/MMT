@@ -32,6 +32,9 @@ class ParserState(val reader: Reader, val container: DPath) {
     */
    var defaultNamespace: DPath = utils.mmt.mmtbase
    
+   /** uri at current parsing location */
+   var home : Path = defaultNamespace
+   
    /** the position at which the current StructuralElement started */ 
    var startPosition = reader.getSourcePosition
    
@@ -101,9 +104,7 @@ trait InTheoryParser {
 abstract class StructureParser(controller: Controller) extends frontend.Logger {
    val report = controller.report
    val logPrefix = "structure-parser"
-     
-   //this doesn't really belong here -- should be moved perhsps to controller 
-   val states = new collection.mutable.HashMap[String, SequentialReader]  
+
    /**
     * a table of external parsers that can parser declarations in a document, indexed by keyword
     * 
@@ -157,7 +158,12 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     */
    def apply(r: Reader, dpath: DPath) : (Document,ParserState) = {
       val state = new ParserState(r, dpath)
+      apply(state, dpath)
+   }
+   
+   def apply(state : ParserState, dpath : DPath) : (Document,ParserState) = {
       state.defaultNamespace = dpath
+      state.home = dpath
       val doc = new Document(dpath)
       seCont(doc)(state)
       logGroup {
@@ -260,6 +266,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param doc the containing Document (must be in the controller already)
     */
    private def readInDocument(doc: Document)(implicit state: ParserState) {
+      state.home = doc.path
       //auxiliary function to unify "view" and "implicit view"
       def doView(isImplicit: Boolean) {
                val name = readLocalPath
@@ -388,6 +395,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * this function handles one declaration if possible, then calls itself recursively
     */
    private def readInTheory(thy: DeclaredTheory, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
+      state.home = thy.path
       //this case occurs if lower methods have already read the GS marker
       if (state.reader.endOfModule) return
       try {
@@ -475,7 +483,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       // @ alias or : TYPE or = DEFINIENS or # NOTATION 
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
-         if (! List(":","=","#","@").contains(delim)) {
+         //TODO remove "##" here and in the case split below, only used temporarily for latex integration
+         if (! List(":","=","#", "##","@").contains(delim)) {
             // error handling
             if (delim == "") {
                if (! state.reader.endOfDeclaration)
@@ -505,7 +514,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      state.reader.readObject
                   } else
                      doComponent(DefComponent, dfC)
-               case "#" =>
+               case "#" | "##" =>
                   val (notString,reg) = state.reader.readObject
                   if (nt.isDefined)
                      errorCont(makeError(treg, "notation of this constant already given, ignored"))
@@ -706,7 +715,7 @@ class SequentialReader extends java.io.Reader {
   
   def read(cbuf : Array[Char], offset : Int, len : Int) : Int = {
     while (!ready) 
-      wait(500)
+      wait(10)
     var i = 0
     while (i < len && (offset + i) < text.length) {
       cbuf(i) = text.head
@@ -721,6 +730,10 @@ class SequentialReader extends java.io.Reader {
   }
   
   override def ready() = !text.isEmpty
+}
+
+class SeqBufReader(in: SequentialReader = new SequentialReader) extends java.io.BufferedReader(in) {
+  def appendLine(line : String) = in.appendLine(line)
 }
 
 

@@ -14,7 +14,7 @@ import utils._
  * 
  */
 // This class generally uses integers (0 to 65535 and -1 for end-of-file) to represent characters.  
-class Reader(jr: java.io.BufferedReader) {
+class Reader(val jr: java.io.BufferedReader) {
    import Reader._
    
    /** the delimiter that terminated the previous read operation */
