@@ -7,7 +7,8 @@ import parser._
 import scala.collection.mutable.HashSet
 
 /** a Compiler that uses the generic MMT functions */
-object MMTCompiler extends Compiler {
+class MMTCompiler(c: Controller) extends Compiler {
+  init(c,Nil)
   def isApplicable(src : String): Boolean = src == "mmt" || src == "elf" || src == "mmt-new"
      
   def compile(in: File, dpath: Option[DPath], out: File) : List[SourceError] = {

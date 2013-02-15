@@ -125,7 +125,7 @@ class TreePane(controller: Controller) extends JPanel {
             if (se != null) {
                content.setText("")
                val presenter = controller.extman.getPresenter(mode) getOrElse {
-                  new presentation.StyleBasedPresenter(controller,style)  
+                  new presentation.StyleBasedPresenter(controller,style)
                }
                presenter(se, rb)
             }
