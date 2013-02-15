@@ -187,18 +187,18 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
   }
 
     /** Generate presentation from content */
-    def producePres(in : List[String] = Nil, style : MPath, controller : Controller) {
+    def producePres(in : List[String] = Nil, param : String, controller : Controller) {
       val inFile = contentDir / in
       log("to do: [CONT -> PRES]        -> " + inFile)
 
       traverse("content", in, Archive.extensionIs("omdoc")) { case Current(inFile, inPath) =>
-        val outFile = (root / "presentation" / style.last / inPath).setExtension("xhtml")
+        val outFile = (root / "presentation" / param / inPath).setExtension("xhtml")
         controller.read(inFile,None)
         val mpath = Archive.ContentPathToMMTPath(inPath)
         val file = File(outFile)
         file.getParentFile.mkdirs
         val fs = new presentation.FileWriter(file)
-        frontend.Present(Get(mpath),style).make(controller, fs)
+        frontend.Present(Get(mpath),param).make(controller, fs)
         fs.done
       }
       log("done:  [CONT -> PRES]        -> " + inFile)

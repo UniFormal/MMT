@@ -2,9 +2,26 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import backend._
+import presentation._
 import libraries._
 import parser._
 import utils._
+
+trait Extension {
+   protected var controller : Controller = null
+   protected var report : Report = null
+   /** initialization (empty by default) */
+   def init(controller: Controller, args: List[String]) {
+      this.controller = controller
+      report = controller.report
+   }
+   /** termination (empty by default)
+    *
+    * Extensions may create persistent data structures and processes,
+    * but they must clean up after themselves in this method
+    */
+   def destroy {}
+}
 
 /** An ExtensionManager maintains all language-specific extensions of MMT.
  *  This includes Compilers, QueryTransformers, and Foundations.
@@ -13,8 +30,9 @@ import utils._
 class ExtensionManager(controller: Controller) {
    private val report = controller.report
    private var foundations : List[Foundation] = Nil
-   private var compilers : List[Compiler] = Nil
+   private var compilers : List[Compiler] = List(MMTCompiler)
    private var querytransformers : List[QueryTransformer] = Nil
+   private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter)
    private var mws : Option[URI] = None
 
    private def log(msg : => String) = report("extman", msg)
@@ -39,22 +57,26 @@ class ExtensionManager(controller: Controller) {
        addPlugin(pl, args)
    }
    /** adds an Importer and initializes it */
-   def addImporter(cls: String, args: List[String]) {
+   def addExtension(cls: String, args: List[String]) {
        log("adding importer " + cls)
-       val imp = try {
-          val Imp = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Importer]]
-          Imp.newInstance
+       val ext = try {
+          val Ext = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Extension]]
+          Ext.newInstance
        } catch {
           case e : java.lang.Throwable => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
-       imp.init(controller, args)
-       if (imp.isInstanceOf[Compiler]) {
+       ext.init(controller, args)
+       if (ext.isInstanceOf[Compiler]) {
           log("  ... as compiler")
-          compilers ::= imp.asInstanceOf[Compiler]
+          compilers ::= ext.asInstanceOf[Compiler]
        }
-       if (imp.isInstanceOf[QueryTransformer]) {
+       if (ext.isInstanceOf[QueryTransformer]) {
           log("  ... as query transformer")
-          querytransformers ::= imp.asInstanceOf[QueryTransformer]
+          querytransformers ::= ext.asInstanceOf[QueryTransformer]
+       }
+       if (ext.isInstanceOf[Presenter]) {
+          log("  ... as presenter")
+          presenters ::= ext.asInstanceOf[Presenter]
        }
    }
 
@@ -62,7 +84,9 @@ class ExtensionManager(controller: Controller) {
    def getCompiler(src: String) : Option[Compiler] = compilers.find(_.isApplicable(src))
    /** retrieves an applicable Compiler */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
-   
+   /** retrieves an applicable Presenter */
+   def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
+  
    /** adds a foundation, must be initialized already */
    def addFoundation(cls: String, args: List[String]) {
        log("adding foundation " + cls)

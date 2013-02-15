@@ -11,30 +11,30 @@ object Morph {
    /** pre: m is a well-structured morphism */
 	def domain(m : Term)(implicit lib : Lookup) : Term = m match {
       case OMIDENT(t) => t
-      case OMCOMP(Nil) => throw Invalid("cannot infer domain of empty composition")
+      case OMCOMP(Nil) => throw InvalidObject(m, "cannot infer domain of empty composition")
       case OMCOMP(n :: _) => domain(n)
-      case Morph.Empty => throw Invalid("cannot infer domain of empty union")
+      case Morph.Empty => throw InvalidObject(m, "cannot infer domain of empty union")
       case MUnion(ms) => TUnion(ms map domain)
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.from}
       } catch {
-         case _ : Throwable => throw Invalid("not a well-formed morphism: " + m)
+         case _ : Throwable => throw InvalidObject(m, "not a well-formed morphism")
       }
       case OMDL(h,n) => try {
          val structure = lib.getStructure(h % n)
          structure.from
       } catch {
-         case _ : Throwable => throw Invalid("not a well-formed morphism: " + m)
+         case _ : Throwable => throw InvalidObject(m, "not a well-formed morphism")
       }
-      case _ => throw Invalid("not a well-formed morphism: " + m)
+      case _ => throw InvalidObject(m, "not a well-formed morphism: " + m)
     }
 
   /** pre: m is a well-structured morphism */
    def codomain(m : Term)(implicit lib : Lookup) : Term = m match {
       case OMIDENT(t) => t
-      case OMCOMP(Nil) => throw Invalid("cannot infer codomain of empty composition")
+      case OMCOMP(Nil) => throw InvalidObject(m, "cannot infer codomain of empty composition")
       case OMCOMP(l) => codomain(l.last)
-      case Morph.Empty => throw Invalid("cannot infer codomain of empty union")
+      case Morph.Empty => throw InvalidObject(m, "cannot infer codomain of empty union")
       case MUnion(ms) =>
          val cs = ms map codomain
          if (cs.forall(_ == cs.head)) cs.head
@@ -42,10 +42,10 @@ object Morph {
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => l.to}
       } catch {
-         case _ : Throwable => throw Invalid("not a well-formed morphism: " + m)
+         case _ : Throwable => throw throw InvalidObject(m, "not a well-formed morphism: " + m)
       }
       case OMDL(t, _ ) => t
-      case _ => throw Invalid("not a well-formed morphism: " + m)
+      case _ => throw throw InvalidObject(m, "not a well-formed morphism: " + m)
    }
    
    /** transform a morphism into a list of morphisms by using associativity of composition */ 
