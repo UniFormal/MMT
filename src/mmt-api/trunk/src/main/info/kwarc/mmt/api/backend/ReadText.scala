@@ -1376,7 +1376,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     addSourceRef(view, start, endsAt)
 
     // add a link to this view to the narrative document
-    add(MRef(dpath, view.path))
+    add(MRef(dpath, view.path, true))
     return endsAt + 1
   }
 
