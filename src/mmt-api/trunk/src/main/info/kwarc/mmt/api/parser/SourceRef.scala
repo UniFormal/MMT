@@ -12,6 +12,8 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   override def toString = start + "-" + end
   /** l.c-l.c*/
   def twoDimString = start.twoDimString + "-" + end.twoDimString
+  /** number of characters in this region */
+  def length = start.offset - end.offset + 1
 }
 
 /** helper object */

@@ -18,17 +18,6 @@ import scala.collection.immutable.{HashMap}
  */
 case class ParsingUnit(source: SourceRef, scope: Term, context: Context, term: String)
 
-/**
- * simplified construction of typical parsing errors
- * @return the corresponding SourceError
- */
-object ParsingError {
-  def apply(msg : String, sr : SourceRegion) = SourceError("object-parser", SourceRef(null, sr), msg) //TODO container missing
-   //("Parsing Error: " + msg + " at (" + start + ","+ end + ")") {
-  //def stackTrace : String = getStackTrace.map(x => x.toString).mkString("","\n","")
-}
-
-
 /** a TermParser parses Term's. Instances are maintained by the ExtensionManager and retrieved and called by the structural parser. */
 trait AbstractObjectParser {
    def apply(pu: ParsingUnit): Term
@@ -37,9 +26,11 @@ trait AbstractObjectParser {
 /** helper object */
 object AbstractObjectParser {
   def getNotations(controller : Controller, scope : Term) : List[TextNotation] = {
+     val closer = new libraries.Closer(controller)
+     closer(scope.toMPath)
      val includes = controller.library.visible(scope)
      val decls = includes.toList flatMap {tm =>
-        controller.globalLookup.getDeclaredTheory(tm.toMPath).getConstants
+        controller.localLookup.getDeclaredTheory(tm.toMPath).getConstants
      }
      decls.flatMap {c =>
         c.not.toList ::: List(new TextNotation(c.path, List(Delim(c.path.last)), presentation.Precedence.neginfinite))
@@ -59,7 +50,6 @@ object DefaultObjectParser extends AbstractObjectParser {
    def apply(pu: ParsingUnit): Term = OMSemiFormal(objects.Text(pu.scope.toMPath.toPath, pu.term))
 }
 
-
 /**
  * A notation based parser
  */
@@ -67,7 +57,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    val report = controller.report
    val logPrefix = "parser"  
    private val prag = controller.pragmatic   
-  
+   
    /**
     * builds parsers notation context based on content in the controller 
     * and the scope (base path) of the parsing unit
@@ -80,6 +70,13 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
       qnotations.sortWith((p1,p2) => p1._1 < p2._1)
    } 
 
+   /** constructs a SourceError and throws it, all errors go through this method */
+   private def makeError(msg: String, reg: SourceRegion)(implicit pu: ParsingUnit) = {
+      val ref = SourceRef(pu.source.container, reg)
+      val err = SourceError(logPrefix, ref, msg)
+      throw err
+   }
+   
    /**
     * declarations of the implicit variables
     */
@@ -120,7 +117,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                 t
             } else
                //in all other cases, we don't know
-               throw ParseError("unbound token: " + word) //actually, this is recoverable
+               makeError("unbound token: " + word, te.region) //actually, this is recoverable
                //OMSemiFormal(objects.Text("unknown", word))
          case Escaped(s,pos) =>
             val r = Reader(s)
@@ -231,7 +228,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   } else
                      //not all combinations correspond to Terms
                      //this should only happen for ill-formed notations
-                     throw ParseError("ill-formed notation")
+                     makeError("ill-formed notation", te.region)
                }}
          case ul : UnmatchedList =>
             if (ul.tl.length == 1)
@@ -267,7 +264,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
        qnotations.map(o => log(o.toString))
     }
     val tl = TokenList(pu.term, pu.source.region.start)
-    if (tl.length == 0) throw ParseError("no tokens found: " + pu.term)
+    if (tl.length == 0) makeError("no tokens found: " + pu.term, pu.source.region)(pu)
     
     //scanning
     val sc = new Scanner(tl, controller.report)

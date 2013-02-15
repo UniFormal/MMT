@@ -11,7 +11,7 @@ trait SemiFormalObject extends Content {
 case class Text(format: String, obj: String) extends SemiFormalObject {
    def components = List(StringLiteral(obj))
    def toNode = <om:text format={format}>{scala.xml.PCData(obj)}</om:text>
-   override def toString = obj
+   override def toString = "\"" + obj + "\""
    def freeVars : List[LocalName] = Nil
 }
 case class XMLNode(obj: scala.xml.Node) extends SemiFormalObject {
