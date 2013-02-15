@@ -368,7 +368,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          case OMV(m) if unknowns.isDeclared(m) =>
             val fvs = tm2.freeVars
             if (fvs.isEmpty) {
-               val res = solve(m, tm2)
+                val res = solve(m, tm2)
                tpOpt foreach {case tp => solveType(m, tp)}
                res
             }
@@ -377,8 +377,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                // TODO: registering solution in terms of preceding meta-variables might save time
                delay(Equality(stack,tm1,tm2,tpOpt))
             else
-               false // meta-variable solution has free variable --> type error
-                     // TODO: need to simplify tm2 in case free variable disappears
+               delay(Equality(stack,tm1,tm2,tpOpt))
+               // meta-variable solution has free variable --> type error unless free variable disappears later
+               // TODO: need to simplify tm2 in case free variable disappears
                
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendages(h,_) :: _) if unknowns.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
@@ -426,7 +427,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                      rule(this)(tm) match {
                         case Some(tmS) =>
                            log("simplified: " + tm + " ~~> " + tmS)
-                           limitedSimplify(tmS)(simple)
+                           limitedSimplify(tmS.from(tm))(simple)
                         case None => (tm, None) 
                      }
                }
@@ -447,7 +448,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          case None => tm
          case Some(rule) =>
             rule(this)(tm) match {
-               case Some(tmS) => simplify(tmS)
+               case Some(tmS) => simplify(tmS).from(tm)
                case None => tm
             }
        }

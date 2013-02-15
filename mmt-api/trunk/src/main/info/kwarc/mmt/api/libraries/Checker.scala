@@ -75,6 +75,7 @@ class StructureChecker(controller: Controller) extends Logger {
       implicit val lib = controller.globalLookup
       e match {
          case d: Document => d.getLocalItems foreach check
+         case r: XRef => if (r.isGenerated) check(r.target)
          case t: DeclaredTheory =>
             nrThys += 1
             nrIncls += controller.memory.content.visible(OMMOD(t.path)).size
@@ -105,19 +106,23 @@ class StructureChecker(controller: Controller) extends Logger {
          case c : Constant =>
             c.tp foreach {t => 
                val (unknowns,tU) = parser.AbstractObjectParser.splitOffUnknowns(t)
-               val tR = checkTerm(c.home, unknowns, tU)
-               OMMOD.unapply(c.home) foreach {p =>
-                  val j = Universe(Stack(p), tR)
-                  unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+               val (tR,valid) = checkTermTop(c.home, unknowns, tU)
+               if (valid) {
+                  OMMOD.unapply(c.home) foreach {p =>
+                     val j = Universe(Stack(p), tR)
+                     unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+                  }
                }
             }
             c.df foreach {d => 
                val (unknowns,dU) = parser.AbstractObjectParser.splitOffUnknowns(d)
-               val dR = checkTerm(c.home, unknowns, dU)
-               OMMOD.unapply(c.home) foreach {p =>
-                  c.tp foreach {tp =>
-                      val j = Typing(Stack(p), dR, tp)
-                      unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+               val (dR, valid) = checkTermTop(c.home, unknowns, dU)
+               if (valid) {
+                  OMMOD.unapply(c.home) foreach {p =>
+                     c.tp foreach {tp =>
+                         val j = Typing(Stack(p), dR, tp)
+                         unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+                     }
                   }
                }
             }
@@ -138,19 +143,19 @@ class StructureChecker(controller: Controller) extends Logger {
                Some(content.getDomain(a))
             } catch { 
               case e: GetError =>
-                 errorCont(InvalidElement(a.path,"invalid assignment",e))
+                 errorCont(InvalidElement(a,"invalid assignment",e))
                  None
             }
             tlOpt foreach {case (t,l) =>
                val c = content.getConstant(t.path ? a.name)
-               a.target foreach {t => checkTerm(l.to, t)}
+               a.target foreach {t => checkTermTop(l.to, Context(), t)}
             }
          case a : DefLinkAssignment =>
             val tlOpt = try {
                Some(content.getDomain(a))
             } catch { 
                case e: GetError =>
-                  errorCont(InvalidElement(a.path,"invalid assignment",e))
+                  errorCont(InvalidElement(a,"invalid assignment",e))
                   None
             }
             tlOpt foreach {case (t,l) =>
@@ -158,7 +163,7 @@ class StructureChecker(controller: Controller) extends Logger {
                   checkMorphism(a.target, OMMOD(a.from), l.to)
                } else {
                   val s = content.getStructure(t.path ? a.name)
-                  if (s.fromPath != a.from) errorCont(InvalidElement(a.path, "import-assignment has bad domain: found " + a.from + " expected " + s.from)) 
+                  if (s.fromPath != a.from) errorCont(InvalidElement(a, "import-assignment has bad domain: found " + a.from + " expected " + s.from)) 
                   checkMorphism(a.target, s.from, l.to)
                }
             }
@@ -170,7 +175,7 @@ class StructureChecker(controller: Controller) extends Logger {
                Some(content.getPattern(i.pattern))
             } catch {
                case e: GetError =>
-                  errorCont(InvalidElement(i.path,"invalid pattern: " + i.pattern,e))
+                  errorCont(InvalidElement(i,"invalid pattern: " + i.pattern,e))
                   None
             }
             ptOpt foreach {pt => checkSubstitution(i.home, i.matches, pt.params, Context())}
@@ -351,7 +356,14 @@ class StructureChecker(controller: Controller) extends Logger {
     * @param s the term
     * @return the reconstructed term
     */
-   def checkTerm(home: Term, s : Term)(implicit pCont: Path => Unit) : Term = checkTerm(home, Context(), s)
+   def checkTermTop(home: Term, context : Context, s : Term)(implicit pCont: Path => Unit) : (Term, Boolean) = {
+      val n = errors.length
+      val t = checkTerm(home, context, s)
+      if (errors.length == n)
+         (t, true) // no new errors
+      else
+         (t, true)      
+   }
    /**
     * Checks structural well-formedness of a term in context relative to a home theory.
     * @param home the home theory
@@ -364,9 +376,8 @@ class StructureChecker(controller: Controller) extends Logger {
 //            if (! content.imports(from, h))
 //               throw Invalid(from + " is not imported into " + h + " in " + s)
 //            checkTerm(home, context, OMID(from % ln))
-         case OMS(GlobalName(t,n)) =>
-            val path = t % n
-            val ceOpt = try {content.get(t % n)}
+         case OMS(path) =>
+            val ceOpt = try {content.getO(path)}
                     catch {case e: GetError =>
                                 errorCont(InvalidObject(s, "ill-formed constant reference"))
                     }
@@ -391,24 +402,24 @@ class StructureChecker(controller: Controller) extends Logger {
             val boundR = checkContext(home, context, bound)
             val conditionR = condition map {c => checkTerm(home, context ++ bound, c)}
             val scopeR = checkTerm(home,  context ++ bound, scope)
-            OMBINDC(binderR, boundR, conditionR, scopeR)
+            OMBINDC(binderR, boundR, conditionR, scopeR).from(s)
          case OMATTR(arg, key, value) =>
             val argR = checkTerm(home, context, arg)
             checkTerm(home, context, key)
             val valueR = checkTerm(home, context, value)
-            OMATTR(argR, key, valueR)
+            OMATTR(argR, key, valueR).from(s)
          case OMM(arg, morph) =>
             val (morphR, from, to) = inferMorphism(morph)
             if (from != null && to != null && ! content.hasImplicit(to, home)) {
                errorCont(InvalidObject(s, "codomain of morphism is not imported into expected home theory"))
                val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
-               OMM(argR, morph)
+               OMM(argR, morph).from(s)
             } else s
          case OMHID => s//TODO
          case OME(err, args) =>
             val errR  = checkTerm(home, context, err)
             val argsR = args.map(checkTerm(home, context, _))
-            OME(errR, argsR)
+            OME(errR, argsR).from(s)
          case OMFOREIGN(node) => s //TODO
          case OMI(i) => s //TODO check if integers are permitted
          case OMSTR(str) => s //TODO check if strings are permitted

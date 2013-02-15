@@ -154,13 +154,19 @@ class Controller extends ROController with Logger {
       log("retrieving " + path)
       logGroup {
          // get, ...
-         backend.get(path) {
-           // read, ...
-           case (u,n) =>
-              xmlReader.readDocuments(DPath(u), n) {
-              // and add the content with URI path
-              e => add(e)
+         try {
+           backend.get(path) {
+              // read, ...
+              case (u,n) =>
+                 xmlReader.readDocuments(DPath(u), n) {
+                 // and add the content with URI path
+                 e => add(e)
+              }
            }
+         } catch {
+            case BackendError(p) =>
+               log("retrieval failed for " + p)
+               throw GetError("retrieval failed for " + p) 
          }
       }
       log("retrieved " + path)
@@ -181,7 +187,6 @@ class Controller extends ROController with Logger {
       catch {
          case NotFound(p : Path) if ! previous.exists(_ == p) => retrieve(p); iterate(a, p :: previous)
          case NotFound(p : Path) => throw GetError("retrieval failed for " + p) 
-         case e : Throwable => throw e
       }
    }
    /** retrieves a knowledge item */

@@ -206,13 +206,11 @@ object TextNotation {
             while (s(i).isDigit) {i+=1}
             val n = s.substring(0,i).toInt
             val d = s.substring(i,s.length-1)
-            println("found var delim")
             Var(n, Delim(d))
          case s:String => Delim(s)
          case m: Marker => m
          case m => throw ParseError("not a valid marker" + m)
       }
-      println(markers.mkString("%"))
       new TextNotation(name, markers, prec)
    }
    

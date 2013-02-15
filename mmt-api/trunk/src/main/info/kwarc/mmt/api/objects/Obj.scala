@@ -39,6 +39,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
       val om = xml.namespace("om") // inlining this into XML literal does not work
       <om:OMOBJ xmlns:om={om}>{toNode}</om:OMOBJ>
    }
+   def toCML: Node
    /** applies a substitution to an object (computed immediately)
     *  capture is avoided by renaming bound variables that are free in sub */
    // TODO use an internal auxiliary method for subsitution that carries along a precomputed list of free variables in sub to avoid recomputing it at every binder
@@ -64,7 +65,6 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
    def head : Option[ContentPath]
    /** the governing path required by Content is the head, if any */
    def governingPath = head
-   def toCML: Node
 }
 
 trait MMTObject {
@@ -103,6 +103,16 @@ sealed abstract class Term extends Obj {
    /** This permits the syntax term % sym for path composition */
    def %(n: LocalName) : GlobalName = GlobalName(this,n)
    def %(n: String) : GlobalName = GlobalName(this,LocalName(n))
+   /** replaces metadata of this with those of o
+    * 
+    * @param o the original object
+    * @return this object with replaced metadata
+    * call o2.from(o1) after transforming o1 into o2 in order to preserve metadata 
+    */
+   def from(o: Term): Term = {
+      metadata = o.metadata
+      this
+   }
 }
 
 /**
@@ -177,7 +187,7 @@ case class OMBINDC(binder : Term, context : Context, condition : Option[Term], b
    def ^(sub : Substitution) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
       val subN = sub ++ alpha
-      OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subN), body ^ subN)
+      OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subN), body ^ subN).from(this)
    }
    private[objects] def freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: (body.freeVars ::: condition.map(_.freeVars_).getOrElse(Nil)).filterNot(x => context.isDeclared(x))      
    def toCML = condition match {
@@ -205,7 +215,7 @@ object OMBIND {
 case class OMM(arg : Term, via : Term) extends Term with MMTObject {
    val path = mmt.morphismapplication
    def args = List(arg,via)
-   def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
+   def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: via.freeVars_
 }
 
@@ -223,7 +233,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       <om:OMA>{fun.toNodeID(pos + 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)) //.flatMap(_.items))
+   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)).from(this) //.flatMap(_.items))
    private[objects] def freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
 
@@ -271,7 +281,7 @@ case class OME(error : Term, args : List[Term]) extends Term {
       <om:OMA>{error.toNodeID(pos + 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub))
+   def ^ (sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = error.freeVars_ ::: args.flatMap(_.freeVars_)   
    def toCML = <m:apply>{error.toCML}{args.map(_.toCML)}</m:apply>
 }
@@ -292,7 +302,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
       <om:OMATTR><om:OMATP>{key.toNodeID(pos+0)}{value.toNodeID(pos+2)}</om:OMATP>
                  {arg.toNodeID(pos+1)}
       </om:OMATTR> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMATTR(arg ^ sub, key ^ sub, value ^ sub)
+   def ^ (sub : Substitution) = OMATTR(arg ^ sub, key, value ^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
 
@@ -377,7 +387,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
          case Formal(t) => Formal(t ^ sub)
          case i => i
       }
-      OMSemiFormal(newtokens)
+      OMSemiFormal(newtokens).from(this)
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
    def toCML = <m:apply><csymbol>OMSemiFormal</csymbol>tokens.map(_.toCML)</m:apply>

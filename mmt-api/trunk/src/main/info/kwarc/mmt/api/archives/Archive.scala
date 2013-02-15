@@ -23,6 +23,7 @@ abstract class ROArchive extends Storage with Logger {
   //def traverse(dim: String, in: List[String], filter: String => Boolean)(f: List[String] => Unit)
 
   val rootString: String
+  override def toString = "archive rootString"
   val properties: Map[String, String]
   val report : Report
   val logPrefix = "archive"
@@ -40,7 +41,6 @@ abstract class ROArchive extends Storage with Logger {
       cont(mod.doc.uri, node)
     case OMMOD(m) % _ => get(m)
   }}
-  //def get(path : Path, reader : Reader)
 }
 
 abstract class WritableArchive extends ROArchive {
@@ -60,7 +60,10 @@ abstract class WritableArchive extends ROArchive {
 
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, narrationDir)
     /** Get a module from content folder */ 
-    def get(m: MPath) : scala.xml.Node = utils.xml.readFile(MMTPathToContentPath(m))
+    def get(m: MPath) : scala.xml.Node = {
+       val p = MMTPathToContentPath(m)
+       utils.xml.readFile(p)
+    }
 
     protected val custom : ArchiveCustomization = {
        properties.get("customization") match {

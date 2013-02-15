@@ -21,7 +21,12 @@ class Validator(controller: Controller) extends Logger {
          } else {
             log("errors while validating " + v.component)
             log(solver.toString)
-            errorCont(InvalidObject(v.judgement.wfo, solver.toString))
+            solver.getConstraints foreach {
+               case j: WFJudgement =>
+                  errorCont(InvalidObject(j.wfo, j.toString))
+               case j => errorCont(InvalidObject(v.judgement.wfo, "unresolved constraint: " + j.toString))
+            }
+            //errorCont(InvalidObject(v.judgement.wfo, solver.toString))
          }
       }
 }
