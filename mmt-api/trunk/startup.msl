@@ -22,7 +22,6 @@ foundation info.kwarc.mmt.lf.LFF
 
 file ../../paths.mmt
 
-importer info.kwarc.mmt.api.backend.MMTCompiler
 archive add ../../../theories
 
 //log+ backend
@@ -50,5 +49,5 @@ server on 8080
 //browser on
 base http://docs.omdoc.org/mmt
 
-//importer info.kwarc.mmt.mizar.test.MwsService
-//importer info.kwarc.mmt.tptp.TptpCompiler
+//extension info.kwarc.mmt.mizar.test.MwsService
+//extension info.kwarc.mmt.tptp.TptpCompiler

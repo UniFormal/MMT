@@ -30,7 +30,7 @@ trait Extension {
 class ExtensionManager(controller: Controller) {
    private val report = controller.report
    private var foundations : List[Foundation] = Nil
-   private var compilers : List[Compiler] = List(MMTCompiler)
+   private var compilers : List[Compiler] = List(new MMTCompiler(controller))
    private var querytransformers : List[QueryTransformer] = Nil
    private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter)
    private var mws : Option[URI] = None

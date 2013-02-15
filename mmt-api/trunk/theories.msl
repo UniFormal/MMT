@@ -13,7 +13,6 @@ log+ notation
 //log+ object-checker
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 
-importer info.kwarc.mmt.api.backend.MMTCompiler
 plugin info.kwarc.mmt.lf.Plugin
 archive add ../../../theories
 archive mmt clean
