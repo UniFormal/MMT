@@ -20,7 +20,7 @@ trait StructuralElement extends Content with metadata.HasMetaData {
    private var origin : Origin = Unelaborated
    def setOrigin(o: Origin) {origin = o}
    def getOrigin = origin
-   def isGenerated = origin != Unelaborated && origin != Elaborated
+   def isGenerated = origin == DocumentSkeleton
    def inElaborated = origin match {
       case Unelaborated => true
       case InstanceElaboration(_) => true

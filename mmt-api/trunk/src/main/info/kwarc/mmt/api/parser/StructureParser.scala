@@ -272,7 +272,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val name = readLocalPath
                val ns = state.defaultNamespace
                val vpath = ns ? name
-               val mref = MRef(doc.path, vpath)
+               val mref = MRef(doc.path, vpath, true)
                seCont(mref)
                readDelimiter(":")
                val from = readMPath(vpath)
@@ -324,7 +324,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val name = readLocalPath
                val ns = state.defaultNamespace
                val tpath = ns ? name
-               val mref = MRef(doc.path, tpath)
+               val mref = MRef(doc.path, tpath, true)
                seCont(mref)
                var delim = state.reader.readToken
                if (delim._1 == "abbrev") {
