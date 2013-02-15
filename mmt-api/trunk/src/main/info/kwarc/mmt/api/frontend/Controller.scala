@@ -95,6 +95,10 @@ class Controller extends ROController with Logger {
    val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
    /** moc.propagator - handling change propagation */
    val propagator = new moc.OccursInImpactPropagator(memory)
+   
+        
+   //not sure if this really belong here, map from jobname to some state info
+   val states = new collection.mutable.HashMap[String, ParserState]
          
    
    def detectChanges(elems : List[ContentElement]) : StrictDiff = {
