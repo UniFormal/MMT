@@ -285,14 +285,15 @@ class Server(val port: Int, controller: Controller) extends HServer {
             case Nil => //no error -> parsing successful
               try {
                 val mod = ctrl.memory.content.getModule(mpath)
-                val nset = DPath(URI("http://cds.omdoc.org/styles/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js
+                val nset = DPath(URI("http://cds.omdoc.org/styles/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js use ExtensionManager.getPresenter
                 val rb = new presentation.XMLBuilder()
                 val module = if(save) {
                   controller.get(mpath)
                 } else {
                   mod
                 }
-                controller.presenter(module, presentation.GlobalParams(rb, nset))
+                val presenter = new presentation.StyleBasedPresenter(controller,nset) 
+                presenter(module, rb)
                 val thyXML = rb.get()
                 val response = new collection.mutable.HashMap[String,Any]()
                 response("success") = "true"                                      

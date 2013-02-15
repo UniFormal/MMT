@@ -49,7 +49,7 @@ abstract class Foundation {
    def tracedTyping(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : HashSet[CPath] = {
       val fl = new TracedLookup(lib)
       typing(tm, tp, G)(fl) match {
-        case false => throw Invalid("Type checking failed")
+        case false => throw InvalidObject(tp.getOrElse(OMHID), "type checking failed")
         case true => fl.getTrace
       }
    }

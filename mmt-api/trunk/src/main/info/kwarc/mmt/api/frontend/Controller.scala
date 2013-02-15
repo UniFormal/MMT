@@ -79,14 +79,12 @@ class Controller extends ROController with Logger {
    val termParser = new ObjectParser(this)
    /** the MMT parser (native MMT text syntax) */
    val textParser = new StructureAndObjectParser(this)
+   /** a basic structure checker */
+   val checker = new StructureAndObjectChecker(this)
    /** the MMT parser (Twelf text syntax) */
    val textReader = new TextReader(this)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
-   /** the checker for the validation of ContentElement's and objects */
-   val checker = new StructureChecker(this)
-   /** the MMT rendering engine */
-   val presenter = new presentation.Presenter(this, report)
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
@@ -339,7 +337,7 @@ class Controller extends ROController with Logger {
             }
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
-	      case AddImporter(c, args) => extman.addImporter(c, args)
+	      case AddExtension(c, args) => extman.addExtension(c, args)
 	      case AddPlugin(c) => extman.addPlugin(c, Nil)
 	      case AddFoundation(c, args) => extman.addFoundation(c, args)
 	      case AddTNTBase(f) =>
@@ -414,10 +412,10 @@ class Controller extends ROController with Logger {
             tg.exportDot(f)
 	      case Check(p) =>
 	         try {
-	            checker.check(p)( _ => (), _ => None)
+	            checker(p)
 	            log("check succeeded")
 	         } catch {
-	          case e: Error =>
+	          case e: Invalid =>
 	            log("check failed\n" + e.getMessage)
 	         }
 	      case DefaultGet(p) => handle(GetAction(Print(p)))

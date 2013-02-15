@@ -4,7 +4,7 @@ import utils._
 
 /** extended by all classes that use the logging aspect */
 trait Logger {
-   val report: Report
+   protected def report: Report
    val logPrefix: String
    protected def log(s : => String) = report(logPrefix, s)
    protected def logGroup[A](a: => A) : A = {

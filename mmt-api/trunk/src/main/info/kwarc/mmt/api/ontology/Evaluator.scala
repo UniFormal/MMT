@@ -157,11 +157,11 @@ class Evaluator(controller: Controller) {
               case p: Path => 
                  val rb = new presentation.XMLBuilder
                  val e = controller.get(p)
-                 controller.presenter(e, presentation.GlobalParams(rb, style))
+                 (new presentation.StyleBasedPresenter(controller,style)).apply(e, rb)
                  res += XMLResult(rb.get)
               case o : Obj =>
                  val rb = new presentation.XMLBuilder
-                 controller.presenter(o, presentation.GlobalParams(rb, style))
+                 (new presentation.StyleBasedPresenter(controller,style)).apply(o, rb)
                  res += XMLResult(rb.get)
               case _ => throw ImplementationError("evaluation of ill-typed query")
            }

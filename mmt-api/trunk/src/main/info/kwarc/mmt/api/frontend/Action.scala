@@ -44,7 +44,7 @@ object Action extends RegexParsers {
             val segs = MyList.fromString(s.getOrElse(""), "/")
             ArchiveBuild(id, dim, segs)
      }
-     private def archpres = "archive" ~> str ~ ("present" ~> mpath) ~ (str ?) ^^ { 
+     private def archpres = "archive" ~> str ~ ("present" ~> str) ~ (str ?) ^^ { 
         case id ~ p ~ s =>
            val segs = MyList.fromString(s.getOrElse(""), "/")
            ArchiveBuild(id, "present", segs, List(p))
@@ -52,7 +52,7 @@ object Action extends RegexParsers {
      private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
-   private def importer = "importer" ~> str ~ (str *) ^^ {case c ~ args => AddImporter(c, args)}
+   private def importer = "extension" ~> str ~ (str *) ^^ {case c ~ args => AddExtension(c, args)}
    private def foundation = "foundation" ~> str ~ (str *) ^^ {case f ~ args => AddFoundation(f, args)}
    private def plugin = "plugin" ~> str ^^ {case s => AddPlugin(s)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
@@ -78,12 +78,11 @@ object Action extends RegexParsers {
    private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
    private def defaultget = presentation ^^ {p => DefaultGet(p)}
    private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
-   private def presentation = present | tonode | totext | deps | tostring
-   private def tonode = content <~ "xml" ^^ {c => ToNode(c)}
-   private def present = content ~ ("present" ~> mpath) ^^ {case c ~ p => Present(c,p)}
+   private def presentation = present | totext | deps | defaultPresent
+   private def present = content ~ ("present" ~> str) ^^ {case c ~ p => Present(c,p)}
    private def deps = path <~ "deps" ^^ {case p => Deps(p)}
    private def totext = content <~ "text" ^^ {c => ToText(c)}
-   private def tostring = content ^^ {c => ToString(c)}
+   private def defaultPresent = content ^^ {c => Present(c, "string")}
    private def content = closure | elaboration | component | get
    private def closure = path <~ "closure" ^^ {p => Closure(p)}
    private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
@@ -229,7 +228,7 @@ case class AddPlugin(cls: String) extends Action {override def toString = "plugi
  * 
  * concrete syntax: importer cls:CLASS args:STRING*
  */
-case class AddImporter(cls: String, args: List[String]) extends Action {override def toString = "importer " + cls + args.mkString(" ", " ", "")}
+case class AddExtension(cls: String, args: List[String]) extends Action {override def toString = "extension " + cls + args.mkString(" ", " ", "")}
 
 /** registers a foundation
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
@@ -246,7 +245,7 @@ case class AddArchive(folder : java.io.File) extends Action {override def toStri
 case class AddSVNArchive(url : String,  rev : Int) extends Action {override def toString = "SVN archive add " + url + "@" + rev}
 
 /** builds a dimension in a previously opened archive */
-case class ArchiveBuild(id: String, dim: String, in : List[String], params: List[MPath] = Nil) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
+case class ArchiveBuild(id: String, dim: String, in : List[String], params: List[String] = Nil) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveMar(id: String, file: File) extends Action {override def toString = "archive " + id + " mar " + file}
@@ -431,11 +430,18 @@ case class ToText(c : MakeAbstract) extends MakeConcrete {
 }
 
 /** takes a content element and renders it using notations */
-case class Present(c : MakeAbstract, nset : MPath) extends MakeConcrete {
+case class Present(c : MakeAbstract, param : String) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {
-      controller.presenter(c.make(controller), presentation.GlobalParams(rb, nset))
+      val presenter = controller.extman.getPresenter(param) getOrElse {
+         val nset = Path.parseM(param, controller.getBase)
+         new StyleBasedPresenter(controller, nset)
+      }
+      c.make(controller) match {
+         case s: StructuralElement => presenter(s, rb)
+         case o: Obj => presenter(o, rb)
+      }
    }
-   override def toString = c + " present " + nset
+   override def toString = c + " present " + param
 }
 
 
