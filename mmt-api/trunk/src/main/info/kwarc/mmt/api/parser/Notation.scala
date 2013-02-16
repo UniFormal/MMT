@@ -167,14 +167,20 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
       case SeqArg(_, Delim(s)) => Some(s)
       case _ => None
    }
-   def isLeftOpen = markers.head match {
-      case _:Arg => true
-      case _:SeqArg => true
-      case _ => false
+   def openLeftArgs : Int = {
+      var i = 0
+      markers foreach {
+         case a: Arg => i += 1
+         case _:SeqArg => return i+1
+         case _: Var => return i+1
+         case d: Delimiter => return i
+      }
+      i
    }
+   def isLeftOpen = openLeftArgs > 0
    /** @return true if next is first delimiter Token */
-   def applicable(next: Token): Boolean = {
-      firstDelimString == Some(next.word)
+   def applicable(pickableTokens: Int, next: Token): Boolean = {
+      firstDelimString == Some(next.word) && openLeftArgs <= pickableTokens
    }
    /** creates a new ActiveNotation with this notation's markers */
    def open(scanner: Scanner, firstToken: Int): ActiveNotation = {

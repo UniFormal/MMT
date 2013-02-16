@@ -199,7 +199,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   applyFirst(false)
                case NotApplicable =>
                   //determine if a new notation can be opened 
-                  val applicable = notations filter {a => a.applicable(currentToken)}
+                  val applicable = notations filter {a => a.applicable(numCurrentTokens, currentToken)}
                   applicable match {
                      case hd :: Nil =>
                         //open the notation and apply it
