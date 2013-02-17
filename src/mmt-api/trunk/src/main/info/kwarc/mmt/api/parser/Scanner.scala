@@ -290,7 +290,7 @@ case class FoundSeqArg(n: Int, args: List[FoundArg]) extends Found {
 }
 /** represents a [[info.kwarc.mmt.api.parser.Var]] that was found
  * @param n the number of the Var
- * @param vr the found variable
+ * @param name the variable name
  * @param tp the found type, if provided 
  */
 case class FoundVar(n: Int, pos: Int, name: Token, tp: Option[FoundArg]) extends Found {

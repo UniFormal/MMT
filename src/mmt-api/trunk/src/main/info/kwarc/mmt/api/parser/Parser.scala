@@ -119,12 +119,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                //in all other cases, we don't know
                makeError("unbound token: " + word, te.region) //actually, this is recoverable
                //OMSemiFormal(objects.Text("unknown", word))
-         case Escaped(s,pos) =>
-            val r = Reader(s)
-            val (format,_) = r.readToken
-            val (text,_) = r.readAll
-            r.close
-            OMSemiFormal(objects.Text(format, text))
+         case Escaped(begin,text,_,pos) =>
+            OMSemiFormal(objects.Text(begin, text))
          case ml : MatchedList =>
             //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
@@ -136,7 +132,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             //stores the argument list in concrete syntax order, together with their position in the abstract syntax
             var args : List[(Int,Term)] = Nil 
             //stores the variable declaration list (name + type) in concrete syntax order together with their position in the abstract syntax
-            var vars : List[(Int,String,Option[Term])] = Nil
+            var vars : List[(Int,Token,Option[Term])] = Nil
             //stores the scope list in concrete syntax order together with their positions in the abstract syntax
             var scopes : List[(Int, Term)] = Nil
             // We walk through found, computing arguments/variable declarations/scopes
@@ -164,7 +160,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                      //the preceding newBVars are added to the context
                      makeTerm(ml.tokens(i-1), boundVars ::: newBVars.take(n-1))
                   }
-                  vars ::= (n, name.word, t) 
+                  vars ::= (n, name, t) 
             }
             val con = ml.an.notation.name
             // hard-coded special case for a bracketed subterm
@@ -199,8 +195,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   }
                   // order the variables
                   val orderedVars = vars.sortBy(_._1).map {
-                     case (_, name, tp) =>
-                        val vname = LocalName(name)
+                     case (_, vr, tp) =>
+                        val vname = LocalName(vr.word)
                         val finalTp = tp.getOrElse {
                            //new meta-variable for unknown type
                            val metaVar = newType(vname) 
@@ -210,7 +206,9 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                            //under a binder, apply meta-variable to all bound variables
                            prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
                         }
-                        VarDecl(vname, Some(finalTp), None)
+                        val vd = VarDecl(vname, Some(finalTp), None)
+                        SourceRef.update(vd, pu.source.copy(region = vr.region))
+                        vd
                   }
                   if (orderedVars == Nil && scopes == Nil) {
                      // no vars, scopes --> OMA
@@ -249,7 +247,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             }
       }
       //log("result: " + term)
-      term.metadata.add(metadata.Link(SourceRef.metaDataKey, pu.source.copy(region = te.region).toURI))
+      SourceRef.update(term, pu.source.copy(region = te.region))
       term
    }
   
@@ -263,7 +261,10 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     logGroup {
        qnotations.map(o => log(o.toString))
     }
-    val tl = TokenList(pu.term, pu.source.region.start)
+
+    //TODO get escape handlers from meta-theory
+    val escMan = new EscapeManager(List(GenericEscapeHandler))
+    val tl = TokenList(pu.term, pu.source.region.start, escMan)
     if (tl.length == 0) makeError("no tokens found: " + pu.term, pu.source.region)(pu)
     
     //scanning
