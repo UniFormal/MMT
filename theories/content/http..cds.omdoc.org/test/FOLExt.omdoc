@@ -2,16 +2,16 @@
 <omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
   <theory name="FOLExt" base="http://cds.omdoc.org/test" meta="http://cds.omdoc.org/foundations?LF">
     <metadata>
-      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/checker-test/test.mmt#481.15.0-773.21.1"/>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test.mmt#481.15.0-773.21.1"/>
     </metadata>
     <import from="http://cds.omdoc.org/test?FOL">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/checker-test/test.mmt#509.16.2-521.16.14"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test.mmt#509.16.2-521.16.14"/>
       </metadata>
     </import>
     <constant name="andI">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/checker-test/test.mmt#525.17.2-579.17.56"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test.mmt#525.17.2-579.17.56"/>
       </metadata>
       <type>
         <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -81,7 +81,7 @@
     </constant>
     <constant name="andEl">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/checker-test/test.mmt#583.18.2-636.18.55"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test.mmt#583.18.2-636.18.55"/>
       </metadata>
       <type>
         <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -145,7 +145,7 @@
     </constant>
     <constant name="andEr">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/checker-test/test.mmt#640.19.2-693.19.55"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test.mmt#640.19.2-693.19.55"/>
       </metadata>
       <type>
         <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -209,7 +209,7 @@
     </constant>
     <constant name="comm">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/checker-test/test.mmt#697.20.2-770.20.75"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test.mmt#697.20.2-770.20.75"/>
       </metadata>
       <type>
         <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
@@ -277,12 +277,12 @@
               <om:OMV position="0" name="A/type"></om:OMV>
               <om:OMV position="1" name="B/type"></om:OMV>
               <om:OMV position="2" name="p/type"></om:OMV>
-              <om:OMV position="3" name="argument/5"></om:OMV>
-              <om:OMV position="4" name="argument/4"></om:OMV>
-              <om:OMV position="5" name="argument/3"></om:OMV>
-              <om:OMV position="6" name="argument/2"></om:OMV>
-              <om:OMV position="7" name="argument/1"></om:OMV>
-              <om:OMV position="8" name="argument/0"></om:OMV>
+              <om:OMV position="3" name="argument/97"></om:OMV>
+              <om:OMV position="4" name="argument/96"></om:OMV>
+              <om:OMV position="5" name="argument/95"></om:OMV>
+              <om:OMV position="6" name="argument/94"></om:OMV>
+              <om:OMV position="7" name="argument/93"></om:OMV>
+              <om:OMV position="8" name="argument/92"></om:OMV>
             </om:OMBVAR>
             <om:OMBIND position="10">
               <om:OMS position="10_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
@@ -325,14 +325,14 @@
                     <om:OMS position="10_2_2_2_1" base="http://cds.omdoc.org/test" module="FOLExt" name="andI"/>
                     <om:OMA position="10_2_2_2_2">
                       <om:OMS position="10_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
-                      <om:OMV position="10_2_2_2_2_1" name="argument/4"/>
+                      <om:OMV position="10_2_2_2_2_1" name="argument/96"/>
                       <om:OMV position="10_2_2_2_2_2" name="A"/>
                       <om:OMV position="10_2_2_2_2_3" name="B"/>
                       <om:OMV position="10_2_2_2_2_4" name="p"/>
                     </om:OMA>
                     <om:OMA position="10_2_2_2_3">
                       <om:OMS position="10_2_2_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
-                      <om:OMV position="10_2_2_2_3_1" name="argument/5"/>
+                      <om:OMV position="10_2_2_2_3_1" name="argument/97"/>
                       <om:OMV position="10_2_2_2_3_2" name="A"/>
                       <om:OMV position="10_2_2_2_3_3" name="B"/>
                       <om:OMV position="10_2_2_2_3_4" name="p"/>
@@ -342,14 +342,14 @@
                       <om:OMS position="10_2_2_2_4_1" base="http://cds.omdoc.org/test" module="FOLExt" name="andEr"/>
                       <om:OMA position="10_2_2_2_4_2">
                         <om:OMS position="10_2_2_2_4_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
-                        <om:OMV position="10_2_2_2_4_2_1" name="argument/0"/>
+                        <om:OMV position="10_2_2_2_4_2_1" name="argument/92"/>
                         <om:OMV position="10_2_2_2_4_2_2" name="A"/>
                         <om:OMV position="10_2_2_2_4_2_3" name="B"/>
                         <om:OMV position="10_2_2_2_4_2_4" name="p"/>
                       </om:OMA>
                       <om:OMA position="10_2_2_2_4_3">
                         <om:OMS position="10_2_2_2_4_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
-                        <om:OMV position="10_2_2_2_4_3_1" name="argument/1"/>
+                        <om:OMV position="10_2_2_2_4_3_1" name="argument/93"/>
                         <om:OMV position="10_2_2_2_4_3_2" name="A"/>
                         <om:OMV position="10_2_2_2_4_3_3" name="B"/>
                         <om:OMV position="10_2_2_2_4_3_4" name="p"/>
@@ -361,14 +361,14 @@
                       <om:OMS position="10_2_2_2_5_1" base="http://cds.omdoc.org/test" module="FOLExt" name="andEl"/>
                       <om:OMA position="10_2_2_2_5_2">
                         <om:OMS position="10_2_2_2_5_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
-                        <om:OMV position="10_2_2_2_5_2_1" name="argument/2"/>
+                        <om:OMV position="10_2_2_2_5_2_1" name="argument/94"/>
                         <om:OMV position="10_2_2_2_5_2_2" name="A"/>
                         <om:OMV position="10_2_2_2_5_2_3" name="B"/>
                         <om:OMV position="10_2_2_2_5_2_4" name="p"/>
                       </om:OMA>
                       <om:OMA position="10_2_2_2_5_3">
                         <om:OMS position="10_2_2_2_5_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
-                        <om:OMV position="10_2_2_2_5_3_1" name="argument/3"/>
+                        <om:OMV position="10_2_2_2_5_3_1" name="argument/95"/>
                         <om:OMV position="10_2_2_2_5_3_2" name="A"/>
                         <om:OMV position="10_2_2_2_5_3_3" name="B"/>
                         <om:OMV position="10_2_2_2_5_3_4" name="p"/>

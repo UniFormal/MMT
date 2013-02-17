@@ -2,16 +2,16 @@
 <omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
   <theory name="Terms" base="http://cds.omdoc.org/foundations">
     <metadata>
-      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#48.2.0-179.9.1"/>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/term-reflection.mmt#48.2.0-179.9.1"/>
     </metadata>
     <import from="http://cds.omdoc.org/foundations?Typed">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#66.3.3-80.3.17"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/term-reflection.mmt#66.3.3-80.3.17"/>
       </metadata>
     </import>
     <constant name="refl-type">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#89.5.3-106.5.20"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/term-reflection.mmt#89.5.3-106.5.20"/>
       </metadata>
       <notation>
         <text-notation name="http://cds.omdoc.org/foundations?Terms?refl-type" precedence="0">
@@ -23,7 +23,7 @@
     </constant>
     <constant name="quote">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#111.6.3-130.6.22"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/term-reflection.mmt#111.6.3-130.6.22"/>
       </metadata>
       <notation>
         <text-notation name="http://cds.omdoc.org/foundations?Terms?quote" precedence="0">
@@ -36,7 +36,7 @@
     </constant>
     <constant name="eval">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#135.7.3-154.7.22"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/term-reflection.mmt#135.7.3-154.7.22"/>
       </metadata>
       <notation>
         <text-notation name="http://cds.omdoc.org/foundations?Terms?eval" precedence="0">
@@ -49,7 +49,7 @@
     </constant>
     <constant name="elim">
       <metadata>
-        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./../../../theories/source/term-reflection.mmt#159.8.3-176.8.20"/>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/term-reflection.mmt#159.8.3-176.8.20"/>
       </metadata>
       <notation>
         <text-notation name="http://cds.omdoc.org/foundations?Terms?elim" precedence="0">
