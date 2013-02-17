@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory name="FOL" base="http://cds.omdoc.org/test-new" meta="http://cds.omdoc.org/foundations?LF">
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#42.2.0-398.10.1"/>
+    </metadata>
+    <constant name="bool">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#95.3.2-107.3.14"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS base="http://cds.omdoc.org/foundations" module="Typed" name="type"/>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="univ">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#110.4.2-122.4.14"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS base="http://cds.omdoc.org/foundations" module="Typed" name="type"/>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="or">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#125.5.2-168.5.45"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="3" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOL?or" precedence="5">
+          <arg>1</arg>
+          <delim>∨</delim>
+          <arg>2</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="and">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#171.6.2-214.6.45"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="3" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOL?and" precedence="5">
+          <arg>1</arg>
+          <delim>∧</delim>
+          <arg>2</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="impl">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#217.7.2-261.7.46"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="3" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOL?impl" precedence="10">
+          <arg>1</arg>
+          <delim>⇒</delim>
+          <arg>2</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="equiv">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#264.8.2-346.8.84"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="3" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="x">
+                <type>
+                  <om:OMS position="0_1" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+                </type>
+              </om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS position="2_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+              <om:OMBVAR>
+                <om:OMV position="2_0" name="y">
+                  <type>
+                    <om:OMS position="2_0_1" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS position="2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                <om:OMS position="2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="and"/>
+                <om:OMA position="2_2_2">
+                  <om:OMS position="2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                  <om:OMS position="2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="impl"/>
+                  <om:OMV position="2_2_2_2" name="x"/>
+                  <om:OMV position="2_2_2_3" name="y"/>
+                </om:OMA>
+                <om:OMA position="2_2_3">
+                  <om:OMS position="2_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                  <om:OMS position="2_2_3_1" base="http://cds.omdoc.org/test-new" module="FOL" name="impl"/>
+                  <om:OMV position="2_2_3_2" name="y"/>
+                  <om:OMV position="2_2_3_3" name="x"/>
+                </om:OMA>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOL?equiv" precedence="10">
+          <arg>1</arg>
+          <delim>≡</delim>
+          <arg>2</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="ded">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#349.9.2-396.9.49"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/test-new" module="FOL" name="bool"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/foundations" module="Typed" name="type"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOL?ded" precedence="100">
+          <delim>ded</delim>
+          <arg>1</arg>
+        </text-notation>
+      </notation>
+    </constant>
+  </theory>
+</omdoc>

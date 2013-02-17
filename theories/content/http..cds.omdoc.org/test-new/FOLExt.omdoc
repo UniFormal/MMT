@@ -1,0 +1,802 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory name="FOLExt" base="http://cds.omdoc.org/test-new" meta="http://cds.omdoc.org/foundations?LF">
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#400.12.0-997.27.1"/>
+    </metadata>
+    <import from="http://cds.omdoc.org/test-new?FOL">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#456.13.2-469.13.15"/>
+      </metadata>
+    </import>
+    <constant name="zero">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#472.14.2-484.14.14"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS base="http://cds.omdoc.org/test-new" module="FOL" name="univ"/>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="succ">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#487.15.2-506.15.21"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS position="0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+            <om:OMS position="1" base="http://cds.omdoc.org/test-new" module="FOL" name="univ"/>
+            <om:OMS position="2" base="http://cds.omdoc.org/test-new" module="FOL" name="univ"/>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="andI">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#510.17.2-566.17.58"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="3">
+              <om:OMS position="3_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+              <om:OMBVAR>
+                <om:OMV position="3_0" name="A">
+                  <type>
+                    <om:OMV position="3_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="3_2">
+                <om:OMS position="3_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                <om:OMBVAR>
+                  <om:OMV position="3_2_0" name="B">
+                    <type>
+                      <om:OMA position="3_2_0_1">
+                        <om:OMS position="3_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="3_2_0_1_1" name="B/type"/>
+                        <om:OMV position="3_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMA position="3_2_2">
+                  <om:OMS position="3_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                  <om:OMA position="3_2_2_1">
+                    <om:OMS position="3_2_2_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_1_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMV position="3_2_2_1_2" name="A"/>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_2">
+                    <om:OMS position="3_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMV position="3_2_2_2_2" name="B"/>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_3">
+                    <om:OMS position="3_2_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_3_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMA position="3_2_2_3_2">
+                      <om:OMS position="3_2_2_3_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_3_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="and"/>
+                      <om:OMV position="3_2_2_3_2_2" name="A"/>
+                      <om:OMV position="3_2_2_3_2_3" name="B"/>
+                    </om:OMA>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOLExt?andI" precedence="0">
+          <delim>andI</delim>
+          <arg>3</arg>
+          <arg>4</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="andEl">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#569.18.2-624.18.57"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="3">
+              <om:OMS position="3_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+              <om:OMBVAR>
+                <om:OMV position="3_0" name="A">
+                  <type>
+                    <om:OMV position="3_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="3_2">
+                <om:OMS position="3_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                <om:OMBVAR>
+                  <om:OMV position="3_2_0" name="B">
+                    <type>
+                      <om:OMA position="3_2_0_1">
+                        <om:OMS position="3_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="3_2_0_1_1" name="B/type"/>
+                        <om:OMV position="3_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMA position="3_2_2">
+                  <om:OMS position="3_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                  <om:OMA position="3_2_2_1">
+                    <om:OMS position="3_2_2_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_1_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMA position="3_2_2_1_2">
+                      <om:OMS position="3_2_2_1_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_1_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="and"/>
+                      <om:OMV position="3_2_2_1_2_2" name="A"/>
+                      <om:OMV position="3_2_2_1_2_3" name="B"/>
+                    </om:OMA>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_2">
+                    <om:OMS position="3_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMV position="3_2_2_2_2" name="A"/>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOLExt?andEl" precedence="0">
+          <delim>andEl</delim>
+          <arg>3</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="andEr">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#627.19.2-682.19.57"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="3">
+              <om:OMS position="3_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+              <om:OMBVAR>
+                <om:OMV position="3_0" name="A">
+                  <type>
+                    <om:OMV position="3_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="3_2">
+                <om:OMS position="3_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                <om:OMBVAR>
+                  <om:OMV position="3_2_0" name="B">
+                    <type>
+                      <om:OMA position="3_2_0_1">
+                        <om:OMS position="3_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="3_2_0_1_1" name="B/type"/>
+                        <om:OMV position="3_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMA position="3_2_2">
+                  <om:OMS position="3_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                  <om:OMA position="3_2_2_1">
+                    <om:OMS position="3_2_2_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_1_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMA position="3_2_2_1_2">
+                      <om:OMS position="3_2_2_1_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_1_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="and"/>
+                      <om:OMV position="3_2_2_1_2_2" name="A"/>
+                      <om:OMV position="3_2_2_1_2_3" name="B"/>
+                    </om:OMA>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_2">
+                    <om:OMS position="3_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMV position="3_2_2_2_2" name="B"/>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOLExt?andEr" precedence="0">
+          <delim>andEr</delim>
+          <arg>3</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="comm">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#685.20.2-760.20.77"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="3">
+              <om:OMS position="3_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+              <om:OMBVAR>
+                <om:OMV position="3_0" name="A">
+                  <type>
+                    <om:OMV position="3_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="3_2">
+                <om:OMS position="3_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                <om:OMBVAR>
+                  <om:OMV position="3_2_0" name="B">
+                    <type>
+                      <om:OMA position="3_2_0_1">
+                        <om:OMS position="3_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="3_2_0_1_1" name="B/type"/>
+                        <om:OMV position="3_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMA position="3_2_2">
+                  <om:OMS position="3_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                  <om:OMA position="3_2_2_1">
+                    <om:OMS position="3_2_2_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_1_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMA position="3_2_2_1_2">
+                      <om:OMS position="3_2_2_1_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_1_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="and"/>
+                      <om:OMV position="3_2_2_1_2_2" name="A"/>
+                      <om:OMV position="3_2_2_1_2_3" name="B"/>
+                    </om:OMA>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_2">
+                    <om:OMS position="3_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMA position="3_2_2_2_2">
+                      <om:OMS position="3_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="and"/>
+                      <om:OMV position="3_2_2_2_2_2" name="B"/>
+                      <om:OMV position="3_2_2_2_2_3" name="A"/>
+                    </om:OMA>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+              <om:OMV position="2" name="p/type"></om:OMV>
+              <om:OMV position="3" name="argument/87"></om:OMV>
+              <om:OMV position="4" name="argument/86"></om:OMV>
+              <om:OMV position="5" name="argument/85"></om:OMV>
+              <om:OMV position="6" name="argument/84"></om:OMV>
+              <om:OMV position="7" name="argument/83"></om:OMV>
+              <om:OMV position="8" name="argument/82"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="10">
+              <om:OMS position="10_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+              <om:OMBVAR>
+                <om:OMV position="10_0" name="A">
+                  <type>
+                    <om:OMV position="10_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="10_2">
+                <om:OMS position="10_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+                <om:OMBVAR>
+                  <om:OMV position="10_2_0" name="B">
+                    <type>
+                      <om:OMA position="10_2_0_1">
+                        <om:OMS position="10_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="10_2_0_1_1" name="B/type"/>
+                        <om:OMV position="10_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMBIND position="10_2_2">
+                  <om:OMS position="10_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+                  <om:OMBVAR>
+                    <om:OMV position="10_2_2_0" name="p">
+                      <type>
+                        <om:OMA position="10_2_2_0_1">
+                          <om:OMS position="10_2_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                          <om:OMV position="10_2_2_0_1_1" name="p/type"/>
+                          <om:OMV position="10_2_2_0_1_2" name="A"/>
+                          <om:OMV position="10_2_2_0_1_3" name="B"/>
+                        </om:OMA>
+                      </type>
+                    </om:OMV>
+                  </om:OMBVAR>
+                  <om:OMA position="10_2_2_2">
+                    <om:OMS position="10_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="10_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOLExt" name="andI"/>
+                    <om:OMA position="10_2_2_2_2">
+                      <om:OMS position="10_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMV position="10_2_2_2_2_1" name="argument/86"/>
+                      <om:OMV position="10_2_2_2_2_2" name="A"/>
+                      <om:OMV position="10_2_2_2_2_3" name="B"/>
+                      <om:OMV position="10_2_2_2_2_4" name="p"/>
+                    </om:OMA>
+                    <om:OMA position="10_2_2_2_3">
+                      <om:OMS position="10_2_2_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMV position="10_2_2_2_3_1" name="argument/87"/>
+                      <om:OMV position="10_2_2_2_3_2" name="A"/>
+                      <om:OMV position="10_2_2_2_3_3" name="B"/>
+                      <om:OMV position="10_2_2_2_3_4" name="p"/>
+                    </om:OMA>
+                    <om:OMA position="10_2_2_2_4">
+                      <om:OMS position="10_2_2_2_4_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="10_2_2_2_4_1" base="http://cds.omdoc.org/test-new" module="FOLExt" name="andEr"/>
+                      <om:OMA position="10_2_2_2_4_2">
+                        <om:OMS position="10_2_2_2_4_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="10_2_2_2_4_2_1" name="argument/82"/>
+                        <om:OMV position="10_2_2_2_4_2_2" name="A"/>
+                        <om:OMV position="10_2_2_2_4_2_3" name="B"/>
+                        <om:OMV position="10_2_2_2_4_2_4" name="p"/>
+                      </om:OMA>
+                      <om:OMA position="10_2_2_2_4_3">
+                        <om:OMS position="10_2_2_2_4_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="10_2_2_2_4_3_1" name="argument/83"/>
+                        <om:OMV position="10_2_2_2_4_3_2" name="A"/>
+                        <om:OMV position="10_2_2_2_4_3_3" name="B"/>
+                        <om:OMV position="10_2_2_2_4_3_4" name="p"/>
+                      </om:OMA>
+                      <om:OMV position="10_2_2_2_4_4" name="p"/>
+                    </om:OMA>
+                    <om:OMA position="10_2_2_2_5">
+                      <om:OMS position="10_2_2_2_5_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="10_2_2_2_5_1" base="http://cds.omdoc.org/test-new" module="FOLExt" name="andEl"/>
+                      <om:OMA position="10_2_2_2_5_2">
+                        <om:OMS position="10_2_2_2_5_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="10_2_2_2_5_2_1" name="argument/84"/>
+                        <om:OMV position="10_2_2_2_5_2_2" name="A"/>
+                        <om:OMV position="10_2_2_2_5_2_3" name="B"/>
+                        <om:OMV position="10_2_2_2_5_2_4" name="p"/>
+                      </om:OMA>
+                      <om:OMA position="10_2_2_2_5_3">
+                        <om:OMS position="10_2_2_2_5_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="10_2_2_2_5_3_1" name="argument/85"/>
+                        <om:OMV position="10_2_2_2_5_3_2" name="A"/>
+                        <om:OMV position="10_2_2_2_5_3_3" name="B"/>
+                        <om:OMV position="10_2_2_2_5_3_4" name="p"/>
+                      </om:OMA>
+                      <om:OMV position="10_2_2_2_5_4" name="p"/>
+                    </om:OMA>
+                  </om:OMA>
+                </om:OMBIND>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+    <constant name="impI">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#764.22.2-818.22.56"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="3">
+              <om:OMS position="3_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+              <om:OMBVAR>
+                <om:OMV position="3_0" name="A">
+                  <type>
+                    <om:OMV position="3_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="3_2">
+                <om:OMS position="3_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                <om:OMBVAR>
+                  <om:OMV position="3_2_0" name="B">
+                    <type>
+                      <om:OMA position="3_2_0_1">
+                        <om:OMS position="3_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="3_2_0_1_1" name="B/type"/>
+                        <om:OMV position="3_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMA position="3_2_2">
+                  <om:OMS position="3_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                  <om:OMA position="3_2_2_1">
+                    <om:OMS position="3_2_2_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                    <om:OMA position="3_2_2_1_1">
+                      <om:OMS position="3_2_2_1_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_1_1_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                      <om:OMV position="3_2_2_1_1_2" name="A"/>
+                    </om:OMA>
+                    <om:OMA position="3_2_2_1_2">
+                      <om:OMS position="3_2_2_1_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_1_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                      <om:OMV position="3_2_2_1_2_2" name="B"/>
+                    </om:OMA>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_2">
+                    <om:OMS position="3_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMA position="3_2_2_2_2">
+                      <om:OMS position="3_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="impl"/>
+                      <om:OMV position="3_2_2_2_2_2" name="A"/>
+                      <om:OMV position="3_2_2_2_2_3" name="B"/>
+                    </om:OMA>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOLExt?impI" precedence="0">
+          <delim>impI</delim>
+          <arg>3</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="impE">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#821.23.2-877.23.58"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="3">
+              <om:OMS position="3_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+              <om:OMBVAR>
+                <om:OMV position="3_0" name="A">
+                  <type>
+                    <om:OMV position="3_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="3_2">
+                <om:OMS position="3_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                <om:OMBVAR>
+                  <om:OMV position="3_2_0" name="B">
+                    <type>
+                      <om:OMA position="3_2_0_1">
+                        <om:OMS position="3_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="3_2_0_1_1" name="B/type"/>
+                        <om:OMV position="3_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMA position="3_2_2">
+                  <om:OMS position="3_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                  <om:OMA position="3_2_2_1">
+                    <om:OMS position="3_2_2_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_1_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMA position="3_2_2_1_2">
+                      <om:OMS position="3_2_2_1_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="3_2_2_1_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="impl"/>
+                      <om:OMV position="3_2_2_1_2_2" name="A"/>
+                      <om:OMV position="3_2_2_1_2_3" name="B"/>
+                    </om:OMA>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_2">
+                    <om:OMS position="3_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMV position="3_2_2_2_2" name="A"/>
+                  </om:OMA>
+                  <om:OMA position="3_2_2_3">
+                    <om:OMS position="3_2_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                    <om:OMS position="3_2_2_3_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                    <om:OMV position="3_2_2_3_2" name="B"/>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation name="http://cds.omdoc.org/test-new?FOLExt?impE" precedence="0">
+          <delim>impE</delim>
+          <arg>3</arg>
+          <arg>4</arg>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="imp2I">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="http://docs.omdoc.org/mmt/checker-test/test-new.mmt-new#881.25.2-995.26.53"/>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+              <om:OMV position="2" name="C/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="4">
+              <om:OMS position="4_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+              <om:OMBVAR>
+                <om:OMV position="4_0" name="A">
+                  <type>
+                    <om:OMV position="4_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="4_2">
+                <om:OMS position="4_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                <om:OMBVAR>
+                  <om:OMV position="4_2_0" name="B">
+                    <type>
+                      <om:OMA position="4_2_0_1">
+                        <om:OMS position="4_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="4_2_0_1_1" name="B/type"/>
+                        <om:OMV position="4_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMBIND position="4_2_2">
+                  <om:OMS position="4_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="Pi"/>
+                  <om:OMBVAR>
+                    <om:OMV position="4_2_2_0" name="C">
+                      <type>
+                        <om:OMA position="4_2_2_0_1">
+                          <om:OMS position="4_2_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                          <om:OMV position="4_2_2_0_1_1" name="C/type"/>
+                          <om:OMV position="4_2_2_0_1_2" name="A"/>
+                          <om:OMV position="4_2_2_0_1_3" name="B"/>
+                        </om:OMA>
+                      </type>
+                    </om:OMV>
+                  </om:OMBVAR>
+                  <om:OMA position="4_2_2_2">
+                    <om:OMS position="4_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                    <om:OMA position="4_2_2_2_1">
+                      <om:OMS position="4_2_2_2_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+                      <om:OMA position="4_2_2_2_1_1">
+                        <om:OMS position="4_2_2_2_1_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMS position="4_2_2_2_1_1_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                        <om:OMV position="4_2_2_2_1_1_2" name="A"/>
+                      </om:OMA>
+                      <om:OMA position="4_2_2_2_1_2">
+                        <om:OMS position="4_2_2_2_1_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMS position="4_2_2_2_1_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                        <om:OMV position="4_2_2_2_1_2_2" name="B"/>
+                      </om:OMA>
+                      <om:OMA position="4_2_2_2_1_3">
+                        <om:OMS position="4_2_2_2_1_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMS position="4_2_2_2_1_3_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                        <om:OMV position="4_2_2_2_1_3_2" name="C"/>
+                      </om:OMA>
+                    </om:OMA>
+                    <om:OMA position="4_2_2_2_2">
+                      <om:OMS position="4_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="4_2_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="ded"/>
+                      <om:OMA position="4_2_2_2_2_2">
+                        <om:OMS position="4_2_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMS position="4_2_2_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOL" name="impl"/>
+                        <om:OMV position="4_2_2_2_2_2_2" name="A"/>
+                        <om:OMA position="4_2_2_2_2_2_3">
+                          <om:OMS position="4_2_2_2_2_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                          <om:OMS position="4_2_2_2_2_2_3_1" base="http://cds.omdoc.org/test-new" module="FOL" name="impl"/>
+                          <om:OMV position="4_2_2_2_2_2_3_2" name="B"/>
+                          <om:OMV position="4_2_2_2_2_2_3_3" name="C"/>
+                        </om:OMA>
+                      </om:OMA>
+                    </om:OMA>
+                  </om:OMA>
+                </om:OMBIND>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS position="0" base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="unknown"/>
+            <om:OMBVAR>
+              <om:OMV position="0" name="A/type"></om:OMV>
+              <om:OMV position="1" name="B/type"></om:OMV>
+              <om:OMV position="2" name="C/type"></om:OMV>
+              <om:OMV position="3" name="f/type"></om:OMV>
+              <om:OMV position="4" name="argument/91"></om:OMV>
+              <om:OMV position="5" name="argument/90"></om:OMV>
+              <om:OMV position="6" name="p/type"></om:OMV>
+              <om:OMV position="7" name="argument/89"></om:OMV>
+              <om:OMV position="8" name="argument/88"></om:OMV>
+              <om:OMV position="9" name="q/type"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="11">
+              <om:OMS position="11_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+              <om:OMBVAR>
+                <om:OMV position="11_0" name="A">
+                  <type>
+                    <om:OMV position="11_0_1" name="A/type"/>
+                  </type>
+                </om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="11_2">
+                <om:OMS position="11_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+                <om:OMBVAR>
+                  <om:OMV position="11_2_0" name="B">
+                    <type>
+                      <om:OMA position="11_2_0_1">
+                        <om:OMS position="11_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="11_2_0_1_1" name="B/type"/>
+                        <om:OMV position="11_2_0_1_2" name="A"/>
+                      </om:OMA>
+                    </type>
+                  </om:OMV>
+                </om:OMBVAR>
+                <om:OMBIND position="11_2_2">
+                  <om:OMS position="11_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+                  <om:OMBVAR>
+                    <om:OMV position="11_2_2_0" name="C">
+                      <type>
+                        <om:OMA position="11_2_2_0_1">
+                          <om:OMS position="11_2_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                          <om:OMV position="11_2_2_0_1_1" name="C/type"/>
+                          <om:OMV position="11_2_2_0_1_2" name="A"/>
+                          <om:OMV position="11_2_2_0_1_3" name="B"/>
+                        </om:OMA>
+                      </type>
+                    </om:OMV>
+                  </om:OMBVAR>
+                  <om:OMBIND position="11_2_2_2">
+                    <om:OMS position="11_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+                    <om:OMBVAR>
+                      <om:OMV position="11_2_2_2_0" name="f">
+                        <type>
+                          <om:OMA position="11_2_2_2_0_1">
+                            <om:OMS position="11_2_2_2_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                            <om:OMV position="11_2_2_2_0_1_1" name="f/type"/>
+                            <om:OMV position="11_2_2_2_0_1_2" name="A"/>
+                            <om:OMV position="11_2_2_2_0_1_3" name="B"/>
+                            <om:OMV position="11_2_2_2_0_1_4" name="C"/>
+                          </om:OMA>
+                        </type>
+                      </om:OMV>
+                    </om:OMBVAR>
+                    <om:OMA position="11_2_2_2_2">
+                      <om:OMS position="11_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                      <om:OMS position="11_2_2_2_2_1" base="http://cds.omdoc.org/test-new" module="FOLExt" name="impI"/>
+                      <om:OMA position="11_2_2_2_2_2">
+                        <om:OMS position="11_2_2_2_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="11_2_2_2_2_2_1" name="argument/90"/>
+                        <om:OMV position="11_2_2_2_2_2_2" name="A"/>
+                        <om:OMV position="11_2_2_2_2_2_3" name="B"/>
+                        <om:OMV position="11_2_2_2_2_2_4" name="C"/>
+                        <om:OMV position="11_2_2_2_2_2_5" name="f"/>
+                      </om:OMA>
+                      <om:OMA position="11_2_2_2_2_3">
+                        <om:OMS position="11_2_2_2_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                        <om:OMV position="11_2_2_2_2_3_1" name="argument/91"/>
+                        <om:OMV position="11_2_2_2_2_3_2" name="A"/>
+                        <om:OMV position="11_2_2_2_2_3_3" name="B"/>
+                        <om:OMV position="11_2_2_2_2_3_4" name="C"/>
+                        <om:OMV position="11_2_2_2_2_3_5" name="f"/>
+                      </om:OMA>
+                      <om:OMBIND position="11_2_2_2_2_4">
+                        <om:OMS position="11_2_2_2_2_4_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+                        <om:OMBVAR>
+                          <om:OMV position="11_2_2_2_2_4_0" name="p">
+                            <type>
+                              <om:OMA position="11_2_2_2_2_4_0_1">
+                                <om:OMS position="11_2_2_2_2_4_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                                <om:OMV position="11_2_2_2_2_4_0_1_1" name="p/type"/>
+                                <om:OMV position="11_2_2_2_2_4_0_1_2" name="A"/>
+                                <om:OMV position="11_2_2_2_2_4_0_1_3" name="B"/>
+                                <om:OMV position="11_2_2_2_2_4_0_1_4" name="C"/>
+                                <om:OMV position="11_2_2_2_2_4_0_1_5" name="f"/>
+                              </om:OMA>
+                            </type>
+                          </om:OMV>
+                        </om:OMBVAR>
+                        <om:OMA position="11_2_2_2_2_4_2">
+                          <om:OMS position="11_2_2_2_2_4_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                          <om:OMS position="11_2_2_2_2_4_2_1" base="http://cds.omdoc.org/test-new" module="FOLExt" name="impI"/>
+                          <om:OMA position="11_2_2_2_2_4_2_2">
+                            <om:OMS position="11_2_2_2_2_4_2_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                            <om:OMV position="11_2_2_2_2_4_2_2_1" name="argument/88"/>
+                            <om:OMV position="11_2_2_2_2_4_2_2_2" name="A"/>
+                            <om:OMV position="11_2_2_2_2_4_2_2_3" name="B"/>
+                            <om:OMV position="11_2_2_2_2_4_2_2_4" name="C"/>
+                            <om:OMV position="11_2_2_2_2_4_2_2_5" name="f"/>
+                            <om:OMV position="11_2_2_2_2_4_2_2_6" name="p"/>
+                          </om:OMA>
+                          <om:OMA position="11_2_2_2_2_4_2_3">
+                            <om:OMS position="11_2_2_2_2_4_2_3_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                            <om:OMV position="11_2_2_2_2_4_2_3_1" name="argument/89"/>
+                            <om:OMV position="11_2_2_2_2_4_2_3_2" name="A"/>
+                            <om:OMV position="11_2_2_2_2_4_2_3_3" name="B"/>
+                            <om:OMV position="11_2_2_2_2_4_2_3_4" name="C"/>
+                            <om:OMV position="11_2_2_2_2_4_2_3_5" name="f"/>
+                            <om:OMV position="11_2_2_2_2_4_2_3_6" name="p"/>
+                          </om:OMA>
+                          <om:OMBIND position="11_2_2_2_2_4_2_4">
+                            <om:OMS position="11_2_2_2_2_4_2_4_0" base="http://cds.omdoc.org/foundations" module="LF" name="lambda"/>
+                            <om:OMBVAR>
+                              <om:OMV position="11_2_2_2_2_4_2_4_0" name="q">
+                                <type>
+                                  <om:OMA position="11_2_2_2_2_4_2_4_0_1">
+                                    <om:OMS position="11_2_2_2_2_4_2_4_0_1_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                                    <om:OMV position="11_2_2_2_2_4_2_4_0_1_1" name="q/type"/>
+                                    <om:OMV position="11_2_2_2_2_4_2_4_0_1_2" name="A"/>
+                                    <om:OMV position="11_2_2_2_2_4_2_4_0_1_3" name="B"/>
+                                    <om:OMV position="11_2_2_2_2_4_2_4_0_1_4" name="C"/>
+                                    <om:OMV position="11_2_2_2_2_4_2_4_0_1_5" name="f"/>
+                                    <om:OMV position="11_2_2_2_2_4_2_4_0_1_6" name="p"/>
+                                  </om:OMA>
+                                </type>
+                              </om:OMV>
+                            </om:OMBVAR>
+                            <om:OMA position="11_2_2_2_2_4_2_4_2">
+                              <om:OMS position="11_2_2_2_2_4_2_4_2_0" base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+                              <om:OMV position="11_2_2_2_2_4_2_4_2_1" name="f"/>
+                              <om:OMV position="11_2_2_2_2_4_2_4_2_2" name="p"/>
+                              <om:OMV position="11_2_2_2_2_4_2_4_2_3" name="q"/>
+                            </om:OMA>
+                          </om:OMBIND>
+                        </om:OMA>
+                      </om:OMBIND>
+                    </om:OMA>
+                  </om:OMBIND>
+                </om:OMBIND>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+  </theory>
+</omdoc>
