@@ -40,10 +40,17 @@ class MMTHyperlinkSource extends HyperlinkSource {
             log(id)
             val asset = SideKickParsedData.getParsedData(jEdit.getActiveView).getAssetAtOffset(caretPosition).asInstanceOf[MMTAsset]
             val elemOpt: Option[StructuralElement] = asset match {
-               case a: MMTTermAsset if a.path.isDefined =>
-                  controller.globalLookup.getO(a.path.get)
-               case _ =>
-                  asset.getScope flatMap {home => libraries.Names.resolve(home, id)(controller.localLookup)}
+               case a: MMTObjAsset =>
+                  a.obj match {
+                    case t: objects.Term =>
+                      val tp = controller.pragmatic.pragmaticHead(t)
+                      tp.head flatMap {h =>
+                         controller.globalLookup.getO(h)
+                      }
+                    case _ => None
+                  }
+               case _ => None
+                  //asset.getScope flatMap {home => libraries.Names.resolve(home, id)(controller.localLookup)}
             }
             elemOpt match {
               case None => null

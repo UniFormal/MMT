@@ -54,8 +54,10 @@ class MMTPlugin extends EBPlugin {
    private def customizeEditPane(editPane: EditPane) {
        val ta = editPane.getTextArea
        val painter = ta.getPainter
-       val taExt = new StyleChanger(editPane, "mmt")
+       val sc = new StyleChanger(editPane, "mmt")
+       val taExt = new MMTTextAreaExtension(controller, editPane)
        painter.addExtension(TextAreaPainter.DEFAULT_LAYER, taExt)
+       painter.addExtension(TextAreaPainter.DEFAULT_LAYER, sc)
        val ma = new MMTMouseAdapter(editPane)
        painter.addMouseListener(ma)
 

@@ -2,6 +2,7 @@ package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api._
 import frontend._
+import objects._
 
 import org.gjt.sp.jedit._
 import textarea._
@@ -15,15 +16,37 @@ import java.awt.font.TextAttribute
 class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends TextAreaExtension {
    private def log(msg: String) {controller.report("jedit-painter", msg)}
    private val textArea = editPane.getTextArea
+   private val view = editPane.getView
    private val painter = textArea.getPainter
-   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+   //override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
      //gfx.setColor(java.awt.Color.RED)
      //val height = painter.getLineHeight()
      //val startPoint = textArea.offsetToXY(startOffset)
      //val endPoint = textArea.offsetToXY(endOffset)
      //gfx.fillRect(0, y, 500, height)
-   }
-   //def getToolTipText(xCoord: Int, yCoord: Int) {} 
+   //}
+   override def getToolTipText(xCoord: Int, yCoord: Int): String = {
+      val offset = textArea.xyToOffset(xCoord, yCoord, false)
+      if (offset == -1) return null
+      val as = MMTSideKick.getAssetAtOffset(view,offset)
+      as match {
+         case ta: MMTObjAsset =>
+            ta.obj match {
+              case OMV(n) =>
+                ta.context(n).toString
+              case VarDecl(n, Some(tp), _) =>
+                if (parser.SourceRef.get(tp).isEmpty)
+                  //assuming lack of source reference identifies inferred type
+                  tp.toString
+                else 
+                  null
+              case t: OMA =>
+                  t.toString
+              case _ => null
+            }
+         case _ => null
+      }
+   } 
 }
 
 //to highlight the current expression implement this
