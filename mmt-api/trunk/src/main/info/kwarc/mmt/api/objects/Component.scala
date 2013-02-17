@@ -17,7 +17,6 @@ object DeclarationComponent {
     case "pattern" => PatternComponent
     case "matches" => MatchesComponent
     case "metadata" => MetaDataComponent
-    case "forpath" => ForPathComponent
     case s => throw ImplementationError("Invalid Declaration Component name : " + s)
   }
 }
@@ -37,7 +36,6 @@ case object PatternBodyComponent extends DeclarationComponent("pattern-body")
 case object PatternComponent extends DeclarationComponent("pattern")
 case object MatchesComponent extends DeclarationComponent("matches")
 case object MetaDataComponent extends DeclarationComponent("metadata")
-case object ForPathComponent extends DeclarationComponent("forpath")
 
 object TermComponent {
    private val components = List(TypeComponent,DefComponent,DomComponent,CodComponent)

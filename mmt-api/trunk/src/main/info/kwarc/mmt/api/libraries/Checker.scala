@@ -375,7 +375,7 @@ class StructureChecker(controller: Controller) extends Logger {
 //         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>
 //            if (! content.imports(from, h))
 //               throw Invalid(from + " is not imported into " + h + " in " + s)
-//            checkTerm(home, context, OMID(from % ln))
+//            checkTerm(home, context, OMID(from % ln).from(s))
          case OMS(path) =>
             val ceOpt = try {content.getO(path)}
                     catch {case e: GetError =>
@@ -396,7 +396,7 @@ class StructureChecker(controller: Controller) extends Logger {
          case OMA(fun, args) =>
             val funR = checkTerm(home, context, fun)
             val argsR = args map {a => checkTerm(home, context, a)}
-            OMA(funR, argsR)
+            OMA(funR, argsR).from(s)
          case OMBINDC(binder, bound, condition, scope) =>
             val binderR = checkTerm(home, context, binder)
             val boundR = checkContext(home, context, bound)
@@ -438,11 +438,13 @@ class StructureChecker(controller: Controller) extends Logger {
     * if context is valid, then this succeeds iff context ++ con is valid
     */
    def checkContext(home: Term, context: Context = Context(), con: Context)(implicit pCont: Path => Unit) : Context = {
-      con.zipWithIndex map {
-    	  case (VarDecl(name, tp, df, attrs @_*), i) => 
-    	     val tpR = tp.map(x => checkTerm(home, context ++ con.take(i), x)) 
-    	     val dfR = df.map(x => checkTerm(home, context ++ con.take(i), x)) 
-    	     VarDecl(name, tpR, dfR, attrs :_*) //TODO check attribution
+      con.mapVarDecls {case (c, vd @ VarDecl(name, tp, df, attrs @_*)) =>
+             val currentContext = context ++ c 
+    	     val tpR = tp.map(x => checkTerm(home, currentContext, x)) 
+    	     val dfR = df.map(x => checkTerm(home, currentContext, x)) 
+    	     val vdR = VarDecl(name, tpR, dfR, attrs :_*) //TODO check attribution
+    	     vdR.copyFrom(vd)
+    	     vdR
       }
    }
    /**

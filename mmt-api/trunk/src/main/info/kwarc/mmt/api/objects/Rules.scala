@@ -18,6 +18,7 @@ class RuleStore {
    val atomicEqualityRules = new HashMap[ContentPath, AtomicEqualityRule]
    val solutionRules = new HashMap[ContentPath, SolutionRule]
    val forwardSolutionRules = new HashMap[ContentPath, ForwardSolutionRule]
+   val provingRules = new utils.HashMapToSet[ContentPath, ProvingRule]
    
    /** add some Rule to this RuleStore */
    def add(rs: Rule*) {
@@ -30,6 +31,7 @@ class RuleStore {
          case r: AtomicEqualityRule => atomicEqualityRules(r.head) = r
          case r: SolutionRule => solutionRules(r.head) = r
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
+         case r: ProvingRule => provingRules(r.head) += r
       }
    }
    def add(rs: RuleSet) {
@@ -191,11 +193,40 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the term that contains the unknown to be solved
     *  @param tm2 the second term 
-    *  @param tpOpt their type, if known
-    *  @param context their context
+    *  @param stack the context
     *  @return false if this rule is not applicable;
     *    if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack): Boolean
+}
+
+/** apply/unapply methods for missing terms of known type */
+object Hole {
+  private val cd = DPath(utils.URI("http","cds.omdoc.org") / "omdoc" / "mmt.omdoc") ? "Errors"
+  private val missing = OMID(cd ? "missing")
+  def apply(t: Term) = OME(missing, List(t))
+  def unapply(t: Term) : Option[Term] = t match {
+     case OME(this.missing, List(t)) => Some(t)
+     case _ => None
+  }
+} 
+/** A continuation returned by [[info.kwarc.mmt.api.objects.ProvingRule]] */
+abstract class ApplicableProvingRule {
+  def label: String
+  def apply() : Term
+}
+
+/** A ProvingRule tries to find a term of a given type
+ * 
+ * ProvingRules do not call back to the Solver.
+ * Instead, they perform a single prove step and return a Term with holes indicating subgoals.  
+ */
+abstract class ProvingRule(val head: GlobalName) extends Rule {
+   /** 
+    * @param tp the type
+    * @param stack the context
+    * @return if applicable, a continuation that applies the rule
+    */
+   def apply(tp: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
 }

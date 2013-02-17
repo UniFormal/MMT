@@ -65,6 +65,14 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
    def head : Option[ContentPath]
    /** the governing path required by Content is the head, if any */
    def governingPath = head
+   /** replaces metadata of this with those of o
+    * 
+    * @param o the original object
+    * call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata 
+    */
+   def copyFrom(o: Obj) {
+      metadata = o.metadata
+   }
 }
 
 trait MMTObject {
@@ -103,14 +111,12 @@ sealed abstract class Term extends Obj {
    /** This permits the syntax term % sym for path composition */
    def %(n: LocalName) : GlobalName = GlobalName(this,n)
    def %(n: String) : GlobalName = GlobalName(this,LocalName(n))
-   /** replaces metadata of this with those of o
+   /** applies copyFrom and returns this
     * 
-    * @param o the original object
-    * @return this object with replaced metadata
-    * call o2.from(o1) after transforming o1 into o2 in order to preserve metadata 
+    * @return this object but with the metadata from o
     */
    def from(o: Term): Term = {
-      metadata = o.metadata
+      copyFrom(o)
       this
    }
 }
@@ -255,7 +261,7 @@ case class OMV(name : LocalName) extends Term {
    override def toString = name.toString
    def ^(sub : Substitution) =
 	   sub(name) match {
-	  	   case Some(t: Term) => t
+	  	   case Some(t: Term) => t.from(this)
 	  	   case Some(_) => 
 	  	     throw SubstitutionUndefined(name, "substitution is applicable but does not provide a term")
 	  	   case None => this
@@ -281,7 +287,7 @@ case class OME(error : Term, args : List[Term]) extends Term {
       <om:OMA>{error.toNodeID(pos + 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub)).from(this)
+   def ^(sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = error.freeVars_ ::: args.flatMap(_.freeVars_)   
    def toCML = <m:apply>{error.toCML}{args.map(_.toCML)}</m:apply>
 }

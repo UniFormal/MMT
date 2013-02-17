@@ -18,9 +18,16 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    val attrs = ats.toList
    /** self-written copy method that does not allow changing attributions
     * (because sequence arguments and copy do not work together) */
-   def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) =
-      VarDecl(name, tp, df, ats:_*)
-   def ^(sub : Substitution) = VarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
+   def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) = {
+      val vd = VarDecl(name, tp, df, ats:_*)
+      vd.copyFrom(this)
+      vd
+   }
+   def ^(sub : Substitution) = {
+      val vd = VarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
+      vd.copyFrom(this)
+      vd
+   }
    private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil) 
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
@@ -75,6 +82,15 @@ case class Context(variables : VarDecl*) extends Obj {
       }
       Context(newvars : _*)
    }
+   /** applies a function to each VarDecl, each time in the respective context
+    * @return the list of results
+    */
+   def mapVarDecls[A](f: (Context,VarDecl) => A): List[A] = {
+      variables.zipWithIndex.toList map {case (vd, i) =>
+         val con = Context(variables.take(i) : _*)
+         f(con, vd)
+      }
+   }
    
    /** substitutes in all variable declarations except for the previously declared variables
     *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
@@ -117,7 +133,11 @@ case class Context(variables : VarDecl*) extends Obj {
 
 /** a case in a substitution */		
 case class Sub(name : LocalName, target : Term) extends Obj {
-   def ^(sub : Substitution) = Sub(name, target ^ sub)
+   def ^(sub : Substitution) = {
+     val s = Sub(name, target ^ sub)
+     s.copyFrom(this)
+     s
+   }
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
    def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos + 1)}</om:OMV>
