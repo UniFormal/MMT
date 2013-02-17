@@ -171,3 +171,21 @@ object Initial extends AtomicEqualityRule(Apply.path) {
          }*/
    }
 }
+
+/** the proof step ?:Pi x:A.B ----> lambda x:A.(?:B)
+ 
+ * This rule works for any universe U
+ */
+object PiProve extends ProvingRule(Pi.path) {
+   def apply(tp: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
+      tp match {
+        case Pi(x,a,b) =>
+           val cont = new ApplicableProvingRule {
+             def label = "pi introduction"
+             def apply = Lambda(x,a,Hole(b))
+           }
+           Some(cont)
+        case _ => None
+      }
+   }
+}
