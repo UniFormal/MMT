@@ -51,7 +51,7 @@ object Extractor {
      result
    }
 
-   def getGlobalName(t: DeclaredTheory, c: Constant) : String = "base ? \"" + t.name + "\" ? \"" + c.name + "\""
+   def getGlobalName(t: DeclaredTheory, c: Constant) : String = "_base ? \"" + t.name + "\" ? \"" + c.name + "\""
 
    def getParameters(str : String) : Int = {
      var braces = 0
