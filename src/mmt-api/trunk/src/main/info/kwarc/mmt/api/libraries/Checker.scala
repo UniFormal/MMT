@@ -178,7 +178,7 @@ class StructureChecker(controller: Controller) extends Logger {
                   errorCont(InvalidElement(i,"invalid pattern: " + i.pattern,e))
                   None
             }
-            ptOpt foreach {pt => checkSubstitution(i.home, i.matches, pt.params, Context())}
+            ptOpt foreach {pt => checkSubstitution(i.home, pt.getSubstitution(i), pt.params, Context())}
             //TODO mihnea's instances already refer to their elaboration in their matches
             
 /*        case a : Alias =>

@@ -30,10 +30,18 @@ object AbstractObjectParser {
      closer(scope.toMPath)
      val includes = controller.library.visible(scope)
      val decls = includes.toList flatMap {tm =>
-        controller.localLookup.getDeclaredTheory(tm.toMPath).getConstants
+        controller.localLookup.getDeclaredTheory(tm.toMPath).getDeclarations
      }
-     decls.flatMap {c =>
-        c.not.toList ::: List(new TextNotation(c.path, List(Delim(c.path.last)), presentation.Precedence.neginfinite))
+     decls.flatMap {
+        case c: Constant =>
+           var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
+           if (c.name.last == "_") names ::= c.name.init.toString
+           //the unapplied notations consisting just of the name 
+           val nots = names map (n => new TextNotation(c.path, List(Delim(n)), presentation.Precedence.neginfinite))
+           c.not.toList ::: nots
+        case p: patterns.Pattern =>
+           p.not.toList
+        case _ => Nil
      }
    }
   val unknown = utils.mmt.mmtcd ? "unknown"
@@ -106,7 +114,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    private def makeTerm(te : TokenListElem, boundVars: List[LocalName])(implicit pu: ParsingUnit) : Term = {
       val term = te match {
          case Token(word, _, _) =>
-            val name = LocalName.parse(word.replace(".", "/"))
+            val name = LocalName.parse(word)
             if (boundVars contains name) {
                //single Tokens may be bound variables
                OMV(name)

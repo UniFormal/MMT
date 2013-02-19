@@ -14,8 +14,6 @@ object DeclarationComponent {
     case "codomain" => CodComponent
     case "params" => ParamsComponent
     case "pattern-body" => PatternBodyComponent
-    case "pattern" => PatternComponent
-    case "matches" => MatchesComponent
     case "metadata" => MetaDataComponent
     case s => throw ImplementationError("Invalid Declaration Component name : " + s)
   }
@@ -33,8 +31,6 @@ case object CodComponent  extends DeclarationComponent("codomain")
 // the following components are used only by change management
 case object ParamsComponent extends DeclarationComponent("params")
 case object PatternBodyComponent extends DeclarationComponent("pattern-body")
-case object PatternComponent extends DeclarationComponent("pattern")
-case object MatchesComponent extends DeclarationComponent("matches")
 case object MetaDataComponent extends DeclarationComponent("metadata")
 
 object TermComponent {

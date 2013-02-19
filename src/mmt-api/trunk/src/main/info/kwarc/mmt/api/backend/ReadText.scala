@@ -1032,12 +1032,24 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
      // parse the pattern body
      val (body, posAfterPatternBody) = crawlPatternBody(i, patternMPath, parameterContext)
-     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
-
      i = expectNext(posAfterPatternBody, "}")
      i = skipwscomments(i+1)
+         // read the optional notation
+
+    var patternNotation : Option[TextNotation] = None
+    if (flat.codePointAt(i) == '#') {
+      i += 1  // jump over '#'
+      i = skipwscomments(i)
+      val (not, posAfter) = crawlNotation(i, List("."), parent.path ? name)
+      addSourceRef(not, i, posAfter - 1)
+      patternNotation = Some(not)
+      i = posAfter
+      i = skipwscomments(i)
+    }
+
      val endsAt = expectNext(i, ".")
 
+     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body, patternNotation)
      // add the semantic comment and source reference
      addSemanticComment(pattern, oldComment)
      addSourceRef(pattern, start, endsAt)
@@ -1585,20 +1597,13 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      val instancePath = parent % nameI     
 
      
-     var args : List[Term] = Nil
-     while (flat.charAt(i) != '.') {
-        val Pair(t,posAfter) = crawlTerm(i, Nil, List(","), instancePath $ DefComponent, parent)
-        args = args ::: List(t)
-        i = posAfter
+     val Pair(t,posAfter) = crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, parent)
+     val matches = t match {
+        case OMA(OMID(`pattern`), args) => args
+        case _ => throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)
      }
+     i = posAfter
      val endsAt = expectNext(i, ".")
-     // construct a Substitution from matches
-     //TODO check substituted variables here (static ana.) or just store them here as "???" and check later?
-     val subs = args map { x =>
-       Sub(LocalName("???"),x)
-     }
-     val matches = Substitution(subs : _*)
-     
      // add the pattern instance to the parent theory           
       val instance = new Instance(parent, nameI, pattern, matches)
       add(instance)

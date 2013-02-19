@@ -17,7 +17,7 @@ object MetaDataParser extends InDocParser with InTheoryParser {
       val key = sp.readSPath(MetaDatum.keyBase)(s)
       val md = k match {
          case "meta" =>
-            val (_,value) = sp.readParsedObject(OMMOD(MetaDatum.keyBase))(s)
+            val (_,_,value) = sp.readParsedObject(OMMOD(MetaDatum.keyBase))(s)
             new MetaDatum(key,value)
          case "link" =>
             val (u,reg) = s.reader.readToken

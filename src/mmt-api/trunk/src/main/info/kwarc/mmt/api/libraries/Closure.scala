@@ -3,9 +3,11 @@ import info.kwarc.mmt.api._
 import frontend._
 import modules._
 import symbols._
+import patterns._
 
 class Closer(controller: Controller) {
    private val lup = controller.globalLookup
+   private val elab = new InstanceElaborator(controller)
    /**
     * recursive loads all theories included into p
     */
@@ -17,6 +19,7 @@ class Closer(controller: Controller) {
                 case PlainInclude(from, _) => apply(from)
                 case _ =>
              }
+             elab.elaborate(d)
           case _ =>
        }
    }

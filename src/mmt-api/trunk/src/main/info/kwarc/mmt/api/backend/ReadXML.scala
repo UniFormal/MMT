@@ -138,14 +138,15 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
    }
    def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
       val thy = OMMOD(tpath)
-      def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
+      def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : Option[Node], md: Option[MetaData]) {
     	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
     	 	  case Some(par) => Context.parse(par, base)
     	 	  case None      => Context()
     	  }
     	  val cn = Context.parse(con, base)
-    	  val p = new Pattern(thy, name, pr, cn)
+        val notation = xmlNotation.map(TextNotation.parse(_, tpath ? name))
+    	  val p = new Pattern(thy, name, pr, cn, notation)
     	  add(p, md)
       }
       for (s <- symbols) {
@@ -211,14 +212,21 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             readNotations(tpath, base, s)
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, Some(params), decls, md)
+            doPat(name, Some(params), decls, None, md)
+         case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{not}</notation></pattern> =>
+            log("pattern with name " + name + " found")
+            doPat(name, Some(params), decls, Some(not), md)
          case <pattern><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, None, decls, md)         
-         case <instance>{sb}</instance> =>
+            doPat(name, None, decls, None, md)         
+         case <pattern><declarations>{decls}</declarations><notation>{not}</notation></pattern> =>
+            log("pattern with name " + name + " found")
+            doPat(name, None, decls, Some(not), md)         
+         case <instance>{ns @ _*}</instance> =>
             val p = xml.attr(s2,"pattern")
          	log("instance " + name.toString + " of pattern " + p + " found")
-            val inst = new Instance(thy,name,Path.parseS(p,base),Substitution.parse(sb,base))
+         	val args = ns map (Obj.parseTerm(_, base))
+            val inst = new Instance(thy,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
