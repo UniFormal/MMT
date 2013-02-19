@@ -120,7 +120,12 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                makeError("unbound token: " + word, te.region) //actually, this is recoverable
                //OMSemiFormal(objects.Text("unknown", word))
          case Escaped(begin,text,_,pos) =>
-            OMSemiFormal(objects.Text(begin, text))
+            //TODO clean up
+            val r = Reader(text)
+            val (format,_) = r.readToken
+            val (rest,_) = r.readAll
+            r.close
+            OMSemiFormal(objects.Text(format, rest))
          case ml : MatchedList =>
             //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound

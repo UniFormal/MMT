@@ -24,6 +24,7 @@ object Extractor {
    private val base = DPath(utils.URI("http", "mmt.kwarc.info") / "openmath") ? "Base"
    private val fun = OMID(base ? "fun")
    private val seqfun = OMID(base ? "seqfun")
+   private val con = OMID(base ? "constructor")
    
    /* Create unique package name for the OMDoc document */
    def UriToPackage(str : String) : String = {
@@ -89,6 +90,17 @@ object Extractor {
      System.exit(1)
      return -2
    }
+   private val keywords = List("true", "false")
+   private def escape(s:String) = if (keywords.contains(s)) "`" + s + "`" else s
+   def pathToScala(t: Term) = t match {
+      case OMS(p) =>
+        /*
+        val mod = p.module.toMPath
+        val uri = mod.doc.uri
+        (uri.authority.getOrElse("").split("\\.").toList.reverse ::: uri.path).mkString(".") + "." +
+        mod.name.toPath.replace("/",".") + "." + */
+        escape(p.name.toPath.replace("/","."))
+   }
    
    private val imports = """
 import info.kwarc.mmt.api._ 
@@ -103,23 +115,17 @@ import uom._
      out.println(imports)
      out.println("object " + t.name + " {")
      val baseUri = t.parent.uri
-     out.println("  val base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
+     out.println("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
         "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
         baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
         ")"
      )
+     out.println("  val _cd = _base ? \"" + t.name + "\"")
 	  t.getDeclarations foreach {
 	     case c: Constant =>
 	       // called if this Constant is an implementation
           def funConst(args: List[Term], lastIsSeqArg: Boolean) {
-               val implemented = args.head match {
-                  case OMS(p) =>
-                    val mod = p.module.toMPath
-                    val uri = mod.doc.uri
-                    (uri.authority.getOrElse("").split("\\.").toList.reverse ::: uri.path).mkString(".") + "." +
-                    mod.name.toPath.replace("/",".") + "." +
-                    p.name.toPath.replace("/",".")
-               }
+               val implemented = pathToScala(args.head)
                val normalArgs = if (lastIsSeqArg) args.length - 3 else args.length - 2
                var s = (normalArgs,lastIsSeqArg) match {
                   case (0,true)  => "Flexary"
@@ -142,14 +148,31 @@ import uom._
                out.println("  // UOM end")
                out.println("  }")
           }
+          def constrConst(args: List[Term], lastIsSeqArg: Boolean) {
+             val num = args.length-1
+             def boundArgString(n:Int) = Range(1,n).map(i => s"x$i : Term").mkString(", ")
+             def argString(n:Int) = Range(1,n).map(i => s"x$i").mkString(", ")
+             def tpString(n:Int) = Range(1,n).map(i => "Term").mkString(", ")
+             val constr = pathToScala(args.head)
+             val output = 
+             s"  object ${c.name} {\n" +
+             s"    def apply(${boundArgString(num)}) = OMA(OMID($constr), List(${argString(num)}))\n" +
+             s"    def unapply(t: Term): Option[(${tpString(num)})] = t match {\n" +
+             s"      case OMA(OMID($constr), List(${argString(num)})) => Some((${argString(num)}))\n" +
+             s"      case _ => None\n" +
+             s"    }\n" +
+             s"  }\n"
+             out.println(output)
+           }
           // called otherwise
 	       def otherConst {
-               out.println("  val " + c.name + " = "+ getGlobalName(t,c))
+               out.println("  val " + escape(c.name.toString) + " = "+ getGlobalName(t,c))
 	       }
 	       c.tp match {
 	          case Some(term) => term match {
 	             case OMA(this.fun, args) => funConst(args, false)
 	             case OMA(this.seqfun, args) => funConst(args, true)
+	             case OMA(this.con, args) => constrConst(args, false)
 	             case _ => otherConst
 	          }
 	          case _ => otherConst
