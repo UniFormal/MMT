@@ -26,5 +26,9 @@ class MMTInterpolator(controller: frontend.Controller) {
         val t = controller.termParser(pu)
         t ^ sub
       }
+      def uom(ts: Term*): Term = {
+         val t = mmt(ts : _*)
+	      controller.uom.simplify(t)
+      }
    }
 }
