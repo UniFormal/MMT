@@ -155,7 +155,7 @@ import uom._
              def tpString(n:Int) = Range(1,n).map(i => "Term").mkString(", ")
              val constr = pathToScala(args.head)
              val output = 
-             s"  object ${c.name} {\n" +
+             s"\n  object ${c.name} {\n" +
              s"    def apply(${boundArgString(num)}) = OMA(OMID($constr), List(${argString(num)}))\n" +
              s"    def unapply(t: Term): Option[(${tpString(num)})] = t match {\n" +
              s"      case OMA(OMID($constr), List(${argString(num)})) => Some((${argString(num)}))\n" +
