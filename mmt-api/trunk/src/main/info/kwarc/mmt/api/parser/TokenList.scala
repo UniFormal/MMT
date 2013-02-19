@@ -147,8 +147,8 @@ object TokenList {
                // letters, marks, and numbers continue the Token
                case _ if c.isLetter =>
                   current += c
-               // the special MMT delimiters continue a multi-character Token; using . instead of /
-               case _ if (c == '?' || c == '.') && current != "" =>
+               // the special MMT delimiters continue a multi-character Token
+               case _ if (c == '?' || c == '/') && current != "" =>
                   current += c
                case COMBINING_SPACING_MARK | ENCLOSING_MARK | NON_SPACING_MARK =>
                   current += c

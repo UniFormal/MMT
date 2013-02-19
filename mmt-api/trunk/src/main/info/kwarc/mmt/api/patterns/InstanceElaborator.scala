@@ -13,44 +13,41 @@ import scala.io.Source
 /** elaborates Instance declarations
  * this is also called the pragmatic-to-strict translation
  */
-class InstanceElaborator(controller: Controller) extends Elaborator {
+class InstanceElaborator(controller: Controller) extends Elaborator with Logger {
+   val logPrefix = "elaborator"
    val report = controller.report
    /**
    * returns the elaboration of an instance
    */
    def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) {e match {
-     case inst : Instance => 
-     	val pt : Pattern = controller.globalLookup.getPattern(inst.pattern)
-     	val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
-     	val names = lpair.unzip._1
-     	val subs = lpair.unzip._2  
-        def auxSub(x : Term) = {
-     		x ^ (inst.matches ++ Substitution(subs : _*))  
-     	}
-     	pt.body.map {
-     		case VarDecl(n,tp,df,at @ _*) =>
-     			val nname = inst.name / n
-     			report("elaboration", "generating constant " + nname)
-     			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None,None)
-     			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
-     			cont(c)
-     	} 
-     case _ => ()
-   }
-  }
+      case inst : Instance => 
+        	val pt : Pattern = controller.globalLookup.getPattern(inst.pattern)
+        	val subs = pt.body.map {d => d.name / OMID(inst.home % (inst.name / d.name))} //TODO Check c.c1
+         def auxSub(x : Term) = {
+        		x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
+        	}
+        	pt.body.foreach {case VarDecl(n,tp,df,at @ _*) =>
+        			val nname = inst.name / n
+        			log("generating constant " + nname)
+        			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None,None)
+        			c.setOrigin(InstanceElaboration(inst.path))
+        			cont(c)
+        	}
+      case _ =>
+  }}
   
   /**
    * elaborates all instances in a theory and inserts the elaborated constants into the containing theory
    */
   def elaborate(thy: DeclaredTheory) {
-     thy.getDeclarations foreach {
-        case i : Instance =>
+     thy.getInstances foreach {i =>
+        if (i.getOrigin != Elaborated) {
            i.setOrigin(Elaborated)
            apply(i) {
               case s: Symbol => thy.add(s)
               case _ => //does not occur
            }
-        case c @ _ => c 
+        }
      }
   }
 }

@@ -12,28 +12,11 @@ import collection.immutable.{HashSet, HashMap}
 
 /** an Elaborator takes a StructuralElement and produces further StructuralElement that are the result of elaborating the former */
 abstract class Elaborator {
-  /** @param e the StructuralElement that is elaborated
-   * @param cont a function that is applied to each produced StructuralElement */
-
-  def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit
-
-  protected def rewrite(t : Term)(implicit rules : HashMap[Path,Term]) : Term = t match {
-    case OMID(path) => rules.get(path) match {
-      case None => t
-      case Some(tm) => tm
-    }
-    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
-    case OMBINDC(b, context, condition, body) =>
-      val nwctx = Context(context.variables.map(v =>
-        VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite), v.attrs.map(p => (p._1, rewrite(p._2))) :_*)
-      ) :_ *)
-      OMBINDC(rewrite(b), nwctx, condition.map(rewrite), rewrite(body))
-    case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))
-    case OME(err, args) => OME(rewrite(err), args.map(rewrite))
-    case OMATTR(arg, key, value) => OMATTR(rewrite(arg), key, rewrite(value)) //TODO maybe handle key (here) & uri (below)
-    case OMREF(uri, value) => OMREF(uri, value.map(rewrite))
-    case _ => t
-  }
+  /**
+   * @param e the StructuralElement that is elaborated
+   * @param cont a function that is applied to each produced StructuralElement
+   */
+   def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit)
 }
 
 /**
@@ -54,6 +37,23 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
     println("decls : " + decls)
   }
 
+  private def rewrite(t : Term)(implicit rules : HashMap[Path,Term]) : Term = t match {
+    case OMID(path) => rules.get(path) match {
+      case None => t
+      case Some(tm) => tm
+    }
+    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
+    case OMBINDC(b, context, condition, body) =>
+      val nwctx = Context(context.variables.map(v =>
+        VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite), v.attrs.map(p => (p._1, rewrite(p._2))) :_*)
+      ) :_ *)
+      OMBINDC(rewrite(b), nwctx, condition.map(rewrite), rewrite(body))
+    case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))
+    case OME(err, args) => OME(rewrite(err), args.map(rewrite))
+    case OMATTR(arg, key, value) => OMATTR(rewrite(arg), key, rewrite(value)) //TODO maybe handle key (here) & uri (below)
+    case OMREF(uri, value) => OMREF(uri, value.map(rewrite))
+    case _ => t
+  }
 
   private def etaReduce(t : Term) : Term = {  //TODO check context
     t match {

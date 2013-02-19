@@ -4,6 +4,7 @@ import frontend._
 import documents._
 import modules._
 import symbols._
+import patterns._
 import objects._
 
 import scala.collection.mutable.{ListMap,HashMap}
@@ -259,7 +260,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val (obj, reg) = state.reader.readObject
       val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, Context(), obj)
       val parsed = puCont(pu)
-      (obj,parsed)
+      (obj,reg,parsed)
    }
   
    /** the main loop for reading declarations that can occur in documents
@@ -280,7 +281,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val to = readMPath(vpath)
                readDelimiter("abbrev", "=") match {
                   case "abbrev" =>
-                     val (_,df) = readParsedObject(OMMOD(vpath))
+                     val (_,_,df) = readParsedObject(OMMOD(vpath))
                      val thy = new DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
                      seCont(thy)
                   case "=" =>
@@ -328,7 +329,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                seCont(mref)
                var delim = state.reader.readToken
                if (delim._1 == "abbrev") {
-                  val (_,df) = readParsedObject(OMMOD(tpath))
+                  val (_,_,df) = readParsedObject(OMMOD(tpath))
                   val thy = new DefinedTheory(ns, name, df)
                   seCont(thy)
                } else {
@@ -401,13 +402,14 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       try {
          val (keyword, reg) = state.reader.readToken
          state.startPosition = reg.start
+         def fail(s: String) = throw makeError(reg,s)
          keyword match {
             //this case occurs if we read the GS or marker
             case "" =>
                if (state.reader.endOfModule) {
                   return
                } else
-                  throw makeError(reg, "keyword expected, within theory " + thy.path).copy(fatal = true)
+                  fail("keyword expected, within theory " + thy.path)
             //Constant
             case "constant" =>
                val name = readName
@@ -425,16 +427,17 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             //Pattern
             case "pattern" =>
                val name = readName
+               
                //TODO
             //Instance
             case "instance" =>
                val name = readName
                thy.meta match {
                   case None =>
-                     throw makeError(reg, "instance declaration illegal without meta-theory")
+                     fail("instance declaration illegal without meta-theory")
                   case Some(mt) =>
                      val pattern = readSPath(mt)
-                     readInstance(name, pattern)
+                     readInstance(name, thy.path, pattern)
                }
             case k =>
                // other keywords are treated as ...
@@ -443,7 +446,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   // 1) an instance of a Pattern with LocalName k visible in meta-theory 
                   val pattern = patOpt.get._2
                   val name = readName
-                  readInstance(name, pattern)
+                  readInstance(name, thy.path, pattern)
                } else {
                   val parsOpt = inTheoryParsers.get(k)
                   if (parsOpt.isDefined) {
@@ -496,7 +499,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          } else {
             def doComponent(c: DeclarationComponent, tc: TermContainer) {
-               val (obj,tm) = readParsedObject(OMMOD(tpath))
+               val (obj,_,tm) = readParsedObject(OMMOD(tpath))
                tc.read = obj
                tc.parsed = tm
             }
@@ -536,8 +539,15 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val c = new Constant(OMMOD(tpath), name, al, tpC, dfC, None, nt)
       seCont(c)
    }
-   private def readInstance(name: LocalName, pattern: GlobalName)(implicit state: ParserState) {
-      
+   private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
+      val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
+      tm match {
+         case OMA(OMID(`pattern`), args) =>
+            val instance = new Instance(OMMOD(tpath), name, pattern, args)
+            seCont(instance)
+         case _ =>
+            throw makeError(reg, "not an instance of pattern " + pattern.toPath)
+      }
    }
    
    private def readInView(view: DeclaredView)(implicit state: ParserState) {
@@ -560,7 +570,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             case "include" =>
                val from = readMPath(view.path)
                readDelimiter(":=")
-               val (_,mor) = readParsedObject(view.to)
+               val (_,_,mor) = readParsedObject(view.to)
                val as = new DefLinkAssignment(view.toTerm, LocalName.Anon, from, mor)
                seCont(as)
             //Pattern

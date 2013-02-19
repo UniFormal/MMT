@@ -36,7 +36,7 @@ object Functor {
        controller.globalLookup.getO(view.path ? pat.name) match {
          case Some(a : PatternAssignment) =>
            val subsT = inst.matches.map {
-             case Sub(x,t) => Sub(x,OMM(t,OMMOD(view.path)))            
+             case t => OMM(t,OMMOD(view.path))            
            }
            a.target match {
              case PatternSym(p) => 
@@ -46,7 +46,7 @@ object Functor {
         	       val names = lpair.unzip._1
         	       val subs = lpair.unzip._2  
                   def auxSub(x : Term) = {
-        		      x ^ (inst.matches ++ Substitution(subs : _*))  
+        		      x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
                   }
         	       pt.body.map {
      		   case VarDecl(n,tp,df,at @ _*) =>
