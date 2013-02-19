@@ -15,10 +15,7 @@ class Exporter {
 	def insToNode(out : File, ins : Instance) : scala.xml.Node = {
 		
 	    // get substituting terms
-		val args = ins.matches.components map { x => x match {
-				case Sub(vName : LocalName,subT : Term) => toNode(subT)
-			}
-		}
+	  val args = ins.matches map {x => toNode(x)}
 		
 		// wrap instance declaration
 	  	<instance pattern={ins.pattern.last} name={ins.name.toPath}>
@@ -33,7 +30,9 @@ class Exporter {
 	  t match {
 			case OMV(n) => <var name={n.toPath}/>	
 			case OMS(s) => <app name={s.name.toPath}/>
-			case OMA(OMS(s),args) => <app name={s.name.toPath}> 
+			//TODO have reference p_i hidden in the path or declared separately? 
+			case OMA(OMS(s),args) => <app name={s.name.toPath}>
+									{/* if p_i, produce another node? */}
 									{args map(x => toNode(x))} 
 								</app>
 			case OMBIND(OMS(s),ctx,bd) =>

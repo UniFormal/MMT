@@ -95,10 +95,11 @@ object Main {
            
            // ----------- RUN ----------------------------         
          
-           val theo =  controller.localLookup.getTheory(DPath(utils.URI("http://cds.omdoc.org/foundational")) ? thname) match {
+           println(controller.library.toString)
+           val theo =  controller.localLookup.getTheory(DPath(utils.URI("http://cds.omdoc.org/foundations")) ? thname) match {
          		case d : DeclaredTheory => d
          		case _ => throw TheoryLookupError("attempted retrieving not a DeclaredTheory")
-           }
+           }           
            val tls = new Theory2LogicSyntax()
            println("translating " + thname + " to logic syntax")
            val ls = tls.translateTheory(theo)
