@@ -224,7 +224,7 @@ object TextNotation {
     * a special Notation for utils.mmt.brackets
     * matches ( 1 ) with infinite precedence
     */
-   val bracketNotation = new TextNotation(utils.mmt.brackets, List(Delim("("),Arg(1),Delim(")")), Precedence.infinite)
+   val bracketNotation = new TextNotation(utils.mmt.brackets, List(Delim("("),Arg(1),Delim(")")), Precedence.integer(1000000))
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
