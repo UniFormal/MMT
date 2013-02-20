@@ -142,6 +142,7 @@ object Solve extends SolutionRule(Apply.path) {
              if (t.freeVars contains x) return false
              stack.context(x) match {
                 case VarDecl(_, Some(a), _, _*) => 
+                   //TODO remove x from context
                    solver.checkEquality(t, Lambda(x, a, tm2), None) // tpOpt map {tp => Pi(x,a,tp)}
                 case _ => false
              }
