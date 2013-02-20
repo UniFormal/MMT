@@ -181,7 +181,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
       else
         throw CatalogError("")
     } catch {   // If it doesn't point to a file on the disk, maybe it's a module URI
-      case _ => {
+      case _ : Throwable => {
         uri = new URI(stringUri) 
         if (uriToNamedBlock.isDefinedAt(uri))
           if (asText == true)
@@ -219,13 +219,13 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
           source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
           return lines.mkString("\n")
         } catch {
-          case e => throw FileOpenError("error: file cannot be opened or the encoding is not UTF-8")
+          case e : Throwable => throw FileOpenError("error: file cannot be opened or the encoding is not UTF-8")
         } 
       }
       else
         throw CatalogError("")
     } catch {   // If it doesn't point to a file on the disk, maybe it's a module URI
-      case _ => {
+      case _ : Throwable => {
         uri = new URI(stringUri) 
         if (uriToNamedBlock.isDefinedAt(uri)) {
           val namedBlock = uriToNamedBlock(uri)    // presumably a theory or a view
@@ -243,7 +243,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
             source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
             return lines.mkString("\n").drop(pos._1._2).dropRight(lines.last.length - pos._2._2 - 1)
           } catch {
-            case e => throw FileOpenError(e + "error: file cannot be opened or the encoding is not UTF-8")
+            case e : Throwable => throw FileOpenError(e + "error: file cannot be opened or the encoding is not UTF-8")
           }
         }
         else
@@ -319,7 +319,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     try {
       url = new URI(getPath(document))
     } catch {
-      case _ => throw CatalogError("Invalid URL: " + stringUrl)
+      case _ : Throwable => throw CatalogError("Invalid URL: " + stringUrl)
     }
     if (urlToDocument.isDefinedAt(url))
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + new PrettyPrinter(80,2).format(urlToDocument(url).toOmdoc)
@@ -340,7 +340,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     try {
       url = new URI(getPath(document))
     } catch {
-      case _ => throw CatalogError("Invalid URL: " + stringUrl)
+      case _ : Throwable => throw CatalogError("Invalid URL: " + stringUrl)
     }
     if (urlToDocument.isDefinedAt(url))
       urlToDocument(url).declaredNamespaces.toArray.map(_.toString)
@@ -383,7 +383,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     try {
       url = new URI(getPath(document)).normalize
     } catch {
-      case _ => throw CatalogError("Invalid URL: " + realUrl)
+      case _ : Throwable => throw CatalogError("Invalid URL: " + realUrl)
     }
     
     var toWrite : String = ""
@@ -403,7 +403,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     try {
       out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile),"UTF8"));
     } catch {
-      case e => { log(Time + outFile + ": error: cannot write to file"); System.exit(3) }
+      case e : Throwable => { log(Time + outFile + ": error: cannot write to file"); System.exit(3) }
     }
     out.write(toWrite)
     out.close

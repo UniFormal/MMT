@@ -46,7 +46,7 @@ class FileCrawler(file : File) {
     lines = source.getLines.toArray                          // get all lines from the file
     source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it                           
   } catch {
-    case e => throw FileOpenError("error: file cannot be opened or the encoding is not UTF-8")
+    case e : Throwable => throw FileOpenError("error: file cannot be opened or the encoding is not UTF-8")
   }
   var lineNumber = 0
   for (x <- lines) {
