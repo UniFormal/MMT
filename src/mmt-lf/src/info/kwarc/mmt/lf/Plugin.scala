@@ -7,7 +7,7 @@ class Plugin extends frontend.Plugin {
    val dependencies = List("info.kwarc.mmt.lf.TypedPlugin")
    def init(c: Controller, args: List[String]) {
       val em = c.extman
-      em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow)
+      em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow,PiProve)
       em.pragmaticStore.add(LFHOAS)
    }
 }
