@@ -1,5 +1,8 @@
 package info.kwarc.mmt.jedit
+
 import org.gjt.sp.jedit._
+import textarea._
+
 import errorlist._
 import sidekick._
 
@@ -64,11 +67,30 @@ class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: S
   def getScope = Some(OMID(parent.parent))
 }
 
-// text is the string that is to be completed, items is the list of completions
-class MyCompletion(view : org.gjt.sp.jedit.View, text: String, items: List[String])
+/**
+ * @param text the string that is to be completed
+ * @param items the list of completions
+ */
+class IDCompletion(view : org.gjt.sp.jedit.View, text: String, items: List[String])
   extends SideKickCompletion(view, text, items) {
    // override def insert(index: Int) // this methods modifies the textArea after the user selected a completion
 }
+
+/**
+ * @param text the string that is to be completed
+ * @param items the list of completions
+ */
+class ProverCompletion(view : org.gjt.sp.jedit.View, region: SourceRegion, rules: List[ApplicableProvingRule])
+  extends SideKickCompletion(view, "", rules.map(_.label)) {
+  // this methods modifies the textArea after the user selected a completion
+  override def insert(index: Int) {
+     val newTerm = rules(index)()
+     val ta = view.getEditPane.getTextArea
+     ta.setSelection(new Selection.Range(region.start.offset, region.end.offset))
+     ta.setSelectedText(newTerm.toString)
+  } 
+}
+
 
 class MMTSideKick extends SideKickParser("mmt") with Logger {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
@@ -228,10 +250,24 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    override def supportsCompletion = true
    override def canCompleteAnywhere = true
    // override def getInstantCompletionTriggers : String = ""
+   private val prover = new Prover(controller)
    override def complete(editPane: EditPane, caret : Int) : SideKickCompletion = {
       val textArea = editPane.getTextArea
       val view = editPane.getView
       val asset = MMTSideKick.getAssetAtOffset(view,caret)
+      asset match {
+         case a: MMTObjAsset =>
+                  log("XXXXYYY")
+            a.obj match {
+               case Hole(t) =>
+                  log("XXXX")
+                  val rules = prover.applicable(t)(Stack(Frame(OMID(a.parent.parent), a.context)))
+                  val comp = new ProverCompletion(view, a.region, rules)
+                  return comp
+               case _ =>
+            }
+         case _ => 
+      }
       asset.getScope match {
         case Some(a) =>
            val p = textArea.getCaretPosition
@@ -239,10 +275,10 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
            while (l < p && MMTPlugin.isIDChar(textArea.getText(p - l - 1,1)(0))) {l = l + 1}
            val partialName = textArea.getText(p - l, l)
            val compls = Names.resolve(a, Nil, partialName)(controller.localLookup)
-           new MyCompletion(view, partialName, compls.map(_.completion.toPath))
-        case None => new MyCompletion(view, "", Nil)
+           return new IDCompletion(view, partialName, compls.map(_.completion.toPath))
+        case None => 
       }
-      
+      new IDCompletion(view, "", Nil)
    }
 }
 
