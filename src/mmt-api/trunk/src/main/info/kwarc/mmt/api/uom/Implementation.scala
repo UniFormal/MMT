@@ -11,7 +11,7 @@ class Implementation(constantName : GlobalName, function : List[Term] => Term) e
      try {
         val res = function(args)
         res match {
-          case OMA(OMS(constantName), newArgs) =>
+          case OMA(OMS(this.constantName), newArgs) =>
             if (newArgs == args)
               NoChange
             else
