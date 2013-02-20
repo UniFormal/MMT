@@ -34,6 +34,32 @@ case class SecDelim(s: String, wsAllowed: Boolean = true) extends Delimiter {
    def toNode = <sec-delim wsAllowed={wsAllowed.toString}>{s}</sec-delim>
 }
 
+/** special delimiters that are expanded to a string based on the declaration that the notation occurs in
+ * 
+ * These should never occur in notations that are used by te Scanner. They should be expanded first.
+ */
+abstract class PlaceholderDelimiter extends Delimiter
+
+/**
+ * expands to the name of the instance
+ * 
+ * only legal for notations within patterns
+ */
+case class InstanceName(path: GlobalName) extends PlaceholderDelimiter {
+   val s = if (path.name.length <= 1) "" else path.name.init.toPath
+   def toNode = <delim type="instancename"/>
+}
+
+/**
+ * expands to the name of the symbol
+ * 
+ * useful for repetitive notations that differ only in the name
+ */
+case class SymbolName(path: GlobalName) extends PlaceholderDelimiter {
+   val s = if (path.name.length < 1) "" else path.name.last.toPath
+   def toNode = <delim type="symbolname"/>
+}
+
 /** an argument
  * @param n absolute value is the argument position, negative iff it is in the binding scope
  */
@@ -194,6 +220,8 @@ object TextNotation {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case "" => throw ParseError("not a valid marker")
+         case "%i" => InstanceName(name)
+         case "%n" => SymbolName(name)
          case s: String if s.endsWith("…") =>
             var i = 0
             while (s(i).isDigit) {i+=1}

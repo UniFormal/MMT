@@ -109,11 +109,10 @@ import uom._
 """
 
    def doTheory(t: DeclaredTheory, out: java.io.PrintWriter) {
-     println("Handling theory \"" + t.name  +  "\"")
      /* open and append */
      out.println(UriToPackage(t.parent.toString))
      out.println(imports)
-     out.println("object " + t.name + " {")
+     out.println("object " + t.name + " extends RuleSet {")
      val baseUri = t.parent.uri
      out.println("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
         "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
@@ -121,6 +120,7 @@ import uom._
         ")"
      )
      out.println("  val _cd = _base ? \"" + t.name + "\"")
+     var rules : List[String] = Nil
 	  t.getDeclarations foreach {
 	     case c: Constant =>
 	       // called if this Constant is an implementation
@@ -147,6 +147,7 @@ import uom._
                }
                out.println("  // UOM end")
                out.println("  }")
+               rules ::= c.name.last.toPath
           }
           def constrConst(args: List[Term], lastIsSeqArg: Boolean) {
              val num = args.length-1
@@ -185,7 +186,7 @@ import uom._
             out.println("._")
 	      case _ => 
 	   }
-     println("Done with that theory\n\n")
+     out.println("  val rules = List" + rules.mkString("(",", ", ")"))   
      out.println("\n}\n")
    }
 
