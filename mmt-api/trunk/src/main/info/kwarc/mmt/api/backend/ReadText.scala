@@ -1596,10 +1596,12 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = skipwscomments(i)
      val instancePath = parent % nameI     
 
-     
-     val Pair(t,posAfter) = crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, parent)
+     val Pair(t,posAfter) = if (flat.charAt(i) != ".")
+        crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, parent)
+     else
+        (OMS(pattern), i)
      val matches = t match {
-        case OMA(OMID(`pattern`), args) => args
+        case OMAMaybeNil(OMID(`pattern`), args) => args
         case _ => throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)
      }
      i = posAfter

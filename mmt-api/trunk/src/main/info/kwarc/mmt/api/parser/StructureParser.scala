@@ -540,14 +540,17 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       seCont(c)
    }
    private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
-      val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
-      tm match {
-         case OMA(OMID(`pattern`), args) =>
-            val instance = new Instance(OMMOD(tpath), name, pattern, args)
-            seCont(instance)
-         case _ =>
-            throw makeError(reg, "not an instance of pattern " + pattern.toPath)
+      val args = if (state.reader.endOfDeclaration)
+         Nil
+      else { 
+         val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
+         tm match {
+            case OMAMaybeNil(OMID(`pattern`), args) => args
+            case _ => throw makeError(reg, "not an instance of pattern " + pattern.toPath)
+         }
       }
+      val instance = new Instance(OMMOD(tpath), name, pattern, args)
+      seCont(instance)
    }
    
    private def readInView(view: DeclaredView)(implicit state: ParserState) {

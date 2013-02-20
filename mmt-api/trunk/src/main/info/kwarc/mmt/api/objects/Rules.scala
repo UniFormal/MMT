@@ -61,6 +61,7 @@ case class Stack(frames: List[Frame]) {
 object Stack {
    def apply(f: Frame) : Stack = Stack(List(f))
    def apply(t: MPath) : Stack = empty(OMMOD(t))
+   def apply(t: MPath, c: Context) : Stack = Stack(Frame(OMMOD(t), c))
    def empty(t: Term) : Stack = Stack(Frame(t, Context()))
 }
 
@@ -75,8 +76,8 @@ trait Rule {
 }
 
 /** A RuleSet groups some rules together */
-abstract class RuleSet {
-   val rules: List[Rule]
+trait RuleSet {
+   def rules: List[Rule]
 }
 
 /** An TypingRule checks a term against a type.
@@ -201,19 +202,10 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack): Boolean
 }
 
-/** apply/unapply methods for missing terms of known type */
-object Hole {
-  private val cd = DPath(utils.URI("http","cds.omdoc.org") / "omdoc" / "mmt.omdoc") ? "Errors"
-  private val missing = OMID(cd ? "missing")
-  def apply(t: Term) = OME(missing, List(t))
-  def unapply(t: Term) : Option[Term] = t match {
-     case OME(this.missing, List(t)) => Some(t)
-     case _ => None
-  }
-} 
 /** A continuation returned by [[info.kwarc.mmt.api.objects.ProvingRule]] */
 abstract class ApplicableProvingRule {
   def label: String
+  //def ranking: Int
   def apply() : Term
 }
 
