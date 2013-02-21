@@ -25,6 +25,7 @@ object Extractor {
    private val fun = OMID(base ? "fun")
    private val seqfun = OMID(base ? "seqfun")
    private val con = OMID(base ? "constructor")
+   private val seqcon = OMID(base ? "seqconstructor")
    
    /* Create unique package name for the OMDoc document */
    def UriToPackage(str : String) : String = {
@@ -112,7 +113,7 @@ import uom._
      /* open and append */
      out.println(UriToPackage(t.parent.toString))
      out.println(imports)
-     out.println("object " + t.name + " extends RuleSet {")
+     out.println("object " + t.name + " {")
      val baseUri = t.parent.uri
      out.println("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
         "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
@@ -150,20 +151,33 @@ import uom._
                rules ::= c.name.last.toPath
           }
           def constrConst(args: List[Term], lastIsSeqArg: Boolean) {
-             val num = args.length-1
+             val num = if (lastIsSeqArg) args.length - 2 else args.length - 1
              def boundArgString(n:Int) = Range(1,n).map(i => s"x$i : Term").mkString(", ")
              def argString(n:Int) = Range(1,n).map(i => s"x$i").mkString(", ")
              def tpString(n:Int) = Range(1,n).map(i => "Term").mkString(", ")
              val constr = pathToScala(args.head)
-             val output = 
-             s"\n  object ${c.name} {\n" +
-             s"    def apply(${boundArgString(num)}) = OMA(OMID($constr), List(${argString(num)}))\n" +
-             s"    def unapply(t: Term): Option[(${tpString(num)})] = t match {\n" +
-             s"      case OMA(OMID(`$constr`), List(${argString(num)})) => Some((${argString(num)}))\n" +
-             s"      case _ => None\n" +
-             s"    }\n" +
-             s"  }\n"
-             out.println(output)
+             if (lastIsSeqArg) {
+               val output = 
+               s"\n  object ${c.name} {\n" +
+               s"    def apply(ls: List[Term]) = OMA(OMID($constr), ls)\n" +
+               s"    def unapply(t: Term): Option[List[Term]] = t match {\n" +
+               s"      case OMA(OMID(`$constr`), ls) => Some(ls)\n" +
+               s"      case _ => None\n" +
+               s"    }\n" +
+               s"  }\n"
+               out.println(output)
+             } else {
+               
+               val output = 
+               s"\n  object ${c.name} {\n" +
+               s"    def apply(${boundArgString(num)}) = OMA(OMID($constr), List(${argString(num)}))\n" +
+               s"    def unapply(t: Term): Option[(${tpString(num)})] = t match {\n" +
+               s"      case OMA(OMID(`$constr`), List(${argString(num)})) => Some((${argString(num)}))\n" +
+               s"      case _ => None\n" +
+               s"    }\n" +
+               s"  }\n"
+               out.println(output)
+             }
            }
           // called otherwise
 	       def otherConst {
@@ -174,6 +188,7 @@ import uom._
 	             case OMA(this.fun, args) => funConst(args, false)
 	             case OMA(this.seqfun, args) => funConst(args, true)
 	             case OMA(this.con, args) => constrConst(args, false)
+	             case OMA(this.seqcon, args) => constrConst(args, true)
 	             case _ => otherConst
 	          }
 	          case _ => otherConst
