@@ -159,7 +159,7 @@ import uom._
              s"\n  object ${c.name} {\n" +
              s"    def apply(${boundArgString(num)}) = OMA(OMID($constr), List(${argString(num)}))\n" +
              s"    def unapply(t: Term): Option[(${tpString(num)})] = t match {\n" +
-             s"      case OMA(OMID($constr), List(${argString(num)})) => Some((${argString(num)}))\n" +
+             s"      case OMA(OMID(`$constr`), List(${argString(num)})) => Some((${argString(num)}))\n" +
              s"      case _ => None\n" +
              s"    }\n" +
              s"  }\n"
