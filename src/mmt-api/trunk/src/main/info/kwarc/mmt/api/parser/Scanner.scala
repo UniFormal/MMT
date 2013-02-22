@@ -81,7 +81,9 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                }
          }
    }
-   /** applies the first active notation (precondition: must be applicable) */
+   /** applies the first active notation (precondition: must be applicable)
+    * @param leftOpen notation may be left-open, i.e., it has not been applied before
+    */
    private def applyFirst(leftOpen: Boolean) {
       val an = active.head
       // left-open notations get all Token's that were shifted in the surrounding group
@@ -94,6 +96,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                an.numCurrentTokens = hd.numCurrentTokens
                hd.numCurrentTokens = 0
          }
+         an.applicable(currentToken, currentIndex) //true by invariant but must be called for precondition of an.apply
       }
       log("applying current notation at " + currentToken + ", found so far: " + an)
       resetPicker
@@ -216,7 +219,6 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                         }
                         val an = hd.open(this, currentIndex)
                         active ::= an
-                        an.applicable(currentToken, currentIndex) //true by invariant but must be called for precondition of apply
                         applyFirst(true)
                      case Nil =>
                         //move one token forward
