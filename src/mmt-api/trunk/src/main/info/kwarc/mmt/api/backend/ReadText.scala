@@ -1595,8 +1595,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = positionAfter
      i = skipwscomments(i)
      val instancePath = parent % nameI     
-
-     val Pair(t,posAfter) = if (flat.charAt(i) != ".")
+     val Pair(t,posAfter) = if (flat.charAt(i) != '.')
         crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, parent)
      else
         (OMS(pattern), i)
