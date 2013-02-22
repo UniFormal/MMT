@@ -1,0 +1,29 @@
+%namespace "http://cds.omdoc.org/foundations".
+
+%sig FOL = {
+  %include LF.
+  o : type.
+  sort : type.
+  tm : sort -> type.
+  ded : o -> type.
+
+  %pattern psort = { _ : sort}.
+
+  %pattern fun0 = [a:sort] { _ : tm a.  } # 1.
+
+  %pattern fun1 = [a:sort] [b: sort] { _ : tm a -> tm b.  } # 1 > 2.
+  %pattern pred2 = [ a: sort ] [b:sort] { _: tm A -> tm b -> o. } # on 1 x 2.
+  %pattern axiom = [f:o] {_ : ded f.} # asserts 1.
+}.
+ 
+%sig Ex = {
+ %instance psort a.
+ %instance psort b.
+
+ %instance fun0 c a/_.
+
+ %instance fun1  f a/_ > b/_.
+ %instance pred1 p on a/_ x b/_.
+ %instance axiom a asserts p/_ c/_ (f/_ c/_).
+
+}
