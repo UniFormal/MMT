@@ -127,6 +127,9 @@
 		<copy todir="${deploy.hets}">
 			<fileset file="${build}/${jar-standalone}"/>
 		</copy>
+		<copy todir="">
+			<fileset file="${build}/${jar-standalone}"/>
+		</copy>
 	</target>
 	
 </project>
