@@ -1601,6 +1601,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         (OMS(pattern), i)
      val matches = t match {
         case OMAMaybeNil(OMID(`pattern`), args) => args
+        case f : OMA => List(f)
         case _ => throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)
      }
      i = posAfter
@@ -1614,7 +1615,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   
 }
-
 
 
 
