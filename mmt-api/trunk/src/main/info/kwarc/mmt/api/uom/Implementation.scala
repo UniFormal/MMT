@@ -46,7 +46,7 @@ object Ternary {
    /** convenience factory for functions of type obj x obj x obj -> obj */
    def apply(name: GlobalName)(f: (Term,Term,Term) => Term): Implementation = Flexary(name) {args =>
       if (args.length != 3) throw UOMError("bad number of arguments")
-      f(args(0), args(1), args(3))
+      f(args(0), args(1), args(2))
    }
 }
 object OneAndFlexary {

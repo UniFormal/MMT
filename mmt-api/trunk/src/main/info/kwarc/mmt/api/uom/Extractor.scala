@@ -113,7 +113,7 @@ import uom._
      /* open and append */
      out.println(UriToPackage(t.parent.toString))
      out.println(imports)
-     out.println("object " + t.name + " {")
+     out.println(s"object ${t.name} extends uom.RuleSet {")
      val baseUri = t.parent.uri
      out.println("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
         "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
@@ -201,7 +201,7 @@ import uom._
             out.println("._")
 	      case _ => 
 	   }
-     out.println("  val rules = List" + rules.mkString("(",", ", ")"))   
+     if (rules != Nil) out.println(s"  declares(${rules.mkString(", ")})")   
      out.println("\n}\n")
    }
 
