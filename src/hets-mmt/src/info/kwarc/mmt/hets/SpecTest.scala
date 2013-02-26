@@ -51,8 +51,8 @@ object SpecTest {
          
          //TODO make global
          val controller = new frontend.Controller
-         val uri = new utils.URI(None,None,List(foundational + "?" + filename))
-         controller.handleLine("archive add /home/aivaras/TPTP/MMT/theories")
+         controller.handleLine("file startup.msl")
+         
          val fl = File(new java.io.File(filename))
          if (!(new java.io.File(filename).exists())) {
            println("File " + filename + " does not exist!")
@@ -65,9 +65,7 @@ object SpecTest {
            // parse logic spec
            println("reading logic specification")
            println("\t\t..from file " + filename)
-           val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
-           val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
-           source.close()           
+           val (doc, err) = controller.read(fl, None)
            if (!err.isEmpty) {
         	   println("errors while reading " + filename + " encountered:")
         	   err map println
@@ -86,9 +84,7 @@ object SpecTest {
            }
          } else if (argl contains "-t") {
            println(".... test test ....")
-           val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
-           val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
-           source.close()           
+           val (doc, err) = controller.read(fl,None)
            if (!err.isEmpty) {
         	   println("errors while reading " + filename + " encountered:")
         	   err map println
