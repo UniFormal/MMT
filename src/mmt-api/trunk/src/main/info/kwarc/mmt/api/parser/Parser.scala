@@ -139,13 +139,13 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             val found = ml.an.getFound
             // compute the names of all bound variables, in abstract syntax order
             val newBVars: List[LocalName] = found.mapPartial {
-               case FoundVar(n,_,name,_) => Some((n,LocalName(name.word)))
+               case FoundVar(vm,_,name,_) => Some((vm,LocalName(name.word)))
                case _ => None
-            }.sortBy(_._1).map(_._2)
+            }.sortBy(_._1.n).map(_._2)
             //stores the argument list in concrete syntax order, together with their position in the abstract syntax
             var args : List[(Int,Term)] = Nil 
             //stores the variable declaration list (name + type) in concrete syntax order together with their position in the abstract syntax
-            var vars : List[(Int,Token,Option[Term])] = Nil
+            var vars : List[(Var,Token,Option[Term])] = Nil
             //stores the scope list in concrete syntax order together with their positions in the abstract syntax
             var scopes : List[(Int, Term)] = Nil
             // We walk through found, computing arguments/variable declarations/scopes
@@ -166,14 +166,14 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   val toks = ml.tokens.slice(i, i+fas.length)
                   args = args ::: toks.map(t => (n,makeTerm(t, boundVars)))
                   i += fas.length
-               case FoundVar(n, pos, name, tpOpt) =>
+               case FoundVar(marker, pos, name, tpOpt) =>
                   // a variable declaration, so take one optional TokenListElement for the type
                   val t = tpOpt map {_ =>
                      i += 1
                      //the preceding newBVars are added to the context
-                     makeTerm(ml.tokens(i-1), boundVars ::: newBVars.take(n-1))
+                     makeTerm(ml.tokens(i-1), boundVars ::: newBVars.take(marker.n-1))
                   }
-                  vars ::= (n, name, t) 
+                  vars ::= (marker, name, t)
             }
             val con = ml.an.notation.name
             // hard-coded special case for a bracketed subterm
@@ -207,19 +207,20 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                      finalArgs ::= arg
                   }
                   // order the variables
-                  val orderedVars = vars.sortBy(_._1).map {
-                     case (_, vr, tp) =>
+                  val orderedVars = vars.sortBy(_._1.n).map {
+                     case (vm, vr, tp) =>
                         val vname = LocalName(vr.word)
-                        val finalTp = tp.getOrElse {
+                        val finalTp = if (vm.untyped) None else tp.orElse {
                            //new meta-variable for unknown type
                            val metaVar = newType(vname) 
-                           if (boundVars == Nil)
+                           val t = if (boundVars == Nil)
                               metaVar
                            else
-                           //under a binder, apply meta-variable to all bound variables
-                           prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
+                              //under a binder, apply meta-variable to all bound variables
+                              prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
+                           Some(t)
                         }
-                        val vd = VarDecl(vname, Some(finalTp), None)
+                        val vd = VarDecl(vname, finalTp, None)
                         SourceRef.update(vd, pu.source.copy(region = vr.region))
                         vd
                   }

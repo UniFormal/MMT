@@ -80,12 +80,20 @@ case class SeqArg(n: Int, sep: Delim) extends Marker {
 
 /** a variable binding 
  * @param n the number of the variable
- * @param key the delimiter between the variable name and its type 
+ * @param key the delimiter between the variable name and its type
+ * if key == Delim(""), the variable is untyped
  */
 case class Var(n: Int, key: Delim) extends Marker {
+   def untyped = key.s == ""
    override def toString = n.toString + key + "_"
    def toNode = <var>{n}{key.toNode}</var>
 }
+
+
+object Var {
+   /** special case of Var for untyped variables */
+   def untyped(n: Int) = Var(n, Delim(""))
+} 
 
 /** a sequence variable binding 
  * @param n the number of the sequence variable
@@ -130,6 +138,17 @@ case object OMSNotation extends NotationType
 case class OMANotation(concretePositions: List[Int]) extends NotationType
 case class OMBINDNotation(vars: List[Int], scope: Int) extends NotationType
 
+/**
+ * @param name the symbol to which this notation applies
+ * @param markers the Markers making up the notation
+ * @param precendence the precedence, notations with higher precedence are used first, thus grab larger subterms
+ * 
+ * a typed Var must be preceded by a Delim because Var.key does not trigger the notation
+ * 
+ * not all markers may be Arg because such notations cannot be parsed
+ * 
+ * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
+ */
 class TextNotation(val name: GlobalName, val markers: List[Marker], val precedence: Precedence) extends Notation {
    val wrap = false 
    val oPrec = Some(precedence)
