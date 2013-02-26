@@ -295,8 +295,8 @@ case class FoundSeqArg(n: Int, args: List[FoundArg]) extends Found {
  * @param name the variable name
  * @param tp the found type, if provided 
  */
-case class FoundVar(n: Int, pos: Int, name: Token, tp: Option[FoundArg]) extends Found {
-   override def toString = name.toString + ":" + tp.map(_.toString).getOrElse("_")
+case class FoundVar(marker: Var, pos: Int, name: Token, tp: Option[FoundArg]) extends Found {
+   override def toString = name.toString + marker.key.s + tp.map(_.toString).getOrElse("_")
    def fromTo = if (tp.isEmpty) Some((pos, pos+1)) else Some((pos, tp.get.slice.next))
 }
 /** represents an [[info.kwarc.mmt.api.parser.SeqVar]] that was found

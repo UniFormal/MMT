@@ -144,12 +144,12 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
               } else
                  NotApplicable //abort?
          // variable without type: x t | rest
-         case (Nil, Var(n, Delim(s)) :: Delim(t) :: _) if ! inVar(n) && s != currentToken.word && t == currentToken.word =>
+         case (Nil, (vm @ Var(n, Delim(s))) :: Delim(t) :: _) if ! inVar(n) && s != currentToken.word && t == currentToken.word =>
               if (numCurrentTokens == 1) {
                  onApply {
                     val vr = scanner.pick(1)
                     val name = vr.toList(0).asInstanceOf[Token]
-                    found ::= FoundVar(n, vr.start, name, None)
+                    found ::= FoundVar(vm, vr.start, name, None)
                     delete(1)
                     deleteDelim(currentIndex)
                  }
@@ -157,12 +157,12 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
                  NotApplicable //abort
               }
          // variable with type: x s | type rest
-         case (Nil, Var(n, Delim(s)) :: _) if ! inVar(n) && s == currentToken.word =>
+         case (Nil, (vm @ Var(n, Delim(s))) :: _) if ! inVar(n) && s == currentToken.word =>
               if (numCurrentTokens == 1) {
                  onApply {
                     val vr = scanner.pick(1)
                     val name = vr.toList(0).asInstanceOf[Token]
-                    found ::= FoundVar(n, vr.start, name, None)
+                    found ::= FoundVar(vm, vr.start, name, None)
                  }
               } else {
                  NotApplicable //abort
@@ -171,9 +171,9 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
          case (Nil, Var(n, _) :: Delim(s) :: _) if inVar(n) && s == currentToken.word =>
                  onApply {
                     found match {
-                       case FoundVar(_, pos, name, _) :: tail =>
+                       case FoundVar(vm, pos, name, _) :: tail =>
                           val fa = FoundArg(scanner.pick(numCurrentTokens), n)
-                          found = FoundVar(n, pos, name, Some(fa)) :: tail
+                          found = FoundVar(vm, pos, name, Some(fa)) :: tail
                           delete(1)
                           deleteDelim(currentIndex)
                        case _ => // impossible
