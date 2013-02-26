@@ -2,9 +2,9 @@
 
 %sig PL : LF = {
   bool : type.
-  or : bool → bool → bool # 1 ∨ 2,10.
-  and : bool → bool → bool # 1 ∧ 2,10.
-  equiv : bool → bool → bool = [x:bool][y:bool] x ∨ y # 1 ⇔ 2,10.
+  or : bool → bool → bool # 1 ∨ 2 prec 10.
+  and : bool → bool → bool # 1 ∧ 2 prec 10.
+  equiv : bool → bool → bool = [x:bool][y:bool] x ∨ y # 1 ⇔ 2 prec 10.
   
   ded : bool → type # ded 1.
   
@@ -12,5 +12,4 @@
   andEl : {A:bool}{B:bool} ded A ∧ B → ded A            # andEl 3.
   andEr : {A:bool}{B:bool} ded A ∧ B → ded B            # andEr 3.
   
- %% comm : {A:bool}{B:bool} ded A ∧ B → ded B ∧ A = [A:bool][B:bool][p: ded A ∧ B] andI (andEr p) (andEl p). 
 }.

@@ -9,8 +9,10 @@
 }%
 
 %spec SP : PLpatt = {
+
+  %instance axiom a1 asserts true ∨ false.
   %instance prop p1.
   %instance prop p2.
-  %instance axiom a1 true ∨ false.
-  %instance axiom a2 true ∧ false.
+  %instance axiom a2 asserts true ∧ false.
+  %instance axiom a3 asserts p1/p.
 }.
