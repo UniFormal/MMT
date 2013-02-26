@@ -34,20 +34,18 @@ import info.kwarc.mmt.api.frontend._ // for report
 
 object SpecTest {
   
-   val latinbase = "http://latin.omdoc.org/logics/syntax"
-   val foundational = "http://cds.omdoc.org/foundations"  
-  
    def main(args: Array[String]) {
      
      if (args.length == 0) {
-    	 println("No arguments given. Expecting [flag] [filepath] arguments.\nTerminating.")
+    	 println("No arguments given. Expecting 'flag filepath' [-outDir filepath] arguments.\nTerminating.")
     	 return
      } 
-     
-       try {         
+     try {         
          val flag = args(0)
          println("flag: " + flag)
          val filename = args(1) // take first argument - file name of the source
+         var outDir = "../../theories/source/hets-test"
+         if (args.contains("-outDir")) { outDir = args(args.length - 1) }                    
          
          //TODO make global
          val controller = new frontend.Controller
@@ -76,11 +74,7 @@ object SpecTest {
                case t:DeclaredTheory => Some(t)
                case _ => None
              } }.head   
-//             println(q.components.map(x => x.toString()))
-//             doc.getModulesResolved(controller.localLookup) foreach {
-//             	case t:DeclaredTheory => println(t.toString())
-//             }      
-             ExporterTest.main("/home/aivaras/TPTP/MMT/theories/source/hets-test", q)
+             ExporterTest.main(outDir, q)
            }
          } else if (argl contains "-t") {
            println(".... test test ....")
@@ -99,21 +93,12 @@ object SpecTest {
            }
            println(th.toString())
          }
-         
-         
        } // <------------ end of main
+       
       catch {
         case e : java.lang.ArrayIndexOutOfBoundsException => println("Error: array index out of bounds")
         													e.printStackTrace()
-        													
-        case e : java.lang.OutOfMemoryError => println("ran out of memory!") 
-        										e.printStackTrace()
-//
-//        case e : FileNotFoundException => println("no such file: " + args(0) + ", check spelling")
-//        case e : IOException => println("IO exception")
-//        case e => println("unknown error:")
-//        				throw e
-//        				e.printStackTrace()
+        case e : Throwable => println("unknown error at SpecTest:"); throw e
       }
        
      
