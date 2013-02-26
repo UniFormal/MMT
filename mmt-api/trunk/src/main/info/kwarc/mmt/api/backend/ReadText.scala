@@ -1534,9 +1534,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   private def crawlSpecBody(start: Int, parent: DeclaredTheory) : Int =
   {
     var i = start + 1       // jump over '{'
-    keepComment = None          // reset the last semantic comment stored
+    keepComment = None          // reset the last semantic comment store/
     i = skipwscomments(i)       // check whether there is a new semantic comment
-    var foundMeta = false
+     
     
     // parent theorem
     var thm : Term = null
@@ -1555,10 +1555,11 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       else if (flat.startsWith("%instance", i)) {
         // read pattern instance
         i = skipws(crawlKeyword(i, "%instance"))
+        val meta = parent.meta.getOrElse(throw TextParseError(toPos(i), "instance declaration reuqires meta-theory") )
         val (name, positionAfter) = crawlIdentifier(i)
         i = positionAfter
         i = skipwscomments(i)
-        val pattern = parent.path ? name
+        val pattern = meta ? name
         i = crawlInstanceDeclaration(i, parent.toTerm, pattern)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
@@ -1595,14 +1596,17 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = positionAfter
      i = skipwscomments(i)
      val instancePath = parent % nameI     
-     val Pair(t,posAfter) = if (flat.charAt(i) != '.')
+     val Pair(t,posAfter) = if (flat.charAt(i) != '.') {
         crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, parent)
+     }
      else
         (OMS(pattern), i)
      val matches = t match {
-        case OMAMaybeNil(OMID(`pattern`), args) => args
-        case f : OMA => List(f)
-        case _ => throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)
+        case OMA(OMID(`pattern`), args) => args
+        case OMID(`pattern`) => Nil
+//        case f : OMA => List(f)
+        case _ => { println(t.toString())
+        throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)}
      }
      i = posAfter
      val endsAt = expectNext(i, ".")
