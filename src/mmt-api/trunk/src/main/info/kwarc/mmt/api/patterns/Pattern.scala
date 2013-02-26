@@ -25,6 +25,10 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
    		   <parameters>{params.toNode}</parameters>
    		else Nil}
    	   <declarations>{body.toNode}</declarations>
+       {if (! not.isEmpty)
+          <notation>{not.get.toNode}</notation>
+       else Nil
+       }
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
    override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("conBegin",params.length + 1)) 
