@@ -92,7 +92,14 @@ object Extractor {
      return -2
    }
    private val keywords = List("true", "false")
-   private def escape(s:String) = if (keywords.contains(s)) "`" + s + "`" else s
+   private val reserved = List("eq")
+   private def escape(s:String) = {
+      if (keywords.contains(s))
+        "`" + s + "`"
+      else if (reserved.contains(s))
+        "om_" + s
+        else s
+   }
    def pathToScala(t: Term) = t match {
       case OMS(p) =>
         /*
