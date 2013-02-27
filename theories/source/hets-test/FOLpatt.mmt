@@ -1,13 +1,13 @@
 %namespace "http://cds.omdoc.org/foundations".
 
-%sig FOL = {
+%sig FOLpatt = {
   %include LF.
   o : type.
   sort : type.
   tm : sort → type.
   ded : o → type.
 
-  %pattern psort = { _ : sort. }.
+  %pattern sort0 = { _ : sort. }.
 
   %pattern fun0 = [a:sort] { _ : tm a.  } # 1.
 
@@ -17,8 +17,8 @@
 }.
  
 %sig Ex = {
- %instance psort a.
- %instance psort b.
+ %instance sort0 a.
+ %instance sort0 b.
 
  %instance fun0 c a/_.
 
