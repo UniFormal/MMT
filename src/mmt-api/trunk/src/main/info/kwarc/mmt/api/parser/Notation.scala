@@ -10,13 +10,13 @@ import presentation._
 
 /** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {
-  def toNode : scala.xml.Node
-  override def toString : String
+   override def toString : String
 }
 
 /** Markers that are delimiters */
 sealed abstract class Delimiter extends Marker {
    val s: String
+   def text = s
 }
 
 /** a delimiter
@@ -24,14 +24,12 @@ sealed abstract class Delimiter extends Marker {
  */
 case class Delim(s: String) extends Delimiter {
    override def toString = s
-   def toNode = <delim>{s}</delim>
 }
 /** a delimiter
  * @param s the delimiting String
  */
 case class SecDelim(s: String, wsAllowed: Boolean = true) extends Delimiter {
    override def toString = (if (wsAllowed) "" else "_") + s
-   def toNode = <sec-delim wsAllowed={wsAllowed.toString}>{s}</sec-delim>
 }
 
 /** special delimiters that are expanded to a string based on the declaration that the notation occurs in
@@ -47,7 +45,6 @@ abstract class PlaceholderDelimiter extends Delimiter
  */
 case class InstanceName(path: GlobalName) extends PlaceholderDelimiter {
    val s = if (path.name.length <= 1) "" else path.name.init.toPath
-   def toNode = <delim type="instancename"/>
 }
 
 /**
@@ -57,54 +54,34 @@ case class InstanceName(path: GlobalName) extends PlaceholderDelimiter {
  */
 case class SymbolName(path: GlobalName) extends PlaceholderDelimiter {
    val s = if (path.name.length < 1) "" else path.name.last.toPath
-   def toNode = <delim type="symbolname"/>
 }
 
 /** an argument
  * @param n absolute value is the argument position, negative iff it is in the binding scope
  */
-case class Arg(n: Int) extends Marker {
-   override def toString = n.toString
-   def by(s:String) = SeqArg(n,Delim(s))
-   def toNode = <arg>{n}</arg>
+case class Arg(number: Int) extends Marker {
+   override def toString = number.toString
+   def by(s:String) = SeqArg(number,Delim(s))
 }
 
 /** a sequence argument 
  * @param n absolute value is the argument position, negative iff it is in the binding scope
  * @param sep the delimiter between elements of the sequence 
  */
-case class SeqArg(n: Int, sep: Delim) extends Marker {
-   override def toString = n.toString + sep + "…"
-   def toNode = <seq-arg>{n}{sep.toNode}</seq-arg>
+case class SeqArg(number: Int, sep: Delim) extends Marker {
+   override def toString = number.toString + sep + "…"
 }
 
 /** a variable binding 
  * @param n the number of the variable
- * @param key the delimiter between the variable name and its type
- * if key == Delim(""), the variable is untyped
+ * @param typed true if the variable carries a type (to be inferred if omitted)
+ * @param sep if given, this is a variable sequence with this separator;
+ *   for typed variables with the same type, only the last one needs a type 
  */
-case class Var(n: Int, key: Delim) extends Marker {
-   def untyped = key.s == ""
-   override def toString = n.toString + key + "_"
-   def toNode = <var>{n}{key.toNode}</var>
+case class Var(number: Int, typed: Boolean, sep: Option[Delim]) extends Marker {
+   override def toString = "V" + number.toString + (if (typed) "T" else "") + (sep.map(_.toString + "…").getOrElse(""))
 }
 
-
-object Var {
-   /** special case of Var for untyped variables */
-   def untyped(n: Int) = Var(n, Delim(""))
-} 
-
-/** a sequence variable binding 
- * @param n the number of the sequence variable
- * @param key the delimiter between the variable name and its type
- * @param sep the delimiter between two consecutive variable bindings 
- */
-//TODO: currently not parsed
-case class SeqVar(n: Int, key: Delim, sep: Delim) extends Marker {
-   override def toString = Var(n,key).toString + sep + "…"
-   def toNode = <seq-var>{n}{key.toNode}{sep.toNode}</seq-var>
-}
 
 /**
  * helper object 
@@ -160,8 +137,7 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
          case _ => None
       }
       val boundVars = markers mapPartial {
-         case Var(n, _) => Some(n)
-         case SeqVar(n, _, _) => Some(n)
+         case Var(n, _, _) => Some(n)
          case _ => None
       }
       val scopes = markers mapPartial {
@@ -188,12 +164,12 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
     		  						 NumberedIndex(-1),  
     		  						 OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
     		  						 oPrec.map(_.weaken)) //TODO fix indexes for sequence arguments 
-       case Var(n, key) => Component(NumberedIndex(n), None) //TODO Use Key
-       case SeqVar(n, key, sep) => Iterate(
+       case Var(n, typed, sep) => Component(NumberedIndex(n), None) //TODO Use Key
+       /*case SeqVar(n, key, sep) => Iterate(
            NumberedIndex(2),
            NumberedIndex(-2), 
            OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
-           oPrec.map(_.weaken))
+           oPrec.map(_.weaken)) */
      }
      presentation.PList(tokens)
    }
@@ -202,10 +178,7 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
   
    override def toString = "Notation for " + name + ": " + markers.map(_.toString).mkString(" ")
    def toNode = 
-     <text-notation name={name.toPath} precedence={precedence.toString}>
-       {markers.map(_.toNode)}
-     </text-notation>
-
+     <text-notation name={name.toPath} precedence={precedence.toString} markers={markers.map(_.toString).mkString(" ")}/>
    // the first delimiter of this notation
    private val firstDelimString : Option[String] = markers mapFind {
       case d: Delimiter => Some(d.s)
@@ -238,101 +211,74 @@ object TextNotation {
    def apply(name: GlobalName, prec: Precedence)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
-         case "" => throw ParseError("not a valid marker")
+         case m: Marker => m
          case "%i" => InstanceName(name)
          case "%n" => SymbolName(name)
+         case s: String if s.startsWith("V") =>
+            //Vn ---> variable
+            var i = 1
+            while (s(i).isDigit) {i+=1}
+            val n = s.substring(1,i).toInt
+            val d = s.substring(i)
+            if (d == "")
+               //Vn ---> untyped, no sequence
+               Var(n, false, None)
+            else if (d == "T")
+               //VnT ---> typed, no sequence
+               Var(n, true, None)
+            else if (d.startsWith("T") && d.endsWith("…")) {
+               //VnTsep… ---> typed, sequence
+               val sep = d.substring(1,d.length-1)
+               Var(n, true, Some(Delim(sep)))
+            } else if (d.endsWith("…")) {
+               //Vnsep… ---> untyped, sequence
+               val sep = d.substring(0,d.length-1)
+               Var(n, false, Some(Delim(sep)))
+            } else
+               throw ParseError("not a valid marker " + s)
          case s: String if s.endsWith("…") =>
+            //nsep… ---> sequence argument/scope
             var i = 0
             while (s(i).isDigit) {i+=1}
             val n = s.substring(0,i).toInt
             val rem = s.substring(i,s.length-1)
-            val p = rem.indexOf("_")
-            if (p == -1)
-               SeqArg(n, Delim(rem))
-            else {
-               val key = rem.substring(0,p)
-               val sep = rem.substring(p+1)
-               SeqVar(n, Delim(key), Delim(sep))
+            SeqArg(n, Delim(rem))
+         case "" => throw ParseError("not a valid marker")
+         case s:String =>
+            try {
+               val n = s.toInt
+               //n ---> arguments, no sequence
+               Arg(n)
+            } catch {case e: Throwable =>
+               //other string ---> delimiter
+               Delim(s)
             }
-         case s: String if s.endsWith("_") =>
-            var i = 0
-            while (s(i).isDigit) {i+=1}
-            val n = s.substring(0,i).toInt
-            val d = s.substring(i,s.length-1)
-            Var(n, Delim(d))
-         case s:String => Delim(s)
-         case m: Marker => m
-         case m => throw ParseError("not a valid marker" + m)
+         case m => throw ParseError("not a valid marker " + m.toString)
       }
       new TextNotation(name, markers, prec)
    }
    
+   /** the precedence of the notation ( 1 )
+    * 
+    * notations with round brackets must have a higher precedence than this to be recognized
+    */
+   val bracketLevel = Precedence.integer(1000000)
    /** 
     * a special Notation for utils.mmt.brackets
-    * matches ( 1 ) with infinite precedence
+    * matches ( 1 ) with precedence bracketLevel
     */
-   val bracketNotation = new TextNotation(utils.mmt.brackets, List(Delim("("),Arg(1),Delim(")")), Precedence.integer(1000000))
+   val bracketNotation = new TextNotation(utils.mmt.brackets, List(Delim("("),Arg(1),Delim(")")), bracketLevel)
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
-    case <text-notation>{xmlMarkers @ _*}</text-notation> =>
+    case <text-notation/> =>
       val name = Path.parseS(utils.xml.attr(n,"name"), utils.mmt.mmtbase)
-      val markers = xmlMarkers.map(x => parseMarker(x)).toList
+      val markers = utils.xml.attr(n, "markers").split("\\s").toList
+      if (markers == List(""))
+         throw ParseError("invalid notation in: " + n)
       val precedence = Precedence.parse(utils.xml.attr(n, "precedence"))
-      new TextNotation(name, markers, precedence)
+      apply(name, precedence)(markers : _*)
     case _ => throw ParseError("invalid notation in \n" + n)
-  }
-
-  private def parseMarker(n : scala.xml.Node) : Marker = n match {
-    case <delim>{value @ _*}</delim> => Delim(value.text)
-    case <sec-delim>{value @ _*}</sec-delim> => SecDelim(value.text, (n \ "@wsAllowed").text == "true")
-    case <arg>{value}</arg> =>
-      try {
-        Arg(value.toString.toInt)
-      } catch {
-        case _ : Throwable => throw ParseError("Invalid XML representation of Arg (not an integer) in: \n" + n)
-      }
-    case <seq-arg>{value}{sep}</seq-arg> => 
-       try {
-        val nr = value.toString.toInt
-        val dlm = parseMarker(sep) match {
-          case d : Delim => d
-          case _ => throw ParseError("Invalid XML representation of Delim in SeqArg : \n" + n)
-        }
-        SeqArg(nr, dlm)
-      } catch {
-        case e : Throwable => throw ParseError("Invalid XML representation of SeqArg in: \n" + n + " with error : \n" + e.getMessage)
-      }
-      
-    case <var>{value}{key}</var> => 
-      try {
-        val nr = value.toString.toInt
-        val keyM = parseMarker(key) match {
-          case d : Delim => d
-          case _ => throw ParseError("Invalid XML representation of Delim in Var : \n" + n)
-        }
-        Var(nr, keyM)
-      } catch {
-        case _ : Throwable => throw ParseError("Invalid XML representation of Var (not an integer) in: \n" + n)
-      }
-    case <seq-var>{value}{key}{sep}</seq-var> => 
-      try {
-        val nr = value.toString.toInt
-        val keyM = parseMarker(key) match {
-          case d : Delim => d
-          case _ => throw ParseError("Invalid XML representation of key Delim in SeqVar : \n" + n)
-        }
-        val sepM = parseMarker(sep) match {
-          case d : Delim => d
-          case _ => throw ParseError("Invalid XML representation of sep Delim in SeqVar : \n" + n)
-        }
-        Var(nr, keyM)
-      } catch {
-        case _ : Throwable => throw ParseError("Invalid XML representation of SeqVar (not an integer) in: \n" + n)
-      }
-    case _ => throw ParseError("Invalid XML representation of Notation Marker in: \n" + n)
-      
-    
   }
   
    /** String parsing methods */
@@ -437,8 +383,8 @@ object TextNotation {
           }
           if (argMks.length == args.length) {
         	val l =  notation.markers map {
-        	  case a : Arg => presentTerm(args(a.n), notations)
-        	  case Delim(s) => s
+        	  case a : Arg => presentTerm(args(a.number), notations)
+        	  case d: Delimiter => d.text
         	}
         	println("using : " + l.mkString(" "))
         	l.mkString("("," ",")")
@@ -452,7 +398,7 @@ object TextNotation {
                 pos
             }    
             val l = notation.markers map {
-              case Delim(s) => s
+              case d: Delimiter => d.text
               case Arg(pos) => presentTerm(args(getPos(pos)), notations)
               case SeqArg(pos, sep) =>
                 foundSeq = true
@@ -477,7 +423,7 @@ object TextNotation {
           println("found notation " + notation.toString)
           println("with args" + args.toString)
           val l =  notation.markers map {
-            case a : Arg => args(a.n)
+            case a : Arg => args(a.number)
             case Delim(s) => s
           }
           "(" + l.mkString(" ") + " " + presentTerm(body, notations) + ")"

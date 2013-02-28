@@ -279,7 +279,7 @@ case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
  * @param n the number of the Arg
  */
 case class FoundArg(slice: TokenSlice, n: Int) extends Found {
-   override def toString = n.toString + ":" + slice.toString
+   override def toString = slice.toString
    def fromTo = Some((slice.start,slice.next))
 }
 /** represents an [[info.kwarc.mmt.api.parser.SeqArg]] that was found
@@ -290,20 +290,62 @@ case class FoundSeqArg(n: Int, args: List[FoundArg]) extends Found {
    override def toString = n.toString + args.map(_.toString).mkString(":(", " ", ")")
    def fromTo = if (args.isEmpty) None else Some((args.head.slice.start, args.last.slice.next))
 }
-/** represents a [[info.kwarc.mmt.api.parser.Var]] that was found
- * @param n the number of the Var
+
+/** helper class for representing a single found variable
+ * @param pos first Token
  * @param name the variable name
- * @param tp the found type, if provided 
+ * @param tp the optional type
  */
-case class FoundVar(marker: Var, pos: Int, name: Token, tp: Option[FoundArg]) extends Found {
-   override def toString = name.toString + marker.key.s + tp.map(_.toString).getOrElse("_")
-   def fromTo = if (tp.isEmpty) Some((pos, pos+1)) else Some((pos, tp.get.slice.next))
+case class SingleFoundVar(val pos: Int, val name: Token, tp: Option[FoundArg]) {
+   def to = tp match {
+      case Some(t) => t.fromTo.get._2
+      case None => pos+1
+   }
 }
-/** represents an [[info.kwarc.mmt.api.parser.SeqVar]] that was found
- * @param n the number of the SeqVar
- * @param vrs the variables that were found 
+/** represents a [[info.kwarc.mmt.api.parser.Var]] that was found
+ * @param marker the Var marker found
+ * @param vrs the variables
+ * 
+ * the sequence variable parser is a state machine
+ * {{{
+ *                                        |---------------- next delim -----------------------------------------|
+ * state:  0                       1      |                             2                                   -1  V
+ * expect: name --- pick name ---> type, sep., next delim --- else ---> sep, next delim --- next delim ---> skip delim, end
+ *   ^                                    | sep                     sep |   | else ^
+ *   | ------------ skip sep -------------|------------------------------   |------|
+ * }}}
  */
-case class FoundSeqVar(n: Int, vrs: List[FoundVar]) extends Found {
-   override def toString = n.toString + ":" + vrs.map(_.toString).mkString("(", " ", ")")
-   def fromTo = if (vrs.isEmpty) None else Some((vrs.head.fromTo.get._1, vrs.last.fromTo.get._2))
+class FoundVar(val marker: Var) extends Found {
+   /** the found variables in reverse order */
+   private var vrs: List[SingleFoundVar] = Nil
+   /** the current state */
+   var state: FoundVar.State = FoundVar.BeforeName
+   /** the found variables */
+   def getVars = vrs.reverse
+   /** start a new variable */
+   def newVar(pos: Int, name: Token) {
+      vrs ::= SingleFoundVar(pos, name, None)
+   }
+   /**
+    * set the type of the current variable
+    * pre: variable exists and has no type
+    */
+   def newType(fa: FoundArg) {
+      vrs = vrs.head.copy(tp = Some(fa)) :: vrs.tail
+   }
+   
+   override def toString = "{V" + (if (state != FoundVar.Done) state else "")  + " " + getVars.map(v => v.name.toString + v.tp.map(":" + _.toString).getOrElse("")).mkString(",") + " V}"
+   def fromTo = Some((vrs.last.pos,vrs.head.to))
+}
+/** helper object */
+object FoundVar {
+   type State = Int
+   /** state in FoundVar: just before parsing the variable name */
+   val BeforeName = 0
+   /** state in FoundVar: just after parsing the variable name */
+   val AfterName = 1
+   /** state in FoundVar: there is a type, some Otkens of which have been shifted */
+   val InType = 2
+   /** final state in FoundVar */
+   val Done = -1
 }

@@ -214,8 +214,11 @@ class TokenList(private var tokens: List[TokenListElem]) {
             doFoundArg(fa)
          case FoundSeqArg(_, args) =>
             args foreach doFoundArg
-         case FoundVar(_, _, _, tpOpt) =>
-            tpOpt foreach doFoundArg
+         case fv : FoundVar =>
+            fv.getVars foreach {
+               case SingleFoundVar(_,_,tpOpt) =>
+                  tpOpt foreach doFoundArg
+            }
       }
       val (from,to) = an.fromTo
       val matched = new MatchedList(newTokens.reverse, an, tokens(from).firstPosition, tokens(to-1).lastPosition)

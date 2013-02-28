@@ -29,6 +29,23 @@ class Pragmatics(controller: Controller) {
          }
       } else tryMeta
    }
+   def strictAttribution(theory: MPath, key: Term, value: Term): Term = {
+      lup.getTheory(theory) match {
+         case d: DeclaredTheory => d.meta match {
+            case None => value // not returning OMA(key, List(value)) here means the outermost key (e.g., the : is dropped)
+            case Some(meta) =>
+               ps.getTyping(meta) match {
+                  case None =>
+                     strictAttribution(meta, key, value)
+                  case Some(h) =>
+                     val arg = strictApplication(meta, key, List(value))
+                     strictAttribution(meta, OMID(h.hastype), arg)
+               }
+         }
+         case d: DefinedTheory => OMA(key, List(value)) //TODO what to do here?
+      }
+      
+   }
    def strictBinding(theory: MPath, binder: Term, context: Context, scope: Term): Term = {
       lup.getTheory(theory) match {
          case d: DeclaredTheory => d.meta match {
@@ -39,7 +56,7 @@ class Pragmatics(controller: Controller) {
                      strictBinding(meta, binder, context, scope)
                   case Some(h) =>
                      val arg = strictBinding(meta, OMID(h.lambda), context, scope)
-                     strictApplication(meta, OMID(h.apply), List(arg))
+                     strictApplication(meta, OMID(h.apply), List(binder, arg))
                }
          }
          case d: DefinedTheory => OMBIND(binder, context, scope) //TODO what to do here?
@@ -87,7 +104,7 @@ trait HOAS extends Application {
 }
 
 //what about the other typing judgements - often there is more than one
-abstract class Typing extends Feature {
+trait Typing extends Feature {
    val hastype : GlobalName 
    def makeStrict(j: objects.Typing) = Inhabitation(j.stack, OMA(OMID(hastype), List(j.tm, j.tp)))
    def makePragmatic(j: Judgement) = j match {

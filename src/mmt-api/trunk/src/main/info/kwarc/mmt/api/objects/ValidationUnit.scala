@@ -13,20 +13,22 @@ class Validator(controller: Controller) extends Logger {
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
          val result = logGroup{solver(v.judgement)}
          val solution = solver.getSolution
-         if (result && solution.isDefined) {
-            log("validated " + v.component)
-            log("solution: " + solution.get.toString)
-            val tc = controller.globalLookup.getComponent(v.component)
-            tc.analyzed = v.judgement.wfo ^ solution.get
-         } else {
-            log("errors while validating " + v.component)
-            log(solver.toString)
-            solver.getConstraints foreach {
-               case j: WFJudgement =>
-                  errorCont(InvalidObject(j.wfo, j.toString))
-               case j => errorCont(InvalidObject(v.judgement.wfo, "unresolved constraint: " + j.toString))
+         logGroup {
+            if (result && solution.isDefined) {
+               log("validated " + v.component)
+               log("solution: " + solution.get.toString)
+               val tc = controller.globalLookup.getComponent(v.component)
+               tc.analyzed = v.judgement.wfo ^ solution.get
+            } else {
+               log("errors while validating " + v.component)
+               log(solver.toString)
+               solver.getConstraints foreach {
+                  case j: WFJudgement =>
+                     errorCont(InvalidObject(j.wfo, j.toString))
+                  case j => errorCont(InvalidObject(v.judgement.wfo, "unresolved constraint: " + j.toString))
+               }
+               //errorCont(InvalidObject(v.judgement.wfo, solver.toString))
             }
-            //errorCont(InvalidObject(v.judgement.wfo, solver.toString))
          }
       }
 }

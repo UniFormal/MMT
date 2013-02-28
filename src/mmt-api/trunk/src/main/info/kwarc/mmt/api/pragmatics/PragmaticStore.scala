@@ -20,6 +20,13 @@ class PragmaticStore {
          case _ =>
       }
       None
-   } 
+   }
+   def getTyping(m: MPath) : Option[Typing] = {
+      features.getOrElse(m, Nil) map {
+         case t: Typing => return Some(t)
+         case _ =>
+      }
+      None
+   }
 }
 
