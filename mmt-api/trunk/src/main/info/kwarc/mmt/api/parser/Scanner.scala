@@ -252,7 +252,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
     * @param nots the notations to scan for
     */
    def scan(nots: List[TextNotation]) {
-      log("scanning " + tl)
+      log("scanning " + tl + " with notations " + nots.mkString(","))
       notations = nots
       currentIndex = 0
       numCurrentTokens = 0

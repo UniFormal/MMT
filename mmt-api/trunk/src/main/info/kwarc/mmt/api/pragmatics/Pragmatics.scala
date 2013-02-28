@@ -38,7 +38,7 @@ class Pragmatics(controller: Controller) {
                   case None =>
                      strictAttribution(meta, key, value)
                   case Some(h) =>
-                     val arg = strictApplication(meta, key, List(value))
+                     val arg = strictApplication(theory, key, List(value))
                      strictAttribution(meta, OMID(h.hastype), arg)
                }
          }
