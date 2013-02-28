@@ -544,7 +544,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          Nil
       else { 
          val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
-         tm match {
+         controller.pragmatic.pragmaticHead(tm) match {
             case OMAMaybeNil(OMID(`pattern`), args) => args
             case _ => throw makeError(reg, "not an instance of pattern " + pattern.toPath)
          }
