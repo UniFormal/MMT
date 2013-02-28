@@ -37,20 +37,31 @@ object LF {
 }
 
 /** provides apply/unapply methods for lambda abstraction
- * for example, it permits constructing and pattern-matching terms as Lambda(variable-name, type, scope) 
+ * 
+ * for example, it permits constructing and pattern-matching terms as Lambda(variable-name, type, scope)
+ * 
+ * unapply curries automatically 
  */
 object Lambda {
    val path = LF.lftheory ? "lambda"
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.lambda, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(LF.lambda, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*)), s) if b == LF.lambda || b == LF.constant("implicit_lambda") => Some(n,t,s)
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @_*), s) if b == LF.lambda || b == LF.constant("implicit_lambda") =>
+	      val newScope = if (rest.isEmpty)
+	         s
+	      else
+	         apply(Context(rest:_*), s)      
+	      Some(n,t,newScope)
 	   case _ => None
    }
 }
 
 /** provides apply/unapply methods for dependent function type formation
+ * 
  * the unapply method also matches a simple function type
+ * 
+ * unapply curries automatically 
  */
 object Pi {
    /** the MMT URI of Pi */
@@ -59,8 +70,11 @@ object Pi {
    def apply(con: Context, body : Term) = OMBIND(LF.Pi, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
 	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.Pi || b == LF.constant("implicit_Pi") =>
-	      if (rest.isEmpty) Some((n,t,s))
-	      else Some((n,t, Pi(rest.toList,s)))
+         val newScope = if (rest.isEmpty)
+            s
+         else
+            apply(Context(rest:_*), s)      
+         Some(n,t,newScope)
 	   case OMA(LF.arrow,args) =>
 	      val name = LocalName.Anon
 	      if (args.length > 2)
