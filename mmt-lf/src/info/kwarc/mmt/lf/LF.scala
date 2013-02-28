@@ -28,12 +28,16 @@ case class LFError(msg : String) extends java.lang.Throwable(msg)
 object LF {
    val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "foundations")
    val lftheory = lfbase ? "LF"
-   val arrow = OMS(LF.lftheory ? "arrow")
-   val Pi = OMS(LF.lftheory ? "Pi")
-   val lambda = OMS(LF.lftheory ? "lambda")
-   val apply = OMS(LF.lftheory ? "@")
+   val arrow = OMS(lftheory ? "arrow")
+   val Pi = OMS(lftheory ? "Pi")
+   val lambda = OMS(lftheory ? "lambda")
+   val apply = OMS(lftheory ? "@")
    val ktype = OMS(Typed.ktype)
    def constant(name : String) = OMS(lftheory ? name)
+}
+
+object OfType {
+   val path = LF.lftheory ? "oftype"
 }
 
 /** provides apply/unapply methods for lambda abstraction
