@@ -305,7 +305,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     *   The well-typedness of tm1 and tm2 is neither assumed nor guaranteed;
     *   however, if tpOpt is given and the terms are well-typed, they must type-check against tpOpt.
     * @param context their context
-    * @return false if the Judgment is definitely not provable; true if the it has been proved or delayed
+    * @return false if the Judgment is definitely not provable; true if it has been proved or delayed
     * 
     * This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
     */

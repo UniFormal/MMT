@@ -178,7 +178,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         i += 1
                         //the preceding newBVars are added to the context
                         val ptp = makeTerm(ml.tokens(i-1), boundVars ::: newBVars.take(fv.marker.number-1))
-                        ptp match {
+                        prag.pragmaticHead(ptp) match {
                            case OMA(OMS(p), List(value)) => prag.strictAttribution(p.module.toMPath, OMS(p), value)
                            case _ => makeError("not a valid type attribution: " + ptp.toString, te.region) 
                         }
@@ -201,24 +201,38 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             } else {
                   // order the arguments
                   val orderedArgs = args.sortBy(_._1)
+                  // order the variables
+                  val orderedVars = vars.sortBy(_._1.number)
+                  // compute the arguments, first insert 'null' for each implicit argument
                   var finalArgs : List[Term] = Nil
                   orderedArgs.foreach {case (i,arg) =>
                      // add implicit arguments as needed
                      while (i > finalArgs.length + 1) {
-                        //generate fresh meta-variable
+                        finalArgs ::= null
+                     }
+                     finalArgs ::= arg
+                  }
+                  // number of implicit arguments that have to be inserted after the given arguments
+                  // can currently only be non-zero if a binding follows
+                  val numLastImplArgs = if (! orderedVars.isEmpty) {
+                     orderedVars.head._1.number - finalArgs.length - 1
+                  } else 0
+                  Range(0, numLastImplArgs).foreach(_ => finalArgs ::= null)
+                  // replace each 'null' with a fresh meta-variable
+                  finalArgs = finalArgs.map {
+                     case null =>
                         val metaVar = newArgument
-                        val implArg = if (boundVars == Nil)
+                        if (boundVars == Nil)
                            metaVar
                         else {
                            //under a binder, apply meta-variable to all bound variables
                            prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
                         }
-                        finalArgs ::= implArg
-                     }
-                     finalArgs ::= arg
+                     case a => a
                   }
-                  // order the variables
-                  val orderedVars = vars.sortBy(_._1.number).map {
+                  finalArgs = finalArgs.reverse
+                  // compute the variables
+                  val finalVars = orderedVars.map {
                      case (vm, vr, tp) =>
                         val vname = LocalName(vr.word)
                         val finalTp = if (! vm.typed) None else tp.orElse {
@@ -235,17 +249,17 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         SourceRef.update(vd, pu.source.copy(region = vr.region))
                         vd
                   }
-                  if (orderedVars == Nil && scopes == Nil) {
+                  if (finalVars == Nil && scopes == Nil) {
                      // no vars, scopes --> OMA
-                     prag.strictApplication(con.module.toMPath, head, finalArgs.reverse)
-                  } else if (orderedVars != Nil && scopes.length == 1) {
-                     val context = Context(orderedVars : _*)
-                     if (args == Nil) {
+                     prag.strictApplication(con.module.toMPath, head, finalArgs)
+                  } else if (finalVars != Nil && scopes.length == 1) {
+                     val context = Context(finalVars : _*)
+                     if (finalArgs == Nil) {
                         //some vars, and 1 scope --> OMBIND
                         prag.strictBinding(con.module.toMPath, head, context, scopes(0)._2)
                      } else {
                         //some args, some vars, and 1 scope --> OMBIND with OMA
-                        val binder = prag.strictApplication(con.module.toMPath, head, finalArgs.reverse)
+                        val binder = prag.strictApplication(con.module.toMPath, head, finalArgs)
                         prag.strictBinding(con.module.toMPath, binder, context, scopes(0)._2)
                      }
                   } else
