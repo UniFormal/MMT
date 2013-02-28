@@ -1,12 +1,13 @@
-%namespace "http://cds.omdoc.org/foundations".
+%namespace "http://cds.omdoc.org/hets-test".
+%namespace found = "http://cds.omdoc.org/foundations".
 
-%sig PL : LF = {
+%sig PL : found.LF = {
   bool : type.
   or : bool → bool → bool # 1 ∨ 2 prec 10.
   and : bool → bool → bool # 1 ∧ 2 prec 10.
   equiv : bool → bool → bool = [x:bool][y:bool] x ∨ y # 1 ⇔ 2 prec 10.
   
-  ded : bool → type # ded 1.
+  ded : bool → type # ded 1 prec 100.
   
   andI  : {A:bool}{B:bool} ded A → ded B → ded A ∧ B    # andI 3 4.
   andEl : {A:bool}{B:bool} ded A ∧ B → ded A            # andEl 3.

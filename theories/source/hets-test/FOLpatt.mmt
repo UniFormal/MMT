@@ -1,7 +1,7 @@
-%namespace "http://cds.omdoc.org/foundations".
+%namespace "http://cds.omdoc.org/hets-test".
+%namespace found = "http://cds.omdoc.org/foundations".
 
-%sig FOLpatt = {
-  %include LF.
+%sig FOLpatt : found.LF = {
   o : type.
   sort : type.
   tm : sort → type.

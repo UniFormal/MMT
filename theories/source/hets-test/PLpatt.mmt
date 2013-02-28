@@ -1,14 +1,14 @@
-%namespace "http://cds.omdoc.org/foundations".
+%namespace "http://cds.omdoc.org/hets-test".
+%namespace found = "http://cds.omdoc.org/foundations".
 
-%sig PLpatt = {
-  %include LF.
+%sig PLpatt: found.LF = {
   bool : type.
-  or : bool → bool → bool # 1 ∨ 2.
-  and : bool → bool → bool # 1 ∧ 2.
-  not : bool → bool # ¬ 1.
+  or : bool → bool → bool # 1 ∨ 2 prec 10.
+  and : bool → bool → bool # 1 ∧ 2 prec 10.
+  not : bool → bool # ¬ 1 prec 5.
   true : bool.
   false : bool.
-  ded : bool → type # ded 1.
+  ded : bool → type # ded 1 prec 100.
 
   %pattern prop = { p : bool.  }.
 

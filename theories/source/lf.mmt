@@ -1,15 +1,18 @@
 %namespace "http://cds.omdoc.org/foundations".
+%namespace meta = "http://cds.omdoc.org/omdoc/mmt.omdoc".
 
 %sig Typed = {
    kind.
    type.
+   %include meta.Errors.
 }.
 
 %sig LF = {
    %include Typed.
    
-   Pi # { 1:_ } -2 prec 10000.
-   lambda # [ 1:_ ] -2 prec 10000.
+   Pi # { V1T,… } -2 prec 10000.
+   lambda # [ V1T,… ] -2 prec 10000.
+   oftype # : 1 prec.
    @.
    arrow # 1→… prec 9999.
    
