@@ -47,6 +47,7 @@ class ParserState(val reader: Reader, val container: DPath) {
    def copy(reader: Reader = reader, defaultNamespace:DPath = defaultNamespace) = {
       val s = new ParserState(reader, container)
       s.defaultNamespace = defaultNamespace
+      namespace map {s.namespace += _}
       s
    }
 }
@@ -728,7 +729,7 @@ class SequentialReader extends java.io.Reader {
   
   def read(cbuf : Array[Char], offset : Int, len : Int) : Int = {
     while (!ready) 
-      wait(10)
+      Thread.sleep(10)
     var i = 0
     while (i < len && (offset + i) < text.length) {
       cbuf(i) = text.head
@@ -742,11 +743,15 @@ class SequentialReader extends java.io.Reader {
     //nothing to do
   }
   
+  def isDone = text.isEmpty
+    
   override def ready() = !text.isEmpty
 }
 
 class SeqBufReader(in: SequentialReader = new SequentialReader) extends java.io.BufferedReader(in) {
   def appendLine(line : String) = in.appendLine(line)
+  
+  def isDone = in.isDone
 }
 
 
