@@ -6,6 +6,7 @@ import presentation._
 import libraries._
 import parser._
 import utils._
+import web._
 
 trait Extension {
    protected var controller : Controller = null
@@ -33,6 +34,7 @@ class ExtensionManager(controller: Controller) {
    private var compilers : List[Compiler] = List(new MMTCompiler(controller))
    private var querytransformers : List[QueryTransformer] = Nil
    private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter)
+   private var serverPlugins : List[ServerPlugin] = Nil
    private var mws : Option[URI] = None
 
    private def log(msg : => String) = report("extman", msg)
@@ -78,6 +80,10 @@ class ExtensionManager(controller: Controller) {
           log("  ... as presenter")
           presenters ::= ext.asInstanceOf[Presenter]
        }
+       if (ext.isInstanceOf[ServerPlugin]) {
+          log("  ... as server plugin")
+          serverPlugins ::= ext.asInstanceOf[ServerPlugin]
+       }
    }
 
    /** retrieves an applicable Compiler */
@@ -86,7 +92,13 @@ class ExtensionManager(controller: Controller) {
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
-  
+   /** retrieves an applicable server plugin */
+   def getServerPlugin(uriComps : List[String]) : Option[ServerPlugin] = 
+     {
+     println(serverPlugins.find(_.isApplicable(uriComps)))
+     serverPlugins.find(_.isApplicable(uriComps))
+     }
+   
    /** adds a foundation, must be initialized already */
    def addFoundation(cls: String, args: List[String]) {
        log("adding foundation " + cls)
