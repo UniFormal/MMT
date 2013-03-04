@@ -217,7 +217,7 @@ object TextNotation {
          case s: String if s.startsWith("V") =>
             //Vn ---> variable
             var i = 1
-            while (s(i).isDigit) {i+=1}
+            while (i < s.length && s(i).isDigit) {i+=1}
             val n = s.substring(1,i).toInt
             val d = s.substring(i)
             if (d == "")
