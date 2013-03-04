@@ -98,7 +98,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
          }
          an.applicable(currentToken, currentIndex) //true by invariant but must be called for precondition of an.apply
       }
-      log("applying current notation at " + currentToken + ", found so far: " + an)
+      logWithState(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
       resetPicker
       val toClose = an.apply
       // we count how much active.head picked and
