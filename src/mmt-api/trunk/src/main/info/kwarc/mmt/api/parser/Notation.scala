@@ -56,10 +56,12 @@ case class SymbolName(path: GlobalName) extends PlaceholderDelimiter {
    val s = if (path.name.length < 1) "" else path.name.last.toPath
 }
 
+sealed abstract class ArgumentMarker extends Marker with ArgumentComponent with ScopeComponent
+
 /** an argument
  * @param n absolute value is the argument position, negative iff it is in the binding scope
  */
-case class Arg(number: Int) extends Marker {
+case class Arg(number: Int) extends ArgumentMarker {
    override def toString = number.toString
    def by(s:String) = SeqArg(number,Delim(s))
 }
@@ -68,8 +70,9 @@ case class Arg(number: Int) extends Marker {
  * @param n absolute value is the argument position, negative iff it is in the binding scope
  * @param sep the delimiter between elements of the sequence 
  */
-case class SeqArg(number: Int, sep: Delim) extends Marker {
+case class SeqArg(number: Int, sep: Delim) extends ArgumentMarker {
    override def toString = number.toString + sep + "…"
+   override def isSequence = true
 }
 
 /** a variable binding 
@@ -78,10 +81,10 @@ case class SeqArg(number: Int, sep: Delim) extends Marker {
  * @param sep if given, this is a variable sequence with this separator;
  *   for typed variables with the same type, only the last one needs a type 
  */
-case class Var(number: Int, typed: Boolean, sep: Option[Delim]) extends Marker {
+case class Var(number: Int, typed: Boolean, sep: Option[Delim]) extends Marker with VariableComponent {
    override def toString = "V" + number.toString + (if (typed) "T" else "") + (sep.map(_.toString + "…").getOrElse(""))
+   override def isSequence = sep.isDefined
 }
-
 
 /**
  * helper object 
@@ -98,22 +101,47 @@ object Arg {
    def split(ms: List[Marker]) = splitAux(Nil,ms)
 }
 
-/** defines some implicit conversions to produce Markers */
-object NotationConversions {
-   /** integers are converted to argument markers */
-   implicit def fromInt(n:Int) = Arg(n)
-   /** strings are converted to delimiters */
-   implicit def fromString(s:String) = Delim(s)
+/**
+ * see [[Arity]]
+ * 
+ * Almost all ArityComponents arise as the non-Delimiter NotationMarkers 
+ */
+sealed trait ArityComponent {
+   val number: Int
+   def isSequence: Boolean = false
+}
+sealed trait ArgumentComponent extends ArityComponent
+sealed trait VariableComponent extends ArityComponent
+sealed trait ScopeComponent extends ArityComponent
+/** implicit argument, corresponds to an ArgumentComponent not mentioned in the notation */
+case class ImplicitArg(number: Int) extends ArgumentComponent
+
+/**
+ * the arity of a symbol describes what kind of objects can be formed from it
+ * 
+ * special cases and analogs in the OpenMath role system for a symbol s:
+ *  no arguments, variables, scopes: constant, s
+ *  some arguments, no variables, scopes: application OMA(s, args)
+ *  no arguments, some variables, 1 scope: binder, OMBIND(s, vars, scope)
+ *  some arguments, some variables, 1 scope: application+binder as in OMBIND(OMA(s, args), vars, scope), suggested by Kohlhase, Rabe, MiCS 2012
+ *  as above but multiple scopes: generalized binders as suggested by Davenport, Kohlhase, MKM 2010
+ */
+case class Arity(arguments: List[ArgumentComponent], variables: List[VariableComponent], scopes: List[ScopeComponent]) {
+   def components = arguments ::: variables ::: scopes
+   def length = components.length
+   def isConstant    =    arguments.isEmpty  &&    variables.isEmpty  && scopes.isEmpty
+   def isApplication = (! arguments.isEmpty) &&    variables.isEmpty  && scopes.isEmpty
+   def isBinder      =    arguments.isEmpty  && (! variables.isEmpty) && scopes.length == 1
+   def isApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty) && scopes.length == 1
 }
 
-sealed abstract class NotationType
-case object OMSNotation extends NotationType
-/** type of notations for applications
- * @param concretePositions the positions of the arguments in the concrete syntax
- * ordered according to the abstract syntax
- */ 
-case class OMANotation(concretePositions: List[Int]) extends NotationType
-case class OMBINDNotation(vars: List[Int], scope: Int) extends NotationType
+object Arity {
+   def constant = Arity(Nil,Nil,Nil)
+   def plainApplication = Arity(List(SeqArg(1,Delim(""))), Nil, Nil)
+   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")))), List(Arg(-2)))
+}
+
+case class InvalidNotation(msg: String) extends java.lang.Throwable
 
 /**
  * @param name the symbol to which this notation applies
@@ -130,29 +158,48 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
    val wrap = false 
    val oPrec = Some(precedence)
 
-   def getType = {
-      val arguments = markers mapPartial {
-         case Arg(n) if n > 0 => Some(n)
-         case SeqArg(n,_) if n > 0 => Some(n)
-         case _ => None
+   def getArity = {
+      var args: List[ArgumentComponent] = Nil
+      var vars : List[VariableComponent] = Nil
+      var scopes : List[ScopeComponent] = Nil
+      //collect components from markers
+      markers foreach {
+         case a : ArgumentMarker =>
+            if (a.number > 0)
+               args ::= a
+            else if (a.number < 0)
+               scopes ::= a
+            else
+               throw InvalidNotation("illegal marker: " + a)
+         case v: VariableComponent =>
+            vars ::= v
+         case _ =>
       }
-      val boundVars = markers mapPartial {
-         case Var(n, _, _) => Some(n)
-         case _ => None
+      // sort by component number
+      args = args.sortBy(_.number)
+      vars = vars.sortBy(_.number)
+      scopes = scopes.sortBy(_.number)
+      // args with all implicit argument components added
+      var argsWithImpl: List[ArgumentComponent] = Nil
+      var i = 1
+      args foreach {a =>
+         while (i < a.number) {
+            //add implicit argument in front of the current one
+            argsWithImpl ::= ImplicitArg(i)
+            i += 1
+         }
+         argsWithImpl ::= a
+         i += 1
       }
-      val scopes = markers mapPartial {
-         case Arg(n) if n < 0 => Some(-n)
-         case _ => None
+      //TODO: check all args.number < vars.number < scopes.numbers; no gaps in variables or scopes
+      //add implicit arguments after the last one (the first variable tells us if there are implicit arguments after the last one)
+      val totalArgs = vars.headOption.map(_.number).getOrElse(i) - 1
+      while (i <= totalArgs) {
+         argsWithImpl ::= ImplicitArg(i)
+         i += 1
       }
-      if (arguments == Nil && boundVars == Nil && scopes == Nil)
-         Some(OMSNotation)
-      else if (arguments != Nil && boundVars == Nil && scopes == Nil) {
-         val order = arguments.zipWithIndex.sortBy(_._1).map(_._2) 
-         Some(OMANotation(order))
-      } else if (arguments == Nil && boundVars != Nil && scopes.length == 1)
-         Some(OMBINDNotation(boundVars, scopes(0)))
-      else
-         None
+      args = argsWithImpl.reverse
+      Arity(args, vars, scopes)
    }
    
    //TODO add other cases & check presentation
@@ -281,14 +328,18 @@ object TextNotation {
     case _ => throw ParseError("invalid notation in \n" + n)
   }
   
-   /** String parsing methods */
+   /** String parsing methods
+    *
+    * the default precedence is 0; exception: if the notation contains (, it is above bracketLevel
+    */
    def parse(str : String, conPath : GlobalName) : TextNotation = {
     str.split("prec").toList match {
       case not :: p :: Nil =>        
         val prec = Precedence.parse(p)
         parseNot(not, prec, conPath)
-      case not :: Nil => 
-        parseNot(not, Precedence.integer(0), conPath)
+      case not :: Nil =>
+        val defaultPrec = if (not.contains("(")) Precedence.integer(1000001) else Precedence.integer(0)
+        parseNot(not, defaultPrec, conPath)
       case _ =>
         throw ParseError("Invalid notation declaration : " + str)
     }
@@ -438,5 +489,13 @@ object TextNotation {
       println("unsupported content element for text presentation " + t.toString)
       ""
   }
-  
 }
+
+/** defines some implicit conversions to produce Markers */
+object NotationConversions {
+   /** integers are converted to argument markers */
+   implicit def fromInt(n:Int) = Arg(n)
+   /** strings are converted to delimiters */
+   implicit def fromString(s:String) = Delim(s)
+}
+

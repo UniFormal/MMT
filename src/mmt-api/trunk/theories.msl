@@ -11,7 +11,8 @@ log+ archive
 //log+ presenter
 //log+ notation
 //log+ library
-log+ validator
+//log+ checker
+//log+ validator
 //log+ object-checker
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 

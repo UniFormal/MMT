@@ -48,6 +48,7 @@ class Report {
    /** decrease indentation */
    def unindent {ind = ind.substring(2)}
 
+   //this should not be here, if needed, a special LogHandler should be added temporarily
    private var mem : List[String] = Nil
    private var rec = false
    def record {rec = true}

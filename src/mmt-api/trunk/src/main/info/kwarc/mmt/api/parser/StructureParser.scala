@@ -414,7 +414,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             //Constant
             case "constant" =>
                val name = readName
-               readConstant(name, thy.path)
+               val c = readConstant(name, thy.path, OMMOD(thy.path))
+               seCont(c)
             //PlainInclude
             case "include" =>
                val from = readMPath(thy.path)
@@ -459,7 +460,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   } else {
                      // 3) a constant with name k
                      val name = LocalName.parse(k)
-                     readConstant(name, thy.path)
+                     val c = readConstant(name, thy.path, OMMOD(thy.path))
+                     seCont(c)
                   }
                }
          }
@@ -476,8 +478,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param name the name of the constant
     * @param the containing [[info.kwarc.mmt.api.modules.DeclaredTheory]]
     */
-   private def readConstant(name: LocalName, tpath: MPath)(implicit state: ParserState) {
-      val cpath = tpath ? name
+   private def readConstant(name: LocalName, parent: MPath, scope: Term)(implicit state: ParserState): Constant = {
+      val cpath = parent ? name
       //initialize all components as omitted
       val tpC = new TermContainer
       var dfC = new TermContainer
@@ -500,7 +502,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          } else {
             def doComponent(c: DeclarationComponent, tc: TermContainer) {
-               val (obj,_,tm) = readParsedObject(OMMOD(tpath))
+               val (obj,_,tm) = readParsedObject(scope)
                tc.read = obj
                tc.parsed = tm
             }
@@ -537,8 +539,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          }
       }
-      val c = new Constant(OMMOD(tpath), name, al, tpC, dfC, None, nt)
-      seCont(c)
+      new Constant(OMMOD(parent), name, al, tpC, dfC, None, nt)
    }
    private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
       val args = if (state.reader.endOfDeclaration)
@@ -570,6 +571,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             //Constant
             case "constant" =>
                val name = readName
+               val a = readConstant(name, view.path, view.to).toConstantAssignment
+               seCont(a)
             //assignment to include
             case "include" =>
                val from = readMPath(view.path)
@@ -602,12 +605,11 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      reader.setSourcePosition(reg.start)
                      parsOpt.get.apply(this, reader)
                   } else {
+                */
                      // 3) a constant with name k
                      val name = LocalName.parse(k)
-                     readConstant(name, view.path)
-                  }
-               }
-                */
+                     val a = readConstant(name, view.path, view.to).toConstantAssignment
+                     seCont(a)
          }
       } catch {
          case e: SourceError =>
