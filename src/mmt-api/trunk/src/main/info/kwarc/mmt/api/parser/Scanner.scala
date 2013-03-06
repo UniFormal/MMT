@@ -163,7 +163,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
          case ul: UnmatchedList => 
             if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, report) //initialize scanner if necessary
             ul.scanner.scan(notations)
-         case e: Escaped =>
+         case e: ExternalToken =>
          case t: Token =>
             // impossible in MatchedList produced by TokenList.reduce, not called for UnmatchedList or Token
             throw ImplementationError("single Token in MatchedList")
@@ -181,7 +181,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
          case ul: UnmatchedList =>
             scanRecursively(ul)
             advance
-         case e: Escaped =>
+         case e: ExternalToken =>
             advance
          case t : Token =>
             currentToken = t
