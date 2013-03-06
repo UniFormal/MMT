@@ -245,7 +245,9 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
    def isLeftOpen = openLeftArgs > 0
    /** @return true if next is first delimiter Token */
    def applicable(pickableTokens: Int, next: Token): Boolean = {
-      firstDelimString == Some(next.word) && openLeftArgs <= pickableTokens
+      val a = firstDelimString == Some(next.word)
+      val b = openLeftArgs <= pickableTokens
+      a && b
    }
    /** creates a new ActiveNotation with this notation's markers */
    def open(scanner: Scanner, firstToken: Int): ActiveNotation = {

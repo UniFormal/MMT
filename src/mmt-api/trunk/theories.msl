@@ -13,7 +13,7 @@ log+ archive
 //log+ library
 //log+ checker
 //log+ validator
-//log+ object-checker
+log+ object-checker
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 
 plugin info.kwarc.mmt.lf.Plugin
