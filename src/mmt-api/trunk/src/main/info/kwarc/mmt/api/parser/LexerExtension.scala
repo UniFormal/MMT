@@ -60,7 +60,7 @@ class PrefixEscapeHandler(delim: Char) extends LexerExtension {
  * 
  * accepts nonLetter digit*
  */
-class NatLiteralHandler(negativeAllowed: Boolean) extends LexerExtension {
+object NatLiteralHandler extends LexerExtension {
   def applicable(s: String, i: Int) = s(i).isDigit && (i == 0 || ! s(i-1).isLetter)
   def apply(s: String, index: Int, firstPosition: SourcePosition) = {
      var i = index
@@ -71,6 +71,64 @@ class NatLiteralHandler(negativeAllowed: Boolean) extends LexerExtension {
      CFExternalToken(text, firstPosition, objects.OMI(text.toInt))
   }
 }
+
+abstract class QuoteEvalPart
+case class QuotePart(text: String) extends QuoteEvalPart
+case class EvalPart(text: String) extends QuoteEvalPart
+
+/**
+ * A LexerExtension that lexes natural number literals
+ * 
+ * accepts nonLetter digit*
+ */
+class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExtension {
+  def applicable(s: String, i: Int) = s.substring(i).startsWith(bQ)
+  def apply(s: String, index: Int, fp: SourcePosition) = {
+     var level = 1
+     var i = index+1
+     var parts : List[QuoteEvalPart] = Nil
+     var current = ""
+     while (i < s.length && level > 0) {
+        if (s.substring(i).startsWith(bQ) && level % 2 == 0) {
+           level += 1
+           i += bQ.length
+        } else if (s.substring(i).startsWith(eQ) && level % 2 == 1) {
+           level -= 1
+           i += eQ.length
+        } else if (s.substring(i).startsWith(bE) && level % 2 == 1) {
+           level += 1
+           i += bE.length
+           parts ::= QuotePart(current)
+           current = ""
+        } else if (s.substring(i).startsWith(eE) && level % 2 == 0) {
+           level -= 1
+           i += eE.length
+           parts ::= EvalPart(current)
+           current = ""
+        } else {
+           current += s(i)
+           i += 1
+        }
+     }
+     val text = s.substring(index,i)
+     new ExternalToken(text) {
+        val firstPosition = fp
+        def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser) = {
+           val parsed = parts map {
+              case QuotePart(q) =>
+                 OMSTR(q)
+              case EvalPart(e) =>
+                 val cont = outer.context ++ Context(boundVars.map(VarDecl(_,None,None)) :_*)
+                 val ref = outer.source
+                 val pu = ParsingUnit(ref, outer.scope, cont, e)
+                 parser(pu)
+           }
+           null
+        }
+     }
+  }
+}
+
 
 /**
  * An EscapeHandler detects foreign tokens, which parse into semi-formal objects
@@ -106,7 +164,7 @@ class AsymmetricEscapeHandler(begin: String, end: String) extends EscapeHandler 
   def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
   def apply(s: String, index: Int) = {
      var level = 1
-     var i = index
+     var i = index+1
      while (i < s.length && level > 0) {
         if (s.substring(i).startsWith(begin)) {
            level += 1
@@ -133,7 +191,7 @@ class AsymmetricEscapeHandler(begin: String, end: String) extends EscapeHandler 
 class SymmetricEscapeHandler(delim: Char, exceptAfter: Char) extends EscapeHandler {
   def applicable(s: String, i: Int) = s(i) == delim
   def apply(s: String, index: Int) = {
-     var i = index
+     var i = index+1
      while (i < s.length && s(i) != delim) {
         if (s.substring(i).startsWith(exceptAfter.toString + delim)) {
            i += 2

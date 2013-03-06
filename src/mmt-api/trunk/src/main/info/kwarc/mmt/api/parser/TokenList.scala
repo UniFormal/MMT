@@ -193,11 +193,11 @@ case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: 
 abstract class ExternalToken(text:String) extends PrimitiveTokenListElem(text) {
    /** a continuation function called by the parser when parsing this Token
     * 
-    * @param scope the scope relative to which to parse
+    * @param outer the ParsingUnit during which this ExternalToken was encountered
     * @param boundVars the context
     * @param parser the parser calling this function
     */
-   def parse(scope: Term, boundVars: List[LocalName], parser: AbstractObjectParser): Term
+   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser): Term
 }
 
 /** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
@@ -205,7 +205,7 @@ abstract class ExternalToken(text:String) extends PrimitiveTokenListElem(text) {
  */
 case class CFExternalToken(text:String, firstPosition: SourcePosition, term: Term) extends ExternalToken(text) {
    /** returns simply term */
-   def parse(scope: Term, boundVars: List[LocalName], parser: AbstractObjectParser) = term
+   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser) = term
 }
 
 /**

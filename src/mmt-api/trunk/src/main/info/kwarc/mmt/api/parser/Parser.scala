@@ -128,7 +128,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                makeError("unbound token: " + word, te.region) //actually, this is recoverable
                //OMSemiFormal(objects.Text("unknown", word))
          case e: ExternalToken =>
-            e.parse(pu.scope, boundVars, this)
+            e.parse(pu, boundVars, this)
          case ml : MatchedList =>
             //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
@@ -297,7 +297,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     }
 
     //TODO get escape handlers from meta-theory, remove PrefixEscapeHandler, ?SyntaxPlugin
-    val escMan = new EscapeManager(List(GenericEscapeHandler, new PrefixEscapeHandler('\\')))
+    val escMan = new EscapeManager(controller.extman.lexerExtensions)
     val tl = TokenList(pu.term, pu.source.region.start, escMan)
     if (tl.length == 0) makeError("no tokens found: " + pu.term, pu.source.region)(pu)
     
