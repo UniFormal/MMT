@@ -47,7 +47,8 @@ case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg)
 object Main {
   
    val latinbase = "http://latin.omdoc.org/logics/syntax"
-   val foundational = "http://cds.omdoc.org/foundational"  
+   val foundational = "http://cds.omdoc.org/foundational"
+   val hetstest = "http://cds.omdoc.org/hets-test"
   
    def main(args: Array[String]) {
      
@@ -63,7 +64,7 @@ object Main {
          
          //TODO make global
          val controller = new frontend.Controller
-         val uri = new utils.URI(None,None,List(foundational + "?" + filename))
+         val uri = new utils.URI(None,None,List(hetstest + "?" + filename))
          controller.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
          controller.handleLine("archive mmt source-structure")                 
          
@@ -96,7 +97,7 @@ object Main {
            // ----------- RUN ----------------------------         
          
            println(controller.library.toString)
-           val theo =  controller.localLookup.getTheory(DPath(utils.URI("http://cds.omdoc.org/foundations")) ? thname) match {
+           val theo =  controller.localLookup.getTheory(DPath(utils.URI(hetstest)) ? thname) match {
          		case d : DeclaredTheory => d
          		case _ => throw TheoryLookupError("attempted retrieving not a DeclaredTheory")
            }           
@@ -110,7 +111,7 @@ object Main {
        	   val lw = new LogicWriter
        	   println("writing to files in " + dir + thname)
          
-           lw.compile(ls, thname, dir)
+//           lw.compile(ls, thname, dir)
          
                   
            println("new logic read and compiled")

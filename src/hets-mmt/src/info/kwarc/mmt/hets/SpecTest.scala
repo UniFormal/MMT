@@ -74,7 +74,8 @@ object SpecTest {
                case t:DeclaredTheory => Some(t)
                case _ => None
              } }.head   
-             ExporterTest.main(outDir, q)
+             val xmlExp = new Exporter(controller) // export to XML
+             xmlExp.compile(File(outDir),q)
            }
          } else if (argl contains "-t") {
            println(".... test test ....")
