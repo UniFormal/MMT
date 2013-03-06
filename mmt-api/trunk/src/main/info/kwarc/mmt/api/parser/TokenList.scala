@@ -1,111 +1,8 @@
 package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
+import objects.Term
 import utils.MyList._
 
-/**
- * An EscapeManager handles escaping between languages during tokenization
- * 
- * @param handlers the individual EscapeHandler to be used 
- * 
- * It is used by the object [[info.kwarc.mmt.api.parser.TokenList]]
- */
-class EscapeManager(handlers: List[EscapeHandler]) {
-   /**
-    * @param s the tokenized String
-    * @param i the next Char in s to be considered
-    * @param firstPosition the SourcePosition of that Char
-    * @return the produced Token if any of the EscapeHandlers
-    *   detects an escape at this position
-    */
-   def apply(s: String, i: Int, firstPosition: SourcePosition): Option[PrimitiveTokenListElem] = {
-      handlers.find(_.applicable(s,i)) map {eh => eh.apply(s,i,firstPosition)}
-   }
-}
-
-/**
- * An EscapeHandler detects Escaped tokens.
- */
-abstract class EscapeHandler {
-   /** determines whether an Escaped token begins at s(i) */
-   def applicable(s: String, i: Int): Boolean
-   /** pre: applicable(s,i) == true
-    * 
-    * @return the Escaped Token
-    */
-   def apply(s: String, i: Int, firstPosition: SourcePosition): PrimitiveTokenListElem
-}
-
-/**
- * an EscapeHandler that detects Escaped Tokens delimited by begin and end
- * 
- * nested escapes are allowed
- * 
- * typical example: AsymmetricEscapeHandler(/*, */)
- */
-class AsymmetricEscapeHandler(begin: String, end: String) extends EscapeHandler {
-  def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
-  def apply(s: String, index: Int, firstPosition: SourcePosition) = {
-     var level = 1
-     var i = index
-     while (i < s.length && level > 0) {
-        if (s.substring(i).startsWith(begin)) {
-           level += 1
-           i += begin.length
-        } else if (s.substring(i).startsWith(end)) {
-           level -= 1
-           i += end.length
-        } else 
-           i += 1
-     }
-     val text = s.substring(index+begin.length,i-end.length)
-     Escaped(begin, text, end, firstPosition)
-  }
-}
-
-/**
- * an EscapeHandler that detects Escaped Tokens delimited by delim
- * 
- * @param delim the begin and end Char
- * @param exceptAfter the escape character to used delim within the escaped text
- * 
- * typical example: SymmetricEscapeHandler(", \)
- */
-class SymmetricEscapeHandler(delim: Char, exceptAfter: Char) extends EscapeHandler {
-  def applicable(s: String, i: Int) = s(i) == delim
-  def apply(s: String, index: Int, firstPosition: SourcePosition) = {
-     var i = index
-     while (i < s.length && s(i) != delim) {
-        if (s.substring(i).startsWith(exceptAfter.toString + delim)) {
-           i += 2
-        } else
-           i += 1
-     }
-     val text = s.substring(index+1,i-1)
-     Escaped(delim.toString, text, delim.toString, firstPosition)
-  }
-}
-
-/**
- * an EscapeHandler that detects ids (letter sequences) Tokens prefixed by delim
- * 
- * @param delim the begin Char
- * 
- * typical example: PrefixEscapeHandler(\)
- */
-class PrefixEscapeHandler(delim: Char) extends EscapeHandler {
-  def applicable(s: String, i: Int) = s(i) == delim
-  def apply(s: String, index: Int, firstPosition: SourcePosition) = {
-     var i = index+1
-     while (i < s.length && s(i).isLetter) {
-           i += 1
-     }
-     val text = s.substring(index, i)
-     Token(text, firstPosition, true)
-  }
-}
-
-
-object GenericEscapeHandler extends AsymmetricEscapeHandler(Reader.escapeChar.toString, Reader.unescapeChar.toString)
 
 /** helper object */
 object TokenList {
@@ -285,15 +182,31 @@ abstract class PrimitiveTokenListElem(text: String) extends TokenListElem {
  * @param word the characters making up the Token (excluding whitespace)
  * @param first the index of the first character
  * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
- */
+ * @param firstPosition the SourcePosition of the first character
+*  */
 case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean) extends PrimitiveTokenListElem(word)
 
-/** A Token is the basic TokenListElem
- * @param word the characters making up the Token (excluding whitespace)
- * @param first the index of the first character
- * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
+/** An ExternalToken is anything produced by an EscapeHandler
+ * @param text the characters making up the literal
+ * @param firstPosition the SourcePosition of the first character
  */
-case class Escaped(before: String, text: String, after: String, firstPosition: SourcePosition) extends PrimitiveTokenListElem(before+text+after)
+abstract class ExternalToken(text:String) extends PrimitiveTokenListElem(text) {
+   /** a continuation function called by the parser when parsing this Token
+    * 
+    * @param scope the scope relative to which to parse
+    * @param boundVars the context
+    * @param parser the parser calling this function
+    */
+   def parse(scope: Term, boundVars: List[LocalName], parser: AbstractObjectParser): Term
+}
+
+/** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
+ * @param term the result of parsing
+ */
+case class CFExternalToken(text:String, firstPosition: SourcePosition, term: Term) extends ExternalToken(text) {
+   /** returns simply term */
+   def parse(scope: Term, boundVars: List[LocalName], parser: AbstractObjectParser) = term
+}
 
 /**
  * A MatchedList is a TokenListElem resulting by reducing a sublist using a notation
