@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils._
  */
 case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   /** inverse of SourceRegion.parse */
-  override def toString = start + "-" + end
+  override def toString = start.toString + "-" + end
   /** l.c-l.c*/
   def twoDimString = start.twoDimString + "-" + end.twoDimString
   /** number of characters in this region */
@@ -39,6 +39,15 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   def twoDimString = line + "." + column
   /** the position that is i places later in the same line */
   def +(i: Int) = SourcePosition(offset + i, line, column + i)
+  /** the position after the string s, which starts at the current position (s may contain newlines) */
+  def after(s: String) = {
+     var sp = this
+     s foreach {c =>
+        if (c == '\n') sp = sp.nl
+        else sp += 1
+     }
+     sp
+  }
   /**
    * the position that is i places earlier in the same line
    * 
