@@ -35,6 +35,7 @@ class ExtensionManager(controller: Controller) {
    private var querytransformers : List[QueryTransformer] = Nil
    private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter)
    private var serverPlugins : List[ServerPlugin] = Nil
+           var lexerExtensions : List[LexerExtension] = List(GenericEscapeHandler, new PrefixEscapeHandler('\\'))
    private var mws : Option[URI] = None
 
    private def log(msg : => String) = report("extman", msg)
@@ -95,7 +96,7 @@ class ExtensionManager(controller: Controller) {
    /** retrieves an applicable server plugin */
    def getServerPlugin(uriComps : List[String]) : Option[ServerPlugin] = 
      {
-     println(serverPlugins.find(_.isApplicable(uriComps)))
+     //println(serverPlugins.find(_.isApplicable(uriComps)))
      serverPlugins.find(_.isApplicable(uriComps))
      }
    

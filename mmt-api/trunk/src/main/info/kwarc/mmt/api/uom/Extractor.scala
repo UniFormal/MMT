@@ -96,7 +96,9 @@ object Extractor {
    /** package URI . modname */
    private def mpathToScala(m: MPath) = dpathToScala(m.doc) + "." + nameToScala(m.name) 
      
-   private val imports = "import info.kwarc.mmt.api._\n" + "import objects._\n" + "import uom._\n"
+   private val imports = "import info.kwarc.mmt.api._\n" + "import objects._\n" + "import uom._\n" +
+    "import ConstantScala._"
+
 
    private def arityToScala(arity: Arity) : List[(String,String)] = arity.components.map {
       case Arg(n) => ("x" + n.abs, "Term")
@@ -194,8 +196,9 @@ object Extractor {
      out.println("package " + dpathToScala(v.parent.doc))
      out.println(imports)
      // generating the object
-     val trt = mpathToScala(from.path)
-     out.println(s"object ${v.name} extends ViewScala with $trt {")
+     val trtPackage = dpathToScala(from.path.parent)
+     out.println("import " + trtPackage + "._\n")
+     out.println(s"object ${v.name} extends ViewScala with ${nameToScala(from.path.name)} {")
      var rules = ""
      from.getDeclarations foreach {
         case c: Constant =>
@@ -225,7 +228,7 @@ object Extractor {
           o += s"  }\n"
           val normalArgs = arity.arguments.length - (if (lastArgIsSeq(arity)) 1 else 0)
           val implConstr = Range(0,normalArgs).map(_ => "A").mkString("") + (if (lastArgIsSeq(arity)) "S" else "")
-          val implemented = trt + "." + c.name.last + ".path"
+          val implemented = nameToScala(from.path.name) + "." + c.name.last + ".path"
           rules += s"  declares(Implementation.$implConstr($implemented)(${c.name.last} _))\n"
           out.println(o)
         case _ =>
