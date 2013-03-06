@@ -301,8 +301,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
        qnotations.map(o => log(o.toString))
     }
 
-    //TODO get escape handlers from meta-theory
-    val escMan = new EscapeManager(List(GenericEscapeHandler))
+    //TODO get escape handlers from meta-theory, remove PrefixEscapeHandler, ?SyntaxPlugin
+    val escMan = new EscapeManager(List(GenericEscapeHandler, new PrefixEscapeHandler('\\')))
     val tl = TokenList(pu.term, pu.source.region.start, escMan)
     if (tl.length == 0) makeError("no tokens found: " + pu.term, pu.source.region)(pu)
     

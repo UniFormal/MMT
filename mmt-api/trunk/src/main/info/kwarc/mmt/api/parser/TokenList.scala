@@ -14,10 +14,10 @@ class EscapeManager(handlers: List[EscapeHandler]) {
     * @param s the tokenized String
     * @param i the next Char in s to be considered
     * @param firstPosition the SourcePosition of that Char
-    * @return the Escaped Token if any of the EscapeHandlers
+    * @return the produced Token if any of the EscapeHandlers
     *   detects an escape at this position
     */
-   def apply(s: String, i: Int, firstPosition: SourcePosition): Option[Escaped] = {
+   def apply(s: String, i: Int, firstPosition: SourcePosition): Option[PrimitiveTokenListElem] = {
       handlers.find(_.applicable(s,i)) map {eh => eh.apply(s,i,firstPosition)}
    }
 }
@@ -32,7 +32,7 @@ abstract class EscapeHandler {
     * 
     * @return the Escaped Token
     */
-   def apply(s: String, i: Int, firstPosition: SourcePosition): Escaped
+   def apply(s: String, i: Int, firstPosition: SourcePosition): PrimitiveTokenListElem
 }
 
 /**
@@ -84,6 +84,26 @@ class SymmetricEscapeHandler(delim: Char, exceptAfter: Char) extends EscapeHandl
      Escaped(delim.toString, text, delim.toString, firstPosition)
   }
 }
+
+/**
+ * an EscapeHandler that detects ids (letter sequences) Tokens prefixed by delim
+ * 
+ * @param delim the begin Char
+ * 
+ * typical example: PrefixEscapeHandler(\)
+ */
+class PrefixEscapeHandler(delim: Char) extends EscapeHandler {
+  def applicable(s: String, i: Int) = s(i) == delim
+  def apply(s: String, index: Int, firstPosition: SourcePosition) = {
+     var i = index+1
+     while (i < s.length && s(i).isLetter) {
+           i += 1
+     }
+     val text = s.substring(index, i)
+     Token(text, firstPosition, true)
+  }
+}
+
 
 object GenericEscapeHandler extends AsymmetricEscapeHandler(Reader.escapeChar.toString, Reader.unescapeChar.toString)
 
@@ -153,12 +173,13 @@ object TokenList {
                case COMBINING_SPACING_MARK | ENCLOSING_MARK | NON_SPACING_MARK =>
                   current += c
                case DECIMAL_DIGIT_NUMBER | LETTER_NUMBER | OTHER_NUMBER =>
-                  current += c
+                  current += c               
                // connectors are remembered
                case CONNECTOR_PUNCTUATION =>
                   current += c
                   connect = true
                // everything else:
+
                case _ =>
                   // end previous Token, if any
                   endToken

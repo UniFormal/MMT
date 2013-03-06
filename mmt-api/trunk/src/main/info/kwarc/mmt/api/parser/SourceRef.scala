@@ -24,6 +24,7 @@ object SourceRegion {
       if (parts.length == 2) SourceRegion(SourcePosition.parse(parts(0)), SourcePosition.parse(parts(1)))
       else throw ParseError("illegal source region: " + s)
    }
+  def ofString(s: String) = SourceRegion(SourcePosition(0,0,0),SourcePosition(s.length-1,0,s.length-1))
 }
 
 /** position in a source block; both one and two-dimensional coordinates are maintained
@@ -83,7 +84,7 @@ object SourceRef {
       SourceRef(container, reg)
    }
    def anonymous(s: String) = {
-      val reg = SourceRegion(SourcePosition(0,0,0),SourcePosition(s.length-1,0,s.length-1))
+      val reg = SourceRegion.ofString(s)
       SourceRef(URI.empty, reg)
    }
    /** the theory in which the parsed metadata keys reside */
