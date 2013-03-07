@@ -27,12 +27,13 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
       case _ => None
    }
    /** convenience method to obtain all included theories (including a possible meta-theory) */
-   def getIncludes:List[MPath] = {
-     val incls = getDeclarations.mapPartial {
+   def getIncludes:List[MPath] = meta.toList ::: getIncludesWithoutMeta 
+   /** convenience method to obtain all included theories (without a possible meta-theory) */
+   def getIncludesWithoutMeta:List[MPath] = {
+    getDeclarations.mapPartial {
         case s:Structure if s.name.isAnonymous => Some(s.fromPath)
         case _ => None
      }
-     meta.toList ::: incls
    }   
    /** convenience method to obtain all named structures */
    def getNamedStructures:List[Structure] = getDeclarations.mapPartial {

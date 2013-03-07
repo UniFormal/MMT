@@ -21,7 +21,7 @@ class ConstantAssignment(val home : Term, val name : LocalName, val alias: Optio
 }
 
   /**
-   * A DefLinkAssignment represents an MMT assignment to a definitional link.<p>
+   * A DefLinkAssignment represents an MMT assignment to a definitional link.
    * 
    * @param home the [[info.kwarc.mmt.api.objects.Term]] representing the parent link
    * @param name the name of the instantiated symbol
@@ -36,6 +36,24 @@ class DefLinkAssignment(val home : Term, val name : LocalName, val from: MPath, 
    override def toString = (if (name.isAnonymous) "import " else name + " := ") + target.toString 
    def components = List(StringLiteral(name.toPath), target)
    def role = info.kwarc.mmt.api.Role_StrAss
+}
+
+/** apply/unapply methods for the special case where a view includes another view */ 
+object PlainViewInclude {
+   /** pre: included is  view with domain from */
+   def apply(home: Term, from: MPath, included: MPath) = new DefLinkAssignment(home, LocalName(ComplexStep(from)), from, OMMOD(included))
+   def unapply(d: Assignment) : Option[(Term, MPath, MPath)] = {
+      d match {
+         case d : DefLinkAssignment => d.name match {
+            case LocalName(List(ComplexStep(from))) => d.target match {
+               case OMMOD(included) => Some((d.home, from, included))
+               case _ => None
+            }
+            case _ => None
+         }
+         case _ => None
+      }
+   }
 }
 
 /*

@@ -37,6 +37,8 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   /** inverse of SourcePosition.parse */
   override def toString = offset + "." + line + "." + column
   def twoDimString = line + "." + column
+  /** same as twoDimString but colums and rows are counted from 1, not 0 */
+  def twoDimStringFromOne = (line+1) + "." + (column+1)
   /** the position that is i places later in the same line */
   def +(i: Int) = SourcePosition(offset + i, line, column + i)
   /** the position after the string s, which starts at the current position (s may contain newlines) */
