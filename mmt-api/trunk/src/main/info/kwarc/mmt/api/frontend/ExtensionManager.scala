@@ -35,7 +35,8 @@ class ExtensionManager(controller: Controller) {
    private var querytransformers : List[QueryTransformer] = Nil
    private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter)
    private var serverPlugins : List[ServerPlugin] = Nil
-           var lexerExtensions : List[LexerExtension] = List(GenericEscapeHandler, new PrefixEscapeHandler('\\'))
+           var lexerExtensions : List[LexerExtension] =
+              List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), NatLiteralHandler)
    private var mws : Option[URI] = None
 
    private def log(msg : => String) = report("extman", msg)

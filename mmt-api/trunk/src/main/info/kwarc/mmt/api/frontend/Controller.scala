@@ -369,7 +369,7 @@ class Controller extends ROController with Logger {
                case "check" => arch.check(in, this)
                case "validate" => arch.validate(in, this)
                case "delete" => arch.deleteNarrCont(in)
-               case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
+               case "clean" => List("compiled", "narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
                case "enrich" =>
                  val me = new ModuleElaborator(this)
@@ -390,7 +390,7 @@ class Controller extends ROController with Logger {
                case "mws" => arch.produceMWS(in, "content")
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
-               case "extract" => arch.extractScala(this, in, "content")
+               case "extract" => arch.extractScala(this, in)
                case "integrate" => arch.integrateScala(in, "content")
                case "present" => params.foreach(p => arch.producePres(Nil,p, this))
                case "close" => backend.closeArchive(id)

@@ -23,18 +23,11 @@ class ParserState(val reader: Reader, val container: DPath) {
     * }}}
     * commands
     */
-   val namespace = new ListMap[String,DPath]
-   /**
-    * the default namespace set by
-    * {{{
-    * namespace URI
-    * }}}
-    * commands
-    */
-   var defaultNamespace: DPath = utils.mmt.mmtbase
-   
+   var namespaces = new utils.NamespaceMap
+   namespaces.default = utils.mmt.mmtbase.uri
+
    /** uri at current parsing location */
-   var home : Path = defaultNamespace
+   var home : Path = DPath(namespaces.default)
    
    /** the position at which the current StructuralElement started */ 
    var startPosition = reader.getSourcePosition
@@ -44,10 +37,9 @@ class ParserState(val reader: Reader, val container: DPath) {
    /** all errors encountered during parsing */()
    def getErrors = errors.reverse
    
-   def copy(reader: Reader = reader, defaultNamespace:DPath = defaultNamespace) = {
+   def copy(reader: Reader = reader) = {
       val s = new ParserState(reader, container)
-      s.defaultNamespace = defaultNamespace
-      namespace map {s.namespace += _}
+      s.namespaces = namespaces
       s
    }
 }
@@ -164,7 +156,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    }
    
    def apply(state : ParserState, dpath : DPath) : (Document,ParserState) = {
-      state.defaultNamespace = dpath
+      state.namespaces.default = dpath.uri
       state.home = dpath
       val doc = new Document(dpath)
       seCont(doc)(state)
@@ -214,7 +206,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      try {Path.parseD(s, base)}
+      val sexp = state.namespaces.expand(s)
+      try {Path.parseD(sexp, base)}
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
@@ -226,7 +219,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      try {Path.parseM(s, base)}
+      val sexp = state.namespaces.expand(s)
+      try {Path.parseM(sexp, base)}
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
@@ -238,7 +232,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      try {Path.parseS(s, base)}
+      val sexp = state.namespaces.expand(s)
+      try {Path.parseS(sexp, base)}
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
@@ -272,7 +267,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       //auxiliary function to unify "view" and "implicit view"
       def doView(isImplicit: Boolean) {
                val name = readLocalPath
-               val ns = state.defaultNamespace
+               val ns = DPath(state.namespaces.default)
                val vpath = ns ? name
                val mref = MRef(doc.path, vpath, true)
                seCont(mref)
@@ -317,14 +312,14 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                end(d)
             case "namespace" =>
                val ns = readDPath(doc.path)
-               state.defaultNamespace = ns 
+               state.namespaces.default = ns .uri
             case "import" =>
                val (n,_) = state.reader.readToken
                val ns = readDPath(doc.path)
-               state.namespace(n) = ns
+               state.namespaces.prefixes(n) = ns.uri
             case "theory" =>
                val name = readLocalPath
-               val ns = state.defaultNamespace
+               val ns = DPath(state.namespaces.default)
                val tpath = ns ? name
                val mref = MRef(doc.path, tpath, true)
                seCont(mref)
@@ -576,9 +571,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             //assignment to include
             case "include" =>
                val from = readMPath(view.path)
-               readDelimiter(":=")
+               readDelimiter("=")
                val (_,_,mor) = readParsedObject(view.to)
-               val as = new DefLinkAssignment(view.toTerm, LocalName.Anon, from, mor)
+               val as = new DefLinkAssignment(view.toTerm, LocalName(ComplexStep(from)), from, mor)
                seCont(as)
             //Pattern
             case "pattern" =>
@@ -650,9 +645,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
      //building parsing state
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(modS)))
      val state = new ParserState(r, docBaseO.getOrElse(null))
-     docBaseO.map(state.defaultNamespace = _)
+     docBaseO.map(dp => state.namespaces.default = dp.uri)
      namespace map { p =>
-       state.namespace(p._1) = p._2
+       state.namespaces.prefixes(p._1) = p._2.uri
      }
      val doc = controller.getDocument(dpath)
      //calling parse function
@@ -674,9 +669,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
      //building parsing state
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(conS)))
      val state = new ParserState(r, docBaseO.getOrElse(null))
-     docBaseO.map(state.defaultNamespace = _)
+     docBaseO.map(dp => state.namespaces.default = dp.uri)
      namespace map { p =>
-       state.namespace(p._1) = p._2
+       state.namespaces.prefixes(p._1) = p._2.uri
      }
      
      val thy = controller.globalLookup.getTheory(mpath) match {

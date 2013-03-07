@@ -7,18 +7,14 @@ import utils.FileConversion._
 
 trait ScalaArchive extends WritableArchive {
     /** Extract scala from a dimension */
-    def extractScala(controller: Controller, in : List[String] = Nil, dim: String) {
-        val inFile = root / dim / in
-        if (inFile.isDirectory) {
-           inFile.list foreach {n =>
-              if (includeDir(n)) extractScala(controller, in ::: List(n), dim)
-           }
-        } else if (inFile.getExtension == Some("omdoc")) {
+    def extractScala(controller: Controller, in : List[String] = Nil) {
+       traverse("content", in, Archive.extensionIs("omdoc")) {case Current(inFile,inPath) => 
            try {
-              val (doc,_) = controller.read(inFile, Some(DPath(narrationBase / in)))
-              val outFile = (root / "scala" / in).setExtension("scala")
+              val mpath = Archive.ContentPathToMMTPath(inPath)
+              val mod = controller.globalLookup.getModule(mpath)
+              val outFile = (root / "scala" / inPath).setExtension("scala")
               outFile.getParentFile.mkdirs
-              uom.Extractor.doDocument(controller, doc.path, outFile)
+              uom.Extractor.doModule(controller, mod, outFile)
            } catch {
               case e: Error => report(e)
               //case e => report("error", e.getMessage)

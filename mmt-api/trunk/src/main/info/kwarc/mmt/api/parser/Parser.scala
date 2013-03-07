@@ -119,10 +119,15 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                //single Tokens may be bound variables
                OMV(name)
             } else if (word.count(_ == '?') > 0) {
-                val p = Path.parseS(word, pu.scope.toMPath)
-                //or identifiers
-                val t = OMID(p)
-                t
+                try {
+                   Path.parse(word, pu.scope.toMPath) match {
+                      //or identifiers
+                      case p: ContentPath => OMID(p)
+                      case p => makeError("content path expected: " + p, te.region) 
+                   }
+                } catch {
+                   case ParseError(msg) => makeError(msg, te.region)
+                }
             } else
                //in all other cases, we don't know
                makeError("unbound token: " + word, te.region) //actually, this is recoverable

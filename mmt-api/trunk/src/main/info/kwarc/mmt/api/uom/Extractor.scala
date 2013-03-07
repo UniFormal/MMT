@@ -20,7 +20,7 @@ object Scala {
 
 object ScalaLambda {
    val cd = DPath(utils.mmt.baseURI / "foundations") ? "Scala"
-   val path = cd ? "lambda"
+   val path = cd ? "Lambda"
    def unapply(t: Term) : Option[(Context,Term)] = t match {
       case OMBIND(OMID(this.path), con, t) => Some((con,t))
       case _ => None
@@ -73,7 +73,7 @@ object Extractor {
      return -2
    }
    /** reserved identifiers */
-   private val keywords = List("true", "false")
+   private val keywords = List("true", "false", "type", "val", "var", "def", "class", "trait", "object", "extends", "with", "while", "do", "for")
    /** preused identifiers, i.e., declared in Object */
    private val reserved = List("eq")
    /** escapes strings to avoid clashes with Scala keywords */
@@ -84,6 +84,7 @@ object Extractor {
         "om_" + s
         else s
    }
+   private def nameToScalaQ(p: GlobalName) = (p.module.toMPath.name.toPath + "_" + p.name.toPath).replace("/", "__")
    private def nameToScala(l: LocalName) = escape(l.toPath.replace("/","."))
    private def nameToScala(l: LocalPath) = escape(l.toPath.replace("/","."))
    /** package URI */
@@ -97,7 +98,7 @@ object Extractor {
    private def mpathToScala(m: MPath) = dpathToScala(m.doc) + "." + nameToScala(m.name) 
      
    private val imports = "import info.kwarc.mmt.api._\n" + "import objects._\n" + "import uom._\n" +
-    "import ConstantScala._"
+    "import ConstantScala._\n"
 
 
    private def arityToScala(arity: Arity) : List[(String,String)] = arity.components.map {
@@ -109,6 +110,20 @@ object Extractor {
    }
    private def lastArgIsSeq(arity: Arity) = ! arity.arguments.isEmpty && arity.arguments.last.isSequence
    private def lastVarIsSeq(arity: Arity) = ! arity.variables.isEmpty && arity.variables.last.isSequence
+   
+   private def termToScala(t: Term): String = t match {
+      case OMA(f, args) =>       s"${termToScala(f)}(${args.map(termToScala).mkString(", ")})"
+      case OMBIND(b, con, sc) => s"${termToScala(b)}(${contextToScala(con)}, ${termToScala(sc)})"
+      case OMS(p)   => nameToScalaQ(p)
+      case OMV(n)   => n.toPath
+      case OMI(i)   => s"OMI(${i.toString})"
+      case OMSTR(s) => "OMSTR(\"" + s + "\")"
+   }
+   // drops types, definiens
+   private def contextToScala(c: Context): String = {
+      val vars = c.variables.map("VarDecl(\"" + _.name + "\n,None,None)").mkString(", ") 
+      s"Context($vars)"
+   }
    
    private def applyMethods(arity: Arity) : String = {
      val scalaArgs = arityToScala(arity)
@@ -150,20 +165,31 @@ object Extractor {
      app + unapp
    }
    
+   private val OMFMP = DPath(utils.URI("http", "www.openmath.org") / "cd") ? "OpenMath" ? "FMP"
    def doTheory(t: DeclaredTheory, out: java.io.PrintWriter) {
      /* open and append */
      out.println("package " + dpathToScala(t.parent.doc))
      out.println(imports)
      // generating the trait
-     out.println(s"trait ${t.name} {")
+     val includes = t.getIncludesWithoutMeta.map(i => " with " + mpathToScala(i)).mkString("")
+     out.println(s"trait ${t.name} extends AbstractTheoryScala$includes {")
      t.getDeclarations foreach {
         case c: Constant =>
-          val arity = c.not.map(_.getArity).getOrElse(Arity.plainApplication)
-          val scalaArgs = arityToScala(arity)
-          val argtpString = scalaArgs.map(p => p._1 + ": " + p._2).mkString(", ")
-          var o = s"  def ${nameToScala(c.name)}($argtpString): Term\n"
-          out.println(o)
-        case _ =>
+          if (c.tp == Some(OMID(OMFMP))) {
+             val qname = nameToScalaQ(c.path)
+             val qnameString = "\"" + qname + "\""
+             out.println(s"  val $qname = _assert($qnameString, ${termToScala(c.df.get)} == logic1_true)\n")
+          } else {
+             val arity = c.not.map(_.getArity).getOrElse(Arity.plainApplication)
+             val scalaArgs = arityToScala(arity)
+             val argtpString = scalaArgs.map(p => p._1 + ": " + p._2).mkString(", ")
+             var o = s"  def ${nameToScalaQ(c.path)}($argtpString): Term\n"
+             out.println(o)
+          }
+        case s: DeclaredStructure if ! s.name.isAnonymous =>
+             // unnamed structures have been handled above already
+             out.println("val " + nameToScalaQ(s.path) + ": " + mpathToScala(s.fromPath))
+        case _ => 
      }
      out.println("}\n")
      // generating the auxiliary object
@@ -180,7 +206,7 @@ object Extractor {
 	         var o = ""
 	         o +=  s"\n  object ${nameToScala(c.name)} extends ConstantScala {\n"
 	         o +=  s"    val parent = _path\n"
-	         o +=   "    val name = \"" + c.name + "\"\n"
+	         o +=   "    val name = \"" + nameToScala(c.name) + "\"\n"
 	         c.not foreach {n =>
 	            val a = n.getArity
 	            o += applyMethods(a)
@@ -198,57 +224,67 @@ object Extractor {
      // generating the object
      val trtPackage = dpathToScala(from.path.parent)
      out.println("import " + trtPackage + "._\n")
-     out.println(s"object ${v.name} extends ViewScala with ${nameToScala(from.path.name)} {")
+     val includes = from.getIncludesWithoutMeta.flatMap {f =>
+        v.getO(LocalName(ComplexStep(f))) match {
+           case Some(PlainViewInclude(_,_,i)) => " with " + mpathToScala(i)
+           case _ => ""
+        }
+     }.mkString("")
+     out.println(s"trait ${v.name} extends ViewScala with ${nameToScala(from.path.name)}$includes {")
      var rules = ""
      from.getDeclarations foreach {
         case c: Constant =>
-          val apath = v.path ? c.name
-          val aO = v.getO(c.name)
-          val arity = c.not.map(_.getArity).getOrElse(Arity.plainApplication)
-          val scalaArgs = arityToScala(arity)
-          val defaultNames = scalaArgs.map(_._1)
-          val varTypes = scalaArgs.map(_._2)
-          val (varNames, impl) = aO match {
-             case None =>
-                   (defaultNames, "null")
-             case Some(a: ConstantAssignment) => a.target match {
-                case Some(ScalaLambda(con, Scala(s))) =>
-                   (con.variables.map(_.name.toPath), s)
-                case _ =>
-                   (defaultNames, " //unexpected assignment in MMT view")
+          if (c.tp != Some(OMID(OMFMP))) {
+             val apath = v.path ? c.name
+             val aO = v.getO(c.name)
+             val arity = c.not.map(_.getArity).getOrElse(Arity.plainApplication)
+             val scalaArgs = arityToScala(arity)
+             val defaultNames = scalaArgs.map(_._1)
+             val varTypes = scalaArgs.map(_._2)
+             val (varNames, impl) = aO match {
+                case None =>
+                      (defaultNames, "null")
+                case Some(a: ConstantAssignment) => a.target match {
+                   case Some(ScalaLambda(con, Scala(s))) =>
+                      (con.variables.map(_.name.toPath), s)
+                   case _ =>
+                      (defaultNames, " //unexpected assignment in MMT view")
+                }
+                case Some(_) =>
+                      (defaultNames, " //unexpected assignment in MMT view")
              }
-             case Some(_) =>
-                   (defaultNames, " //unexpected assignment in MMT view")
+             var o = ""
+             o += s"  def ${nameToScalaQ(c.path)}(${varNames.zip(varTypes).map(p => p._1 + ": " + p._2).mkString(", ")}) : Term = {\n"
+             o += s"    // UOM start " + apath.toPath + "\n"
+             o += s"    $impl\n"
+             o += s"    // UOM end " + apath.toPath + "\n"
+             o += s"  }\n"
+             val normalArgs = arity.arguments.length - (if (lastArgIsSeq(arity)) 1 else 0)
+             var implConstr = Range(0,normalArgs).map(_ => "A").mkString("") + (if (lastArgIsSeq(arity)) "S" else "")
+             if (implConstr == "") implConstr = "constant"
+             val implemented = nameToScala(from.path.name) + "." + nameToScala(c.name) + ".path"
+             rules += s"  declares(Implementation.$implConstr($implemented)(${nameToScalaQ(c.path)} _))\n"
+             out.println(o)
           }
-          var o = ""
-          o += s"  def ${nameToScala(c.name)}(${varNames.zip(varTypes).map(p => p._1 + ": " + p._2).mkString(", ")}) : Term = {\n"
-          o += s"    // UOM start " + apath.toPath + "\n"
-          o += s"    $impl\n"
-          o += s"    // UOM end " + apath.toPath + "\n"
-          o += s"  }\n"
-          val normalArgs = arity.arguments.length - (if (lastArgIsSeq(arity)) 1 else 0)
-          val implConstr = Range(0,normalArgs).map(_ => "A").mkString("") + (if (lastArgIsSeq(arity)) "S" else "")
-          val implemented = nameToScala(from.path.name) + "." + c.name.last + ".path"
-          rules += s"  declares(Implementation.$implConstr($implemented)(${c.name.last} _))\n"
-          out.println(o)
         case _ =>
      }
      out.println(rules)
      out.println("}\n")
+     out.println(s"object ${v.name} extends ${v.name}\n")
    }
 
-   def doDocument(controller: Controller, dpath: DPath, outFile: File) {
-      val doc = controller.getDocument(dpath)
+   def doModule(controller: Controller, mod: Module, outFile: File) {
       var out = utils.File.Writer(outFile)
       out.println("//Source file generated by the Universal OpenMath Machine\n")
-  	   doc.getModulesResolved(controller.globalLookup).foreach {
-  	  	   case t : DeclaredTheory => doTheory(t, out)
+  	   mod match {
+  	  	   case t: DeclaredTheory => doTheory(t, out)
   	  	   case v: DeclaredView =>
   	  	      v.from match {
   	  	         case OMMOD(f) =>
   	  	            val dom = controller.globalLookup.getDeclaredTheory(f)
   	  	            doView(v, dom, out)
   	  	      }
+  	  	   case _ =>
   	   }
       out.close    //TODO some exception handling
    }

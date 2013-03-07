@@ -1,11 +1,21 @@
 package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
-
+import objects.Term
 
 trait TheoryScala {
    val _base : DPath
    val _path : MPath
+}
+
+trait AbstractTheoryScala {
+   var _axioms: List[(String,Boolean)] = Nil
+   def _assert(name: String, t: Boolean) {_axioms ::= (name,t)}
+   def _test() {
+      _axioms.foreach {
+         case (n, a) => if (! a) println("test failed: " + n)
+      }
+   }
 }
 
 trait ConstantScala {
