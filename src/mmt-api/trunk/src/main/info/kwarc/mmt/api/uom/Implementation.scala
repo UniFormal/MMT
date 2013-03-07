@@ -5,6 +5,8 @@ import info.kwarc.mmt.api._
 
 case class UOMError(msg: String) extends java.lang.Throwable
 
+case object NoChangeMessage extends java.lang.Throwable
+
 class Implementation(constantName : GlobalName, function : List[Term] => Term) extends BreadthRule(constantName) {
   def name = constantName
   val apply: Rewrite = (args : List[Term]) => {
@@ -20,6 +22,7 @@ class Implementation(constantName : GlobalName, function : List[Term] => Term) e
         }
      } catch {
         case UOMError(_) => NoChange
+        case NoChangeMessage => NoChange
      }
   }
 }
@@ -28,7 +31,7 @@ object Implementation {
    /** convenience factory for functions of type obj*  -> obj */
    def S(name: GlobalName)(f: List[Term] => Term) = new Implementation(name, f)
    /** convenience factory for functions of type  -> obj */
-   def constant(name: GlobalName)(f: Unit => Term) = S(name) {args =>
+   def constant(name: GlobalName)(f: () => Term) = S(name) {args =>
       if (args.length != 0) throw UOMError("bad number of arguments")
       f()
    }

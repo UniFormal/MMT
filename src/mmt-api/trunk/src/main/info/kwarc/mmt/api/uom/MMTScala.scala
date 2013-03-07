@@ -21,8 +21,8 @@ trait AbstractTheoryScala {
 trait ConstantScala {
    val parent: MPath
    val name: String
-   val path: GlobalName = parent ? name
-   val term = objects.OMID(path)
+   lazy val path: GlobalName = parent ? name
+   lazy val term = objects.OMID(path)
 }
 
 trait ViewScala extends RuleSet {

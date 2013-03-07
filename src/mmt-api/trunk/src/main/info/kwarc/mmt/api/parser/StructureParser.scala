@@ -572,7 +572,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             case "include" =>
                val from = readMPath(view.path)
                readDelimiter("=")
-               val (_,_,mor) = readParsedObject(view.to)
+               val mor = OMMOD(readMPath(view.path)) //readParsedObject(view.to)
                val as = new DefLinkAssignment(view.toTerm, LocalName(ComplexStep(from)), from, mor)
                seCont(as)
             //Pattern

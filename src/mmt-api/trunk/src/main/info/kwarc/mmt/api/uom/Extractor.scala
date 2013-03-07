@@ -121,10 +121,12 @@ object Extractor {
                }.getOrElse(0)
             case _ => 0
          }
-         var argsScala = args.take(normalArgs).map(termToScala).mkString(", ")
-         if (normalArgs > 0 && normalArgs < args.length)
-            argsScala += ", "
-         if (normalArgs < args.length) argsScala += s"List(${args.drop(normalArgs).mkString(", ")})"
+         val argsRecurse = args.map(termToScala)
+         var argsScala = argsRecurse.take(normalArgs).mkString(", ")
+         if (normalArgs > 0 && normalArgs < argsRecurse.length)
+             argsScala += ", "
+         if (normalArgs < argsRecurse.length)
+             argsScala += s"List(${argsRecurse.drop(normalArgs).mkString(", ")})"
          s"${termToScala(f)}($argsScala)"
       case OMBIND(b, con, sc) => s"${termToScala(b)}(${contextToScala(con)}, ${termToScala(sc)})"
       case OMS(p)   => nameToScalaQ(p)
@@ -191,9 +193,9 @@ object Extractor {
           if (c.tp == Some(OMID(OMFMP))) {
              val qname = nameToScalaQ(c.path)
              val qnameString = "\"" + qname + "\""
-             out.println(s"  val $qname = _assert($qnameString, ${termToScala(c.df.get)(controller)} == logic1_true)\n")
+             out.println(s"  val $qname = _assert($qnameString, ${termToScala(c.df.get)(controller)} == logic1_true())\n")
           } else {
-             val arity = c.not.map(_.getArity).getOrElse(Arity.plainApplication)
+             val arity = c.not.map(_.getArity).getOrElse(Arity.constant)
              val scalaArgs = arityToScala(arity)
              val argtpString = scalaArgs.map(p => p._1 + ": " + p._2).mkString(", ")
              var o = s"  def ${nameToScalaQ(c.path)}($argtpString): Term\n"
@@ -237,6 +239,7 @@ object Extractor {
      // generating the object
      val trtPackage = dpathToScala(from.path.parent)
      out.println("import " + trtPackage + "._\n")
+     out.println("import " + nameToScala(from.path.name) + "._\n")
      val includes = from.getIncludesWithoutMeta.flatMap {f =>
         v.getO(LocalName(ComplexStep(f))) match {
            case Some(PlainViewInclude(_,_,i)) => " with " + mpathToScala(i)
@@ -248,15 +251,19 @@ object Extractor {
      from.getDeclarations foreach {
         case c: Constant =>
           if (c.tp != Some(OMID(OMFMP))) {
+             val implemented = nameToScala(from.path.name) + "." + nameToScala(c.name) + ".path"
              val apath = v.path ? c.name
              val aO = v.getO(c.name)
-             val arity = c.not.map(_.getArity).getOrElse(Arity.plainApplication)
+             val arity = c.not.map(_.getArity).getOrElse(Arity.constant)
              val scalaArgs = arityToScala(arity)
              val defaultNames = scalaArgs.map(_._1)
              val varTypes = scalaArgs.map(_._2)
              val (varNames, impl) = aO match {
                 case None =>
-                      (defaultNames, "null")
+                   if (arity.isConstant)
+                      (defaultNames, s"OMS($implemented)") //constants are often not implemented
+                   else
+                      (defaultNames, "throw NoChangeMessage")
                 case Some(a: ConstantAssignment) => a.target match {
                    case Some(ScalaLambda(con, Scala(s))) =>
                       (con.variables.map(_.name.toPath), s)
@@ -275,7 +282,6 @@ object Extractor {
              val normalArgs = arity.arguments.length - (if (lastArgIsSeq(arity)) 1 else 0)
              var implConstr = Range(0,normalArgs).map(_ => "A").mkString("") + (if (lastArgIsSeq(arity)) "S" else "")
              if (implConstr == "") implConstr = "constant"
-             val implemented = nameToScala(from.path.name) + "." + nameToScala(c.name) + ".path"
              rules += s"  declares(Implementation.$implConstr($implemented)(${nameToScalaQ(c.path)} _))\n"
              out.println(o)
           }
