@@ -87,20 +87,31 @@ abstract class WritableArchive extends ROArchive {
       */
     def MMTPathToContentPath(m: MPath) : File = contentDir / Archive.MMTPathToContentPath(m)
 
-    /** traverses a dimension; it seems reasonable to reimplement all methods in terms of (a method similar to) this */
-    def traverse(dim: String, in: List[String], filter: String => Boolean, sendLog: Boolean = true)(f: Current => Unit) {
+    /** traverses a dimension calling continuations on files and subdirectories */
+    def traverse[A](dim: String, in: List[String], filter: String => Boolean, sendLog: Boolean = true)
+                     (onFile: Current => A, onDir: (Current,List[A]) => A = (_:Current,_:List[A]) => ()) : Option[A] = { 
         val inFile = root / dim / in
         if (inFile.isDirectory) {
            if (sendLog) log("entering " + inFile)
-           inFile.list foreach {n =>
-              if (includeDir(n)) traverse(dim, in ::: List(n), filter, sendLog)(f)
+           val results = inFile.list flatMap {n =>
+              if (includeDir(n)) {
+                  val r = traverse(dim, in ::: List(n), filter, sendLog)(onFile, onDir)
+                  r.toList
+              } else
+                 Nil
            }
+           val result = onDir(Current(inFile,in), results.toList.reverse)
            if (sendLog) log("leaving  " + inFile)
+           Some(result)
         } else {
            try {
-              if (filter(inFile.getName)) f(Current(inFile, in))
+              if (filter(inFile.getName)) {
+                 val r = onFile(Current(inFile, in))
+                 Some(r)
+              } else
+                 None
            } catch {
-              case e : Error => report(e)
+              case e : Error => report(e); None
            }
         }
     }
@@ -294,6 +305,13 @@ object Archive {
             }
           }
           DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl.init) ? unescape(fileNameNoExt)
+   }
+    // scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
+   def ContentPathToDPath(segs: List[String]) : DPath = segs match {
+       case Nil => throw ImplementationError("")
+       case hd :: tl =>
+          val p = hd.indexOf("..")
+          DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl)
    }
     /** Get the disk path of the module in the content folder
       * @param m the MPath of the module 
