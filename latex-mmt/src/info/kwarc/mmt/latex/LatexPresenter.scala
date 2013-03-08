@@ -1,5 +1,6 @@
 package info.kwarc.mmt.latex
 import info.kwarc.mmt.api._
+import utils._
 import info.kwarc.mmt.api.web._
 import objects._
 import parser._
@@ -133,6 +134,7 @@ class LatexPresenter extends Presenter with ServerPlugin {
        }
        case OMA(OMV(v), args) => s"${toLatex(OMV(v))} ${args.map(toLatex).mkString("{ }")}"
        case OMV(n) => n.toString
+       case OMA(f, args) => s"(${toLatex(f)}\\;${args.map(toLatex).mkString("\\:")})"
        case t => throw LatexError("Term cannot be converted to latex : " + t.toString)
      }
    }
@@ -202,12 +204,11 @@ class LatexPresenter extends Presenter with ServerPlugin {
     def act(tk : HTalk) = try {
       val text = bodyAsString(tk)
       val jobname = tk.req.header("jobname").getOrElse(throw LatexError("found no jobname for request"))
-      val dpathS = tk.req.header("dpath").getOrElse(throw LatexError("found no dpath"))
+      val dpathS =  tk.req.header("dpath").getOrElse(throw LatexError("found no dpath"))
       val notPresS = tk.req.header("pres").getOrElse("")
-
       
       
-      val dpath = Path.parseD(dpathS, utils.mmt.mmtbase)      
+      val dpath = DPath(URI(dpathS)) 
       println("received : " + jobname + " : " + text)
       if (!states.isDefinedAt(jobname)) { 
         val state = new LatexState(dpath, controller)
@@ -320,20 +321,25 @@ class LatexPresenter extends Presenter with ServerPlugin {
 
 class LatexStructureParser(ltxState : LatexState, controller : Controller) extends StructureAndObjectParser(controller) {
    var addedMacros : List[String] = Nil
-  
+   def getSourceFile(state : ParserState) : String = {
+     val fs = state.container.uri.pathAsString
+     val pos = fs.lastIndexOf('.')
+     "run:./" + fs.substring(0,pos) + ".pdf"
+   }
    
    override def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
       SourceRef.update(se, SourceRef(state.container.uri,currentSourceRegion))
+      val source = getSourceFile(state)
       se match {
         case c : Constant => 
           if (!ltxState.notationQueue.isEmpty) {
             val defaultNot = TextNotation.parse(ltxState.notationQueue.dequeue(), c.path)
-            addedMacros ::= Utils.makeMacro(defaultNot)
+            addedMacros ::= makeMacro(defaultNot, source)
           } else {//no explicit presentation notation
             c.not match {
-              case None => addedMacros ::= s"\\newcommand{\\${Utils.latexName(c.path)}}{${c.name.toString}}"
-              case Some(notation) => addedMacros ::= Utils.makeMacro(notation) 
+              case None => addedMacros ::= s"\\newcommand{\\${Utils.latexName(c.path)}}{\\mmtlink[$source]{${c.name.toString}}{${c.path}}}"
+              case Some(notation) => addedMacros ::= makeMacro(notation, source) 
             }
           }
         case m : modules.Module => ltxState.mod = m.path
@@ -341,33 +347,33 @@ class LatexStructureParser(ltxState : LatexState, controller : Controller) exten
       }      
       controller.add(se)
    }
+   
+     private def makeMacro(marker : Marker, mmtName : GlobalName, source : String) : String = marker match {
+     case Delim(str) => s"\\mmtlink[$source]{$str}{${mmtName.toPath}}"
+     case SecDelim(str,_) => s"\\mmtlink[$source]{$str}{${mmtName.toPath}}"
+     case Arg(i) => s"#${i.abs}"
+     case SeqArg(i,d) => s"\\mmtseq{#${i.abs}}{${makeMacro(d, mmtName, source)}}"
+     case Var(i, t, sO) => s"#${i.abs}" //TODO 
+     case p : PlaceholderDelimiter => throw LatexError("Marker PlaceholderDelimiter shouldn't occur in Notations")
+   }
+    
+    
+   def makeMacro(not : TextNotation, source : String) : String = {
+     val mmtName = not.name
+     val markers = not.markers
+     val body = markers.map(makeMacro(_, mmtName, source)).mkString(" ")
+     val label = s"\\hyperdef{mmt}{${mmtName.toPath}}{}"
+     val args = (1 to not.getArity.length).map(i => s"#$i").mkString("")
+     
+     s"\\gdef\\${Utils.latexName(mmtName)}$args{$body}\n $label\n"     
+   }
+   
 }
 
 object Utils {
    private val sep = ""
    def latexName(mmtName : GlobalName) : String = "mmt" + sep + mmtName.module.toMPath.last + sep + mmtName.last
    
-   private def makeMacro(marker : Marker, mmtName : GlobalName) : String = marker match {
-     case Delim(str) => s"\\link{$str}{${mmtName.toPath}}"
-     case SecDelim(str,_) => s"\\link{$str}{${mmtName.toPath}}"
-     case Arg(i) => s"#${i.abs}"
-     case SeqArg(i,d) => s"\\mmtseq{#${i.abs}}{${makeMacro(d, mmtName)}}"
-     case Var(i, t, sO) => s"#${i.abs}" //TODO 
-     case p : PlaceholderDelimiter => throw LatexError("Marker PlaceholderDelimiter shouldn't occur in Notations")
-   }
-    
-    
-   def makeMacro(not : TextNotation) : String = {
-     val mmtName = not.name
-     val markers = not.markers
-     val body = markers.map(makeMacro(_, mmtName)).mkString(" ")
-     val label = s"\\hyperdef{mmt}{${mmtName.toPath}}{}"
-     val args = (1 to not.getArity.length).map(i => s"#$i").mkString("")
-     
-     s"\\gdef\\${Utils.latexName(mmtName)}$args{$body}\n $label\n"     
-   }
 
-   
-   
 }
 
