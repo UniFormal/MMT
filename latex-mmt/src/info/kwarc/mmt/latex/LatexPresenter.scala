@@ -9,6 +9,8 @@ import frontend._
 import scala.collection._
 import zgs.httpd._
 
+case class LatexError(val text : String) extends Error(text)
+
 class LatexState(val dpath : DPath, controller : Controller) {
   
   val dictionary = new mutable.HashMap[LocalName, String] // ?needed
@@ -31,6 +33,7 @@ class LatexState(val dpath : DPath, controller : Controller) {
   val seqReader = new SeqBufReader
   val parserState = new ParserState(new Reader(seqReader), dpath)
   
+  var notationQueue = new mutable.Queue[String]
   
   def setParserState(text : String) {
     seqReader.appendLine(text)
@@ -76,15 +79,16 @@ class LatexPresenter extends Presenter with ServerPlugin {
       }
    }
    
-   private def ttoLatex(tm : Term, scope : MPath) : String = {
+   private def toLatex(tm : Term, scope : MPath) : String = {
      val notations = AbstractObjectParser.getNotations(controller, OMMOD(scope))
      val notationsHash = notations.map(n => (n.name, n)).toMap
-     ttoLatex(tm)(notationsHash)
-     
+     val contentRep = toLatex(tm)(new immutable.HashMap[GlobalName,TextNotation])
+     val pres = toLatex(tm)(notationsHash)
+     s"\\mmtTooltip{$pres}{$contentRep}"
    }
 
    
-   private def ttoLatex(tm : Term)(implicit notations : Map[GlobalName,TextNotation]) : String = {
+   private def toLatex(tm : Term)(implicit notations : Map[GlobalName,TextNotation]) : String = {
      controller.pragmatic.pragmaticHead(tm) match {
        case OMS(p) => "\\" + Utils.latexName(p)
        case OMA(OMS(p), args) => notations.get(p) match {
@@ -94,18 +98,20 @@ class LatexPresenter extends Presenter with ServerPlugin {
              case SeqArg(n,sep) => (n,sep) 
            }
            sqargs match {
-             case Nil => ttoLatex(OMS(p)) + args.map(ttoLatex).mkString("{","}{","}") 
+             case Nil => toLatex(OMS(p)) + args.map(toLatex).mkString("{","}{","}") 
              case hd :: Nil => //one seq arg, must detect corresponding content arguments
                val pos = hd._1
                val sep = hd._2
                val arity = not.getArity.length
                val (begin,rest) = args.splitAt(pos - 1)
                val (seq, end) = rest.splitAt(args.length - arity)
-               s"\\mmtseq{${seq.map(ttoLatex).mkString(sep.s)}}"
-             
-              case _ => throw ImplementationError("Multiple sequence arguments in the same notation not supported yet")
-           }        
-         case None => ttoLatex(OMS(p)) + args.map(ttoLatex).mkString("{","}{","}") 
+               val beginS = begin.map(toLatex).mkString("{","}{","}")
+               val seqS = s"{\\mmtseq{${seq.map(toLatex).mkString(sep.s)}}}"               
+               val endS = begin.map(toLatex).mkString("{","}{","}")
+               toLatex(OMS(p)) + beginS + seqS + endS
+              case _ => throw LatexError("Multiple sequence arguments in the same notation not supported yet")
+           }   
+         case None => "(" + p.last + "\\;" + args.map(toLatex).mkString("\\:") + ")"
      }
        case OMBIND(OMS(p), con, body) => notations.get(p) match {
          case Some(not) =>
@@ -115,25 +121,24 @@ class LatexPresenter extends Presenter with ServerPlugin {
            } match {
              case Some(Var(_,_,Some(sep))) => 
                val vars = con.variables.map(vToLatex).mkString(sep.s)
-               s"${ttoLatex(OMS(p))}{$vars}{${ttoLatex(body)}}"
+               s"${toLatex(OMS(p))}{$vars}{${toLatex(body)}}"
              case _ => 
                assert(con.variables.length == 1, "expected one variable argument")
-               s"${ttoLatex(OMS(p))}{${vToLatex(con.variables.head)}}{${ttoLatex(body)}}"
+               s"${toLatex(OMS(p))}{${vToLatex(con.variables.head)}}{${toLatex(body)}}"
            }
          case None => 
            assert(con.variables.length == 1, "expected one variable argument")
            val v = con.variables.head
-           s"${ttoLatex(OMS(p))}{${vToLatex(v)}}{${ttoLatex(body)}}"
+           s"(${p.last}\\;${vToLatex(v)}\\, . \\, ${toLatex(body)}"
        }
-       case OMA(OMV(v), args) => s"${ttoLatex(OMV(v))} ${args.map(ttoLatex).mkString(" ")}"
+       case OMA(OMV(v), args) => s"${toLatex(OMV(v))} ${args.map(toLatex).mkString("{ }")}"
        case OMV(n) => n.toString
-       case t => println("@@@@:\n" +  t.toNode); throw ImplementationError("not done yet")
- 
+       case t => throw LatexError("Term cannot be converted to latex : " + t.toString)
      }
    }
    
    def vToLatex(v : VarDecl)(implicit notations : Map[GlobalName,TextNotation]) : String = v match {
-     case VarDecl(a, Some(tp), None, _*) => println(tp.toNode); a.toString + " : " + ttoLatex(tp) 
+     case VarDecl(a, Some(tp), None, _*) => println(tp.toNode); a.toString + " : " + toLatex(tp) 
      case _ => v.name.toString
    }    
    
@@ -144,22 +149,29 @@ class LatexPresenter extends Presenter with ServerPlugin {
      uriComp.head == ":latex"
    }
    
-   def apply(uriComps: List[String]): Option[HLet] = uriComps.tail match {
-     case "postdecl" :: _ => Some(PostDeclResponse)
-     case "getobjpres" :: _ => Some(GetObjPresResponse)
-     case "context" :: _ => Some(ContextResponse)
-     
-     case _ => None
+   def apply(uriComps: List[String]): Option[HLet] = {
+     try {
+       uriComps.tail match {
+         case "postdecl" :: _ => Some(PostDeclResponse)
+         case "getobjpres" :: _ => Some(GetObjPresResponse)
+         case "context" :: _ => Some(ContextResponse)
+         case _ => None
+       }
+     } catch {
+       case e : LatexError => Some(errorResponse(e.text))
+       case e : Error => Some(errorResponse(e.msg))
+       case e : Exception => Some(errorResponse("Exception occured : " + e.getMessage()))
+     }
    }
  
    private def ContextResponse : HLet = new HLet {
-    def act(tk : HTalk) {
-    	val jobname = tk.req.header("jobname").getOrElse(throw ServerError(<error><message>found no jobname for request</message></error>))
-    	val request = tk.req.header("request").getOrElse(throw ServerError(<error><message>found no context update request</message></error>))
+    def act(tk : HTalk) = try {
+    	val jobname = tk.req.header("jobname").getOrElse(throw LatexError("found no jobname for request"))
+    	val request = tk.req.header("request").getOrElse(throw LatexError("found no context update request"))
     	val text = bodyAsString(tk)
     	println("###### received context : " + request + ":" + text)
     	if (!states.isDefinedAt(jobname)) {
-    	  throw ServerError(<error><message>given jobname: {jobname} not active</message></error>)
+    	  throw LatexError(s"given jobname: $jobname not active")
     	} else {
     	  val state = states(jobname)
     	  request match {
@@ -172,32 +184,37 @@ class LatexPresenter extends Presenter with ServerPlugin {
     	        val tp = controller.termParser(pu)
     	        val v = VarDecl(LocalName(name), Some(tp), None)
     	        state.addVar(v)
-    	      case _ =>  throw ServerError(<error><message>invalid var: {text}</message></error>)
+    	      case _ =>  throw LatexError(s"invalid var: $text")
 
     	    }
     	    
     	  }
     	  TextResponse("Success").act(tk)
     	}		
-    }
+     } catch {
+       case e : LatexError => errorResponse(e.text).act(tk)
+       case e : Error => errorResponse(e.shortMsg).act(tk)
+       case e : Exception => errorResponse("Exception occured : " + e.getMessage()).act(tk)
+     }
    }
-   
-   
-   private def PostDeclResponse : HLet = new HLet {
-    def act(tk : HTalk) {
-      val text = bodyAsString(tk)
-      val jobname = tk.req.header("jobname").getOrElse(throw ServerError(<error><message>found no jobname for request</message></error>))
-      val dpathS = tk.req.header("dpath").getOrElse(throw ServerError(<error><message>found no dpath</message></error>))
-      val dpath = Path.parseD(dpathS, utils.mmt.mmtbase)
       
-      println("received : " + jobname + " : " + text)
-      if (!states.isDefinedAt(jobname)) {
- 
+   private def PostDeclResponse : HLet = new HLet {
+    def act(tk : HTalk) = try {
+      val text = bodyAsString(tk)
+      val jobname = tk.req.header("jobname").getOrElse(throw LatexError("found no jobname for request"))
+      val dpathS = tk.req.header("dpath").getOrElse(throw LatexError("found no dpath"))
+      val notPresS = tk.req.header("pres").getOrElse("")
 
+      
+      
+      val dpath = Path.parseD(dpathS, utils.mmt.mmtbase)      
+      println("received : " + jobname + " : " + text)
+      if (!states.isDefinedAt(jobname)) { 
         val state = new LatexState(dpath, controller)
         state.setParserState(text)
-        states(jobname) = state
-        
+        if(!notPresS.isEmpty) 
+          state.notationQueue.enqueue(notPresS) 
+        states(jobname) = state        
         val thread = new Thread(new Runnable {          
           def run() {
             state.parser(state.parserState, dpath)
@@ -209,22 +226,28 @@ class LatexPresenter extends Presenter with ServerPlugin {
         state.parser.addedMacros = Nil
         TextResponse(resp).act(tk)	
       } else {
-        val ltxState = states(jobname)
-        ltxState.setParserState(text)
+    	val ltxState = states(jobname)
+    	if(!notPresS.isEmpty) 
+          ltxState.notationQueue.enqueue(notPresS)
+        ltxState.setParserState(text)       
         ltxState.waitDone
         val resp = ltxState.parser.addedMacros.mkString("\n")
         println("RESP :" + resp + ": END RESP")
         ltxState.parser.addedMacros = Nil
         TextResponse(resp).act(tk)
       }
-    }
+    } catch {
+       case e : LatexError => errorResponse(e.text).act(tk)
+       case e : Error => errorResponse(e.shortMsg).act(tk)
+       case e : Exception => errorResponse("Exception occured : " + e.getMessage()).act(tk)
+     }
   }
   
    
   private def GetObjPresResponse : HLet = new HLet {
-    def act(tk : HTalk) {
+    def act(tk : HTalk) = try {
       val text = bodyAsString(tk)
-      val jobname = tk.req.header("jobname").getOrElse(throw ServerError(<error><message>found no dpath</message></error>))
+      val jobname = tk.req.header("jobname").getOrElse(throw LatexError("found no jobname in request"))
       val state = states(jobname)
       val home = tk.req.header("home").map(Path.parse).getOrElse {        
         state.mod
@@ -248,33 +271,42 @@ class LatexPresenter extends Presenter with ServerPlugin {
           oc.getSolution match {
             case Some(sub) =>
               val tmR = tmU ^ sub
-              println("Sending ResponseR" + ttoLatex(tmR, mod))
-              TextResponse(ttoLatex(tmR, mod)).act(tk)
-            case None =>            
-              println("Sending ResponseU" + ttoLatex(tmU, mod))
-              // throw ServerError(<error><message> type reconstruction failed </message></error>)
-              TextResponse(ttoLatex(tmU,mod)).act(tk) //until things are stable sending non-reconstructed term 
+              println("Sending ResponseR" + toLatex(tmR, mod))
+              TextResponse(toLatex(tmR, mod)).act(tk)
+            case None =>
+              println("Sending ResponseU" + toLatex(tmU, mod))
+              // throw LatexErrpr("type reconstruction failed")
+              TextResponse(toLatex(tmU,mod)).act(tk) //until things are stable sending non-reconstructed term 
           }
-        case _ => throw ServerError(<error><message>support for non-module paths not implemented yet</message></error>)
+        case _ => throw LatexError("support for non-module paths not implemented yet")
       } 
-    }
-  }     
+    } catch {
+       case e : LatexError => errorResponse(e.text).act(tk)
+       case e : Error => errorResponse(e.shortMsg).act(tk)
+       case e : Exception => errorResponse("Exception occured : " + e.getMessage()).act(tk)
+     }
+  }
   
   private def sanitizeInput(text : String) : String = {
     text.replaceAllLiterally("\\ldots", "…")
   }
   
   private def bodyAsString(tk: HTalk): String = {
-    val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
+    val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw LatexError("no body found"))
     val text = new String(bodyArray, "UTF-8")
     sanitizeInput(text)
   }
+  
+  private def errorResponse(text : String) : HLet = {
+    TextResponse(s"\\mmtError{$text}")
+  }
+
   
   /**
    * A text response that the server sends back to the browser
    * @param text the message that is sent in the HTTP body
    */
-  private def TextResponse(text: String): HLet = new HLet {
+  private def TextResponse(text: String): HLet = new HLet {    
     def act(tk: HTalk) {
       val out = text.getBytes("UTF-8")
       tk.setContentLength(out.size) // if not buffered
@@ -283,8 +315,6 @@ class LatexPresenter extends Presenter with ServerPlugin {
         .close
     }
   }
-  
-   
 }
 
 
@@ -296,10 +326,16 @@ class LatexStructureParser(ltxState : LatexState, controller : Controller) exten
       log(se.toString)
       SourceRef.update(se, SourceRef(state.container.uri,currentSourceRegion))
       se match {
-        case c : Constant => c.not match {
-          case None => addedMacros ::= s"\\newcommand{\\${Utils.latexName(c.path)}}{${c.name.toString}}"
-          case Some(notation) => addedMacros ::= Utils.makeMacro(notation) 
-        }
+        case c : Constant => 
+          if (!ltxState.notationQueue.isEmpty) {
+            val defaultNot = TextNotation.parse(ltxState.notationQueue.dequeue(), c.path)
+            addedMacros ::= Utils.makeMacro(defaultNot)
+          } else {//no explicit presentation notation
+            c.not match {
+              case None => addedMacros ::= s"\\newcommand{\\${Utils.latexName(c.path)}}{${c.name.toString}}"
+              case Some(notation) => addedMacros ::= Utils.makeMacro(notation) 
+            }
+          }
         case m : modules.Module => ltxState.mod = m.path
         case _ => 
       }      
@@ -317,7 +353,7 @@ object Utils {
      case Arg(i) => s"#${i.abs}"
      case SeqArg(i,d) => s"\\mmtseq{#${i.abs}}{${makeMacro(d, mmtName)}}"
      case Var(i, t, sO) => s"#${i.abs}" //TODO 
-     case p : PlaceholderDelimiter => throw ImplementationError("Marker PlaceholderDelimiter shouldn't occur in Notations")
+     case p : PlaceholderDelimiter => throw LatexError("Marker PlaceholderDelimiter shouldn't occur in Notations")
    }
     
     
