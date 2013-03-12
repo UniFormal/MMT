@@ -77,13 +77,13 @@ object Extractor {
    /** reserved identifiers */
    private val keywords = List("true", "false", "type", "val", "var", "def", "class", "trait", "object", "extends", "with", "while", "do", "for")
    /** preused identifiers, i.e., declared in Object */
-   private val reserved = List("eq")
+   private val reserved = List("eq", "List", "Set")
    /** escapes strings to avoid clashes with Scala keywords */
    private def escape(s:String) = {
       if (keywords.contains(s))
         "`" + s + "`"
       else if (reserved.contains(s))
-        "om_" + s
+        "OM" + s
         else s
    }
    private def nameToScalaQ(p: GlobalName) = (p.module.toMPath.name.toPath + "_" + p.name.toPath).replace("/", "__")
@@ -189,7 +189,7 @@ object Extractor {
      out.println(imports)
      // generating the trait
      val includes = t.getIncludesWithoutMeta.map(i => " with " + mpathToScala(i)).mkString("")
-     out.println(s"trait ${t.name} extends TheoryScala$includes {")
+     out.println(s"trait ${nameToScala(t.name)} extends TheoryScala$includes {")
      t.getDeclarations foreach {
         case c: Constant =>
           if (c.tp == Some(OMID(OMFMP))) {
@@ -210,7 +210,7 @@ object Extractor {
      }
      out.println("}\n")
      // generating the auxiliary object
-     out.println(s"object ${t.name} extends TheoryScalaAux {")
+     out.println(s"object ${nameToScala(t.name)} extends TheoryScalaAux {")
      val baseUri = t.parent.uri
      out.println("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
         "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
@@ -223,7 +223,7 @@ object Extractor {
 	         var o = ""
 	         o +=  s"\n  object ${nameToScala(c.name)} extends ConstantScala {\n"
 	         o +=  s"    val parent = _path\n"
-	         o +=   "    val name = \"" + nameToScala(c.name) + "\"\n"
+	         o +=   "    val name = \"" + c.name + "\"\n"
 	         c.not foreach {n =>
 	            val a = n.getArity
 	            o += applyMethods(a)
@@ -233,7 +233,7 @@ object Extractor {
 	      case _ => 
 	   }
      out.println("\n}\n")
-     s"addTheory($pack.${t.name})"
+     s"addTheory($pack.${nameToScala(t.name)})"
    }
    
    def doView(v: DeclaredView, from: DeclaredTheory, out: java.io.PrintWriter): String = {
@@ -250,7 +250,7 @@ object Extractor {
            case _ => ""
         }
      }.mkString("")
-     out.println(s"trait ${v.name} extends ViewScala with ${nameToScala(from.path.name)}$includes {")
+     out.println(s"trait ${nameToScala(v.name)} extends ViewScala with ${nameToScala(from.path.name)}$includes {")
      var rules = ""
      from.getDeclarations foreach {
         case c: Constant =>
@@ -262,12 +262,13 @@ object Extractor {
              val scalaArgs = arityToScala(arity)
              val defaultNames = scalaArgs.map(_._1)
              val varTypes = scalaArgs.map(_._2)
+             val scalaName = nameToScalaQ(c.path)
              val (varNames, impl) = aO match {
                 case None =>
                    if (arity.isConstant)
                       (defaultNames, s"OMS($implemented)") //constants are often not implemented
                    else
-                      (defaultNames, "throw NoChangeMessage")
+                      (defaultNames, "throw Unimplemented(\"" + scalaName + "\")")
                 case Some(a: ConstantAssignment) => a.target match {
                    case Some(ScalaLambda(con, Scala(s))) =>
                       (con.variables.map(_.name.toPath), s)
@@ -278,7 +279,7 @@ object Extractor {
                       (defaultNames, " //unexpected assignment in MMT view")
              }
              var o = ""
-             o += s"  def ${nameToScalaQ(c.path)}(${varNames.zip(varTypes).map(p => p._1 + ": " + p._2).mkString(", ")}) : Term = {\n"
+             o += s"  def $scalaName(${varNames.zip(varTypes).map(p => p._1 + ": " + p._2).mkString(", ")}) : Term = {\n"
              o += s"    // UOM start " + apath.toPath + "\n"
              o += s"    $impl\n"
              o += s"    // UOM end " + apath.toPath + "\n"
@@ -293,7 +294,7 @@ object Extractor {
      }
      out.println(rules)
      out.println("}\n")
-     out.println(s"object ${v.name} extends ${v.name}\n")
+     out.println(s"object ${nameToScala(v.name)} extends ${v.name}\n")
      s"addView($pack.${v.name})"
    }
 
