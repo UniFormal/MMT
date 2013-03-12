@@ -9,11 +9,14 @@ trait TheoryScalaAux {
 }
 
 trait TheoryScala {
-   var _axioms: List[(String,Boolean)] = Nil
-   def _assert(name: String, t: Boolean) {_axioms ::= (name,t)}
+   var _axioms: List[(String, Unit => Boolean)] = Nil
+   def _assert(name: String, t: => Boolean) {_axioms ::= ((name, _ => t))}
    def _test() {
       _axioms.foreach {
-         case (n, a) => if (! a) println("test failed: " + n)
+         case (n, a) =>
+           val result = try {a().toString}
+                        catch {case Unimplemented(f) => "unimplemented " + f}
+           println(s"test $n: $result")
       }
    }
 }

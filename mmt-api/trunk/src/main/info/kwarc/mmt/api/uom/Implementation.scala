@@ -5,7 +5,7 @@ import info.kwarc.mmt.api._
 
 case class UOMError(msg: String) extends java.lang.Throwable
 
-case object NoChangeMessage extends java.lang.Throwable
+case class Unimplemented(msg: String) extends java.lang.Throwable
 
 class Implementation(constantName : GlobalName, function : List[Term] => Term) extends BreadthRule(constantName) {
   def name = constantName
@@ -22,7 +22,7 @@ class Implementation(constantName : GlobalName, function : List[Term] => Term) e
         }
      } catch {
         case UOMError(_) => NoChange
-        case NoChangeMessage => NoChange
+        case Unimplemented(_) => NoChange
      }
   }
 }
