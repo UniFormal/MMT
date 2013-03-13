@@ -8,6 +8,7 @@ class Plugin extends frontend.Plugin {
    def init(c: Controller, args: List[String]) {
       val em = c.extman
       em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow,PiProve)
+      c.uom.register(UnsafeBeta)
       em.pragmaticStore.add(LFHOAS, LFTyping)
    }
 }
