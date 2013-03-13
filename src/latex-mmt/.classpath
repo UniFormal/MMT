@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deploy-wrapper"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/mmt/mmt-lf.jar" sourcepath="/mmt-lf"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -27,6 +27,7 @@ class LatexState(val dpath : DPath, controller : Controller) {
   var varContexts : List[Context] = Nil
   def addContext(con : Context = Context()) = varContexts ::= con
   def addVar(v : VarDecl) = varContexts = (varContexts.head ++ v) :: varContexts.tail
+  
   def clearContext() = varContexts = varContexts.tail
   
   var mod : MPath = null //current module
@@ -39,6 +40,21 @@ class LatexState(val dpath : DPath, controller : Controller) {
   def setParserState(text : String) {
     seqReader.appendLine(text)
   }
+  
+  val varIds = new mutable.HashMap[LocalName,Int]
+  
+  var currentId = 0
+  def getFreshId = {
+    currentId += 1
+    currentId
+  }
+  
+  def addVar(name : LocalName) = {
+    varIds(name) = getFreshId
+    resolveVar(name)
+  }
+  
+  def resolveVar(name : LocalName) = varIds(name)
   
   def waitDone() {  
     
@@ -80,16 +96,44 @@ class LatexPresenter extends Presenter with ServerPlugin {
       }
    }
    
-   private def toLatex(tm : Term, scope : MPath) : String = {
+   private def toLatex(tm : Term, scope : MPath, state : LatexState) : String = {
      val notations = AbstractObjectParser.getNotations(controller, OMMOD(scope))
      val notationsHash = notations.map(n => (n.name, n)).toMap
-     val contentRep = toLatex(tm)(new immutable.HashMap[GlobalName,TextNotation])
-     val pres = toLatex(tm)(notationsHash)
+     val contentRep = toLatex(tm)(new immutable.HashMap[GlobalName,TextNotation], state, None)
+     val pres = toLatex(tm)(notationsHash, state, None)
      s"\\mmtTooltip{$pres}{$contentRep}"
    }
 
+   private def loadVars(tm : Term)(implicit state : LatexState) : Unit = {
+     controller.pragmatic.pragmaticHead(tm) match {
+       case OMS(p) => 
+       case OMV(v) =>
+       case OMA(f, args) => 
+         loadVars(f)
+         args.map(loadVars)
+       case OMBIND(OMS(p), con, body) => con.variables.map(loadVar)
+       case OMBIND(OMA(OMS(p), args), con, body) => con.variables.map(loadVar)
+      case t => throw LatexError("Invalid term in load Vars : " + t.toString)
+     }
+   }
    
-   private def toLatex(tm : Term)(implicit notations : Map[GlobalName,TextNotation]) : String = {
+   private def loadVar(v : VarDecl)(implicit state : LatexState) = {
+     state.addVar(v.name)
+   }
+   
+   
+   private def wrapInferredArgs(s : String, args : List[Term])
+     (implicit notations : Map[GlobalName,TextNotation], state : LatexState, parentNot : Option[TextNotation]) : String = {
+     val inferred = args filter {t => SourceRef.get(t) match {
+       case None => true //inferred
+       case _ => false
+     }}          
+     val infS = inferred.map(toLatex).mkString(" ")
+     s"\\mmtinferredargs{$s}{$infS}"
+     
+   }
+   
+   private def toLatex(tm : Term)(implicit notations : Map[GlobalName,TextNotation], state : LatexState, parentNot : Option[TextNotation]) : String = {
      controller.pragmatic.pragmaticHead(tm) match {
        case OMS(p) => "\\" + Utils.latexName(p)
        case OMA(OMS(p), args) => notations.get(p) match {
@@ -99,7 +143,12 @@ class LatexPresenter extends Presenter with ServerPlugin {
              case SeqArg(n,sep) => (n,sep) 
            }
            sqargs match {
-             case Nil => toLatex(OMS(p)) + args.map(toLatex).mkString("{","}{","}") 
+             case Nil => 
+               val str = toLatex(OMS(p)) + args.map(t => toLatex(t)(notations, state, Some(not))).mkString("{","}{","}") 
+               parentNot match {
+                 case Some(n) if n == not => "(" + str  + ")"
+                 case _ => str
+               }
              case hd :: Nil => //one seq arg, must detect corresponding content arguments
                val pos = hd._1
                val sep = hd._2
@@ -114,38 +163,62 @@ class LatexPresenter extends Presenter with ServerPlugin {
            }   
          case None => "(" + p.last + "\\;" + args.map(toLatex).mkString("\\:") + ")"
      }
-       case OMBIND(OMS(p), con, body) => notations.get(p) match {
+       case OMBIND(b, con, body) => controller.pragmatic.pragmaticHead(b) match {
+        case OMAMaybeNil(OMS(p), args) => notations.get(p) match {
          case Some(not) =>
+           val argsS = args match {
+             case Nil => ""
+             case _ => args.map(toLatex).mkString("{","}{","}")
+           }
            not.markers find {
              case Var(_,_,Some(sep)) => true
              case _ => false
            } match {
              case Some(Var(_,_,Some(sep))) => 
                val vars = con.variables.map(vToLatex).mkString(sep.s)
-               s"${toLatex(OMS(p))}{$vars}{${toLatex(body)}}"
+               s"${toLatex(OMS(p))}$argsS{$vars}{${toLatex(body)}}"
              case _ => 
                assert(con.variables.length == 1, "expected one variable argument")
-               s"${toLatex(OMS(p))}{${vToLatex(con.variables.head)}}{${toLatex(body)}}"
+               s"${toLatex(OMS(p))}$argsS{${vToLatex(con.variables.head)}}{${toLatex(body)}}"
            }
          case None => 
            assert(con.variables.length == 1, "expected one variable argument")
            val v = con.variables.head
            s"(${p.last}\\;${vToLatex(v)}\\, . \\, ${toLatex(body)}"
+        }
        }
        case OMA(OMV(v), args) => s"${toLatex(OMV(v))} ${args.map(toLatex).mkString("{ }")}"
-       case OMV(n) => n.toString
+       case OMV(n) => try {
+         s"\\mmtboundvarref{$n}{${state.resolveVar(n)}}"
+       } catch {
+         case e : Exception => n.toString
+       }
        case OMA(f, args) => s"(${toLatex(f)}\\;${args.map(toLatex).mkString("\\:")})"
        case t => throw LatexError("Term cannot be converted to latex : " + t.toString)
      }
    }
    
-   def vToLatex(v : VarDecl)(implicit notations : Map[GlobalName,TextNotation]) : String = v match {
-     case VarDecl(a, Some(tp), None, _*) => println(tp.toNode); a.toString + " : " + toLatex(tp) 
-     case _ => v.name.toString
-   }    
+   def vToLatex(v : VarDecl)(implicit notations : Map[GlobalName,TextNotation], state : LatexState, parentNot : Option[TextNotation]) : String = {
+     val vname = try {
+       val id = state.resolveVar(v.name)
+       s"\\mmtboundvar{${v.name}}{$id}"
+     } catch {
+         case e : Exception => v.name.toString
+     }
+     v match {
+       case VarDecl(a, Some(tp), None, _*) =>
+         SourceRef.get(tp) match {
+           case None => //inferred
+             s"\\mmtinferredtype{$vname}{${tp.toString}}"
+           case _ => //already typed
+             s"\\mmttype{$vname}{${toLatex(tp)}}"
+         }
+       case _ => vname
+     }
+   }
    
-   /** Server */
    
+   /** Server */   
    def isApplicable(uriComp : List[String]) = {
      println("uriComp" + uriComp)
      uriComp.head == ":latex"
@@ -172,26 +245,31 @@ class LatexPresenter extends Presenter with ServerPlugin {
     	val request = tk.req.header("request").getOrElse(throw LatexError("found no context update request"))
     	val text = bodyAsString(tk)
     	println("###### received context : " + request + ":" + text)
+    	var resp = ""
     	if (!states.isDefinedAt(jobname)) {
     	  throw LatexError(s"given jobname: $jobname not active")
     	} else {
     	  val state = states(jobname)
+          println("BEFORE: " + state.varContexts.mkString(";"))
     	  request match {
     	    case "clear" => state.clearContext()
     	    case "new" => state.addContext()
     	    case "addvar" =>  text.split(":").toList match {
     	      case name :: tpS :: Nil => 
+    	        val vname = LocalName(name)
+    	        val id = state.addVar(vname)
+    	        resp = s"\\mmtboundvar{$vname}{$id}"
     	        println("currentContext :" + state.context)
     	        val pu = new parser.ParsingUnit(parser.SourceRef(state.mod.doc.uri,SourceRegion.ofString(tpS)), OMMOD(state.mod), state.context, tpS)
     	        val tp = controller.termParser(pu)
     	        val v = VarDecl(LocalName(name), Some(tp), None)
     	        state.addVar(v)
     	      case _ =>  throw LatexError(s"invalid var: $text")
-
-    	    }
-    	    
+    	    }    	    
     	  }
-    	  TextResponse("Success").act(tk)
+          println("AFTER: " + state.varContexts.mkString(";"))
+
+    	  TextResponse(resp).act(tk)
     	}		
      } catch {
        case e : LatexError => errorResponse(e.text).act(tk)
@@ -272,12 +350,20 @@ class LatexPresenter extends Presenter with ServerPlugin {
           oc.getSolution match {
             case Some(sub) =>
               val tmR = tmU ^ sub
-              println("Sending ResponseR" + toLatex(tmR, mod))
-              TextResponse(toLatex(tmR, mod)).act(tk)
+              val tmRU = controller.uom.simplify(tmR)
+              val tmRS = Utils.reduce(tmRU)
+
+              loadVars(tmRS)(state)
+              val resp =  toLatex(tmRS, mod, state)
+              println("Sending ResponseRS" + resp)
+              TextResponse(resp).act(tk)
             case None =>
-              println("Sending ResponseU" + toLatex(tmU, mod))
+              loadVars(tmU)(state)
+              val resp = toLatex(tmU,mod, state)
+              println("Sending ResponseU" + resp)
+
               // throw LatexErrpr("type reconstruction failed")
-              TextResponse(toLatex(tmU,mod)).act(tk) //until things are stable sending non-reconstructed term 
+              TextResponse(resp).act(tk) //until things are stable sending non-reconstructed term 
           }
         case _ => throw LatexError("support for non-module paths not implemented yet")
       } 
@@ -338,7 +424,10 @@ class LatexStructureParser(ltxState : LatexState, controller : Controller) exten
             addedMacros ::= makeMacro(defaultNot, source)
           } else {//no explicit presentation notation
             c.not match {
-              case None => addedMacros ::= s"\\newcommand{\\${Utils.latexName(c.path)}}{\\mmtlink[$source]{${c.name.toString}}{${c.path}}}"
+              case None => 
+                val m1 = s"\\gdef\\${Utils.latexName(c.path)}{${wrapLink(c.name.toString,c.path,source)}}"
+                val m2 = s"\\hyperdef{mmt}{${c.path}}{}"
+                addedMacros ::= (m1 + "\n" + m2)
               case Some(notation) => addedMacros ::= makeMacro(notation, source) 
             }
           }
@@ -349,31 +438,68 @@ class LatexStructureParser(ltxState : LatexState, controller : Controller) exten
    }
    
      private def makeMacro(marker : Marker, mmtName : GlobalName, source : String) : String = marker match {
-     case Delim(str) => s"\\mmtlink[$source]{$str}{${mmtName.toPath}}"
-     case SecDelim(str,_) => s"\\mmtlink[$source]{$str}{${mmtName.toPath}}"
+     case Delim(str) => wrapLink(str, mmtName, source)
+     case SecDelim(str,_) => wrapLink(str, mmtName, source)
      case Arg(i) => s"#${i.abs}"
      case SeqArg(i,d) => s"\\mmtseq{#${i.abs}}{${makeMacro(d, mmtName, source)}}"
      case Var(i, t, sO) => s"#${i.abs}" //TODO 
      case p : PlaceholderDelimiter => throw LatexError("Marker PlaceholderDelimiter shouldn't occur in Notations")
    }
     
-    
+   def wrapLink(del : String, path : GlobalName, source : String) : String = del match {
+     case "_" => "_"
+     case "^" => "^"
+     case "{" => "{"
+     case "}" => "}"
+     case str => s"\\mmtlink[$source]{$str}{${path.toPath}}"     
+   } 
+     
+     
    def makeMacro(not : TextNotation, source : String) : String = {
      val mmtName = not.name
      val markers = not.markers
      val body = markers.map(makeMacro(_, mmtName, source)).mkString(" ")
      val label = s"\\hyperdef{mmt}{${mmtName.toPath}}{}"
      val args = (1 to not.getArity.length).map(i => s"#$i").mkString("")
-     
+     println("NOT:" + not.toNode)
      s"\\gdef\\${Utils.latexName(mmtName)}$args{$body}\n $label\n"     
    }
    
 }
 
+import info.kwarc.mmt.lf._
+
 object Utils {
    private val sep = ""
    def latexName(mmtName : GlobalName) : String = "mmt" + sep + mmtName.module.toMPath.last + sep + mmtName.last
+   def reduce(t: Term) : Term = {
+     println(t.toString)
+     t match {
+       case OMA(OMS(Apply.path), OMBIND(OMS(Lambda.path), con, body) :: OMV(n) :: rest) => 
+         val names = con.variables.map(_.name)
+         if (names.head == n) {
+           println("REDUCED")
+           rest match {
+             case Nil => reduce(body)
+             case _ => reduce(OMA(OMS(Apply.path), body :: rest)) 
+           }
+         } else 
+           OMA(OMS(Apply.path), OMBIND(OMS(Lambda.path), reduceCon(con), reduce(body)) :: OMV(n) :: Nil)
+ //      case OMA(OMS(Apply.path), hd :: rest) => reduce(OMA(hd, rest))  
+       case OMA(f, args) => 
+         OMA(reduce(f), args map reduce).from(t)
+       case OMBIND(b,con, s) => OMBIND(reduce(b), reduceCon(con), reduce(s)).from(t)
+       case _ => t
+     }
+   }
    
+   def reduceCon(con : Context) : Context = {
+     val nvars = con.variables map {
+       case VarDecl(n, Some(tp), df, _*) => VarDecl(n, Some(reduce(tp)), df)
+       case v => v
+     }
+     Context(nvars : _*)
+   }
 
 }
 
