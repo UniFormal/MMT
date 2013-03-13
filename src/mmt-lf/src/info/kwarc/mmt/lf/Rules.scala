@@ -2,6 +2,7 @@ package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import objects._
 import objects.Conversions._
+import uom._
 import utils.MyList.fromList
 
 /** the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
@@ -124,6 +125,31 @@ object Beta extends ComputationRule(Apply.path) {
       }
    }
 }
+
+object UnsafeBeta extends BreadthRule(Apply.path){
+   val apply = (args: List[Term]) => {
+      var reduced = false // remembers if there was a reduction
+      // auxiliary recursive function to beta-reduce as often as possible
+      // returns Some(reducedTerm) or None if no reduction
+      def reduce(f: Term, args: List[Term]): Change = (f,args) match {
+         case (Lambda(x,a,t), s :: rest) => 
+            reduced = true
+            reduce(t ^ (x / s), rest)
+         case (f, Nil) =>
+            //all arguments were used
+            //only possible if there was a reduction, so no need for 'if (reduced)'
+            GlobalChange(f)
+         case _ => 
+            // simplify f recursively to see if it becomes a Lambda
+              if (reduced)
+                GlobalChange(ApplySpine(f,args : _*))
+              else
+                NoChange
+      }
+      reduce(args.head, args.tail)
+   }
+}
+
 
 /** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
  * LocalName.Anon is used for x */ 

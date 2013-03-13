@@ -31,7 +31,7 @@ object LF {
    val arrow = OMS(lftheory ? "arrow")
    val Pi = OMS(lftheory ? "Pi")
    val lambda = OMS(lftheory ? "lambda")
-   val apply = OMS(lftheory ? "@")
+   val apply = OMS(lftheory ? "apply")
    val ktype = OMS(Typed.ktype)
    def constant(name : String) = OMS(lftheory ? name)
 }
@@ -148,7 +148,7 @@ object Arrow {
  */
 object Apply {
    /** the MMT URI of application */
-   val path = LF.lftheory ? "@"
+   val path = LF.lftheory ? "apply"
 	def apply(f: Term, a: Term) = OMA(LF.apply, List(f, a))
 	def unapply(t: Term) : Option[(Term,Term)] = t match {
 		case OMA(LF.apply, f :: a) => 
