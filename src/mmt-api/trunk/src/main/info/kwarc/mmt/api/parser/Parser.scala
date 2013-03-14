@@ -135,6 +135,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
          case e: ExternalToken =>
             e.parse(pu, boundVars, this)
          case ml : MatchedList =>
+            val notation = ml.an.notation
+            val arity = notation.getArity
             //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
             // compute the names of all bound variables, in abstract syntax order
@@ -197,7 +199,10 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             //this includes sorting args and vars according to the abstract syntax
             if (args == Nil && vars == Nil && scopes == Nil) {
                   //no args, vars, scopes --> OMID
-                  head
+                  if (arity.isConstant)
+                    head
+                  else
+                    OMA(head, Nil)
             } else {
                   // order the arguments
                   val orderedArgs = args.sortBy(_._1)
