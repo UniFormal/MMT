@@ -25,7 +25,7 @@ object ScalaLambda {
    val path = cd ? "Lambda"
    def unapply(t: Term) : Option[(Context,Term)] = t match {
       case OMBIND(OMID(this.path), con, t) => Some((con,t))
-      case _ => None
+      case t => Some((Context(),t))
    }
 }
 
