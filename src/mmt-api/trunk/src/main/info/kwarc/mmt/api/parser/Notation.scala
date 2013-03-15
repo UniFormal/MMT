@@ -25,12 +25,6 @@ sealed abstract class Delimiter extends Marker {
 case class Delim(s: String) extends Delimiter {
    override def toString = s
 }
-/** a delimiter
- * @param s the delimiting String
- */
-case class SecDelim(s: String, wsAllowed: Boolean = true) extends Delimiter {
-   override def toString = (if (wsAllowed) "" else "_") + s
-}
 
 /** special delimiters that are expanded to a string based on the declaration that the notation occurs in
  * 
