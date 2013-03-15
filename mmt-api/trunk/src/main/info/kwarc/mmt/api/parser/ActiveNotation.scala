@@ -52,7 +52,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
     * this has the effect of skipping the subsequent Tokens that have been used already after matching token against delim
     */ 
    def addPrepickedDelims(delim: Delimiter, token: Token) {
-      val prepicked = delim.text.substring(delim.text.length - token.word.length).toList.map(c => Delim(c.toString))
+      val prepicked = delim.text.substring(token.word.length).toList.map(c => Delim(c.toString))
       left = prepicked ::: left
    }
    /** pick all available Token's as Arg(n) */

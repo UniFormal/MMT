@@ -116,7 +116,8 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                an.numCurrentTokens = hd.numCurrentTokens
                hd.numCurrentTokens = 0
          }
-         an.applicable(currentToken, currentIndex, availableFutureTokens) //true by invariant but must be called for precondition of an.apply
+         val app = an.applicable(currentToken, currentIndex, availableFutureTokens) //true by invariant but must be called for precondition of an.apply
+         assert(app == Applicable)
       }
       logWithState(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
       resetPicker
@@ -232,8 +233,9 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                      else
                         Nil
                   }
+                  log("openable: " + openable.map(_._1).mkString(", "))
                   //the longest firstDelim of an openable notation
-                  val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)
+                  val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)._2
                   openable.filter(_._2 == longestDelim) match {
                      case (hd,_) :: Nil =>
                         //open the notation and apply it
