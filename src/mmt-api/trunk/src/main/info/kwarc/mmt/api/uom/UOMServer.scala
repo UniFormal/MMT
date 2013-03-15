@@ -15,6 +15,8 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
   val depthRules = new utils.HashMapToSet[(GlobalName,GlobalName), DepthRule]
   /** the BreadthRule's that this UOM will use, hashed by (outer,inner) pairs */
   val breadthRules = new utils.HashMapToSet[GlobalName, BreadthRule]
+  /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
+  val abbrevRules = new utils.HashMapToSet[GlobalName, AbbrevRule]
 
   private def log(msg: => String) {report("uom", msg)}
 
@@ -63,6 +65,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
      r match {
         case r: DepthRule => depthRules((r.outer,r.inner)) += r
         case r: BreadthRule => breadthRules(r.op) += r
+        case r: AbbrevRule => abbrevRules(r.op) += r
      }
   }
   
@@ -135,16 +138,22 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
    /** the simplification method that is called internally during the traversal of a term
     * users should not call this method (call simplify instead) */
    def apply(t: Term)(implicit con : Context, init: Unit) : Term =  t match {
-      case OMAMaybeNil(OMS(_), _) =>
+      case OMA(OMS(_), _) =>
          log("simplifying " + t)
          report.indent
          val (tS, globalChange) = applyAux(t)
          report.unindent
          log("simplified  " + tS)
+         val tSM = tS.from(t)
          if (globalChange)
-            Changed(tS)
+            Changed(tSM)
          else
-            tS
+            tSM
+      case OMS(p) =>
+         abbrevRules(p).headOption match {
+           case Some(ar) => ar.term.from(t)
+           case None => t
+         }
       case _ => Traverser(this, t)
    }
    /** an auxiliary method of apply that applies simplification rules
@@ -157,7 +166,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
     * @return the simplified term and a Boolean indicating whether a GlobalChange occurred
     */
    private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: Unit) : (Term, Boolean) = t match {
-      case OMAMaybeNil(OMS(outer), args) =>
+      case OMA(OMS(outer), args) =>
          // state (1)
          log("applying depth rules to   " + t)
          applyDepthRules(outer, Nil, args) match {

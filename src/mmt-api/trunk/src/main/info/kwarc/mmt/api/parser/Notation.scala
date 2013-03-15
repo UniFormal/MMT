@@ -331,7 +331,7 @@ object TextNotation {
   }
    
   private def parseNot(str : String, prec : Precedence, conPath : GlobalName) : TextNotation = {
-    val protoMks = str.split("\\s") map {s =>
+    val protoMks = str.split("\\s+").filterNot(_ == "") map {s =>
       try {
         s.toInt
       } catch {
