@@ -65,6 +65,10 @@ abstract class BreadthRule(val op: GlobalName) extends Rule {
    val apply: Rewrite
 }
 
+/** An AbbrevRule expands a symbol into a term
+ */ 
+case class AbbrevRule(op: GlobalName, term: Term) extends Rule
+
 /** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
 abstract class RuleSet {
    private val rules = new HashSet[Rule]
@@ -75,4 +79,5 @@ abstract class RuleSet {
    def allRules = rules
    def depthRules = rules filter {_.isInstanceOf[DepthRule]}
    def breadthRules = rules filter {_.isInstanceOf[BreadthRule]}
+   def abbrevRules = rules filter {_.isInstanceOf[AbbrevRule]}
 }
