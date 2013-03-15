@@ -227,8 +227,8 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
    def toNode = 
      <text-notation name={name.toPath} precedence={precedence.toString} markers={markers.map(_.toString).mkString(" ")}/>
    // the first delimiter of this notation
-   private val firstDelimString : Option[String] = markers mapFind {
-      case d: Delimiter => Some(d.s)
+   def firstDelimString : Option[String] = markers mapFind {
+      case d: Delimiter => Some(d.text)
       case SeqArg(_, Delim(s)) => Some(s)
       case _ => None
    }
@@ -243,17 +243,6 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
       i
    }
    def isLeftOpen = openLeftArgs > 0
-   /** @return true if next is first delimiter Token */
-   def applicable(pickableTokens: Int, next: Token): Boolean = {
-      val a = firstDelimString == Some(next.word)
-      val b = openLeftArgs <= pickableTokens
-      a && b
-   }
-   /** creates a new ActiveNotation with this notation's markers */
-   def open(scanner: Scanner, firstToken: Int): ActiveNotation = {
-      val an = new ActiveNotation(scanner, this, firstToken)
-      an
-   }
 }
 
 object TextNotation {
