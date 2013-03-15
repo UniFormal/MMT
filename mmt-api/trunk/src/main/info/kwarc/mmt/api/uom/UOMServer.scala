@@ -135,7 +135,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
    /** the simplification method that is called internally during the traversal of a term
     * users should not call this method (call simplify instead) */
    def apply(t: Term)(implicit con : Context, init: Unit) : Term =  t match {
-      case OMA(OMS(_), _) =>
+      case OMAMaybeNil(OMS(_), _) =>
          log("simplifying " + t)
          report.indent
          val (tS, globalChange) = applyAux(t)
@@ -157,7 +157,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
     * @return the simplified term and a Boolean indicating whether a GlobalChange occurred
     */
    private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: Unit) : (Term, Boolean) = t match {
-      case OMA(OMS(outer), args) =>
+      case OMAMaybeNil(OMS(outer), args) =>
          // state (1)
          log("applying depth rules to   " + t)
          applyDepthRules(outer, Nil, args) match {

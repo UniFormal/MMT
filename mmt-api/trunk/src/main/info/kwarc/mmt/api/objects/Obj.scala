@@ -415,6 +415,23 @@ object OMAMaybeNil {
    }
 }
 
+object ComplexTerm {
+   def apply(p: GlobalName, args: List[Term], con: Context, scopes: List[Term]) =
+      if (args.isEmpty && con.isEmpty && scopes.isEmpty) OMS(p)
+      else if (con.isEmpty && scopes.isEmpty) OMA(OMS(p), args)
+      else if (!con.isEmpty && scopes.length == 1)
+         if (args.isEmpty) OMBIND(OMS(p), con,scopes.head)
+         else OMBIND(OMA(OMS(p), args), con, scopes.head)
+      else throw ImplementationError(s"invalid complex term: $p, $args, $con, $scopes")
+   def unapply(t: Term) : Option[(GlobalName, List[Term], Context, List[Term])] = t match {
+      case OMS(p) => Some((p, Nil, Context(), Nil))
+      case OMA(OMS(p), args) => Some(p, args, Context(), Nil)
+      case OMBIND(OMS(p), con, scope) => Some((p, Nil, con, List(scope)))
+      case OMBIND(OMA(OMS(p), args), con, scope) => Some((p, args, con, List(scope)))
+      case _ => None
+   }
+}
+
 
 /* this may prove useful to pattern-match through OMREF elements 
 abstract class TermCompanion[A] {

@@ -57,6 +57,26 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
       sl
    }
    
+   /**
+    * a string consisting of all the single-character Tokens that follow the current one without whitespace
+    * 
+    * these may be used to lengthen the current Token to match Tokens that were taken apart by the lexer
+    */ 
+   private def availableFutureTokens : String = {
+      val len = tl.length
+      var delim = ""
+      var i = currentIndex+1
+      while (i < len) {
+         tl(i) match {
+            case Token(w,_,false) if w.length == 1 =>
+               delim += w
+               i += 1
+            case _ => return delim
+         }
+      }
+      delim
+   }
+   
    /** the currently open notations, inner-most first */
    private var active: List[ActiveNotation] = Nil
    /**
@@ -68,7 +88,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
    private def checkActive(ans: List[ActiveNotation], closable: Int) : (Int, Applicability) = ans match {
       case Nil => (closable, NotApplicable)
       case an::rest => 
-         an.applicable(currentToken, currentIndex) match {
+         an.applicable(currentToken, currentIndex, availableFutureTokens) match {
             case Applicable =>
                (closable, Applicable)
             case Abort =>
@@ -96,7 +116,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                an.numCurrentTokens = hd.numCurrentTokens
                hd.numCurrentTokens = 0
          }
-         an.applicable(currentToken, currentIndex) //true by invariant but must be called for precondition of an.apply
+         an.applicable(currentToken, currentIndex, availableFutureTokens) //true by invariant but must be called for precondition of an.apply
       }
       logWithState(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
       resetPicker
@@ -201,10 +221,21 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   Range(0,closable) foreach {_ => closeFirst(true)}
                   applyFirst(false)
                case NotApplicable =>
-                  //determine if a new notation can be opened 
-                  val applicable = notations filter {a => a.applicable(numCurrentTokens, currentToken)}
-                  applicable match {
-                     case hd :: Nil =>
+                  val futureTokens = availableFutureTokens
+                  //openable is the list of notations that can be opened, paired with the length of the delim they match
+                  //if multiple notations can be opened, we open the one with the longest first delim
+                  val openable = notations flatMap {not =>
+                     val delim = not.firstDelimString
+                     val m = delim.isDefined && ActiveNotation.matches(delim.get, currentToken.word, futureTokens)
+                     if (m && not.openLeftArgs <= numCurrentTokens)
+                        List((not, delim.get.length))
+                     else
+                        Nil
+                  }
+                  //the longest firstDelim of an openable notation
+                  val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)
+                  openable.filter(_._2 == longestDelim) match {
+                     case (hd,_) :: Nil =>
                         //open the notation and apply it
                         log("opening notation at " + currentToken)
                         if (hd.isLeftOpen) {
@@ -217,13 +248,13 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                             */
                            Range(0,closable) foreach {_ => closeFirst(true)}
                         }
-                        val an = hd.open(this, currentIndex)
+                        val an = new ActiveNotation(this, hd, currentIndex)
                         active ::= an
                         applyFirst(true)
                      case Nil =>
                         //move one token forward
                         advance
-                     case l => throw Ambiguous(l) //some kind of ambiguity-handling here (maybe look for next delimiter)
+                     case l => throw Ambiguous(l.map(_._1)) //some kind of ambiguity-handling here (maybe look for next delimiter)
                   }
             }
       }
