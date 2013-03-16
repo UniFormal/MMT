@@ -3,404 +3,505 @@
 <html>
         <head>
           <title>MMT</title>
+          <meta name="description" content="MMT" />
+          <meta name="keywords" content="MMT" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../lib/ref-index.css" />
+      <link href="../lib/ref-index.css" media="screen" type="text/css" rel="stylesheet" />
       <script type="text/javascript" src="../lib/jquery.js"></script>
     
         </head>
         <body><div class="entry">
       <div class="name">s</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.AddError" class="extype" href="../info/kwarc/mmt/api/AddError.html">AddError</a> <a name="info.kwarc.mmt.api.DeleteError" class="extype" href="../info/kwarc/mmt/api/DeleteError.html">DeleteError</a> <a name="info.kwarc.mmt.api.ExtensionError" class="extype" href="../info/kwarc/mmt/api/ExtensionError.html">ExtensionError</a> <a name="info.kwarc.mmt.api.GetError" class="extype" href="../info/kwarc/mmt/api/GetError.html">GetError</a> <a name="info.kwarc.mmt.api.ImplementationError" class="extype" href="../info/kwarc/mmt/api/ImplementationError.html">ImplementationError</a> <a name="info.kwarc.mmt.api.Invalid" class="extype" href="../info/kwarc/mmt/api/Invalid.html">Invalid</a> <a name="info.kwarc.mmt.api.moc.Add" class="extype" href="../info/kwarc/mmt/api/moc/Add.html">Add</a> <a name="info.kwarc.mmt.api.moc.Delete" class="extype" href="../info/kwarc/mmt/api/moc/Delete.html">Delete</a> <a name="info.kwarc.mmt.api.ObjError" class="extype" href="../info/kwarc/mmt/api/ObjError.html">ObjError</a> <a name="info.kwarc.mmt.api.ParseError" class="extype" href="../info/kwarc/mmt/api/ParseError.html">ParseError</a> <a name="info.kwarc.mmt.api.parser.SingSep" class="extype" href="../info/kwarc/mmt/api/parser/SingSep.html">SingSep</a> <a name="info.kwarc.mmt.api.parser.StrTk" class="extype" href="../info/kwarc/mmt/api/parser/StrTk.html">StrTk</a> <a name="info.kwarc.mmt.api.parser.test.Delim" class="extype" href="../info/kwarc/mmt/api/parser/test/Delim.html">Delim</a> <a name="info.kwarc.mmt.api.parser.test.Delimiter" class="extype" href="../info/kwarc/mmt/api/parser/test/Delimiter.html">Delimiter</a> <a name="info.kwarc.mmt.api.parser.test.SecDelim" class="extype" href="../info/kwarc/mmt/api/parser/test/SecDelim.html">SecDelim</a> <a name="info.kwarc.mmt.api.presentation.NamedIndex" class="extype" href="../info/kwarc/mmt/api/presentation/NamedIndex.html">NamedIndex</a> <a name="info.kwarc.mmt.api.presentation.StringLiteral" class="extype" href="../info/kwarc/mmt/api/presentation/StringLiteral.html">StringLiteral</a> <a name="info.kwarc.mmt.api.PresentationError" class="extype" href="../info/kwarc/mmt/api/PresentationError.html">PresentationError</a> <a name="info.kwarc.mmt.api.uom.ExtractError" class="extype" href="../info/kwarc/mmt/api/uom/ExtractError.html">ExtractError</a> <a name="info.kwarc.mmt.api.UpdateError" class="extype" href="../info/kwarc/mmt/api/UpdateError.html">UpdateError</a> <a name="info.kwarc.mmt.api.utils.Id" class="extype" href="../info/kwarc/mmt/api/utils/Id.html">Id</a> <a name="info.kwarc.mmt.api.utils.Keyword" class="extype" href="../info/kwarc/mmt/api/utils/Keyword.html">Keyword</a> <a name="info.kwarc.mmt.api.utils.LineComment" class="extype" href="../info/kwarc/mmt/api/utils/LineComment.html">LineComment</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/AddError.html" class="extype" name="info.kwarc.mmt.api.AddError">AddError</a> <a href="../info/kwarc/mmt/api/DeleteError.html" class="extype" name="info.kwarc.mmt.api.DeleteError">DeleteError</a> <a href="../info/kwarc/mmt/api/ExtensionError.html" class="extype" name="info.kwarc.mmt.api.ExtensionError">ExtensionError</a> <a href="../info/kwarc/mmt/api/GetError.html" class="extype" name="info.kwarc.mmt.api.GetError">GetError</a> <a href="../info/kwarc/mmt/api/ImplementationError.html" class="extype" name="info.kwarc.mmt.api.ImplementationError">ImplementationError</a> <a href="../info/kwarc/mmt/api/InvalidElement.html" class="extype" name="info.kwarc.mmt.api.InvalidElement">InvalidElement</a> <a href="../info/kwarc/mmt/api/InvalidObject.html" class="extype" name="info.kwarc.mmt.api.InvalidObject">InvalidObject</a> <a href="../info/kwarc/mmt/api/moc/Add.html" class="extype" name="info.kwarc.mmt.api.moc.Add">Add</a> <a href="../info/kwarc/mmt/api/moc/Delete.html" class="extype" name="info.kwarc.mmt.api.moc.Delete">Delete</a> <a href="../info/kwarc/mmt/api/ParseError.html" class="extype" name="info.kwarc.mmt.api.ParseError">ParseError</a> <a href="../info/kwarc/mmt/api/parser/Delim.html" class="extype" name="info.kwarc.mmt.api.parser.Delim">Delim</a> <a href="../info/kwarc/mmt/api/parser/Delimiter.html" class="extype" name="info.kwarc.mmt.api.parser.Delimiter">Delimiter</a> <a href="../info/kwarc/mmt/api/parser/InstanceName.html" class="extype" name="info.kwarc.mmt.api.parser.InstanceName">InstanceName</a> <a href="../info/kwarc/mmt/api/parser/SymbolName.html" class="extype" name="info.kwarc.mmt.api.parser.SymbolName">SymbolName</a> <a href="../info/kwarc/mmt/api/presentation/NamedIndex.html" class="extype" name="info.kwarc.mmt.api.presentation.NamedIndex">NamedIndex</a> <a href="../info/kwarc/mmt/api/presentation/StringLiteral.html" class="extype" name="info.kwarc.mmt.api.presentation.StringLiteral">StringLiteral</a> <a href="../info/kwarc/mmt/api/PresentationError.html" class="extype" name="info.kwarc.mmt.api.PresentationError">PresentationError</a> <a href="../info/kwarc/mmt/api/uom/ExtractError.html" class="extype" name="info.kwarc.mmt.api.uom.ExtractError">ExtractError</a> <a href="../info/kwarc/mmt/api/uom/Implementation$.html" class="extype" name="info.kwarc.mmt.api.uom.Implementation">Implementation</a> <a href="../info/kwarc/mmt/api/UpdateError.html" class="extype" name="info.kwarc.mmt.api.UpdateError">UpdateError</a> </div>
+    </div><div class="entry">
+      <div class="name">Scala</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a> </div>
     </div><div class="entry">
       <div class="name">scala2Java</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.utils.FileConversion" class="extype" href="../info/kwarc/mmt/api/utils/FileConversion$.html">FileConversion</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/utils/FileConversion$.html" class="extype" name="info.kwarc.mmt.api.utils.FileConversion">FileConversion</a> </div>
     </div><div class="entry">
       <div class="name">ScalaArchive</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.archives" class="extype" href="../info/kwarc/mmt/api/archives/package.html">archives</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/archives/package.html" class="extype" name="info.kwarc.mmt.api.archives">archives</a> </div>
+    </div><div class="entry">
+      <div class="name">ScalaLambda</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a> </div>
     </div><div class="entry">
       <div class="name">scan</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.test.MatchedList" class="extype" href="../info/kwarc/mmt/api/parser/test/MatchedList.html">MatchedList</a> <a name="info.kwarc.mmt.api.parser.test.Scanner" class="extype" href="../info/kwarc/mmt/api/parser/test/Scanner.html">Scanner</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/Scanner.html" class="extype" name="info.kwarc.mmt.api.parser.Scanner">Scanner</a> </div>
     </div><div class="entry">
-      <div class="name">scanner</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.test" class="extype" href="../info/kwarc/mmt/api/parser/test/package.html">test</a> <a name="info.kwarc.mmt.api.parser.test.UnscannedList" class="extype" href="../info/kwarc/mmt/api/parser/test/UnscannedList.html">UnscannedList</a> </div>
+      <div class="name">Scanner</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> <a href="../info/kwarc/mmt/api/parser/UnmatchedList.html" class="extype" name="info.kwarc.mmt.api.parser.UnmatchedList">UnmatchedList</a> </div>
+    </div><div class="entry">
+      <div class="name">scanRecursively</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/Scanner.html" class="extype" name="info.kwarc.mmt.api.parser.Scanner">Scanner</a> </div>
     </div><div class="entry">
       <div class="name">scene</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.gui.FXPanel" class="extype" href="../info/kwarc/mmt/api/gui/FXPanel.html">FXPanel</a> <a name="info.kwarc.mmt.api.gui.MyScene" class="extype" href="../info/kwarc/mmt/api/gui/MyScene.html">MyScene</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/gui/FXPanel.html" class="extype" name="info.kwarc.mmt.api.gui.FXPanel">FXPanel</a> <a href="../info/kwarc/mmt/api/gui/MyScene.html" class="extype" name="info.kwarc.mmt.api.gui.MyScene">MyScene</a> </div>
     </div><div class="entry">
       <div class="name">scheme</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.backend.LocalCopy" class="extype" href="../info/kwarc/mmt/api/backend/LocalCopy.html">LocalCopy</a> <a name="info.kwarc.mmt.api.backend.SVNRepo" class="extype" href="../info/kwarc/mmt/api/backend/SVNRepo.html">SVNRepo</a> <a name="info.kwarc.mmt.api.backend.TNTBase" class="extype" href="../info/kwarc/mmt/api/backend/TNTBase.html">TNTBase</a> <a name="info.kwarc.mmt.api.utils.URI" class="extype" href="../info/kwarc/mmt/api/utils/URI.html">URI</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/backend/LocalCopy.html" class="extype" name="info.kwarc.mmt.api.backend.LocalCopy">LocalCopy</a> <a href="../info/kwarc/mmt/api/backend/SVNRepo.html" class="extype" name="info.kwarc.mmt.api.backend.SVNRepo">SVNRepo</a> <a href="../info/kwarc/mmt/api/backend/TNTBase.html" class="extype" name="info.kwarc.mmt.api.backend.TNTBase">TNTBase</a> <a href="../info/kwarc/mmt/api/utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a> </div>
     </div><div class="entry">
       <div class="name">schemeNull</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.utils.URI" class="extype" href="../info/kwarc/mmt/api/utils/URI.html">URI</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a> </div>
     </div><div class="entry">
       <div class="name">scope</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology.Forall" class="extype" href="../info/kwarc/mmt/api/ontology/Forall.html">Forall</a> <a name="info.kwarc.mmt.api.parser.ParsingUnit" class="extype" href="../info/kwarc/mmt/api/parser/ParsingUnit.html">ParsingUnit</a> <a name="info.kwarc.mmt.api.presentation.GenerateID" class="extype" href="../info/kwarc/mmt/api/presentation/GenerateID.html">GenerateID</a> <a name="info.kwarc.mmt.lf.compile.Binder" class="extype" href="../info/kwarc/mmt/lf/compile/Binder.html">Binder</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/Forall.html" class="extype" name="info.kwarc.mmt.api.ontology.Forall">Forall</a> <a href="../info/kwarc/mmt/api/parser/ParsingUnit.html" class="extype" name="info.kwarc.mmt.api.parser.ParsingUnit">ParsingUnit</a> <a href="../info/kwarc/mmt/api/presentation/GenerateID.html" class="extype" name="info.kwarc.mmt.api.presentation.GenerateID">GenerateID</a> <a href="../info/kwarc/mmt/lf/compile/Binder.html" class="extype" name="info.kwarc.mmt.lf.compile.Binder">Binder</a> </div>
+    </div><div class="entry">
+      <div class="name">ScopeComponent</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
+    </div><div class="entry">
+      <div class="name">scopes</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/Arity.html" class="extype" name="info.kwarc.mmt.api.parser.Arity">Arity</a> </div>
     </div><div class="entry">
       <div class="name">se</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.gui.StructuralElementNode" class="extype" href="../info/kwarc/mmt/api/gui/StructuralElementNode.html">StructuralElementNode</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/gui/StructuralElementNode.html" class="extype" name="info.kwarc.mmt.api.gui.StructuralElementNode">StructuralElementNode</a> </div>
     </div><div class="entry">
-      <div class="name">SecDelim</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.test" class="extype" href="../info/kwarc/mmt/api/parser/test/package.html">test</a> </div>
+      <div class="name">seCont</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/StructureAndObjectParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureAndObjectParser">StructureAndObjectParser</a> <a href="../info/kwarc/mmt/api/parser/StructureParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a> <a href="../info/kwarc/mmt/latex/LatexStructureParser.html" class="extype" name="info.kwarc.mmt.latex.LatexStructureParser">LatexStructureParser</a> </div>
     </div><div class="entry">
       <div class="name">segments</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.LocalRef" class="extype" href="../info/kwarc/mmt/api/LocalRef.html">LocalRef</a> <a name="info.kwarc.mmt.api.utils.File" class="extype" href="../info/kwarc/mmt/api/utils/File.html">File</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/LocalRef.html" class="extype" name="info.kwarc.mmt.api.LocalRef">LocalRef</a> <a href="../info/kwarc/mmt/api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a> </div>
     </div><div class="entry">
       <div class="name">SELECT</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile" class="extype" href="../info/kwarc/mmt/lf/compile/package.html">compile</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/package.html" class="extype" name="info.kwarc.mmt.lf.compile">compile</a> </div>
     </div><div class="entry">
       <div class="name">selectorPoolSize</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.web.Server" class="extype" href="../info/kwarc/mmt/api/web/Server.html">Server</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/web/Server.html" class="extype" name="info.kwarc.mmt.api.web.Server">Server</a> </div>
     </div><div class="entry">
       <div class="name">SemiFormalObject</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">SemiFormalObjectList</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">Semigroup</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.uom" class="extype" href="../info/kwarc/mmt/api/uom/package.html">uom</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a> </div>
     </div><div class="entry">
       <div class="name">SemigroupAction</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.uom" class="extype" href="../info/kwarc/mmt/api/uom/package.html">uom</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a> </div>
     </div><div class="entry">
       <div class="name">sendRequest</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.backend.OMBase" class="extype" href="../info/kwarc/mmt/api/backend/OMBase.html">OMBase</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/backend/OMBase.html" class="extype" name="info.kwarc.mmt.api.backend.OMBase">OMBase</a> </div>
     </div><div class="entry">
       <div class="name">seNode</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.gui.PathNode" class="extype" href="../info/kwarc/mmt/api/gui/PathNode.html">PathNode</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/gui/PathNode.html" class="extype" name="info.kwarc.mmt.api.gui.PathNode">PathNode</a> </div>
     </div><div class="entry">
       <div class="name">sep</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.ExpTk" class="extype" href="../info/kwarc/mmt/api/parser/ExpTk.html">ExpTk</a> <a name="info.kwarc.mmt.api.parser.test.SeqArg" class="extype" href="../info/kwarc/mmt/api/parser/test/SeqArg.html">SeqArg</a> <a name="info.kwarc.mmt.api.parser.test.SeqVar" class="extype" href="../info/kwarc/mmt/api/parser/test/SeqVar.html">SeqVar</a> <a name="info.kwarc.mmt.api.presentation.Components" class="extype" href="../info/kwarc/mmt/api/presentation/Components.html">Components</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/SeqArg.html" class="extype" name="info.kwarc.mmt.api.parser.SeqArg">SeqArg</a> <a href="../info/kwarc/mmt/api/parser/Var.html" class="extype" name="info.kwarc.mmt.api.parser.Var">Var</a> <a href="../info/kwarc/mmt/api/presentation/Components.html" class="extype" name="info.kwarc.mmt.api.presentation.Components">Components</a> </div>
     </div><div class="entry">
-      <div class="name">Separator</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> <a name="info.kwarc.mmt.api.presentation.SeqArgument" class="extype" href="../info/kwarc/mmt/api/presentation/SeqArgument.html">SeqArgument</a> </div>
-    </div><div class="entry">
-      <div class="name">separators</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.Grammar" class="extype" href="../info/kwarc/mmt/api/parser/Grammar.html">Grammar</a> </div>
+      <div class="name">separator</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/SeqArgument.html" class="extype" name="info.kwarc.mmt.api.presentation.SeqArgument">SeqArgument</a> </div>
     </div><div class="entry">
       <div class="name">SeqArg</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> <a name="info.kwarc.mmt.api.parser.test" class="extype" href="../info/kwarc/mmt/api/parser/test/package.html">test</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">SeqArgument</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.presentation" class="extype" href="../info/kwarc/mmt/api/presentation/package.html">presentation</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a> </div>
+    </div><div class="entry">
+      <div class="name">SeqBufReader</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
+    </div><div class="entry">
+      <div class="name">seqReader</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/latex/LatexState.html" class="extype" name="info.kwarc.mmt.latex.LatexState">LatexState</a> </div>
     </div><div class="entry">
       <div class="name">Sequence</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology" class="extype" href="../info/kwarc/mmt/api/ontology/package.html">ontology</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/package.html" class="extype" name="info.kwarc.mmt.api.ontology">ontology</a> </div>
     </div><div class="entry">
-      <div class="name">SeqVar</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.test" class="extype" href="../info/kwarc/mmt/api/parser/test/package.html">test</a> </div>
+      <div class="name">SequentialReader</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">server</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../info/kwarc/mmt/api/frontend/Controller.html">Controller</a> <a name="info.kwarc.mmt.api.web" class="extype" href="../info/kwarc/mmt/api/web/package.html">web</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a> <a href="../info/kwarc/mmt/api/web/package.html" class="extype" name="info.kwarc.mmt.api.web">web</a> </div>
     </div><div class="entry">
       <div class="name">ServerError</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.web" class="extype" href="../info/kwarc/mmt/api/web/package.html">web</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/web/package.html" class="extype" name="info.kwarc.mmt.api.web">web</a> </div>
     </div><div class="entry">
       <div class="name">ServerOff</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend" class="extype" href="../info/kwarc/mmt/api/frontend/package.html">frontend</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/package.html" class="extype" name="info.kwarc.mmt.api.frontend">frontend</a> </div>
     </div><div class="entry">
       <div class="name">ServerOn</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend" class="extype" href="../info/kwarc/mmt/api/frontend/package.html">frontend</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/package.html" class="extype" name="info.kwarc.mmt.api.frontend">frontend</a> </div>
+    </div><div class="entry">
+      <div class="name">ServerPlugin</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/web/package.html" class="extype" name="info.kwarc.mmt.api.web">web</a> </div>
     </div><div class="entry">
       <div class="name">set</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.archives.Timestamps" class="extype" href="../info/kwarc/mmt/api/archives/Timestamps.html">Timestamps</a> <a name="info.kwarc.mmt.api.gui.BackendPane" class="extype" href="../info/kwarc/mmt/api/gui/BackendPane.html">BackendPane</a> <a name="info.kwarc.mmt.api.gui.Window" class="extype" href="../info/kwarc/mmt/api/gui/Window.html">Window</a> <a name="info.kwarc.mmt.api.objects.OMREF" class="extype" href="../info/kwarc/mmt/api/objects/OMREF.html">OMREF</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/archives/Timestamps.html" class="extype" name="info.kwarc.mmt.api.archives.Timestamps">Timestamps</a> <a href="../info/kwarc/mmt/api/gui/BackendPane.html" class="extype" name="info.kwarc.mmt.api.gui.BackendPane">BackendPane</a> <a href="../info/kwarc/mmt/api/gui/Window.html" class="extype" name="info.kwarc.mmt.api.gui.Window">Window</a> <a href="../info/kwarc/mmt/api/objects/OMREF.html" class="extype" name="info.kwarc.mmt.api.objects.OMREF">OMREF</a> </div>
     </div><div class="entry">
       <div class="name">SetBase</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend" class="extype" href="../info/kwarc/mmt/api/frontend/package.html">frontend</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/package.html" class="extype" name="info.kwarc.mmt.api.frontend">frontend</a> </div>
     </div><div class="entry">
       <div class="name">setCausedBy</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.Error" class="extype" href="../info/kwarc/mmt/api/Error.html">Error</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> </div>
     </div><div class="entry">
       <div class="name">setExtension</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.utils.File" class="extype" href="../info/kwarc/mmt/api/utils/File.html">File</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a> </div>
     </div><div class="entry">
       <div class="name">setHome</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../info/kwarc/mmt/api/frontend/Controller.html">Controller</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a> </div>
+    </div><div class="entry">
+      <div class="name">setLiteral</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/owl/AddImpacts.html" class="extype" name="info.kwarc.mmt.owl.AddImpacts">AddImpacts</a> </div>
+    </div><div class="entry">
+      <div class="name">setLiteralForImpactedConstantApplication</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/owl/AddImpacts.html" class="extype" name="info.kwarc.mmt.owl.AddImpacts">AddImpacts</a> </div>
+    </div><div class="entry">
+      <div class="name">setLiteralForImpactedConstantSymbol</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/owl/AddImpacts.html" class="extype" name="info.kwarc.mmt.owl.AddImpacts">AddImpacts</a> </div>
+    </div><div class="entry">
+      <div class="name">setMetaDatum</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/owl/AddImpacts.html" class="extype" name="info.kwarc.mmt.owl.AddImpacts">AddImpacts</a> </div>
     </div><div class="entry">
       <div class="name">setMWS</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend.ExtensionManager" class="extype" href="../info/kwarc/mmt/api/frontend/ExtensionManager.html">ExtensionManager</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/ExtensionManager.html" class="extype" name="info.kwarc.mmt.api.frontend.ExtensionManager">ExtensionManager</a> </div>
     </div><div class="entry">
       <div class="name">setOrigin</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.StructuralElement" class="extype" href="../info/kwarc/mmt/api/StructuralElement.html">StructuralElement</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a> </div>
+    </div><div class="entry">
+      <div class="name">setParserState</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/latex/LatexState.html" class="extype" name="info.kwarc.mmt.latex.LatexState">LatexState</a> </div>
     </div><div class="entry">
       <div class="name">sets</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.presentation.NotationStore" class="extype" href="../info/kwarc/mmt/api/presentation/NotationStore.html">NotationStore</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/NotationStore.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationStore">NotationStore</a> </div>
+    </div><div class="entry">
+      <div class="name">setSourcePosition</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/Reader.html" class="extype" name="info.kwarc.mmt.api.parser.Reader">Reader</a> </div>
     </div><div class="entry">
       <div class="name">SFOL</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile" class="extype" href="../info/kwarc/mmt/lf/compile/package.html">compile</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/package.html" class="extype" name="info.kwarc.mmt.lf.compile">compile</a> </div>
     </div><div class="entry">
       <div class="name">Shell</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend" class="extype" href="../info/kwarc/mmt/api/frontend/package.html">frontend</a> </div>
-    </div><div class="entry">
-      <div class="name">shift</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.NotationParser.TokensPos" class="extype" href="../info/kwarc/mmt/api/parser/NotationParser$TokensPos.html">TokensPos</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/package.html" class="extype" name="info.kwarc.mmt.api.frontend">frontend</a> </div>
     </div><div class="entry">
       <div class="name">short</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology.PrefixOf" class="extype" href="../info/kwarc/mmt/api/ontology/PrefixOf.html">PrefixOf</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/PrefixOf.html" class="extype" name="info.kwarc.mmt.api.ontology.PrefixOf">PrefixOf</a> </div>
     </div><div class="entry">
       <div class="name">shortMsg</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.Error" class="extype" href="../info/kwarc/mmt/api/Error.html">Error</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> </div>
+    </div><div class="entry">
+      <div class="name">show</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/Hider$.html" class="extype" name="info.kwarc.mmt.jedit.Hider">Hider</a> </div>
+    </div><div class="entry">
+      <div class="name">showEnd</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/Hider$.html" class="extype" name="info.kwarc.mmt.jedit.Hider">Hider</a> </div>
+    </div><div class="entry">
+      <div class="name">showinfo</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/MMTPlugin.html" class="extype" name="info.kwarc.mmt.jedit.MMTPlugin">MMTPlugin</a> </div>
+    </div><div class="entry">
+      <div class="name">showStart</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/Hider$.html" class="extype" name="info.kwarc.mmt.jedit.Hider">Hider</a> </div>
     </div><div class="entry">
       <div class="name">sign</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.uom" class="extype" href="../info/kwarc/mmt/api/uom/package.html">uom</a> <a name="info.kwarc.mmt.lf.compile.Compiler" class="extype" href="../info/kwarc/mmt/lf/compile/Compiler.html">Compiler</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a> <a href="../info/kwarc/mmt/lf/compile/Compiler.html" class="extype" name="info.kwarc.mmt.lf.compile.Compiler">Compiler</a> </div>
     </div><div class="entry">
       <div class="name">sign_from_pt</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.Compiler" class="extype" href="../info/kwarc/mmt/lf/compile/Compiler.html">Compiler</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/Compiler.html" class="extype" name="info.kwarc.mmt.lf.compile.Compiler">Compiler</a> </div>
     </div><div class="entry">
       <div class="name">sigs</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.Compiler" class="extype" href="../info/kwarc/mmt/lf/compile/Compiler.html">Compiler</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/Compiler.html" class="extype" name="info.kwarc.mmt.lf.compile.Compiler">Compiler</a> </div>
     </div><div class="entry">
       <div class="name">SimpleNotation</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.presentation" class="extype" href="../info/kwarc/mmt/api/presentation/package.html">presentation</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a> </div>
+    </div><div class="entry">
+      <div class="name">SimpleStep</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/package.html" class="extype" name="info.kwarc.mmt.api">api</a> </div>
     </div><div class="entry">
       <div class="name">Simplified</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.uom" class="extype" href="../info/kwarc/mmt/api/uom/package.html">uom</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a> </div>
     </div><div class="entry">
       <div class="name">simplify</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.Morph" class="extype" href="../info/kwarc/mmt/api/objects/Morph$.html">Morph</a> <a name="info.kwarc.mmt.api.objects.Solver" class="extype" href="../info/kwarc/mmt/api/objects/Solver.html">Solver</a> <a name="info.kwarc.mmt.api.objects.TheoryExp" class="extype" href="../info/kwarc/mmt/api/objects/TheoryExp$.html">TheoryExp</a> <a name="info.kwarc.mmt.api.uom.UOM" class="extype" href="../info/kwarc/mmt/api/uom/UOM.html">UOM</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/Morph$.html" class="extype" name="info.kwarc.mmt.api.objects.Morph">Morph</a> <a href="../info/kwarc/mmt/api/objects/Solver.html" class="extype" name="info.kwarc.mmt.api.objects.Solver">Solver</a> <a href="../info/kwarc/mmt/api/objects/TheoryExp$.html" class="extype" name="info.kwarc.mmt.api.objects.TheoryExp">TheoryExp</a> <a href="../info/kwarc/mmt/api/uom/UOM.html" class="extype" name="info.kwarc.mmt.api.uom.UOM">UOM</a> </div>
+    </div><div class="entry">
+      <div class="name">SingleFoundVar</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">Singleton</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology" class="extype" href="../info/kwarc/mmt/api/ontology/package.html">ontology</a> </div>
-    </div><div class="entry">
-      <div class="name">SingSep</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> </div>
-    </div><div class="entry">
-      <div class="name">skip</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.utils.SourceReader" class="extype" href="../info/kwarc/mmt/api/utils/SourceReader.html">SourceReader</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/package.html" class="extype" name="info.kwarc.mmt.api.ontology">ontology</a> </div>
     </div><div class="entry">
       <div class="name">slice</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.test.FoundArg" class="extype" href="../info/kwarc/mmt/api/parser/test/FoundArg.html">FoundArg</a> <a name="info.kwarc.mmt.api.utils.LList" class="extype" href="../info/kwarc/mmt/api/utils/LList.html">LList</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/FoundArg.html" class="extype" name="info.kwarc.mmt.api.parser.FoundArg">FoundArg</a> <a href="../info/kwarc/mmt/api/utils/LList.html" class="extype" name="info.kwarc.mmt.api.utils.LList">LList</a> </div>
     </div><div class="entry">
       <div class="name">SML</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile" class="extype" href="../info/kwarc/mmt/lf/compile/package.html">compile</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/package.html" class="extype" name="info.kwarc.mmt.lf.compile">compile</a> </div>
     </div><div class="entry">
       <div class="name">sname</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.Compiler" class="extype" href="../info/kwarc/mmt/lf/compile/Compiler.html">Compiler</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/Compiler.html" class="extype" name="info.kwarc.mmt.lf.compile.Compiler">Compiler</a> </div>
     </div><div class="entry">
       <div class="name">SolutionRule</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">solutionRules</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.RuleStore" class="extype" href="../info/kwarc/mmt/api/objects/RuleStore.html">RuleStore</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/RuleStore.html" class="extype" name="info.kwarc.mmt.api.objects.RuleStore">RuleStore</a> </div>
     </div><div class="entry">
       <div class="name">Solve</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf" class="extype" href="../info/kwarc/mmt/lf/package.html">lf</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/package.html" class="extype" name="info.kwarc.mmt.lf">lf</a> </div>
     </div><div class="entry">
       <div class="name">solved</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.DelayedConstraint" class="extype" href="../info/kwarc/mmt/api/objects/DelayedConstraint.html">DelayedConstraint</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/DelayedConstraint.html" class="extype" name="info.kwarc.mmt.api.objects.DelayedConstraint">DelayedConstraint</a> </div>
     </div><div class="entry">
       <div class="name">Solver</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">sort</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.SFOL" class="extype" href="../info/kwarc/mmt/lf/compile/SFOL$.html">SFOL</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/SFOL$.html" class="extype" name="info.kwarc.mmt.lf.compile.SFOL">SFOL</a> </div>
     </div><div class="entry">
       <div class="name">sorts</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.SFOL" class="extype" href="../info/kwarc/mmt/lf/compile/SFOL$.html">SFOL</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/SFOL$.html" class="extype" name="info.kwarc.mmt.lf.compile.SFOL">SFOL</a> </div>
     </div><div class="entry">
       <div class="name">source</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.utils" class="extype" href="../info/kwarc/mmt/api/utils/package.html">utils</a> <a name="info.kwarc.mmt.lf.compile.Compiler" class="extype" href="../info/kwarc/mmt/lf/compile/Compiler.html">Compiler</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/ParsingUnit.html" class="extype" name="info.kwarc.mmt.api.parser.ParsingUnit">ParsingUnit</a> <a href="../info/kwarc/mmt/lf/compile/Compiler.html" class="extype" name="info.kwarc.mmt.lf.compile.Compiler">Compiler</a> </div>
     </div><div class="entry">
       <div class="name">sourceDim</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="../info/kwarc/mmt/api/archives/WritableArchive.html">WritableArchive</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/archives/WritableArchive.html" class="extype" name="info.kwarc.mmt.api.archives.WritableArchive">WritableArchive</a> </div>
     </div><div class="entry">
       <div class="name">sourceDir</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.archives.WritableArchive" class="extype" href="../info/kwarc/mmt/api/archives/WritableArchive.html">WritableArchive</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/archives/WritableArchive.html" class="extype" name="info.kwarc.mmt.api.archives.WritableArchive">WritableArchive</a> </div>
     </div><div class="entry">
       <div class="name">SourceError</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api" class="extype" href="../info/kwarc/mmt/api/package.html">api</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/package.html" class="extype" name="info.kwarc.mmt.api">api</a> </div>
     </div><div class="entry">
       <div class="name">SourcePosition</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> </div>
-    </div><div class="entry">
-      <div class="name">SourceReader</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.utils" class="extype" href="../info/kwarc/mmt/api/utils/package.html">utils</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">SourceRef</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">sourceRefKey</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.backend.TextReader" class="extype" href="../info/kwarc/mmt/api/backend/TextReader$.html">TextReader</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/backend/TextReader$.html" class="extype" name="info.kwarc.mmt.api.backend.TextReader">TextReader</a> </div>
     </div><div class="entry">
       <div class="name">SourceRegion</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">sp</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.backend.TNTBase" class="extype" href="../info/kwarc/mmt/api/backend/TNTBase.html">TNTBase</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/backend/TNTBase.html" class="extype" name="info.kwarc.mmt.api.backend.TNTBase">TNTBase</a> <a href="../org/gjt/package.html" class="extype" name="org.gjt">gjt</a> </div>
     </div><div class="entry">
       <div class="name">split</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.test.Arg" class="extype" href="../info/kwarc/mmt/api/parser/test/Arg$.html">Arg</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/Arg$.html" class="extype" name="info.kwarc.mmt.api.parser.Arg">Arg</a> </div>
+    </div><div class="entry">
+      <div class="name">splitOffUnknowns</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/AbstractObjectParser$.html" class="extype" name="info.kwarc.mmt.api.parser.AbstractObjectParser">AbstractObjectParser</a> </div>
     </div><div class="entry">
       <div class="name">stack</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.Equality" class="extype" href="../info/kwarc/mmt/api/objects/Equality.html">Equality</a> <a name="info.kwarc.mmt.api.objects.Inhabitation" class="extype" href="../info/kwarc/mmt/api/objects/Inhabitation.html">Inhabitation</a> <a name="info.kwarc.mmt.api.objects.IsContext" class="extype" href="../info/kwarc/mmt/api/objects/IsContext.html">IsContext</a> <a name="info.kwarc.mmt.api.objects.IsMorphism" class="extype" href="../info/kwarc/mmt/api/objects/IsMorphism.html">IsMorphism</a> <a name="info.kwarc.mmt.api.objects.IsSubstitution" class="extype" href="../info/kwarc/mmt/api/objects/IsSubstitution.html">IsSubstitution</a> <a name="info.kwarc.mmt.api.objects.IsTheory" class="extype" href="../info/kwarc/mmt/api/objects/IsTheory.html">IsTheory</a> <a name="info.kwarc.mmt.api.objects.Judgement" class="extype" href="../info/kwarc/mmt/api/objects/Judgement.html">Judgement</a> <a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> <a name="info.kwarc.mmt.api.objects.Typing" class="extype" href="../info/kwarc/mmt/api/objects/Typing.html">Typing</a> <a name="info.kwarc.mmt.api.objects.Universe" class="extype" href="../info/kwarc/mmt/api/objects/Universe.html">Universe</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/Equality.html" class="extype" name="info.kwarc.mmt.api.objects.Equality">Equality</a> <a href="../info/kwarc/mmt/api/objects/Inhabitation.html" class="extype" name="info.kwarc.mmt.api.objects.Inhabitation">Inhabitation</a> <a href="../info/kwarc/mmt/api/objects/IsContext.html" class="extype" name="info.kwarc.mmt.api.objects.IsContext">IsContext</a> <a href="../info/kwarc/mmt/api/objects/IsMorphism.html" class="extype" name="info.kwarc.mmt.api.objects.IsMorphism">IsMorphism</a> <a href="../info/kwarc/mmt/api/objects/IsSubstitution.html" class="extype" name="info.kwarc.mmt.api.objects.IsSubstitution">IsSubstitution</a> <a href="../info/kwarc/mmt/api/objects/IsTheory.html" class="extype" name="info.kwarc.mmt.api.objects.IsTheory">IsTheory</a> <a href="../info/kwarc/mmt/api/objects/Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> <a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> <a href="../info/kwarc/mmt/api/objects/Typing.html" class="extype" name="info.kwarc.mmt.api.objects.Typing">Typing</a> <a href="../info/kwarc/mmt/api/objects/Universe.html" class="extype" name="info.kwarc.mmt.api.objects.Universe">Universe</a> </div>
     </div><div class="entry">
       <div class="name">stackTrace</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.Error" class="extype" href="../info/kwarc/mmt/api/Error.html">Error</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> </div>
     </div><div class="entry">
       <div class="name">start</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.SourceRegion" class="extype" href="../info/kwarc/mmt/api/parser/SourceRegion.html">SourceRegion</a> <a name="info.kwarc.mmt.api.parser.test.TokenSlice" class="extype" href="../info/kwarc/mmt/api/parser/test/TokenSlice.html">TokenSlice</a> <a name="info.kwarc.mmt.api.parser.Token" class="extype" href="../info/kwarc/mmt/api/parser/Token.html">Token</a> <a name="info.kwarc.mmt.api.parser.TokenProperties" class="extype" href="../info/kwarc/mmt/api/parser/TokenProperties.html">TokenProperties</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/SourceRegion.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRegion">SourceRegion</a> <a href="../info/kwarc/mmt/api/parser/TokenSlice.html" class="extype" name="info.kwarc.mmt.api.parser.TokenSlice">TokenSlice</a> <a href="../info/kwarc/mmt/jedit/MMTPlugin.html" class="extype" name="info.kwarc.mmt.jedit.MMTPlugin">MMTPlugin</a> </div>
+    </div><div class="entry">
+      <div class="name">startPosition</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a> </div>
     </div><div class="entry">
       <div class="name">startServer</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../info/kwarc/mmt/api/frontend/Controller.html">Controller</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a> </div>
     </div><div class="entry">
       <div class="name">startStopListener</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.web.Server" class="extype" href="../info/kwarc/mmt/api/web/Server.html">Server</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/web/Server.html" class="extype" name="info.kwarc.mmt.api.web.Server">Server</a> </div>
+    </div><div class="entry">
+      <div class="name">state</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/FoundVar.html" class="extype" name="info.kwarc.mmt.api.parser.FoundVar">FoundVar</a> <a href="../info/kwarc/mmt/api/parser/FoundVar$.html" class="extype" name="info.kwarc.mmt.api.parser.FoundVar">FoundVar</a> </div>
     </div><div class="entry">
       <div class="name">StatelessTraverser</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">statements</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.modules.Body" class="extype" href="../info/kwarc/mmt/api/modules/Body.html">Body</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/modules/Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a> </div>
     </div><div class="entry">
-      <div class="name">StdArg</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> </div>
+      <div class="name">states</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a> <a href="../info/kwarc/mmt/latex/LatexPresenter.html" class="extype" name="info.kwarc.mmt.latex.LatexPresenter">LatexPresenter</a> </div>
+    </div><div class="entry">
+      <div class="name">StatusBarLogger</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/package.html" class="extype" name="info.kwarc.mmt.jedit">jedit</a> </div>
     </div><div class="entry">
       <div class="name">step</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.presentation.Components" class="extype" href="../info/kwarc/mmt/api/presentation/Components.html">Components</a> <a name="info.kwarc.mmt.api.presentation.Nest" class="extype" href="../info/kwarc/mmt/api/presentation/Nest.html">Nest</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/Components.html" class="extype" name="info.kwarc.mmt.api.presentation.Components">Components</a> <a href="../info/kwarc/mmt/api/presentation/Nest.html" class="extype" name="info.kwarc.mmt.api.presentation.Nest">Nest</a> </div>
     </div><div class="entry">
       <div class="name">steps</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.LocalName" class="extype" href="../info/kwarc/mmt/api/LocalName.html">LocalName</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a> </div>
     </div><div class="entry">
       <div class="name">sToMyS</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.gui.MyScene" class="extype" href="../info/kwarc/mmt/api/gui/MyScene$.html">MyScene</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/gui/MyScene$.html" class="extype" name="info.kwarc.mmt.api.gui.MyScene">MyScene</a> </div>
+    </div><div class="entry">
+      <div class="name">stop</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/MMTConsole.html" class="extype" name="info.kwarc.mmt.jedit.MMTConsole">MMTConsole</a> <a href="../info/kwarc/mmt/jedit/MMTPlugin.html" class="extype" name="info.kwarc.mmt.jedit.MMTPlugin">MMTPlugin</a> </div>
     </div><div class="entry">
       <div class="name">stopServer</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.frontend.Controller" class="extype" href="../info/kwarc/mmt/api/frontend/Controller.html">Controller</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a> </div>
     </div><div class="entry">
       <div class="name">Storage</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.backend" class="extype" href="../info/kwarc/mmt/api/backend/package.html">backend</a> </div>
-    </div><div class="entry">
-      <div class="name">str</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.NotationParser" class="extype" href="../info/kwarc/mmt/api/parser/NotationParser.html">NotationParser</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/backend/package.html" class="extype" name="info.kwarc.mmt.api.backend">backend</a> </div>
     </div><div class="entry">
       <div class="name">strictApplication</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.pragmatics.Pragmatics" class="extype" href="../info/kwarc/mmt/api/pragmatics/Pragmatics.html">Pragmatics</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/pragmatics/Pragmatics.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Pragmatics">Pragmatics</a> </div>
+    </div><div class="entry">
+      <div class="name">strictAttribution</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/pragmatics/Pragmatics.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Pragmatics">Pragmatics</a> </div>
     </div><div class="entry">
       <div class="name">strictBinding</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.pragmatics.Pragmatics" class="extype" href="../info/kwarc/mmt/api/pragmatics/Pragmatics.html">Pragmatics</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/pragmatics/Pragmatics.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Pragmatics">Pragmatics</a> </div>
     </div><div class="entry">
       <div class="name">StrictChange</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.moc" class="extype" href="../info/kwarc/mmt/api/moc/package.html">moc</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/moc/package.html" class="extype" name="info.kwarc.mmt.api.moc">moc</a> </div>
     </div><div class="entry">
       <div class="name">StrictDiff</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.moc" class="extype" href="../info/kwarc/mmt/api/moc/package.html">moc</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/moc/package.html" class="extype" name="info.kwarc.mmt.api.moc">moc</a> </div>
     </div><div class="entry">
       <div class="name">STRING</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology.StringResult" class="extype" href="../info/kwarc/mmt/api/ontology/StringResult.html">StringResult</a> <a name="info.kwarc.mmt.lf.compile" class="extype" href="../info/kwarc/mmt/lf/compile/package.html">compile</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/StringResult.html" class="extype" name="info.kwarc.mmt.api.ontology.StringResult">StringResult</a> <a href="../info/kwarc/mmt/lf/compile/package.html" class="extype" name="info.kwarc.mmt.lf.compile">compile</a> </div>
     </div><div class="entry">
       <div class="name">string2LocalName</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.Conversions" class="extype" href="../info/kwarc/mmt/api/objects/Conversions$.html">Conversions</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/Conversions$.html" class="extype" name="info.kwarc.mmt.api.objects.Conversions">Conversions</a> </div>
     </div><div class="entry">
       <div class="name">string2OMV</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.Conversions" class="extype" href="../info/kwarc/mmt/api/objects/Conversions$.html">Conversions</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/Conversions$.html" class="extype" name="info.kwarc.mmt.api.objects.Conversions">Conversions</a> </div>
+    </div><div class="entry">
+      <div class="name">StringBuilder</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a> </div>
     </div><div class="entry">
       <div class="name">STRINGCONCAT</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile" class="extype" href="../info/kwarc/mmt/lf/compile/package.html">compile</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/package.html" class="extype" name="info.kwarc.mmt.lf.compile">compile</a> </div>
     </div><div class="entry">
       <div class="name">StringLiteral</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.presentation" class="extype" href="../info/kwarc/mmt/api/presentation/package.html">presentation</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a> </div>
     </div><div class="entry">
       <div class="name">StringResult</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology" class="extype" href="../info/kwarc/mmt/api/ontology/package.html">ontology</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/package.html" class="extype" name="info.kwarc.mmt.api.ontology">ontology</a> </div>
     </div><div class="entry">
       <div class="name">STRINGS</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile" class="extype" href="../info/kwarc/mmt/lf/compile/package.html">compile</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/package.html" class="extype" name="info.kwarc.mmt.lf.compile">compile</a> </div>
     </div><div class="entry">
       <div class="name">stringToCONSHEAD</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.EXPConversions" class="extype" href="../info/kwarc/mmt/lf/compile/EXPConversions$.html">EXPConversions</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/EXPConversions$.html" class="extype" name="info.kwarc.mmt.lf.compile.EXPConversions">EXPConversions</a> </div>
     </div><div class="entry">
       <div class="name">stringToDECLHEAD</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.EXPConversions" class="extype" href="../info/kwarc/mmt/lf/compile/EXPConversions$.html">EXPConversions</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/EXPConversions$.html" class="extype" name="info.kwarc.mmt.lf.compile.EXPConversions">EXPConversions</a> </div>
     </div><div class="entry">
       <div class="name">stringToID</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.EXPConversions" class="extype" href="../info/kwarc/mmt/lf/compile/EXPConversions$.html">EXPConversions</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/EXPConversions$.html" class="extype" name="info.kwarc.mmt.lf.compile.EXPConversions">EXPConversions</a> </div>
     </div><div class="entry">
       <div class="name">StringType</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology" class="extype" href="../info/kwarc/mmt/api/ontology/package.html">ontology</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/package.html" class="extype" name="info.kwarc.mmt.api.ontology">ontology</a> </div>
     </div><div class="entry">
       <div class="name">strip</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.OMATTR" class="extype" href="../info/kwarc/mmt/api/objects/OMATTR.html">OMATTR</a> <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="../info/kwarc/mmt/api/objects/Term.html">Term</a> </div>
-    </div><div class="entry">
-      <div class="name">strseps</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser.Grammar" class="extype" href="../info/kwarc/mmt/api/parser/Grammar.html">Grammar</a> </div>
-    </div><div class="entry">
-      <div class="name">StrTk</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.parser" class="extype" href="../info/kwarc/mmt/api/parser/package.html">parser</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/OMATTR.html" class="extype" name="info.kwarc.mmt.api.objects.OMATTR">OMATTR</a> <a href="../info/kwarc/mmt/api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> </div>
     </div><div class="entry">
       <div class="name">StrToplevel</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.presentation" class="extype" href="../info/kwarc/mmt/api/presentation/package.html">presentation</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a> </div>
     </div><div class="entry">
       <div class="name">StructuralElement</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api" class="extype" href="../info/kwarc/mmt/api/package.html">api</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/package.html" class="extype" name="info.kwarc.mmt.api">api</a> </div>
     </div><div class="entry">
       <div class="name">StructuralElementNode</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.gui" class="extype" href="../info/kwarc/mmt/api/gui/package.html">gui</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/gui/package.html" class="extype" name="info.kwarc.mmt.api.gui">gui</a> </div>
     </div><div class="entry">
       <div class="name">StructuralImpactPropagator</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.moc" class="extype" href="../info/kwarc/mmt/api/moc/package.html">moc</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/moc/package.html" class="extype" name="info.kwarc.mmt.api.moc">moc</a> </div>
     </div><div class="entry">
       <div class="name">Structure</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.symbols" class="extype" href="../info/kwarc/mmt/api/symbols/package.html">symbols</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/symbols/package.html" class="extype" name="info.kwarc.mmt.api.symbols">symbols</a> </div>
+    </div><div class="entry">
+      <div class="name">StructureAndObjectChecker</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/libraries/package.html" class="extype" name="info.kwarc.mmt.api.libraries">libraries</a> </div>
+    </div><div class="entry">
+      <div class="name">StructureAndObjectParser</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
+    </div><div class="entry">
+      <div class="name">StructureChecker</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/libraries/package.html" class="extype" name="info.kwarc.mmt.api.libraries">libraries</a> </div>
     </div><div class="entry">
       <div class="name">StructureEdge</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology" class="extype" href="../info/kwarc/mmt/api/ontology/package.html">ontology</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/package.html" class="extype" name="info.kwarc.mmt.api.ontology">ontology</a> </div>
+    </div><div class="entry">
+      <div class="name">StructureParser</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
+    </div><div class="entry">
+      <div class="name">StructureTraverser</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/frontend/package.html" class="extype" name="info.kwarc.mmt.api.frontend">frontend</a> </div>
     </div><div class="entry">
       <div class="name">style</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology.Present" class="extype" href="../info/kwarc/mmt/api/ontology/Present.html">Present</a> <a name="info.kwarc.mmt.api.presentation" class="extype" href="../info/kwarc/mmt/api/presentation/package.html">presentation</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/Present.html" class="extype" name="info.kwarc.mmt.api.ontology.Present">Present</a> <a href="../info/kwarc/mmt/api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a> </div>
+    </div><div class="entry">
+      <div class="name">StyleBasedPresenter</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a> </div>
+    </div><div class="entry">
+      <div class="name">StyleChanger</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/package.html" class="extype" name="info.kwarc.mmt.jedit">jedit</a> </div>
+    </div><div class="entry">
+      <div class="name">styleTextArea</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/gui/TreePane.html" class="extype" name="info.kwarc.mmt.api.gui.TreePane">TreePane</a> </div>
     </div><div class="entry">
       <div class="name">Sub</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">subj</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.ontology.Relation" class="extype" href="../info/kwarc/mmt/api/ontology/Relation.html">Relation</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/ontology/Relation.html" class="extype" name="info.kwarc.mmt.api.ontology.Relation">Relation</a> </div>
     </div><div class="entry">
       <div class="name">subobject</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="../info/kwarc/mmt/api/objects/Obj.html">Obj</a> <a name="info.kwarc.mmt.api.ontology" class="extype" href="../info/kwarc/mmt/api/ontology/package.html">ontology</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a> <a href="../info/kwarc/mmt/api/ontology/package.html" class="extype" name="info.kwarc.mmt.api.ontology">ontology</a> </div>
     </div><div class="entry">
       <div class="name">subs</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.Substitution" class="extype" href="../info/kwarc/mmt/api/objects/Substitution.html">Substitution</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/Substitution.html" class="extype" name="info.kwarc.mmt.api.objects.Substitution">Substitution</a> </div>
+    </div><div class="entry">
+      <div class="name">subscript</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/StyleChanger$.html" class="extype" name="info.kwarc.mmt.jedit.StyleChanger">StyleChanger</a> </div>
     </div><div class="entry">
       <div class="name">Substitute</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">Substitution</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.IsSubstitution" class="extype" href="../info/kwarc/mmt/api/objects/IsSubstitution.html">IsSubstitution</a> <a name="info.kwarc.mmt.api.objects" class="extype" href="../info/kwarc/mmt/api/objects/package.html">objects</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/IsSubstitution.html" class="extype" name="info.kwarc.mmt.api.objects.IsSubstitution">IsSubstitution</a> <a href="../info/kwarc/mmt/api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a> </div>
     </div><div class="entry">
       <div class="name">substitution2list</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.objects.Conversions" class="extype" href="../info/kwarc/mmt/api/objects/Conversions$.html">Conversions</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/objects/Conversions$.html" class="extype" name="info.kwarc.mmt.api.objects.Conversions">Conversions</a> </div>
     </div><div class="entry">
       <div class="name">substitutionapplication</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.utils.mmt" class="extype" href="../info/kwarc/mmt/api/utils/mmt$.html">mmt</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/utils/mmt$.html" class="extype" name="info.kwarc.mmt.api.utils.mmt">mmt</a> </div>
     </div><div class="entry">
       <div class="name">SubstitutionUndefined</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api" class="extype" href="../info/kwarc/mmt/api/package.html">api</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/package.html" class="extype" name="info.kwarc.mmt.api">api</a> </div>
+    </div><div class="entry">
+      <div class="name">Subtype</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/experimental/package.html" class="extype" name="info.kwarc.mmt.api.uom.experimental">experimental</a> </div>
     </div><div class="entry">
       <div class="name">succ</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.TestProgram" class="extype" href="../info/kwarc/mmt/lf/compile/TestProgram$.html">TestProgram</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/TestProgram$.html" class="extype" name="info.kwarc.mmt.lf.compile.TestProgram">TestProgram</a> </div>
+    </div><div class="entry">
+      <div class="name">supportsCompletion</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/jedit/MMTSideKick.html" class="extype" name="info.kwarc.mmt.jedit.MMTSideKick">MMTSideKick</a> </div>
     </div><div class="entry">
       <div class="name">SVNArchive</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.archives" class="extype" href="../info/kwarc/mmt/api/archives/package.html">archives</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/archives/package.html" class="extype" name="info.kwarc.mmt.api.archives">archives</a> </div>
     </div><div class="entry">
       <div class="name">SVNRepo</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.backend" class="extype" href="../info/kwarc/mmt/api/backend/package.html">backend</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/backend/package.html" class="extype" name="info.kwarc.mmt.api.backend">backend</a> </div>
+    </div><div class="entry">
+      <div class="name">Swing</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/gui/package.html" class="extype" name="info.kwarc.mmt.api.gui">gui</a> </div>
     </div><div class="entry">
       <div class="name">symb</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.Compiler" class="extype" href="../info/kwarc/mmt/lf/compile/Compiler.html">Compiler</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/Compiler.html" class="extype" name="info.kwarc.mmt.lf.compile.Compiler">Compiler</a> </div>
     </div><div class="entry">
       <div class="name">Symbol</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.symbols" class="extype" href="../info/kwarc/mmt/api/symbols/package.html">symbols</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/symbols/package.html" class="extype" name="info.kwarc.mmt.api.symbols">symbols</a> </div>
+    </div><div class="entry">
+      <div class="name">SymbolName</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">symbols</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api" class="extype" href="../info/kwarc/mmt/api/package.html">api</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/package.html" class="extype" name="info.kwarc.mmt.api">api</a> </div>
+    </div><div class="entry">
+      <div class="name">SymmetricEscapeHandler</div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/parser/package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a> </div>
     </div><div class="entry">
       <div class="name">Syn</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile.PL" class="extype" href="../info/kwarc/mmt/lf/compile/PL$.html">PL</a> <a name="info.kwarc.mmt.lf.compile.SFOL" class="extype" href="../info/kwarc/mmt/lf/compile/SFOL$.html">SFOL</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/PL$.html" class="extype" name="info.kwarc.mmt.lf.compile.PL">PL</a> <a href="../info/kwarc/mmt/lf/compile/SFOL$.html" class="extype" name="info.kwarc.mmt.lf.compile.SFOL">SFOL</a> </div>
     </div><div class="entry">
       <div class="name">SyntaxError</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.lf.compile" class="extype" href="../info/kwarc/mmt/lf/compile/package.html">compile</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/lf/compile/package.html" class="extype" name="info.kwarc.mmt.lf.compile">compile</a> </div>
     </div><div class="entry">
       <div class="name">Synthesizer</div>
-      <div class="occurrences"><a name="info.kwarc.mmt.api.uom" class="extype" href="../info/kwarc/mmt/api/uom/package.html">uom</a> </div>
+      <div class="occurrences"><a href="../info/kwarc/mmt/api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a> </div>
     </div></body>
       </html>
