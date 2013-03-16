@@ -20,7 +20,7 @@ class TptpCompiler extends Compiler with QueryTransformer {
   
   def isApplicable(src : String) : Boolean = src == "tptp"
 
-  override def compile(in : File, out : File) : List[SourceError] = {
+  override def compile(in : File, dpath: Option[DPath], out : File) : List[SourceError] = {
     var errors: List[SourceError] = Nil
     val fileName = in.toJava.getName
     if (!fileName.contains(TptpUtils.FORM))

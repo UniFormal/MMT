@@ -1,6 +1,6 @@
 // TODO: catch certain exceptions earlier, e.g. just ignore a module if possible, but parse the rest, or at least return those already parsed
 
-package info.kwarc.mmt.lf
+package info.kwarc.mmt.twelf
 
 import java.io.File
 import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet, LinkedList}

@@ -1,4 +1,4 @@
-package info.kwarc.mmt.lf
+package info.kwarc.mmt.twelf
 
 
 /** Occurs during file opening */

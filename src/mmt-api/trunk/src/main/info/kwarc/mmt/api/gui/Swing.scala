@@ -10,7 +10,7 @@ object Swing {
    /** a JPanel containing a list of horizontal radio buttons
     * that hides the boilerplate Java code
     * @param items the label-id pairs of the buttons
-    * @action the function to be called when a button is selected, takes the button's id as its argument
+    * @param action the function to be called when a button is selected, takes the button's id as its argument
     * @return the JPanel
     */
    def RadioButtonPanel(items: Item*)(action: String => Unit) : JPanel = {

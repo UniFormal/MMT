@@ -1,4 +1,4 @@
-package info.kwarc.mmt.lf
+package info.kwarc.mmt.twelf
 
 import java.io.{File, BufferedWriter, OutputStreamWriter, FileOutputStream}
 import java.net.URLDecoder

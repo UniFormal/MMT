@@ -691,7 +691,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
 class StructureAndObjectParser(controller: Controller) extends StructureParser(controller) {
    /**
     * parsing units are parsed by the termParser of the controller
-    * if that fails, the [[info.kwarc.mmt.api.parser.DefaultParser]] is used
+    * if that fails, the [[info.kwarc.mmt.api.parser.DefaultObjectParser]] is used
     */
    def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
       val obj = try {

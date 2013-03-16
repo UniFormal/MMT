@@ -1,7 +1,7 @@
 // TO*not*DO: in BackgroundEliminator: also check whether the filename or a directory name between the location and the file is now excluded
 // correction: don't allow patterns to be removed. Don't even allow them to be added later via the web interface (security problem).
 
-package info.kwarc.mmt.lf
+package info.kwarc.mmt.twelf
 
 import scala.collection.mutable.HashSet
 
