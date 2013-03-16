@@ -5,3 +5,6 @@ HReqHeader.scala:122: instead of
 have
  
      if (extParts.size == 2) anUriExt = Some(extParts(1).trim)
+
+     
+Also, all println have been turned into function calls so that the output method can be overridden.
