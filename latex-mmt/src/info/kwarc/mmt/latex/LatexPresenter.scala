@@ -439,7 +439,6 @@ class LatexStructureParser(ltxState : LatexState, controller : Controller) exten
    
      private def makeMacro(marker : Marker, mmtName : GlobalName, source : String) : String = marker match {
      case Delim(str) => wrapLink(str, mmtName, source)
-     case SecDelim(str,_) => wrapLink(str, mmtName, source)
      case Arg(i) => s"#${i.abs}"
      case SeqArg(i,d) => s"\\mmtseq{#${i.abs}}{${makeMacro(d, mmtName, source)}}"
      case Var(i, t, sO) => s"#${i.abs}" //TODO 
