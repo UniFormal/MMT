@@ -2,8 +2,8 @@
 <!DOCTYPE MODES SYSTEM "catalog.dtd">
 
 <MODES>
-<MODE NAME="lf" FILE="lf.xml" FILE_NAME_GLOB="*.{elf,mmt}" />
-<MODE NAME="mmt" FILE="mmt.xml" FILE_NAME_GLOB="*.mmt-new" />
+<MODE NAME="lf" FILE="lf.xml" FILE_NAME_GLOB="*.elf" />
+<MODE NAME="mmt" FILE="mmt.xml" FILE_NAME_GLOB="*.mmt" />
 <MODE NAME="msl" FILE="msl.xml" FILE_NAME_GLOB="*.msl" />
 <MODE NAME="mmtlog" FILE="mmtlog.xml" FILE_NAME_GLOB="*.log" />
 <MODE NAME="scala" FILE="scala.xml" FILE_NAME_GLOB="*.scala" />
