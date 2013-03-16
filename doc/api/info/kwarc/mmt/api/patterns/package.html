@@ -2,248 +2,312 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.api.patterns</title>
+          <title>patterns - MMT - info.kwarc.mmt.api.patterns</title>
+          <meta name="description" content="patterns - MMT - info.kwarc.mmt.api.patterns" />
+          <meta name="keywords" content="patterns MMT info.kwarc.mmt.api.patterns" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.patterns.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
         <h1>patterns</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <span class="name">patterns</span>
-        
-        
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"></div>
+          <div id="comment" class="fullcommenttop"></div>
         
 
-      <div id="template">
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          
-          
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.patterns.Instance" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InstanceextendsSymbol"></a>
+      <a id="Instance:Instance"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Instance.html"><span class="name">Instance</span></a><span class="result"> extends <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.InstanceCompiler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InstanceCompilerextendsCompiler"></a>
+      <a id="InstanceCompiler:InstanceCompiler"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="InstanceCompiler.html"><span class="name">InstanceCompiler</span></a><span class="result"> extends <a href="../backend/Compiler.html" class="extype" name="info.kwarc.mmt.api.backend.Compiler">Compiler</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.InstanceElaborator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InstanceElaboratorextendsElaboratorwithLogger"></a>
+      <a id="InstanceElaborator:InstanceElaborator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="InstanceElaborator.html"><span class="name">InstanceElaborator</span></a><span class="result"> extends <a href="../libraries/Elaborator.html" class="extype" name="info.kwarc.mmt.api.libraries.Elaborator">Elaborator</a> with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">elaborates Instance declarations
+this is also called the pragmatic-to-strict translation
+</p>
+    </li><li name="info.kwarc.mmt.api.patterns.Matcher" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MatcherextendsObject"></a>
+      <a id="Matcher:Matcher"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Matcher.html"><span class="name">Matcher</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.Pattern" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternextendsSymbol"></a>
+      <a id="Pattern:Pattern"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Pattern.html"><span class="name">Pattern</span></a><span class="result"> extends <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternAbs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternAbsextendsPatternExpressionwithProductwithSerializable"></a>
+      <a id="PatternAbs:PatternAbs"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternAbs.html"><span class="name">PatternAbs</span></a><span class="params">(<span name="params">params: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="body">body: <a href="PatternExpression.html" class="extype" name="info.kwarc.mmt.api.patterns.PatternExpression">PatternExpression</a></span>)</span><span class="result"> extends <a href="PatternExpression.html" class="extype" name="info.kwarc.mmt.api.patterns.PatternExpression">PatternExpression</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternApp" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternAppextendsPatternExpressionwithProductwithSerializable"></a>
+      <a id="PatternApp:PatternApp"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternApp.html"><span class="name">PatternApp</span></a><span class="params">(<span name="pattern">pattern: <a href="PatternExpression.html" class="extype" name="info.kwarc.mmt.api.patterns.PatternExpression">PatternExpression</a></span>, <span name="args">args: <a href="../objects/Substitution.html" class="extype" name="info.kwarc.mmt.api.objects.Substitution">Substitution</a></span>)</span><span class="result"> extends <a href="PatternExpression.html" class="extype" name="info.kwarc.mmt.api.patterns.PatternExpression">PatternExpression</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternAssignment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternAssignmentextendsAssignment"></a>
+      <a id="PatternAssignment:PatternAssignment"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternAssignment.html"><span class="name">PatternAssignment</span></a><span class="result"> extends <a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternChecker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternCheckerextendsElaborator"></a>
+      <a id="PatternChecker:PatternChecker"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternChecker.html"><span class="name">PatternChecker</span></a><span class="result"> extends <a href="../libraries/Elaborator.html" class="extype" name="info.kwarc.mmt.api.libraries.Elaborator">Elaborator</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">elaborates Instance declarations
+this is also called the pragmatic-to-strict translation
+</p>
+    </li><li name="info.kwarc.mmt.api.patterns.PatternController" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternControllerextendsObject"></a>
+      <a id="PatternController:PatternController"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternController.html"><span class="name">PatternController</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternExpression" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="PatternExpressionextendsObject"></a>
+      <a id="PatternExpression:PatternExpression"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternExpression.html"><span class="name">PatternExpression</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternFrag" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternFragextendsPatternExpressionwithProductwithSerializable"></a>
+      <a id="PatternFrag:PatternFrag"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternFrag.html"><span class="name">PatternFrag</span></a><span class="params">(<span name="body">body: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span><span class="result"> extends <a href="PatternExpression.html" class="extype" name="info.kwarc.mmt.api.patterns.PatternExpression">PatternExpression</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternSym" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternSymextendsPatternExpressionwithProductwithSerializable"></a>
+      <a id="PatternSym:PatternSym"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternSym.html"><span class="name">PatternSym</span></a><span class="params">(<span name="path">path: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span><span class="result"> extends <a href="PatternExpression.html" class="extype" name="info.kwarc.mmt.api.patterns.PatternExpression">PatternExpression</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="info.kwarc.mmt.api.patterns.CompTest" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CompTest"></a>
+      <a id="CompTest:CompTest"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CompTest$.html"><span class="name">CompTest</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.Functor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Functor"></a>
+      <a id="Functor:Functor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Functor$.html"><span class="name">Functor</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.patterns.PatternTest" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternTest"></a>
+      <a id="PatternTest:PatternTest"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternTest$.html"><span class="name">PatternTest</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
             </div>
         </div>
 
-        
-
-        <div class="types members" id="types">
-              <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.patterns.Instance" data-isabs="false">
-      <a id="Instance:Instance"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Instance.html"><span class="name">Instance</span></a>
-        
-        <span class="result"> extends Symbol</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.InstanceCompiler" data-isabs="false">
-      <a id="InstanceCompiler:InstanceCompiler"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="InstanceCompiler.html"><span class="name">InstanceCompiler</span></a>
-        
-        <span class="result"> extends Compiler</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.InstanceElaborator" data-isabs="false">
-      <a id="InstanceElaborator:InstanceElaborator"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="InstanceElaborator.html"><span class="name">InstanceElaborator</span></a>
-        
-        <span class="result"> extends Elaborator</span>
-      </span>
-      </h4>
-      <p class="comment cmt">elaborates Instance declarations
-this is also called the pragmatic-to-strict translation
-</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.Matcher" data-isabs="false">
-      <a id="Matcher:Matcher"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Matcher.html"><span class="name">Matcher</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.Pattern" data-isabs="false">
-      <a id="Pattern:Pattern"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Pattern.html"><span class="name">Pattern</span></a>
-        
-        <span class="result"> extends Symbol</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternAbs" data-isabs="false">
-      <a id="PatternAbs:PatternAbs"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="PatternAbs.html"><span class="name">PatternAbs</span></a>
-        
-        <span class="params">(<span name="params">params: Context</span>, <span name="body">body: PatternExpression</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternApp" data-isabs="false">
-      <a id="PatternApp:PatternApp"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="PatternApp.html"><span class="name">PatternApp</span></a>
-        
-        <span class="params">(<span name="pattern">pattern: PatternExpression</span>, <span name="args">args: Substitution</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternAssignment" data-isabs="false">
-      <a id="PatternAssignment:PatternAssignment"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PatternAssignment.html"><span class="name">PatternAssignment</span></a>
-        
-        <span class="result"> extends Assignment</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternChecker" data-isabs="false">
-      <a id="PatternChecker:PatternChecker"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PatternChecker.html"><span class="name">PatternChecker</span></a>
-        
-        <span class="result"> extends Elaborator</span>
-      </span>
-      </h4>
-      <p class="comment cmt">elaborates Instance declarations
-this is also called the pragmatic-to-strict translation
-</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternController" data-isabs="false">
-      <a id="PatternController:PatternController"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PatternController.html"><span class="name">PatternController</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternExpression" data-isabs="true">
-      <a id="PatternExpression:PatternExpression"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PatternExpression.html"><span class="name">PatternExpression</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>sealed abstract </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternFrag" data-isabs="false">
-      <a id="PatternFrag:PatternFrag"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="PatternFrag.html"><span class="name">PatternFrag</span></a>
-        
-        <span class="params">(<span name="body">body: Context</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternSym" data-isabs="false">
-      <a id="PatternSym:PatternSym"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="PatternSym.html"><span class="name">PatternSym</span></a>
-        
-        <span class="params">(<span name="path">path: GlobalName</span>)</span><span class="result"> extends PatternExpression with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li></ol>
-            </div>
-        
-        
-
-        <div class="values members" id="values">
-              <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.patterns.CompTest" data-isabs="false">
-      <a id="CompTest:CompTest"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="CompTest$.html"><span class="name">CompTest</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.Functor" data-isabs="false">
-      <a id="Functor:Functor"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Functor$.html"><span class="name">Functor</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.patterns.PatternTest" data-isabs="false">
-      <a id="PatternTest:PatternTest"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="PatternTest$.html"><span class="name">PatternTest</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li></ol>
-            </div>
-
-        
-
-        
-
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

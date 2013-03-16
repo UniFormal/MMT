@@ -1,0 +1,760 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>StructureParser - MMT - info.kwarc.mmt.api.parser.StructureParser</title>
+          <meta name="description" content="StructureParser - MMT - info.kwarc.mmt.api.parser.StructureParser" />
+          <meta name="keywords" content="StructureParser MMT info.kwarc.mmt.api.parser.StructureParser" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.parser.StructureParser';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img src="../../../../../lib/class_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a></p>
+        <h1>StructureParser</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">StructureParser</span><span class="result"> extends <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A StructureParser read MMT declarations (but not objects) and
+defers to continuation functions for the found StructuralElement, ParsingUnits, and SourceErrors.</p><p>This class provides 3 things</p><p>1) High-level read methods that read MMT-related entities from a stream,
+which implementing classes can use.
+These methods throw do not read more than necessary from the stream and
+throw <a href="../SourceError.html" class="extype" name="info.kwarc.mmt.api.SourceError">info.kwarc.mmt.api.SourceError</a> where appropriate.</p><p>2) It maintains the parse state via an implicit argument
+<a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">info.kwarc.mmt.api.parser.ParserState</a> in most functions.</p><p>3) It leaves processing of MMT entities application-independent via high-level continuation functions.
+</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div><div class="toggleContainer block">
+          <span class="toggle">Known Subclasses</span>
+          <div class="subClasses hiddenContent"><a href="../../latex/LatexStructureParser.html" class="extype" name="info.kwarc.mmt.latex.LatexStructureParser">LatexStructureParser</a>, <a href="StructureAndObjectParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureAndObjectParser">StructureAndObjectParser</a></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="info.kwarc.mmt.api.parser.StructureParser"><span>StructureParser</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="info.kwarc.mmt.api.parser.StructureParser#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(controller:info.kwarc.mmt.api.frontend.Controller):info.kwarc.mmt.api.parser.StructureParser"></a>
+      <a id="&lt;init&gt;:StructureParser"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">StructureParser</span><span class="params">(<span name="controller">controller: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>)</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Abstract Value Members</h3>
+              <ol><li name="info.kwarc.mmt.api.parser.StructureParser#puCont" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="puCont(pu:info.kwarc.mmt.api.parser.ParsingUnit)(implicitstate:info.kwarc.mmt.api.parser.ParserState):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="puCont(ParsingUnit)(ParserState):Term"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">puCont</span><span class="params">(<span name="pu">pu: <a href="ParsingUnit.html" class="extype" name="info.kwarc.mmt.api.parser.ParsingUnit">ParsingUnit</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">A continuation function called on every ParsingUnit that was found</p><div class="fullcomment"><div class="comment cmt"><p>A continuation function called on every ParsingUnit that was found</p><p>Objects are opaque to the parser, and parsing is deferred via this function.
+</p></div></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#seCont" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="seCont(se:info.kwarc.mmt.api.StructuralElement)(implicitstate:info.kwarc.mmt.api.parser.ParserState):Unit"></a>
+      <a id="seCont(StructuralElement)(ParserState):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">seCont</span><span class="params">(<span name="se">se: <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">A continuation function called on every StructuralElement that was found</p><div class="fullcomment"><div class="comment cmt"><p>A continuation function called on every StructuralElement that was found</p><p>For grouping elements (documents, modules with body), this is called on the empty element first
+and then on each child.
+</p></div></div>
+    </li></ol>
+            </div>
+
+        <div id="values" class="values members">
+              <h3>Concrete Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:AnyRef):Boolean"></a>
+      <a id="!=(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:AnyRef):Boolean"></a>
+      <a id="==(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#apply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="apply(state:info.kwarc.mmt.api.parser.ParserState,dpath:info.kwarc.mmt.api.DPath):(info.kwarc.mmt.api.documents.Document,info.kwarc.mmt.api.parser.ParserState)"></a>
+      <a id="apply(ParserState,DPath):(Document,ParserState)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>, <span name="dpath">dpath: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>)</span><span class="result">: (<a href="../documents/Document.html" class="extype" name="info.kwarc.mmt.api.documents.Document">Document</a>, <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a>)</span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(r:info.kwarc.mmt.api.parser.Reader,dpath:info.kwarc.mmt.api.DPath):(info.kwarc.mmt.api.documents.Document,info.kwarc.mmt.api.parser.ParserState)"></a>
+      <a id="apply(Reader,DPath):(Document,ParserState)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="r">r: <a href="Reader.html" class="extype" name="info.kwarc.mmt.api.parser.Reader">Reader</a></span>, <span name="dpath">dpath: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>)</span><span class="result">: (<a href="../documents/Document.html" class="extype" name="info.kwarc.mmt.api.documents.Document">Document</a>, <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a>)</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the main interface function
+</p><div class="fullcomment"><div class="comment cmt"><p>the main interface function
+</p></div><dl class="paramcmts block"><dt class="param">r</dt><dd class="cmt"><p>a Reader holding the input stream</p></dd><dt class="param">dpath</dt><dd class="cmt"><p>the MMT URI of the stream
+</p></dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#currentSourceRegion" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="currentSourceRegion(implicitstate:info.kwarc.mmt.api.parser.ParserState):info.kwarc.mmt.api.parser.SourceRegion"></a>
+      <a id="currentSourceRegion(ParserState):SourceRegion"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">currentSourceRegion</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <a href="SourceRegion.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRegion">SourceRegion</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the region from the start of the current structural element to the current position</p><div class="fullcomment"><div class="comment cmt"><p>the region from the start of the current structural element to the current position</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#end" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="end(s:info.kwarc.mmt.api.StructuralElement)(implicitstate:info.kwarc.mmt.api.parser.ParserState):Unit"></a>
+      <a id="end(StructuralElement)(ParserState):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">end</span><span class="params">(<span name="s">s: <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">called at the end of a document or module, does common bureaucracy</p><div class="fullcomment"><div class="comment cmt"><p>called at the end of a document or module, does common bureaucracy</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#errorCont" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="errorCont(err:info.kwarc.mmt.api.SourceError)(implicitstate:info.kwarc.mmt.api.parser.ParserState):Unit"></a>
+      <a id="errorCont(SourceError)(ParserState):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">errorCont</span><span class="params">(<span name="err">err: <a href="../SourceError.html" class="extype" name="info.kwarc.mmt.api.SourceError">SourceError</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">A continuation function called on every error that was found</p><div class="fullcomment"><div class="comment cmt"><p>A continuation function called on every error that was found</p><p>Error handling is very lenient and will recover wherever possible.</p><p>Default implementation adds every error to the ParserState
+</p></div></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#inDocParsers" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inDocParsers:scala.collection.mutable.HashMap[String,info.kwarc.mmt.api.parser.InDocParser]"></a>
+      <a id="inDocParsers:HashMap[String,InDocParser]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inDocParsers</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="InDocParser.html" class="extype" name="info.kwarc.mmt.api.parser.InDocParser">InDocParser</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">a table of external parsers that can parser declarations in a document, indexed by keyword</p><div class="fullcomment"><div class="comment cmt"><p>a table of external parsers that can parser declarations in a document, indexed by keyword</p><p> plugins may register parsers here to extend MMT with new keywords
+</p></div></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#inTheoryParsers" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inTheoryParsers:scala.collection.mutable.HashMap[String,info.kwarc.mmt.api.parser.InTheoryParser]"></a>
+      <a id="inTheoryParsers:HashMap[String,InTheoryParser]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inTheoryParsers</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="InTheoryParser.html" class="extype" name="info.kwarc.mmt.api.parser.InTheoryParser">InTheoryParser</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">a table of external parsers that can parser declarations in a theory, indexed by keyword</p><div class="fullcomment"><div class="comment cmt"><p>a table of external parsers that can parser declarations in a theory, indexed by keyword</p><p> plugins may register parsers here to extend MMT with new keywords
+</p></div></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(s:=&gt;String):Unit"></a>
+      <a id="log(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logGroup" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logGroup[A](a:=&gt;A):A"></a>
+      <a id="logGroup[A](⇒A):A"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logGroup</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="a">a: ⇒ <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>)</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#logPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logPrefix:String"></a>
+      <a id="logPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readConstant" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readConstant(mpath:info.kwarc.mmt.api.MPath,conS:String,docBaseO:Option[info.kwarc.mmt.api.DPath],namespace:scala.collection.mutable.ListMap[String,info.kwarc.mmt.api.DPath]):Unit"></a>
+      <a id="readConstant(MPath,String,Option[DPath],ListMap[String,DPath]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readConstant</span><span class="params">(<span name="mpath">mpath: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="conS">conS: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="docBaseO">docBaseO: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">None</span></span>, <span name="namespace">namespace: <span class="extype" name="scala.collection.mutable.ListMap">ListMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">new ListMap</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">reads a constant from a string</p><div class="fullcomment"><div class="comment cmt"><p>reads a constant from a string</p></div><dl class="paramcmts block"><dt class="param">mpath</dt><dd class="cmt"><p>the uri of the parent module</p></dd><dt class="param">docBaseO</dt><dd class="cmt"><p>optionally the base uri of the containing document</p></dd><dt class="param">namespace</dt><dd class="cmt"><p>the namespace declarations found so far
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readDPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readDPath(base:info.kwarc.mmt.api.Path)(implicitstate:info.kwarc.mmt.api.parser.ParserState):info.kwarc.mmt.api.DPath"></a>
+      <a id="readDPath(Path)(ParserState):DPath"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readDPath</span><span class="params">(<span name="base">base: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">read a DPath from the stream</p><div class="fullcomment"><div class="comment cmt"><p>read a DPath from the stream</p></div><dl class="attributes block"> <dt>Exceptions thrown</dt><dd><span class="cmt">SourceError<p>iff ill-formed or empty
+</p></span></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readDelimiter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readDelimiter(delims:String*)(implicitstate:info.kwarc.mmt.api.parser.ParserState):String"></a>
+      <a id="readDelimiter(String*)(ParserState):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readDelimiter</span><span class="params">(<span name="delims">delims: <span class="extype" name="scala.Predef.String">String</span>*</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">reads one out of a list of permitted delimiters</p><div class="fullcomment"><div class="comment cmt"><p>reads one out of a list of permitted delimiters</p></div><dl class="paramcmts block"><dt class="param">delims</dt><dd class="cmt"><p>the permitted delimiter</p></dd><dt>returns</dt><dd class="cmt"><p>the read delimiter</p></dd></dl><dl class="attributes block"> <dt>Exceptions thrown</dt><dd><span class="cmt">SourceError<p>iff anything else found
+</p></span></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readDocument" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readDocument(docURI:info.kwarc.mmt.api.DPath,docS:String):Unit"></a>
+      <a id="readDocument(DPath,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readDocument</span><span class="params">(<span name="docURI">docURI: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="docS">docS: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Reads a document from a string</p><div class="fullcomment"><div class="comment cmt"><p>Reads a document from a string</p></div><dl class="paramcmts block"><dt class="param">docURI</dt><dd class="cmt"><p>the base uri (location) of the document</p></dd><dt class="param">docS</dt><dd class="cmt"><p>the document string
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readLocalPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readLocalPath(implicitstate:info.kwarc.mmt.api.parser.ParserState):info.kwarc.mmt.api.LocalPath"></a>
+      <a id="readLocalPath(ParserState):LocalPath"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readLocalPath</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <a href="../LocalPath.html" class="extype" name="info.kwarc.mmt.api.LocalPath">LocalPath</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">read a LocalPath from the stream</p><div class="fullcomment"><div class="comment cmt"><p>read a LocalPath from the stream</p></div><dl class="attributes block"> <dt>Exceptions thrown</dt><dd><span class="cmt">SourceError<p>iff ill-formed or empty
+</p></span></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readMPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readMPath(base:info.kwarc.mmt.api.Path)(implicitstate:info.kwarc.mmt.api.parser.ParserState):info.kwarc.mmt.api.MPath"></a>
+      <a id="readMPath(Path)(ParserState):MPath"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readMPath</span><span class="params">(<span name="base">base: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">read a MPath from the stream</p><div class="fullcomment"><div class="comment cmt"><p>read a MPath from the stream</p></div><dl class="attributes block"> <dt>Exceptions thrown</dt><dd><span class="cmt">SourceError<p>iff ill-formed or empty
+</p></span></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readModule" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readModule(dpath:info.kwarc.mmt.api.DPath,modS:String,docBaseO:Option[info.kwarc.mmt.api.DPath],namespace:scala.collection.mutable.ListMap[String,info.kwarc.mmt.api.DPath]):Unit"></a>
+      <a id="readModule(DPath,String,Option[DPath],ListMap[String,DPath]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readModule</span><span class="params">(<span name="dpath">dpath: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="modS">modS: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="docBaseO">docBaseO: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">None</span></span>, <span name="namespace">namespace: <span class="extype" name="scala.collection.mutable.ListMap">ListMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">new ListMap</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">reads a module from a string</p><div class="fullcomment"><div class="comment cmt"><p>reads a module from a string</p></div><dl class="paramcmts block"><dt class="param">dpath</dt><dd class="cmt"><p>the uri of the parent document</p></dd><dt class="param">modS</dt><dd class="cmt"><p>the module string</p></dd><dt class="param">docBaseO</dt><dd class="cmt"><p>optionally the base uri of the containing document</p></dd><dt class="param">namespace</dt><dd class="cmt"><p>the namespace declarations found so far
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readName" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readName(implicitstate:info.kwarc.mmt.api.parser.ParserState):info.kwarc.mmt.api.LocalName"></a>
+      <a id="readName(ParserState):LocalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readName</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">read a LocalName from the stream</p><div class="fullcomment"><div class="comment cmt"><p>read a LocalName from the stream</p></div><dl class="attributes block"> <dt>Exceptions thrown</dt><dd><span class="cmt">SourceError<p>iff ill-formed or empty
+</p></span></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readParsedObject" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="readParsedObject(scope:info.kwarc.mmt.api.objects.Term,context:info.kwarc.mmt.api.objects.Context)(implicitstate:info.kwarc.mmt.api.parser.ParserState):(String,info.kwarc.mmt.api.parser.SourceRegion,info.kwarc.mmt.api.objects.Term)"></a>
+      <a id="readParsedObject(Term,Context)(ParserState):(String,SourceRegion,Term)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readParsedObject</span><span class="params">(<span name="scope">scope: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">Context()</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: (<span class="extype" name="scala.Predef.String">String</span>, <a href="SourceRegion.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRegion">SourceRegion</a>, <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>)</span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#readSPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readSPath(base:info.kwarc.mmt.api.MPath)(implicitstate:info.kwarc.mmt.api.parser.ParserState):info.kwarc.mmt.api.GlobalName"></a>
+      <a id="readSPath(MPath)(ParserState):GlobalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readSPath</span><span class="params">(<span name="base">base: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">read a GlobalName from the stream</p><div class="fullcomment"><div class="comment cmt"><p>read a GlobalName from the stream</p></div><dl class="attributes block"> <dt>Exceptions thrown</dt><dd><span class="cmt">SourceError<p>iff ill-formed or empty
+</p></span></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.StructureParser#report" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
+      <a id="report:Report"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">report</span><span class="result">: <a href="../frontend/Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
+              <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

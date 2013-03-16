@@ -2,132 +2,295 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.owl</title>
+          <title>owl - MMT - info.kwarc.mmt.owl</title>
+          <meta name="description" content="owl - MMT - info.kwarc.mmt.owl" />
+          <meta name="keywords" content="owl MMT info.kwarc.mmt.owl" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../lib/jquery.js"></script>
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'info.kwarc.mmt.owl.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="value">
       <div id="definition">
         <img src="../../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../package.html">mmt</a></p>
+        <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a></p>
         <h1>owl</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <span class="name">owl</span>
-        
-        
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"></div>
+          <div id="comment" class="fullcommenttop"></div>
         
 
-      <div id="template">
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          
-          
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.owl.AddIdentifiers" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AddIdentifiersextendsObject"></a>
+      <a id="AddIdentifiers:AddIdentifiers"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AddIdentifiers.html"><span class="name">AddIdentifiers</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.AddImpacts" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AddImpactsextendsImpactPropagator"></a>
+      <a id="AddImpacts:AddImpacts"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AddImpacts.html"><span class="name">AddImpacts</span></a><span class="result"> extends <a href="../api/moc/ImpactPropagator.html" class="extype" name="info.kwarc.mmt.api.moc.ImpactPropagator">ImpactPropagator</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.Exception" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ExceptionextendsThrowablewithProductwithSerializable"></a>
+      <a id="Exception:Exception"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Exception.html"><span class="name">Exception</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.Export" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ExportextendsObject"></a>
+      <a id="Export:Export"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Export.html"><span class="name">Export</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.Import" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ImportextendsObject"></a>
+      <a id="Import:Import"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Import.html"><span class="name">Import</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.OWLCompiler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OWLCompilerextendsCompiler"></a>
+      <a id="OWLCompiler:OWLCompiler"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="OWLCompiler.html"><span class="name">OWLCompiler</span></a><span class="result"> extends <a href="../api/backend/Compiler.html" class="extype" name="info.kwarc.mmt.api.backend.Compiler">Compiler</a></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="info.kwarc.mmt.owl.AddIdentifiers" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AddIdentifiers"></a>
+      <a id="AddIdentifiers:AddIdentifiers"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="AddIdentifiers$.html"><span class="name">AddIdentifiers</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.Diff" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Diff"></a>
+      <a id="Diff:Diff"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Diff$.html"><span class="name">Diff</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.Export" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Export"></a>
+      <a id="Export:Export"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Export$.html"><span class="name">Export</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.FirstTry" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FirstTry"></a>
+      <a id="FirstTry:FirstTry"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="FirstTry$.html"><span class="name">FirstTry</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.Import" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Import"></a>
+      <a id="Import:Import"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Import$.html"><span class="name">Import</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.MoCinOWL" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MoCinOWL"></a>
+      <a id="MoCinOWL:MoCinOWL"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MoCinOWL$.html"><span class="name">MoCinOWL</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.OWL2OMS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OWL2OMS"></a>
+      <a id="OWL2OMS:OWL2OMS"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OWL2OMS$.html"><span class="name">OWL2OMS</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.OWLOMS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OWLOMS"></a>
+      <a id="OWLOMS:OWLOMS"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OWLOMS$.html"><span class="name">OWLOMS</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl.Utils" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Utils"></a>
+      <a id="Utils:Utils"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Utils$.html"><span class="name">Utils</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
             </div>
         </div>
 
-        
-
-        <div class="types members" id="types">
-              <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.owl.Exception" data-isabs="false">
-      <a id="Exception:Exception"></a>
-      <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Exception.html"><span class="name">Exception</span></a>
-        
-        <span class="params">(<span name="msg">msg: String</span>)</span><span class="result"> extends Throwable with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.owl.Export" data-isabs="false">
-      <a id="Export:Export"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Export.html"><span class="name">Export</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.owl.Import" data-isabs="false">
-      <a id="Import:Import"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Import.html"><span class="name">Import</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li></ol>
-            </div>
-        
-        
-
-        <div class="values members" id="values">
-              <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.owl.Export" data-isabs="false">
-      <a id="Export:Export"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Export$.html"><span class="name">Export</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.owl.Import" data-isabs="false">
-      <a id="Import:Import"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Import$.html"><span class="name">Import</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.owl.Utils" data-isabs="false">
-      <a id="Utils:Utils"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Utils$.html"><span class="name">Utils</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li></ol>
-            </div>
-
-        
-
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

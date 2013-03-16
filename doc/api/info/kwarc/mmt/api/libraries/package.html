@@ -2,235 +2,309 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.api.libraries</title>
+          <title>libraries - MMT - info.kwarc.mmt.api.libraries</title>
+          <meta name="description" content="libraries - MMT - info.kwarc.mmt.api.libraries" />
+          <meta name="keywords" content="libraries MMT info.kwarc.mmt.api.libraries" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.libraries.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
         <h1>libraries</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <span class="name">libraries</span>
-        
-        
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"></div>
+          <div id="comment" class="fullcommenttop"></div>
         
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
       <div id="template">
-
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          
-          
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
-            </div>
-        </div>
-
+        <div id="allMembers">
         
 
-        <div class="types members" id="types">
+        <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.libraries.AlreadyDefined" data-isabs="false">
-      <a id="AlreadyDefined:AlreadyDefined[E]"></a>
+              <ol><li name="info.kwarc.mmt.api.libraries.AlreadyDefined" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AlreadyDefined[E]extendsThrowablewithProductwithSerializable"></a>
+      <a id="AlreadyDefined[E]:AlreadyDefined[E]"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="AlreadyDefined.html"><span class="name">AlreadyDefined</span></a>
-        <span class="tparams">[<span name="E">E</span>]</span>
-        <span class="params">(<span name="value">value: E</span>)</span><span class="result"> extends Throwable with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="AlreadyDefined.html"><span class="name">AlreadyDefined</span></a><span class="tparams">[<span name="E">E</span>]</span><span class="params">(<span name="value">value: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>)</span><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Checker" data-isabs="false">
-      <a id="Checker:Checker"></a>
+    </li><li name="info.kwarc.mmt.api.libraries.Closer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CloserextendsObject"></a>
+      <a id="Closer:Closer"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Checker.html"><span class="name">Checker</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Closer.html"><span class="name">Closer</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
-      <p class="comment cmt">A Checker that checks only knowledge items whose well-formedness is foundation-independent.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Completion" data-isabs="false">
+      
+    </li><li name="info.kwarc.mmt.api.libraries.Completion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CompletionextendsProductwithSerializable"></a>
       <a id="Completion:Completion"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Completion.html"><span class="name">Completion</span></a>
-        
-        <span class="params">(<span name="parent">parent: Path</span>, <span name="completion">completion: LocalName</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Completion.html"><span class="name">Completion</span></a><span class="params">(<span name="parent">parent: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>, <span name="completion">completion: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a possible completion</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.DefaultFoundation" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.libraries.DefaultFoundation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefaultFoundationextendsFoundation"></a>
       <a id="DefaultFoundation:DefaultFoundation"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="DefaultFoundation.html"><span class="name">DefaultFoundation</span></a>
-        
-        <span class="result"> extends Foundation</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DefaultFoundation.html"><span class="name">DefaultFoundation</span></a><span class="result"> extends <a href="Foundation.html" class="extype" name="info.kwarc.mmt.api.libraries.Foundation">Foundation</a></span>
       </span>
       </h4>
       <p class="comment cmt">Foundation where typing is always true and equality is identity</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Elaborator" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.libraries.Elaborator" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ElaboratorextendsObject"></a>
       <a id="Elaborator:Elaborator"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Elaborator.html"><span class="name">Elaborator</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Elaborator.html"><span class="name">Elaborator</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">an Elaborator takes a StructuralElement and produces further StructuralElement that are the result of elaborating the former</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Foundation" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.libraries.Foundation" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="FoundationextendsObject"></a>
       <a id="Foundation:Foundation"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Foundation.html"><span class="name">Foundation</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Foundation.html"><span class="name">Foundation</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">MMT Foundation: provides oracles for typing and equality.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.FoundationLookup" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.libraries.FoundationLookup" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="FoundationLookupextendsObject"></a>
       <a id="FoundationLookup:FoundationLookup"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="FoundationLookup.html"><span class="name">FoundationLookup</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FoundationLookup.html"><span class="name">FoundationLookup</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.LabeledHashRelation" data-isabs="false">
-      <a id="LabeledHashRelation:LabeledHashRelation[N, E]"></a>
+      
+    </li><li name="info.kwarc.mmt.api.libraries.LabeledHashRelation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LabeledHashRelation[N,E]extendsObject"></a>
+      <a id="LabeledHashRelation[N,E]:LabeledHashRelation[N,E]"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="LabeledHashRelation.html"><span class="name">LabeledHashRelation</span></a>
-        <span class="tparams">[<span name="N">N</span>, <span name="E">E</span>]</span>
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LabeledHashRelation.html"><span class="name">LabeledHashRelation</span></a><span class="tparams">[<span name="N">N</span>, <span name="E">E</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">maintains a binary relation on N where pairs in the relation are labeled with values from E
 hashes in both directions are used to make all lookups fast
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Library" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.libraries.Library" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LibraryextendsLookup"></a>
       <a id="Library:Library"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Library.html"><span class="name">Library</span></a>
-        
-        <span class="result"> extends Lookup</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Library.html"><span class="name">Library</span></a><span class="result"> extends <a href="Lookup.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup">Lookup</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Library represents an MMT theory graph.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.Lookup" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.libraries.Lookup" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="LookupextendsObject"></a>
       <a id="Lookup:Lookup"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Lookup.html"><span class="name">Lookup</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Lookup.html"><span class="name">Lookup</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">A read-only abstraction of a library.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.ModuleElaborator" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.libraries.ModuleElaborator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ModuleElaboratorextendsElaborator"></a>
       <a id="ModuleElaborator:ModuleElaborator"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="ModuleElaborator.html"><span class="name">ModuleElaborator</span></a>
-        
-        <span class="result"> extends Elaborator</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ModuleElaborator.html"><span class="name">ModuleElaborator</span></a><span class="result"> extends <a href="Elaborator.html" class="extype" name="info.kwarc.mmt.api.libraries.Elaborator">Elaborator</a></span>
       </span>
       </h4>
       <p class="comment cmt">Elaborates modules by enriching with induced statements
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.PlainLookup" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.libraries.PlainLookup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PlainLookupextendsFoundationLookup"></a>
       <a id="PlainLookup:PlainLookup"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PlainLookup.html"><span class="name">PlainLookup</span></a>
-        
-        <span class="result"> extends FoundationLookup</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PlainLookup.html"><span class="name">PlainLookup</span></a><span class="result"> extends <a href="FoundationLookup.html" class="extype" name="info.kwarc.mmt.api.libraries.FoundationLookup">FoundationLookup</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.ThinGeneratedCategory" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.libraries.StructureAndObjectChecker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StructureAndObjectCheckerextendsStructureChecker"></a>
+      <a id="StructureAndObjectChecker:StructureAndObjectChecker"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="StructureAndObjectChecker.html"><span class="name">StructureAndObjectChecker</span></a><span class="result"> extends <a href="StructureChecker.html" class="extype" name="info.kwarc.mmt.api.libraries.StructureChecker">StructureChecker</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.libraries.StructureChecker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StructureCheckerextendsLogger"></a>
+      <a id="StructureChecker:StructureChecker"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="StructureChecker.html"><span class="name">StructureChecker</span></a><span class="result"> extends <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A StructureChecker traverses structural elements and checks them structurally.</p>
+    </li><li name="info.kwarc.mmt.api.libraries.ThinGeneratedCategory" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ThinGeneratedCategoryextendsObject"></a>
       <a id="ThinGeneratedCategory:ThinGeneratedCategory"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="ThinGeneratedCategory.html"><span class="name">ThinGeneratedCategory</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ThinGeneratedCategory.html"><span class="name">ThinGeneratedCategory</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">maintains a thin diagram of theories
 This is the category generated by some edges that is guaranteed to be thin (i.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.TracedLookup" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.libraries.TracedLookup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TracedLookupextendsFoundationLookup"></a>
       <a id="TracedLookup:TracedLookup"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="TracedLookup.html"><span class="name">TracedLookup</span></a>
-        
-        <span class="result"> extends FoundationLookup</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TracedLookup.html"><span class="name">TracedLookup</span></a><span class="result"> extends <a href="FoundationLookup.html" class="extype" name="info.kwarc.mmt.api.libraries.FoundationLookup">FoundationLookup</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.libraries.UniqueGraph" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.libraries.UniqueGraph" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UniqueGraphextendsLabeledHashRelation[info.kwarc.mmt.api.objects.Term,info.kwarc.mmt.api.objects.Term]"></a>
       <a id="UniqueGraph:UniqueGraph"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="UniqueGraph.html"><span class="name">UniqueGraph</span></a>
-        
-        <span class="result"> extends LabeledHashRelation[Term, Term]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="UniqueGraph.html"><span class="name">UniqueGraph</span></a><span class="result"> extends <a href="LabeledHashRelation.html" class="extype" name="info.kwarc.mmt.api.libraries.LabeledHashRelation">LabeledHashRelation</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
       <p class="comment cmt">A diagram of theories and morphisms.</p>
     </li></ol>
             </div>
-        
+
         
 
-        <div class="values members" id="values">
+        <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.libraries.Names" data-isabs="false">
+              <ol><li name="info.kwarc.mmt.api.libraries.Names" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Names"></a>
       <a id="Names:Names"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="Names$.html"><span class="name">Names</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">Auxiliary methods for name lookup</p>
@@ -240,10 +314,26 @@ This is the category generated by some edges that is guaranteed to be thin (i.</
         
 
         
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
 
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

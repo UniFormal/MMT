@@ -2,267 +2,374 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.api.gui</title>
+          <title>gui - MMT - info.kwarc.mmt.api.gui</title>
+          <meta name="description" content="gui - MMT - info.kwarc.mmt.api.gui" />
+          <meta name="keywords" content="gui MMT info.kwarc.mmt.api.gui" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.gui.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
         <h1>gui</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <span class="name">gui</span>
-        
-        
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"></div>
+          <div id="comment" class="fullcommenttop"></div>
         
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
       <div id="template">
-
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          
-          
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
-            </div>
-        </div>
-
+        <div id="allMembers">
         
 
-        <div class="types members" id="types">
+        <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.gui.BackendPane" data-isabs="false">
+              <ol><li name="info.kwarc.mmt.api.gui.BackendPane" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BackendPaneextendsJTextArea"></a>
       <a id="BackendPane:BackendPane"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="BackendPane.html"><span class="name">BackendPane</span></a>
-        
-        <span class="result"> extends JTextArea</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BackendPane.html"><span class="name">BackendPane</span></a><span class="result"> extends <span class="extype" name="javax.swing.JTextArea">JTextArea</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.Browser" data-isabs="false">
-      <a id="Browser:Browser"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Browser.html"><span class="name">Browser</span></a>
-        
-        <span class="result"> extends JFrame</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.ControllerNode" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.ControllerNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ControllerNodeextendsMMTNode"></a>
       <a id="ControllerNode:ControllerNode"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="ControllerNode.html"><span class="name">ControllerNode</span></a>
-        
-        <span class="result"> extends MMTNode</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ControllerNode.html"><span class="name">ControllerNode</span></a><span class="result"> extends <a href="MMTNode.html" class="extype" name="info.kwarc.mmt.api.gui.MMTNode">MMTNode</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.FXPanel" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.FXPanel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FXPanelextendsJFXPanel"></a>
       <a id="FXPanel:FXPanel"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="FXPanel.html"><span class="name">FXPanel</span></a>
-        
-        <span class="result"> extends JFXPanel</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FXPanel.html"><span class="name">FXPanel</span></a><span class="result"> extends <span class="extype" name="javafx.embed.swing.JFXPanel">JFXPanel</span></span>
       </span>
       </h4>
       <p class="comment cmt">a JFXPanel inside a swing JFrame containing only a WebView
 Note that access to the scene and engine must be from the FX application thread (see FXHelpers.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.Handler" data-isabs="false">
-      <a id="Handler:Handler[E]"></a>
+    </li><li name="info.kwarc.mmt.api.gui.GUIFrame" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GUIFrameextendsJFrame"></a>
+      <a id="GUIFrame:GUIFrame"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Handler.html"><span class="name">Handler</span></a>
-        <span class="tparams">[<span name="E">E &lt;: Event</span>]</span>
-        <span class="params">(<span name="f">f: (E) ⇒ Unit</span>)</span><span class="result"> extends EventHandler[E] with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GUIFrame.html"><span class="name">GUIFrame</span></a><span class="result"> extends <span class="extype" name="javax.swing.JFrame">JFrame</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.gui.GUIPanel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GUIPanelextendsJPanel"></a>
+      <a id="GUIPanel:GUIPanel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GUIPanel.html"><span class="name">GUIPanel</span></a><span class="result"> extends <span class="extype" name="javax.swing.JPanel">JPanel</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.gui.Handler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Handler[E&lt;:javafx.event.Event]extendsEventHandler[E]withProductwithSerializable"></a>
+      <a id="Handler[E&lt;:Event]:Handler[E]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Handler.html"><span class="name">Handler</span></a><span class="tparams">[<span name="E">E &lt;: <span class="extype" name="javafx.event.Event">Event</span></span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="info.kwarc.mmt.api.gui.Handler.E">E</span>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result"> extends <span class="extype" name="javafx.event.EventHandler">EventHandler</span>[<span class="extype" name="info.kwarc.mmt.api.gui.Handler.E">E</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">Scala sugar for FX EventHandler</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.LogPane" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.Item" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ItemextendsProductwithSerializable"></a>
+      <a id="Item:Item"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Item.html"><span class="name">Item</span></a><span class="params">(<span name="label">label: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="id">id: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a label-id pair, used e.</p>
+    </li><li name="info.kwarc.mmt.api.gui.LogPane" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LogPaneextendsListModel[String]"></a>
       <a id="LogPane:LogPane"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="LogPane.html"><span class="name">LogPane</span></a>
-        
-        <span class="result"> extends ListModel[String]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LogPane.html"><span class="name">LogPane</span></a><span class="result"> extends <span class="extype" name="javax.swing.ListModel">ListModel</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.MMTNode" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.gui.MMTNode" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="MMTNodeextendsObject"></a>
       <a id="MMTNode:MMTNode"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="MMTNode.html"><span class="name">MMTNode</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.MMTTreeModel" data-isabs="false">
-      <a id="MMTTreeModel:MMTTreeModel"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="MMTTreeModel.html"><span class="name">MMTTreeModel</span></a>
-        
-        <span class="result"> extends TreeModel</span>
+      <span class="symbol">
+        <a href="MMTNode.html"><span class="name">MMTNode</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.MyScene" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.MMTTreeModel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MMTTreeModelextendsTreeModel"></a>
+      <a id="MMTTreeModel:MMTTreeModel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MMTTreeModel.html"><span class="name">MMTTreeModel</span></a><span class="result"> extends <span class="extype" name="javax.swing.tree.TreeModel">TreeModel</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.gui.MyScene" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MySceneextendsProductwithSerializable"></a>
       <a id="MyScene:MyScene"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="MyScene.html"><span class="name">MyScene</span></a>
-        
-        <span class="params">(<span name="scene">scene: Scene</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="MyScene.html"><span class="name">MyScene</span></a><span class="params">(<span name="scene">scene: <span class="extype" name="javafx.scene.Scene">Scene</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">Scala wrapper for FX Scene with some smart functions</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.ObjNode" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.ObjNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ObjNodeextendsMMTNode"></a>
       <a id="ObjNode:ObjNode"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="ObjNode.html"><span class="name">ObjNode</span></a>
-        
-        <span class="result"> extends MMTNode</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ObjNode.html"><span class="name">ObjNode</span></a><span class="result"> extends <a href="MMTNode.html" class="extype" name="info.kwarc.mmt.api.gui.MMTNode">MMTNode</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.PathNode" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.PathNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PathNodeextendsMMTNode"></a>
       <a id="PathNode:PathNode"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PathNode.html"><span class="name">PathNode</span></a>
-        
-        <span class="result"> extends MMTNode</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PathNode.html"><span class="name">PathNode</span></a><span class="result"> extends <a href="MMTNode.html" class="extype" name="info.kwarc.mmt.api.gui.MMTNode">MMTNode</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.StructuralElementNode" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.StructuralElementNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StructuralElementNodeextendsMMTNode"></a>
       <a id="StructuralElementNode:StructuralElementNode"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="StructuralElementNode.html"><span class="name">StructuralElementNode</span></a>
-        
-        <span class="result"> extends MMTNode</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="StructuralElementNode.html"><span class="name">StructuralElementNode</span></a><span class="result"> extends <a href="MMTNode.html" class="extype" name="info.kwarc.mmt.api.gui.MMTNode">MMTNode</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.TreePane" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.TreePane" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TreePaneextendsJPanel"></a>
       <a id="TreePane:TreePane"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="TreePane.html"><span class="name">TreePane</span></a>
-        
-        <span class="result"> extends JPanel</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TreePane.html"><span class="name">TreePane</span></a><span class="result"> extends <span class="extype" name="javax.swing.JPanel">JPanel</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.Window" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.Window" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="WindowextendsJWindow"></a>
       <a id="Window:Window"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Window.html"><span class="name">Window</span></a>
-        
-        <span class="result"> extends JWindow</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Window.html"><span class="name">Window</span></a><span class="result"> extends <span class="extype" name="javax.swing.JWindow">JWindow</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.WindowManager" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.WindowManager" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="WindowManagerextendsObject"></a>
       <a id="WindowManager:WindowManager"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="WindowManager.html"><span class="name">WindowManager</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="WindowManager.html"><span class="name">WindowManager</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
     </li></ol>
             </div>
-        
+
         
 
-        <div class="values members" id="values">
+        <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.gui.FXHelpers" data-isabs="false">
+              <ol><li name="info.kwarc.mmt.api.gui.FXHelpers" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FXHelpers"></a>
       <a id="FXHelpers:FXHelpers"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="FXHelpers$.html"><span class="name">FXHelpers</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">FX helper functionality</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.LogPane" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.LogPane" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LogPane"></a>
       <a id="LogPane:LogPane"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="LogPane$.html"><span class="name">LogPane</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.gui.MyScene" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.gui.MyScene" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MyScene"></a>
       <a id="MyScene:MyScene"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="MyScene$.html"><span class="name">MyScene</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MyScene$.html"><span class="name">MyScene</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">implicit conversion from Scene to MyScene</p>
+    </li><li name="info.kwarc.mmt.api.gui.Swing" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Swing"></a>
+      <a id="Swing:Swing"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Swing$.html"><span class="name">Swing</span></a>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
 
         
 
         
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
 
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

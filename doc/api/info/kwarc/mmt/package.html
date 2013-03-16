@@ -2,74 +2,146 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt</title>
+          <title>mmt - MMT - info.kwarc.mmt</title>
+          <meta name="description" content="mmt - MMT - info.kwarc.mmt" />
+          <meta name="keywords" content="mmt MMT info.kwarc.mmt" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../lib/template.css" />
-      <script type="text/javascript" src="../../../lib/jquery.js"></script>
+      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../index.html';
+            var hash = 'info.kwarc.mmt.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="value">
       <div id="definition">
         <img src="../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../package.html">kwarc</a></p>
+        <p id="owner"><a href="../../package.html" class="extype" name="info">info</a>.<a href="../package.html" class="extype" name="info.kwarc">kwarc</a></p>
         <h1>mmt</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <span class="name">mmt</span>
-        
-        
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"></div>
+          <div id="comment" class="fullcommenttop"></div>
         
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
       <div id="template">
-
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          
-          
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
-            </div>
-        </div>
+        <div id="allMembers">
+        
 
         
 
         
-        
-        
 
-        <div class="values members" id="values">
+        <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api" data-isabs="false">
+              <ol><li name="info.kwarc.mmt.api" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="api"></a>
       <a id="api:api"></a>
       <h4 class="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <a href="api/package.html"><span class="name">api</span></a>
-        
-        
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.lf" data-isabs="false">
+    </li><li name="info.kwarc.mmt.jedit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="jedit"></a>
+      <a id="jedit:jedit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="jedit/package.html"><span class="name">jedit</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.latex" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="latex"></a>
+      <a id="latex:latex"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="latex/package.html"><span class="name">latex</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.lf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="lf"></a>
       <a id="lf:lf"></a>
       <h4 class="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <a href="lf/package.html"><span class="name">lf</span></a>
-        
-        
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.owl" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="owl"></a>
+      <a id="owl:owl"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="owl/package.html"><span class="name">owl</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.tptp" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="tptp"></a>
+      <a id="tptp:tptp"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="tptp/package.html"><span class="name">tptp</span></a>
       </span>
       </h4>
       
@@ -79,10 +151,26 @@
         
 
         
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
 
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

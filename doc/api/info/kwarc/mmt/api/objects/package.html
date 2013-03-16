@@ -2,137 +2,182 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.api.objects</title>
+          <title>objects - MMT - info.kwarc.mmt.api.objects</title>
+          <meta name="description" content="objects - MMT - info.kwarc.mmt.api.objects" />
+          <meta name="keywords" content="objects MMT info.kwarc.mmt.api.objects" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.objects.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
         <h1>objects</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <span class="name">objects</span>
-        
-        
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"></div>
+          <div id="comment" class="fullcommenttop"></div>
         
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
       <div id="template">
-
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          
-          
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
-            </div>
-        </div>
-
+        <div id="allMembers">
         
 
-        <div class="types members" id="types">
+        <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.objects.Appendages" data-isabs="false">
+              <ol><li name="info.kwarc.mmt.api.objects.Appendages" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AppendagesextendsProductwithSerializable"></a>
       <a id="Appendages:Appendages"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Appendages.html"><span class="name">Appendages</span></a>
-        
-        <span class="params">(<span name="head">head: GlobalName</span>, <span name="extremities">extremities: List[Term]</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Appendages.html"><span class="name">Appendages</span></a><span class="params">(<span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="extremities">extremities: <span class="extype" name="scala.List">List</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">see TorsoForm for explanation on the intended use</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.AtomicEqualityRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.ApplicableProvingRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ApplicableProvingRuleextendsObject"></a>
+      <a id="ApplicableProvingRule:ApplicableProvingRule"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ApplicableProvingRule.html"><span class="name">ApplicableProvingRule</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A continuation returned by <a href="ProvingRule.html" class="extype" name="info.kwarc.mmt.api.objects.ProvingRule">info.kwarc.mmt.api.objects.ProvingRule</a></p>
+    </li><li name="info.kwarc.mmt.api.objects.AtomicEqualityRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="AtomicEqualityRuleextendsRule"></a>
       <a id="AtomicEqualityRule:AtomicEqualityRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="AtomicEqualityRule.html"><span class="name">AtomicEqualityRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AtomicEqualityRule.html"><span class="name">AtomicEqualityRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">An AtomicEqualityRule is called to handle equality of atomic terms with the same shape at a base type.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ClientProperties" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.ClientProperties" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ClientPropertiesextendsObject"></a>
       <a id="ClientProperties:ClientProperties"></a>
       <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="ClientProperties.html"><span class="name">ClientProperties</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ClientProperties.html"><span class="name">ClientProperties</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">a trait to be mixed into Obj
 it provides a stateful key-value map for storing arbitrary information</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ComputationRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.ComputationRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ComputationRuleextendsRule"></a>
       <a id="ComputationRule:ComputationRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="ComputationRule.html"><span class="name">ComputationRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ComputationRule.html"><span class="name">ComputationRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A ComputationRule simplifies an expression operating at the toplevel of the term.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Context" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Context" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ContextextendsObjwithProductwithSerializable"></a>
       <a id="Context:Context"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Context.html"><span class="name">Context</span></a>
-        
-        <span class="params">(<span name="variables">variables: VarDecl*</span>)</span><span class="result"> extends Obj with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Context.html"><span class="name">Context</span></a><span class="params">(<span name="variables">variables: <a href="VarDecl.html" class="extype" name="info.kwarc.mmt.api.objects.VarDecl">VarDecl</a>*</span>)</span><span class="result"> extends <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">represents an MMT context as a list of variable declarations</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.DeclarationComponent" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.DeclarationComponent" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DeclarationComponentextendsObject"></a>
       <a id="DeclarationComponent:DeclarationComponent"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="DeclarationComponent.html"><span class="name">DeclarationComponent</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DeclarationComponent.html"><span class="name">DeclarationComponent</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">A DeclarationComponent identifies a component of a Declaration.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.DelayedConstraint" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.DelayedConstraint" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DelayedConstraintextendsObject"></a>
       <a id="DelayedConstraint:DelayedConstraint"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="DelayedConstraint.html"><span class="name">DelayedConstraint</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DelayedConstraint.html"><span class="name">DelayedConstraint</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">A wrapper around a Judgement to maintain meta-information while a constraint is delayed</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Equality" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Equality" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EqualityextendsJudgementwithProductwithSerializable"></a>
       <a id="Equality:Equality"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Equality.html"><span class="name">Equality</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="t1">t1: Term</span>, <span name="t2">t2: Term</span>, <span name="t">t: Option[Term]</span>)</span><span class="result"> extends Judgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Equality.html"><span class="name">Equality</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="t1">t1: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="t2">t2: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="t">t: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result"> extends <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">represents an equality judgement, optionally at a type
@@ -140,1101 +185,1349 @@ context |- t1 = t2 : tp  if t = Some(tp)
 or
 context |- t1 = t2       if t = None
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.EqualityRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.EqualityRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="EqualityRuleextendsRule"></a>
       <a id="EqualityRule:EqualityRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="EqualityRule.html"><span class="name">EqualityRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="EqualityRule.html"><span class="name">EqualityRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A EqualityRule checks the equality of two expressions</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Formal" data-isabs="false">
-      <a id="Formal:Formal"></a>
+    </li><li name="info.kwarc.mmt.api.objects.ErrorsPlugin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ErrorsPluginextendsPlugin"></a>
+      <a id="ErrorsPlugin:ErrorsPlugin"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Formal.html"><span class="name">Formal</span></a>
-        
-        <span class="params">(<span name="obj">obj: Term</span>)</span><span class="result"> extends SemiFormalObject with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ErrorsPlugin.html"><span class="name">ErrorsPlugin</span></a><span class="result"> extends <a href="../frontend/Plugin.html" class="extype" name="info.kwarc.mmt.api.frontend.Plugin">Plugin</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ForwardSolutionRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.Formal" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FormalextendsSemiFormalObjectwithProductwithSerializable"></a>
+      <a id="Formal:Formal"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Formal.html"><span class="name">Formal</span></a><span class="params">(<span name="obj">obj: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="SemiFormalObject.html" class="extype" name="info.kwarc.mmt.api.objects.SemiFormalObject">SemiFormalObject</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.objects.ForwardSolutionRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ForwardSolutionRuleextendsRule"></a>
       <a id="ForwardSolutionRule:ForwardSolutionRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="ForwardSolutionRule.html"><span class="name">ForwardSolutionRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ForwardSolutionRule.html"><span class="name">ForwardSolutionRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A ForwardSolutionRule solves for an unknown by inspecting its declarations (as opposed to its use)
 It can solve a variable directly (e.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Frame" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Frame" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FrameextendsProductwithSerializable"></a>
       <a id="Frame:Frame"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Frame.html"><span class="name">Frame</span></a>
-        
-        <span class="params">(<span name="theory">theory: Term</span>, <span name="context">context: Context</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Frame.html"><span class="name">Frame</span></a><span class="params">(<span name="theory">theory: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A pair (theory, context) used by rules</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.InferenceRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.InferenceRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="InferenceRuleextendsRule"></a>
       <a id="InferenceRule:InferenceRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="InferenceRule.html"><span class="name">InferenceRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="InferenceRule.html"><span class="name">InferenceRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">An InferenceRule infers the type of an expression
  It may recursively infer the types of components.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Inhabitation" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Inhabitation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InhabitationextendsJudgementwithProductwithSerializable"></a>
       <a id="Inhabitation:Inhabitation"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Inhabitation.html"><span class="name">Inhabitation</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="tp">tp: Term</span>)</span><span class="result"> extends Judgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Inhabitation.html"><span class="name">Inhabitation</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="tp">tp: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.IsContext" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.IsContext" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="IsContextextendsJudgementwithProductwithSerializable"></a>
       <a id="IsContext:IsContext"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="IsContext.html"><span class="name">IsContext</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="context">context: Context</span>)</span><span class="result"> extends Judgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="IsContext.html"><span class="name">IsContext</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="context">context: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span><span class="result"> extends <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.IsMorphism" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.IsMorphism" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="IsMorphismextendsJudgementwithProductwithSerializable"></a>
       <a id="IsMorphism:IsMorphism"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="IsMorphism.html"><span class="name">IsMorphism</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="morphism">morphism: Term</span>, <span name="from">from: Term</span>)</span><span class="result"> extends Judgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="IsMorphism.html"><span class="name">IsMorphism</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="morphism">morphism: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="from">from: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.IsSubstitution" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.IsSubstitution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="IsSubstitutionextendsJudgementwithProductwithSerializable"></a>
       <a id="IsSubstitution:IsSubstitution"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="IsSubstitution.html"><span class="name">IsSubstitution</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="substitution">substitution: Substitution</span>, <span name="from">from: Context</span>, <span name="to">to: Context</span>)</span><span class="result"> extends Judgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="IsSubstitution.html"><span class="name">IsSubstitution</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="substitution">substitution: <a href="Substitution.html" class="extype" name="info.kwarc.mmt.api.objects.Substitution">Substitution</a></span>, <span name="from">from: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="to">to: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span><span class="result"> extends <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.IsTheory" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.IsTheory" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="IsTheoryextendsJudgementwithProductwithSerializable"></a>
       <a id="IsTheory:IsTheory"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="IsTheory.html"><span class="name">IsTheory</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="theory">theory: Term</span>)</span><span class="result"> extends Judgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="IsTheory.html"><span class="name">IsTheory</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="theory">theory: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Judgement" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.Judgement" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="JudgementextendsObject"></a>
       <a id="Judgement:Judgement"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Judgement.html"><span class="name">Judgement</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Judgement.html"><span class="name">Judgement</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">the type of object level judgments as used for typing and equality of terms</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.MMTObject" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.MMTObject" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="MMTObjectextendsObject"></a>
       <a id="MMTObject:MMTObject"></a>
       <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="MMTObject.html"><span class="name">MMTObject</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="MMTObject.html"><span class="name">MMTObject</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMA" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMA" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMAextendsTermwithProductwithSerializable"></a>
       <a id="OMA:OMA"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMA.html"><span class="name">OMA</span></a>
-        
-        <span class="params">(<span name="fun">fun: Term</span>, <span name="args">args: List[Term]</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMA.html"><span class="name">OMA</span></a><span class="params">(<span name="fun">fun: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMA represents an application of a term to a list of terms</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMATTR" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMATTR" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMATTRextendsTermwithProductwithSerializable"></a>
       <a id="OMATTR:OMATTR"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMATTR.html"><span class="name">OMATTR</span></a>
-        
-        <span class="params">(<span name="arg">arg: Term</span>, <span name="key">key: OMID</span>, <span name="value">value: Term</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMATTR.html"><span class="name">OMATTR</span></a><span class="params">(<span name="arg">arg: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="key">key: <a href="OMID.html" class="extype" name="info.kwarc.mmt.api.objects.OMID">OMID</a></span>, <span name="value">value: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMATTR represents an attributed term.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMBINDCextendsTermwithProductwithSerializable"></a>
       <a id="OMBINDC:OMBINDC"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMBINDC.html"><span class="name">OMBINDC</span></a>
-        
-        <span class="params">(<span name="binder">binder: Term</span>, <span name="context">context: Context</span>, <span name="condition">condition: Option[Term]</span>, <span name="body">body: Term</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMBINDC.html"><span class="name">OMBINDC</span></a><span class="params">(<span name="binder">binder: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="condition">condition: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>, <span name="body">body: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMBINDC represents a binding with condition</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OME" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OME" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMEextendsTermwithProductwithSerializable"></a>
       <a id="OME:OME"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OME.html"><span class="name">OME</span></a>
-        
-        <span class="params">(<span name="error">error: Term</span>, <span name="args">args: List[Term]</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OME.html"><span class="name">OME</span></a><span class="params">(<span name="error">error: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OME represents an application of an error-constructing term to a list of terms</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMF" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMF" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMFextendsOMLiteralwithProductwithSerializable"></a>
       <a id="OMF:OMF"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMF.html"><span class="name">OMF</span></a>
-        
-        <span class="params">(<span name="value">value: Double</span>)</span><span class="result"> extends OMLiteral with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMF.html"><span class="name">OMF</span></a><span class="params">(<span name="value">value: <span class="extype" name="scala.Double">Double</span></span>)</span><span class="result"> extends <a href="OMLiteral.html" class="extype" name="info.kwarc.mmt.api.objects.OMLiteral">OMLiteral</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A float literal</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMFOREIGN" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMFOREIGN" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMFOREIGNextendsTermwithProductwithSerializable"></a>
       <a id="OMFOREIGN:OMFOREIGN"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMFOREIGN.html"><span class="name">OMFOREIGN</span></a>
-        
-        <span class="params">(<span name="node">node: Node</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMFOREIGN.html"><span class="name">OMFOREIGN</span></a><span class="params">(<span name="node">node: <span class="extype" name="scala.xml.Node">Node</span></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMFOREIGN represents an OpenMath foreign object.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMI" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMI" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMIextendsOMLiteralwithProductwithSerializable"></a>
       <a id="OMI:OMI"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMI.html"><span class="name">OMI</span></a>
-        
-        <span class="params">(<span name="value">value: BigInt</span>)</span><span class="result"> extends OMLiteral with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMI.html"><span class="name">OMI</span></a><span class="params">(<span name="value">value: <span class="extype" name="scala.BigInt">BigInt</span></span>)</span><span class="result"> extends <a href="OMLiteral.html" class="extype" name="info.kwarc.mmt.api.objects.OMLiteral">OMLiteral</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An integer literal</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMID" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMID" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMIDextendsTermwithProductwithSerializable"></a>
       <a id="OMID:OMID"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMID.html"><span class="name">OMID</span></a>
-        
-        <span class="params">(<span name="path">path: ContentPath</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMID.html"><span class="name">OMID</span></a><span class="params">(<span name="path">path: <a href="../ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMID represents an MMT reference
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMLiteral" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.OMLiteral" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="OMLiteralextendsTerm"></a>
       <a id="OMLiteral:OMLiteral"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="OMLiteral.html"><span class="name">OMLiteral</span></a>
-        
-        <span class="result"> extends Term</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMLiteral.html"><span class="name">OMLiteral</span></a><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       <p class="comment cmt">OpenMath literals
  integers, floats, and strings (we omit byte arrays)
  we add URIs
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMM" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMM" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMMextendsTermwithMMTObjectwithProductwithSerializable"></a>
       <a id="OMM:OMM"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMM.html"><span class="name">OMM</span></a>
-        
-        <span class="params">(<span name="arg">arg: Term</span>, <span name="via">via: Term</span>)</span><span class="result"> extends Term with MMTObject with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMM.html"><span class="name">OMM</span></a><span class="params">(<span name="arg">arg: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="via">via: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <a href="MMTObject.html" class="extype" name="info.kwarc.mmt.api.objects.MMTObject">MMTObject</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMM represents a morphism application to a term</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMREF" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMREF" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMREFextendsTermwithProductwithSerializable"></a>
       <a id="OMREF:OMREF"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMREF.html"><span class="name">OMREF</span></a>
-        
-        <span class="params">(<span name="uri">uri: URI</span>, <span name="value">value: Option[Term]</span>, <span name="under">under: Substitution</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMREF.html"><span class="name">OMREF</span></a><span class="params">(<span name="uri">uri: <a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a></span>, <span name="value">value: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMSTR" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMSTR" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMSTRextendsOMLiteralwithProductwithSerializable"></a>
       <a id="OMSTR:OMSTR"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMSTR.html"><span class="name">OMSTR</span></a>
-        
-        <span class="params">(<span name="value">value: String</span>)</span><span class="result"> extends OMLiteral with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMSTR.html"><span class="name">OMSTR</span></a><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="OMLiteral.html" class="extype" name="info.kwarc.mmt.api.objects.OMLiteral">OMLiteral</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A string literal</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMSemiFormal" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMSemiFormal" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMSemiFormalextendsTermwithSemiFormalObjectListwithProductwithSerializable"></a>
       <a id="OMSemiFormal:OMSemiFormal"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMSemiFormal.html"><span class="name">OMSemiFormal</span></a>
-        
-        <span class="params">(<span name="tokens">tokens: List[SemiFormalObject]</span>)</span><span class="result"> extends Term with SemiFormalObjectList with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMSemiFormal.html"><span class="name">OMSemiFormal</span></a><span class="params">(<span name="tokens">tokens: <span class="extype" name="scala.List">List</span>[<a href="SemiFormalObject.html" class="extype" name="info.kwarc.mmt.api.objects.SemiFormalObject">SemiFormalObject</a>]</span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <a href="SemiFormalObjectList.html" class="extype" name="info.kwarc.mmt.api.objects.SemiFormalObjectList">SemiFormalObjectList</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMSemiFormal represents a mathematical object that mixes formal and informal components</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMURI" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMURI" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMURIextendsOMLiteralwithProductwithSerializable"></a>
       <a id="OMURI:OMURI"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMURI.html"><span class="name">OMURI</span></a>
-        
-        <span class="params">(<span name="value">value: URI</span>)</span><span class="result"> extends OMLiteral with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMURI.html"><span class="name">OMURI</span></a><span class="params">(<span name="value">value: <a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a></span>)</span><span class="result"> extends <a href="OMLiteral.html" class="extype" name="info.kwarc.mmt.api.objects.OMLiteral">OMLiteral</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A literal object representing a URI (not part of the OpenMath standard)</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMV" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMV" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMVextendsTermwithProductwithSerializable"></a>
       <a id="OMV:OMV"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OMV.html"><span class="name">OMV</span></a>
-        
-        <span class="params">(<span name="name">name: LocalName</span>)</span><span class="result"> extends Term with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OMV.html"><span class="name">OMV</span></a><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An OMV represents a reference to a variable.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OPath" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OPath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OPathextendsProductwithSerializable"></a>
       <a id="OPath:OPath"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="OPath.html"><span class="name">OPath</span></a>
-        
-        <span class="params">(<span name="parent">parent: Path</span>, <span name="component">component: String</span>, <span name="pos">pos: Position</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OPath.html"><span class="name">OPath</span></a><span class="params">(<span name="parent">parent: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>, <span name="component">component: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="pos">pos: <a href="Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a> = <span class="symbol">Position.Init</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A path in an object</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Obj" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.Obj" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ObjextendsContentwithBaseTypewithHasMetaDatawithClientProperties"></a>
       <a id="Obj:Obj"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Obj.html"><span class="name">Obj</span></a>
-        
-        <span class="result"> extends Content with BaseType with HasMetaData with ClientProperties</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Obj.html"><span class="name">Obj</span></a><span class="result"> extends <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a> with <a href="../ontology/BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a> with <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a> with <a href="ClientProperties.html" class="extype" name="info.kwarc.mmt.api.objects.ClientProperties">ClientProperties</a></span>
       </span>
       </h4>
       <p class="comment cmt">An Obj represents an MMT object.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Position" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Position" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PositionextendsProductwithSerializable"></a>
       <a id="Position:Position"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Position.html"><span class="name">Position</span></a>
-        
-        <span class="params">(<span name="indices">indices: List[Int]</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Position.html"><span class="name">Position</span></a><span class="params">(<span name="indices">indices: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A path in the syntax tree of an object</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Record" data-isabs="false">
-      <a id="Record:Record"></a>
+    </li><li name="info.kwarc.mmt.api.objects.Prover" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ProverextendsObject"></a>
+      <a id="Prover:Prover"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Record.html"><span class="name">Record</span></a>
-        
-        <span class="params">(<span name="fields">fields: List[(LocalName, Term)]</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Prover.html"><span class="name">Prover</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Rule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.ProvingRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ProvingRuleextendsRule"></a>
+      <a id="ProvingRule:ProvingRule"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ProvingRule.html"><span class="name">ProvingRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A ProvingRule tries to find a term of a given type</p>
+    </li><li name="info.kwarc.mmt.api.objects.Record" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RecordextendsProductwithSerializable"></a>
+      <a id="Record:Record"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Record.html"><span class="name">Record</span></a><span class="params">(<span name="fields">fields: <span class="extype" name="scala.List">List</span>[(<a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>, <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>)]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.objects.Rule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RuleextendsObject"></a>
       <a id="Rule:Rule"></a>
       <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="Rule.html"><span class="name">Rule</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Rule.html"><span class="name">Rule</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">the type of all Rules</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.RuleSet" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.RuleSet" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RuleSetextendsObject"></a>
       <a id="RuleSet:RuleSet"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="RuleSet.html"><span class="name">RuleSet</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="RuleSet.html"><span class="name">RuleSet</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">A RuleSet groups some rules together</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.RuleStore" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.RuleStore" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RuleStoreextendsObject"></a>
       <a id="RuleStore:RuleStore"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="RuleStore.html"><span class="name">RuleStore</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RuleStore.html"><span class="name">RuleStore</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.SemiFormalObject" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.SemiFormalObject" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="SemiFormalObjectextendsContent"></a>
       <a id="SemiFormalObject:SemiFormalObject"></a>
       <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="SemiFormalObject.html"><span class="name">SemiFormalObject</span></a>
-        
-        <span class="result"> extends Content</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="SemiFormalObject.html"><span class="name">SemiFormalObject</span></a><span class="result"> extends <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.SemiFormalObjectList" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.SemiFormalObjectList" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="SemiFormalObjectListextendsObject"></a>
       <a id="SemiFormalObjectList:SemiFormalObjectList"></a>
       <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="SemiFormalObjectList.html"><span class="name">SemiFormalObjectList</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="SemiFormalObjectList.html"><span class="name">SemiFormalObjectList</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.SolutionRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.SolutionRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="SolutionRuleextendsRule"></a>
       <a id="SolutionRule:SolutionRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="SolutionRule.html"><span class="name">SolutionRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SolutionRule.html"><span class="name">SolutionRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A SolutionRule tries to solve for an unknown that occurs in a non-solved position.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Solver" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Solver" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SolverextendsLogger"></a>
       <a id="Solver:Solver"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Solver.html"><span class="name">Solver</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Solver.html"><span class="name">Solver</span></a><span class="result"> extends <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Solver is used to solve a system of constraints about Term's given as judgments.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Stack" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Stack" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StackextendsProductwithSerializable"></a>
       <a id="Stack:Stack"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Stack.html"><span class="name">Stack</span></a>
-        
-        <span class="params">(<span name="frames">frames: List[Frame]</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Stack.html"><span class="name">Stack</span></a><span class="params">(<span name="frames">frames: <span class="extype" name="scala.List">List</span>[<a href="Frame.html" class="extype" name="info.kwarc.mmt.api.objects.Frame">Frame</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.StatelessTraverser" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.StatelessTraverser" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="StatelessTraverserextendsTraverser[Unit]"></a>
       <a id="StatelessTraverser:StatelessTraverser"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="StatelessTraverser.html"><span class="name">StatelessTraverser</span></a>
-        
-        <span class="result"> extends Traverser[Unit]</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="StatelessTraverser.html"><span class="name">StatelessTraverser</span></a><span class="result"> extends <a href="Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
       </span>
       </h4>
       <p class="comment cmt">A StatelessTraverser is like a Traverser but does not carry a state during the traversal.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Sub" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Sub" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SubextendsObjwithProductwithSerializable"></a>
       <a id="Sub:Sub"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Sub.html"><span class="name">Sub</span></a>
-        
-        <span class="params">(<span name="name">name: LocalName</span>, <span name="target">target: Term</span>)</span><span class="result"> extends Obj with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Sub.html"><span class="name">Sub</span></a><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="target">target: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a case in a substitution</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Substitution" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Substitution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SubstitutionextendsObjwithProductwithSerializable"></a>
       <a id="Substitution:Substitution"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Substitution.html"><span class="name">Substitution</span></a>
-        
-        <span class="params">(<span name="subs">subs: Sub*</span>)</span><span class="result"> extends Obj with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Substitution.html"><span class="name">Substitution</span></a><span class="params">(<span name="subs">subs: <a href="Sub.html" class="extype" name="info.kwarc.mmt.api.objects.Sub">Sub</a>*</span>)</span><span class="result"> extends <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">substitution between two contexts</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.Term" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TermextendsObj"></a>
       <a id="Term:Term"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Term.html"><span class="name">Term</span></a>
-        
-        <span class="result"> extends Obj</span>
+      <span class="modifier_kind">
+        <span class="modifier">sealed abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Term.html"><span class="name">Term</span></a><span class="result"> extends <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Term represents an MMT term.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Text" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Text" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TextextendsSemiFormalObjectwithProductwithSerializable"></a>
       <a id="Text:Text"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Text.html"><span class="name">Text</span></a>
-        
-        <span class="params">(<span name="format">format: String</span>, <span name="obj">obj: String</span>)</span><span class="result"> extends SemiFormalObject with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Text.html"><span class="name">Text</span></a><span class="params">(<span name="format">format: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="obj">obj: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="SemiFormalObject.html" class="extype" name="info.kwarc.mmt.api.objects.SemiFormalObject">SemiFormalObject</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TorsoForm" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.TorsoForm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TorsoFormextendsProductwithSerializable"></a>
       <a id="TorsoForm:TorsoForm"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="TorsoForm.html"><span class="name">TorsoForm</span></a>
-        
-        <span class="params">(<span name="torso">torso: Term</span>, <span name="apps">apps: List[Appendages]</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TorsoForm.html"><span class="name">TorsoForm</span></a><span class="params">(<span name="torso">torso: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="apps">apps: <span class="extype" name="scala.List">List</span>[<a href="Appendages.html" class="extype" name="info.kwarc.mmt.api.objects.Appendages">Appendages</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">The torso form of a term is named akin to the head normal forms.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Traverser" data-isabs="true">
-      <a id="Traverser:Traverser[State]"></a>
+    </li><li name="info.kwarc.mmt.api.objects.Traverser" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="Traverser[State]extendsObject"></a>
+      <a id="Traverser[State]:Traverser[State]"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Traverser.html"><span class="name">Traverser</span></a>
-        <span class="tparams">[<span name="State">State</span>]</span>
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Traverser.html"><span class="name">Traverser</span></a><span class="tparams">[<span name="State">State</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       <p class="comment cmt">A Traverser is a function on Term defined by context-sensitive induction.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Typing" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Typing" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TypingextendsWFJudgementwithProductwithSerializable"></a>
       <a id="Typing:Typing"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Typing.html"><span class="name">Typing</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="tm">tm: Term</span>, <span name="tp">tp: Term</span>)</span><span class="result"> extends WFJudgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Typing.html"><span class="name">Typing</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="tm">tm: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tp">tp: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">represents a typing judgement
 context |- tm : tp
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TypingRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.TypingRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TypingRuleextendsRule"></a>
       <a id="TypingRule:TypingRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="TypingRule.html"><span class="name">TypingRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TypingRule.html"><span class="name">TypingRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">An TypingRule checks a term against a type.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Universe" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Universe" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UniverseextendsWFJudgementwithProductwithSerializable"></a>
       <a id="Universe:Universe"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="Universe.html"><span class="name">Universe</span></a>
-        
-        <span class="params">(<span name="stack">stack: Stack</span>, <span name="univ">univ: Term</span>)</span><span class="result"> extends WFJudgement with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Universe.html"><span class="name">Universe</span></a><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="univ">univ: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.UniverseRule" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.UniverseRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="UniverseRuleextendsRule"></a>
       <a id="UniverseRule:UniverseRule"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="UniverseRule.html"><span class="name">UniverseRule</span></a>
-        
-        <span class="result"> extends Rule</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="UniverseRule.html"><span class="name">UniverseRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A UniverseRule checks if a term is a universe</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ValidationUnit" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.ValidationUnit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ValidationUnitextendsProductwithSerializable"></a>
       <a id="ValidationUnit:ValidationUnit"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="ValidationUnit.html"><span class="name">ValidationUnit</span></a>
-        
-        <span class="params">(<span name="component">component: CPath</span>, <span name="judgement">judgement: WFJudgement</span>)</span><span class="result"> extends Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ValidationUnit.html"><span class="name">ValidationUnit</span></a><span class="params">(<span name="component">component: <a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a></span>, <span name="unknowns">unknowns: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="judgement">judgement: <a href="WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.VarDecl" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Validator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ValidatorextendsLogger"></a>
+      <a id="Validator:Validator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Validator.html"><span class="name">Validator</span></a><span class="result"> extends <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.objects.VarDecl" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="VarDeclextendsObjwithProductwithSerializable"></a>
       <a id="VarDecl:VarDecl"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="VarDecl.html"><span class="name">VarDecl</span></a>
-        
-        <span class="params">(<span name="name">name: LocalName</span>, <span name="tp">tp: Option[Term]</span>, <span name="df">df: Option[Term]</span>, <span name="ats">ats: (GlobalName, Term)*</span>)</span><span class="result"> extends Obj with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="VarDecl.html"><span class="name">VarDecl</span></a><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="tp">tp: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>, <span name="df">df: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>, <span name="ats">ats: (<a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>, <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>)*</span>)</span><span class="result"> extends <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">represents an MMT term variable declaration</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.WFJudgement" data-isabs="true">
+    </li><li name="info.kwarc.mmt.api.objects.WFJudgement" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="WFJudgementextendsJudgement"></a>
       <a id="WFJudgement:WFJudgement"></a>
       <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="WFJudgement.html"><span class="name">WFJudgement</span></a>
-        
-        <span class="result"> extends Judgement</span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="WFJudgement.html"><span class="name">WFJudgement</span></a><span class="result"> extends <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></span>
       </span>
       </h4>
       <p class="comment cmt">A WFJudgment defines well-formed objects</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.XMLNode" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.XMLNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="XMLNodeextendsSemiFormalObjectwithProductwithSerializable"></a>
       <a id="XMLNode:XMLNode"></a>
       <h4 class="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <a href="XMLNode.html"><span class="name">XMLNode</span></a>
-        
-        <span class="params">(<span name="obj">obj: Node</span>)</span><span class="result"> extends SemiFormalObject with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="XMLNode.html"><span class="name">XMLNode</span></a><span class="params">(<span name="obj">obj: <span class="extype" name="scala.xml.Node">Node</span></span>)</span><span class="result"> extends <a href="SemiFormalObject.html" class="extype" name="info.kwarc.mmt.api.objects.SemiFormalObject">SemiFormalObject</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
     </li></ol>
             </div>
-        
+
         
 
-        <div class="values members" id="values">
+        <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.objects.++" data-isabs="false">
+              <ol><li name="info.kwarc.mmt.api.objects.++" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="++"></a>
       <a id="++:++"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="$plus$plus$.html"><span class="name">++</span></a>
-        
-        <span class="result"> extends AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="$plus$plus$.html"><span title="gt4s: $plus$plus" class="name">++</span></a>
       </span>
       </h4>
       <p class="comment cmt">Concatenation of contexts and substitutions (extractor object)</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.CodComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.CodComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CodComponent"></a>
       <a id="CodComponent:CodComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="CodComponent$.html"><span class="name">CodComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CodComponent$.html"><span class="name">CodComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">codomain of a link</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Context" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.ComplexTerm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ComplexTerm"></a>
+      <a id="ComplexTerm:ComplexTerm"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ComplexTerm$.html"><span class="name">ComplexTerm</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.objects.Context" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Context"></a>
       <a id="Context:Context"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Context$.html"><span class="name">Context</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Context$.html"><span class="name">Context</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">helper object</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Conversions" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Conversions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Conversions"></a>
       <a id="Conversions:Conversions"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="Conversions$.html"><span class="name">Conversions</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">Stores all implicit conversions related to MMT objects
 This is imported in all source files that use conversions</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.DeclarationComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.DeclarationComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeclarationComponent"></a>
       <a id="DeclarationComponent:DeclarationComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="DeclarationComponent$.html"><span class="name">DeclarationComponent</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.DefComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.DefComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefComponent"></a>
       <a id="DefComponent:DefComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="DefComponent$.html"><span class="name">DefComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefComponent$.html"><span class="name">DefComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">definitiens of Constant, DefinedTheory, DefinedView, DefinedStructure; target of an Assignment</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.DomComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.DomComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DomComponent"></a>
       <a id="DomComponent:DomComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="DomComponent$.html"><span class="name">DomComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DomComponent$.html"><span class="name">DomComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">domain of a Link, meta-theory of a theory</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ExplicitMorph" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.ExplicitMorph" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ExplicitMorph"></a>
       <a id="ExplicitMorph:ExplicitMorph"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="ExplicitMorph$.html"><span class="name">ExplicitMorph</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Flatten" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Flatten" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Flatten"></a>
       <a id="Flatten:Flatten"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Flatten$.html"><span class="name">Flatten</span></a>
-        
-        <span class="result"> extends StatelessTraverser</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Flatten$.html"><span class="name">Flatten</span></a><span class="result"> extends <a href="StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></span>
       </span>
       </h4>
       <p class="comment cmt">a Traverser that replaces all references with their resolution if available</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ForPathComponent" data-isabs="false">
-      <a id="ForPathComponent:ForPathComponent"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="ForPathComponent$.html"><span class="name">ForPathComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ForwardSolutionRule" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.ForwardSolutionRule" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ForwardSolutionRule"></a>
       <a id="ForwardSolutionRule:ForwardSolutionRule"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="ForwardSolutionRule$.html"><span class="name">ForwardSolutionRule</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">auxiliary object for the class ForwardSolutionRule</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.MUnion" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Hole" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Hole"></a>
+      <a id="Hole:Hole"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Hole$.html"><span class="name">Hole</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">apply/unapply methods for missing terms of known type</p>
+    </li><li name="info.kwarc.mmt.api.objects.HoleTerm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="HoleTerm"></a>
+      <a id="HoleTerm:HoleTerm"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="HoleTerm$.html"><span class="name">HoleTerm</span></a><span class="result"> extends <a href="InferenceRule.html" class="extype" name="info.kwarc.mmt.api.objects.InferenceRule">InferenceRule</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.objects.MUnion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MUnion"></a>
       <a id="MUnion:MUnion"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="MUnion$.html"><span class="name">MUnion</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.MatchesComponent" data-isabs="false">
-      <a id="MatchesComponent:MatchesComponent"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="MatchesComponent$.html"><span class="name">MatchesComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.MetaDataComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.MetaDataComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MetaDataComponent"></a>
       <a id="MetaDataComponent:MetaDataComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="MetaDataComponent$.html"><span class="name">MetaDataComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MetaDataComponent$.html"><span class="name">MetaDataComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Morph" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Morph" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Morph"></a>
       <a id="Morph:Morph"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="Morph$.html"><span class="name">Morph</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMAMaybeNil" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMAMaybeNil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMAMaybeNil"></a>
       <a id="OMAMaybeNil:OMAMaybeNil"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMAMaybeNil$.html"><span class="name">OMAMaybeNil</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">provides apply/unapply methods for constructing and pattern-matching a function that is may or may not be applied to arguments
  Nil is used as the list of arguments in the latter case
  This identifies t with OMA(t,Nil).</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBIND" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMBIND" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMBIND"></a>
       <a id="OMBIND:OMBIND"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMBIND$.html"><span class="name">OMBIND</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">OMBIND represents a binding without condition
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMCOMP" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMCOMP" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMCOMP"></a>
       <a id="OMCOMP:OMCOMP"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMCOMP$.html"><span class="name">OMCOMP</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">An OMCOMP represents the associative composition of a list of morphisms.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMDL" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMDL" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMDL"></a>
       <a id="OMDL:OMDL"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMDL$.html"><span class="name">OMDL</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">An OMDL represents a structure
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMHID" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMHID" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMHID"></a>
       <a id="OMHID:OMHID"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="OMHID$.html"><span class="name">OMHID</span></a>
-        
-        <span class="result"> extends Term with MMTObject with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OMHID$.html"><span class="name">OMHID</span></a><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <a href="MMTObject.html" class="extype" name="info.kwarc.mmt.api.objects.MMTObject">MMTObject</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">OMHID represents the hidden term.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMIDENT" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMIDENT" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMIDENT"></a>
       <a id="OMIDENT:OMIDENT"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMIDENT$.html"><span class="name">OMIDENT</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">An OMIDENT represents the identity morphism of a theory.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMMOD" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMMOD" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMMOD"></a>
       <a id="OMMOD:OMMOD"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMMOD$.html"><span class="name">OMMOD</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">An OMMOD represents a reference to a module (which may be a theory or a morphism expression).</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMREC" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMREC" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMREC"></a>
       <a id="OMREC:OMREC"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMREC$.html"><span class="name">OMREC</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMS" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMS"></a>
       <a id="OMS:OMS"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="OMS$.html"><span class="name">OMS</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMSemiFormal" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMSemiFormal" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMSemiFormal"></a>
       <a id="OMSemiFormal:OMSemiFormal"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="OMSemiFormal$.html"><span class="name">OMSemiFormal</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OMSemiFormal$.html"><span class="name">OMSemiFormal</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMV" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMV" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OMV"></a>
       <a id="OMV:OMV"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="OMV$.html"><span class="name">OMV</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OMV$.html"><span class="name">OMV</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Obj" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Obj" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Obj"></a>
       <a id="Obj:Obj"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="Obj$.html"><span class="name">Obj</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">Obj contains the parsing methods for objects.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ParamsComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.ParamsComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ParamsComponent"></a>
       <a id="ParamsComponent:ParamsComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="ParamsComponent$.html"><span class="name">ParamsComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ParamsComponent$.html"><span class="name">ParamsComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.PatternBodyComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.PatternBodyComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternBodyComponent"></a>
       <a id="PatternBodyComponent:PatternBodyComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="PatternBodyComponent$.html"><span class="name">PatternBodyComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternBodyComponent$.html"><span class="name">PatternBodyComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.PatternComponent" data-isabs="false">
-      <a id="PatternComponent:PatternComponent"></a>
-      <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="PatternComponent$.html"><span class="name">PatternComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Position" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Position" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Position"></a>
       <a id="Position:Position"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Position$.html"><span class="name">Position</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Position$.html"><span class="name">Position</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.PushMorphs" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.PushMorphs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PushMorphs"></a>
       <a id="PushMorphs:PushMorphs"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="PushMorphs$.html"><span class="name">PushMorphs</span></a>
-        
-        <span class="result"> extends Traverser[Term]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PushMorphs$.html"><span class="name">PushMorphs</span></a><span class="result"> extends <a href="Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
       <p class="comment cmt">A Traverser that moves all morphisms to the inside of a term.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Stack" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Stack" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Stack"></a>
       <a id="Stack:Stack"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Stack$.html"><span class="name">Stack</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Stack$.html"><span class="name">Stack</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Sub" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Sub" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Sub"></a>
       <a id="Sub:Sub"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Sub$.html"><span class="name">Sub</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Sub$.html"><span class="name">Sub</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">helper object</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Substitute" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Substitute" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Substitute"></a>
       <a id="Substitute:Substitute"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Substitute$.html"><span class="name">Substitute</span></a>
-        
-        <span class="result"> extends Traverser[Substitution]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Substitute$.html"><span class="name">Substitute</span></a><span class="result"> extends <a href="Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="Substitution.html" class="extype" name="info.kwarc.mmt.api.objects.Substitution">Substitution</a>]</span>
       </span>
       </h4>
       <p class="comment cmt">A Traverser that applies a fixed substitution to a Term</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Substitution" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Substitution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Substitution"></a>
       <a id="Substitution:Substitution"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="Substitution$.html"><span class="name">Substitution</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Substitution$.html"><span class="name">Substitution</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">helper object</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TUnion" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.TUnion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TUnion"></a>
       <a id="TUnion:TUnion"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="TUnion$.html"><span class="name">TUnion</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TermComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.TermComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TermComponent"></a>
       <a id="TermComponent:TermComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="TermComponent$.html"><span class="name">TermComponent</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TheoryExp" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.TheoryExp" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TheoryExp"></a>
       <a id="TheoryExp:TheoryExp"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="TheoryExp$.html"><span class="name">TheoryExp</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TorsoForm" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.TorsoForm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TorsoForm"></a>
       <a id="TorsoForm:TorsoForm"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="TorsoForm$.html"><span class="name">TorsoForm</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TorsoForm$.html"><span class="name">TorsoForm</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TorsoNormalForm" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.TorsoNormalForm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TorsoNormalForm"></a>
       <a id="TorsoNormalForm:TorsoNormalForm"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="TorsoNormalForm$.html"><span class="name">TorsoNormalForm</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       <p class="comment cmt">In the torso normal form, the torso cannot be further decomposed anymore, typically it is a variable or constant.</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Traverser" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Traverser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Traverser"></a>
       <a id="Traverser:Traverser"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
         <a href="Traverser$.html"><span class="name">Traverser</span></a>
-        
-        <span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.TypeComponent" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.TypeComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TypeComponent"></a>
       <a id="TypeComponent:TypeComponent"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="TypeComponent$.html"><span class="name">TypeComponent</span></a>
-        
-        <span class="result"> extends DeclarationComponent with Product with Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TypeComponent$.html"><span class="name">TypeComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">type of a Constant</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.VarDecl" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.VarDecl" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="VarDecl"></a>
       <a id="VarDecl:VarDecl"></a>
       <h4 class="signature">
-      <span class="kind">object</span>
-      <span class="symbol"> 
-        <a href="VarDecl$.html"><span class="name">VarDecl</span></a>
-        
-        <span class="result"> extends Serializable</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="VarDecl$.html"><span class="name">VarDecl</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">helper object</p>
@@ -1244,10 +1537,26 @@ This is imported in all source files that use conversions</p>
         
 
         
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
 
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

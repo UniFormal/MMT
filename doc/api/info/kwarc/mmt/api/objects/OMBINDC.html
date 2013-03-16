@@ -2,69 +2,99 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.api.objects.OMBINDC</title>
+          <title>OMBINDC - MMT - info.kwarc.mmt.api.objects.OMBINDC</title>
+          <meta name="description" content="OMBINDC - MMT - info.kwarc.mmt.api.objects.OMBINDC" />
+          <meta name="keywords" content="OMBINDC MMT info.kwarc.mmt.api.objects.OMBINDC" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.objects.OMBINDC';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="type">
       <div id="definition">
         <img src="../../../../../lib/class_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a>.<a name="info.kwarc.mmt.api.objects" class="extype" href="package.html">objects</a></p>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a></p>
         <h1>OMBINDC</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">case class</span>
-      <span class="symbol"> 
-        <span class="name">OMBINDC</span>
-        
-        <span class="params">(<span name="binder">binder: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>, <span name="condition">condition: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>, <span name="body">body: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="result"> extends <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a> with <span name="scala.Product" class="extype">Product</span> with <span name="scala.Serializable" class="extype">Serializable</span></span>
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">OMBINDC</span><span class="params">(<span name="binder">binder: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="condition">condition: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>, <span name="body">body: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>An OMBINDC represents a binding with condition</p></div><dl class="paramcmts block"><dt class="param">binder</dt><dd class="cmt"><p>the binder</p></dd><dt class="param">context</dt><dd class="cmt"><p>the bound variables (from outside to inside)</p></dd><dt class="param">condition</dt><dd class="cmt"><p>an optional condition on the variables</p></dd><dt class="param">body</dt><dd class="cmt"><p>the scope/body/matrix of the binder
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>An OMBINDC represents a binding with condition</p></div><dl class="paramcmts block"><dt class="param">binder</dt><dd class="cmt"><p>the binder</p></dd><dt class="param">context</dt><dd class="cmt"><p>the bound variables (from outside to inside)</p></dd><dt class="param">condition</dt><dd class="cmt"><p>an optional condition on the variables</p></dd><dt class="param">body</dt><dd class="cmt"><p>the scope/body/matrix of the binder
 </p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span name="scala.Serializable" class="extype">Serializable</span>, <span name="java.io.Serializable" class="extype">Serializable</span>, <span name="scala.Product" class="extype">Product</span>, <span name="scala.Equals" class="extype">Equals</span>, <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>, <a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a>, <a name="info.kwarc.mmt.api.objects.ClientProperties" class="extype" href="ClientProperties.html">ClientProperties</a>, <a name="info.kwarc.mmt.api.metadata.HasMetaData" class="extype" href="../metadata/HasMetaData.html">HasMetaData</a>, <a name="info.kwarc.mmt.api.ontology.BaseType" class="extype" href="../ontology/BaseType.html">BaseType</a>, <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>, <a href="ClientProperties.html" class="extype" name="info.kwarc.mmt.api.objects.ClientProperties">ClientProperties</a>, <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a>, <a href="../ontology/BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
-      <div id="template">
-
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          <div id="order">
-                <span class="filtertype">Ordering</span>
-                <ol><li class="alpha in"><span>Alphabetic</span></li><li class="inherit out"><span>By inheritance</span></li></ol>
-              </div>
-          <div id="ancestors">
-                <span class="filtertype">Inherited</span>
-                <ol><li class="hideall out"><span>Hide All</span></li>
-                <li class="showall in"><span>Show all</span></li></ol>
-                <ol id="linearization"><li name="info.kwarc.mmt.api.objects.OMBINDC" class="in"><span>OMBINDC</span></li><li name="scala.Serializable" class="in"><span>Serializable</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.Product" class="in"><span>Product</span></li><li name="scala.Equals" class="in"><span>Equals</span></li><li name="info.kwarc.mmt.api.objects.Term" class="in"><span>Term</span></li><li name="info.kwarc.mmt.api.objects.Obj" class="in"><span>Obj</span></li><li name="info.kwarc.mmt.api.objects.ClientProperties" class="in"><span>ClientProperties</span></li><li name="info.kwarc.mmt.api.metadata.HasMetaData" class="in"><span>HasMetaData</span></li><li name="info.kwarc.mmt.api.ontology.BaseType" class="in"><span>BaseType</span></li><li name="info.kwarc.mmt.api.Content" class="in"><span>Content</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
-              </div>
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
             </div>
-        </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="info.kwarc.mmt.api.objects.OMBINDC"><span>OMBINDC</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="info.kwarc.mmt.api.objects.Term"><span>Term</span></li><li class="in" name="info.kwarc.mmt.api.objects.Obj"><span>Obj</span></li><li class="in" name="info.kwarc.mmt.api.objects.ClientProperties"><span>ClientProperties</span></li><li class="in" name="info.kwarc.mmt.api.metadata.HasMetaData"><span>HasMetaData</span></li><li class="in" name="info.kwarc.mmt.api.ontology.BaseType"><span>BaseType</span></li><li class="in" name="info.kwarc.mmt.api.Content"><span>Content</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
-        <div class="members" id="constructors">
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#this" data-isabs="false">
-      <a id="this:OMBINDC"></a>
+              <ol><li name="info.kwarc.mmt.api.objects.OMBINDC#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="&lt;init&gt;(binder:info.kwarc.mmt.api.objects.Term,context:info.kwarc.mmt.api.objects.Context,condition:Option[info.kwarc.mmt.api.objects.Term],body:info.kwarc.mmt.api.objects.Term):info.kwarc.mmt.api.objects.OMBINDC"></a>
+      <a id="&lt;init&gt;:OMBINDC"></a>
       <h4 class="signature">
-      <span class="kind">new</span>
-      <span class="symbol"> 
-        <span class="name">OMBINDC</span>
-        
-        <span class="params">(<span name="binder">binder: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>, <span name="context">context: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>, <span name="condition">condition: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>, <span name="body">body: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">OMBINDC</span><span class="params">(<span name="binder">binder: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="condition">condition: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>, <span name="body">body: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">binder</dt><dd class="cmt"><p>the binder</p></dd><dt class="param">context</dt><dd class="cmt"><p>the bound variables (from outside to inside)</p></dd><dt class="param">condition</dt><dd class="cmt"><p>an optional condition on the variables</p></dd><dt class="param">body</dt><dd class="cmt"><p>the scope/body/matrix of the binder
@@ -73,675 +103,724 @@
             </div>
 
         
-        
+
         
 
-        <div class="values members" id="values">
+        <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="scala.AnyRef#!=" data-isabs="false">
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:AnyRef):Boolean"></a>
       <a id="!=(AnyRef):Boolean"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">!=</span>
-        
-        <span class="params">(<span name="arg0">arg0: AnyRef</span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="scala.Any#!=" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
       <a id="!=(Any):Boolean"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">!=</span>
-        
-        <span class="params">(<span name="arg0">arg0: <span name="scala.Any" class="extype">Any</span></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef###" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
       <a id="##():Int"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">##</span>
-        
-        <span class="params">()</span><span class="result">: <span name="scala.Int" class="extype">Int</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term#%" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#%" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="%(n:String):info.kwarc.mmt.api.GlobalName"></a>
       <a id="%(String):GlobalName"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">%</span>
-        
-        <span class="params">(<span name="n">n: String</span>)</span><span class="result">: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $percent" class="name">%</span><span class="params">(<span name="n">n: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term#%" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#%" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="%(n:info.kwarc.mmt.api.LocalName):info.kwarc.mmt.api.GlobalName"></a>
       <a id="%(LocalName):GlobalName"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">%</span>
-        
-        <span class="params">(<span name="n">n: <a name="info.kwarc.mmt.api.LocalName" class="extype" href="../LocalName.html">LocalName</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.GlobalName" class="extype" href="../GlobalName.html">GlobalName</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $percent" class="name">%</span><span class="params">(<span name="n">n: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">This permits the syntax term % sym for path composition</p><div class="fullcomment"><div class="comment cmt"><p>This permits the syntax term % sym for path composition</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term#*" data-isabs="false">
+      <p class="shortcomment cmt">This permits the syntax term % sym for path composition</p><div class="fullcomment"><div class="comment cmt"><p>This permits the syntax term % sym for path composition</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#*" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="*(that:info.kwarc.mmt.api.objects.Term):info.kwarc.mmt.api.objects.Term"></a>
       <a id="*(Term):Term"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">*</span>
-        
-        <span class="params">(<span name="that">that: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $times" class="name">*</span><span class="params">(<span name="that">that: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">morphism application (written postfix), maps OMHID to OMHID</p><div class="fullcomment"><div class="comment cmt"><p>morphism application (written postfix), maps OMHID to OMHID</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#==" data-isabs="false">
+      <p class="shortcomment cmt">morphism application (written postfix), maps OMHID to OMHID</p><div class="fullcomment"><div class="comment cmt"><p>morphism application (written postfix), maps OMHID to OMHID</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:AnyRef):Boolean"></a>
       <a id="==(AnyRef):Boolean"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">==</span>
-        
-        <span class="params">(<span name="arg0">arg0: AnyRef</span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="scala.Any#==" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
       <a id="==(Any):Boolean"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">==</span>
-        
-        <span class="params">(<span name="arg0">arg0: <span name="scala.Any" class="extype">Any</span></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#^" data-isabs="false">
-      <a id="^(Substitution):OMBINDC"></a>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#^" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="^(sub:info.kwarc.mmt.api.objects.Substitution):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="^(Substitution):Term"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">^</span>
-        
-        <span class="params">(<span name="sub">sub: <a name="info.kwarc.mmt.api.objects.Substitution" class="extype" href="Substitution.html">Substitution</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $up" class="name">^</span><span class="params">(<span name="sub">sub: <a href="Substitution.html" class="extype" name="info.kwarc.mmt.api.objects.Substitution">Substitution</a></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">applies a substitution to an object (computed immediately)
  capture is avoided by renaming bound variables that are free in sub</p><div class="fullcomment"><div class="comment cmt"><p>applies a substitution to an object (computed immediately)
- capture is avoided by renaming bound variables that are free in sub</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a> → <a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term#^?" data-isabs="false">
+ capture is avoided by renaming bound variables that are free in sub</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.OMBINDC">OMBINDC</a> → <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a> → <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#^?" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="^?(sub:info.kwarc.mmt.api.objects.Substitution):info.kwarc.mmt.api.objects.Term"></a>
       <a id="^?(Substitution):Term"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">^?</span>
-        
-        <span class="params">(<span name="sub">sub: <a name="info.kwarc.mmt.api.objects.Substitution" class="extype" href="Substitution.html">Substitution</a></span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $up$qmark" class="name">^?</span><span class="params">(<span name="sub">sub: <a href="Substitution.html" class="extype" name="info.kwarc.mmt.api.objects.Substitution">Substitution</a></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term#apply" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(args:info.kwarc.mmt.api.objects.Term*):info.kwarc.mmt.api.objects.OMA"></a>
       <a id="apply(Term*):OMA"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">apply</span>
-        
-        <span class="params">(<span name="args">args: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>*</span>)</span><span class="result">: <a name="info.kwarc.mmt.api.objects.OMA" class="extype" href="OMA.html">OMA</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="args">args: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>*</span>)</span><span class="result">: <a href="OMA.html" class="extype" name="info.kwarc.mmt.api.objects.OMA">OMA</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">permits the intuitive f(t_1,.</p><div class="fullcomment"><div class="comment cmt"><p>permits the intuitive f(t_1,...,t_n) syntax for term applications</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></dd></dl></div>
-    </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
+      <p class="shortcomment cmt">permits the intuitive f(t_1,.</p><div class="fullcomment"><div class="comment cmt"><p>permits the intuitive f(t_1,...,t_n) syntax for term applications</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">asInstanceOf</span>
-        <span class="tparams">[<span name="T0">T0</span>]</span>
-        <span class="result">: T0</span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#binder" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#binder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="binder:info.kwarc.mmt.api.objects.Term"></a>
       <a id="binder:Term"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">binder</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">binder</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the binder</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#body" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#body" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="body:info.kwarc.mmt.api.objects.Term"></a>
       <a id="body:Term"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">body</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">body</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the scope/body/matrix of the binder
 </p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#canEqual" data-isabs="false">
-      <a id="canEqual(Any):Boolean"></a>
+    </li><li name="info.kwarc.mmt.api.objects.ClientProperties#clientProperty" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clientProperty:scala.collection.mutable.ListMap[info.kwarc.mmt.api.utils.URI,Any]"></a>
+      <a id="clientProperty:ListMap[URI,Any]"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">canEqual</span>
-        
-        <span class="params">(<span name="arg0">arg0: <span name="scala.Any" class="extype">Any</span></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clientProperty</span><span class="result">: <span class="extype" name="scala.collection.mutable.ListMap">ListMap</span>[<a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a>, <span class="extype" name="scala.Any">Any</span>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → Equals</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.ClientProperties#clientProperty" data-isabs="false">
-      <a id="clientProperty:ListMap[URI, Any]"></a>
-      <h4 class="signature">
-      <span class="kind">lazy val</span>
-      <span class="symbol"> 
-        <span class="name">clientProperty</span>
-        
-        <span class="result">: <span name="scala.collection.mutable.ListMap" class="extype">ListMap</span>[<a name="info.kwarc.mmt.api.utils.URI" class="extype" href="../utils/URI.html">URI</a>, <span name="scala.Any" class="extype">Any</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.ClientProperties" class="extype" href="ClientProperties.html">ClientProperties</a></dd></dl></div>
-    </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ClientProperties.html" class="extype" name="info.kwarc.mmt.api.objects.ClientProperties">ClientProperties</a></dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">clone</span>
-        
-        <span class="params">()</span><span class="result">: AnyRef</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#compNames" data-isabs="false">
-      <a id="compNames:List[(String, Int)]"></a>
+    </li><li name="info.kwarc.mmt.api.Content#compNames" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="compNames:List[(String,Int)]"></a>
+      <a id="compNames:List[(String,Int)]"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">compNames</span>
-        
-        <span class="result">: List[(String, <span name="scala.Int" class="extype">Int</span>)]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">compNames</span><span class="result">: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>)]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#components" data-isabs="false">
+      <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#components" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="components:List[info.kwarc.mmt.api.objects.Obj]"></a>
       <a id="components:List[Obj]"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">components</span>
-        
-        <span class="result">: <span name="scala.collection.immutable.List" class="extype">List</span>[<a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a>]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">components</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#condition" data-isabs="false">
+      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.OMBINDC">OMBINDC</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#condition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="condition:Option[info.kwarc.mmt.api.objects.Term]"></a>
       <a id="condition:Option[Term]"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">condition</span>
-        
-        <span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a>]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">condition</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">an optional condition on the variables</p>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.Content#contComponents" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.Content#contComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="contComponents:info.kwarc.mmt.api.presentation.ContentComponents"></a>
       <a id="contComponents:ContentComponents"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">contComponents</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.presentation.ContentComponents" class="extype" href="../presentation/ContentComponents.html">ContentComponents</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">contComponents</span><span class="result">: <a href="../presentation/ContentComponents.html" class="extype" name="info.kwarc.mmt.api.presentation.ContentComponents">ContentComponents</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#context" data-isabs="false">
+      <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#context" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="context:info.kwarc.mmt.api.objects.Context"></a>
       <a id="context:Context"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">context</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">context</span><span class="result">: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the bound variables (from outside to inside)</p>
-    </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Obj#copyFrom" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="copyFrom(o:info.kwarc.mmt.api.objects.Obj):Unit"></a>
+      <a id="copyFrom(Obj):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">copyFrom</span><span class="params">(<span name="o">o: <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">replaces metadata of this with those of o
+</p><div class="fullcomment"><div class="comment cmt"><p>replaces metadata of this with those of o
+</p></div><dl class="paramcmts block"><dt class="param">o</dt><dd class="cmt"><p>the original object
+call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">eq</span>
-        
-        <span class="params">(<span name="arg0">arg0: AnyRef</span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#equals" data-isabs="false">
-      <a id="equals(Any):Boolean"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">equals</span>
-        
-        <span class="params">(<span name="arg0">arg0: <span name="scala.Any" class="extype">Any</span></span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → Equals → AnyRef → Any</dd></dl></div>
-    </li><li visbl="prt" name="scala.AnyRef#finalize" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">finalize</span>
-        
-        <span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Obj#freeVars" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.Obj#freeVars" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="freeVars:List[info.kwarc.mmt.api.LocalName]"></a>
       <a id="freeVars:List[LocalName]"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">freeVars</span>
-        
-        <span class="result">: List[<a name="info.kwarc.mmt.api.LocalName" class="extype" href="../LocalName.html">LocalName</a>]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">freeVars</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the free variables of this object in any order</p><div class="fullcomment"><div class="comment cmt"><p>the free variables of this object in any order</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
-      <a id="getClass():java.lang.Class[_]"></a>
+      <p class="shortcomment cmt">the free variables of this object in any order</p><div class="fullcomment"><div class="comment cmt"><p>the free variables of this object in any order</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#from" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="from(o:info.kwarc.mmt.api.objects.Term):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="from(Term):Term"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">getClass</span>
-        
-        <span class="params">()</span><span class="result">: java.lang.Class[_]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">from</span><span class="params">(<span name="o">o: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.metadata.HasMetaData#getMetaDataNode" data-isabs="false">
+      <p class="shortcomment cmt">applies copyFrom and returns this
+</p><div class="fullcomment"><div class="comment cmt"><p>applies copyFrom and returns this
+</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>this object but with the metadata from o
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.metadata.HasMetaData#getMetaDataNode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getMetaDataNode:scala.xml.NodeSeq"></a>
       <a id="getMetaDataNode:NodeSeq"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">getMetaDataNode</span>
-        
-        <span class="result">: <span name="scala.xml.NodeSeq" class="extype">NodeSeq</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getMetaDataNode</span><span class="result">: <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.metadata.HasMetaData" class="extype" href="../metadata/HasMetaData.html">HasMetaData</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Obj#governingPath" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Obj#governingPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="governingPath:Option[info.kwarc.mmt.api.ContentPath]"></a>
       <a id="governingPath:Option[ContentPath]"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">governingPath</span>
-        
-        <span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.ContentPath" class="extype" href="../ContentPath.html">ContentPath</a>]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">governingPath</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the governing path required by Content is the head, if any</p><div class="fullcomment"><div class="comment cmt"><p>the governing path required by Content is the head, if any</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#hashCode" data-isabs="false">
-      <a id="hashCode():Int"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">hashCode</span>
-        
-        <span class="params">()</span><span class="result">: <span name="scala.Int" class="extype">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#head" data-isabs="false">
+      <p class="shortcomment cmt">the governing path required by Content is the head, if any</p><div class="fullcomment"><div class="comment cmt"><p>the governing path required by Content is the head, if any</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#head" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="head:Option[info.kwarc.mmt.api.ContentPath]"></a>
       <a id="head:Option[ContentPath]"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">head</span>
-        
-        <span class="result">: <span name="scala.Option" class="extype">Option</span>[<a name="info.kwarc.mmt.api.ContentPath" class="extype" href="../ContentPath.html">ContentPath</a>]</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">head</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → <a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></dd></dl></div>
-    </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.OMBINDC">OMBINDC</a> → <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">isInstanceOf</span>
-        <span class="tparams">[<span name="T0">T0</span>]</span>
-        <span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.metadata.HasMetaData#metadata" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.metadata.HasMetaData#metadata" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="metadata:info.kwarc.mmt.api.metadata.MetaData"></a>
       <a id="metadata:MetaData"></a>
       <h4 class="signature">
-      <span class="kind">var</span>
-      <span class="symbol"> 
-        <span class="name">metadata</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.metadata.MetaData" class="extype" href="../metadata/MetaData.html">MetaData</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">metadata</span><span class="result">: <a href="../metadata/MetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.MetaData">MetaData</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.metadata.HasMetaData" class="extype" href="../metadata/HasMetaData.html">HasMetaData</a></dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">ne</span>
-        
-        <span class="params">(<span name="arg0">arg0: AnyRef</span>)</span><span class="result">: <span name="scala.Boolean" class="extype">Boolean</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#notify" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">notify</span>
-        
-        <span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#notifyAll" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
       <a id="notifyAll():Unit"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">notifyAll</span>
-        
-        <span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#numVars" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#numVars" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="numVars:Int"></a>
       <a id="numVars:Int"></a>
       <h4 class="signature">
-      <span class="kind">val</span>
-      <span class="symbol"> 
-        <span class="name">numVars</span>
-        
-        <span class="result">: <span name="scala.Int" class="extype">Int</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numVars</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#productArity" data-isabs="false">
-      <a id="productArity:Int"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">productArity</span>
-        
-        <span class="result">: <span name="scala.Int" class="extype">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → Product</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#productElement" data-isabs="false">
-      <a id="productElement(Int):Any"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">productElement</span>
-        
-        <span class="params">(<span name="arg0">arg0: <span name="scala.Int" class="extype">Int</span></span>)</span><span class="result">: <span name="scala.Any" class="extype">Any</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → Product</dd></dl></div>
-    </li><li visbl="pub" name="scala.Product#productIterator" data-isabs="false">
-      <a id="productIterator:Iterator[Any]"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">productIterator</span>
-        
-        <span class="result">: Iterator[<span name="scala.Any" class="extype">Any</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Product</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#productPrefix" data-isabs="false">
-      <a id="productPrefix:String"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">productPrefix</span>
-        
-        <span class="result">: <span name="java.lang.String" class="extype">String</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → Product</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#role" data-isabs="false">
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#role" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="role:info.kwarc.mmt.api.Role_binding.type"></a>
+      <a id="role:Role_binding.type"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">role</span>
-        
-        <span class="result">: info.kwarc.mmt.api.Role_binding.type</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">role</span><span class="result">: <a href="../Role_binding$.html" class="extype" name="info.kwarc.mmt.api.Role_binding">Role_binding</a>.type</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term#strip" data-isabs="false">
+      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.OMBINDC">OMBINDC</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#strip" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="strip:info.kwarc.mmt.api.objects.Term"></a>
       <a id="strip:Term"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">strip</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">strip</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Obj#subobject" data-isabs="false">
-      <a id="subobject(Position):(Context, Obj)"></a>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Obj#subobject" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="subobject(pos:info.kwarc.mmt.api.objects.Position):(info.kwarc.mmt.api.objects.Context,info.kwarc.mmt.api.objects.Obj)"></a>
+      <a id="subobject(Position):(Context,Obj)"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">subobject</span>
-        
-        <span class="params">(<span name="pos">pos: <a name="info.kwarc.mmt.api.objects.Position" class="extype" href="Position.html">Position</a></span>)</span><span class="result">: (<a name="info.kwarc.mmt.api.objects.Context" class="extype" href="Context.html">Context</a>, <a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a>)</span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">subobject</span><span class="params">(<span name="pos">pos: <a href="Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>)</span><span class="result">: (<a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a>, <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">returns the subobject at a given position and its context; first index of pos is always 0 and is ignored</p><div class="fullcomment"><div class="comment cmt"><p>returns the subobject at a given position and its context; first index of pos is always 0 and is ignored</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
-      <a id="synchronized[T0](⇒ T0):T0"></a>
+      <p class="shortcomment cmt">returns the subobject at a given position and its context; first index of pos is always 0 and is ignored</p><div class="fullcomment"><div class="comment cmt"><p>returns the subobject at a given position and its context; first index of pos is always 0 and is ignored</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">synchronized</span>
-        <span class="tparams">[<span name="T0">T0</span>]</span>
-        <span class="params">(<span name="arg0">arg0: ⇒ T0</span>)</span><span class="result">: T0</span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#toCML" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#toCML" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toCML:scala.xml.Node"></a>
       <a id="toCML:Node"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">toCML</span>
-        
-        <span class="result">: <span name="scala.xml.Node" class="extype">Node</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toCML</span><span class="result">: <span class="extype" name="scala.xml.Node">Node</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → <a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Term#toMPath" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.OMBINDC">OMBINDC</a> → <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Term#toMPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toMPath:info.kwarc.mmt.api.MPath"></a>
       <a id="toMPath:MPath"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">toMPath</span>
-        
-        <span class="result">: <a name="info.kwarc.mmt.api.MPath" class="extype" href="../MPath.html">MPath</a></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toMPath</span><span class="result">: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the syntactically computed MPath of the term.</p><div class="fullcomment"><div class="comment cmt"><p>the syntactically computed MPath of the term.
-If the term is module level, this is guaranteed to be correct.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Obj#toNode" data-isabs="false">
+If the term is module level, this is guaranteed to be correct.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Obj#toNode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toNode:scala.xml.Node"></a>
       <a id="toNode:Node"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">toNode</span>
-        
-        <span class="result">: <span name="scala.xml.Node" class="extype">Node</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toNode</span><span class="result">: <span class="extype" name="scala.xml.Node">Node</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a> → <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#toNodeID" data-isabs="false">
+      <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#toNodeID" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toNodeID(pos:info.kwarc.mmt.api.objects.Position):scala.xml.Elem"></a>
       <a id="toNodeID(Position):Elem"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">toNodeID</span>
-        
-        <span class="params">(<span name="pos">pos: <a name="info.kwarc.mmt.api.objects.Position" class="extype" href="Position.html">Position</a></span>)</span><span class="result">: <span name="scala.xml.Elem" class="extype">Elem</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toNodeID</span><span class="params">(<span name="pos">pos: <a href="Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>)</span><span class="result">: <span class="extype" name="scala.xml.Elem">Elem</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">prints to OpenMath (with OMOBJ wrapper)</p><div class="fullcomment"><div class="comment cmt"><p>prints to OpenMath (with OMOBJ wrapper)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → <a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.Obj#toOBJNode" data-isabs="false">
+      <p class="shortcomment cmt">prints to OpenMath (with OMOBJ wrapper)</p><div class="fullcomment"><div class="comment cmt"><p>prints to OpenMath (with OMOBJ wrapper)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.OMBINDC">OMBINDC</a> → <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Obj#toOBJNode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toOBJNode:scala.xml.Elem"></a>
       <a id="toOBJNode:Elem"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">toOBJNode</span>
-        
-        <span class="result">: <span name="scala.xml.Elem" class="extype">Elem</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toOBJNode</span><span class="result">: <span class="extype" name="scala.xml.Elem">Elem</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.objects.OMBINDC#toString" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.OMBINDC#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
       <a id="toString():String"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">toString</span>
-        
-        <span class="params">()</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="info.kwarc.mmt.api.objects.OMBINDC" class="extype" href="">OMBINDC</a> → AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.OMBINDC">OMBINDC</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">wait</span>
-        
-        <span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
       <a id="wait(Long,Int):Unit"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">wait</span>
-        
-        <span class="params">(<span name="arg0">arg0: <span name="scala.Long" class="extype">Long</span></span>, <span name="arg1">arg1: <span name="scala.Int" class="extype">Int</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
       <a id="wait(Long):Unit"></a>
       <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name">wait</span>
-        
-        <span class="params">(<span name="arg0">arg0: <span name="scala.Long" class="extype">Long</span></span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
     </li></ol>
             </div>
 
-        <div class="values members" id="values">
-              <h3>Deprecated Value Members</h3>
-              <ol><li visbl="pub" name="scala.Product#productElements" data-isabs="false">
-      <a id="productElements:Iterator[Any]"></a>
-      <h4 class="signature">
-      <span class="kind">def</span>
-      <span class="symbol"> 
-        <span class="name deprecated">productElements</span>
         
-        <span class="result">: Iterator[<span name="scala.Any" class="extype">Any</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Product</dd><dt>Annotations</dt><dd>
-                <span class="name">@deprecated</span>
-              
-        </dd><dt>Deprecated</dt><dd class="cmt"><p>use productIterator instead</p></dd></dl></div>
-    </li></ol>
-            </div>
 
-        <div name="scala.Serializable" class="parent">
-              <h3>Inherited from <span name="scala.Serializable" class="extype">Serializable</span></h3>
-            </div><div name="java.io.Serializable" class="parent">
-              <h3>Inherited from <span name="java.io.Serializable" class="extype">Serializable</span></h3>
-            </div><div name="scala.Product" class="parent">
-              <h3>Inherited from <span name="scala.Product" class="extype">Product</span></h3>
-            </div><div name="scala.Equals" class="parent">
-              <h3>Inherited from <span name="scala.Equals" class="extype">Equals</span></h3>
-            </div><div name="info.kwarc.mmt.api.objects.Term" class="parent">
-              <h3>Inherited from <a name="info.kwarc.mmt.api.objects.Term" class="extype" href="Term.html">Term</a></h3>
-            </div><div name="info.kwarc.mmt.api.objects.Obj" class="parent">
-              <h3>Inherited from <a name="info.kwarc.mmt.api.objects.Obj" class="extype" href="Obj.html">Obj</a></h3>
-            </div><div name="info.kwarc.mmt.api.objects.ClientProperties" class="parent">
-              <h3>Inherited from <a name="info.kwarc.mmt.api.objects.ClientProperties" class="extype" href="ClientProperties.html">ClientProperties</a></h3>
-            </div><div name="info.kwarc.mmt.api.metadata.HasMetaData" class="parent">
-              <h3>Inherited from <a name="info.kwarc.mmt.api.metadata.HasMetaData" class="extype" href="../metadata/HasMetaData.html">HasMetaData</a></h3>
-            </div><div name="info.kwarc.mmt.api.ontology.BaseType" class="parent">
-              <h3>Inherited from <a name="info.kwarc.mmt.api.ontology.BaseType" class="extype" href="../ontology/BaseType.html">BaseType</a></h3>
-            </div><div name="info.kwarc.mmt.api.Content" class="parent">
-              <h3>Inherited from <a name="info.kwarc.mmt.api.Content" class="extype" href="../Content.html">Content</a></h3>
-            </div><div name="scala.AnyRef" class="parent">
-              <h3>Inherited from AnyRef</h3>
-            </div><div name="scala.Any" class="parent">
-              <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.Product">
+              <h3>Inherited from <span class="extype" name="scala.Product">Product</span></h3>
+            </div><div class="parent" name="scala.Equals">
+              <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.objects.Term">
+              <h3>Inherited from <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.objects.Obj">
+              <h3>Inherited from <a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.objects.ClientProperties">
+              <h3>Inherited from <a href="ClientProperties.html" class="extype" name="info.kwarc.mmt.api.objects.ClientProperties">ClientProperties</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.metadata.HasMetaData">
+              <h3>Inherited from <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.ontology.BaseType">
+              <h3>Inherited from <a href="../ontology/BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.Content">
+              <h3>Inherited from <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
 
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

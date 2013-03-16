@@ -2,142 +2,188 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>info.kwarc.mmt.api.pragmatics</title>
+          <title>pragmatics - MMT - info.kwarc.mmt.api.pragmatics</title>
+          <meta name="description" content="pragmatics - MMT - info.kwarc.mmt.api.pragmatics" />
+          <meta name="keywords" content="pragmatics MMT info.kwarc.mmt.api.pragmatics" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
       <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../../../../../lib/template.js"></script>
       <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.pragmatics.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
     
         </head>
         <body class="value">
       <div id="definition">
         <img src="../../../../../lib/package_big.png" />
-        <p id="owner"><a name="info" class="extype" href="../../../../package.html">info</a>.<a name="info.kwarc" class="extype" href="../../../package.html">kwarc</a>.<a name="info.kwarc.mmt" class="extype" href="../../package.html">mmt</a>.<a name="info.kwarc.mmt.api" class="extype" href="../package.html">api</a></p>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
         <h1>pragmatics</h1>
       </div>
 
-      <h4 class="signature" id="signature">
-      <span class="kind">package</span>
-      <span class="symbol"> 
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
         <span class="name">pragmatics</span>
-        
-        
       </span>
       </h4>
       
-          <div class="fullcommenttop" id="comment"></div>
+          <div id="comment" class="fullcommenttop"></div>
         
 
-      <div id="template">
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
 
-        <div id="mbrsel">
-          <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
-          
-          
-          <div id="visbl">
-              <span class="filtertype">Visibility</span>
-              <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.pragmatics.Application" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ApplicationextendsFeature"></a>
+      <a id="Application:Application"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Application.html"><span class="name">Application</span></a><span class="result"> extends <a href="Feature.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Feature">Feature</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.pragmatics.Equality" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="EqualityextendsFeature"></a>
+      <a id="Equality:Equality"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Equality.html"><span class="name">Equality</span></a><span class="result"> extends <a href="Feature.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Feature">Feature</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.pragmatics.Feature" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="FeatureextendsObject"></a>
+      <a id="Feature:Feature"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Feature.html"><span class="name">Feature</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.pragmatics.HOAS" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="HOASextendsFeaturewithApplication"></a>
+      <a id="HOAS:HOAS"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="HOAS.html"><span class="name">HOAS</span></a><span class="result"> extends <a href="Feature.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Feature">Feature</a> with <a href="Application.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Application">Application</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.pragmatics.PragmaticStore" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PragmaticStoreextendsObject"></a>
+      <a id="PragmaticStore:PragmaticStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PragmaticStore.html"><span class="name">PragmaticStore</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.pragmatics.Pragmatics" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PragmaticsextendsObject"></a>
+      <a id="Pragmatics:Pragmatics"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Pragmatics.html"><span class="name">Pragmatics</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.pragmatics.Typing" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TypingextendsFeature"></a>
+      <a id="Typing:Typing"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Typing.html"><span class="name">Typing</span></a><span class="result"> extends <a href="Feature.html" class="extype" name="info.kwarc.mmt.api.pragmatics.Feature">Feature</a></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
             </div>
         </div>
 
-        
-
-        <div class="types members" id="types">
-              <h3>Type Members</h3>
-              <ol><li visbl="pub" name="info.kwarc.mmt.api.pragmatics.Application" data-isabs="true">
-      <a id="Application:Application"></a>
-      <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="Application.html"><span class="name">Application</span></a>
-        
-        <span class="result"> extends Feature</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.pragmatics.Equality" data-isabs="true">
-      <a id="Equality:Equality"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Equality.html"><span class="name">Equality</span></a>
-        
-        <span class="result"> extends Feature</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.pragmatics.Feature" data-isabs="true">
-      <a id="Feature:Feature"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Feature.html"><span class="name">Feature</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
-    </li><li visbl="pub" name="info.kwarc.mmt.api.pragmatics.HOAS" data-isabs="true">
-      <a id="HOAS:HOAS"></a>
-      <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="HOAS.html"><span class="name">HOAS</span></a>
-        
-        <span class="result"> extends Feature with Application</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.pragmatics.PragmaticStore" data-isabs="false">
-      <a id="PragmaticStore:PragmaticStore"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="PragmaticStore.html"><span class="name">PragmaticStore</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.pragmatics.Pragmatics" data-isabs="false">
-      <a id="Pragmatics:Pragmatics"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Pragmatics.html"><span class="name">Pragmatics</span></a>
-        
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="info.kwarc.mmt.api.pragmatics.Typing" data-isabs="true">
-      <a id="Typing:Typing"></a>
-      <h4 class="signature">
-      <span class="kind">class</span>
-      <span class="symbol"> 
-        <a href="Typing.html"><span class="name">Typing</span></a>
-        
-        <span class="result"> extends Feature</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>abstract </dd></dl></div>
-    </li></ol>
-            </div>
-        
-        
-
-        
-
-        
-
-        
-
       </div>
-      
+
       <div id="tooltip"></div>
-      
+
+      <div id="footer">  </div>
+
+
     </body>
       </html>

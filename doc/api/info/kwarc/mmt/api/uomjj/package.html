@@ -1,0 +1,822 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>uom - MMT - info.kwarc.mmt.api.uom</title>
+          <meta name="description" content="uom - MMT - info.kwarc.mmt.api.uom" />
+          <meta name="keywords" content="uom MMT info.kwarc.mmt.api.uom" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.uom.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a></p>
+        <h1>uom</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">uom</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.uom.AbbrevRule" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AbbrevRuleextendsRulewithProductwithSerializable"></a>
+      <a id="AbbrevRule:AbbrevRule"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="AbbrevRule.html"><span class="name">AbbrevRule</span></a><span class="params">(<span name="op">op: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="term">term: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">An AbbrevRule expands a symbol into a term
+</p>
+    </li><li name="info.kwarc.mmt.api.uom.Antonym" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AntonymextendsDepthRuleUnary"></a>
+      <a id="Antonym:Antonym"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Antonym.html"><span class="name">Antonym</span></a><span class="result"> extends <a href="DepthRuleUnary.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRuleUnary">DepthRuleUnary</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">the antony of a predicate under negation</p>
+    </li><li name="info.kwarc.mmt.api.uom.Association" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AssociationextendsDepthRule"></a>
+      <a id="Association:Association"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Association.html"><span class="name">Association</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Associativity</p>
+    </li><li name="info.kwarc.mmt.api.uom.Attractor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AttractorextendsDepthRule"></a>
+      <a id="Attractor:Attractor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Attractor.html"><span class="name">Attractor</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">An attractor element</p>
+    </li><li name="info.kwarc.mmt.api.uom.BooleanLattice" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BooleanLatticeextendsRuleSet"></a>
+      <a id="BooleanLattice:BooleanLattice"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BooleanLattice.html"><span class="name">BooleanLattice</span></a><span class="result"> extends <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.uom.RuleSet">RuleSet</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BooleanLattice packages the simplification rules that yield normalization in a Boolean lattice</p>
+    </li><li name="info.kwarc.mmt.api.uom.BoundedSemiLattice" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BoundedSemiLatticeextendsMonoid"></a>
+      <a id="BoundedSemiLattice:BoundedSemiLattice"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BoundedSemiLattice.html"><span class="name">BoundedSemiLattice</span></a><span class="result"> extends <a href="Monoid.html" class="extype" name="info.kwarc.mmt.api.uom.Monoid">Monoid</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BoundedSemiLattice packages the simplification rules that yield normalization in a bounded semilattice.</p>
+    </li><li name="info.kwarc.mmt.api.uom.BreadthRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="BreadthRuleextendsRule"></a>
+      <a id="BreadthRule:BreadthRule"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BreadthRule.html"><span class="name">BreadthRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BreadthRule looks at all arguments of an operator, but usually does not look inside them</p>
+    </li><li name="info.kwarc.mmt.api.uom.CGroup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CGroupextendsGroup"></a>
+      <a id="CGroup:CGroup"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CGroup.html"><span class="name">CGroup</span></a><span class="result"> extends <a href="Group.html" class="extype" name="info.kwarc.mmt.api.uom.Group">Group</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A CGroup packages the simplification rules that yield normalization in a commutative group.</p>
+    </li><li name="info.kwarc.mmt.api.uom.CRing" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CRingextendsRing"></a>
+      <a id="CRing:CRing"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CRing.html"><span class="name">CRing</span></a><span class="result"> extends <a href="Ring.html" class="extype" name="info.kwarc.mmt.api.uom.Ring">Ring</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A CRing packages the simplification rules that yield normalization in a commutative ring (as a sum of products).</p>
+    </li><li name="info.kwarc.mmt.api.uom.Change" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ChangeextendsObject"></a>
+      <a id="Change:Change"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Change.html"><span class="name">Change</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">The return type of a simplification rule</p>
+    </li><li name="info.kwarc.mmt.api.uom.Collect" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CollectextendsBreadthRule"></a>
+      <a id="Collect:Collect"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Collect.html"><span class="name">Collect</span></a><span class="result"> extends <a href="BreadthRule.html" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Collection and counting of quantities that are integer multiples of the same base</p>
+    </li><li name="info.kwarc.mmt.api.uom.Commutative" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CommutativeextendsBreadthRule"></a>
+      <a id="Commutative:Commutative"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Commutative.html"><span class="name">Commutative</span></a><span class="result"> extends <a href="BreadthRule.html" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Commutativity of op</p>
+    </li><li name="info.kwarc.mmt.api.uom.Complement" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ComplementextendsBreadthRule"></a>
+      <a id="Complement:Complement"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Complement.html"><span class="name">Complement</span></a><span class="result"> extends <a href="BreadthRule.html" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Complementation</p>
+    </li><li name="info.kwarc.mmt.api.uom.ConstantScala" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ConstantScalaextendsObject"></a>
+      <a id="ConstantScala:ConstantScala"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ConstantScala.html"><span class="name">ConstantScala</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.DepthRule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DepthRuleextendsRule"></a>
+      <a id="DepthRule:DepthRule"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DepthRule.html"><span class="name">DepthRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A DepthRule looks one level deep into the structure of one of the arguments of an operator</p>
+    </li><li name="info.kwarc.mmt.api.uom.DepthRuleUnary" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DepthRuleUnaryextendsDepthRule"></a>
+      <a id="DepthRuleUnary:DepthRuleUnary"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DepthRuleUnary.html"><span class="name">DepthRuleUnary</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A DepthRuleUnary is the special case of a DepthRule where the outer operator is unary</p>
+    </li><li name="info.kwarc.mmt.api.uom.Distribution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DistributionextendsDepthRule"></a>
+      <a id="Distribution:Distribution"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Distribution.html"><span class="name">Distribution</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Distributivity</p>
+    </li><li name="info.kwarc.mmt.api.uom.DocumentScala" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DocumentScalaextendsObject"></a>
+      <a id="DocumentScala:DocumentScala"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="DocumentScala.html"><span class="name">DocumentScala</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.ExtractError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ExtractErrorextendsErrorwithProductwithSerializable"></a>
+      <a id="ExtractError:ExtractError"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ExtractError.html"><span class="name">ExtractError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.GlobalChange" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GlobalChangeextendsChangewithProductwithSerializable"></a>
+      <a id="GlobalChange:GlobalChange"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="GlobalChange.html"><span class="name">GlobalChange</span></a><span class="params">(<span name="it">it: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A GlobalChange changes the structure of a term.</p>
+    </li><li name="info.kwarc.mmt.api.uom.Group" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GroupextendsMonoid"></a>
+      <a id="Group:Group"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Group.html"><span class="name">Group</span></a><span class="result"> extends <a href="Monoid.html" class="extype" name="info.kwarc.mmt.api.uom.Monoid">Monoid</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Group packages the simplification rules that yield normalization in a group.</p>
+    </li><li name="info.kwarc.mmt.api.uom.Homomorphism" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="HomomorphismextendsDepthRuleUnary"></a>
+      <a id="Homomorphism:Homomorphism"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Homomorphism.html"><span class="name">Homomorphism</span></a><span class="result"> extends <a href="DepthRuleUnary.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRuleUnary">DepthRuleUnary</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A homomorphism interacting with an operation</p>
+    </li><li name="info.kwarc.mmt.api.uom.Idempotent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="IdempotentextendsBreadthRule"></a>
+      <a id="Idempotent:Idempotent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Idempotent.html"><span class="name">Idempotent</span></a><span class="result"> extends <a href="BreadthRule.html" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Idempotency of an operation (e.</p>
+    </li><li name="info.kwarc.mmt.api.uom.Implementation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ImplementationextendsBreadthRule"></a>
+      <a id="Implementation:Implementation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Implementation.html"><span class="name">Implementation</span></a><span class="result"> extends <a href="BreadthRule.html" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.Involution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InvolutionextendsDepthRuleUnary"></a>
+      <a id="Involution:Involution"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Involution.html"><span class="name">Involution</span></a><span class="result"> extends <a href="DepthRuleUnary.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRuleUnary">DepthRuleUnary</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a self-inverse function</p>
+    </li><li name="info.kwarc.mmt.api.uom.Lambda" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LambdaextendsObject"></a>
+      <a id="Lambda:Lambda"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Lambda.html"><span class="name">Lambda</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">beta and eta reduction</p>
+    </li><li name="info.kwarc.mmt.api.uom.LocalChange" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LocalChangeextendsChangewithProductwithSerializable"></a>
+      <a id="LocalChange:LocalChange"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="LocalChange.html"><span class="name">LocalChange</span></a><span class="params">(<span name="inside">inside: <span class="extype" name="scala.List">List</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result"> extends <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A LocalChange leaves the structure of a term unchanged, but changes its arguments</p>
+    </li><li name="info.kwarc.mmt.api.uom.Monoid" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MonoidextendsSemigroup"></a>
+      <a id="Monoid:Monoid"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Monoid.html"><span class="name">Monoid</span></a><span class="result"> extends <a href="Semigroup.html" class="extype" name="info.kwarc.mmt.api.uom.Semigroup">Semigroup</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Monoid packages the simplification rules that yield normalization in a monoid.</p>
+    </li><li name="info.kwarc.mmt.api.uom.MonoidAction" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MonoidActionextendsDepthRule"></a>
+      <a id="MonoidAction:MonoidAction"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MonoidAction.html"><span class="name">MonoidAction</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Additional rules for a monoid acting on a set</p>
+    </li><li name="info.kwarc.mmt.api.uom.Neutral" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NeutralextendsDepthRule"></a>
+      <a id="Neutral:Neutral"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Neutral.html"><span class="name">Neutral</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A neutral element</p>
+    </li><li name="info.kwarc.mmt.api.uom.Projection" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ProjectionextendsDepthRuleUnary"></a>
+      <a id="Projection:Projection"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Projection.html"><span class="name">Projection</span></a><span class="result"> extends <a href="DepthRuleUnary.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRuleUnary">DepthRuleUnary</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a projective function</p>
+    </li><li name="info.kwarc.mmt.api.uom.Ring" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RingextendsCGroup"></a>
+      <a id="Ring:Ring"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Ring.html"><span class="name">Ring</span></a><span class="result"> extends <a href="CGroup.html" class="extype" name="info.kwarc.mmt.api.uom.CGroup">CGroup</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Ring packages the simplification rules that yield normalization in a ring (as a sum of products).</p>
+    </li><li name="info.kwarc.mmt.api.uom.Rule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RuleextendsObject"></a>
+      <a id="Rule:Rule"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Rule.html"><span class="name">Rule</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a type to unify BreadRule's and DepthRule's</p>
+    </li><li name="info.kwarc.mmt.api.uom.RuleSet" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RuleSetextendsObject"></a>
+      <a id="RuleSet:RuleSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RuleSet.html"><span class="name">RuleSet</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A RuleSet groups some Rule's.</p>
+    </li><li name="info.kwarc.mmt.api.uom.Semigroup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SemigroupextendsRuleSet"></a>
+      <a id="Semigroup:Semigroup"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Semigroup.html"><span class="name">Semigroup</span></a><span class="result"> extends <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.uom.RuleSet">RuleSet</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Semigroup packages the simplification rules that yield normalization in a semigroup.</p>
+    </li><li name="info.kwarc.mmt.api.uom.SemigroupAction" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SemigroupActionextendsDepthRule"></a>
+      <a id="SemigroupAction:SemigroupAction"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SemigroupAction.html"><span class="name">SemigroupAction</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A semigroup acting on a set</p>
+    </li><li name="info.kwarc.mmt.api.uom.Sign" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SignextendsDepthRule"></a>
+      <a id="Sign:Sign"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Sign.html"><span class="name">Sign</span></a><span class="result"> extends <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Signs in a product</p>
+    </li><li name="info.kwarc.mmt.api.uom.TheoryScala" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TheoryScalaextendsObject"></a>
+      <a id="TheoryScala:TheoryScala"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="TheoryScala.html"><span class="name">TheoryScala</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.TheoryScalaAux" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TheoryScalaAuxextendsObject"></a>
+      <a id="TheoryScalaAux:TheoryScalaAux"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="TheoryScalaAux.html"><span class="name">TheoryScalaAux</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.UOM" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UOMextendsStatelessTraverser"></a>
+      <a id="UOM:UOM"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="UOM.html"><span class="name">UOM</span></a><span class="result"> extends <a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term</p>
+    </li><li name="info.kwarc.mmt.api.uom.UOMError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UOMErrorextendsThrowablewithProductwithSerializable"></a>
+      <a id="UOMError:UOMError"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="UOMError.html"><span class="name">UOMError</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.UnaryInverse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UnaryInverseextendsObject"></a>
+      <a id="UnaryInverse:UnaryInverse"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="UnaryInverse.html"><span class="name">UnaryInverse</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A class that defines several rules for a unary inverse operator in an algebraic theory</p>
+    </li><li name="info.kwarc.mmt.api.uom.Unimplemented" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UnimplementedextendsThrowablewithProductwithSerializable"></a>
+      <a id="Unimplemented:Unimplemented"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Unimplemented.html"><span class="name">Unimplemented</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.ViewScala" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ViewScalaextendsRuleSetwithTheoryScala"></a>
+      <a id="ViewScala:ViewScala"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ViewScala.html"><span class="name">ViewScala</span></a><span class="result"> extends <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.uom.RuleSet">RuleSet</a> with <a href="TheoryScala.html" class="extype" name="info.kwarc.mmt.api.uom.TheoryScala">TheoryScala</a></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="info.kwarc.mmt.api.uom.Changed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Changed"></a>
+      <a id="Changed:Changed"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Changed$.html"><span class="name">Changed</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
+UOM uses it to remember whether a Term underwent a GlobalChange during simplification
+this information is passed upwards during recursive simplification
+</p>
+    </li><li name="info.kwarc.mmt.api.uom.ConstantScala" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConstantScala"></a>
+      <a id="ConstantScala:ConstantScala"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ConstantScala$.html"><span class="name">ConstantScala</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.Extractor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Extractor"></a>
+      <a id="Extractor:Extractor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Extractor$.html"><span class="name">Extractor</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.Implementation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Implementation"></a>
+      <a id="Implementation:Implementation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Implementation$.html"><span class="name">Implementation</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.NoChange" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NoChange"></a>
+      <a id="NoChange:NoChange"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NoChange$.html"><span class="name">NoChange</span></a><span class="result"> extends <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">no change</p>
+    </li><li name="info.kwarc.mmt.api.uom.Scala" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Scala"></a>
+      <a id="Scala:Scala"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Scala$.html"><span class="name">Scala</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">apply/unapply methods for the constructor Scala(code: String): Term to represent escaped Scala code in an MMT Term</p>
+    </li><li name="info.kwarc.mmt.api.uom.ScalaLambda" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ScalaLambda"></a>
+      <a id="ScalaLambda:ScalaLambda"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ScalaLambda$.html"><span class="name">ScalaLambda</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.Simplified" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Simplified"></a>
+      <a id="Simplified:Simplified"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Simplified$.html"><span class="name">Simplified</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
+UOM uses it to remember that a Term has been simplified already to avoid recursing into it again
+</p>
+    </li><li name="info.kwarc.mmt.api.uom.Synthesizer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Synthesizer"></a>
+      <a id="Synthesizer:Synthesizer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Synthesizer$.html"><span class="name">Synthesizer</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.UnitConvImplems" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UnitConvImplems"></a>
+      <a id="UnitConvImplems:UnitConvImplems"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="UnitConvImplems$.html"><span class="name">UnitConvImplems</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.experimental" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="experimental"></a>
+      <a id="experimental:experimental"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="experimental/package.html"><span class="name">experimental</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
