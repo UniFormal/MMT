@@ -554,7 +554,7 @@ object Export {
 		val source : File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc"))		
 		val target : File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2ToOWL.owl"))
 		
-		val doc : DPath  = controller.read(source)
+		val doc : DPath  = controller.read(source)._1.path
 		
 		def writeToFile(iri : IRI, trg : File) {
 			val onto = manager.getOntology(iri)

@@ -5,6 +5,8 @@ import info.kwarc.mmt.api.backend._
 import utils.File
 import utils.FileConversion._
 
+import info.kwarc.mmt.twelf._
+
 import java.io._
 import scala.collection.mutable.HashSet
 

@@ -60,8 +60,8 @@ object Diff{
 	//val olderVersion : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDs.omdoc")
     //val currentVersion : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDsChanged.omdoc")
                 
-    val olderDoc : DPath  = firstController.read(olderVersion)
-    val currentDoc : DPath = secondController.read(currentVersion)
+    val olderDoc : DPath  = firstController.read(olderVersion)._1.path
+    val currentDoc : DPath = secondController.read(currentVersion)._1.path
         
     var diff = Differ.diff(firstController, secondController, olderDoc, currentDoc)
 //    println(diff.toNode.toString())

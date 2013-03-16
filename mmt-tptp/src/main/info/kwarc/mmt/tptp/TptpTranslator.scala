@@ -108,7 +108,7 @@ class TptpTranslator {
         case e: AddError =>
           if (e.toString.endsWith("already exists")) {
             x match {
-              case c: Constant => TptpTranslator.add(new Constant(c.home,
+              case c: Constant => TptpTranslator.add(Constant(c.home,
                 LocalName(c.name.last + "_rule"), None, c.tp, c.df, c.rl, c.not))
               case _ =>
                 println("Error adding " + x.toString)
@@ -199,7 +199,7 @@ class TptpTranslator {
               case Axiom | Conjecture => OMA(TptpUtils.t, x::Nil)
               case _ => x
             }
-            Some(new Constant(OMMOD(theoryPath),
+            Some(Constant(OMMOD(theoryPath),
                               LocalName(item.getName), None, Some(tp),
                               None, None, None))
           case None => None
@@ -306,7 +306,7 @@ class TptpTranslator {
     else
       conType = TptpUtils.term
     if (!constants.contains(name)) {
-      val con = new Constant(OMMOD(theoryPath),
+      val con = Constant(OMMOD(theoryPath),
                              LocalName(name), None, Some(conType),
                              None, None, None)
       constants.put(name, con)

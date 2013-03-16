@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="trunk/src/main"/>
+	<classpathentry kind="lib" path="trunk/MizarToOMDoc.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/mmt/mmt-api.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/mmt/mmt-lf.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/mmt/mmt-lfs.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

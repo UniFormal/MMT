@@ -32,7 +32,7 @@ class TptpTwelfCompiler extends Compiler {
      super.init(con, Nil)
   }
 
-  override def compile(in : File, out : File) : List[SourceError] = {
+  override def compile(in : File, dpath: Option[DPath], out : File) : List[SourceError] = {
     var errors: List[SourceError] = Nil    
    
    // should be  .../TPTP/TPTP2X  

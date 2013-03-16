@@ -119,7 +119,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	        }
 	      } else
 	    	n
-		val constant = new Constant(OMMOD(currThy), name, None, Some(tp), None, None, None)
+		val constant = Constant(OMMOD(currThy), name, None, Some(tp), None, None, None)
 		//theory name: ex, class name:woman, type, none for definition
 		constant.metadata = md
 		controller.add(constant)
@@ -597,7 +597,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 class OWLCompiler extends Compiler {
    def isApplicable(src : String): Boolean = { src == "owl" }
    override def includeFile(f:  String) = f.endsWith("owl")
-   def compile(in: utils.File, out: utils.File) : List[SourceError] = {
+   def compile(in: utils.File, dpath: Option[DPath], out: utils.File) : List[SourceError] = {
        val source : File = in
        val target : File = out.setExtension("omdoc")
       

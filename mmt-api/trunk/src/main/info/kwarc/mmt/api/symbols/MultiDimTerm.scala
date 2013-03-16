@@ -12,7 +12,7 @@ class TermDimension {
 
 /** TermContainer acts as the interface between the structural and the object level
  * 
- * Elements like [[info.kwarc.mmt.api.symbols.Constant]] that have a [[info.kwarc.mmt.api.object.Term]] as a component
+ * Elements like [[info.kwarc.mmt.api.symbols.Constant]] that have a [[info.kwarc.mmt.api.objects.Term]] as a component
  * will not declare a term directly but a TermContainer.
  * 
  * TermContainer keeps track of different syntactic representations of the same semantic term.

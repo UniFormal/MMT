@@ -1,4 +1,4 @@
-package info.kwarc.mmt.lf
+package info.kwarc.mmt.twelf
 
 import zgs.httpd._
 import zgs.httpd.let._

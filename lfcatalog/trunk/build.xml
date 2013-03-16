@@ -33,7 +33,7 @@
     <target name="build" depends="compile">
         <jar destfile="${ant.project.name}.jar">
             <manifest>
-                <attribute name="Main-Class" value="info.kwarc.mmt.lf.Run"/>
+                <attribute name="Main-Class" value="info.kwarc.mmt.twelf.Run"/>
             </manifest>
             <fileset dir="bin"/>
             <fileset dir="resources"/>

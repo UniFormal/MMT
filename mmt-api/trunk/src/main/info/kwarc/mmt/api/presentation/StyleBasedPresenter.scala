@@ -57,7 +57,7 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
 /** The presentation class
  * @param controller the controller storing all information about MMT expressions and notations
  * @param report the logging handler
- * @parem style the notation style used for presentation
+ * @param style the notation style used for presentation
  */
 class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with Logger {
    init(c, Nil)
