@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mmt-api" default="scaladoc" basedir=".">
+
+    <path id="classpath">
+        <fileset dir="deploy/lib/">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="src/mmt-owl/lib/">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="src/jEdit-mmt/lib/">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="src/mmt-tptp/lib/">
+          <include name="*.jar"/>
+        </fileset>
+    	<pathelement location="src/mmt-api/trunk/lib/jfxrt.jar"/>
+        <pathelement location="deploy/lfcatalog/lfcatalog.jar"/>
+    </path>
+
+    <taskdef resource="scala/tools/ant/antlib.xml" classpathref="classpath"/>
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="scaladoc" depends="init">
+        <mkdir dir="doc/api"/>
+        <scaladoc destdir="doc/api" doctitle="MMT" srcdir="." classpathref="classpath">
+            <include name="src/mmt-api/trunk/src/**/*.scala"/>
+            <include name="src/mmt-lf/src/**/*.scala"/>
+        	<include name="src/jEdit-mmt/src/**/*.scala"/>
+        	<include name="src/latex-mmt/src/**/*.scala"/>
+            <exclude name="src/mmt-mizar/trunk/src/**/*.scala"/>
+            <include name="src/mmt-owl/src/**/*.scala"/>
+            <include name="src/mmt-tptp/src/**/*.scala"/>
+        </scaladoc>
+    </target>
+
+</project>
