@@ -46,20 +46,20 @@ class Pragmatics(controller: Controller) {
       }
       
    }
-   def strictBinding(theory: MPath, binder: Term, context: Context, scope: Term): Term = {
+   def strictBinding(theory: MPath, binder: Term, context: Context, scopes: List[Term]): Term = {
       lup.getTheory(theory) match {
          case d: DeclaredTheory => d.meta match {
-            case None => OMBIND(binder, context, scope)
+            case None => OMBINDC(binder, context, scopes)
             case Some(meta) =>
                ps.getHOAS(meta) match {
                   case None =>
-                     strictBinding(meta, binder, context, scope)
+                     strictBinding(meta, binder, context, scopes)
                   case Some(h) =>
-                     val arg = strictBinding(meta, OMID(h.lambda), context, scope)
+                     val arg = strictBinding(meta, OMID(h.lambda), context, scopes)
                      strictApplication(meta, OMID(h.apply), List(binder, arg))
                }
          }
-         case d: DefinedTheory => OMBIND(binder, context, scope) //TODO what to do here?
+         case d: DefinedTheory => OMBINDC(binder, context, scopes) //TODO what to do here?
       }
    }
    def pragmaticHead(t: Term) : Term = t match {

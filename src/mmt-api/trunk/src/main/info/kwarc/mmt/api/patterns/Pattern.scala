@@ -19,6 +19,7 @@ import scala.io.Source
  * @param body   the body of the declaration pattern that consists of symbol declarations             
  */
 class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val not: Option[TextNotation]) extends Symbol {
+   override val parameters = params
    def toNode =
      <pattern name={name.toPath}>
    		{if (! params.isEmpty)

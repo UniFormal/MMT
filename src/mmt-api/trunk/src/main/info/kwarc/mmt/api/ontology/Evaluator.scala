@@ -93,7 +93,7 @@ class Evaluator(controller: Controller) {
          val found = extman.getFoundation(mt).getOrElse(throw GetError("no applicable type inference engine defined"))
          evaluateESet(of) foreach {
             case List(o) => o match { 
-               case OMBINDC(`free`, cont, _, obj) =>
+               case OMBIND(`free`, cont, obj) =>
                  res += List(found.inference(obj, cont)(lup))
                case t: Term => res += List(found.inference(t, Context())(lup))
                case o => throw GetError("object exists but is not a term: " + o)

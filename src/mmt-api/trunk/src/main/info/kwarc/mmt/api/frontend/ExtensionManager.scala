@@ -56,7 +56,7 @@ class ExtensionManager(controller: Controller) {
           val Pl = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Plugin]]
           Pl.newInstance
        } catch {
-          case e : java.lang.Throwable => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
+          case e : java.lang.Exception => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
        addPlugin(pl, args)
    }
@@ -67,7 +67,7 @@ class ExtensionManager(controller: Controller) {
           val Ext = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Extension]]
           Ext.newInstance
        } catch {
-          case e : java.lang.Throwable => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
+          case e : java.lang.Exception => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
        ext.init(controller, args)
        if (ext.isInstanceOf[Compiler]) {

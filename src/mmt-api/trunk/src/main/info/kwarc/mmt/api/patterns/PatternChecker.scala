@@ -144,14 +144,14 @@ class Matcher(controller : Controller, var metaContext : Context) {
             // OM symbol
             case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b), con)
             // conditional binder
-            case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => 
+            case (OMBINDC(b1, ctx1, scopes1), OMBINDC(b2,ctx2,scopes2)) => 
               val res1 = apply(b1,b2,con) 
-              val res2 = apply(cond1,cond2,con ++ ctx1)  
-              val res3 = apply(bod1,bod2,con ++ ctx1)
-              (res1,res2,res3) match {
-                case (Some(a), Some(b), Some(c)) => Some(a ++ b ++ c)
-                case _ => None
+              val res2 = scopes1.zip(scopes2).map {
+                 case (s1,s2) => apply(s1,s2,con ++ ctx1)
               }
+              if (res1.isDefined && res2.forall(_.isDefined))
+                 Some(res2.foldLeft(res1.get) {case (x,y) => x ++ y.get})
+              else None
             // var to anything  
             case (OMV(v), x) => if (metaContext.isDeclared(v)) Some(Substitution(Sub("OMV to Term", OMV(v)))) else None 
             // check if constant and variable types are the same                        

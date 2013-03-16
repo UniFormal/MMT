@@ -317,7 +317,7 @@ class Controller extends ROController with Logger {
        try {a}
        catch {
     	   case e : info.kwarc.mmt.api.Error => report(e)
-         case e : java.lang.Throwable => report("error", e.getMessage)
+         case e : java.lang.Exception => report("error", e.getMessage)
        }
    }
    /** executes a string command */

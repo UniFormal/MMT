@@ -257,15 +257,15 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   if (finalVars == Nil && scopes == Nil) {
                      // no vars, scopes --> OMA
                      prag.strictApplication(con.module.toMPath, head, finalArgs)
-                  } else if (finalVars != Nil && scopes.length == 1) {
+                  } else if (finalVars != Nil) {
                      val context = Context(finalVars : _*)
                      if (finalArgs == Nil) {
                         //some vars, and 1 scope --> OMBIND
-                        prag.strictBinding(con.module.toMPath, head, context, scopes(0)._2)
+                        prag.strictBinding(con.module.toMPath, head, context, scopes.map(_._2))
                      } else {
                         //some args, some vars, and 1 scope --> OMBIND with OMA
                         val binder = prag.strictApplication(con.module.toMPath, head, finalArgs)
-                        prag.strictBinding(con.module.toMPath, binder, context, scopes(0)._2)
+                        prag.strictBinding(con.module.toMPath, binder, context, scopes.map(_._2))
                      }
                   } else
                      //not all combinations correspond to Terms

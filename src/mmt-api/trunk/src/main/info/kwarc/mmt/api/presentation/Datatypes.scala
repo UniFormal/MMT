@@ -50,6 +50,22 @@ case object Right extends Associativity("right")
  * InfInt: integers with positive and negative infinity
 */
 sealed abstract class InfInt(s: String) {
+
+   /**
+    * sum
+    * satisfies x + (- x) = 0
+    */
+   def +(that : InfInt) : InfInt =
+     (this, that) match {
+        case (Infinite, NegInfinite) => Finite(0)
+        case (NegInfinite, Infinite) => Finite(0)
+        case (Infinite,_) => Infinite
+        case (_, Infinite) => Infinite
+        case (NegInfinite, _) => NegInfinite
+        case (_,NegInfinite) => NegInfinite
+        case (Finite(a), Finite(b)) => Finite(a+b)
+      }
+   def +(i: Int): InfInt = this + Finite(i)  
    /**
     * difference
     * satisfies x - x = 0
@@ -63,6 +79,7 @@ sealed abstract class InfInt(s: String) {
         case (_, NegInfinite) => Infinite
         case (Finite(a), Finite(b)) => Finite(a-b)
       }
+   def -(i: Int): InfInt = this - Finite(i)
    /**
     * true if (non-zero and) positive
     */
@@ -111,6 +128,7 @@ sealed case class Precedence(prec : InfInt, loseTie : Boolean) {
         loseTie && ! that.loseTie
       else false
    }
+   def +(i: Int) = Precedence(prec+i, loseTie)
    override def toString = prec.toString + (if (loseTie) "*" else "")
 }
 /** helper object for precedences */
