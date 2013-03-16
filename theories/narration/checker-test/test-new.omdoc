@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<omdoc base="http://docs.omdoc.org/mmt/checker-test/test-new.omdoc">
-  <mref target="http://cds.omdoc.org/test-new?FOL"/>
-  <mref target="http://cds.omdoc.org/test-new?FOLExt"/>
-</omdoc>

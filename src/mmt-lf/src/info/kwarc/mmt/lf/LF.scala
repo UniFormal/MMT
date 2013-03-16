@@ -26,7 +26,7 @@ import objects.Conversions._
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
 object LF {
-   val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "foundations")
+   val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
    val lftheory = lfbase ? "LF"
    val arrow = OMS(lftheory ? "arrow")
    val Pi = OMS(lftheory ? "Pi")

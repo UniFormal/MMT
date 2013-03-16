@@ -7,6 +7,7 @@
         <pathelement location="deploy/lib/tiscaf.jar"/>
         <pathelement location="deploy/lib/tntbase-plugin-api.jar"/>
         <pathelement location="deploy/lib/svnkit.jar"/>
+    	<pathelement location="src/mmt-api/trunk/lib/jfxrt.jar"/>
         <pathelement location="deploy/lfcatalog/lfcatalog.jar"/>
     </path>
     <path id="scaladoc.classpath">

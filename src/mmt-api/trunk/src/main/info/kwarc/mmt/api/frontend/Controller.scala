@@ -265,14 +265,14 @@ class Controller extends ROController with Logger {
                case e => add(e)
             }
             (doc, Nil)
-         case Some("elf") | Some("mmt") =>
+         case Some("elf") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
             val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
             source.close
             if (!errorList.isEmpty)
               log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
             (doc, errorList.toList)
-         case Some("mmt-new") =>
+         case Some("mmt") =>
             val r = Reader(f)
             val (doc, state) = textParser(r, dpath)
             r.close

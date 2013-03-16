@@ -1,29 +1,0 @@
-namespace http://cds.omdoc.org/test-new
-
-theory FOL : http://cds.omdoc.org/foundations?LF =
-  bool : type         
-  univ : type
-  or   : bool → bool → bool  # 1 ∨ 2 prec 5
-  and  : bool → bool → bool  # 1 ∧ 2 prec 5
-  impl : bool → bool → bool  # 1 ⇒ 2 prec 10
-  equiv : bool → bool → bool = [x:bool,y:bool] (x ⇒ y) ∧ (y ⇒ x) # 1 ≡ 2 prec 10
-  ded  : bool → type         # ded 1   prec 100
-
-
-theory FOLExt : http://cds.omdoc.org/foundations?LF =
-  include ?FOL
-  zero : univ
-  succ : univ → univ
-
-  andI  : {A,B} ded A → ded B → ded A ∧ B    # andI 3 4
-  andEl : {A,B} ded A ∧ B → ded A            # andEl 3
-  andEr : {A,B} ded A ∧ B → ded B            # andEr 3
-  comm  : {A,B} ded A ∧ B → ded B ∧ A = [A][B][p] andI (andEr p) (andEl p)
-
-  impI  : {A,B} (ded A → ded B) → ded A ⇒ B  # impI 3
-  impE  : {A,B} ded A ⇒ B → ded A → ded B    # impE 3 4
-
-  imp2I : {A,B}{C} (ded A → ded B → ded C) → ded A ⇒ (B ⇒ C)
-        = [A,B,C] [f] impI [p] (impI ([q] f p q)) 
-  test  : {A} ded A → ded A ∧ A  = ≪{A} ded A → ded A ∧ A≫
-

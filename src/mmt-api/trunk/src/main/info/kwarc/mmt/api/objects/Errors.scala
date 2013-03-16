@@ -4,7 +4,7 @@ import frontend._
 
 /** apply/unapply methods for missing terms of known type */
 object Hole {
-  private val cd = DPath(utils.URI("http","cds.omdoc.org") / "omdoc" / "mmt.omdoc") ? "Errors"
+  private val cd = DPath(utils.URI("http","cds.omdoc.org") / "mmt") ? "Errors"
   val path = cd ? "missing"
   private val missing = OMID(path)
   def apply(t: Term) = OMA(missing, List(t))

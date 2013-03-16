@@ -9,7 +9,7 @@ import scala.collection.mutable.HashSet
 /** a Compiler that uses the generic MMT functions */
 class MMTCompiler(c: Controller) extends Compiler {
   init(c,Nil)
-  def isApplicable(src : String): Boolean = src == "mmt" || src == "elf" || src == "mmt-new"
+  def isApplicable(src : String): Boolean = src == "mmt"
      
   def compile(in: File, dpath: Option[DPath], out: File) : List[SourceError] = {
     val (doc, errorList) = controller.read(in, dpath)
