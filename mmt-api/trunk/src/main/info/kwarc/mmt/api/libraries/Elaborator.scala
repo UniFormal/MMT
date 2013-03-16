@@ -43,11 +43,11 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
       case Some(tm) => tm
     }
     case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
-    case OMBINDC(b, context, condition, body) =>
+    case OMBINDC(b, context, scopes) =>
       val nwctx = Context(context.variables.map(v =>
         VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite), v.attrs.map(p => (p._1, rewrite(p._2))) :_*)
       ) :_ *)
-      OMBINDC(rewrite(b), nwctx, condition.map(rewrite), rewrite(body))
+      OMBINDC(rewrite(b), nwctx, scopes.map(rewrite))
     case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))
     case OME(err, args) => OME(rewrite(err), args.map(rewrite))
     case OMATTR(arg, key, value) => OMATTR(rewrite(arg), key, rewrite(value)) //TODO maybe handle key (here) & uri (below)

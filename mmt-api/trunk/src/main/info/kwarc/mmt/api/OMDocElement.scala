@@ -34,11 +34,6 @@ trait StructuralElement extends Content with metadata.HasMetaData {
  * This includes virtual knowledge items.
  */
 trait ContentElement extends StructuralElement {
-   /** every MMT Declaration takes a list of parameters
-    * empty by default, may be overridden when constructing instances
-    */
-   //TODO use this everywhere
-   val parameters = objects.Context()
 }
 
 /**

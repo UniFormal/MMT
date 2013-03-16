@@ -397,12 +397,11 @@ class StructureChecker(controller: Controller) extends Logger {
             val funR = checkTerm(home, context, fun)
             val argsR = args map {a => checkTerm(home, context, a)}
             OMA(funR, argsR).from(s)
-         case OMBINDC(binder, bound, condition, scope) =>
+         case OMBINDC(binder, bound, scopes) =>
             val binderR = checkTerm(home, context, binder)
             val boundR = checkContext(home, context, bound)
-            val conditionR = condition map {c => checkTerm(home, context ++ bound, c)}
-            val scopeR = checkTerm(home,  context ++ bound, scope)
-            OMBINDC(binderR, boundR, conditionR, scopeR).from(s)
+            val scopesR = scopes map {c => checkTerm(home, context ++ bound, c)}
+            OMBINDC(binderR, boundR, scopesR).from(s)
          case OMATTR(arg, key, value) =>
             val argR = checkTerm(home, context, arg)
             checkTerm(home, context, key)

@@ -116,17 +116,19 @@ case class ImplicitArg(number: Int) extends ArgumentComponent
  * special cases and analogs in the OpenMath role system for a symbol s:
  *  no arguments, variables, scopes: constant, s
  *  some arguments, no variables, scopes: application OMA(s, args)
- *  no arguments, some variables, 1 scope: binder, OMBIND(s, vars, scope)
- *  some arguments, some variables, 1 scope: application+binder as in OMBIND(OMA(s, args), vars, scope), suggested by Kohlhase, Rabe, MiCS 2012
- *  as above but multiple scopes: generalized binders as suggested by Davenport, Kohlhase, MKM 2010
+ *  no arguments, some variables: binder, OMBINDC(s, vars, scopes)
+ *  some arguments, some variables: application+binder as in OMBINDC(OMA(s, args), vars, scopes), as suggested by Kohlhase, Rabe, MiCS 2012
+ *  as above but exactly 1 scope: usual binders, generalized binders as suggested by Davenport, Kohlhase, MKM 2010
  */
 case class Arity(arguments: List[ArgumentComponent], variables: List[VariableComponent], scopes: List[ScopeComponent]) {
    def components = arguments ::: variables ::: scopes
    def length = components.length
    def isConstant    =    arguments.isEmpty  &&    variables.isEmpty  && scopes.isEmpty
    def isApplication = (! arguments.isEmpty) &&    variables.isEmpty  && scopes.isEmpty
-   def isBinder      =    arguments.isEmpty  && (! variables.isEmpty) && scopes.length == 1
-   def isApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty) && scopes.length == 1
+   def isBinder      =    arguments.isEmpty  && (! variables.isEmpty)
+   def isPlainBinder =    arguments.isEmpty  && (! variables.isEmpty) && scopes.length == 1
+   def isApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty)
+   def isPlainApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty) && scopes.length == 1
 }
 
 object Arity {
@@ -300,6 +302,7 @@ object TextNotation {
     * matches ( 1 ) with precedence bracketLevel
     */
    val bracketNotation = new TextNotation(utils.mmt.brackets, List(Delim("("),Arg(1),Delim(")")), bracketLevel)
+   //val contextNotation = new TextNotation(utils.mmt.brackets, List(Var(1,true,Some(Delim(",")))), bracketLevel)
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
@@ -444,7 +447,7 @@ object TextNotation {
           }
       }
 
-    case OMBINDC(OMID(p), context, None, body) =>
+    case OMBINDC(OMID(p), context, scopes) =>
       println(t.toNode)
       val tmpargs = context.variables collect {
         case VarDecl(s, _, _, _*) => s :: Nil //TODO handle var type and def
@@ -454,7 +457,7 @@ object TextNotation {
       val args = tmpargs.flatten
       
       notations.find(op => op.name == p) match {
-        case None => presentTerm(body, notations) //assuming implicit binder
+        case None => scopes.map(presentTerm(_, notations)).mkString(" ") //assuming implicit binder
         case Some(notation) =>
           println("found notation " + notation.toString)
           println("with args" + args.toString)
@@ -462,7 +465,7 @@ object TextNotation {
             case a : Arg => args(a.number)
             case Delim(s) => s
           }
-          "(" + l.mkString(" ") + " " + presentTerm(body, notations) + ")"
+          "(" + l.mkString(" ") + " " + scopes.map(presentTerm(_, notations)).mkString(" ") + ")"
       }
 
     case OMV(s) => s.toPath

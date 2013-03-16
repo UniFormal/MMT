@@ -480,20 +480,23 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       var dfC = new TermContainer
       var al : Option[LocalName] = None
       var nt : Option[TextNotation] = None
+      var pr : Option[Context] = None
       // every iteration reads one delimiter and one object
-      // @ alias or : TYPE or = DEFINIENS or # NOTATION 
+      // @ alias or : TYPE or = DEFINIENS or # NOTATION
+      //TODO remove "##" here and in the case split below, only used temporarily for latex integration
+      val keys = List(":","=","#", "##","@", "$")
+      def keyString = keys.map("'" + _ + "'").mkString(" or ")
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
-         //TODO remove "##" here and in the case split below, only used temporarily for latex integration
-         if (! List(":","=","#", "##","@").contains(delim)) {
+         if (! keys.contains(delim)) {
             // error handling
             if (delim == "") {
                if (! state.reader.endOfDeclaration)
-                  errorCont(makeError(treg, "expected '@' or ':' or '=' or '#'"))
+                  errorCont(makeError(treg, "expected " + keyString))
             } else { 
                if (! state.reader.endOfObject)
                   state.reader.readObject
-               errorCont(makeError(treg, "expected '@' or ':' or '=' or '#', ignoring the next object"))
+               errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
             }
          } else {
             def doComponent(c: DeclarationComponent, tc: TermContainer) {
@@ -503,6 +506,12 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
             // the main part, which branches based on the delimiter
             delim match {
+               case "$" =>
+                  if (pr.isDefined) {
+                     errorCont(makeError(treg, "parameters of this constant already given, ignored"))
+                     state.reader.readObject
+                  } else
+                     null
                case ":" =>
                   if (tpC.read.isDefined) {
                      errorCont(makeError(treg, "type of this constant already given, ignored"))

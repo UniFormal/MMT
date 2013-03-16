@@ -117,7 +117,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with L
             //some adjustments for certain objects 
             o match {
                //for binders, change newlpar to remember VarData for rendering the bound variables later 
-               case OMBINDC(binder,context,_,_) =>
+               case OMBINDC(binder,context,_) =>
                   val pOpt = binder match {case OMS(b) => Some(b) case _ => None}
                   val vds = context.zipWithIndex.map {
                       case (v, i) => VarData(v, pOpt, newlpar.pos + (i+1))

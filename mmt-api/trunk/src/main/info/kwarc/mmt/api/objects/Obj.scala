@@ -54,7 +54,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
      pos.indices.tail.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
             val newContext = obj match {
-               case OMBINDC(_,context, _,_) => con ++ context.take(i)
+               case OMBINDC(_,context,_) => con ++ context.take(i)
                case _ => con
             }
             obj.components(i) match {
@@ -175,40 +175,37 @@ object OMS {
  * An OMBINDC represents a binding with condition
  * @param binder the binder
  * @param context the bound variables (from outside to inside)
- * @param condition an optional condition on the variables
- * @param body the scope/body/matrix of the binder
+ * @param scopes the scopes/bodies/matrices of the binder (usually exactly 1)
  */
-case class OMBINDC(binder : Term, context : Context, condition : Option[Term], body : Term) extends Term  {
+case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends Term  {
    def head = binder.head
    val numVars = context.variables.length
-   def components = binder :: context.toList ::: List(body) //condition.getOrElse(Omitted)
+   def components = binder :: context.toList ::: scopes
    def role = Role_binding
    def toNodeID(pos : Position) = 
       <om:OMBIND>{binder.toNodeID(pos + 0)}
                  {context.toNodeID(pos)}
-                 {if (condition.isDefined) condition.get.toNodeID(pos + (numVars + 2))}
-                 {body.toNodeID(pos + (numVars + 1))}
+                 {scopes.zipWithIndex.map {
+                    case (s,i) => s.toNodeID(pos + (numVars + i + 1))
+                 }}
       </om:OMBIND> % pos.toIDAttr
-   override def toString = "(" + binder + " [" + context + "] " + body + ")"  
+   override def toString = "(" + binder + " [" + context + "] " + scopes.map(_.toString).mkString(" ") + ")"  
    def ^(sub : Substitution) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
       val subN = sub ++ alpha
-      OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subN), body ^ subN).from(this)
+      OMBINDC(binder ^ sub, newCon ^ sub, scopes.map(_ ^ subN)).from(this)
    }
-   private[objects] def freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: (body.freeVars ::: condition.map(_.freeVars_).getOrElse(Nil)).filterNot(x => context.isDeclared(x))      
-   def toCML = condition match {
-     case Some(cond) => <m:apply>{binder.toCML}{context.toCML}<m:condition>{cond.toCML}</m:condition>{body.toCML}</m:apply>
-     case None => <m:apply>{binder.toCML}{context.toCML}{body.toCML}</m:apply>
-   }
+   private[objects] def freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
+   def toCML = <m:apply>{binder.toCML}{context.toCML}{scopes.map(_.toCML)}</m:apply>
 }
 
 /**
  * OMBIND represents a binding without condition
  */
 object OMBIND {
-	def apply(binder : Term, context : Context, body : Term) = OMBINDC(binder, context, None, body)
+	def apply(binder : Term, context : Context, body : Term) = OMBINDC(binder, context, List(body))
 	def unapply(t : Term): Option[(Term,Context,Term)] = t match {
-		case OMBINDC(b,c,None,s) => Some((b,c,s))
+		case OMBINDC(b,c,List(s)) => Some((b,c,s))
 		case _ => None
 	}
 }
@@ -419,10 +416,9 @@ object ComplexTerm {
    def apply(p: GlobalName, args: List[Term], con: Context, scopes: List[Term]) =
       if (args.isEmpty && con.isEmpty && scopes.isEmpty) OMS(p)
       else if (con.isEmpty && scopes.isEmpty) OMA(OMS(p), args)
-      else if (!con.isEmpty && scopes.length == 1)
-         if (args.isEmpty) OMBIND(OMS(p), con,scopes.head)
-         else OMBIND(OMA(OMS(p), args), con, scopes.head)
-      else throw ImplementationError(s"invalid complex term: $p, $args, $con, $scopes")
+      else
+         if (args.isEmpty) OMBINDC(OMS(p), con,scopes)
+         else OMBINDC(OMA(OMS(p), args), con, scopes)
    def unapply(t: Term) : Option[(GlobalName, List[Term], Context, List[Term])] = t match {
       case OMS(p) => Some((p, Nil, Context(), Nil))
       case OMA(OMS(p), args) => Some(p, args, Context(), Nil)
@@ -473,14 +469,13 @@ object Obj {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       //this function unifies the two cases for binders in the case distinction below
-      def doBinder(binder : Node, context : Node, condition : Option[Node], body : Node) = {
+      def doBinder(binder : Node, context : Node, scopes : List[Node]) = {
          val bind = parseTerm(binder, nbase)
          val cont = Context.parse(context, base)
          if (cont.isEmpty)
             throw new ParseError("at least one variable required in " + cont.toString)
-         val cond = condition.map(parseTerm(_, nbase))
-         val bod = parseTerm(body, nbase)
-         OMBINDC(bind, cont, cond, bod)
+         val scopesP = scopes.map(parseTerm(_, nbase))
+         OMBINDC(bind, cont, scopesP)
       }
       N match {
          case <OMS/> =>
@@ -503,10 +498,8 @@ object Obj {
          case <OME>{child @ _*}</OME> =>
             val ch = child.toList.map(parseTerm(_, nbase))
             OME(ch.head,ch.tail)
-         case <OMBIND>{binder}{context}{condition}{body}</OMBIND> =>
-           	doBinder(binder, context, Some(condition), body)
-         case <OMBIND>{binder}{context}{body}</OMBIND> =>
-            doBinder(binder, context, None, body)
+         case <OMBIND>{binder}{context}{scopes @ _*}</OMBIND> =>
+            doBinder(binder, context, scopes.toList)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
             val k = parseTerm(key, nbase)
             if (! k.isInstanceOf[OMID])
