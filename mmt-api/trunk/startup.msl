@@ -18,21 +18,9 @@ log+ server
 
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 plugin info.kwarc.mmt.lf.Plugin
-foundation info.kwarc.mmt.lf.LFF
+//foundation info.kwarc.mmt.lf.LFF
 
 file ../../paths.mmt
-
-archive add ../../../theories
-
-//log+ backend
-//archive mmt clean
-//archive mmt source-structure
-//archive mmt compile
-//archive mmt content
-//archive mmt relational
-//archive mmt notation
-//archive mmt check
-//archive mmt validate
 
 //archive latin clean
 //archive latin compile
@@ -46,7 +34,7 @@ archive add ../../../theories
 
 //mws http://localhost:6284
 server on 8080
-//browser on
+browser on
 base http://docs.omdoc.org/mmt
 
 //extension info.kwarc.mmt.mizar.test.MwsService

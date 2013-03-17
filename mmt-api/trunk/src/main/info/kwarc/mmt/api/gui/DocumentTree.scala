@@ -89,7 +89,7 @@ class TreePane(controller: Controller) extends JPanel {
 
    setLayout(new BorderLayout())
 
-   val items = List(Item("text", "text"), Item("XML", "xml"), Item("rendered", "pres"))
+   val items = List(Item("plain", "text"), Item("text", "text/notations"), Item("XML", "xml"), Item("rendered", "pres"))
    val styleTextArea = new JTextField(style.toPath, 30)
    private val buttons = Swing.RadioButtonPanel(items : _*){id =>
       mode = id

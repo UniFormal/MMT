@@ -78,10 +78,9 @@ object Action extends RegexParsers {
    private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
    private def defaultget = presentation ^^ {p => DefaultGet(p)}
    private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
-   private def presentation = present | totext | deps | defaultPresent
+   private def presentation = present | deps | defaultPresent
    private def present = content ~ ("present" ~> str) ^^ {case c ~ p => Present(c,p)}
    private def deps = path <~ "deps" ^^ {case p => Deps(p)}
-   private def totext = content <~ "text" ^^ {c => ToText(c)}
    private def defaultPresent = content ^^ {c => Present(c, "string")}
    private def content = closure | elaboration | component | get
    private def closure = path <~ "closure" ^^ {p => Closure(p)}
@@ -400,33 +399,6 @@ case class ToNode(c : MakeAbstract) extends MakeConcrete {
 case class ToString(c : MakeAbstract) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toString)}
    override def toString = c.toString
-}
-
-case class ToText(c : MakeAbstract) extends MakeConcrete {
-
-  def make(controller : Controller, rb : RenderingHandler) {
-    val con = c.make(controller)
-    println("Action -> ToText # content : " + con.toString)
-    val home = c match {
-      case Component(p : GlobalName, component) => Some(p.module)
-      case Get(p : GlobalName) => Some(p.module)
-      case Get(p : MPath) => Some(OMMOD(p))
-      case _ => None
-    }
-    
-    val notations = home.map(h => AbstractObjectParser.getNotations(controller, h)).getOrElse(Nil)   
-    con match {
-      case d : DeclaredTheory =>
-        rb(TextNotation.present(d, notations))
-      case c : Constant =>
-        rb(TextNotation.present(c, notations))
-      case t : Term => 
-        rb(TextNotation.present(con, notations))
-      case _ => //TODO add support for other content types
-        rb(c.make(controller).toString)
-    }
-  }
-  override def toString = c.toString + " text"
 }
 
 /** takes a content element and renders it using notations */

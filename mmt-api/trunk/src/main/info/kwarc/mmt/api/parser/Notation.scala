@@ -129,6 +129,11 @@ case class Arity(arguments: List[ArgumentComponent], variables: List[VariableCom
    def isPlainBinder =    arguments.isEmpty  && (! variables.isEmpty) && scopes.length == 1
    def isApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty)
    def isPlainApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty) && scopes.length == 1
+   def numSeqArgs = arguments.count(_.isInstanceOf[SeqArg])
+   def numSeqVars = variables.count {
+      case Var(_,_, Some(_)) => true
+      case _ => false
+   }
 }
 
 object Arity {
@@ -197,6 +202,78 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
       args = argsWithImpl.reverse
       Arity(args, vars, scopes)
    }
+
+   /**
+    * flattens all sequence arguments/variables
+    * 
+    * @param args number of arguments
+    * @param vars number of variables
+    * @param scs number of scopes
+    * 
+    * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
+    * remaining arguments are distributed in order of content position
+    * 
+    * multiple sequence variables are treated accordingly
+    * it is assumed there are no sequences in the scopes
+    */
+   def flatten(args: Int, vars: Int, scs: Int) : List[Marker] = {
+      // distributes available components to numTotal normal/sequence components where the positions of the sequences are given by seqs
+      // returns: number of arguments per sequence and cutoff below which sequences get one extra argument
+      def distribute(available: Int, numTotal: Int, seqs: List[Int]):(Int,Int) = {
+         val numSeqs = seqs.length
+         if (numSeqs == 0) return (0,0)
+         val numSingle = numTotal - numSeqs
+         val availableForSeqs = available - numSingle
+         //the number of arguments that every sequence argument gets
+         val perSeq = availableForSeqs / numSeqs
+         //the first sequence that does not get an extra argument
+         val cutoff = seqs.sortWith(_<_).apply(availableForSeqs % numSeqs)
+         (perSeq,cutoff)
+      }
+      val arity = getArity
+      val seqArgPositions = arity.arguments.flatMap {
+         case SeqArg(n,_) if n > 0 => List(n)
+         case _ => Nil
+      }
+      val (perSeqArg, seqArgCutOff) = distribute(args, arity.arguments.length, seqArgPositions)
+      val seqVarPositions = arity.variables.flatMap {
+         case Var(n,_,Some(_)) => List(n)
+         case _ => Nil
+      }
+      val (perSeqVar, seqVarCutOff) = distribute(vars, arity.variables.length, seqVarPositions)
+      //maps component positions to position in flattened notation, by including the arguments of the preceding sequences
+      def remap(p: Int): Int = {
+         var i = p.abs
+         markers.foreach {
+            case SeqArg(n,_) if n < p || p < 0 =>
+               i += perSeqArg - 1
+               if (n < seqArgCutOff) i += 1
+            case Var(n,_,Some(_)) if n < p || p < 0 => 
+               i += perSeqVar - 1
+               if (n < seqVarCutOff) i += 1
+            case _ =>
+         }
+         if (p > 0) i else -i
+      }
+      markers.flatMap {
+         case Arg(n) =>
+            List(Arg(remap(n)))
+         case SeqArg(n, sep) if n > 0 =>
+            val length = if (n < seqArgCutOff) perSeqArg+1 else perSeqArg
+            val first = remap(n)
+            if (length == 0) Nil
+            else Range(1,length).toList.flatMap(i => List(Arg(first+i-1), sep)) ::: List(Arg(first+length-1))
+         case Var(n, tpd, None) =>
+            List(Var(remap(n), tpd, None))
+         case v @ Var(n, tpd, Some(sep)) =>
+            val length = if (n < seqVarCutOff) perSeqVar+1 else perSeqVar
+            val first = remap(n)
+            if (length == 0) Nil
+            else Range(1,length).toList.flatMap(i => List(Var(first+i-1, tpd, None), sep)) ::: List(Var(first+length-1, tpd, None))
+         case d: Delimiter =>
+            List(d)
+      }
+   }
    
    //TODO add other cases & check presentation
    lazy val pres = {  
@@ -219,9 +296,11 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
    val key = presentation.NotationKey(Some(name), Role_Notation)
    val nset = name.module.toMPath
   
-   override def toString = "Notation for " + name + ": " + markers.map(_.toString).mkString(" ")
+   private def markerString = markers.map(_.toString).mkString(" ")
+   def toText = markerString + (if (precedence != Precedence.integer(0)) " prec " + precedence.toString else "")
+   override def toString = "Notation for " + name + ": " + markerString
    def toNode = 
-     <text-notation name={name.toPath} precedence={precedence.toString} markers={markers.map(_.toString).mkString(" ")}/>
+     <text-notation name={name.toPath} precedence={precedence.toString} markers={markerString}/>
    // the first delimiter of this notation
    def firstDelimString : Option[String] = markers mapFind {
       case d: Delimiter => Some(d.text)
@@ -342,140 +421,6 @@ object TextNotation {
       }
     }
     apply(conPath, prec)(protoMks :_*)
-  }
-   
-  /*
-  private def parseMarkers(not : String) : List[Marker] = {
-    val tokens = not.split(" ").filter(_ != "").toList
-    val markers = tokens map {tk =>
-      tk.split("/").toList match {
-        case Nil => throw ImplementationError("unexpected error: string split returned empty result list")
-        case value :: Nil => //std arg or delimiter
-          try {
-            Arg(value.toInt - 1)
-          } catch {
-            case _ => Delim(value)
-          }
-        case pos :: sep :: Nil => //seq arg
-          try {
-            SeqArg(pos.toInt - 1, Delim(sep))
-          } catch {
-             case _ => throw ParseError("Invalid arg position in seq notation : " + not)
-          }
-      }
-    }
-    markers
-  }
-  */
-   
-  /** Presenting methods*/
-    //TODO add logging instead of print
-  def present(con : Content, operators : List[TextNotation]) : String = {
-    println("current con : " + con.toString)
-    con match {
-      case d : DeclaredTheory =>
-        val namespace = "%namespace \"" +  d.path.parent  + "\"." 
-        println(d.path)
-        val sig = "%sig " + d.path.last + " = {\n" + d.innerComponents.map(c => "  " + present(c, operators)).filterNot(_ == "  ").mkString("\n")+ "\n}."
-        namespace + "\n\n" + sig
-//      case OMMOD(meta : MPath) => 
-//        "%meta " + meta.doc.last + "?" + meta.name + "."
-        
-      case Include(from, to) => "%include " + to.last + "."
-      case c : Constant =>
-        println("constant : " + operators)
-        val tp = c.tp match {
-          case None => ""
-          case Some(t) => " : " + presentTerm(t, operators)
-        }
-        val df = c.df match {
-          case None => ""
-          case Some(t) => " = " + presentTerm(t, operators)
-        }
-        val not = c.not match {
-          case None => ""
-          case Some(n) => " # " + n.toString
-        }
-        c.path.last + tp + df + not + "."
-
-//      case s : Structure => "%include " + s.from.toString
-     
-      case t : Term => presentTerm(t, operators)
-      case _ =>
-        println("unsupported content element for text presentation " + con.toNode)
-        ""
-    }
-  }
-
-  private def presentTerm(t : Term, notations : List[TextNotation]) : String = t match {
-    case OMA(OMID(p), args) =>
-      println("found : " + t.toString)
-      notations.find(op => op.name == p) match {
-        case None =>  //using default notations
-          println("not found notation for constant with path " + p)
-          println("using : " + p.last + "  " + args.map(x => presentTerm(x, notations)).mkString(" "))
-          "(" + p.last + "  " + args.map(x => presentTerm(x, notations)).mkString(" ") + ")" 
-        case Some(notation) =>
-          println("found notation : " + notation.toString)
-          val argMks = notation.markers collect {
-            case a : Arg => a
-          }
-          if (argMks.length == args.length) {
-        	val l =  notation.markers map {
-        	  case a : Arg => presentTerm(args(a.number), notations)
-        	  case d: Delimiter => d.text
-        	}
-        	println("using : " + l.mkString(" "))
-        	l.mkString("("," ",")")
-          } else { // a seq arg with arbitrary length
-            val seqLen = args.length - argMks.length + 1
-            var foundSeq = false
-            def getPos(pos : Int) : Int = {
-              if (foundSeq)
-                pos + seqLen - 1
-              else
-                pos
-            }    
-            val l = notation.markers map {
-              case d: Delimiter => d.text
-              case Arg(pos) => presentTerm(args(getPos(pos)), notations)
-              case SeqArg(pos, sep) =>
-                foundSeq = true
-                args.slice(pos, pos + seqLen).map(presentTerm(_, notations)).mkString(" " + sep.s + " ")
-            }     
-            l.mkString("(", " ",")")                 
-          }
-      }
-
-    case OMBINDC(OMID(p), context, scopes) =>
-      println(t.toNode)
-      val tmpargs = context.variables collect {
-        case VarDecl(s, _, _, _*) => s :: Nil //TODO handle var type and def
-      }
-      println("context : " + context.variables)
-      println("tmpargs : " + tmpargs)
-      val args = tmpargs.flatten
-      
-      notations.find(op => op.name == p) match {
-        case None => scopes.map(presentTerm(_, notations)).mkString(" ") //assuming implicit binder
-        case Some(notation) =>
-          println("found notation " + notation.toString)
-          println("with args" + args.toString)
-          val l =  notation.markers map {
-            case a : Arg => args(a.number)
-            case Delim(s) => s
-          }
-          "(" + l.mkString(" ") + " " + scopes.map(presentTerm(_, notations)).mkString(" ") + ")"
-      }
-
-    case OMV(s) => s.toPath
-
-    case OMID(p) =>
-      println("got here with " + p.toString)
-      p.last
-    case _ =>
-      println("unsupported content element for text presentation " + t.toString)
-      ""
   }
 }
 

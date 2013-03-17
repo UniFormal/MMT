@@ -33,7 +33,8 @@ class ExtensionManager(controller: Controller) {
    private var foundations : List[Foundation] = Nil
    private var compilers : List[Compiler] = List(new MMTCompiler(controller))
    private var querytransformers : List[QueryTransformer] = Nil
-   private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter)
+   private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter,StructureAndObjectPresenter)
+   presenters.foreach {_.init(controller, Nil)}
    private var serverPlugins : List[ServerPlugin] = Nil
            var lexerExtensions : List[LexerExtension] =
               List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), NatLiteralHandler)
