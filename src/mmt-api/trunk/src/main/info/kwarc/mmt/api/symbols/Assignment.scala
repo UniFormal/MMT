@@ -18,6 +18,7 @@ class ConstantAssignment(val home : Term, val name : LocalName, val alias: Optio
                                   alias.map(" @ " + _.toString).getOrElse("")
    def components = List(StringLiteral(name.toPath), target.getOrElse(Omitted))
    def role = info.kwarc.mmt.api.Role_ConAss
+   def toConstant = Constant(home, name, alias, None, target, None, None)
 }
 
   /**
@@ -36,6 +37,7 @@ class DefLinkAssignment(val home : Term, val name : LocalName, val from: MPath, 
    override def toString = (if (name.isAnonymous) "import " else name + " := ") + target.toString 
    def components = List(StringLiteral(name.toPath), target)
    def role = info.kwarc.mmt.api.Role_StrAss
+   def toStructure = new DefinedStructure(home, name, from, target, false)
 }
 
 /** apply/unapply methods for the special case where a view includes another view */ 
