@@ -178,11 +178,13 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, context, parent, label, reg))
       node.add(child)
       tp match {
-         case OMBINDC(binder,cont, _, scope) =>
+         case OMBINDC(binder,cont, scopes) =>
             if (! binder.isInstanceOf[OMID])
                buildTree(child, parent, binder, context, reg)
             buildTree(child, parent, cont, context, reg)
-            buildTree(child, parent, scope, context ++ cont, reg)
+            scopes foreach {s =>
+               buildTree(child, parent, s, context ++ cont, reg)
+            }
          case OMA(fun, args) =>
             if (! fun.isInstanceOf[OMID])
                buildTree(child, parent, fun, context, reg)
@@ -257,10 +259,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val asset = MMTSideKick.getAssetAtOffset(view,caret)
       asset match {
          case a: MMTObjAsset =>
-                  log("XXXXYYY")
             a.obj match {
                case Hole(t) =>
-                  log("XXXX")
                   val rules = prover.applicable(t)(Stack(Frame(OMID(a.parent.parent), a.context)))
                   val comp = new ProverCompletion(view, a.region, rules)
                   return comp

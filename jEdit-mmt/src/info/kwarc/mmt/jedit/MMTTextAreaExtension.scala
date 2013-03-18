@@ -25,6 +25,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
      //val endPoint = textArea.offsetToXY(endOffset)
      //gfx.fillRect(0, y, 500, height)
    //}
+   private def asString(o: Obj) = controller.presenter.asString(o)
    override def getToolTipText(xCoord: Int, yCoord: Int): String = {
       val offset = textArea.xyToOffset(xCoord, yCoord, false)
       if (offset == -1) return null
@@ -33,15 +34,17 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
          case ta: MMTObjAsset =>
             ta.obj match {
               case OMV(n) =>
-                ta.context(n).toString
-              case VarDecl(n, Some(tp), _) =>
+                asString(ta.context(n))
+              case VarDecl(n, Some(tp), _,_*) =>
                 if (parser.SourceRef.get(tp).isEmpty)
                   //assuming lack of source reference identifies inferred type
-                  tp.toString
+                  asString(tp)
                 else 
                   null
-              case t: OMA =>
-                  t.toString
+              case OMA(OMID(p), args) =>
+                  val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
+                  if (implicits.isEmpty) null
+                  else implicits.map(asString).mkString("   ")
               case _ => null
             }
          case _ => null
