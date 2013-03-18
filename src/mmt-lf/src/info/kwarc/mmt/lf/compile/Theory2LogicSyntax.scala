@@ -59,7 +59,7 @@ class Theory2LogicSyntax {
 	  }
 	}
 	/*
-	 * a very stupid Declaration parser
+	 * Declaration parser
 	 */
 	def getDecls(sl : List[Symbol]) : List[Declaration] = {
 	  sl.mapPartial{
@@ -137,8 +137,9 @@ class Theory2LogicSyntax {
 	  sl mapPartial {
 	    case a : Constant =>  a.tp match {
 	      	case Some(FunType(in, out)) => 
-	      	  if (out == Univ(1) && in == List()) Some(CatRef(a.name.toString)) else None     
-	      	case _ => None
+	      	  if (out == Univ(1) && in == List()) Some(CatRef(a.name.toString)) 
+	      	  		else None     
+	      	case x => {println(x.getClass); None}
 	      }
 	    
 	    case _ => None
