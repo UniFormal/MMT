@@ -107,4 +107,7 @@ object SourceRef {
       e.metadata.update(metaDataKey, r.toURI)
    }
    def get(e: metadata.HasMetaData) = e.metadata.getLinks(metaDataKey).headOption.map(fromURI)
+   def delete(e: metadata.HasMetaData) {
+      e.metadata.delete(metaDataKey)
+   }
 }

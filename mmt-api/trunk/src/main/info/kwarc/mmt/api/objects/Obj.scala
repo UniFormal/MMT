@@ -236,7 +236,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       <om:OMA>{fun.toNodeID(pos + 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)).from(this) //.flatMap(_.items))
+   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
 
@@ -258,9 +258,14 @@ case class OMV(name : LocalName) extends Term {
    override def toString = name.toString
    def ^(sub : Substitution) =
 	   sub(name) match {
-	  	   case Some(t: Term) => t.from(this)
-	  	   case Some(_) => 
-	  	     throw SubstitutionUndefined(name, "substitution is applicable but does not provide a term")
+	  	   case Some(t) => t match {
+	  	      //substitution introduces structure-sharing if the same variable occurs more than once
+	  	      //that is normally useful for efficiency
+	  	      //but it the two occurrences carry different metadata (in particular, different source-references), it is undesirable
+	  	      //for the most important case of variable renamings, the OMV case below avoids structure sharing and preserves metadata 
+	  	      case OMV(x) => OMV(x).from(this)
+	  	      case _ => t
+	  	   }
 	  	   case None => this
        }
    private[objects] def freeVars_ = List(name)

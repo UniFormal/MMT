@@ -5,7 +5,7 @@
 
 	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <fileset dir="deploy/lib/">
+        <fileset dir="${deploy}/lib/">
           <include name="*.jar"/>
         </fileset>
     	<pathelement location="lib/jfxrt.jar"/>

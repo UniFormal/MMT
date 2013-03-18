@@ -96,7 +96,11 @@ trait NotationBasedPresenter extends Presenter {
     * called by doDefaultTerm to render symbols
     */
    def doIdentifier(p: ContentPath, rh: RenderingHandler) {
-      rh(p.toPath)
+      val s = p match {
+         case OMMOD(m) % name => m.name.toPath + "?" + name.toPath  //not machine-readable but a lot more human-readable 
+         case _ => p.toPath
+      }
+      rh(s)
    }
    /**
     * called by doDefaultTerm to render variables
@@ -139,13 +143,20 @@ trait NotationBasedPresenter extends Presenter {
          }
       case l: OMLiteral =>
          rh(l.toString)
+      case OMSemiFormal(parts) => parts.foreach {
+         case Formal(t) => apply(t, rh)
+         case objects.Text(format, t) => rh(t)
+         case XMLNode(n) => rh(n.toString)
+      }
+         
       //TODO other cases
    }}
    /**
     * called on every delimiter that is rendered through a notation
     */
    def doDelimiter(p: GlobalName, d: parser.Delimiter, rh: RenderingHandler) {
-      rh(d.text)
+      val s = if (d.text.exists(_.isLetter)) " " + d.text + " " else d.text
+      rh(s)
    }
    def apply(o: Obj, rh: RenderingHandler) {
        o match {
@@ -179,9 +190,9 @@ trait NotationBasedPresenter extends Presenter {
             getNotation(termP) match {
                case None => getNotation(term) match {
                   case None => doDefaultTerm(termP, rh)
-                  case Some(not) => doNotation(termP, not)
+                  case Some(not) => doNotation(term, not)
                }
-               case Some(not) => doNotation(term, not)
+               case Some(not) => doNotation(termP, not)
             }
          case VarDecl(n,tp,df, _*) =>
                doVariable(n.toPath, rh)
@@ -211,7 +222,11 @@ trait NotationBasedPresenter extends Presenter {
    }
 }
 
-/** a notation-based presenter using the StructureParser syntax */
-object StructureAndObjectPresenter extends StructurePresenter(true) with NotationBasedPresenter {
+/** a notation-based presenter using the StructureParser syntax
+ * 
+ * this class must be initialized after instantiation to set the controller
+ */
+class StructureAndObjectPresenter(controller: frontend.Controller) extends StructurePresenter(true) with NotationBasedPresenter {
+      init(controller, Nil)
       def isApplicable(format: String) = format == "text/notations"
 }

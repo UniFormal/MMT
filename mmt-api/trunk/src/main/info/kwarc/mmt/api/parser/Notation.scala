@@ -134,6 +134,80 @@ case class Arity(arguments: List[ArgumentComponent], variables: List[VariableCom
       case Var(_,_, Some(_)) => true
       case _ => false
    }
+   // distributes available components to numTotal normal/sequence components where the positions of the sequences are given by seqs
+   // returns: number of arguments per sequence and cutoff below which sequences get one extra argument
+   private def distribute(available: Int, numTotal: Int, seqs: List[Int]):(Int,Int) = {
+         val numSeqs = seqs.length
+         if (numSeqs == 0) return (0,0)
+         val numSingle = numTotal - numSeqs
+         val availableForSeqs = available - numSingle
+         //the number of arguments that every sequence argument gets
+         val perSeq = availableForSeqs / numSeqs
+         //the first sequence that does not get an extra argument
+         val cutoff = seqs.apply(availableForSeqs % numSeqs)
+         (perSeq,cutoff)
+   }
+   /** 
+    * distributes all arguments evenly to the sequence arguments
+    * 
+    * @param numArgs the total number of arguments
+    * 
+    * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
+    * remaining arguments are distributed in order of content position
+    */
+   def distributeArgs(numArgs: Int) : (Int, Int) = {
+      val seqArgPositions = arguments.flatMap {
+         case SeqArg(n,_) if n > 0 => List(n)
+         case _ => Nil
+      }
+      distribute(numArgs, arguments.length, seqArgPositions)
+   }
+   /** 
+    * like distributeArgs but for the variables
+    */
+   def distributeVars(numVars: Int): (Int, Int) = {
+      val seqVarPositions = variables.flatMap {
+         case Var(n,_,Some(_)) => List(n)
+         case _ => Nil
+      }
+      distribute(numVars, variables.length, seqVarPositions)
+   }
+   /**
+    * groups a list of arguments into sequences according to distributeArgs
+    */
+   def groupArgs(args: List[Term]) : List[List[Term]] = {
+      var remain = args
+      var result : List[List[Term]] = Nil
+      val (perSeq,cutoff) = distributeArgs(remain.length)
+      arguments foreach {
+         case _:Arg | _ :ImplicitArg =>
+            result ::= List(remain.head)
+            remain = remain.tail
+         case SeqArg(n,_) =>
+            val len = if (n < cutoff) perSeq+1 else perSeq
+            result ::= remain.take(len)
+            remain = remain.drop(len)
+      }
+      result.reverse
+   }
+   /**
+    * groups a list of variable declarations into sequences according to distributeVars
+    */
+   def groupVars(cont: Context) : List[Context] = {
+      var remain = cont.variables
+      var result : List[Context] = Nil
+      val (perSeq,cutoff) = distributeVars(remain.length)
+      variables foreach {
+         case v: Var if ! v.isSequence => 
+            result ::= Context(remain.head)
+            remain = remain.tail
+         case v: Var if v.isSequence =>
+            val len = if (v.number < cutoff) perSeq+1 else perSeq
+            result ::= Context(remain.take(len) :_*)
+            remain = remain.drop(len)
+      }
+      result.reverse
+   }
 }
 
 object Arity {
@@ -217,30 +291,9 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
     * it is assumed there are no sequences in the scopes
     */
    def flatten(args: Int, vars: Int, scs: Int) : List[Marker] = {
-      // distributes available components to numTotal normal/sequence components where the positions of the sequences are given by seqs
-      // returns: number of arguments per sequence and cutoff below which sequences get one extra argument
-      def distribute(available: Int, numTotal: Int, seqs: List[Int]):(Int,Int) = {
-         val numSeqs = seqs.length
-         if (numSeqs == 0) return (0,0)
-         val numSingle = numTotal - numSeqs
-         val availableForSeqs = available - numSingle
-         //the number of arguments that every sequence argument gets
-         val perSeq = availableForSeqs / numSeqs
-         //the first sequence that does not get an extra argument
-         val cutoff = seqs.sortWith(_<_).apply(availableForSeqs % numSeqs)
-         (perSeq,cutoff)
-      }
       val arity = getArity
-      val seqArgPositions = arity.arguments.flatMap {
-         case SeqArg(n,_) if n > 0 => List(n)
-         case _ => Nil
-      }
-      val (perSeqArg, seqArgCutOff) = distribute(args, arity.arguments.length, seqArgPositions)
-      val seqVarPositions = arity.variables.flatMap {
-         case Var(n,_,Some(_)) => List(n)
-         case _ => Nil
-      }
-      val (perSeqVar, seqVarCutOff) = distribute(vars, arity.variables.length, seqVarPositions)
+      val (perSeqArg, seqArgCutOff) = arity.distributeArgs(args)
+      val (perSeqVar, seqVarCutOff) = arity.distributeVars(vars)
       //maps component positions to position in flattened notation, by including the arguments of the preceding sequences
       def remap(p: Int): Int = {
          var i = p.abs

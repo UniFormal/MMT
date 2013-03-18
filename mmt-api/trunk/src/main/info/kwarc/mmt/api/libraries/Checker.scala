@@ -362,7 +362,7 @@ class StructureChecker(controller: Controller) extends Logger {
       if (errors.length == n)
          (t, true) // no new errors
       else
-         (t, true)      
+         (t, false)      
    }
    /**
     * Checks structural well-formedness of a term in context relative to a home theory.
