@@ -74,6 +74,6 @@ class MMTHyperlinkSource extends HyperlinkSource {
       currentLink
    } catch {
      case e: Error => controller.report(e); null
-     case e => log(e.getMessage); null
+     case e: java.lang.Exception => log(e.getMessage); null
    }
 }
