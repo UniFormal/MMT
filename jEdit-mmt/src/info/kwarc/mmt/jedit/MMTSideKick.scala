@@ -71,9 +71,36 @@ class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: S
  * @param text the string that is to be completed
  * @param items the list of completions
  */
-class IDCompletion(view : org.gjt.sp.jedit.View, text: String, items: List[String])
+class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constants: List[Constant], text: String, items: List[String])
   extends SideKickCompletion(view, text, items) {
-   // override def insert(index: Int) // this methods modifies the textArea after the user selected a completion
+  // this methods modifies the textArea after the user selected a completion
+   override def insert(index: Int) {
+     val con = constants(index)
+     //the text to insert and after how many characters to place the caret
+     val (newText,shift): (String,Int) = con.not match {
+        case None =>
+           val s = con.name.toPath + " "
+           (s, s.length + 1)
+        case Some(not) =>
+           val text = not.markers.flatMap {
+              case d: Delimiter => d.text
+              case SeqArg(_,sep) => " " + sep.text + " "
+              case a:Arg => " "
+              case v: Var => " "
+           }.mkString("")
+           val sh = not.markers.head match {
+              case d: Delimiter => d.text.length + 1
+              case _ => 0
+           }
+           (text, sh)
+     }
+     //replace text with newText and move the caret by shift
+     val ta = view.getEditPane.getTextArea
+     val caret = ta.getCaretPosition
+     ta.setSelection(new Selection.Range(caret-text.length, caret))
+     ta.setSelectedText(newText)
+     ta.setCaretPosition(caret-text.length+shift)
+   }
 }
 
 /**
@@ -275,10 +302,23 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
            while (l < p && MMTPlugin.isIDChar(textArea.getText(p - l - 1,1)(0))) {l = l + 1}
            val partialName = textArea.getText(p - l, l)
            val compls = Names.resolve(a, Nil, partialName)(controller.localLookup)
-           return new IDCompletion(view, partialName, compls.map(_.completion.toPath))
+           val paths = compls.map(_.path)
+           val symbols = paths.flatMap {p =>
+              controller.globalLookup.getO(p) match {
+                 case Some(c: Constant) => List(c)
+                 case _ => Nil
+              }
+           }
+           val displayed = symbols map {c =>
+              c.tp match {
+                 case Some(t) => c.name.toPath + " : " + controller.presenter.asString(t)
+                 case None => c.name.toPath
+              }
+           }
+           return new IDCompletion(view, controller, symbols, partialName, displayed)
         case None => 
       }
-      new IDCompletion(view, "", Nil)
+      new IDCompletion(view, controller, Nil, "", Nil)
    }
 }
 
