@@ -1,5 +1,10 @@
 package info.kwarc.mmt.lf.compile
 
+package object extras {
+   type FuncName = String
+   type ConsName = String
+}
+
 /** expressions of a simple functional language */
 sealed abstract class EXP {
    /** equality predicate: e === e' */
@@ -59,13 +64,14 @@ case class ID(name: String) extends EXP {
    def apply(fs: FIELD*) = ARECORD(name, fs.toList)
    /** case in a pattern match: id |> body */
    def ==>(body: EXP) = CASE(this, body)
+//   override def toString = name
 }
 /** function application */
 case class APPLY(fun: String, args: EXP*) extends EXP {
    /** case in a pattern match: id(args) |> body */
    def ==>(body: EXP) = CASE(this, body)
 }
- 
+
 /** if then else */
 case class IF(cond: EXP, thn: EXP, els: EXP) extends EXP
 /** pattern matching */
@@ -75,6 +81,9 @@ case class ERROR(name: String, msg: EXP) extends EXP
 
 /** equality */
 case class EQUAL(left: EXP, right: EXP) extends EXP
+/** conjunction */
+case class AND(left: EXP, right: EXP) extends EXP
+
 /** type of integers */
 case object INTS extends EXP
 /** type of booleans */
@@ -104,6 +113,13 @@ case class AT(l: EXP, index: EXP) extends EXP
 case class CONCAT(left: EXP, right: EXP) extends EXP
 /** map over a list */
 case class MAP(l: EXP, fun: ID) extends EXP
+
+/** type of options */
+case class OPTION(tp: EXP) extends EXP
+/** a defined option */
+case class SOME(elem: EXP) extends EXP
+/** the empty option */
+case object NONE extends EXP
 
 /** product type */
 case class PROD(tps: List[EXP]) extends EXP

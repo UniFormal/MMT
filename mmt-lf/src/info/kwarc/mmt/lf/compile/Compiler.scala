@@ -49,7 +49,6 @@ class Compiler(log: LogicSyntax) extends Program {
             CONS(n, arg ::: List(vrb, (scope:EXP)))
          case ConstantSymbol(p, n, args) => CONS(p + "_" + n, id :: argsToEXP(args))
          case VariableSymbol => CONS(c + "_var", List(vrb))
-//         case Constructor0(n) => CONS(n, Nil)
       }
       val declare(_*) = c adt (cases :_*)
    }
@@ -97,37 +96,45 @@ class Compiler(log: LogicSyntax) extends Program {
    
    // the functions that map parse trees to expressions
    
-   def parse(c: CatRef, a: EXP) = APPLY(c.target + "_from_pt", a)
-   def qualIDFirst(e: EXP) = APPLY("parse.qualIDSplitFirst", e)   //parse.qualIDSplit("instance_name") = ("instance","name")
-   def qualIDSecond(e: EXP) = APPLY("parse.qualIDSplitSecond", e)
-   //TODO generate 'case _ => error' at the end
+   def parse(c: CatRef, a: EXP) = APPLY("fromJust", APPLY(c.target + "_from_pt", a))
+//   def qualIDFirst(e: EXP) = APPLY("Generic.qualIDSplitFirst", e)   //parse.qualIDSplit("instance_name") = ("instance","name")
+//   def qualIDSecond(e: EXP) = APPLY("Generic.qualIDSplitSecond", e)
    val parsefuncs = log.cats map {case Category(c, cons) =>
+     /** matches Application(n, None, args) */
       val appcase = cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
         case (rest, Connective(con,cats)) =>
-           IF("n" === STRING(con),
+          IF("n" === STRING(con),
              IF(ID("args").length === cats.length,
-                 APPLY(con, cats.zipWithIndex map {case (r, i) =>
-                    parse(r, AT("args", i))
-                 } : _*),
-                 ERROR("error", STRING("bad number of arguments, expected " + cats.length))
+               	SOME( // returns Some(exp)
+                				APPLY(upc(con), cats.zipWithIndex map {case (r, i) =>
+                				parse(r, AT("args", i))
+                				} : _*)
+               	),
+//                 ERROR("error", STRING("bad number of arguments, expected " + cats.length)) // returns None
+                NONE
                ),
              rest
            )
-        //NOTE: The following case assumes that non-logical constructors for the same category have different names, even though they this is not necessarily the case if they are declared in different patterns
-        //This is typical in practice though.
-        case (rest, ConstantSymbol(pat, con,cats)) =>
-           IF(qualIDSecond("n") === STRING(con),
-             IF(ID("args").length === cats.length,
-                 APPLY(pat + "_" + con, qualIDFirst("n") :: (cats.zipWithIndex map {case (r, i) =>
-                    parse(r, AT("args", i))
-                 }) : _*),
-                 ERROR("error", STRING("bad number of arguments, expected " + cats.length))
-               ),
-             rest
-           )
-           
         case (rest, _) => rest
       }
+      /** matches Application(n, Some(Pair(p,i)), args) */
+      val instappcase = cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
+        case (rest, ConstantSymbol(pat,con,cats)) =>
+           IF(AND("n" === STRING(con), "pat" === STRING(pat)),
+             IF(ID("args").length === cats.length,
+                 SOME(
+                		 APPLY(upc(pat) + "_" + con, ID("inst") :: (cats.zipWithIndex map {case (r, i) =>
+                		 parse(r, AT("args", i))
+                		 }) : _*)
+                 ),
+//                 ERROR("error", STRING("bad number of arguments, expected " + cats.length))
+                   NONE
+               ),
+             rest
+           )
+        case (rest, _) => rest
+      }
+      
       val bindcase = cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
          case (rest, Binder(name, None, bound, scope)) =>
             IF("n" === STRING(name),
@@ -136,6 +143,7 @@ class Compiler(log: LogicSyntax) extends Program {
             )
          case (rest, _) => rest
       }
+      
       val tbindcase = cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
             case (rest, Binder(name, Some(a), bound, scope)) =>
                IF("n" === STRING(name),
@@ -146,13 +154,18 @@ class Compiler(log: LogicSyntax) extends Program {
         }
       val varcase = if (cons.exists(_ == VariableSymbol)) APPLY(c + "_var", "n")
           else ERROR("error", STRING("variables not allowed here"))
+      
+      // worst case - return None
+      val errcase : EXP = NONE
 
-      val declare(_) = c + "_from_pt" function c <-- ("x" :: "Generic.Tree") == {
+      val declare(_) = c + "_from_pt" function OPTION(c) <-- ("x" :: "Generic.Tree") == {
         "x" Match (
-            ID("parse.app")("n", "args") ==> appcase,
-            ID("parse.bind")("n", "v", "s") ==> bindcase,
-            ID("parse.tbind")("n", "a", "v", "s") ==> tbindcase,
-            ID("parse.var")("n") ==> varcase
+            ID("Generic.Application")("n", NONE, "args") ==> appcase,
+            ID("Generic.Application")("n", SOME(TUPLE(List("pat", "inst"))), "args") ==> instappcase,
+            ID("Generic.Bind")("n", "v", "s") ==> bindcase,
+            ID("Generic.Tbind")("n", "a", "v", "s") ==> tbindcase,
+            ID("Generic.Variable")("n") ==> varcase,
+            ID("_") ==> errcase
         )
       }
    }
@@ -170,9 +183,9 @@ class Compiler(log: LogicSyntax) extends Program {
            rest
         )      
    }
-   val declare(decl_from_pt) = "decl_from_pt" function decl <-- ("d" :: "Generic.Decl") =|= {case d =>
+   val declare(decl_from_pt) = "decl_from_pt" function OPTION(decl) <-- ("d" :: "Generic.Decl") =|= {case d =>
        d Match (
-          ID("Decl")("i", "p", "args") ==> declfrompt
+          ID("Generic.Decl")("i", "p", "args") ==> declfrompt
        )
    }
    
@@ -231,5 +244,6 @@ class Compiler(log: LogicSyntax) extends Program {
    }
    */
    addTag("funs")
-   
+ 
+   private def upc(string : String) : String = string.head.toUpper + string.substring(1)
 }

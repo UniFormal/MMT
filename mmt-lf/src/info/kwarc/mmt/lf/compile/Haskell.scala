@@ -9,13 +9,15 @@
  */
 package info.kwarc.mmt.lf.compile
 
-case class Unsupported(msg: String) extends java.lang.Throwable 
+case class Unsupported(msg: String) extends java.lang.Throwable
 
 /** Haskell as an implementation of a FuncLang */
 object Haskell extends FuncLang[String] {
    private var current : String = null
+   
    def exp(e: EXP) : String = e match {
      case EQUAL(left,right) => "(" + exp(left) + " == " + exp(right) + ")"
+     case AND(left,right) => "(" + exp(left) + " && " + exp(right) + ")"
      case INTS => "Integer"
      case INT(value) => value.toString
      case PLUS(x,y) => "(" + exp(x) + " + " + exp(y) + ")"
@@ -26,37 +28,48 @@ object Haskell extends FuncLang[String] {
      case STRINGCONCAT(left, right) => "(" + exp(left) + " + " + exp(right) + ")"
      case ID(name) => if (name == "") {
        ids.find(_._1 == current) match {
-         case Some((_,b)) => if (b) checkNativeTypeConflict(upc(current)) else checkNativeTypeConflict(current)
+         //TODO replace with fixConflict(current,fixMap)
+         case Some((_,b)) => if (b) fix(upc(current)) else fix(current)
          case None => current
        } 
-     }
+     } 
      else {
        ids.find(_._1 == name) match {
-         case Some((_,b)) => if (b) checkNativeTypeConflict(upc(name)) else checkNativeTypeConflict(name)
+         case Some((_,b)) => if (b) fix(upc(name)) else fix(name)
          case None => name
        }
      }
-     case APPLY(fun, args @ _*) => fun + args.map(exp).mkString("(", ",", ")")
-     case IF(cond, thn, els) => "(if " + exp(cond) + " then " + exp(thn) + " else " + exp(els) + ")"  
-     case MATCH(arg, cases) => "case " + exp(arg) + "\n" + cases.map(cas).mkString("  of ", "\n   ", "\n")
-     case ERROR(e, msg) => "error " + exp(STRINGCONCAT(STRING(e + ": "), msg))
+     case APPLY(fun, args @ _*) => "(" + fixConflict(fixNative(upperORlower(fun)),fixMap) + {
+       if (! args.isEmpty) args.map(exp).mkString(" ", " ", " ")
+       else ""
+     } + ")"
+     case IF(cond, thn, els) => "if " + exp(cond) + 
+    		 						idtrn + "then " + exp(thn) + 
+    		 						idtn + "else " + exp(els) +
+    		 					left
+     case MATCH(arg, cases) => "case " + exp(arg) + " of" + idtrn + cases.map(cas).mkString(idt, idtrn, idtln + left)
+//     case ERROR(e, msg) => "error " + exp(STRINGCONCAT(STRING(e + ": "), msg))
+     case ERROR(e, msg) => "Nothing"
      case LIST(tp) => "[" + exp(tp) + "]"
      case ALIST(elems) => elems.map(exp).mkString("[", ",", "]")
+     case OPTION(tp) => s"Maybe(${exp(tp)})"
+     case SOME(elem) => s"Just(${exp(elem)})"
+     case NONE => "Nothing"
      case LENGTH(list) => "length(" + exp(list) + ")"
      case AT(list, index) => "(" + exp(list) + " !! " + exp(index) + ")"
      case CONCAT(left, right) => "(" + exp(left) + " ++ " + exp(right) + ")"
      case MAP(list, fun) => "(map " + exp(fun) + " " + exp(list) + ")"
-     case PROD(tps) => throw Unsupported("product types")
-     case TUPLE(es) => throw Unsupported("product types")
-     case PROJ(e, i) => throw Unsupported("product types")
+     case PROD(tps) => s"(${tps.map(exp).mkString(",")})"
+     case TUPLE(elems) => s"(${elems.map(exp).mkString(",")})"
+     case PROJ(e, i) => s"${exp(e)}($i)"
      case ARECORD(tp, fields) => tp + fields.map {case FIELD(n,v) => n + " = " + exp(v)}.mkString("{", ",", "}")
      case SELECT(rec, field) => "(" + field + " " + exp(rec) + ")"  
    }
-   def cons(c: CONS) = upc(c.name) + " " + c.args.map(exp).mkString("", " ", "")
+   def cons(c: CONS) = fix(upc(c.name)) + " " + c.args.map(exp).mkString("", " ", "")
    def arg(a: ARG) = a.name + ": " + exp(a.tp) 
    private def ADTaux(a: ADT) = {
       current = a.name
-      checkNativeTypeConflict(upc(a.name)) + " = " + a.constructors.map(cons).mkString("", " | ", "\n")
+      fixNative(upc(a.name)) + " = " + a.constructors.map(cons).mkString("", " | ", "\n")
    }
    private def FUNCTIONaux(f: FUNCTION) = {
       current = f.name
@@ -66,9 +79,12 @@ object Haskell extends FuncLang[String] {
      case a : ADT => "data " + ADTaux(a)
      case ADTRec(adts) => adts.map(decl).mkString("", "", "")
      case TYPEDEF(name, df) => "type " + upc(name) + " = " + exp(df) + "\n"
-     case f: FUNCTION =>
-        f.name + " :: " + f.args.map(a => exp(a.tp)).mkString("", " -> ", " -> ") + exp(f.ret) + "\n" +
+     case f: FUNCTION => {
+//       println(f.args.map(a => exp(a.tp) + f.ret))
+        f.name + " :: " + f.args.map(a => exp(a.tp)).mkString("", " -> ", " -> ") + 
+        	exp(f.ret) + "\n" +
         f.name + " " + f.args.map(_.name).mkString("", " ", " = ") + exp(f.body) + "\n"
+     }
      case FUNCTIONRec(fs) => fs.map(decl).mkString("", "\n", "")
      case RECORD(name, fields) => "data " + upc(name) + " = " + upc(name) + fields.map {case FIELD(n,v) => n + " :: " + exp(v)}.mkString("{", ",", "}")
      case EXCEPTION(e) => ""
@@ -76,14 +92,14 @@ object Haskell extends FuncLang[String] {
    private var ids: List[(String,Boolean)] = Nil
    def reset {ids = Nil}
    override def prog(ds: List[DECL]) : List[String] = {
-      val q = ds map {d =>
+//      val q = 
+        ds map {d =>
 //        reset
         ids :::= declName(d)
-        val q = ids
+//        val q = ids
         decl(d)
       }
-//      println(ids)
-      q
+//      q
    }
    private def declName(d : DECL) : List[(String,Boolean)] = d match {
      case TYPEDEF(a,b) => (a,true) :: declName(b)
@@ -91,7 +107,7 @@ object Haskell extends FuncLang[String] {
 //    	 val q = b map declName 
 //     }
 //     ( )foldRight(List())(:::)
-     case d : FUNCTION => List((d.name,false)) // function names start with small letters
+     case d : FUNCTION => List((d.name,false)) // function names start with lowercase
      case d : RECORD => List((d.name,true))
      case d : EXCEPTION => List((d.name,true))
      case d : ADTRec => d.adts map declName flatten
@@ -111,12 +127,66 @@ object Haskell extends FuncLang[String] {
      case d : ADT => true
      case _  => false
    }
+   private def upperORlower(s : String) : String = 
+     if (s == "") {
+       ids.find(_._1 == current) match {
+         //TODO replace with fixConflict(current,fixMap)
+         case Some((_,b)) => if (b) fixNative(upc(current)) else fixNative(current)
+         case None => current
+       } 
+     } 
+     else {
+       ids.find(_._1 == s) match {
+         case Some((_,b)) => if (b) fixNative(upc(s)) else fixNative(s)
+         case None => s
+       }
+     }
    def cas(c: CASE) : String = exp(c.pattern) + " -> " + exp(c.body)
    // auxiliary function: upc(string) = String
    private def upc(string : String) : String = string.head.toUpper + string.substring(1)
    // haskell native datatypes and checker
    private val haskellTypes : List[String] = List("Integer","Bool")//,"String","Int")
    private def haskellType(name : String) : Boolean = haskellTypes.exists( name == )
+   /** resolves conflicts with Haskell native types by mapping strings that occur in IDs to replacement strings
+    *  if the key is not found, i.e. there is no conflict, it's just an identity map
+    */
+   private def fixConflict(s : String, m : scala.collection.mutable.HashMap[String,String]) : String = {
+	   m.applyOrElse(s, {x : String => x})
+   }
+   private def fix(s : String) : String = {
+     fixNative(fixConflict(s,fixMap))
+   }
+   // maps the possible conflicts to resolutions
+   private val fixMap = scala.collection.mutable.HashMap[String,String](
+       "true" -> "AS_BASIC.True",
+//       "True" -> "AS_BASIC.True",
+       "false" -> "AS_BASIC.False"//,
+//       "False" -> "AS_BASIC.False",
+//       "<Decl>" -> "Generic.Decl"//,
+//       "Bool" -> "AS_BASIC.Form",
+//       "Sigs" -> "PLpatt.Sigs.Sigs"
+       )
+   private val haskellNative : List[String] = List(
+       "Bool",
+       "True",
+       "False"
+       )
+   private def fixNative(n : String) : String = if (haskellNative.exists({x => x == n})) s"$n'" else n
    //TODO this could be improved
-   private def checkNativeTypeConflict(name : String) : String = if (upc(name) == "Bool" || upc(name) == "Boolean") "Form" else  if (haskellType(name)) name + "'" else name
+//   private def checkNativeTypeConflict(name : String) : String = if (upc(name) == "Bool" || upc(name) == "Boolean") "Form" else  if (haskellType(name)) name + "'" else name
+   // indentation state tracker, represents the level of indentation
+   private var indent : Int = 0
+   // helper function for creation of indentations
+   private def idt : String = { " " * (indent * 2)}
+   private def idt(n : Int) : String = { " " * (n * 2)}
+   private def idt(s : String) : String = { s + idt}
+   private def idt(c : Char) : String = { c + idt}
+   private def idtn : String = { idt('\n')}
+   private def right : String = { indent = indent + 1; ""}
+   private def left : String = { if (indent > 0) indent = indent - 1; ""}
+   private def idtr : String = { right; idt}
+   private def idtrn : String = { right; idtn}
+   private def idtl : String = { left; idt}
+   private def idtln : String = { left; idtn}
+   private def idtReset : String = { indent = 0; ""}
 }

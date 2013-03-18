@@ -70,16 +70,16 @@ class LogicWriter() {
     	}
     	// pick the corresponding template file
     	val (templ,fname) : (java.io.File,String) = x match {
-    	  case "sig" => (new java.io.File(templdir + "/" + "Sign.hs"),"Sign.hs")
+    	  case "sig" => (new java.io.File(templdir + "/" + "Sign.tmpl"),"Sign.hs")
     	  case "tree" => (new java.io.File(templdir + "/" + "GTools.hs"),"GTools.hs")
-    	  case "basic" => (new java.io.File(templdir + "/" + "AS.hs"),"AS_BASIC_" + lname + ".hs")
-    	  case "mor" => (new java.io.File(templdir + "/" + "Morphism.hs"),"Morphism.hs")
-    	  case "funs" => (new java.io.File(templdir + "/" + "Tools.hs"),"Tools.hs")
+    	  case "basic" => (new java.io.File(templdir + "/" + "AS.tmpl"),"AS_BASIC_" + lname + ".hs")
+    	  case "mor" => (new java.io.File(templdir + "/" + "Morphism.tmpl"),"Morphism.hs")
+    	  case "funs" => (new java.io.File(templdir + "/" + "Tools.tmpl"),"Tools.hs")
     	}
     	write(ldir,lname :: Haskell.prog(dd),fname, templ)
     }
     val mainLName = "Logic_" + lname + ".hs"
-    val tempL = new java.io.File(templdir + "/" + "Logic.hs")
+    val tempL = new java.io.File(templdir + "/" + "Logic.tmpl")
     write(ldir, List(lname), mainLName, tempL)
   }
   
@@ -92,8 +92,11 @@ class LogicWriter() {
     * filename - destination of generated code file name
     * templ - template file
     */
-  def write(logdir : String, cont : List[String], filename : String, templ : java.io.File) = {
-    
+  def write(logdir : String, cont : List[String], filename : String, templ : java.io.File) : Unit = {
+    //TODO GTools has been dropped
+    if (filename == "GTools.hs") 
+      return    
+      
     println("reading template " + templ.toString())
     val templdir = "/home/aivaras/Hets-src/MMT/newLogicTemplates/"
     val file = File(new java.io.File(logdir + "/" + filename))    
