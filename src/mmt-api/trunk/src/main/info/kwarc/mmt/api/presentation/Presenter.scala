@@ -7,12 +7,24 @@ import objects._
  */
 abstract class Presenter extends frontend.Extension {
    def isApplicable(format: String): Boolean
-   def apply(c : StructuralElement, rh : RenderingHandler)
+   def apply(e : StructuralElement, rh : RenderingHandler)
    def apply(o: Obj, rh: RenderingHandler)
+   def asString(e : StructuralElement): String = {
+      val sb = new StringBuilder
+      apply(e, sb)
+      sb.get
+   }
+   def asString(o: Obj): String = {
+      val sb = new StringBuilder
+      apply(o, sb)
+      sb.get
+   }
 }
 
 /**
  * A Presenter that returns text based on the toString method
+ * 
+ * This Presenter can be used without initialization.
  */
 object TextPresenter extends Presenter {
    def isApplicable(format: String) = format == "text"
@@ -26,6 +38,8 @@ object TextPresenter extends Presenter {
 
 /**
  * A Presenter that returns XML based on the toNode method
+ * 
+ * This Presenter can be used without initialization.
  */
 object OMDocPresenter extends Presenter {
    def isApplicable(format: String) = format == "xml"

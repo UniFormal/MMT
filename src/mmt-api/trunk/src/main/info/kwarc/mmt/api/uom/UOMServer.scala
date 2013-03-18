@@ -133,11 +133,11 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
     * @param context its context, if non-empty
     * @return the simplified Term (if a sensible collection of rules is used that make this method terminate)
     */
-   def simplify(t: Term, context: Context = Context()) = apply(t)(context, ())
+   def simplify(t: Term, context: Context = Context()) = apply(t,context)
    
    /** the simplification method that is called internally during the traversal of a term
     * users should not call this method (call simplify instead) */
-   def apply(t: Term)(implicit con : Context, init: Unit) : Term =  t match {
+   def traverse(t: Term)(implicit con : Context, init: Unit) : Term =  t match {
       case OMA(OMS(_), _) =>
          log("simplifying " + t)
          report.indent
@@ -181,7 +181,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
                // by marking with and testing for Simplified(_), we avoid recursing into a term twice
                val argsSS = argsS map {
                   case Simplified(a) => a 
-                  case a => Simplified(apply(a))
+                  case a => Simplified(traverse(a))
                }
                // if any argument changed globally, go back to state (1)
                if (argsSS exists {

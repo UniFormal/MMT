@@ -67,6 +67,9 @@ class Controller extends ROController with Logger {
    val notstore = memory.presentation
    val docstore = memory.narration
 
+   /** text-based presenter for error messages, logging, etc. */
+   val presenter = new StructureAndObjectPresenter(this)
+   
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
    /** pragmatic MMT features besides Patterns */

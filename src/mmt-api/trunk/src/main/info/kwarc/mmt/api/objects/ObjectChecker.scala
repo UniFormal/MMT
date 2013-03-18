@@ -115,7 +115,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     */
    private def solve(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
       log("solving " + name + " as " + value)
-      val valueS = simplify(value) 
+      // use controller.uom.simplify? yes, if well-formedness is guaranteed at this point
+      val valueS = simplify(value)
+      parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
          checkEquality(valueS, solved.df.get, solved.tp) //TODO

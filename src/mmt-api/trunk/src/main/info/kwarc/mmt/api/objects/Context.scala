@@ -153,12 +153,10 @@ case class Substitution(subs : Sub*) extends Obj {
    def ++(n:String, t:Term) : Substitution = this ++ Sub(LocalName(n),t)
    def ++(s: Sub) : Substitution = this ++ Substitution(s)
    def ++(that: Substitution) : Substitution = this ::: that
-   def ^(sub : Substitution) = this map {
-	   case Sub(v,t) => Sub(v, t ^ sub)
-   }
+   def ^(sub : Substitution) = this map {s => s ^ sub}
    private[objects] def freeVars_ = (this flatMap {_.freeVars_})
    def maps(n: LocalName): Boolean = this exists {_.name == n}
-   def apply(v : LocalName) : Option[Obj] = subs.reverse.find(_.name == v).map(_.target)
+   def apply(v : LocalName) : Option[Term] = subs.reverse.find(_.name == v).map(_.target)
    def isIdentity : Boolean = subs forall {
       case Sub(n, OMV(m)) => m == n
       case _ => false 
@@ -198,6 +196,7 @@ object Context {
 	      if (forbidden contains x) {
    	      val xn = rename(x)
             val vdn = VarDecl(xn, tp map {_ ^ sub}, df map {_ ^ sub}, ats : _*)
+            vdn.copyFrom(vd)
    	      sub = sub ++ OMV(x) / OMV(xn)
    	      vdn
 	      } else {

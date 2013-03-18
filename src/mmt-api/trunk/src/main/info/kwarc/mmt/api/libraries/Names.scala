@@ -9,7 +9,7 @@ import utils.MyList._
  * @param parent theory from which the resolved symbol is imported
  * @param completion name of the completed symbol 
  */
-case class Completion(parent: Path, completion: LocalName)
+case class Completion(parent: MPath, completion: LocalName)
 
 /** Auxiliary methods for name lookup */
 // we assume includes have been flattened
