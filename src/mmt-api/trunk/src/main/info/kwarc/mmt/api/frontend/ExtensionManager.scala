@@ -34,7 +34,7 @@ class ExtensionManager(controller: Controller) {
    private var compilers : List[Compiler] = List(new MMTCompiler(controller))
    private var querytransformers : List[QueryTransformer] = Nil
    private var roleHandlers: List[RoleHandler] = Nil
-   private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter,StructureAndObjectPresenter)
+   private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter,controller.presenter)
    private var serverPlugins : List[ServerPlugin] = Nil
            var lexerExtensions : List[LexerExtension] =
               List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), NatLiteralHandler)
