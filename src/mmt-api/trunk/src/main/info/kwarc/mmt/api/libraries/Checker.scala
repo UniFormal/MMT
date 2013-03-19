@@ -126,6 +126,12 @@ class StructureChecker(controller: Controller) extends Logger {
                   }
                }
             }
+            // apply every applicable RoleHandler
+            c.rl foreach {r =>
+              controller.extman.getRoleHandler(r) foreach { h =>
+                 h.apply(c)
+              }
+            }
             /*
             val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
             c.tp map {t =>

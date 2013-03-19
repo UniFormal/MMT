@@ -312,7 +312,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                end(d)
             case "namespace" =>
                val ns = readDPath(doc.path)
-               state.namespaces.default = ns .uri
+               state.namespaces.default = ns.uri
             case "import" =>
                val (n,_) = state.reader.readToken
                val ns = readDPath(doc.path)
@@ -480,6 +480,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       var dfC = new TermContainer
       var al : Option[LocalName] = None
       var nt : Option[TextNotation] = None
+      var rl : Option[String] = None
       var pr : Option[Context] = None
       // every iteration reads one delimiter and one object
       // @ alias or : TYPE or = DEFINIENS or # NOTATION
@@ -543,7 +544,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          }
       }
-      new Constant(OMMOD(parent), name, al, tpC, dfC, None, nt)
+      new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt)
    }
    private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
       val args = if (state.reader.endOfDeclaration)
