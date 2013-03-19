@@ -137,8 +137,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          else if (flat.startsWith("%view", i))
            i = crawlView(i)
          else if (flat.startsWith("%spec", i)) {
-           //TODO read logic spec
-//           throw TextParseError(toPos(i), "reading spec!")
            i = crawlSpec(i)
          }
          else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) // unknown top-level %-declaration => ignore it
@@ -1211,11 +1209,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       else if (flat.startsWith("%pattern", i)) {
         // read pattern declaration
         i = crawlPatternDeclaration(i, parent)
-      }
-      //TODO
-      else if (flat.startsWith("%pattern", i)) {
-        // read pattern instance
-        //i = crawlInstanceDeclaration(i, parent)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)

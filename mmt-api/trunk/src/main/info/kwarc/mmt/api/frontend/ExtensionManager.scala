@@ -33,7 +33,8 @@ class ExtensionManager(controller: Controller) {
    private var foundations : List[Foundation] = Nil
    private var compilers : List[Compiler] = List(new MMTCompiler(controller))
    private var querytransformers : List[QueryTransformer] = Nil
-   private var presenters : List[Presenter] = List(TextPresenter, OMDocPresenter, controller.presenter)
+   private var roleHandlers: List[RoleHandler] = Nil
+   private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter,StructureAndObjectPresenter)
    private var serverPlugins : List[ServerPlugin] = Nil
            var lexerExtensions : List[LexerExtension] =
               List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), NatLiteralHandler)
@@ -92,6 +93,8 @@ class ExtensionManager(controller: Controller) {
    def getCompiler(src: String) : Option[Compiler] = compilers.find(_.isApplicable(src))
    /** retrieves an applicable Compiler */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
+   /** retrieves an applicable Compiler */
+   def getRoleHandler(role: String) : List[RoleHandler] = roleHandlers.filter(_.isApplicable(role))
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
    /** retrieves an applicable server plugin */
