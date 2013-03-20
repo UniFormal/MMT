@@ -30,12 +30,15 @@ trait Extension {
  */
 class ExtensionManager(controller: Controller) {
    private val report = controller.report
+   
    private var foundations : List[Foundation] = Nil
    private var compilers : List[Compiler] = List(new MMTCompiler(controller))
    private var querytransformers : List[QueryTransformer] = Nil
    private var roleHandlers: List[RoleHandler] = Nil
    private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter,controller.presenter)
    private var serverPlugins : List[ServerPlugin] = Nil
+   private var loadedPlugins : List[java.lang.Class[_ <: Plugin]] = Nil
+   
            var lexerExtensions : List[LexerExtension] =
               List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), NatLiteralHandler)
    private var mws : Option[URI] = None
@@ -45,22 +48,6 @@ class ExtensionManager(controller: Controller) {
    val ruleStore = new objects.RuleStore
    val pragmaticStore = new pragmatics.PragmaticStore
 
-   private var loadedPlugins : List[java.lang.Class[_ <: Plugin]] = Nil
-   def addPlugin(pl: Plugin, args: List[String]) {
-       loadedPlugins ::= pl.getClass
-       pl.dependencies foreach {d => if (! (loadedPlugins contains d)) addPlugin(d, Nil)}
-       pl.init(controller, args)
-   }
-   def addPlugin(cls: String, args: List[String]) {
-       log("adding plugin " + cls)
-       val pl = try {
-          val Pl = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Plugin]]
-          Pl.newInstance
-       } catch {
-          case e : java.lang.Exception => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
-       }
-       addPlugin(pl, args)
-   }
    /** adds an Importer and initializes it */
    def addExtension(cls: String, args: List[String]) {
        log("adding importer " + cls)
@@ -71,6 +58,21 @@ class ExtensionManager(controller: Controller) {
           case e : java.lang.Exception => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
        ext.init(controller, args)
+       if (ext.isInstanceOf[Plugin]) {
+          log("  ... as plugin")
+          val pl = ext.asInstanceOf[Plugin]
+          loadedPlugins ::= pl.getClass
+          pl.dependencies foreach {d => if (! (loadedPlugins contains d)) addExtension(d, Nil)}
+          pl.init(controller, args)
+       }
+       if (ext.isInstanceOf[Foundation]) {
+          log("  ... as foundation")
+          foundations ::= ext.asInstanceOf[Foundation]
+       }
+       if (ext.isInstanceOf[RoleHandler]) {
+          log("  ... as role handler")
+          roleHandlers ::= ext.asInstanceOf[RoleHandler]
+       }
        if (ext.isInstanceOf[Compiler]) {
           log("  ... as compiler")
           compilers ::= ext.asInstanceOf[Compiler]
@@ -98,24 +100,7 @@ class ExtensionManager(controller: Controller) {
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
    /** retrieves an applicable server plugin */
-   def getServerPlugin(uriComps : List[String]) : Option[ServerPlugin] = 
-     {
-     //println(serverPlugins.find(_.isApplicable(uriComps)))
-     serverPlugins.find(_.isApplicable(uriComps))
-     }
-   
-   /** adds a foundation, must be initialized already */
-   def addFoundation(cls: String, args: List[String]) {
-       log("adding foundation " + cls)
-       val found = try {
-          val Found = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Foundation]]
-          Found.newInstance
-       } catch {
-          case e : java.lang.ClassNotFoundException => throw ExtensionError("cannot instantiate class " + cls).setCausedBy(e)
-       }
-       found.init(report, args)
-       foundations ::= found
-   }
+   def getServerPlugin(uriComps : List[String]) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(uriComps))
    /** retrieves an applicable Foundation */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
 
@@ -124,7 +109,7 @@ class ExtensionManager(controller: Controller) {
    def getMWS : Option[URI] = mws
    
    def cleanup {
-      compilers.foreach(_.destroy)
+      (compilers:::foundations:::compilers:::querytransformers:::roleHandlers:::presenters:::serverPlugins).foreach(_.destroy)
       compilers = Nil
    } 
 

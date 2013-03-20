@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def comment = "//.*"r
    private def action = controller | shell | getaction
 
-   private def controller = log | mathpath | archive | importer | foundation | plugin | mws | server | windowaction | execfile
+   private def controller = log | mathpath | archive | importer | mws | server | windowaction | execfile
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
@@ -53,8 +53,6 @@ object Action extends RegexParsers {
            "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def importer = "extension" ~> str ~ (str *) ^^ {case c ~ args => AddExtension(c, args)}
-   private def foundation = "foundation" ~> str ~ (str *) ^^ {case f ~ args => AddFoundation(f, args)}
-   private def plugin = "plugin" ~> str ^^ {case s => AddPlugin(s)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def server = serveron | serveroff
      private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
@@ -211,16 +209,6 @@ case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Op
  */
 case class AddTNTBase(file : File) extends Action {override def toString = "tntbase " + file}
 
-/** adds a Plugin
- * @param cls the id of the class extending info.kwarc.mmt.api.frontend.Plugin
- * 
- * The plugin is instantiated using reflection.
- * The respective class must be on the Java class path before this Plugin is added. 
- *
- * concrete syntax: plugin cls:CLASS
- */  
-case class AddPlugin(cls: String) extends Action {override def toString = "plugin " + cls}
-
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
  * @param args a list of arguments that will be passed to the compiler's init method
@@ -228,14 +216,6 @@ case class AddPlugin(cls: String) extends Action {override def toString = "plugi
  * concrete syntax: importer cls:CLASS args:STRING*
  */
 case class AddExtension(cls: String, args: List[String]) extends Action {override def toString = "extension " + cls + args.mkString(" ", " ", "")}
-
-/** registers a foundation
- * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
- * @param args a list of arguments that will be passed to the compiler's init method
- * 
- * concrete syntax: foundation cls:CLASS args:STRING*
- */
-case class AddFoundation(cls: String, args: List[String]) extends Action {override def toString = "foundation " + cls + args.mkString(" ", " ", "")}
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}

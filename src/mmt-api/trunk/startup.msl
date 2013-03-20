@@ -17,8 +17,8 @@ log+ server
 //log+ lf
 
 mathpath fs http://cds.omdoc.org/styles ../../../styles
-plugin info.kwarc.mmt.lf.Plugin
-//foundation info.kwarc.mmt.lf.LFF
+extension info.kwarc.mmt.lf.Plugin
+//extension info.kwarc.mmt.lf.LFF
 
 file ../../paths.mmt
 

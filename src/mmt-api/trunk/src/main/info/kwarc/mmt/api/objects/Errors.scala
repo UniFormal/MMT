@@ -20,7 +20,8 @@ object HoleTerm extends InferenceRule(Hole.path) {
 
 class ErrorsPlugin extends Plugin {
    val dependencies = Nil
-   def init(c: Controller, args: List[String]) {
+   override def init(c: Controller, args: List[String]) {
+      super.init(c, args)
       c.extman.ruleStore.add(HoleTerm)
    }
 }

@@ -350,8 +350,6 @@ class Controller extends ROController with Logger {
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
 	      case AddExtension(c, args) => extman.addExtension(c, args)
-	      case AddPlugin(c) => extman.addPlugin(c, Nil)
-	      case AddFoundation(c, args) => extman.addFoundation(c, args)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>

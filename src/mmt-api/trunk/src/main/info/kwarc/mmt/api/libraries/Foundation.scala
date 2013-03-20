@@ -37,13 +37,7 @@ class TracedLookup(val lup: Lookup) extends FoundationLookup {
 
 /** MMT Foundation: provides oracles for typing and equality. Concrete foundations are registered as plugins and maintained by @frontend.ExtensionManager
  * Concrete foundations must have a constructor that takes no arguments, which will be called after plugin registration */
-abstract class Foundation {
-   protected var report : Report = null
-   /** called after registration of the plugin
-    *  @param params user parameters (passed on the shell) */
-   def init(r: Report, params: List[String] = Nil) {
-      report = r
-   }
+abstract class Foundation extends Extension {
    val foundTheory : MPath
    
    def tracedTyping(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : HashSet[CPath] = {
@@ -78,4 +72,3 @@ class DefaultFoundation extends Foundation {
       tm1 == tm2
    def inference(tm: Term, context: Context)(implicit lib: Lookup) : Term = OMHID //TODO: questionable choice here, better introduce a special untyped foundation
 }
-
