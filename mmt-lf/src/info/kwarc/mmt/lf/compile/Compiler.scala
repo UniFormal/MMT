@@ -156,16 +156,16 @@ class Compiler(log: LogicSyntax) extends Program {
           else ERROR("error", STRING("variables not allowed here"))
       
       // worst case - return None
-      val errcase : EXP = NONE
+//      val errcase : EXP = NONE
 
       val declare(_) = c + "_from_pt" function OPTION(c) <-- ("x" :: "Generic.Tree") == {
         "x" Match (
             ID("Generic.Application")("n", NONE, "args") ==> appcase,
             ID("Generic.Application")("n", SOME(TUPLE(List("pat", "inst"))), "args") ==> instappcase,
-            ID("Generic.Bind")("n", "v", "s") ==> bindcase,
-            ID("Generic.Tbind")("n", "a", "v", "s") ==> tbindcase,
-            ID("Generic.Variable")("n") ==> varcase,
-            ID("_") ==> errcase
+            ID("Generic.Bind")("_n", "_v", "_s") ==> bindcase,
+            ID("Generic.Tbind")("_n", "_a", "_v", "_s") ==> tbindcase,
+            ID("Generic.Variable")("_n") ==> varcase//,
+//            ID("_") ==> errcase
         )
       }
    }
@@ -175,9 +175,14 @@ class Compiler(log: LogicSyntax) extends Program {
       case (rest, Declaration(p, args)) =>
          IF("p" === STRING(p),
            IF(ID("args").length === args.length,
-              ID(p + "_decl")("i", args.zipWithIndex map {case (r, i) =>
-                       parse(r, AT("args", i))
-                 }),
+              SOME(ID(p + "_decl")(
+                  APPLY(p,
+                		  ((ID("i") :: 
+                			  (args.zipWithIndex map {case (r, i) => parse(r, AT("args", i)) }) 
+                		   ) : _* )
+                  )
+                 )
+              ),
               ERROR("error", STRING("bad number of arguments, expected " + args.length))
            ),
            rest
@@ -190,15 +195,23 @@ class Compiler(log: LogicSyntax) extends Program {
    }
    
    // functions that parse signatures and theories
-   val declare(sign_from_pt) = "sign_from_pt" function sigs <-- ("sg" :: "Generic.Sign") =|= {case sg =>
-      MAP(sg, decl_from_pt)
+   val declare(sign_from_pt) = "sign_from_pt" function sigs <-- ("(Generic.Sign sg)" :: "Generic.Sign") =|= {case sg =>
+      sigs(MAP(ID("sg"), ID("fromJust") o decl_from_pt ))
    }
+   
+//   val declare(sign_from_pt) = "sign_from_pt" function "Sigs" <-- ("sg" :: "Generic.Sign") =|= {case sg =>
+//     sg Match (
+//         ID("Generic.Sign")("sg") ==> ERROR("","")
+//     )
+//   } 
+   
+//   val declare(sign_from_pt) = 
    
    val declare(axiom_from_pt) = "axiom_from_pt" function log.form <-- ("ax" :: "Generic.Tree") =|= {case ax =>
       parse(log.form, ax)
    }
    val declare(theo_from_pt) = "theo_from_pt" function theo <-- ("th" :: "Generic.Theo") =|= {case th => 
-       theo("sign" ::: sign_from_pt(th __ sign), "axioms" ::: MAP(th __ axioms, axiom_from_pt))
+       theo("sign" ::: sign_from_pt(th __ sign.prepend("Generic.")), "axioms" ::: MAP(th __ axioms.prepend("Generic."), axiom_from_pt))
    }
 /*
    def tolf(c: CatRef, e: EXP) = APPLY(c.target + "_to_lf", e)
@@ -246,4 +259,13 @@ class Compiler(log: LogicSyntax) extends Program {
    addTag("funs")
  
    private def upc(string : String) : String = string.head.toUpper + string.substring(1)
+   
+   private def getCons(ex : EXP) : EXP = {
+     def pred(x : EXP) : Boolean = ex match {
+       case x : CONS => true
+       case _ => false
+     }
+//     log.get.filter(  )
+     ID("")
+   }
 }

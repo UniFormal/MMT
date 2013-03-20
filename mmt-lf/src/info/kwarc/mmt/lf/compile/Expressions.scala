@@ -64,7 +64,8 @@ case class ID(name: String) extends EXP {
    def apply(fs: FIELD*) = ARECORD(name, fs.toList)
    /** case in a pattern match: id |> body */
    def ==>(body: EXP) = CASE(this, body)
-//   override def toString = name
+   def prepend(s : String) = s + name
+   def o(that: ID) = ID(name + "." + that.name)
 }
 /** function application */
 case class APPLY(fun: String, args: EXP*) extends EXP {
@@ -113,6 +114,8 @@ case class AT(l: EXP, index: EXP) extends EXP
 case class CONCAT(left: EXP, right: EXP) extends EXP
 /** map over a list */
 case class MAP(l: EXP, fun: ID) extends EXP
+/** function composition */
+//case class COMPOSE(fun1: ID, fun2: ID) extends ID()
 
 /** type of options */
 case class OPTION(tp: EXP) extends EXP
@@ -120,6 +123,8 @@ case class OPTION(tp: EXP) extends EXP
 case class SOME(elem: EXP) extends EXP
 /** the empty option */
 case object NONE extends EXP
+/** unwrap option */
+case class UNOPTION(sm: EXP) extends EXP
 
 /** product type */
 case class PROD(tps: List[EXP]) extends EXP
