@@ -1,4 +1,4 @@
-\subsection{Presentable Expressions}
+\subsubsection{Presentable Expressions}
 
 A \defemph{presentable} {\mmt} expression is any expression produced from any non-terminal symbol of the {\mmt} grammar. Most presentable expressions are characterized by
 \begin{itemize}
@@ -31,12 +31,9 @@ $\triple{g}{\qT}{\qi}$               & \snippet{structure}       & $g::\qT::\qi:
 $\mpath{g}{\ql}$                     & \snippet{view}            & $g::\ql::nil$ \\
 $\mpath{g}{\qT}$                     & \snippet{theory}          & $g::\qT:nil$ \\
 $\hid$                               & \snippet{hidden}          & $nil$ \\
-$\ma{\omega}{\mu}$                   & \snippet{morphism-application} (b) & $\omega::\mu::nil$ \\
 $\oma{\omega_1,\ldots,\omega_n}$     & \snippet{application} (b) & $\omega_1::\ldots::\omega_n::nil$ \\
 $\ombind{\omega_1}{\Upsilon}{\omega_2}$ & \snippet{binding} (b)  & $\omega_1::\Upsilon + \omega_2$ \\
 $\omattr{\omega_1}{\omega_2}{\omega_3}$ & \snippet{attribution} (b) & $\omega_2::\omega_1::\omega_3::nil$ \\
-$\mu_1\bullet\ldots\bullet \mu_n$    & \snippet{composition} (b) & $\mu_1::\ldots::\mu_n::nil$ \\
-$\mmtident{\qT}$                       & \snippet{identity} (b)  & $\qT::nil$ \\
 \hline
 toplevel structural expression       & \snippet{Toplevel}        & see below \\
 toplevel object expression           & \snippet{toplevel}        & see below \\
@@ -62,19 +59,18 @@ The meaning of the path depends on the presentable expression, or more strictly 
 	\item For roles of composed objects, paths are computed recursively as follows:
     \begin{itemize}
 	    \item \snippet{variable}: none
-	    \item \snippet{morphism-application}: the path of the applied morphism,
 	    \item \snippet{application}: the path of the applied function,
 	    \item \snippet{binding}: the path of the binder,
 	    \item \snippet{attribution}: the path of the key,
-	    \item \snippet{identity}: the path of the theory,
 	    \item \snippet{hidden}: none,
-	    \item \snippet{composition}: The path of the first morphism,
 	    \item values and foreign objects: none
     \end{itemize}
   \item For the roles \snippet{Toplevel} and \snippet{toplevel}, the path is the path of the toplevel expression.
 \end{itemize}
 
-\subsection{Syntax and Semantics of Presentations}
+\subsubsection{Syntax and Semantics of Presentations}
+
+The type \snippet{pres} represents presentations. These are lists of \emph{presentation elements} that are used to define structural translations of {\mmt} expressions into other formats or languages. A presentation is evaluated relative to a list of {\mmt} expressions, and this evaluation returns a string or an XML element. Syntax and semantics of presentations are described in Sect.~\ref{sec:notations}.
 
 In the following we will define the well-formed presentation elements and their semantics. We write $[m,n]$ for the set of all integers between and including $m$ and $n$ and $\Z^*$ for the set $\Z\cup\{\snippet{infinity},\snippet{-infinity}\}$.
 
@@ -82,7 +78,7 @@ For a presentation element $P$, its evaluation $\render{P}{C}{i}$ is parametric 
 
 For a list of presentation elements $P_1\ldots P_n$, the evaluation $\render{P_1\ldots P_n}{C}{i}$ is the concatenation $\render{P_1}{C}{i}+\ldots+\render{P_n}{C}{i}$. If any of these returns an XML element, the concatenation is the concatenation of XML elements where all string components are treated as XML text nodes; consecutive text nodes are merged. Otherwise, it is the concatenation of strings. (This concatenation is associative.)
 
-\subsubsection{Producing Literal Values}
+\paragraph{Producing Literal Values}
 
 \begin{elemdescr}
   \elemlabel{text}{produce a string}
@@ -137,7 +133,7 @@ An \snippet{attribute} element is evaluated as the XML attribute with namespace 
 %\end{elemdescr}
 
 
-\subsubsection{Recursing into Components}
+\paragraph{Recursing into Components}
 
 \begin{elemdescr}
   \elemlabel{components}{iterate through $C$}
@@ -265,7 +261,7 @@ This presentation element evaluates to the result of $i+o$ as a string where $o$
 %\end{example}
 %
 
-\subsubsection{Miscellaneous Elements}\label{sec:notations:misc}
+\paragraph{Miscellaneous Elements}\label{sec:notations:misc}
 
 \begin{elemdescr}
   \elemlabel{id}{produces a unique ID}
@@ -319,7 +315,7 @@ This presentation element calls another notation, which is used as a template. I
 The latter notation describes the filling of placeholders. For a presentation $p$ and a list of presentations $p_0,\ldots,p_n$, we write $p(p_1,\ldots,p_n)$ for the presentation arising from $p$ by replacing every placeholder with index $0\leq \leq n$ in $p$ with $p_i$. Placeholders with index $i>n$ or $i<0$ are replaced with their respective children. For example, brackets are given as presentations in which a placeholder indicates the position of the bracketed expression.
 \end{evaluation}
 
-\subsection{Semantics of Notations}
+\subsubsection{Semantics of Notations}
 
 A notation is a tuple of a notation key and a presentation and possibly and output precedence. The notation key determines when the notation is used, the presentation determines the rendering produced form the notation.
 

@@ -23,7 +23,7 @@
 
 \setlength{\hfuzz}{3pt} \hbadness=10001 %make box warning less strict
 
-\title{The {\mmt} API Manual}
+\title{The {\mmt} Manual}
 \author{Florian Rabe \\
 Jacobs University Bremen}
 
@@ -42,34 +42,36 @@ Jacobs University Bremen}
 \begin{document}
 \maketitle
 
-%\begin{abstract}
-%\end{abstract}
+\begin{abstract}
+This is a permanently out-of-date collection of documentation meant to supplement the published accounts on the \mmt language and system.
+It focuses on technical details and is mainly written as a reference, not as an introduction or tutorial.
+\end{abstract}
 
-\section{MMT XML Syntax and MMT URIs}\label{sec:syntax}
+\section{XML Syntax and MMT URIs}\label{sec:syntax}
   \input{syntax}
 
-\section{MMT Text Syntax}\label{sec:syntax}
-  \input{text}
-
-\section{Notations}\label{sec:notations}
+\subsection{Notations in Styles}\label{sec:notations}
   \input{notations}
 
-\section{MMT API}
-
-\section{Catalog}\label{sec:catalog}
-  \input{catalog}
+\section{Text Syntax}\label{sec:syntax}
+  \input{text}
 
 \section{Archives}\label{sec:archives}
   \input{archives}
 
-\section{Extensions}\label{sec:extensions}
-  \input{extensions}
+\section{Catalogs}\label{sec:catalog}
+  \input{catalog}
 
-\section{Shell}\label{sec:shell}
+\section{The Shell Interface}\label{sec:shell}
   \input{shell}
 
-\section{HTTP Server}\label{sec:http}
+\section{The HTTP Interface}\label{sec:http}
   \input{http }
+
+\section{The API}
+
+\section{MMT Extensions and Plugins}\label{sec:extensions}
+  \input{extensions}
 
 
 \bibliographystyle{alpha}

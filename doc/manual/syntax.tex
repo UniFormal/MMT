@@ -69,7 +69,7 @@ In addition to the above grammars, we introduce the following convention: {\mmtu
 
 Thus, (recalling that no $?$-character may occur in URIs that have no query component) every absolute MMT URI can be written uniquely as a $?$-separated triple. The components of this triple are a URI and two $/$-separated lists of strings.
 
-\paragraph{Relationship between URI and {\mmturi}s.}
+\paragraph{Relationship with URIs}
 Every absolute/relative {\mmturi} is also a legal absolute/relative URI. In particular, if we consider an {\mmturi} $N?Q?R$ as a URI, then $Q?R$ is its query component.
 Moreover, the {\mmturi} resolution of $n?q?r$ against $D?Q?R$ is identical to the usual resolution of relative URIs.
 
@@ -91,16 +91,22 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
   \xmlcomment{If this occurs as the root of a document that has a URL, then the name must be omitted or be equal to the last segment of that URL's path.}
 \end{elemdescr}
 
-%\begin{elemdescr}
-%  \elemlabel{omdoc}{a nondocument unit}
-%  \begin{attdescr}
-%    \attribute{name}{\mmturi}{the optional name of the unit}
-%    \attribute{base}{\mmturi}{the base URI for the document's content, relative to document URI, empty by default}
-%  \end{attdescr}
-%  \children{omdoc* \& omgroup \& xref* \& module*}{}
-%  \xmlcomment{If this occurs as the root of a document that has a URL, then the name must be omitted or be equal to the last segment of that URL's path.}
-%\end{elemdescr}
-%
+\begin{elemdescr}
+  \elemlabel{dref}{a reference to an external document unit}
+  \begin{attdescr}
+    \attribute{target}{\mmturi}{the referenced document}
+  \end{attdescr}
+  \children{}{}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{mref}{a reference to an external document unit}
+  \begin{attdescr}
+    \attribute{target}{\mmturi}{the referenced module}
+  \end{attdescr}
+  \children{}{}
+\end{elemdescr}
+
 %\begin{elemdescr}
 %  \elemlabel{omtext}{text}
 %  \begin{attdescr}
@@ -120,8 +126,10 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
     \attribute{name}{\mmtname}{the name of the view}
     \attribute{meta}{\mmturi}{the URI of the optional meta-theory, relative to base URI given by parent}
   \end{attdescr}
-  \children{(include* \& symbol*) | definition\{theory\}}{}
-  \xmlcomment{Here, a symbol can be a constant, a structure, or a notation. Definitions are actually not supported yet and only added for symmetry.}
+  \children{(include* \& symbol*) | definition\{object\}}{}
+  \xmlcomment{Here, a symbol can be a constant or a structure.}
+  \xmlcomment{Depending on the children, we speak of \emph{declared} and \emph{defined} theories.
+  In the latter case, the definiens is a theory expression.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -132,8 +140,9 @@ Every absolute {\mmturi} is a triple of namespace, module name, and symbol name.
     \attribute{from}{\mmturi}{the domain of the view, relative to base URI given by parent}
     \attribute{to}{\mmturi}{the codomain of the view, relative to base URI given by parent}
   \end{attdescr}
-  \children{(include* \& assignment*) | definition\{morph\}}{}
-  \xmlcomment{An assignment can be an assignment to a constant or an assignment to a structure.}
+  \children{(include* \& symbol*) | definition\{object\}}{}
+  \xmlcomment{The symbols are assignments, i.e., their name must be the same as that of a corresponding symbol in the domain, their types are predetermined, and their definientia required.}
+  \xmlcomment{Depending on the children, we speak of \emph{declared} and \emph{defined} views. In the latter case, the definiens is a morphism expression.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -156,14 +165,12 @@ A document unit with name $n$ whose parent is addressable as $D$ is addressable 
 
 \subsection{Symbol Level Elements}
 
-Some symbol level elements are named (notations optionally so). If a symbol with name $n$ occurs in a module with URI $M$, the symbol is addressable via the URI $M?n$.
-
-\subsubsection{Elements in Theories}
+Some symbol level elements are named (includes and notations optionally so). If a symbol with name $n$ occurs in a module with URI $M$, the symbol is addressable via the URI $M?n$.
 
 \begin{elemdescr}
-  \elemlabel{include}{inclusion of a theory into the containing theory}
+  \elemlabel{include}{inclusion of a theory/view/style into the containing theory/view/styles}
   \begin{attdescr}
-    \attribute{from}{\mmturi}{the domain of the inclusion, relative to containing theory}
+    \attribute{from}{\mmturi}{the included module, relative to containing module}
   \end{attdescr}
   \children{}{}
 \end{elemdescr}
@@ -173,7 +180,8 @@ Some symbol level elements are named (notations optionally so). If a symbol with
   \begin{attdescr}
     \attribute{name}{\mmtname}{the name of the constant}
   \end{attdescr}
-  \children{type\{term\}? \& definition\{term\}?}{}
+    \children{alias\{name\} \& type\{object\}? \& definition\{object\}? \& notation\{notation\}? \& role\{string\}}{}
+    \xmlcomment{Constants can occur both in theories and views. In the latter case, their type is predetermined and must be omitted, and their definiens is required.}
 \end{elemdescr}
 
 \begin{elemdescr}
@@ -182,53 +190,9 @@ Some symbol level elements are named (notations optionally so). If a symbol with
     \attribute{name}{\mmtname}{the name of the structure}
     \attribute{from}{\mmturi}{the domain of the structure, relative to containing theory}
   \end{attdescr}
-  \children{(include* \& assignment*) | definition\{morph\}}{}
-  \xmlcomment{An assignment can be an assignment to a constant or an assignment to a structure.}
-\end{elemdescr}
-
-\begin{elemdescr}
-  \elemlabel{alias}{alternative name for another symbol}
-  \begin{attdescr}
-    \attribute{name}{\mmtname}{the name of the alias}
-    \attribute{for}{\mmturi}{the symbol the alias references}
-  \end{attdescr}
-  \children{}{}
-  \xmlcomment{Contrary to a defined symbol, an alias is transparent and does not introduce a new symbol.}
-\end{elemdescr}
-
-\subsubsection{Elements in Links}
-
-\begin{elemdescr}
-  \elemlabel{include}{inclusion of a morphism into the containing link}
-  \children{morph}{}  
-\end{elemdescr}
-
-\begin{elemdescr}
-  \elemlabel{conass}{assignment to a constant in a link}
-  \begin{attdescr}
-    \attribute{name}{\mmtqname}{the name of the constant}
-  \end{attdescr}
-  \children{term}{}
-  \xmlcomment{The child is the term that is assigned to the constant.}
-\end{elemdescr}
-
-\begin{elemdescr}
-  \elemlabel{strass}{assignment to a structure in a link}
-  \begin{attdescr}
-    \attribute{name}{\mmtqname}{the name of the structure}
-  \end{attdescr}
-  \children{morph}{}
-  \xmlcomment{The child is the morphism that is assigned to the constant.}
-\end{elemdescr}
-
-\subsubsection{Elements in Styles}
-
-\begin{elemdescr}
-  \elemlabel{include}{inclusion of a style into the containing style}
-  \begin{attdescr}
-    \attribute{from}{\mmturi}{the domain of the inclusion, relative to base URI of containing style}
-  \end{attdescr}
-  \children{}{}
+  \children{(include* \& symbol*) | definition\{object\}}{}
+  \xmlcomment{A can be an assignment to a constant or an assignment to a structure.}
+  \xmlcomment{Depending on the children, we speak of \emph{declared} and \emph{defined} structures. In the latter case, the definiens is a morphism expression.} 
 \end{elemdescr}
 
 Every notation has a role. The permitted values of \snippet{role} are given in Sect.~\ref{sec:notations}. There are two ways to give notations, direct and via parameters:
@@ -262,25 +226,9 @@ Every notation has a role. The permitted values of \snippet{role} are given in S
   \xmlcomment{A notation without a name has no URI. \snippet{precedence} may only be given if the role is bracketable.}
 \end{elemdescr}
 
-\subsection{Fragment References}
-
-In addition, document fragments defined elsewhere may be referenced. Documents with references are semantically identical to those where references are replaced with their resolution except that the appropriate \snippet{base} attribute is added after resolving.
-
-\begin{elemdescr}
-  \elemlabel{X}{a reference to a X element}
-  \begin{attdescr}
-    \attribute{href}{\mmturi}{the URI of the referenced element}
-  \end{attdescr}
-  \children{}{}
-  \xmlcomment{\snippet{X} may be any document, module, or symbol level label.}
-  \xmlcomment{These elements may carry additional attributes if their key and value are identical to those in the referenced element.}
-\end{elemdescr}
-
 \subsection{Object Level Elements}
 
-\subsubsection{Terms}
-
-The type \snippet{term} represents {\mmt} terms. These are given as OpenMath objects wrapped in an OMOBJ element. Furthermore, morphism application of $\mu$ to $\omega$ is encoded in OpenMath using the special theory MMT with base $MMT$:
+The type \snippet{objects} represents {\mmt} terms. These are given as OpenMath objects wrapped in an OMOBJ element. Furthermore, morphism application of $\mu$ to $\omega$ is encoded in OpenMath using the special theory MMT with base $MMT$:
 \begin{lstlisting}
 <OMA>
   <OMS base="$MMT$" module="mmt" name="morphism-application"/>
@@ -289,9 +237,12 @@ The type \snippet{term} represents {\mmt} terms. These are given as OpenMath obj
 </OMA>
 \end{lstlisting}
 
-\subsubsection{Morphisms}
 
-The type \snippet{morph} represents {\mmt} morphisms. Morphisms are links, identity, and composition, which are encoded in OpenMath using the special theory MMT. We use $MMT$ to abbreviate \lstinline|http://omdoc.org/mmt|.
+\paragraph{Module Expressions}
+Objects may denote \mmt theories and morphisms.
+Besides OMS elements referring to \mmt theories, theory expressions can arise from, e.g., instantiation, union, and pushout.
+Besides OMS elements referring to \mmt views and structures, morphism expressions can arise from, e.g., instantiation, identity, composition, unit, pushout.
+We use $MMT$ to abbreviate \lstinline|http://omdoc.org/mmt|.
 
 Link $D?Q$:
 \begin{lstlisting}
@@ -317,10 +268,6 @@ Identity $\mmtident{\qT}$:
 \end{lstlisting}
 
 Theories are encoded like links.
-
-\subsubsection{Presentations}
-
-The type \snippet{pres} represents presentations. These are lists of \emph{presentation elements} that are used to define structural translations of {\mmt} expressions into other formats or languages. A presentation is evaluated relative to a list of {\mmt} expressions, and this evaluation returns a string or an XML element. Syntax and semantics of presentations are described in Sect.~\ref{sec:notations}.
 
 \subsection{Resolving MMT URIs}
 

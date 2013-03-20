@@ -1,27 +1,36 @@
+The main way to interact with \mmt is through the shell.
+After invocation, it can be controlled via STDIN/STDOUT.
+
+
+The shell can be scripted by putting shell commands into files. The conventional file ending is \code{msl} for \mmt scripting language.
+
 The MMT shell is invoked by
 \begin{center}
-\code{java -cp scala/*;mmt-api.jar info.kwarc.mmt.api.RunNull}
+\code{java -cp lib/*;mmt-api.jar info.kwarc.mmt.api.Run}
 \end{center}
 Further command line parameters are passed to the shell and executed as a command (see below). In particular,
 \begin{center}
-  \code{java -cp mmt-api.jar info.kwarc.mmt.api.RunNull file F}
+  \code{java -cp mmt-api.jar info.kwarc.mmt.api.Run file F}
 \end{center}
-can be used to execute a startup/configuration file \code{F}. After invocation, the shell can be controlled via STDIN/STDOUT.
+can be used to execute a startup/configuration file \code{F}.
+For both commands, Windows and Unix shell-scripts are given in the deploy folder of the \mmt repository.
+In particular, users may want to asscociate the \code{msl} file ending with the \code{run-file} scripts.
 
-The \code{-cp} parameter defines the Java classpath. Besides the main file \code{mmt-api.jar}, it must contain the jar file(s) of the Scala library \cite{scala}, which is here assumed to reside in a folder \code{scala}. Note that the classpath is a list of entries separated by \code{;} on Windows and \code{:} on Unix.
+The \code{-cp} parameter defines the Java classpath. Besides the main file \code{mmt-api.jar}, it must contain the dependencies, in particular the Scala library. All dependencies are available from the folder \code{deploy/lib} \footnote{Note that the classpath is a list of entries separated by \code{;} on Windows and \code{:} on Unix.}
 
-Additional classpath entries are necessary in the following cases:
+Among the dependencies, not all files are needed all the time:
 \begin{itemize}
 \item If the {\mmt} web server is used, the classpath must contain \code{tiscaf.jar} \cite{tiscaf}.
+\item If an SVN repository is used, the classpath must contain \code{svnkit.jar}.
 \item If an {\mmt} extension is used, it (and all its dependencies) must be in the classpath.
 \end{itemize}
 
 It is often reasonable to increase the memory available to {\mmt} by using the appropriate Java parameter as in (here: 1024 MB) 
 \begin{center}
-\code{java -Xmx1024m -cp scala/*;mmt-api.jar info.kwarc.mmt.api.RunNull}
+\code{java -Xmx1024m -cp scala/*;mmt-api.jar info.kwarc.mmt.api.Run}
 \end{center}
 
-Besides caching all loaded documents, the shell only maintains one state variable: a base MMT-URI. All paths are interpreted relative to this base.
+The shell maintains one state variable: a base MMT-URI. All paths are interpreted relative to this base.
 
 \subsection{General Syntax}
 \emph{Commands} are given by a keyword followed by a whitespace-separated list of arguments and terminated by a newline. Empty lines and lines starting with \code{//} are ignored.
