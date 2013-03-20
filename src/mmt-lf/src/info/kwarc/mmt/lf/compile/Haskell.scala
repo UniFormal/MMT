@@ -33,10 +33,13 @@ object Haskell extends FuncLang[String] {
          case None => current
        } 
      } 
-     else {
-       ids.find(_._1 == name) match {
+     else { if (! name.contains(".")) 
+    	 ids.find(_._1 == name) match {
          case Some((_,b)) => if (b) fix(upc(name)) else fix(name)
          case None => name
+       } // ID must contain function composition 
+     	else {
+         "(" + name + ")"
        }
      }
      case APPLY(fun, args @ _*) => "(" + fixConflict(fixNative(upperORlower(fun)),fixMap) + {
@@ -51,18 +54,21 @@ object Haskell extends FuncLang[String] {
 //     case ERROR(e, msg) => "error " + exp(STRINGCONCAT(STRING(e + ": "), msg))
      case ERROR(e, msg) => "Nothing"
      case LIST(tp) => "[" + exp(tp) + "]"
+//     case ALIST(elems) => if (elems.length > 1) elems.map(exp).mkString("[", ",", "]") else elems.map(exp).mkString("")
      case ALIST(elems) => elems.map(exp).mkString("[", ",", "]")
      case OPTION(tp) => s"Maybe(${exp(tp)})"
-     case SOME(elem) => s"Just(${exp(elem)})"
+     case SOME(elem) => s"(Just(${exp(elem)}))"
      case NONE => "Nothing"
+     case UNOPTION(sm) => s"(fromJust(${exp(sm)})" // requires 'import Data.Maybe'
      case LENGTH(list) => "length(" + exp(list) + ")"
      case AT(list, index) => "(" + exp(list) + " !! " + exp(index) + ")"
      case CONCAT(left, right) => "(" + exp(left) + " ++ " + exp(right) + ")"
      case MAP(list, fun) => "(map " + exp(fun) + " " + exp(list) + ")"
+//     case COMPOSE(fun1, fun2) => "(" + exp(fun2) + "." + exp(fun1) + ")"
      case PROD(tps) => s"(${tps.map(exp).mkString(",")})"
      case TUPLE(elems) => s"(${elems.map(exp).mkString(",")})"
      case PROJ(e, i) => s"${exp(e)}($i)"
-     case ARECORD(tp, fields) => tp + fields.map {case FIELD(n,v) => n + " = " + exp(v)}.mkString("{", ",", "}")
+     case ARECORD(tp, fields) => fix(upc(tp)) + fields.map {case FIELD(n,v) => n + " = " + exp(v)}.mkString("{", ",", "}")
      case SELECT(rec, field) => "(" + field + " " + exp(rec) + ")"  
    }
    def cons(c: CONS) = fix(upc(c.name)) + " " + c.args.map(exp).mkString("", " ", "")
