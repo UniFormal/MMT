@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.objects._
 import java.io._
 import scala.Console._
 
-object Synthesizer {
+object Integrator {
 
    val uomstart = "  // UOM start "
    val uomend = "  // UOM end"
@@ -36,21 +36,24 @@ object Synthesizer {
      return getSnippets(in, base)
    }
 
-   def doDocument(controller: Controller, dpath: DPath, scalaFile: File) {
-	   val out = new BufferedReader(new FileReader(scalaFile)) 
-	   val snippets = getSnippets(out, dpath)
+   def doModule(controller: Controller, mod: Module, scalaFile: File) {
+	   val out = new BufferedReader(new FileReader(scalaFile))
+	   val snippets = getSnippets(out, mod.path)
       out.close
-
+      
+      def merge(c: Constant, code: String) =
+         Constant(c.home, c.name, c.alias, c.tp, Some(Scala(code)), c.rl, c.not)
+      
 	   snippets foreach {
-	  	 case (path,code) =>
-	  	   val oldcons : Constant = controller.library.get(path) match {
-           case cons : Constant => cons
-           case _ => throw new Exception(
-             "Synthesizer: Path does not point to a constant"
-           )
+	  	 case (path,code) => controller.globalLookup.get(path) match {
+           case oldcons : Constant =>
+              val newcons = merge(oldcons, code)
+              controller.library.update(newcons)
+           case oldass : ConstantAssignment =>
+              val newass = merge(oldass.toConstant, code).toConstantAssignment
+              controller.library.update(newass)
+           case _ =>
          }
-	  	   val newcons = Constant(oldcons.home, oldcons.name, oldcons.alias, oldcons.tp, Some(Scala(code)), None, None)
-	  	   controller.library.update(newcons)
 	   }
    }
 }

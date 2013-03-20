@@ -11,16 +11,11 @@ trait ScalaArchive extends WritableArchive {
        traverse[String]("content", in, Archive.extensionIs("omdoc")) ({
            //files
            case Current(inFile,inPath) => 
-              try {
                  val mpath = Archive.ContentPathToMMTPath(inPath)
                  val mod = controller.globalLookup.getModule(mpath)
                  val outFile = (root / "scala" / inPath).setExtension("scala")
                  outFile.getParentFile.mkdirs
                  uom.Extractor.doModule(controller, mod, outFile)
-              } catch {
-                 case e: Error => report(e); ""
-                 //case e => report("error", e.getMessage)
-              }
        }, {
            //directories
           (curr: Current, results: List[String]) =>
@@ -33,23 +28,14 @@ trait ScalaArchive extends WritableArchive {
     }
     
     /** Integrate scala into a dimension */
-    def integrateScala(in : List[String] = Nil, dim: String) {
-        val inFile = root / "scala" / in
-        if (inFile.isDirectory) {
-           inFile.list foreach {n =>
-              if (includeDir(n)) integrateScala(in ::: List(n), dim)
-           }
-        } else if (inFile.getExtension == Some("omdoc")) {
-           try {
-              val controller = new Controller(report)
-              val (doc,_) = controller.read(inFile, Some(DPath(narrationBase / in)))
-              val scalaFile = (root / "scala" / in).setExtension("scala")
-              uom.Synthesizer.doDocument(controller, doc.path, scalaFile)
-              xml.writeFile(doc.toNodeResolved(controller.library), inFile)
-           } catch {
-              case e: Error => report(e)
-              //case e => report("error", e.getMessage)
-           }
+    def integrateScala(controller: Controller, in : List[String] = Nil) {
+       traverse("content", in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
+              val mpath = Archive.ContentPathToMMTPath(inPath)
+              val mod = controller.globalLookup.getModule(mpath)
+              val scalaFile = (root / "scala" / inPath).setExtension("scala")
+              uom.Integrator.doModule(controller, mod, scalaFile)
+              val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
+              xml.writeFile(omdocNode, inFile)
         }
     }
 }
