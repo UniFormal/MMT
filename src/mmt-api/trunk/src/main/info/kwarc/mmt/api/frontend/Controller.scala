@@ -394,7 +394,7 @@ class Controller extends ROController with Logger {
                case "mws-flat" => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
                case "extract" => arch.extractScala(this, in)
-               case "integrate" => arch.integrateScala(in, "content")
+               case "integrate" => arch.integrateScala(this, in)
                case "present" => params.foreach(p => arch.producePres(Nil,p, this))
                case "close" => backend.closeArchive(id)
             }
