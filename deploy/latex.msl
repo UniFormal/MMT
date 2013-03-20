@@ -15,7 +15,7 @@ log+ validator
 log+ object-checker
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 
-plugin info.kwarc.mmt.lf.Plugin
+extension info.kwarc.mmt.lf.Plugin
 extension info.kwarc.mmt.latex.LatexPresenter
 archive add ../../../../papers/mmt-latex/examples
 archive mmt-latex clean
