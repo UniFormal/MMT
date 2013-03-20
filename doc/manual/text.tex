@@ -26,13 +26,37 @@ Currently, the best available write-up is in \cite{GIR:mmtlatex:13}.
 
 \subsection{Structural Delimiters}
 
+Within this document, we display them as $D_{US}$, $D_{RS}$, $D_{GS}$, and $D_{FS}$.
+
 \paragraph{Editor Support}
 
-jEdit
+jEdit supports setting up abbreviations that make entering any character easy.
+For example, one can use the following in the \code{mmt} section of jEdit's \code{abbrevs} file:
 
-ViM (v. 7.3.429) by default supports insertion of control characters via hotkeys: group separator (displayed as ^]) - ctrl+shift+], record separator (^^) - ctrl+shift+^, unit separator (^_) - ctrl+shift+_. Tip: in command mode one can look up ASCII code of a character by pressing "ga".
+\begin{lstlisting}
+US|$D_{US}$
+GS|$D_{GS}$
+RS|$D_{RS}$
+FS|$D_{FS}$
+\end{lstlisting}
 
+In fact, the \code{abbrevs} file provided with \mmt sets up more sophisticated abbreviations that expand to declaration templates and in particular include the delimiters such as
+
+\begin{lstlisting}
+öconstant\| : $D_{US}$ = $D_{US}$ # $D_{US}$$D_{RS}$
+\end{lstlisting}
+
+
+\renewcommand{\caret}{\lstinline|^|}
+ViM supports the insertion of control characters via the following hotkeys:
+\begin{compactitem}
+ \item group separator (displayed as \caret]) - ctrl+shift+]
+ \item record separator (\caret\caret) - ctrl+shift+\caret
+ \item unit separator (\caret\_) - ctrl+shift+\_
+\end{compactitem}
+Note that in command mode one can look up the ASCII code of a character by pressing \code{ga}.
 
 \paragraph{Font Support}
 
-GNU unifont
+To display \mmt's special delimiters in text interfaces, it is advisable to use a font that has reasonable glyphs for them.
+GNU unifont is an example.
