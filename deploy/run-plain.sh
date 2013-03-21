@@ -1,1 +1,2 @@
-java -Xmx2048m -cp lib/*:lfcatalog/*:mmt/* info.kwarc.mmt.api.frontend.Run
+dir=`dirname $0`
+java -Xmx2048m -cp $dir/lib/*:$dir/lfcatalog/*:mmt/* info.kwarc.mmt.api.frontend.Run
