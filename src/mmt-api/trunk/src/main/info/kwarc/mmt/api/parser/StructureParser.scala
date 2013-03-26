@@ -485,7 +485,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       // every iteration reads one delimiter and one object
       // @ alias or : TYPE or = DEFINIENS or # NOTATION
       //TODO remove "##" here and in the case split below, only used temporarily for latex integration
-      val keys = List(":","=","#", "##","@", "$")
+      val keys = List(":","=","#", "##","@", "$", "role")
       def keyString = keys.map("'" + _ + "'").mkString(" or ")
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
@@ -540,6 +540,13 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   else {
                      al = Some(LocalName.parse(str))
                   }
+               case "role" =>
+                 val (str,_) = state.reader.readObject
+                 rl = Some(str)
+                 controller.extman.getRoleHandler(str) foreach { 
+                   rh => rh(new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt))
+                 }
+                 
                //TODO read metadata
             }
          }
