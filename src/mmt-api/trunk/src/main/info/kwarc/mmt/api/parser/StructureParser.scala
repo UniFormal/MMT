@@ -542,11 +542,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   }
                case "role" =>
                  val (str,_) = state.reader.readObject
-                 rl = Some(str)
-                 controller.extman.getRoleHandler(str) foreach { 
-                   rh => rh(new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt))
-                 }
-                 
+                 rl = Some(str)                 
                //TODO read metadata
             }
          }
