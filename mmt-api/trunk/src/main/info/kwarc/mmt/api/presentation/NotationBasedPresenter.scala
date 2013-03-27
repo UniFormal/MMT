@@ -10,7 +10,13 @@ import symbols._
 import objects.Conversions._
 import parser._
 
-/** presents structural levels according to StructureParser */ 
+/**
+ * presents structural levels according to StructureParser
+ *
+ * The bracket placement algorithm is only approximate.
+ * It will sometimes put too many and sometimes too few brackets.
+ * The latter will confuse the NotationBasedParser, but rarely humans.    
+ */ 
 abstract class StructurePresenter(printDelims: Boolean) extends Presenter {
    def apply(e : StructuralElement, rh : RenderingHandler) = apply(e, 0)(rh)
    
@@ -97,7 +103,7 @@ trait NotationBasedPresenter extends Presenter {
     */
    def doIdentifier(p: ContentPath, rh: RenderingHandler) {
       val s = p match {
-         case OMMOD(m) % name => m.name.toPath + "?" + name.toPath  //not machine-readable but a lot more human-readable 
+         case OMMOD(m) % name => name.toPath  //not parsable if there are name clashes 
          case _ => p.toPath
       }
       rh(s)
@@ -158,9 +164,19 @@ trait NotationBasedPresenter extends Presenter {
       val s = if (d.text.exists(_.isLetter)) " " + d.text + " " else d.text
       rh(s)
    }
-   def apply(o: Obj, rh: RenderingHandler) {
+
+   /** abbreviation for not bracketing */
+   private val noBrackets = (_: TextNotation) => false
+   
+   def apply(o: Obj, rh: RenderingHandler) {recurse(o,rh, noBrackets)}
+
+   /** 
+    *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
+    */
+   private def recurse(o: Obj, rh: RenderingHandler, bracket: TextNotation => Boolean) {
        o match {
          case term: Term =>
+            val termP = controller.pragmatic.pragmaticHead(term)
             def getNotation(t: Term) : Option[TextNotation] = t match {
                case OMID(_) => None //avoid trying to render constants using a notation
                case ComplexTerm(p, args, context, scopes) =>
@@ -171,22 +187,55 @@ trait NotationBasedPresenter extends Presenter {
                   }
                case _ => None
             }
+            // tries to render using notation, defaults to doDefaultTerm for some errors
             def doNotation(t: Term, not: TextNotation) {
                val ComplexTerm(p, args, context, scopes) = t
+               if (! not.canHandle(args.length, context.length, scopes.length))
+                  return doDefaultTerm(termP, rh)
+               val br = bracket(not)
+
+               /*
+                * @param position the position into which we recurse
+                * @return a function that determines whether the child has to be bracketed
+                *
+                * TODO bracketing improvements
+                * - independent of precedence, often no brackets are needed when recursing
+                *     - from the left argument of a left-open notation into a right-closed notation
+                *     - from a middle argument into a left- and right-closed notation
+                *     - the right argument of a right-open notation into a left-closed notation
+                * - when multiple arguments occur without delimiter, brackets are usually needed
+                * - generally, omitting brackets may screw up parsing 
+                */
+               def childrenMustBracket(position: Int) = (childNot: TextNotation) => position match {
+                  //the = case puts brackets into x * (y / z) if * and / have the same precedence
+                  case 1 => not.precedence <= childNot.precedence && childNot.isLeftOpen
+                  case 0 => not.precedence < childNot.precedence
+                  case -1 => not.precedence <= childNot.precedence //&& childNot.isRightOpen
+                  case _ => throw ImplementationError("illegal position")
+               }
+
                val markers = not.flatten(args.length, context.length, scopes.length)
+               // currentPostion: -1: left argument; 0: middle argument; 1: right
+               val numDelims = markers.count(_.isInstanceOf[parser.Delimiter])
+               var numDelimsSeen = 0
+               def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
+               def doChild(child: Obj) {recurse(child, rh, childrenMustBracket(currentPosition))}
+               
+               if (br) doOperator("(", rh)
                markers.foreach {
                   case Arg(n) if n > 0 =>
-                     apply(args(n-1), rh)
+                     doChild(args(n-1))
                   case Arg(n) if n < 0 =>
-                     apply(scopes(-n-args.length-context.length-1), rh)
+                     doChild(scopes(-n-args.length-context.length-1))
                   case Var(n, typed, _) => //sequence variables impossible due to flattening
-                     apply(context(n-args.length-1), rh)
+                     doChild(context(n-args.length-1))
                   case d: parser.Delimiter =>
+                     numDelimsSeen += 1
                      doDelimiter(p, d, rh)
                   case s: SeqArg => //impossible due to flattening
                }
+               if (br) doOperator(")", rh)
             }
-            val termP = controller.pragmatic.pragmaticHead(term)
             getNotation(termP) match {
                case None => getNotation(term) match {
                   case None => doDefaultTerm(termP, rh)
@@ -195,29 +244,29 @@ trait NotationBasedPresenter extends Presenter {
                case Some(not) => doNotation(termP, not)
             }
          case VarDecl(n,tp,df, _*) =>
-               doVariable(n.toPath, rh)
+               doVariable(n, rh)
                tp foreach {t =>
                   doOperator(":", rh)
-                  apply(t, rh)
+                  recurse(t, rh, noBrackets)
                }
                df foreach {d =>
                   doOperator("=", rh)
-                  apply(d, rh)
+                  recurse(d, rh, noBrackets)
                }
          case Sub(n,t) =>
                doVariable(n, rh)
                doOperator("=", rh)
-               apply(t, rh)
+               recurse(t, rh, noBrackets)
          case c: Context => c.init.foreach {v =>
-               apply(v, rh)
+               recurse(v, rh, noBrackets)
                doOperator(", ", rh)
             }
-            apply(c.last, rh)  
+            recurse(c.last, rh, noBrackets)  
          case s: Substitution => s.init.foreach {c =>
-               apply(c, rh)
+               recurse(c, rh, noBrackets)
                doOperator(", ", rh)
             }
-            apply(s.last, rh) 
+            recurse(s.last, rh, noBrackets) 
        }
    }
 }

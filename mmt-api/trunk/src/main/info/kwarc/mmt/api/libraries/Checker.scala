@@ -104,23 +104,25 @@ class StructureChecker(controller: Controller) extends Logger {
             checkTheory(s.from)
             checkMorphism(s.df, s.from, s.home)
          case c : Constant =>
+            val parR = checkContext(c.home, Context(), c.parameters)
+            //TODO reconstruction in parameters
             c.tp foreach {t => 
                val (unknowns,tU) = parser.AbstractObjectParser.splitOffUnknowns(t)
-               val (tR,valid) = checkTermTop(c.home, unknowns, tU)
+               val (tR,valid) = checkTermTop(c.home, c.parameters ++ unknowns, tU)
                if (valid) {
                   OMMOD.unapply(c.home) foreach {p =>
-                     val j = Universe(Stack(p), tR)
+                     val j = Universe(Stack(p, c.parameters), tR)
                      unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
                   }
                }
             }
             c.df foreach {d => 
                val (unknowns,dU) = parser.AbstractObjectParser.splitOffUnknowns(d)
-               val (dR, valid) = checkTermTop(c.home, unknowns, dU)
+               val (dR, valid) = checkTermTop(c.home, c.parameters ++ unknowns, dU)
                if (valid) {
                   OMMOD.unapply(c.home) foreach {p =>
                      c.tp foreach {tp =>
-                         val j = Typing(Stack(p), dR, tp)
+                         val j = Typing(Stack(p, c.parameters), dR, tp)
                          unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
                      }
                   }
@@ -442,7 +444,7 @@ class StructureChecker(controller: Controller) extends Logger {
     * @return the reconstructed context
     * if context is valid, then this succeeds iff context ++ con is valid
     */
-   def checkContext(home: Term, context: Context = Context(), con: Context)(implicit pCont: Path => Unit) : Context = {
+   def checkContext(home: Term, context: Context, con: Context)(implicit pCont: Path => Unit) : Context = {
       con.mapVarDecls {case (c, vd @ VarDecl(name, tp, df, attrs @_*)) =>
              val currentContext = context ++ c 
     	     val tpR = tp.map(x => checkTerm(home, currentContext, x)) 

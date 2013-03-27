@@ -49,7 +49,7 @@ case object Right extends Associativity("right")
 /**
  * InfInt: integers with positive and negative infinity
 */
-sealed abstract class InfInt(s: String) {
+sealed abstract class InfInt(s: String) extends scala.math.Ordered[InfInt] {
 
    /**
     * sum
@@ -83,20 +83,24 @@ sealed abstract class InfInt(s: String) {
    /**
     * true if (non-zero and) positive
     */
-   def positive : Boolean
+   def positive : Boolean = this > Finite(0)
    override def toString = s 
 }
 /** integer */
 case class Finite(ones : Int) extends InfInt(ones.toString) {
-   def positive = ones > 0
+   def compare(that: InfInt) = that match {
+      case Finite(t) => ones - t
+      case Infinite => -1
+      case _ => 1
+   }
 }
 /** positively infinite InfInt */
 case object Infinite extends InfInt("infinity") {
-  def positive = true
+  def compare(that: InfInt) = if (that == Infinite) 0 else 1
 }
 /** positively infinite InfInt */
 case object NegInfinite extends InfInt("-infinity") {
-  def positive = false
+  def compare(that: InfInt) = if (that == NegInfinite) 0 else -1
 }
 /** helper object for InfInts */
 object InfInt {
@@ -115,19 +119,16 @@ object InfInt {
  * @param p the precedence, smaller precedence means weaker binding
  * @param loseTie tie-breaking flag for comparisons
 */
-sealed case class Precedence(prec : InfInt, loseTie : Boolean) {
+sealed case class Precedence(prec : InfInt, loseTie : Boolean) extends scala.math.Ordered[Precedence] {
    def weaken = Precedence(prec, true)
    /**
     * irreflexive comparison
     * satisfies: Precedence(p, true) < Precedence(p, false)
     */
-   def <(that: Precedence) = {
-      val d = that.prec - prec
-      if (d.positive) true
-      else if (d == Finite(0))
-        loseTie && ! that.loseTie
-      else false
-   }
+   def compare(that: Precedence) =
+      if (this == that) 0
+      else if (prec < that.prec || (prec == that.prec && loseTie && ! that.loseTie)) -1
+      else 1
    def +(i: Int) = Precedence(prec+i, loseTie)
    override def toString = prec.toString + (if (loseTie) "*" else "")
 }

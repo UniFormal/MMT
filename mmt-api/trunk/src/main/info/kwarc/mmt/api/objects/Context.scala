@@ -23,6 +23,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
       vd.copyFrom(this)
       vd
    }
+   def toTerm = OMV(name)
    def ^(sub : Substitution) = {
       val vd = VarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
       vd.copyFrom(this)

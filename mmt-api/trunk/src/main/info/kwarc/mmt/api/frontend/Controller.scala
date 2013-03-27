@@ -196,7 +196,7 @@ class Controller extends ROController with Logger {
    def get(path : Path) : StructuralElement = {
       path match {
          case p : DPath => iterate (docstore.get(p))
-         case p : MPath => iterate (try {library.get(p)} catch {case _ => notstore.get(p)})
+         case p : MPath => iterate (try {library.get(p)} catch {case _: java.lang.Exception => notstore.get(p)})
          case p : GlobalName => iterate (library.get(p))
          case _ : CPath => throw ImplementationError("cannot retrieve component paths")
       }
@@ -277,9 +277,12 @@ class Controller extends ROController with Logger {
             (doc, errorList.toList)
          case Some("mmt") =>
             val r = Reader(f)
-            val (doc, state) = textParser(r, dpath)
-            r.close
-            (doc, state.getErrors)
+            try {
+               val (doc, state) = textParser(r, dpath)
+               (doc, state.getErrors)
+            } finally {
+               r.close
+            }
          case Some(e) => throw ParseError("unknown file extension: " + f)
          case None => throw ParseError("unknown document format: " + f)
       }
