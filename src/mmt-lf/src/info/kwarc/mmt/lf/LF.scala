@@ -89,46 +89,6 @@ object Pi {
    }
 }
 
-/** apply/unapply methods that curry and uncurry, e.g.,
- * FunType(List((None,a1),...,(None,an)), b) = a1 -> ... -> an -> b
- * FunType(List((Some(x1),a1),...,(Some(xn),an)), b) = Pi x1:a1. ... Pi xn:an. b
- * The methods include the case n=0, in particular, unapply always matches 
- * **/
-object FunType {
-  def apply(in: List[(Option[LocalName], Term)], out: Term) = {
-     in.foldRight(out) ({
-       case ( (Some(x), t), sofar) => Pi(x, t, sofar)
-       case ( (None, t), sofar) => Arrow(t, sofar)
-     })
-  }
-  def unapply(t: Term): Option[(List[(Option[LocalName], Term)], Term)] = {
-    /*val q : Option[(List[(Option[LocalName], Term)], Term)] = */t match {
-      case Pi(name, tp, bd) => {
-        val nm = name match {
-        	case LocalName.Anon => None
-        	case x : LocalName => Some(x)
-        }
-        val (tl,ls) = unapply(bd) match {
-          case None => return None
-          case Some((a,b)) => (a,b)
-        }
-        if (tl == null) Some(List((nm, tp)), ls) else Some(List((nm, tp)) ++ tl, ls)
-        Some(List((nm, tp)) ++ tl, ls)
-      }
-      
-      case Arrow(t1, t2) => {
-    	val (tl,ls) = unapply(t2) match {
-          case None => return None
-          case Some((a,b)) => (a,b)
-        }
-        Some(List((None, t1)) ++ tl, ls) 
-      }  
-      case t : Term => Some(List(),t)
-      case _ => None
-    }
-  }
-}
-
 /** provides apply/unapply methods for simple function type formation
  * the unapply method does not match a dependent function type, even if the variable does not occur
  */
@@ -172,6 +132,44 @@ object ApplySpine {
 		case _ => None
 	}
 }
+
+/** apply/unapply methods that curry and uncurry, e.g.,
+ * FunType(List((None,a1),...,(None,an)), b) = a1 -> ... -> an -> b
+ * FunType(List((Some(x1),a1),...,(Some(xn),an)), b) = Pi x1:a1. ... Pi xn:an. b
+ * The methods include the case n=0, in particular, unapply always matches 
+ * **/
+object FunType {
+  def apply(in: List[(Option[LocalName], Term)], out: Term) = {
+     in.foldRight(out) ({
+       case ( (Some(x), t), sofar) => Pi(x, t, sofar)
+       case ( (None, t), sofar) => Arrow(t, sofar)
+     })
+  }
+  def unapply(t: Term): Option[(List[(Option[LocalName], Term)], Term)] = t match {
+      case Pi(name, tp, bd) =>
+         val nm = name match {
+            case LocalName.Anon => None
+            case x => Some(x)
+         }
+         val (remainingArgs,ultimateScope) = unapply(bd).get //always returns non-None
+         Some((nm, tp) :: remainingArgs, ultimateScope)
+      case Arrow(t1, t2) =>
+         val (remainingArgs,ultimateScope) = unapply(t2).get //always returns non-None
+         Some((None, t1) :: remainingArgs, ultimateScope) 
+      case t => Some(Nil,t)
+  }
+}
+
+/**
+ * like ApplySpine, but also covers the case n=0, akin to FunType
+ * 
+ * note that ApplySpine(f, Nil) != ApplyGeneral(f, Nil)
+ */ 
+object ApplyGeneral {
+   def apply(f: Term, args: List[Term]) = if (args.isEmpty) f else ApplySpine(f, args :_*)
+   def unapply(t: Term) : Option[(Term,List[Term])] = ApplySpine.unapply(t).orElse(Some((t,Nil)))
+}
+
 
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation with Logger {

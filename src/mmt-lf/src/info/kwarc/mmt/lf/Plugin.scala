@@ -8,8 +8,13 @@ class Plugin extends frontend.Plugin {
    override def init(c: Controller, args: List[String]) {
       super.init(c, args)
       val em = c.extman
-      em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow,PiProve)
+      // type reconstruction rules
+      em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow)
+      // computation rules
       c.uom.register(UnsafeBeta)
+      // proof rules
+      em.ruleStore.add(PiIntroRule, PiElimRule, ArrowIntroRule, ArrowElimRule)
+      // pragmatic features
       em.pragmaticStore.add(LFHOAS, LFTyping)
    }
 }
