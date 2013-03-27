@@ -7,8 +7,7 @@ class MMTInterpolator(controller: frontend.Controller) {
    implicit def int2OM(i: Int) = OMI(i)
    implicit def floatt2OM(f: Double) = OMF(f)
    
-   implicit class MMTContext(sc: StringContext) {
-      def mmt(ts: Term*): Term = {
+   def parse(sc: StringContext, ts: List[Term], top: Option[TextNotation]) = {
          val strings = sc.parts.iterator
          val args = ts.iterator
          val buf = new StringBuffer(strings.next)
@@ -22,13 +21,25 @@ class MMTInterpolator(controller: frontend.Controller) {
             i += 1
         }
         val str = buf.toString
-        val pu = ParsingUnit(SourceRef.anonymous(str), OMMOD(theory), sub.asContext, str) 
+        val pu = ParsingUnit(SourceRef.anonymous(str), OMMOD(theory), sub.asContext, str, top) 
         val t = controller.termParser(pu)
         t ^ sub
-      }
+   }
+   
+   implicit class MMTContext(sc: StringContext) {
+      def mmt(ts: Term*): Term = parse(sc, ts.toList, None)
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
 	      controller.uom.simplify(t)
+      }
+   }
+   implicit class MMTContextForContexts(sc: StringContext) {
+      def cont(ts: Term*) : Context = {
+         val t = parse(sc, ts.toList, Some(TextNotation.contextNotation))
+         t match {
+            case OMBINDC(_,con, Nil) => con
+            case _ => throw ParseError("not a context")
+         }
       }
    }
 }

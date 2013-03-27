@@ -134,6 +134,19 @@ case class Arity(arguments: List[ArgumentComponent], variables: List[VariableCom
       case Var(_,_, Some(_)) => true
       case _ => false
    }
+   def numNormalArgs = arguments.count {
+      case Arg(n) => n > 0
+      case ImplicitArg(_) => true
+      case _ => false
+   }
+   def numNormalVars = variables.count {
+      case Var(_,_, Some(_)) => false
+      case _ => true
+   }
+   def numNormalScopes = arguments.count {
+      case Arg(n) => n < 0
+      case _ => false
+   }
    // distributes available components to numTotal normal/sequence components where the positions of the sequences are given by seqs
    // returns: number of arguments per sequence and cutoff below which sequences get one extra argument
    private def distribute(available: Int, numTotal: Int, seqs: List[Int]):(Int,Int) = {
@@ -277,6 +290,14 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
       Arity(args, vars, scopes)
    }
 
+   /** @return true if ComplexTerm(name, args, vars, scs) has enough components for this notation */
+   def canHandle(args: Int, vars: Int, scs: Int) = {
+      val arity = getArity
+      arity.numNormalArgs <= args &&
+      arity.numNormalVars <= vars &&
+      arity.numNormalScopes <= scs
+   }
+   
    /**
     * flattens all sequence arguments/variables
     * 
@@ -289,6 +310,8 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
     * 
     * multiple sequence variables are treated accordingly
     * it is assumed there are no sequences in the scopes
+    * 
+    * pre: canHandle(args, vars, scs) == true
     */
    def flatten(args: Int, vars: Int, scs: Int) : List[Marker] = {
       val arity = getArity
@@ -434,7 +457,7 @@ object TextNotation {
     * matches ( 1 ) with precedence bracketLevel
     */
    val bracketNotation = new TextNotation(utils.mmt.brackets, List(Delim("("),Arg(1),Delim(")")), bracketLevel)
-   //val contextNotation = new TextNotation(utils.mmt.brackets, List(Var(1,true,Some(Delim(",")))), bracketLevel)
+   val contextNotation = new TextNotation(utils.mmt.context, List(Delim("["), Var(1,true,Some(Delim(","))), Delim("]")), bracketLevel)
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {

@@ -18,7 +18,8 @@ class RuleStore {
    val atomicEqualityRules = new HashMap[ContentPath, AtomicEqualityRule]
    val solutionRules = new HashMap[ContentPath, SolutionRule]
    val forwardSolutionRules = new HashMap[ContentPath, ForwardSolutionRule]
-   val provingRules = new utils.HashMapToSet[ContentPath, ProvingRule]
+   val introProvingRules = new utils.HashMapToSet[ContentPath, IntroProvingRule]
+   val elimProvingRules = new utils.HashMapToSet[ContentPath, ElimProvingRule]
    
    /** add some Rule to this RuleStore */
    def add(rs: Rule*) {
@@ -31,7 +32,8 @@ class RuleStore {
          case r: AtomicEqualityRule => atomicEqualityRules(r.head) = r
          case r: SolutionRule => solutionRules(r.head) = r
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
-         case r: ProvingRule => provingRules(r.head) += r
+         case r: IntroProvingRule => introProvingRules(r.head) += r
+         case r: ElimProvingRule => elimProvingRules(r.head) += r
       }
    }
    def add(rs: RuleSet) {
@@ -209,16 +211,27 @@ abstract class ApplicableProvingRule {
   def apply() : Term
 }
 
-/** A ProvingRule tries to find a term of a given type
- * 
- * ProvingRules do not call back to the Solver.
- * Instead, they perform a single prove step and return a Term with holes indicating subgoals.  
+/** An IntroProvingRule solves a goal with a certain head.
  */
-abstract class ProvingRule(val head: GlobalName) extends Rule {
+abstract class IntroProvingRule(val head: GlobalName) extends Rule {
    /** 
-    * @param tp the type
+    * @param goal the type for which a term is needed
     * @param stack the context
     * @return if applicable, a continuation that applies the rule
     */
-   def apply(tp: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
+   def apply(goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
+}
+
+/**
+ * An ElimProvingRule uses a term of a given type with a given head.
+ */
+abstract class ElimProvingRule(val head: GlobalName) extends Rule {
+   /** 
+    * @param evidence the proof of the fact, typically an OMS or OMV
+    * @param fact the type representing the judgment to be used (whose type is formed from head)
+    * @param goal the type for which a term is needed
+    * @param stack the context
+    * @return if applicable, a continuation that applies the rule
+    */
+   def apply(evidence: Term, fact: Term, goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
 }

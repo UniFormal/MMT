@@ -485,8 +485,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       // every iteration reads one delimiter and one object
       // @ alias or : TYPE or = DEFINIENS or # NOTATION
       //TODO remove "##" here and in the case split below, only used temporarily for latex integration
-      val keys = List(":","=","#", "##","@", "$", "role")
-      def keyString = keys.map("'" + _ + "'").mkString(" or ")
+      val keys = List(":","=","#", "##","@", "of", "role")
+      val keyString = keys.map("'" + _ + "'").mkString(", ")
+
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
          if (! keys.contains(delim)) {
@@ -501,18 +502,27 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          } else {
             def doComponent(c: DeclarationComponent, tc: TermContainer) {
-               val (obj,_,tm) = readParsedObject(scope)
+               val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
                tc.read = obj
                tc.parsed = tm
             }
             // the main part, which branches based on the delimiter
             delim match {
-               case "$" =>
+               case "of" =>
                   if (pr.isDefined) {
                      errorCont(makeError(treg, "parameters of this constant already given, ignored"))
                      state.reader.readObject
-                  } else
-                     null
+                  } else {
+                     val (obj, reg) = state.reader.readObject
+                     val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, Context(), obj, Some(TextNotation.contextNotation))
+                     val parsed = puCont(pu)
+                     parsed match {
+                        case OMBINDC(utils.mmt.context, cont, Nil) =>
+                           pr = Some(cont)
+                        case _ =>
+                           errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
+                     }
+                  }
                case ":" =>
                   if (tpC.read.isDefined) {
                      errorCont(makeError(treg, "type of this constant already given, ignored"))
@@ -547,7 +557,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          }
       }
-      new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt)
+      new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt) {
+         override val parameters = pr.getOrElse(Context())
+      }
    }
    private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
       val args = if (state.reader.endOfDeclaration)

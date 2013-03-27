@@ -61,7 +61,15 @@ class PrefixEscapeHandler(delim: Char) extends LexerExtension {
  * accepts nonLetter digit*
  */
 object NatLiteralHandler extends LexerExtension {
-  def applicable(s: String, i: Int) = s(i).isDigit && (i == 0 || ! s(i-1).isLetter)
+  def applicable(s: String, i: Int) = {
+     val previousOK = if (i == 0)
+        true
+     else {
+        val previous = s(i-1)
+        ! previous.isLetter && ! (previous.getType == java.lang.Character.CONNECTOR_PUNCTUATION)
+     }
+     s(i).isDigit && previousOK
+  }
   def apply(s: String, index: Int, firstPosition: SourcePosition) = {
      var i = index
      while (i < s.length && s(i).isDigit) {

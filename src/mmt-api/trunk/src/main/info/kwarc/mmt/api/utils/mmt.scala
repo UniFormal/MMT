@@ -3,12 +3,13 @@ import info.kwarc.mmt.api._
 
 object mmt {
    val baseURI = URI("http", "cds.omdoc.org")
-   val mmtbase = DPath(baseURI / "omdoc" / "mmt.omdoc")
+   val mmtbase = DPath(baseURI / "mmt")
    val mmtcd = mmtbase ? "mmt"
    def mmtsymbol(name : String) = mmtcd ? name
    val mmttype = mmtsymbol("type")
    val mmtdef = mmtsymbol("definiens")
    val brackets = mmtsymbol("brackets")
+   val context = mmtsymbol("context")
    val identity = mmtsymbol("identity")
    val composition = mmtsymbol("composition")
    val morphismapplication = mmtsymbol("morphismapplication")

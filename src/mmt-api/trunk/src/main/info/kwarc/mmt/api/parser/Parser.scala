@@ -10,13 +10,13 @@ import utils.MyList._
 import scala.collection.immutable.{HashMap}
 
 /** a ParsingUnit represents a term that is to be parsed
- * @param component the URI of the Term, if any; may be null
+ * @param source the source reference of the string to parse
  * @param scope the theory against which to parse
  * @param context the context against which to parse
- * @param term the term to be parse
- * @param first the position of the first character, used for back references, 0 by default
+ * @param term the term to parse
+ * @param top an optional notation that the whole input must match; this can be used to parse a term that is known/required to have a certain form
  */
-case class ParsingUnit(source: SourceRef, scope: Term, context: Context, term: String)
+case class ParsingUnit(source: SourceRef, scope: Term, context: Context, term: String, top: Option[TextNotation] = None)
 
 /** a TermParser parses Term's. Instances are maintained by the ExtensionManager and retrieved and called by the structural parser. */
 trait AbstractObjectParser {
@@ -202,6 +202,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   if (arity.isConstant)
                     head
                   else
+                    //no args but an empty sequence argument ---> OMA(_,Nil)
                     OMA(head, Nil)
             } else {
                   // order the arguments
@@ -260,15 +261,15 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   } else if (finalVars != Nil) {
                      val context = Context(finalVars : _*)
                      if (finalArgs == Nil) {
-                        //some vars, and 1 scope --> OMBIND
+                        //some vars --> OMBINDC
                         prag.strictBinding(con.module.toMPath, head, context, scopes.map(_._2))
                      } else {
-                        //some args, some vars, and 1 scope --> OMBIND with OMA
+                        //some args and some vars --> OMBINDC with OMA
                         val binder = prag.strictApplication(con.module.toMPath, head, finalArgs)
                         prag.strictBinding(con.module.toMPath, binder, context, scopes.map(_._2))
                      }
                   } else
-                     //not all combinations correspond to Terms
+                     //some args, no vars, some scopes
                      //this should only happen for ill-formed notations
                      makeError("ill-formed notation", te.region)
                }}
@@ -295,6 +296,10 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
       term
    }
   
+  
+  /**
+   * @param pu the parsing unit
+   */
   def apply(pu : ParsingUnit) : Term = {    
     //gathering notations in scope
     val qnotations = buildNotations(pu.scope)
@@ -313,6 +318,16 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     
     //scanning
     val sc = new Scanner(tl, controller.report)
+    // scan once with the top notation and make sure it matches the whole input
+    pu.top foreach { n =>
+       log("scanning top notation: " + n)
+       sc.scan(List(n))
+       if (sc.tl.length == 1 && sc.tl(0).isInstanceOf[MatchedList])
+          ()
+       else
+          makeError("top notation did not match whole input: " + n.toString, pu.source.region)(pu)
+    }
+    // now scan with all notations in decreasing order of precedence
     qnotations reverseMap {
          case (priority,nots) => sc.scan(nots)
     }

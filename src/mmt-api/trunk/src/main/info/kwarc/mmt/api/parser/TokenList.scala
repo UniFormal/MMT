@@ -76,7 +76,6 @@ object TokenList {
                   current += c
                   connect = true
                // everything else:
-
                case _ =>
                   // end previous Token, if any
                   endToken
