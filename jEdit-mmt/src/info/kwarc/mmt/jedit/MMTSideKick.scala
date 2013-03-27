@@ -64,12 +64,19 @@ class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: S
   obj.head map {case p =>
     setLongDescription(p.toPath)
   }
-  def getScope = Some(OMID(parent.parent))
+  def getTheory = parent.parent match {
+     case p: MPath => OMMOD(p)
+     case GlobalName(t, _) => t
+  }
+  def getScope = Some(getTheory)
 }
 
 /**
- * @param text the string that is to be completed
- * @param items the list of completions
+ * @param view the current jEdit view
+ * @param controller the current MMT controller
+ * @param constants the MMT constants that are applicable here 
+ * @param text the partial identifier that is completed
+ * @param items the list of completion labels that is displayed
  */
 class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constants: List[Constant], text: String, items: List[String])
   extends SideKickCompletion(view, text, items) {
@@ -107,14 +114,17 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
  * @param text the string that is to be completed
  * @param items the list of completions
  */
-class ProverCompletion(view : org.gjt.sp.jedit.View, region: SourceRegion, rules: List[ApplicableProvingRule])
+class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, region: SourceRegion, rules: List[ApplicableProvingRule])
   extends SideKickCompletion(view, "", rules.map(_.label)) {
   // this methods modifies the textArea after the user selected a completion
   override def insert(index: Int) {
+     // the new subterm, result of applying the rule
      val newTerm = rules(index)()
+     val newText = controller.presenter.asString(newTerm)
+     // replace the old subterm with the new one
      val ta = view.getEditPane.getTextArea
      ta.setSelection(new Selection.Range(region.start.offset, region.end.offset))
-     ta.setSelectedText(newTerm.toString)
+     ta.setSelectedText(newText)
   } 
 }
 
@@ -288,8 +298,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case a: MMTObjAsset =>
             a.obj match {
                case Hole(t) =>
-                  val rules = prover.applicable(t)(Stack(Frame(OMID(a.parent.parent), a.context)))
-                  val comp = new ProverCompletion(view, a.region, rules)
+                  val rules = prover.applicable(t)(Stack(Frame(a.getTheory, a.context)))
+                  val comp = new ProverCompletion(view, controller, a.region, rules)
                   return comp
                case _ =>
             }
