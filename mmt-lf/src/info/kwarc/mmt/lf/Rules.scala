@@ -202,15 +202,15 @@ object Initial extends AtomicEqualityRule(Apply.path) {
 }
 
 /** the proof step ?:Pi x:A.B ----> lambda x:A.(?:B)
- 
+ *
  * This rule works for any universe U
  */
-object PiProve extends ProvingRule(Pi.path) {
+class PiOrArrowIntroRule(op: GlobalName) extends IntroProvingRule(op) {
    def apply(tp: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
       tp match {
         case Pi(x,a,b) =>
            val cont = new ApplicableProvingRule {
-             def label = "pi introduction"
+             def label = "Pi introduction"
              def apply = Lambda(x,a,Hole(b))
            }
            Some(cont)
@@ -218,3 +218,55 @@ object PiProve extends ProvingRule(Pi.path) {
       }
    }
 }
+
+object PiIntroRule extends PiOrArrowIntroRule(Pi.path)
+object ArrowIntroRule extends PiOrArrowIntroRule(Arrow.path)
+
+
+/** the proof step ?:A ----> e(?,...?)  for e:Pi x1:A1,...,xn:An.A' where A' ^ s = A for some substitution s
+ *
+ * This rule works for any universe U and the case n=0.
+ * This rule replace ?'s in the result with their terms if they can be inferred through unification.
+ */
+class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(op) {
+   def apply(ev: Term, fact: Term, goal: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
+      // tp must be of the form Pi bindings.scope
+      val (bindings, scope) = FunType.unapply(fact).get
+      // the free variables of scope (we drop the types because matching does not need them)
+      val unknowns: Context = bindings.flatMap {
+         case (Some(x),_) => List(VarDecl(x,None,None))
+         case _ => Nil
+      }
+      // fact may contain free variables from stack.context, so make sure there are no name clashes
+      // sub is a renaming from unknowns to unknownsFresh
+      val (unknownsFresh, sub) = Context.makeFresh(unknowns, stack.context.map(_.name))
+      val scopeFresh = scope ^ sub
+      // match goal against scope, trying to solve for scope's free variables
+      // TODO using a first-order matcher is too naive in general - for the general case, we need to use the Solver
+      val matcher = new Matcher(unknownsFresh)
+      val matchFound = matcher(stack.context, goal, scopeFresh)
+      if (!matchFound) return None
+      val solution = matcher.getSolution
+      // sub is a renaming, so it's more efficient to compose the substitutions before applying them
+      val subSolution = sub ^ solution
+      // now scope ^ solution == goal
+      val cont = new ApplicableProvingRule {
+          def label = ev.toString
+          def apply = {
+             val args = bindings map {
+                // named bound variables that are substituted by solution can be filled in
+                // others are holes representing subgoals
+                case (Some(x), xtp) =>
+                   solution(x).getOrElse(Hole(xtp ^ subSolution))
+                case (None, anontp) =>
+                   Hole(anontp ^ subSolution)
+             }
+             ApplyGeneral(ev, args)
+          }
+      }
+      Some(cont)
+   }
+}
+
+object PiElimRule extends PiOrArrowElimRule(Pi.path)
+object ArrowElimRule extends PiOrArrowElimRule(Arrow.path)
