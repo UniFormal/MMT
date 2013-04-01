@@ -10,8 +10,8 @@ import scala.Console._
 
 object Integrator {
 
-   val uomstart = "  // UOM start "
-   val uomend = "  // UOM end"
+   val uomstart = "    // UOM start "
+   val uomend = "    // UOM end"
 
    private def getCode(in : BufferedReader) : String = {
      var line = in.readLine
@@ -25,7 +25,6 @@ object Integrator {
 
    def getSnippets(in : BufferedReader, base: Path) : List[(GlobalName, String)] = {
      var line : String = null
-
      line = in.readLine
      if (line == null) // finished reading file
        return Nil
