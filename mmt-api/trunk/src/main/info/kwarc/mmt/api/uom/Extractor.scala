@@ -77,7 +77,7 @@ object Extractor {
    /** reserved identifiers */
    private val keywords = List("true", "false", "type", "val", "var", "def", "class", "trait", "object", "extends", "with", "while", "do", "for")
    /** preused identifiers, i.e., declared in Object */
-   private val reserved = List("eq", "List", "Set")
+   private val reserved = List("eq", "List", "Set", "String")
    /** escapes strings to avoid clashes with Scala keywords */
    private def escape(s:String) = {
       if (keywords.contains(s))
@@ -294,8 +294,8 @@ object Extractor {
      }
      out.println(rules)
      out.println("}\n")
-     out.println(s"object ${nameToScala(v.name)} extends ${v.name}\n")
-     s"addView($pack.${v.name})"
+     out.println(s"object ${nameToScala(v.name)} extends ${nameToScala(v.name)}\n")
+     s"addView($pack.${nameToScala(v.name)})"
    }
 
    def doModule(controller: Controller, mod: Module, outFile: File): String = {
