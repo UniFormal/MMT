@@ -238,7 +238,6 @@ class Server(val port: Int, controller: Controller) extends HServer {
    */
   private def PostResponse : HLet = new HLet {
     def act(tk : HTalk) {
-      println(tk.req.paramKeys)
       val content = tk.req.param("body").getOrElse(throw ServerError(<error><message>found no body in post req</message></error>))
       val format = tk.req.param("format").getOrElse("mmt")
       val dpathS = tk.req.param("dpath").getOrElse(throw ServerError(<error><message>expected dpath</message></error>))
