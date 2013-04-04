@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import objects._
-import scala.collection.mutable.HashSet
 
 /** The return type of a simplification rule
  * @see DepthRule
@@ -23,9 +22,6 @@ case class GlobalChange(it: Term) extends Change
 /** no change */
 case object NoChange extends Change
 
-/** a type to unify BreadRule's and DepthRule's */
-sealed abstract class Rule
-
 /** A DepthRule looks one level deep into the structure of one of the arguments of an operator
  * 
  * It is applicable to a term of the form
@@ -35,6 +31,7 @@ sealed abstract class Rule
  * A LocalChange replaces OMA(inner,inside).
  */
 abstract class DepthRule(val outer: GlobalName, val inner: GlobalName) extends Rule {
+   val head = outer
    /** a Rewrite takes the triple (before, inside, after) and returns a simplification Result */
    type Rewrite = (List[Term], List[Term], List[Term]) => Change
    /** the implementation of the simplification rule */
@@ -58,7 +55,7 @@ abstract class DepthRuleUnary(outer: GlobalName, inner: GlobalName) extends Dept
  * }}}
  * A LocalChange replaces args.
  */ 
-abstract class BreadthRule(val op: GlobalName) extends Rule {
+abstract class BreadthRule(val head: GlobalName) extends Rule {
    /** a Rewrite takes the arguments args and returns a simplification Result */
    type Rewrite = List[Term] => Change
    /** the implementation of the simplification rule */
@@ -67,17 +64,4 @@ abstract class BreadthRule(val op: GlobalName) extends Rule {
 
 /** An AbbrevRule expands a symbol into a term
  */ 
-case class AbbrevRule(op: GlobalName, term: Term) extends Rule
-
-/** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
-abstract class RuleSet {
-   private val rules = new HashSet[Rule]
-
-   def declares(rs: Rule*) {rs foreach {rules += _}}
-   def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
-
-   def allRules = rules
-   def depthRules = rules filter {_.isInstanceOf[DepthRule]}
-   def breadthRules = rules filter {_.isInstanceOf[BreadthRule]}
-   def abbrevRules = rules filter {_.isInstanceOf[AbbrevRule]}
-}
+case class AbbrevRule(head: GlobalName, term: Term) extends Rule

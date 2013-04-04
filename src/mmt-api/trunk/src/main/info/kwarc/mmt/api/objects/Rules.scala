@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import libraries._
 import objects.Conversions._
-import scala.collection.mutable.{HashMap}
+import scala.collection.mutable.{HashMap,HashSet}
 
 /** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
  * 
@@ -20,6 +20,13 @@ class RuleStore {
    val forwardSolutionRules = new HashMap[ContentPath, ForwardSolutionRule]
    val introProvingRules = new utils.HashMapToSet[ContentPath, IntroProvingRule]
    val elimProvingRules = new utils.HashMapToSet[ContentPath, ElimProvingRule]
+
+   /** the DepthRule's that this UOM will use, hashed by (outer,inner) pairs */
+   val depthRules = new utils.HashMapToSet[(GlobalName,GlobalName), uom.DepthRule]
+   /** the BreadthRule's that this UOM will use, hashed by (outer,inner) pairs */
+   val breadthRules = new utils.HashMapToSet[GlobalName, uom.BreadthRule]
+   /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
+   val abbrevRules = new utils.HashMapToSet[GlobalName, uom.AbbrevRule]
    
    /** add some Rule to this RuleStore */
    def add(rs: Rule*) {
@@ -34,37 +41,44 @@ class RuleStore {
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
          case r: IntroProvingRule => introProvingRules(r.head) += r
          case r: ElimProvingRule => elimProvingRules(r.head) += r
+         case r: uom.DepthRule => depthRules((r.outer,r.inner)) += r
+         case r: uom.BreadthRule => breadthRules(r.head) += r
+         case r: uom.AbbrevRule => abbrevRules(r.head) += r
       }
    }
    def add(rs: RuleSet) {
-      add(rs.rules : _*)
+      rs.rules.foreach(add(_))
    }
-}
-
-/** A pair (theory, context) used by rules
- * @param theory the theory
- * @param context the context
- */
-case class Frame(theory : Term, context : Context) {
-   def ^(subs: Substitution) = Frame(theory, context ^ subs)
-}
-
-case class Stack(frames: List[Frame]) {
-   def pop = Stack(frames.tail)
-   def push(f: Frame) = Stack(f::frames)
-   def theory = frames.head.theory
-   def context = frames.head.context
-   /** applies the same substitution to all contexts on this stack
-    */
-   def ^(subs: Substitution) = Stack(frames.map(_ ^ subs))
-   def ++(con: Context) = Stack(Frame(theory, context ++ con) :: frames.tail)
-}
-
-object Stack {
-   def apply(f: Frame) : Stack = Stack(List(f))
-   def apply(t: MPath) : Stack = empty(OMMOD(t))
-   def apply(t: MPath, c: Context) : Stack = Stack(Frame(OMMOD(t), c))
-   def empty(t: Term) : Stack = Stack(Frame(t, Context()))
+   
+   def stringDescription = {
+      var res = ""
+      def mkM[A<:Rule](label: String, map: HashMap[ContentPath,A]) {
+         if (! map.isEmpty) {
+            res += "  " + label + "\n"
+            map.values.foreach {r => res += "    " + r.toString + "\n\n"}
+         }
+      }
+      def mkS[A, B<:Rule](label: String, map: utils.HashMapToSet[A,B]) {
+         if (! map.isEmpty) {
+            res += "  " + label + "\n"
+            map.foreach {e => e._2.foreach {r => res += "    " + r.toString + "\n\n"}}
+         }
+      }
+      mkM("typing rules", typingRules) 
+      mkM("inference rules", inferenceRules)
+      mkM("computation rules", computationRules)
+      mkM("universe rules", universeRules)
+      mkM("equality rules", equalityRules)
+      mkM("atomic equality rules", atomicEqualityRules)
+      mkM("solution rules", solutionRules)
+      mkM("forwardSolution rules", forwardSolutionRules)
+      mkS("intro proving rules", introProvingRules)
+      mkS("elim proving rules", elimProvingRules)
+      mkS("depth rules", depthRules)
+      mkS("breadth rules", breadthRules)
+      mkS("abbrev rules", abbrevRules)
+      res
+   }
 }
 
 /** the type of all Rules
@@ -75,12 +89,22 @@ object Stack {
 trait Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    val head: GlobalName
+   override def toString = String.format("%-60s", head.toPath) + " of " + getClass.toString 
 }
 
-/** A RuleSet groups some rules together */
+/** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
 trait RuleSet {
-   def rules: List[Rule]
+   val rules = new HashSet[Rule]
+
+   def declares(rs: Rule*) {rs foreach {rules += _}}
+   def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
+
+   def allRules = rules
+   def depthRules = rules filter {_.isInstanceOf[uom.DepthRule]}
+   def breadthRules = rules filter {_.isInstanceOf[uom.BreadthRule]}
+   def abbrevRules = rules filter {_.isInstanceOf[uom.AbbrevRule]}
 }
+
 
 /** An TypingRule checks a term against a type.
  *  It may recursively call other checks.

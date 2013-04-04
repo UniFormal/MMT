@@ -28,7 +28,7 @@ trait ConstantScala {
    lazy val term = objects.OMID(path)
 }
 
-trait ViewScala extends RuleSet with TheoryScala
+trait ViewScala extends objects.RuleSet with TheoryScala
 
 object ConstantScala {
    implicit def constantToTerm(c: ConstantScala) = c.term
@@ -47,9 +47,9 @@ trait DocumentScala {
    def addDocument(d: DocumentScala) {
       documents = documents ::: List(d)
    }
-   def register(uom: UOM) {
-      documents.foreach(_.register(uom))
-      views.foreach(uom.register)
+   def register(rs: objects.RuleStore) {
+      documents.foreach(_.register(rs))
+      views.foreach(rs.add)
    }
    def test {
       documents.foreach {_.test}

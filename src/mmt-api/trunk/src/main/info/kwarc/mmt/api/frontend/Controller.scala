@@ -91,7 +91,7 @@ class Controller extends ROController with Logger {
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
-   val uom = new UOM(report)
+   val uom = new UOM(this)
    /** the window manager */
    val winman = new WindowManager(this)
    /** moc.refiner - handling pragmatic changes in scope */ 
@@ -408,6 +408,9 @@ class Controller extends ROController with Logger {
 	         report("response", "base: " + base)
 	      case ServerOn(p) => startServer(p)
 	      case ServerOff => stopServer
+	      case Scala =>
+	         val interp = new MMTILoop(this)
+            interp.run
 	      case Clear => clear
 	      case ExecFile(f) =>
 	         var line : String = null

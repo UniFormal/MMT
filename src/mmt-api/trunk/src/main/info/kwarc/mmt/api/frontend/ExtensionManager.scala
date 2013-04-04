@@ -28,8 +28,7 @@ trait Extension {
  *  This includes Compilers, QueryTransformers, and Foundations.
  *  They are provided as plugins and registered via their qualified class name, which is instantiated by reflection.
  */
-class ExtensionManager(controller: Controller) {
-   private val report = controller.report
+class ExtensionManager(controller: Controller) extends Logger {
    
    private var foundations : List[Foundation] = Nil
    private var compilers : List[Compiler] = List(new MMTCompiler(controller))
@@ -37,13 +36,14 @@ class ExtensionManager(controller: Controller) {
    private var roleHandlers: List[RoleHandler] = Nil
    private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter,controller.presenter)
    private var serverPlugins : List[ServerPlugin] = Nil
-   private var loadedPlugins : List[java.lang.Class[_ <: Plugin]] = Nil
+   private var loadedPlugins : List[Plugin] = Nil
    
            var lexerExtensions : List[LexerExtension] =
               List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), new NumberLiteralHandler(true))
    private var mws : Option[URI] = None
 
-   private def log(msg : => String) = report("extman", msg)
+   val report = controller.report
+   val logPrefix = "extman"
 
    val ruleStore = new objects.RuleStore
    val pragmaticStore = new pragmatics.PragmaticStore
@@ -51,8 +51,9 @@ class ExtensionManager(controller: Controller) {
    /** adds an Importer and initializes it */
    def addExtension(cls: String, args: List[String]) {
        log("adding importer " + cls)
+       val clsJ = java.lang.Class.forName(cls)
        val ext = try {
-          val Ext = java.lang.Class.forName(cls).asInstanceOf[java.lang.Class[Extension]]
+          val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
           Ext.newInstance
        } catch {
           case e : java.lang.Exception => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
@@ -61,8 +62,8 @@ class ExtensionManager(controller: Controller) {
        if (ext.isInstanceOf[Plugin]) {
           log("  ... as plugin")
           val pl = ext.asInstanceOf[Plugin]
-          loadedPlugins ::= pl.getClass
-          pl.dependencies foreach {d => if (! (loadedPlugins contains d)) addExtension(d, Nil)}
+          loadedPlugins ::= pl
+          pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == clsJ)) addExtension(d, Nil)}
           pl.init(controller, args)
        }
        if (ext.isInstanceOf[Foundation]) {
@@ -108,12 +109,24 @@ class ExtensionManager(controller: Controller) {
    def setMWS(uri: URI) {mws = Some(uri)}
    def getMWS : Option[URI] = mws
    
+   /** retrieves all registered extensions */
+   private def getAll = foundations:::compilers:::querytransformers:::roleHandlers:::presenters:::serverPlugins:::loadedPlugins
+   
+   def stringDescription = {
+      def mkL(label: String, es: List[Extension]) =
+         if (es.isEmpty) "" else label + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
+      mkL("foundations", foundations) +
+      mkL("compilers", compilers) +
+      mkL("querytransformers", querytransformers) +
+      mkL("roleHandlers", roleHandlers) +
+      mkL("presenters", presenters) +
+      mkL("serverPlugins", serverPlugins) +
+      mkL("plugins", loadedPlugins) +
+      "rules\n" + ruleStore.stringDescription 
+   }
+   
    def cleanup {
-      (compilers:::foundations:::compilers:::querytransformers:::roleHandlers:::presenters:::serverPlugins).foreach(_.destroy)
+      getAll.foreach(_.destroy)
       compilers = Nil
    } 
-
 }
-
-//info.kwarc.mmt.mizar.test.MwsService
-// info.kwarc.mmt.tptp.TptpCompiler

@@ -9,71 +9,13 @@ import java.util.jar._
 
 
 /** A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
-class UOM(report: frontend.Report) extends StatelessTraverser {
+class UOM(controller: frontend.Controller) extends StatelessTraverser with frontend.Logger {
 
-  /** the DepthRule's that this UOM will use, hashed by (outer,inner) pairs */
-  val depthRules = new utils.HashMapToSet[(GlobalName,GlobalName), DepthRule]
-  /** the BreadthRule's that this UOM will use, hashed by (outer,inner) pairs */
-  val breadthRules = new utils.HashMapToSet[GlobalName, BreadthRule]
-  /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
-  val abbrevRules = new utils.HashMapToSet[GlobalName, AbbrevRule]
+  val report = controller.report
+  val logPrefix = "uom"
 
-  private def log(msg: => String) {report("uom", msg)}
+  private val rs = controller.extman.ruleStore
 
-  /** registers all Implementations provided by a jar file
-   * @param jarFileName the name of the jar file
-   */
-  def register(jarFileName : String) {
-    val jarFile = new File(jarFileName)
-    
-    val urlArray = new Array[URL](1)
-    urlArray(0) = jarFile.toURI.toURL 
-    val child = new URLClassLoader(urlArray, this.getClass.getClassLoader)
-
-    val jarInput = new JarInputStream(new FileInputStream(jarFileName))
-    
-    var jarEntry : JarEntry = null // a jar entry is a resource/file in the jar 
-    while ({jarEntry = jarInput.getNextJarEntry; jarEntry != null}) {
-      if (jarEntry.getName.endsWith(".class")) {
-        val className = jarEntry.getName()
-          .replaceAll("/", "\\.")
-          .replaceAll(".class","")
-        
-        val classToLoad = Class.forName(className, true, child) // returns an object reflecting the class
-        // call each method in instance that returns an Implementation (we really only care about the Scala-generated getter methods of Implementation-fields)
-        // and register the result in impls
-        classToLoad.getDeclaredMethods map {method => 
-          if (method.getReturnType.getName == "info.kwarc.mmt.uom.Implementation") {
-
-            val instance = classToLoad.newInstance  // do not move above for now
-            val invokeResult = method.invoke(instance)
-            invokeResult match {
-              case impl : Implementation => register(impl)
-              case _ => {
-                System.err.println("Wrong return type of method")
-                System.exit(1)
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  /** adds a Rule to */
-  def register(r: Rule) {
-     r match {
-        case r: DepthRule => depthRules((r.outer,r.inner)) += r
-        case r: BreadthRule => breadthRules(r.op) += r
-        case r: AbbrevRule => abbrevRules(r.op) += r
-     }
-  }
-  
-  /** adds all Rule's of a RuleSet */ 
-  def register(rs: RuleSet) {
-     rs.allRules foreach register
-  }
-  
    /** applies all DepthRule's that are applicable at toplevel of an OMA
     * for each arguments, all rules are tried
     * if a rule leads to a GlobalChange, we stop; otherwise, we go to the next argument
@@ -81,14 +23,14 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
     * @param before the arguments that have been checked already
     * @param after the arguments that still need to be checked
     * @return GlobalChange if a rule led to it; LocalChange otherwise (even if no rule was applicable)
-    * */
+    */
    private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term]): Change = {
       after match {
          case Nil => LocalChange(before)
          case arg::afterRest =>
             arg match {
                case OMAMaybeNil(OMS(inner), inside) =>
-                  depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
+                  rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
                      val ch = rule.apply(before, inside, afterRest)
                      log("rule " + rule + ": " + ch)
                      ch match {
@@ -113,7 +55,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
    private def applyBreadthRules(op: GlobalName, inside: List[Term]): Change = {
       var insideS = inside
       var changed = false
-      breadthRules.getOrElse(op,Nil) foreach {rule =>
+      rs.breadthRules.getOrElse(op,Nil) foreach {rule =>
          val ch = rule.apply(insideS)
          log("rule " + rule + ": " + ch)
          ch match {
@@ -150,7 +92,7 @@ class UOM(report: frontend.Report) extends StatelessTraverser {
          else
             tSM
       case OMS(p) =>
-         abbrevRules(p).headOption match {
+         rs.abbrevRules(p).headOption match {
            case Some(ar) => ar.term.from(t)
            case None => t
          }
