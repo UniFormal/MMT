@@ -97,7 +97,8 @@ class Server(val port: Int, controller: Controller) extends HServer {
         case ":change" :: _ => Some(ChangeResponse)
         case ":uom" :: _ => Some(UomResponse)
         case ":search" :: _ => Some(MwsResponse)
-        case ":parse" ::_ => Some(ParserResponse)
+        case ":parse" :: _ => Some(ParserResponse)
+        case ":post" :: _ => Some(PostResponse)
         case ":mmt" :: _ => Some(MmtResponse)
         // empty path 
         case List("") | Nil => Some(resourceResponse("browse.html"))
@@ -106,7 +107,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
         // other resources
         case uriComps =>
           controller.extman.getServerPlugin(uriComps) match {
-            case Some(s) => println("found and using extension"); s(uriComps)
+            case Some(s) => s(uriComps)
             case None => Some(resourceResponse(req.uriPath))
           }
       }
@@ -230,6 +231,23 @@ class Server(val port: Int, controller: Controller) extends HServer {
       XmlResponse(resp).act(tk)
     }
   }
+  
+  /** 
+   * PostResponse is a response to a requests that posts content to MMT
+   *  
+   */
+  private def PostResponse : HLet = new HLet {
+    def act(tk : HTalk) {
+      println(tk.req.paramKeys)
+      val content = tk.req.param("body").getOrElse(throw ServerError(<error><message>found no body in post req</message></error>))
+      val format = tk.req.param("format").getOrElse("mmt")
+      val dpathS = tk.req.param("dpath").getOrElse(throw ServerError(<error><message>expected dpath</message></error>))
+      val dpath = DPath(URI(dpathS))
+      controller.textParser.apply(parser.Reader(content), dpath)
+      TextResponse("Success").act(tk)
+    }    
+  }
+  
   
   private def ChangeResponse : HLet = new HLet {
     def act(tk : HTalk) {

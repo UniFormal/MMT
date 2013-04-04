@@ -46,7 +46,7 @@ object Extractor {
      for (i <- start until str.length) {
        val tmp = str.charAt(i)
        if ( tmp == '(') { braces = braces + 1 }
-       if ( tmp == ')') { braces = braces - 1 } 
+       if ( tmp == ')') { braces = braces - 1 }
        if ( braces < 0 ) {
          System.err.println("Extractor: Inbalanced string found"+
            " in implementation")
