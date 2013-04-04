@@ -24,7 +24,7 @@
     <element name="div">
       <attribute prefix="jobad" name="load"><component index="0"/></attribute>
       <element name="span">
-        <attribute name="onclick" value="remoteClick(event.target.parentNode)"/>
+        <attribute name="loadable" value="true"/>
         <attribute name="class" value="keyword"/>
         <text value="remote "/><hole/>
       </element>
