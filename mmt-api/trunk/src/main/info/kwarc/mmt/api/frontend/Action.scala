@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def comment = "//.*"r
    private def action = controller | shell | getaction
 
-   private def controller = log | mathpath | archive | importer | mws | server | windowaction | execfile
+   private def controller = log | mathpath | archive | extension | mws | server | windowaction | execfile | scala
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
@@ -52,12 +52,13 @@ object Action extends RegexParsers {
      private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
-   private def importer = "extension" ~> str ~ (str *) ^^ {case c ~ args => AddExtension(c, args)}
+   private def extension = "extension" ~> str ~ (str *) ^^ {case c ~ args => AddExtension(c, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def server = serveron | serveroff
      private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
      private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
+   private def scala = "scala" ^^ {_ => Scala}
 
    private def shell = setbase | read | graph | check | printall | printallxml | clear | exit
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
@@ -237,6 +238,8 @@ case object PrintAll extends Action
 
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
+
+case object Scala extends Action {override def toString = "scala"}
 
 /** start up the HTTP server
  * @param port the port to listen to

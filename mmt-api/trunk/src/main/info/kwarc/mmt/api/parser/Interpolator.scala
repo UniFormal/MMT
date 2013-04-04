@@ -3,7 +3,6 @@ import info.kwarc.mmt.api._
 import objects._
 
 class MMTInterpolator(controller: frontend.Controller) {
-   var theory : MPath = utils.mmt.mmtcd
    implicit def int2OM(i: Int) = OMI(i)
    implicit def floatt2OM(f: Double) = OMF(f)
    
@@ -21,7 +20,16 @@ class MMTInterpolator(controller: frontend.Controller) {
             i += 1
         }
         val str = buf.toString
-        val pu = ParsingUnit(SourceRef.anonymous(str), OMMOD(theory), sub.asContext, str, top) 
+        val theory = controller.getBase match {
+           case d: DPath => OMMOD(utils.mmt.mmtcd) 
+           case p: MPath => OMMOD(p)
+           case GlobalName(t,_) => t
+           case CPath(par,_) => par match {
+              case p: MPath => OMMOD(p)
+              case GlobalName(t,_) => t
+           }
+        }
+        val pu = ParsingUnit(SourceRef.anonymous(str), theory, sub.asContext, str, top) 
         val t = controller.termParser(pu)
         t ^ sub
    }

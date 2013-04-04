@@ -6,7 +6,7 @@ import archives._
 import javax.swing._
 import event._
 
-class BackendPane(backend: Backend) extends JTextArea {
+class BackendPane(backend: Backend) extends {val ta = new JTextArea} with JScrollPane(ta) {
    def set = {
       var s : String = ""
       backend.getStores foreach {
@@ -17,7 +17,7 @@ class BackendPane(backend: Backend) extends JTextArea {
          case r: SVNRepo =>
             s += r.toString //TODO better printing
       }
-      setText(s) 
+      ta.setText(s) 
    }
    set
 }

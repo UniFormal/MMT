@@ -17,7 +17,7 @@ object Test {
       
       val ip = new parser.MMTInterpolator(controller)
       val mpath = Path.parseM("http://cds.omdoc.org/test-new?FOLExt", utils.mmt.mmtbase)
-      ip.theory = mpath
+      controller.handle(SetBase(mpath))
       import ip._
       
       val prover = new Prover(controller)
