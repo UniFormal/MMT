@@ -40,7 +40,7 @@ class ExtensionManager(controller: Controller) {
    private var loadedPlugins : List[java.lang.Class[_ <: Plugin]] = Nil
    
            var lexerExtensions : List[LexerExtension] =
-              List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), NatLiteralHandler)
+              List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), new NumberLiteralHandler(true))
    private var mws : Option[URI] = None
 
    private def log(msg : => String) = report("extman", msg)
