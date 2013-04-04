@@ -11,7 +11,7 @@ class Plugin extends frontend.Plugin {
       // type reconstruction rules
       em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow)
       // computation rules
-      c.uom.register(UnsafeBeta)
+      em.ruleStore.add(UnsafeBeta)
       // proof rules
       em.ruleStore.add(PiIntroRule, PiElimRule, ArrowIntroRule, ArrowElimRule)
       // pragmatic features
