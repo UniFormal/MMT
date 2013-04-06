@@ -1,0 +1,66 @@
+<omdoc base="file:/./doc-lib/theories/source/term-reflection.mmt">
+        <theory base="http://cds.omdoc.org/foundational" name="Terms" >
+        <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#49.2.0-182.9.1"></link></metadata>
+        <import   from="http://cds.omdoc.org/foundational?Typed">
+            <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#67.3.3-81.3.17"></link></metadata>
+            
+          </import><constant name="refl-type" >
+       <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#90.5.3-108.5.21"></link></metadata>
+       
+       
+       <notation><text-notation isBinder="false">
+      <markers>
+        <delimiter> ↑ </delimiter><delimiter> _1 </delimiter><std-arg>1</std-arg>
+      </markers>
+      <precedence>
+        0
+      </precedence>
+    </text-notation></notation>
+     </constant><constant name="quote" >
+       <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#113.6.3-133.6.23"></link></metadata>
+       
+       
+       <notation><text-notation isBinder="false">
+      <markers>
+        <delimiter> ⌜ </delimiter><std-arg>0</std-arg><delimiter> ⌝ </delimiter><delimiter> _2 </delimiter>
+      </markers>
+      <precedence>
+        0
+      </precedence>
+    </text-notation></notation>
+     </constant><constant name="eval" >
+       <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#138.7.3-158.7.23"></link></metadata>
+       
+       
+       <notation><text-notation isBinder="false">
+      <markers>
+        <delimiter> ⌞ </delimiter><std-arg>0</std-arg><delimiter> ⌟ </delimiter><delimiter> _2 </delimiter>
+      </markers>
+      <precedence>
+        0
+      </precedence>
+    </text-notation></notation>
+     </constant><constant name="elim" >
+       <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#163.8.3-179.8.19"></link></metadata>
+       
+       
+       <notation><text-notation isBinder="false">
+      <markers>
+        <std-arg>0</std-arg><delimiter> ^2 </delimiter>
+      </markers>
+      <precedence>
+        0
+      </precedence>
+    </text-notation></notation>
+     </constant>
+      </theory><theory base="http://cds.omdoc.org/foundational" name="LFReflection" >
+        <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#185.11.0-241.14.1"></link></metadata>
+        <import   from="http://cds.omdoc.org/foundational?LF">
+            <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#209.12.2-220.12.13"></link></metadata>
+            
+          </import><import   from="http://cds.omdoc.org/foundational?Terms">
+            <metadata><link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/term-reflection.mmt#224.13.2-238.13.16"></link></metadata>
+            
+          </import>
+      </theory>
+     </omdoc>

@@ -1,0 +1,10 @@
+theory http://cds.omdoc.org/foundational?Terms
+Includes http://cds.omdoc.org/foundational?Terms http://cds.omdoc.org/foundational?Typed
+Declares http://cds.omdoc.org/foundational?Terms http://cds.omdoc.org/foundational?Terms?refl-type
+constant: http://cds.omdoc.org/foundational?Terms?refl-type
+Declares http://cds.omdoc.org/foundational?Terms http://cds.omdoc.org/foundational?Terms?quote
+constant: http://cds.omdoc.org/foundational?Terms?quote
+Declares http://cds.omdoc.org/foundational?Terms http://cds.omdoc.org/foundational?Terms?eval
+constant: http://cds.omdoc.org/foundational?Terms?eval
+Declares http://cds.omdoc.org/foundational?Terms http://cds.omdoc.org/foundational?Terms?elim
+constant: http://cds.omdoc.org/foundational?Terms?elim

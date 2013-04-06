@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory base="http://cds.omdoc.org/fol" name="FOL" >
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#255.20.0-495.28.1"></link>
+    </metadata>
+    <import   from="http://cds.omdoc.org/fol?LF">
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#270.21.2-281.21.13"></link>
+      </metadata>
+    </import>
+    <constant name="bool" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#285.22.2-296.22.13"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Typed" name="type" base="http://cds.omdoc.org/fol"></om:OMS>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="univ" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#300.23.2-311.23.13"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Typed" name="type" base="http://cds.omdoc.org/fol"></om:OMS>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="and" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#315.24.2-349.24.36"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/fol" position="0"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="1"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="2"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <std-arg>0</std-arg>
+            <delimiter> ∧ </delimiter>
+            <std-arg>1</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="or" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#353.25.2-386.25.35"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/fol" position="0"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="1"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="2"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <std-arg>0</std-arg>
+            <delimiter> ∨ </delimiter>
+            <std-arg>1</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="impl" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#390.26.2-425.26.37"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/fol" position="0"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="1"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="2"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <std-arg>0</std-arg>
+            <delimiter> ⇒ </delimiter>
+            <std-arg>1</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="equiv" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/fol.mmt#429.27.2-492.27.65"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/fol" position="0"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="1"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="2"></om:OMS>
+            <om:OMS module="FOL" name="bool" base="http://cds.omdoc.org/fol" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/fol" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="x" position="0"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/fol" position="2_0"></om:OMS>
+              <om:OMBVAR>
+                <om:OMV name="y" position="2_0"></om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS module="FOL" name="and" base="http://cds.omdoc.org/fol" position="2_2_0"></om:OMS>
+                <om:OMA position="2_2_1">
+                  <om:OMS module="FOL" name="impl" base="http://cds.omdoc.org/fol" position="2_2_1_0"></om:OMS>
+                  <om:OMV name="x" position="2_2_1_1"></om:OMV>
+                  <om:OMV name="y" position="2_2_1_2"></om:OMV>
+                </om:OMA>
+                <om:OMA position="2_2_2">
+                  <om:OMS module="FOL" name="impl" base="http://cds.omdoc.org/fol" position="2_2_2_0"></om:OMS>
+                  <om:OMV name="y" position="2_2_2_1"></om:OMV>
+                  <om:OMV name="x" position="2_2_2_2"></om:OMV>
+                </om:OMA>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <std-arg>0</std-arg>
+            <delimiter> ⇔ </delimiter>
+            <std-arg>1</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+  </theory>
+</omdoc>

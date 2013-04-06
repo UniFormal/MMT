@@ -1,0 +1,1233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc base="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc"
+xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">
+       
+<theory name="fol" meta="http://cds.omdoc.org/foundations/lf/lf.omdoc?lf">
+
+<constant name="i" role="sort">
+   <type>
+      <om:OMOBJ>
+         <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="type"/>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="o" role="sort">
+   <type>
+      <om:OMOBJ>
+         <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="type"/>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="top">
+   <type>
+      <om:OMOBJ>
+         <om:OMS name="o"/>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="bot">
+   <type>
+      <om:OMOBJ>
+         <om:OMS name="o"/>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="and">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMS name="o"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="o"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="or">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMS name="o"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="o"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="imp">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMS name="o"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="o"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="not">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMS name="o"/>
+            <om:OMS name="o"/>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="forall">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="i"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+            <om:OMS name="o"/>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="exists">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="i"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+            <om:OMS name="o"/>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="eq">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMS name="i"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="i"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="existsUnique">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="i"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+            <om:OMS name="o"/>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+<definition>
+   <om:OMOBJ>
+      <om:OMBIND>
+         <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+         <om:OMBVAR><om:OMATTR>
+            <om:OMATP>
+            <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMS name="i"/>
+               <om:OMS name="o"/>
+            </om:OMA>
+            </om:OMATP>
+            <om:OMV name="f"/>
+         </om:OMATTR></om:OMBVAR>
+         <om:OMA>
+            <om:OMS name="exists"/>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="i"/>
+                  </om:OMATP>
+                  <om:OMV name="x"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS name="and"/>
+                  <om:OMA>
+                     <om:OMV name="f"/>
+                     <om:OMV name="x"/>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR><om:OMATTR>
+                           <om:OMATP>
+                           <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                           <om:OMS name="i"/>
+                           </om:OMATP>
+                           <om:OMV name="y"/>
+                        </om:OMATTR></om:OMBVAR>
+                        <om:OMA>
+                           <om:OMS name="imp"/>
+                           <om:OMA>
+                              <om:OMV name="f"/>
+                              <om:OMV name="y"/>
+                           </om:OMA>
+                           <om:OMA>
+                              <om:OMS name="eq"/>
+                              <om:OMV name="y"/>
+                              <om:OMV name="x"/>
+                           </om:OMA>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMA>
+      </om:OMBIND>
+   </om:OMOBJ>
+</definition>
+</constant>
+
+
+<constant name="true" role="judgment">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+            <om:OMS name="o"/>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="type"/>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="topI" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMA>
+            <om:OMS name="true"/>
+            <om:OMS name="top"/>
+         </om:OMA>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="botE" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMA>
+                  <om:OMS name="true"/>
+                  <om:OMS name="bot"/>
+               </om:OMA>
+               <om:OMA>
+                  <om:OMS name="true"/>
+                  <om:OMV name="A"/>
+               </om:OMA>
+            </om:OMA>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="andI" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="B"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMV name="A"/>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMA>
+                           <om:OMS name="and"/>
+                           <om:OMV name="A"/>
+                           <om:OMV name="B"/>
+                        </om:OMA>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="andEl" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="B"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="and"/>
+                        <om:OMV name="A"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMV name="A"/>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="andEr" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="B"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="and"/>
+                        <om:OMV name="A"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMV name="B"/>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="orIl" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="B"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMV name="A"/>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="or"/>
+                        <om:OMV name="A"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="orIr" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="B"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="A"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMV name="B"/>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="or"/>
+                        <om:OMV name="A"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="orE" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="C"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMBIND>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+                  <om:OMBVAR><om:OMATTR>
+                     <om:OMATP>
+                     <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                     <om:OMS name="o"/>
+                     </om:OMATP>
+                     <om:OMV name="B"/>
+                  </om:OMATTR></om:OMBVAR>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMA>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMV name="A"/>
+                        </om:OMA>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMV name="C"/>
+                        </om:OMA>
+                     </om:OMA>
+                     <om:OMA>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                           <om:OMA>
+                              <om:OMS name="true"/>
+                              <om:OMV name="B"/>
+                           </om:OMA>
+                           <om:OMA>
+                              <om:OMS name="true"/>
+                              <om:OMV name="C"/>
+                           </om:OMA>
+                        </om:OMA>
+                        <om:OMA>
+                           <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                           <om:OMA>
+                              <om:OMS name="true"/>
+                              <om:OMA>
+                                 <om:OMS name="or"/>
+                                 <om:OMV name="A"/>
+                                 <om:OMV name="B"/>
+                              </om:OMA>
+                           </om:OMA>
+                           <om:OMA>
+                              <om:OMS name="true"/>
+                              <om:OMV name="C"/>
+                           </om:OMA>
+                        </om:OMA>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMBIND>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="impI" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="B"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMV name="A"/>
+                     </om:OMA>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="imp"/>
+                        <om:OMV name="A"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="impE" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="B"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="imp"/>
+                        <om:OMV name="A"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMV name="A"/>
+                     </om:OMA>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMV name="B"/>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="notI" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMV name="A"/>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMS name="bot"/>
+                  </om:OMA>
+               </om:OMA>
+               <om:OMA>
+                  <om:OMS name="true"/>
+                  <om:OMA>
+                     <om:OMS name="not"/>
+                     <om:OMV name="A"/>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMA>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="forallI" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMS name="i"/>
+                  <om:OMS name="o"/>
+               </om:OMA>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMBIND>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="Pi"/>
+                  <om:OMBVAR><om:OMATTR>
+                     <om:OMATP>
+                     <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                     <om:OMS name="i"/>
+                     </om:OMATP>
+                     <om:OMV name="x"/>
+                  </om:OMATTR></om:OMBVAR>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMV name="A"/>
+                        <om:OMV name="x"/>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMBIND>
+               <om:OMA>
+                  <om:OMS name="true"/>
+                  <om:OMA>
+                     <om:OMS name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR><om:OMATTR>
+                           <om:OMATP>
+                           <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                           <om:OMS name="i"/>
+                           </om:OMATP>
+                           <om:OMV name="x"/>
+                        </om:OMATTR></om:OMBVAR>
+                        <om:OMA>
+                           <om:OMV name="A"/>
+                           <om:OMV name="x"/>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMA>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="forallE" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMS name="i"/>
+                  <om:OMS name="o"/>
+               </om:OMA>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+               <om:OMA>
+                  <om:OMS name="true"/>
+                  <om:OMA>
+                     <om:OMS name="forall"/>
+                     <om:OMBIND>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                        <om:OMBVAR><om:OMATTR>
+                           <om:OMATP>
+                           <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                           <om:OMS name="i"/>
+                           </om:OMATP>
+                           <om:OMV name="x"/>
+                        </om:OMATTR></om:OMBVAR>
+                        <om:OMA>
+                           <om:OMV name="A"/>
+                           <om:OMV name="x"/>
+                        </om:OMA>
+                     </om:OMBIND>
+                  </om:OMA>
+               </om:OMA>
+               <om:OMBIND>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="Pi"/>
+                  <om:OMBVAR><om:OMATTR>
+                     <om:OMATP>
+                     <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                     <om:OMS name="i"/>
+                     </om:OMATP>
+                     <om:OMV name="x"/>
+                  </om:OMATTR></om:OMBVAR>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMV name="A"/>
+                        <om:OMV name="x"/>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMBIND>
+            </om:OMA>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="existsI" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMS name="i"/>
+                  <om:OMS name="o"/>
+               </om:OMA>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="i"/>
+                  </om:OMATP>
+                  <om:OMV name="x"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMV name="A"/>
+                        <om:OMV name="x"/>
+                     </om:OMA>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="exists"/>
+                        <om:OMBIND>
+                           <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                           <om:OMBVAR><om:OMATTR>
+                              <om:OMATP>
+                              <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                              <om:OMS name="i"/>
+                              </om:OMATP>
+                              <om:OMV name="x1"/>
+                           </om:OMATTR></om:OMBVAR>
+                           <om:OMA>
+                              <om:OMV name="A"/>
+                              <om:OMV name="x1"/>
+                           </om:OMA>
+                        </om:OMBIND>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="existsE" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMS name="i"/>
+                  <om:OMS name="o"/>
+               </om:OMA>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="o"/>
+                  </om:OMATP>
+                  <om:OMV name="C"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMBIND>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="Pi"/>
+                  <om:OMBVAR><om:OMATTR>
+                     <om:OMATP>
+                     <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                     <om:OMS name="i"/>
+                     </om:OMATP>
+                     <om:OMV name="x"/>
+                  </om:OMATTR></om:OMBVAR>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMA>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMA>
+                              <om:OMV name="A"/>
+                              <om:OMV name="x"/>
+                           </om:OMA>
+                        </om:OMA>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMV name="C"/>
+                        </om:OMA>
+                     </om:OMA>
+                     <om:OMA>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMA>
+                              <om:OMS name="exists"/>
+                              <om:OMBIND>
+                                 <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="lambda"/>
+                                 <om:OMBVAR><om:OMATTR>
+                                    <om:OMATP>
+                                    <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                                    <om:OMS name="i"/>
+                                    </om:OMATP>
+                                    <om:OMV name="x1"/>
+                                 </om:OMATTR></om:OMBVAR>
+                                 <om:OMA>
+                                    <om:OMV name="A"/>
+                                    <om:OMV name="x1"/>
+                                 </om:OMA>
+                              </om:OMBIND>
+                           </om:OMA>
+                        </om:OMA>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMV name="C"/>
+                        </om:OMA>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMBIND>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="refl" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="i"/>
+               </om:OMATP>
+               <om:OMV name="X"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMA>
+               <om:OMS name="true"/>
+               <om:OMA>
+                  <om:OMS name="eq"/>
+                  <om:OMV name="X"/>
+                  <om:OMV name="X"/>
+               </om:OMA>
+            </om:OMA>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="sym" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="i"/>
+               </om:OMATP>
+               <om:OMV name="X"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="i"/>
+                  </om:OMATP>
+                  <om:OMV name="Y"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMA>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="eq"/>
+                        <om:OMV name="X"/>
+                        <om:OMV name="Y"/>
+                     </om:OMA>
+                  </om:OMA>
+                  <om:OMA>
+                     <om:OMS name="true"/>
+                     <om:OMA>
+                        <om:OMS name="eq"/>
+                        <om:OMV name="Y"/>
+                        <om:OMV name="X"/>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="trans" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="i"/>
+               </om:OMATP>
+               <om:OMV name="X"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="i"/>
+                  </om:OMATP>
+                  <om:OMV name="Y"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMBIND>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+                  <om:OMBVAR><om:OMATTR>
+                     <om:OMATP>
+                     <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                     <om:OMS name="i"/>
+                     </om:OMATP>
+                     <om:OMV name="Z"/>
+                  </om:OMATTR></om:OMBVAR>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMA>
+                           <om:OMS name="eq"/>
+                           <om:OMV name="X"/>
+                           <om:OMV name="Y"/>
+                        </om:OMA>
+                     </om:OMA>
+                     <om:OMA>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMA>
+                              <om:OMS name="eq"/>
+                              <om:OMV name="Y"/>
+                              <om:OMV name="Z"/>
+                           </om:OMA>
+                        </om:OMA>
+                        <om:OMA>
+                           <om:OMS name="true"/>
+                           <om:OMA>
+                              <om:OMS name="eq"/>
+                              <om:OMV name="X"/>
+                              <om:OMV name="Z"/>
+                           </om:OMA>
+                        </om:OMA>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMBIND>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="cong" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="i"/>
+               </om:OMATP>
+               <om:OMV name="X"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMBIND>
+               <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+               <om:OMBVAR><om:OMATTR>
+                  <om:OMATP>
+                  <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                  <om:OMS name="i"/>
+                  </om:OMATP>
+                  <om:OMV name="Y"/>
+               </om:OMATTR></om:OMBVAR>
+               <om:OMBIND>
+                  <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+                  <om:OMBVAR><om:OMATTR>
+                     <om:OMATP>
+                     <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+                     <om:OMA>
+                        <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                        <om:OMS name="i"/>
+                        <om:OMS name="i"/>
+                     </om:OMA>
+                     </om:OMATP>
+                     <om:OMV name="F"/>
+                  </om:OMATTR></om:OMBVAR>
+                  <om:OMA>
+                     <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="arrow"/>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMA>
+                           <om:OMS name="eq"/>
+                           <om:OMV name="X"/>
+                           <om:OMV name="Y"/>
+                        </om:OMA>
+                     </om:OMA>
+                     <om:OMA>
+                        <om:OMS name="true"/>
+                        <om:OMA>
+                           <om:OMS name="eq"/>
+                           <om:OMA>
+                              <om:OMV name="F"/>
+                              <om:OMV name="X"/>
+                           </om:OMA>
+                           <om:OMA>
+                              <om:OMV name="F"/>
+                              <om:OMV name="Y"/>
+                           </om:OMA>
+                        </om:OMA>
+                     </om:OMA>
+                  </om:OMA>
+               </om:OMBIND>
+            </om:OMBIND>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+<constant name="tnd" role="axiom">
+   <type>
+      <om:OMOBJ>
+         <om:OMBIND>
+            <om:OMS base="http://cds.omdoc.org/foundations/lf/lf.omdoc" module="lf" name="implicit_Pi"/>
+            <om:OMBVAR><om:OMATTR>
+               <om:OMATP>
+               <om:OMS base="http://cds.omdoc.org/omdoc/mmt.omdoc" module="mmt" name="type"/>
+               <om:OMS name="o"/>
+               </om:OMATP>
+               <om:OMV name="A"/>
+            </om:OMATTR></om:OMBVAR>
+            <om:OMA>
+               <om:OMS name="true"/>
+               <om:OMA>
+                  <om:OMS name="or"/>
+                  <om:OMV name="A"/>
+                  <om:OMA>
+                     <om:OMS name="not"/>
+                     <om:OMV name="A"/>
+                  </om:OMA>
+               </om:OMA>
+            </om:OMA>
+         </om:OMBIND>
+      </om:OMOBJ>
+   </type>
+</constant>
+
+
+   <notation for="??and" role="application" precedence="10" fixity="inter" associativity="none"/>
+   <notation for="??or" role="application" precedence="10" fixity="inter" associativity="none"/>
+   <notation for="??imp" role="application" precedence="10" fixity="inter" associativity="right"/>
+   <notation for="??not" role="application" precedence="20" application-style="lc"/>
+   <notation for="??eq" role="application" precedence="25" fixity="in" associativity="none"/>
+   <notation for="??forall" role="application" precedence="15" fixity="pre" application-style="lc"/>
+   <notation for="??exists" role="application" precedence="15" fixity="pre" application-style="lc"/>
+   <notation for="??true" role="application" precedence="5" fixity="pre" application-style="lc"/>
+ 
+</theory>
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+

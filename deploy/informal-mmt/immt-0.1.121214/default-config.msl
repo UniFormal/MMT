@@ -1,0 +1,21 @@
+//loading plugins
+importer info.kwarc.mmt.api.backend.MMTCompiler
+plugin info.kwarc.mmt.lf.Plugin
+
+//adding document libraries
+mathpath fs http://cds.omdoc.org/styles doc-lib/styles
+
+archive add doc-lib/theories
+archive mmt clean  
+archive mmt compile  
+archive mmt content
+
+archive add doc-lib/planetary-test
+archive planetarytest clean  
+archive planetarytest content
+archive planetarytest check
+archive planetarytest notation
+
+//starting server
+server on 8080
+base http://docs.omdoc.org/planetary

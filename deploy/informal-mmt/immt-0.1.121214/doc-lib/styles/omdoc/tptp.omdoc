@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+
+<style name="tptp" from="http://cds.omdoc.org/" to="text/tptp">
+
+  <include from="styles/omdoc/ascii.omdoc?ascii"/>
+
+  <notation role="Theory">
+    <components begin="2" end="-1"/>
+  </notation>
+
+  <notation role="Constant">
+    <text value="fof("/>
+    <component index="0"/>
+    <text value=",type,"/>
+    <component index="0"/>
+    <text value=" : "/>
+    <component index="1"/>
+    <text value=")."/>
+    <fragment name="newline"/>
+  </notation>
+
+  <notation role="Constant:judgment"/>
+
+  <notation role="Constant:proof">
+    <text value="fof("/>
+    <component index="0"/>
+    <if test="present" index="2">
+      <then>
+        <text value=",axiom,"/>
+      </then>
+      <else>
+        <text value=",conjecture,"/>
+      </else>
+    </if>
+    <component index="1"/>
+    <text value=")."/>
+    <fragment name="newline"/>
+  </notation>
+
+</style>
+
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

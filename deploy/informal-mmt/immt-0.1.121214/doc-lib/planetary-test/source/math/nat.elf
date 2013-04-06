@@ -1,0 +1,10 @@
+%namespace "http://latin.omdoc.org/math".
+
+%sig Natural = {
+
+   nat : type.
+   + : nat -> nat -> nat. %infix left 25 +.
+   0 : nat.
+   1 : nat.
+   2 : nat = 1 + 1.
+}.

@@ -1,0 +1,10 @@
+RefersTo http://latin.omdoc.org/math?Peano?succ http://cds.omdoc.org/foundations?LF?@
+RefersTo http://latin.omdoc.org/math?Peano? http://latin.omdoc.org/math?Natural
+RefersTo http://latin.omdoc.org/math?Peano http://cds.omdoc.org/foundations?LF
+RefersTo http://latin.omdoc.org/math?Peano?succ http://cds.omdoc.org/foundations?LF?arrow
+RefersTo http://latin.omdoc.org/math?Peano?succ http://latin.omdoc.org/math?Natural?+
+RefersTo http://latin.omdoc.org/math?Peano?zero http://latin.omdoc.org/math?Natural?0
+RefersTo http://latin.omdoc.org/math?Peano?succ http://latin.omdoc.org/math?Natural?nat
+RefersTo http://latin.omdoc.org/math?Peano?succ http://latin.omdoc.org/math?Natural?1
+RefersTo http://latin.omdoc.org/math?Peano?succ http://cds.omdoc.org/foundations?LF?lambda
+RefersTo http://latin.omdoc.org/math?Peano?zero http://latin.omdoc.org/math?Natural?nat

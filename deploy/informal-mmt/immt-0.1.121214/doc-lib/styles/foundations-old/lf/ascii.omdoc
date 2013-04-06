@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+  <style name="ascii" from="http://cds.omdoc.org/foundations/lf/lf.omdoc" to="text/plain">
+   <include from="http://cds.omdoc.org/omdoc/ascii.omdoc?ascii"/>
+
+   <notation for="?lf?oftype" role="constant">
+      <text value=":"/>
+   </notation>
+
+   <notation for="?lf?omitted" role="constant">
+      <text value="_"/>
+   </notation>
+
+   <notation for="?lf?lambda" role="constant"/>
+
+   <notation for="?lf?Pi" role="constant"/>
+
+   <notation for="?lf?arrow" role="constant">
+      <text value="->"/>
+   </notation>
+
+   <notation role="fragment:lambda">
+     <text value="["/><hole/><text value="] "/>
+   </notation>
+   <notation role="fragment:Pi">
+     <text value="{"/><hole/><text value="} "/>
+   </notation>
+
+  </style>
+
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,63 @@
+<omdoc-diff>
+<add level="module" base="http://latin.omdoc.org/math" path="http://latin.omdoc.org/math?NatNrs">
+<theory name="NatNrs" meta="http://cds.omdoc.org/foundations?LF">
+   <constant name="nat" role="type">
+      <type>
+         <om:OMOBJ>
+            <om:OMS base="http://cds.omdoc.org/foundations" module="Typed" name="type"/>
+         </om:OMOBJ>
+      </type>
+   </constant>
+   
+   <constant name="+" role="constructor">
+      <type>
+         <om:OMOBJ>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+               <om:OMS name="nat"/>
+               <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations" module="LF" name="arrow"/>
+               <om:OMS name="nat"/>
+               <om:OMS name="nat"/>
+            </om:OMA>
+            </om:OMA>
+         </om:OMOBJ>
+      </type>
+   </constant>
+   <notation for="??+" role="application" fixity="in" associativity="left" precedence="25" implicit="0"/>
+   <constant name="0" role="constructor">
+      <type>
+         <om:OMOBJ>
+            <om:OMS name="nat"/>
+         </om:OMOBJ>
+      </type>
+   </constant>
+   
+   <constant name="1" role="constructor">
+      <type>
+         <om:OMOBJ>
+            <om:OMS name="nat"/>
+         </om:OMOBJ>
+      </type>
+   </constant>
+   
+   <constant name="2" role="constructor">
+      <type>
+         <om:OMOBJ>
+            <om:OMS name="nat"/>
+         </om:OMOBJ>
+      </type>
+      <definition>
+         <om:OMOBJ>
+            <om:OMA>
+               <om:OMS base="http://cds.omdoc.org/foundations" module="LF" name="@"/>
+               <om:OMS name="+"/>
+               <om:OMS name="1"/>
+               <om:OMS name="1"/>
+            </om:OMA>
+         </om:OMOBJ>
+      </definition>
+   </constant>
+</theory>
+</add>
+</omdoc-diff>

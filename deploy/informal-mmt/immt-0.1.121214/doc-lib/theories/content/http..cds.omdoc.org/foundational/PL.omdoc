@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory base="http://cds.omdoc.org/foundational" name="PL" meta="http://cds.omdoc.org/foundational?LF">
+    <metadata>
+      <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#49.2.0-513.15.1"></link>
+    </metadata>
+    <constant name="bool" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#68.3.2-79.3.13"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Typed" name="type" base="http://cds.omdoc.org/foundational"></om:OMS>
+        </om:OMOBJ>
+      </type>
+    </constant>
+    <constant name="or" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#83.4.2-119.4.38"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="1"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="2"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <std-arg>0</std-arg>
+            <delimiter> ∨ </delimiter>
+            <std-arg>1</std-arg>
+          </markers>
+          <precedence> 10 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="and" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#123.5.2-160.5.39"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="1"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="2"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <std-arg>0</std-arg>
+            <delimiter> ∧ </delimiter>
+            <std-arg>1</std-arg>
+          </markers>
+          <precedence> 10 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="equiv" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#164.6.2-218.6.56"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="1"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="2"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="3"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="x" position="0"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/foundational" position="2_0"></om:OMS>
+              <om:OMBVAR>
+                <om:OMV name="y" position="2_0"></om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS module="PL" name="or" base="http://cds.omdoc.org/foundational" position="2_2_0"></om:OMS>
+                <om:OMV name="x" position="2_2_1"></om:OMV>
+                <om:OMV name="y" position="2_2_2"></om:OMV>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <std-arg>0</std-arg>
+            <delimiter> ⇔ </delimiter>
+            <std-arg>1</std-arg>
+          </markers>
+          <precedence> 10 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="ded" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#225.8.2-251.8.28"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMS module="PL" name="bool" base="http://cds.omdoc.org/foundational" position="1"></om:OMS>
+            <om:OMS module="Typed" name="type" base="http://cds.omdoc.org/foundational" position="2"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <delimiter> ded </delimiter>
+            <std-arg>0</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="andI" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#258.10.2-313.10.57"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="A" position="0"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="2_0"></om:OMS>
+              <om:OMBVAR>
+                <om:OMV name="B" position="2_0"></om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="2_2_0"></om:OMS>
+                <om:OMA position="2_2_1">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_1_0"></om:OMS>
+                  <om:OMV name="A" position="2_2_1_1"></om:OMV>
+                </om:OMA>
+                <om:OMA position="2_2_2">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_2_0"></om:OMS>
+                  <om:OMV name="B" position="2_2_2_1"></om:OMV>
+                </om:OMA>
+                <om:OMA position="2_2_3">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_3_0"></om:OMS>
+                  <om:OMA position="2_2_3_1">
+                    <om:OMS module="PL" name="and" base="http://cds.omdoc.org/foundational" position="2_2_3_1_0"></om:OMS>
+                    <om:OMV name="A" position="2_2_3_1_1"></om:OMV>
+                    <om:OMV name="B" position="2_2_3_1_2"></om:OMV>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <delimiter> andI </delimiter>
+            <std-arg>2</std-arg>
+            <std-arg>3</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="andEl" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#317.11.2-371.11.56"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="A" position="0"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="2_0"></om:OMS>
+              <om:OMBVAR>
+                <om:OMV name="B" position="2_0"></om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="2_2_0"></om:OMS>
+                <om:OMA position="2_2_1">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_1_0"></om:OMS>
+                  <om:OMA position="2_2_1_1">
+                    <om:OMS module="PL" name="and" base="http://cds.omdoc.org/foundational" position="2_2_1_1_0"></om:OMS>
+                    <om:OMV name="A" position="2_2_1_1_1"></om:OMV>
+                    <om:OMV name="B" position="2_2_1_1_2"></om:OMV>
+                  </om:OMA>
+                </om:OMA>
+                <om:OMA position="2_2_2">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_2_0"></om:OMS>
+                  <om:OMV name="A" position="2_2_2_1"></om:OMV>
+                </om:OMA>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <delimiter> andEl </delimiter>
+            <std-arg>2</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="andEr" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#375.12.2-429.12.56"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="A" position="0"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="2_0"></om:OMS>
+              <om:OMBVAR>
+                <om:OMV name="B" position="2_0"></om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="2_2_0"></om:OMS>
+                <om:OMA position="2_2_1">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_1_0"></om:OMS>
+                  <om:OMA position="2_2_1_1">
+                    <om:OMS module="PL" name="and" base="http://cds.omdoc.org/foundational" position="2_2_1_1_0"></om:OMS>
+                    <om:OMV name="A" position="2_2_1_1_1"></om:OMV>
+                    <om:OMV name="B" position="2_2_1_1_2"></om:OMV>
+                  </om:OMA>
+                </om:OMA>
+                <om:OMA position="2_2_2">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_2_0"></om:OMS>
+                  <om:OMV name="B" position="2_2_2_1"></om:OMV>
+                </om:OMA>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <notation>
+        <text-notation isBinder="false">
+          <markers>
+            <delimiter> andEr </delimiter>
+            <std-arg>2</std-arg>
+          </markers>
+          <precedence> 0 </precedence>
+        </text-notation>
+      </notation>
+    </constant>
+    <constant name="comm" >
+      <metadata>
+        <link rel="http://cds.omdoc.org/omdoc/mmt.omdoc?metadata?sourceRef" resource="file:/./doc-lib/theories/source/pl.mmt#436.14.2-509.14.75"></link>
+      </metadata>
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="A" position="0"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS module="LF" name="pi" base="http://cds.omdoc.org/foundational" position="2_0"></om:OMS>
+              <om:OMBVAR>
+                <om:OMV name="B" position="2_0"></om:OMV>
+              </om:OMBVAR>
+              <om:OMA position="2_2">
+                <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundational" position="2_2_0"></om:OMS>
+                <om:OMA position="2_2_1">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_1_0"></om:OMS>
+                  <om:OMA position="2_2_1_1">
+                    <om:OMS module="PL" name="and" base="http://cds.omdoc.org/foundational" position="2_2_1_1_0"></om:OMS>
+                    <om:OMV name="A" position="2_2_1_1_1"></om:OMV>
+                    <om:OMV name="B" position="2_2_1_1_2"></om:OMV>
+                  </om:OMA>
+                </om:OMA>
+                <om:OMA position="2_2_2">
+                  <om:OMS module="PL" name="ded" base="http://cds.omdoc.org/foundational" position="2_2_2_0"></om:OMS>
+                  <om:OMA position="2_2_2_1">
+                    <om:OMS module="PL" name="and" base="http://cds.omdoc.org/foundational" position="2_2_2_1_0"></om:OMS>
+                    <om:OMV name="B" position="2_2_2_1_1"></om:OMV>
+                    <om:OMV name="A" position="2_2_2_1_2"></om:OMV>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMA>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/foundational" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="A" position="0"></om:OMV>
+            </om:OMBVAR>
+            <om:OMBIND position="2">
+              <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/foundational" position="2_0"></om:OMS>
+              <om:OMBVAR>
+                <om:OMV name="B" position="2_0"></om:OMV>
+              </om:OMBVAR>
+              <om:OMBIND position="2_2">
+                <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/foundational" position="2_2_0"></om:OMS>
+                <om:OMBVAR>
+                  <om:OMV name="p" position="2_2_0"></om:OMV>
+                </om:OMBVAR>
+                <om:OMA position="2_2_2">
+                  <om:OMS module="PL" name="andI" base="http://cds.omdoc.org/foundational" position="2_2_2_0"></om:OMS>
+                  <om:OMA position="2_2_2_1">
+                    <om:OMS module="PL" name="andEr" base="http://cds.omdoc.org/foundational" position="2_2_2_1_0"></om:OMS>
+                    <om:OMV name="p" position="2_2_2_1_1"></om:OMV>
+                  </om:OMA>
+                  <om:OMA position="2_2_2_2">
+                    <om:OMS module="PL" name="andEl" base="http://cds.omdoc.org/foundational" position="2_2_2_2_0"></om:OMS>
+                    <om:OMV name="p" position="2_2_2_2_1"></om:OMV>
+                  </om:OMA>
+                </om:OMA>
+              </om:OMBIND>
+            </om:OMBIND>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+  </theory>
+</omdoc>

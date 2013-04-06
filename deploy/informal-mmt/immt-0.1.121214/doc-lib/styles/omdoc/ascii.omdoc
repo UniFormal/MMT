@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+
+<style name="ascii" from="http://cds.omdoc.org/" to="text/plain">
+
+  <notation role="Toplevel">
+    <component index="0"/>
+  </notation>
+
+  <notation role="toplevel">
+    <component index="0"/>
+  </notation>
+
+  <notation role="Document">
+    <text value="document "/>
+    <component index="0"/>
+    <fragment name="newline"/><fragment name="newline"/>
+    <components begin="1" end="-1">
+      <separator>
+        <fragment name="newline"/><fragment name="newline"/>
+      </separator>
+    </components>
+  </notation>
+
+  <notation role="DRef">
+    <text value="dref "/>
+    <component index="0"/>
+  </notation>
+
+  <notation role="MRef">
+    <text value="mref "/>
+    <component index="0"/>
+  </notation>
+
+  <notation role="Theory">
+    <text value="theory "/>
+    <component index="0"/>
+    <text value=" = "/>
+    <if test="present" index="1">
+      <then>
+        <component index="1"/>
+        <text value=" "/>
+      </then>
+    </if>
+    <text value="{"/>
+    <fragment name="newline"/>
+    <components begin="2" end="-1">
+      <body>
+        <fragment name="tab"/>
+        <recurse/>
+        <fragment name="newline"/>
+      </body>
+    </components>
+    <text value="}"/>
+  </notation>
+  
+  <notation role="Include">
+    <text value="include "/>
+    <component index="0"/>
+  </notation>
+
+  <notation role="Constant">
+    <text value="constant "/>
+    <component index="0"/>
+    <if test="present" index="1">
+      <then>
+        <text value=" : "/>
+        <component index="1"/>
+      </then>
+    </if>
+    <if test="present" index="2">
+      <then>
+        <text value=" = "/>
+        <component index="2"/>
+      </then>
+    </if>
+  </notation>
+  
+  <notation role="View">
+    <text value="view "/>
+    <component index="0"/>
+    <text value=" : "/>
+    <component index="1"/>
+    <text value=" -> "/>
+    <component index="2"/>
+    <text value="{"/>
+    <fragment name="newline"/>
+    <components begin="3" end="-1">
+      <body>
+        <fragment name="tab"/>
+        <recurse/>
+        <fragment name="newline"/>
+      </body>
+    </components>
+    <text value="}"/>
+  </notation>
+
+  <notation role="ConAss StrAss">
+    <text value="assignment "/>
+    <component index="0"/>
+    <text value=" := "/>
+    <component index="1"/>
+  </notation>
+
+  <notation role="Alias">
+    <text value="alias "/>
+    <component index="0"/>
+    <text value=" = "/>
+    <component index="1"/>
+  </notation>
+
+  <notation role="Structure">
+    <text value="structure "/>
+    <component index="0"/>
+    <text value=" : "/>
+    <component index="1"/>
+    <components begin="2" end="-1">
+      <pre>
+        <text value=" = {"/>
+      </pre>
+      <post>
+        <text value="}"/>
+      </post>
+      <separator>
+        <text value=", "/>
+      </separator>
+    </components>
+  </notation>
+
+  <notation role="module">
+    <component index="0"/>
+    <text value="?"/>
+    <component index="1"/>
+  </notation>
+    
+  <notation role="structure">
+    <component index="1"/>
+    <text value="?"/>
+    <component index="2"/>
+  </notation>
+
+  <notation role="constant">
+    <text value="??"/>
+    <hole><component index="2"/></hole>
+  </notation>
+
+  <notation role="variable">
+    <component index="0"/>
+  </notation>
+    
+  <notation role="application" fixity="pre" application-style="lc" associativity="none"/>
+  <notation role="binding" fixity="bind" implicit="0"/>
+  <notation role="attribution" fixity="in" associativity="none"/>
+  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmt?composition" role="application" fixity="inter" associativity="none" precedence="-infinity"/>
+  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmt?composition" role="constant">
+    <text value=";"/>
+  </notation>
+  <notation role="fragment:brackets">
+    <text value="("/><hole/><text value=")"/>
+  </notation>
+  <notation role="fragment:ebrackets">
+    <hole/>
+  </notation>
+  <notation role="fragment:nobrackets">
+    <hole/>
+  </notation>
+  <notation role="fragment:opsep">
+    <text value=" "/>
+  </notation>
+  <notation role="fragment:argsep">
+    <text value=" "/>
+  </notation>
+  <notation role="fragment:mathargs">
+    <text value="("/><hole/><text value=")"/>
+  </notation>
+  <notation role="fragment:impargs">
+    <hole/>
+  </notation>
+  <notation role="fragment:newline">
+    <text value="&#x000a;"/>
+  </notation>
+  <notation role="fragment:tab">
+    <text value="&#x0009;"/>
+  </notation>
+</style>
+
+</omdoc>
+
+
+
+
+

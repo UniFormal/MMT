@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns="http://omdoc.org/ns">
+
+ <style name="tptp" includeDefault="no" for="http://cds.omdoc.org/logics/first-order/fol/fol.omdoc">
+  <include from="http://cds.omdoc.org/foundations/lf/tptp.omdoc?tptp"/>
+  <include from="?fol"/>
+
+  <notation for="?fol?top" role="constant">
+    <text value="$true"/>
+  </notation>
+  <notation for="?fol?bot" role="constant">
+    <text value="$false"/>
+  </notation>
+  <notation for="?fol?and" role="constant">
+    <text value="&amp;"/>
+  </notation>
+  <notation for="?fol?or" role="constant">
+    <text value="|"/>
+  </notation>
+  <notation for="?fol?imp" role="constant">
+    <text value="-&gt;"/>
+  </notation>
+  <notation for="?fol?not" role="constant">
+    <text value="~"/>
+  </notation>
+  <notation for="?fol?forall" role="constant">
+    <text value="!"/>
+  </notation>
+  <notation for="?fol?exists" role="constant">
+    <text value="?"/>
+  </notation>
+  <notation for="?fol?eq" role="constant">
+    <text value="="/>
+  </notation>
+  <notation for="?fol?existsUnique" role="constant">
+    <text value="?U"/>
+  </notation>
+
+  </style>
+</omdoc>
+
+
+
+
+
+
+
+
+
+
+
+

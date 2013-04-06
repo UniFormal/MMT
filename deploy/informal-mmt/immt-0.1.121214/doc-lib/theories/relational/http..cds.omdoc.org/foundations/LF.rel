@@ -1,0 +1,16 @@
+theory http://cds.omdoc.org/foundations?LF
+Includes http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?Typed
+Declares http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?LF?pi
+constant: http://cds.omdoc.org/foundations?LF?pi
+Declares http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?LF?lambda
+constant: http://cds.omdoc.org/foundations?LF?lambda
+Declares http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?LF?@
+constant: http://cds.omdoc.org/foundations?LF?@
+Declares http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?LF?arrow
+constant: http://cds.omdoc.org/foundations?LF?arrow
+Declares http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?LF?omitted
+constant: http://cds.omdoc.org/foundations?LF?omitted
+Declares http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?LF?implicit_Pi
+constant: http://cds.omdoc.org/foundations?LF?implicit_Pi
+Declares http://cds.omdoc.org/foundations?LF http://cds.omdoc.org/foundations?LF?implicit_lambda
+constant: http://cds.omdoc.org/foundations?LF?implicit_lambda

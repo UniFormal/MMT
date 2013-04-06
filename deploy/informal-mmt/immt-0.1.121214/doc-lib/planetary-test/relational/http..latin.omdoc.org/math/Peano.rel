@@ -1,0 +1,7 @@
+theory http://latin.omdoc.org/math?Peano
+HasMeta http://latin.omdoc.org/math?Peano http://cds.omdoc.org/foundations?LF
+Includes http://latin.omdoc.org/math?Peano http://latin.omdoc.org/math?Natural
+Declares http://latin.omdoc.org/math?Peano http://latin.omdoc.org/math?Peano?zero
+constant:constructor http://latin.omdoc.org/math?Peano?zero
+Declares http://latin.omdoc.org/math?Peano http://latin.omdoc.org/math?Peano?succ
+constant:constructor http://latin.omdoc.org/math?Peano?succ

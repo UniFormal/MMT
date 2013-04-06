@@ -1,0 +1,7 @@
+id: mmt
+catalog : http://cds.omdoc.org/omdoc lib/omdoc/
+catalog : http://cds.omdoc.org/foundations/lf/ lib/foundations/lf
+compilation: mmt@source -> omdoc@compiled
+source-base: http://cds.omdoc.org/
+narration-base: http://docs.omdoc.org/mmt
+

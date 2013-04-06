@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory base="http://latin.omdoc.org/math" name="Peano" meta="http://cds.omdoc.org/foundations?LF">
+    <import from="http://latin.omdoc.org/math?Natural"> </import>
+    <constant name="zero" role="constructor">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math"></om:OMS>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMS module="Natural" name="0" base="http://latin.omdoc.org/math"></om:OMS>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+    <constant name="succ" role="constructor">
+      <type>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMA>
+            <om:OMS module="LF" name="arrow" base="http://cds.omdoc.org/foundations" position="0"></om:OMS>
+            <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math" position="1"></om:OMS>
+            <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math" position="2"></om:OMS>
+          </om:OMA>
+        </om:OMOBJ>
+      </type>
+      <definition>
+        <om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath">
+          <om:OMBIND>
+            <om:OMS module="LF" name="lambda" base="http://cds.omdoc.org/foundations" position="0"></om:OMS>
+            <om:OMBVAR>
+              <om:OMV name="n" position="0">
+                <type>
+                  <om:OMS module="Natural" name="nat" base="http://latin.omdoc.org/math" position="0_1"></om:OMS>
+                </type>
+                <attribution key="http://cds.omdoc.org/foundations?LF?omitted">
+                  <om:OMS module="LF" name="omitted" base="http://cds.omdoc.org/foundations"></om:OMS>
+                </attribution>
+              </om:OMV>
+            </om:OMBVAR>
+            <om:OMA position="2">
+              <om:OMS module="LF" name="@" base="http://cds.omdoc.org/foundations" position="2_0"></om:OMS>
+              <om:OMS module="Natural" name="+" base="http://latin.omdoc.org/math" position="2_1"></om:OMS>
+              <om:OMV name="n" position="2_2"></om:OMV>
+              <om:OMS module="Natural" name="1" base="http://latin.omdoc.org/math" position="2_3"></om:OMS>
+            </om:OMA>
+          </om:OMBIND>
+        </om:OMOBJ>
+      </definition>
+    </constant>
+  </theory>
+</omdoc>
