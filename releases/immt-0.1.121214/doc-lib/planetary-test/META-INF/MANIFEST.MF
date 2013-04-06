@@ -1,4 +1,0 @@
-id: planetarytest
-compilation: twelf@source -> omdoc@compiled
-source-base: http://planetary.omdoc.org/
-narration-base: http://docs.omdoc.org/planetary

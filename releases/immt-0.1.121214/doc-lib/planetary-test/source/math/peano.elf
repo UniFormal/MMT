@@ -1,8 +1,0 @@
-%namespace "http://latin.omdoc.org/math".
-
-%sig Peano = {
-   %include Natural.
-   zero : nat = 0.
-   succ : nat -> nat = [n] n + 1.
-}.
-

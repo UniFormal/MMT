@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<omdoc base="http://docs.omdoc.org/mmt/fol.omdoc">
-  <mref target="http://cds.omdoc.org/fol?Typed"></mref>
-  <mref target="http://cds.omdoc.org/fol?LF"></mref>
-  <mref target="http://cds.omdoc.org/fol?FOL"></mref>
-  <mref target="http://cds.omdoc.org/fol?FOLExt"></mref>
-</omdoc>
