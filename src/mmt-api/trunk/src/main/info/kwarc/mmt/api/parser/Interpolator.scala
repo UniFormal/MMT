@@ -6,7 +6,12 @@ class MMTInterpolator(controller: frontend.Controller) {
    implicit def int2OM(i: Int) = OMI(i)
    implicit def floatt2OM(f: Double) = OMF(f)
    
-   def parse(sc: StringContext, ts: List[Term], top: Option[TextNotation]) = {
+   /** a shortcut for running MMT shell commands while in the Scala interpreter */
+   def shell(command: String) {
+     controller.handleLine(command)
+   }
+   
+   private def parse(sc: StringContext, ts: List[Term], top: Option[TextNotation]) = {
          val strings = sc.parts.iterator
          val args = ts.iterator
          val buf = new StringBuffer(strings.next)
@@ -40,8 +45,6 @@ class MMTInterpolator(controller: frontend.Controller) {
          val t = mmt(ts : _*)
 	      controller.uom.simplify(t)
       }
-   }
-   implicit class MMTContextForContexts(sc: StringContext) {
       def cont(ts: Term*) : Context = {
          val t = parse(sc, ts.toList, Some(TextNotation.contextNotation))
          t match {
