@@ -391,13 +391,16 @@ class Controller extends ROController with Logger {
                case "notation" => 
                   arch.readNotation(in, this)
                   log("done reading notation index")
-               case "mws" => arch.produceMWS(in, "content")
-               case "mws-flat" => arch.produceMWS(in, "mws-flat")
+               case "mws"          => arch.produceMWS(in, "content")
+               case "mws-flat"     => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
-               case "extract" => arch.extractScala(this, in)
-               case "integrate" => arch.integrateScala(this, in)
-               case "present" => params.foreach(p => arch.producePres(Nil,p, this))
-               case "close" => backend.closeArchive(id)
+               case "extract"      => arch.extractScala(this, in)
+               case "integrate"    => arch.integrateScala(this, in)
+               case "register"     => arch.loadJava(this, params(0), true, false)
+               case "test"         => arch.loadJava(this, params(0), false, true)
+               case "present"      => params.foreach(p => arch.producePres(Nil,p, this))
+               case "close"        => backend.closeArchive(id)
+               case d => log("ignoring unknown dimension " + d)
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 

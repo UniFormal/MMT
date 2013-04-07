@@ -6,6 +6,29 @@ import utils._
 import utils.FileConversion._
 
 trait ScalaArchive extends WritableArchive {
+  
+    private var loader: java.net.URLClassLoader = null
+    def loadJava(controller: Controller, cls: String, addRules: Boolean, runTests: Boolean) {
+       if (loader == null) {
+          val jar = File(root / "bin" / (id+".jar"))
+          try {
+            loader = new java.net.URLClassLoader(Array(jar.toURI.toURL))
+          } catch {
+            case _:Exception => 
+             log("could not create class loader for " + jar.toString)
+             return
+          }
+       }
+       val clsJ = loader.loadClass(cls + ".NAMESPACE")
+       val ns = clsJ.newInstance.asInstanceOf[uom.DocumentScala]
+       if (addRules) {
+          ns.register(controller.extman.ruleStore)
+       }
+       if (runTests) {
+          ns.test
+       }
+    }
+  
     /** Extract scala from a dimension */
     def extractScala(controller: Controller, in : List[String] = Nil) {
        traverse[String]("content", in, Archive.extensionIs("omdoc")) ({

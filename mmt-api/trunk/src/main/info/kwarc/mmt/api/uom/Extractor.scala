@@ -90,14 +90,14 @@ object Extractor {
    private def nameToScala(l: LocalName) = escape(l.toPath.replace("/","."))
    private def nameToScala(l: LocalPath) = escape(l.toPath.replace("/","."))
    /** package URI */
-   private def dpathToScala(d: DPath) = {
+   def dpathToScala(d: DPath) = {
       val u = d.uri
       var auth = u.authority.getOrElse("").split("\\.").toList.reverse
       if (auth == List("")) auth = Nil
       (auth ::: u.path).mkString(".")
    }
    /** package URI . modname */
-   private def mpathToScala(m: MPath) = dpathToScala(m.doc) + "." + nameToScala(m.name) 
+   def mpathToScala(m: MPath) = dpathToScala(m.doc) + "." + nameToScala(m.name) 
      
    private val imports = "import info.kwarc.mmt.api._\n" + "import objects._\n" + "import uom._\n" +
     "import ConstantScala._\n"
