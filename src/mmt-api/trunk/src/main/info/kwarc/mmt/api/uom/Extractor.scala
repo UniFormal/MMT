@@ -135,6 +135,7 @@ object Extractor {
       case OMV(n)   => n.toPath
       case OMI(i)   => s"OMI(${i.toString})"
       case OMSTR(s) => "OMSTR(\"" + s + "\")"
+      case t: OMSemiFormal => "(throw ParseError(\"\"\"informal term " + t.toString + "\"\"\"))"
    }
    // drops types, definiens
    private def contextToScala(c: Context): String = {
