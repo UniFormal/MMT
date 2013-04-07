@@ -52,9 +52,19 @@ trait ZipArchive extends WritableArchive {
                     addFolderToMar(root/dim, root, out, buffer)
             }
         } catch {
-            case e: java.io.IOException => log("error when packing into a MAR file: " + (if (e.getCause == null) "" else e.getCause))
+            case e: java.io.IOException => log("error when packing into a mar file: " + (if (e.getCause == null) "" else e.getCause))
         }
         log("done")
         out.close
+        if ((root/"bin").canRead) {
+           val outJar = new ZipOutputStream(new FileOutputStream(target.setExtension("jar")))
+           try {
+              addFolderToMar(root/"bin", root, outJar, buffer)
+           } catch {
+              case e: java.io.IOException => log("error when packing into a jar file: " + (if (e.getCause == null) "" else e.getCause))
+           }
+           log("done")
+           outJar.close
+        }
     }
 }

@@ -170,9 +170,11 @@ class StructureChecker(controller: Controller) extends Logger {
                if (a.name.isAnonymous) {
                   checkMorphism(a.target, OMMOD(a.from), l.to)
                } else {
+                  /* temporarily disabled because it fails when a meta-morphism is checked (lookup of the meta-theory as a structure fails)
                   val s = content.getStructure(t.path ? a.name)
                   if (s.fromPath != a.from) errorCont(InvalidElement(a, "import-assignment has bad domain: found " + a.from + " expected " + s.from)) 
                   checkMorphism(a.target, s.from, l.to)
+                  */
                }
             }
          case p : Pattern =>
