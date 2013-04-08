@@ -197,7 +197,7 @@ object Extractor {
           if (c.tp == Some(OMID(OMFMP))) {
              val qname = nameToScalaQ(c.path)
              val qnameString = "\"" + qname + "\""
-             out.println(s"  val $qname = _assert($qnameString, ${termToScala(c.df.get)(controller)} == logic1_true())\n")
+             out.println(s"  val $qname = _assert($qnameString, ${termToScala(c.df.get)(controller)}, _ == logic1_true())\n")
           } else {
              val arity = c.not.map(_.getArity).getOrElse(Arity.constant)
              val scalaArgs = arityToScala(arity)

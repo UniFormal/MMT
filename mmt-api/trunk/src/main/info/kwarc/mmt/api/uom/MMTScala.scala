@@ -9,14 +9,18 @@ trait TheoryScalaAux {
 }
 
 trait TheoryScala {
-   var _axioms: List[(String, Unit => Boolean)] = Nil
-   def _assert(name: String, t: => Boolean) {_axioms ::= ((name, _ => t))}
-   def _test() {
+   var _axioms: List[(String, Term, Term => Boolean)] = Nil
+   def _assert(name: String, term: Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
+   def _test(controller: frontend.Controller) {
       _axioms.foreach {
-         case (n, a) =>
-           val result = try {a().toString}
+         case (n, t, a) =>
+           println("test case " + n)
+           println("term: " + controller.presenter.asString(t))
+           val tS = controller.uom.simplify(t)
+           println("simplified: " + controller.presenter.asString(tS))
+           val result = try {a(tS).toString}
                         catch {case Unimplemented(f) => "unimplemented " + f}
-           println(s"test $n: $result")
+           println(s"result: $result\n")
       }
    }
 }
@@ -51,8 +55,8 @@ trait DocumentScala {
       documents.foreach(_.register(rs))
       views.foreach(rs.add)
    }
-   def test {
-      documents.foreach {_.test}
-      views.foreach {_._test}
+   def test(controller: frontend.Controller) {
+      documents.foreach {_.test(controller)}
+      views.foreach {_._test(controller)}
    }
 }

@@ -5,8 +5,9 @@ import frontend._
 import javax.swing._
 import event._
 
+/*
 //remove [String] if you try to compile with Java 1.6 (or update to Java 1.7)
-class LogPane(report: Report) extends ListModel {
+class LogPane(report: Report) extends ListModel[String] {
    def addListDataListener(l: ListDataListener){}
    def removeListDataListener(l: ListDataListener) {} 
    def getElementAt(index: Int) = {
@@ -33,3 +34,4 @@ object LogPane {
      list
   }
 }
+*/
