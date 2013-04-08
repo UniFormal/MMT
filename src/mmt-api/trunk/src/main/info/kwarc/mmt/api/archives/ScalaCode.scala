@@ -10,8 +10,9 @@ trait ScalaArchive extends WritableArchive {
     private var loader: java.net.URLClassLoader = null
     def loadJava(controller: Controller, cls: String, addRules: Boolean, runTests: Boolean) {
        if (loader == null) {
-          val jar = File(root / "bin" / (id+".jar"))
+          val jar = File(root / (id+".jar"))
           try {
+            println(jar.toURI.toURL)
             loader = new java.net.URLClassLoader(Array(jar.toURI.toURL))
           } catch {
             case _:Exception => 
@@ -19,8 +20,11 @@ trait ScalaArchive extends WritableArchive {
              return
           }
        }
-       val clsJ = loader.loadClass(cls + ".NAMESPACE")
-       val ns = clsJ.newInstance.asInstanceOf[uom.DocumentScala]
+       // scala appends $ to classes generated for objects
+       // and uses "MODULE$" as the name of the companion object
+       val clsJ = loader.loadClass(cls + ".NAMESPACE$")
+       //val clsJ = java.lang.Class.forName(cls + ".NAMESPACE$")
+       val ns = clsJ.getField("MODULE$").get(clsJ).asInstanceOf[uom.DocumentScala]
        if (addRules) {
           ns.register(controller.extman.ruleStore)
        }
