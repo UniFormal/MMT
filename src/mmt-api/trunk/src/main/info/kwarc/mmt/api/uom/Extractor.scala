@@ -134,6 +134,7 @@ object Extractor {
       case OMS(p)   => nameToScalaQ(p)
       case OMV(n)   => n.toPath
       case OMI(i)   => s"OMI(${i.toString})"
+      case OMF(f)  	=> s"OMF(${f.toString})"
       case OMSTR(s) => "OMSTR(\"" + s + "\")"
       case t: OMSemiFormal => "(throw ParseError(\"\"\"informal term " + t.toString + "\"\"\"))"
    }

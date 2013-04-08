@@ -44,7 +44,9 @@ object Integrator {
          Constant(c.home, c.name, c.alias, c.tp, Some(Scala(code)), c.rl, c.not)
       
 	   snippets foreach {
-	  	 case (path,code) => controller.globalLookup.get(path) match {
+	  	 case (path,code) => 
+	  	   println(path, code)
+	  	   controller.globalLookup.get(path) match {
            case oldcons : Constant =>
               val newcons = merge(oldcons, code)
               controller.library.update(newcons)
