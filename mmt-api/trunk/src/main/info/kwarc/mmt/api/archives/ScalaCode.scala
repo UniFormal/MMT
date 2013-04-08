@@ -29,7 +29,7 @@ trait ScalaArchive extends WritableArchive {
           ns.register(controller.extman.ruleStore)
        }
        if (runTests) {
-          ns.test(controller)
+          ns.test(controller, (s: String) => log(s))
        }
     }
   

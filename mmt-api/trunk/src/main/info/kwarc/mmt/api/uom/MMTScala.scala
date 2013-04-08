@@ -9,18 +9,23 @@ trait TheoryScalaAux {
 }
 
 trait TheoryScala {
-   var _axioms: List[(String, Term, Term => Boolean)] = Nil
-   def _assert(name: String, term: Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
-   def _test(controller: frontend.Controller) {
+   var _axioms: List[(String, Unit => Term, Term => Boolean)] = Nil
+   def _assert(name: String, term: Unit => Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
+   def _test(controller: frontend.Controller, log: String => Unit) {
       _axioms.foreach {
-         case (n, t, a) =>
-           println("test case " + n)
-           println("term: " + controller.presenter.asString(t))
-           val tS = controller.uom.simplify(t)
-           println("simplified: " + controller.presenter.asString(tS))
-           val result = try {a(tS).toString}
-                        catch {case Unimplemented(f) => "unimplemented " + f}
-           println(s"result: $result\n")
+         case (n, tL, a) =>
+           log("test case " + n)
+           try {
+             val t = tL()
+             //log("term: " + controller.presenter.asString(t))
+             val tS = controller.uom.simplify(t)
+             //log("simplified: " + controller.presenter.asString(tS))
+             val result = a(tS)
+             log((if (result) "PASSED" else "FAILED") + "\n")
+           } catch {
+             case Unimplemented(f) => log("unimplemented " + f)
+           }
+           
       }
    }
 }
@@ -53,10 +58,12 @@ trait DocumentScala {
    }
    def register(rs: objects.RuleStore) {
       documents.foreach(_.register(rs))
-      views.foreach(rs.add)
+      views.foreach {v =>
+         rs.add(v)
+      }
    }
-   def test(controller: frontend.Controller) {
-      documents.foreach {_.test(controller)}
-      views.foreach {_._test(controller)}
+   def test(controller: frontend.Controller, log: String => Unit) {
+      documents.foreach {_.test(controller, log)}
+      views.foreach {_._test(controller, log)}
    }
 }
