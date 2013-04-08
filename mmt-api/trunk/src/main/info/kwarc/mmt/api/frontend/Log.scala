@@ -12,6 +12,7 @@ trait Logger {
       try {a}
       finally {report.unindent}
    }
+   protected def logError(s : => String) = report("error", "(" + logPrefix + ") " + s)
 }
 
 /** Instances of Report handle all output to the user */

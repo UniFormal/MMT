@@ -332,7 +332,7 @@ class Controller extends ROController with Logger {
            Action.parseAct(l, base, home)
         } catch {
            case ParseError(msg) =>
-              log(msg)
+              logError(msg)
               return
         }
         handle(act)
@@ -396,8 +396,16 @@ class Controller extends ROController with Logger {
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
                case "extract"      => arch.extractScala(this, in)
                case "integrate"    => arch.integrateScala(this, in)
-               case "register"     => arch.loadJava(this, params(0), true, false)
-               case "test"         => arch.loadJava(this, params(0), false, true)
+               case "register"     =>
+                  if (params.length != 1)
+                     logError("exactly 1 parameter required for register command, found " + params.mkString(""))
+                  else
+                     arch.loadJava(this, params(0), true, false)
+               case "test"         =>
+                  if (params.length != 1)
+                     logError("exactly 1 parameter required for test command, found " + params.mkString(""))
+                  else
+                     arch.loadJava(this, params(0), false, true)
                case "present"      => params.foreach(p => arch.producePres(Nil,p, this))
                case "close"        => backend.closeArchive(id)
                case d => log("ignoring unknown dimension " + d)
