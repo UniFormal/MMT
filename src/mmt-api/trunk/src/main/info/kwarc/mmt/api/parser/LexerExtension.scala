@@ -77,8 +77,7 @@ class NumberLiteralHandler(floatAllowed: Boolean) extends LexerExtension {
      while (i < s.length && s(i).isDigit) {
         i += 1
      }
-    		 
-     if (floatAllowed && i < s.length && s(i) == ".") {
+     if (floatAllowed && i < s.length && s(i) == '.') {
          i += 1
     	 while (i < s.length && s(i).isDigit) { //continuing
     		 i += 1
