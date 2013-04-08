@@ -397,15 +397,15 @@ class Controller extends ROController with Logger {
                case "extract"      => arch.extractScala(this, in)
                case "integrate"    => arch.integrateScala(this, in)
                case "register"     =>
-                  if (params.length != 1)
-                     logError("exactly 1 parameter required for register command, found " + params.mkString(""))
+                  if (in.length != 1)
+                     logError("exactly 1 parameter required for register command, found " + in.mkString(""))
                   else
-                     arch.loadJava(this, params(0), true, false)
+                     arch.loadJava(this, in(0), true, false)
                case "test"         =>
-                  if (params.length != 1)
-                     logError("exactly 1 parameter required for test command, found " + params.mkString(""))
+                  if (in.length != 1)
+                     logError("exactly 1 parameter required for test command, found " + in.mkString(""))
                   else
-                     arch.loadJava(this, params(0), false, true)
+                     arch.loadJava(this, in(0), false, true)
                case "present"      => params.foreach(p => arch.producePres(Nil,p, this))
                case "close"        => backend.closeArchive(id)
                case d => log("ignoring unknown dimension " + d)

@@ -8,6 +8,7 @@ import utils.FileConversion._
 
 import java.io.{FileInputStream, FileOutputStream}
 import java.util.zip._
+import java.util.jar._
 
 trait ZipArchive extends WritableArchive {
     /** Add a file to a MAR file (only used internally by toMar)
@@ -15,7 +16,7 @@ trait ZipArchive extends WritableArchive {
     private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
         var bytesRead = 0
         val in = new FileInputStream(f)
-        out.putNextEntry(new ZipEntry(f.getPath.substring(base.getPath.length + 1)))
+        out.putNextEntry(new ZipEntry(f.segments.drop(base.segments.length).mkString("/")))
         var stop = false
         while (bytesRead != -1) {
             bytesRead = in.read(buffer)
@@ -59,7 +60,9 @@ trait ZipArchive extends WritableArchive {
         if ((root/"bin").canRead) {
            val targetJar = target.setExtension("jar")
            log("building Java archive at " + targetJar.getPath)
-           val outJar = new ZipOutputStream(new FileOutputStream(targetJar))
+           val manifest = new Manifest()
+           manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0")
+           val outJar = new JarOutputStream(new FileOutputStream(targetJar), manifest)
            try {
               addFolderToMar(root/"bin", root/"bin", outJar, buffer)
            } catch {
