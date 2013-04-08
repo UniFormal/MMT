@@ -43,9 +43,9 @@ trait ZipArchive extends WritableArchive {
     /** Pack everything in a MAR archive. Caution: empty folders are not put in the archive.
       * @param target the target MAR file. Default is <name>.mar in the root folder, where <name> is the name of the root */
     def toMar(target: java.io.File = root / (root.getName + ".mar")) {
-        log("building archive at " + target.getPath)
+        log("building math archive at " + target.getPath)
         val out = new ZipOutputStream(new FileOutputStream(target))
-        val buffer = new Array[Byte] (100000)   // 100KB buffer size
+        val buffer = new Array[Byte](100000)   // 100KB buffer size
         try {
             List("META-INF", "source", "narration", "content", "presentation", "relational") foreach {dim =>
                 if ((root/dim).canRead)
@@ -57,9 +57,11 @@ trait ZipArchive extends WritableArchive {
         log("done")
         out.close
         if ((root/"bin").canRead) {
-           val outJar = new ZipOutputStream(new FileOutputStream(target.setExtension("jar")))
+           val targetJar = target.setExtension("jar")
+           log("building Java archive at " + targetJar.getPath)
+           val outJar = new ZipOutputStream(new FileOutputStream(targetJar))
            try {
-              addFolderToMar(root/"bin", root, outJar, buffer)
+              addFolderToMar(root/"bin", root/"bin", outJar, buffer)
            } catch {
               case e: java.io.IOException => log("error when packing into a jar file: " + (if (e.getCause == null) "" else e.getCause))
            }
