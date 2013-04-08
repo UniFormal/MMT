@@ -1,0 +1,13 @@
+Directories:
+  - mmt: all jar files of MMT projects
+  - lib: all jar files that MMT depends on, including the Scala library
+    The only extenal dependency is the JVM itself. For most parts, Java 6 is fine; occassionally Java 7 is needed.
+    The run scripts below automatically put these jars on the classpath.
+
+  - lfcatalog:    the jar files of the LF catalog, to be used with Twelf
+  - jedit-plugin: the jar files for the plugin for jEdit, to obtain MMT editing support
+  - informal-mmt: jar files for the mmt-informal branch of mmt-api
+
+Run scripts (with .bat/.sh file endings to be used on Windows/Unix):
+  - run-plain: opens an empty MMT shell
+  - run-file:  runs an MMT script (an msl file)
