@@ -100,16 +100,15 @@ class Server(val port: Int, controller: Controller) extends HServer {
         case ":parse" :: _ => Some(ParserResponse)
         case ":post" :: _ => Some(PostResponse)
         case ":mmt" :: _ => Some(MmtResponse)
+        case hd::tl if hd.startsWith(":") =>
+          controller.extman.getServerPlugin(hd.substring(1)) match {
+            case Some(pl) => pl(tl)
+            case None => Some(XmlResponse(Util.div("error: no plugin registered for context " + hd)))
+          }
         // empty path 
         case List("") | Nil => Some(resourceResponse("browse.html"))
-        // HTML files in xhtml/ folder can be accessed without xhtml/ prefix
-        //case List(s) if (s.endsWith(".html")) => {println("tt"); Some(resourceResponse("xhtml/" + s))}
         // other resources
-        case uriComps =>
-          controller.extman.getServerPlugin(uriComps) match {
-            case Some(s) => s(uriComps)
-            case None => Some(resourceResponse(req.uriPath))
-          }
+        case _ => Some(resourceResponse(req.uriPath))
       }
     }
   }
@@ -395,9 +394,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
           case None => "text/plain"
         }
         tk.setContentType(cType)
-
         val buffer = new Array[Byte](4096) // buffer
-
         // read from disk and write to network simultaneously
         @scala.annotation.tailrec
         def step(wasRead: Int): Unit = if (wasRead > 0) {

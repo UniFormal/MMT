@@ -21,30 +21,30 @@ var folding = {
 				if ($(obj).closest("maction").attr("actiontype") == "folding") { //already folded
 					if ($(obj).closest("maction").attr('selection') == 1) { // unfolded version. return fold
 						return {
-							'Fold' : function() {me.foldIn(target)}
+							'fold' : function() {me.foldIn(target)}
 						};
 					}
 					else {//folded version -- return unfold
 						var result = document.evaluate('//mathml:maction[@actiontype="folding"]', $(target).closest("maction")[0], nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);//FIXME ask for maction only
 						if (result.snapshotLength > 1) 
 							return {
-								'Unfold' : function() {me.foldOut(target);}, 
-								'Unfold All' : function() {me.unfoldAll(target);}
+								'unfold' : function() {me.foldOut(target);}, 
+								'unfold all' : function() {me.unfoldAll(target);}
 							};
 						return {
-							'Unfold' : function() {me.foldOut(target);}
+							'unfold' : function() {me.foldOut(target);}
 						};
 					}
 				}
 				else {
 					return {
-						'Fold' : function() {me.foldIn(target);}
+						'fold' : function() {me.foldIn(target);}
 					};
 				}
 			}
 			else {
 				return {
-					'Fold' :  function() {me.foldIn(target);}
+					'fold' :  function() {me.foldIn(target);}
 				};
 			}
 			return true;

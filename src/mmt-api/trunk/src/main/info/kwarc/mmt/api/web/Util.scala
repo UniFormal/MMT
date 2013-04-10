@@ -19,7 +19,7 @@ object Util {
    def ahref(p: Path) =
       <a href="#" onclick={navigate(p)}>{p.last}</a>
    def navigate(p: Path) = 
-      "latin_navigate('" + p.toPath + "')"
+      "latin.navigate('" + p.toPath + "')"
    
    /** yields a breadcrumb navigation bar as a sequence of links */
    def breadcrumbs(path : Path) : Node = {
@@ -77,8 +77,8 @@ object Util {
     *       jar-name.jar/some-path/resource.txt
     * If the resource is a separate file and the code is run from outside any JAR, then the folder structure must look like
     *       project-folder
-    *        |--bin
-    *        |--resources/mmt.web/ 
+    *        |--bin/main/info/...
+    *        |--resources/mmt-web/ 
     * @return stream to the resource, if found, null otherwise. **The caller must close the stream after reading!**
     */
   def loadResource(path : String) : java.io.InputStream = {
@@ -89,7 +89,7 @@ object Util {
         val filePath : String = try {
           //the folder containing the class files
           val binaryFolder : java.io.File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toString)  // e.g. .../lfcatalog/trunk/build/main
-          val resourceFolder : String = binaryFolder.getParentFile.toString + "/resources/mmt-web"
+          val resourceFolder : String = binaryFolder.getParentFile.toString + "/../resources/mmt-web"
           (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + "/" + path
         }
         catch {

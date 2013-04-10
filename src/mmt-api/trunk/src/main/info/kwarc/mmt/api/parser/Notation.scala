@@ -5,8 +5,8 @@ import NotationConversions._
 import utils.MyList._
 import modules._
 import symbols._
+import presentation.{Text => PText, _}
 import objects._
-import presentation._ 
 
 /** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {
@@ -15,15 +15,15 @@ sealed abstract class Marker {
 
 /** Markers that are delimiters */
 sealed abstract class Delimiter extends Marker {
-   val s: String
-   def text = s
+   def text : String
 }
 
 /** a delimiter
- * @param s the delimiting String
+ * @param s the delimiting String, %w for whitespace
  */
 case class Delim(s: String) extends Delimiter {
    override def toString = s
+   def text = if (s == "%w") " " else s
 }
 
 /** special delimiters that are expanded to a string based on the declaration that the notation occurs in
@@ -38,7 +38,7 @@ abstract class PlaceholderDelimiter extends Delimiter
  * only legal for notations within patterns
  */
 case class InstanceName(path: GlobalName) extends PlaceholderDelimiter {
-   val s = if (path.name.length <= 1) "" else path.name.init.toPath
+   def text = if (path.name.length <= 1) "" else path.name.init.toPath
 }
 
 /**
@@ -47,7 +47,7 @@ case class InstanceName(path: GlobalName) extends PlaceholderDelimiter {
  * useful for repetitive notations that differ only in the name
  */
 case class SymbolName(path: GlobalName) extends PlaceholderDelimiter {
-   val s = if (path.name.length < 1) "" else path.name.last.toPath
+   def text = if (path.name.length < 1) "" else path.name.last.toPath
 }
 
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent with ScopeComponent
@@ -242,10 +242,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val name: GlobalName, val markers: List[Marker], val precedence: Precedence) extends Notation {
-   val wrap = false 
-   val oPrec = Some(precedence)
-
+class TextNotation(val name: GlobalName, val markers: List[Marker], val precedence: Precedence) extends ComplexNotation {
    def getArity = {
       var args: List[ArgumentComponent] = Nil
       var vars : List[VariableComponent] = Nil
@@ -352,24 +349,21 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
    }
    
    //TODO add other cases & check presentation
-   lazy val pres = {  
-     val tokens = markers map {
-       case d : Delimiter => Fragment("constant", presentation.Text(name.toPath), presentation.Text(d.s))
-       case Arg(p) => Component(NumberedIndex(p.abs),oPrec.map(_.weaken))
-       case SeqArg(p,sep) => Iterate(NumberedIndex(1),
-    		  						 NumberedIndex(-1),  
-    		  						 OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
-    		  						 oPrec.map(_.weaken)) //TODO fix indexes for sequence arguments 
-       case Var(n, typed, sep) => Component(NumberedIndex(n), None) //TODO Use Key
-       /*case SeqVar(n, key, sep) => Iterate(
-           NumberedIndex(2),
-           NumberedIndex(-2), 
-           OpSep() + Fragment("constant", presentation.Text(name.toPath), presentation.Text(sep.s)) + OpSep(),
-           oPrec.map(_.weaken)) */
+   /* restriction:
+    *  sequence arguments always go -1
+    *  sequence variables always go -2
+    */
+   def presentation(args: Int, vars: Int, scopes: Int) = {
+     val tokens = flatten(args, vars, scopes) map {
+       case d : Delimiter => ArgSep() + Fragment("constant", PText(name.toPath), PText(d.text)) + ArgSep()
+       case Arg(p) => Component(NumberedIndex(p.abs),Some(precedence.weaken))
+       case Var(n, _, None) => Component(NumberedIndex(n), None)
+       case SeqArg(n,sep) => throw ImplementationError("non-flat marker")
+       case Var(n,_,Some(sep)) => throw ImplementationError("non-flat marker")
      }
-     presentation.PList(tokens)
+     PList(tokens)
    }
-   val key = presentation.NotationKey(Some(name), Role_Notation)
+   val key = NotationKey(Some(name), Role_application(None))
    val nset = name.module.toMPath
   
    private def markerString = markers.map(_.toString).mkString(" ")
@@ -462,12 +456,30 @@ object TextNotation {
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
     case <text-notation/> =>
-      val name = Path.parseS(utils.xml.attr(n,"name"), utils.mmt.mmtbase)
+      val nameP = Path.parseS(utils.xml.attr(n,"name"), name)
+      val precedence = utils.xml.attr(n, "precedence") match {
+         case "" => Precedence.integer(0)
+         case s => Precedence.parse(s)
+      }
       val markers = utils.xml.attr(n, "markers").split("\\s").toList
-      if (markers == List(""))
-         throw ParseError("invalid notation in: " + n)
-      val precedence = Precedence.parse(utils.xml.attr(n, "precedence"))
-      apply(name, precedence)(markers : _*)
+      if (markers == List("")) {
+         val impl = utils.xml.attr(n, "implicit") match {
+            case "" => 0
+            case i => i.toInt
+         }
+         val fixMarkers = utils.xml.attr(n, "fixity") match {
+            //note: associativity cannot be turned into sequence argument; better to avoid it altogether in favor of sequence arguments 
+            case "infix"       => List(Arg(impl+1),Delim(name.last),Arg(impl+2))
+            case "infix-left"  => List(Arg(impl+1),Delim(name.last),Arg(impl+2))
+            case "infix-right" => List(Arg(impl+1),Delim(name.last),Arg(impl+2))
+            case "prefix"      => List(Delim(name.last), SeqArg(impl+1, Delim("%w")))
+            case "postfix"     => List(SeqArg(impl+1, Delim("%w")), Delim(name.last))
+            case "" => throw ParseError("invalid notation in: " + n)
+         }
+         new TextNotation(name, fixMarkers, precedence)
+      } else {
+         apply(nameP, precedence)(markers : _*)
+      }
     case _ => throw ParseError("invalid notation in \n" + n)
   }
   

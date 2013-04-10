@@ -148,7 +148,6 @@ object Precedence {
       try {Precedence(InfInt.parse(s.replace("*","")), s.endsWith("*"))}
       catch {case _ : Throwable => throw ParseError("illegal precedence: " + s)}
    }
-   def parseOpt(s : String) : Option[Precedence] = if (s == "none") None else Some(parse(s))
 }
 
 

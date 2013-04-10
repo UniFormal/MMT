@@ -24,10 +24,6 @@ case class Element(prefix : String, label : String, attributes : List[Attribute]
       Element(prefix, label, attributes.map(_.fill(plug : _*)), children.map(_.fill(plug : _*)))
 }
 
-/*
-case class XMLDecl(version : String, encoding : String) extends Presentation
-case class ProcInstr(target : String, text : String) extends Presentation
-*/
 /** produces an XML attribute */
 case class Attribute(prefix : String, name : String, value : Presentation) {
    def fill(plug : Presentation*) = Attribute(prefix, name, value.fill(plug : _*))

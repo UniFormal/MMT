@@ -76,6 +76,34 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with L
       present(ObjToplevel(o, None), gpar, lpar)
    }
 
+   /** transforms into pragmatic form and tries to retrieve a notation
+    *  
+    *  if the strict but not the pragmatic form has a notation, the strict form is retained 
+    */
+   protected def getNotation(t: Term) : (Term, Option[ComplexNotation]) = {
+      //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
+      def tryTerm(t: Term): Option[ComplexNotation] = t match {
+         case ComplexTerm(p, args, vars, scs) =>
+            val numArgs = args.length
+            val numVars = vars.length
+            val numScs  = scs.length
+            controller.get(p) match {
+               case c: symbols.Constant => c.not
+               case p: patterns.Pattern => p.not
+               case _ => None
+            }
+         case _ => None
+      }
+      val tP = controller.pragmatic.pragmaticHead(t)
+      tryTerm(tP) match {
+         case Some(n) => (tP, Some(n))
+         case None    => tryTerm(t) match {
+            case Some(n) => (t, Some(n))
+            case None => (tP, None)
+         }
+      }
+   } 
+   
    /** the main presentation method
     * @param c the presented expression
     * @param gpar the parameters that do not change during rendering
@@ -87,7 +115,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with L
          case StrToplevel(c) => 
             val key = NotationKey(None, Role_StrToplevel)
             val notation = controller.get(gpar.nset, key)
-            render(notation.pres, ContentComponents(List(c)), List(0), gpar, lpar)
+            render(notation.presentation, ContentComponents(List(c)), List(0), gpar, lpar)
          case ObjToplevel(c, opath) =>
             val key = NotationKey(None, Role_ObjToplevel)
             val notation = controller.get(gpar.nset, key)
@@ -95,19 +123,19 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with L
                case None => List(Omitted, Omitted)
                case Some(p) => List(StringLiteral(p.parent.toPath), StringLiteral(p.component))
             }
-            render(notation.pres, ContentComponents(c :: opComps), List(0), gpar, lpar)
+            render(notation.presentation, ContentComponents(c :: opComps), List(0), gpar, lpar)
          case l: Literal =>
             gpar.rh(l)
          case s: StructuralElement =>
             val key = NotationKey(Some(s.path), s.role)
             val notation = controller.get(gpar.nset, key)
-            render(notation.pres, s.contComponents, List(0), gpar, lpar)
+            render(notation.presentation, s.contComponents, List(0), gpar, lpar)
          case s:SemiFormalObject =>
             s.components.foreach(c => present(c, gpar, lpar)) //could be much better
          case o1: Obj =>
-            val o = o1 match {
-               case o1: Term => controller.pragmatic.pragmaticHead(o1)
-               case _ => o1
+            val (o, notationOpt) = o1 match {
+               case t: Term => getNotation(t)
+               case _ => (o1, None)
             }
             //default values
             var key = NotationKey(o.head, o.role)
@@ -134,30 +162,41 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with L
                   }
                case _ =>
             }
-            val notation = controller.get(gpar.nset, key)
-            //log("looked up notation: " + notation)
-            val presentation = if (o.role.bracketable) {
-               val ip = newlpar.iPrec
-               val op = notation.oPrec match {
-                  case Some(p) => p
-                  // error should be impossible as parser forces non-None value for bracketable roles
-                  case None => throw PresentationError("notation for bracketable role must have precedence")
-               }
-               // case-split according to how much stronger the outer operator binds than the inner one
-               // the stronger the inner operator binds, the less necessary its brackets are
-               // the outer operator decides how a tie is broken
-               val pres = notation.pres
-               (ip.prec - op.prec) match {
-                  case Infinite    =>     Brackets(pres)
-                  case Finite(i)   =>
-                          if (i > 0)      Brackets(pres)
-                     else if (i < 0)      EBrackets(pres, -i) 
-                     else if (ip.loseTie) EBrackets(pres, -i)
-                     else                 Brackets(pres)
-                  case NegInfinite =>     NoBrackets(pres)
-               }
-            } else
-               notation.pres
+            val presentation = o match {
+               case ComplexTerm(p, args, vars, scs) =>
+                  val numArgs = args.length
+                  val numVars = vars.length
+                  val numScs  = scs.length
+                  notationOpt match {
+                     case Some(notation) =>
+                        val pres = notation.presentation(numArgs, numVars, numScs)
+                        val ip = newlpar.iPrec
+                        val op = notation.precedence
+                        // case-split according to how much stronger the outer operator binds than the inner one
+                        // the stronger the inner operator binds, the less necessary its brackets are
+                        // the outer operator decides how a tie is broken
+                        (ip.prec - op.prec) match {
+                           case Infinite    =>     Brackets(pres)
+                           case Finite(i)   =>
+                                   if (i > 0)      Brackets(pres)
+                              else if (i < 0)      EBrackets(pres, -i) 
+                              else if (ip.loseTie) EBrackets(pres, -i)
+                              else                 Brackets(pres)
+                           case NegInfinite =>     NoBrackets(pres)
+                        }
+                     case None =>
+                        // default presentation
+                        implicit def convert(i:Int) = NumberedIndex(i)
+                        var pres: Presentation = Component(0,None)
+                        if (numArgs > 0) pres += OpSep() + Iterate(1, numArgs, ArgSep(), None)
+                        if (numVars > 0) pres += OpSep() + Iterate(numArgs+1, numArgs+numVars, ArgSep(), None)
+                        if (numScs > 0)  pres += OpSep() + Iterate(numArgs+numVars+1, -1, ArgSep(), None)
+                        Brackets(pres)
+                  }
+               case _ =>
+                  val notation = controller.get(gpar.nset, key)
+                  notation.presentation
+            }
             val contComps = ContentComponents(comps, Nil, None, Some(o))
             render(presentation, contComps, List(0), gpar, newlpar)
             
@@ -278,7 +317,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with L
         }
         case Fragment(name, args @ _*) =>
              val notation = controller.get(gpar.nset, NotationKey(None, Role_Fragment(name)))
-             val pres = notation.pres.fill(args : _*)
+             val pres = notation.presentation.fill(args : _*)
              //log("found fragment notation: " + notation)
              recurse(pres)
         case Compute(iOpt, f) =>
