@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <omdoc xmlns="http://omdoc.org/ns" xmlns:l="mmt:literal">
 
-<style name="common" from="http://cds.omdoc.org/foundations?LF" to="text/html">
-
-  <!-- LF specific notations - should go away eventually  -->
+<!-- old, LF specific notations
  <notation for="??arrow" role="application" fixity="inter" associativity="right" precedence="-20"/>
 
   <notation for="??lambda" role="binding" precedence="-1">
@@ -60,8 +58,10 @@
    <notation for="??omitted" role="attribution">
      <component index="2"/>
    </notation>
-  <!-- LF specific notations - Until here  -->
+-->
 
+
+<style name="common" from="http://cds.omdoc.org/foundations?LF" to="text/html">
    <include from="http://cds.omdoc.org/styles/omdoc/mathml.omdoc?html5"/>
    
    <notation for="??type" role="constant">

@@ -299,7 +299,7 @@
 
   <notation role="module" wrap="true">
     <element name="mo">
-      <attribute prefix="jobad" name="xref"><id/></attribute>
+      <attribute prefix="jobad" name="mmtref"><id/></attribute>
       <attribute prefix="jobad" name="href">
         <component index="3"/>
       </attribute>
@@ -309,7 +309,7 @@
 
   <notation role="constant structure" wrap="true">
     <element name="mo">
-      <attribute prefix="jobad" name="xref">
+      <attribute prefix="jobad" name="mmtref">
         <id/>
       </attribute>
       <attribute prefix="jobad" name="href">
@@ -321,7 +321,7 @@
 
   <notation role="constant structure" wrap="true">
     <element name="mo">
-      <attribute prefix="jobad" name="xref">
+      <attribute prefix="jobad" name="mmtref">
         <id/>
       </attribute>
       <attribute prefix="jobad" name="href">
@@ -333,7 +333,7 @@
 
   <notation role="fragment:constant">
     <element name="mo">
-      <attribute prefix="jobad" name="xref">
+      <attribute prefix="jobad" name="mmtref">
         <id/>
       </attribute>
       <attribute prefix="jobad" name="href">
@@ -345,7 +345,7 @@
 
   <notation role="complex-constant">
     <element name="mrow">
-      <attribute prefix="jobad" name="xref">
+      <attribute prefix="jobad" name="mmtref">
         <id/>
       </attribute>
       <component index="0"/>
@@ -356,7 +356,7 @@
 
   <notation role="Variable">
     <element name="mrow">
-      <attribute prefix="jobad" name="xref">
+      <attribute prefix="jobad" name="mmtref">
         <id/>
       </attribute>
       <element name="mi">
@@ -379,7 +379,7 @@
 
   <notation role="variable" wrap="true">
     <element name="mi">
-      <attribute prefix="jobad" name="xref">
+      <attribute prefix="jobad" name="mmtref">
         <id/>
       </attribute>
       <attribute prefix="jobad" name="varref">
@@ -389,28 +389,12 @@
     </element>
   </notation>
   
-  <notation role="application" fixity="pre" application-style="math" associativity="none" implicit="0"/>
-
-  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?composition"
-            role="application" fixity="inter" associativity="right" precedence="-infinity">
-  </notation>
-  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?composition" role="constant"><text value=";"/></notation>
-
-  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?morphism-application"
-            role="application" fixity="in" associativity="left" precedence="-infinity">
-  </notation>
-  <notation for="http://cds.omdoc.org/omdoc/mmt.omdoc?mmtcd?morphism-application" role="constant">
-  <text value="*"/></notation>
-
-  <notation role="binding" fixity="bind" implicit="0"/>
-  <notation role="attribution" fixity="in" associativity="none"/>
-
   <notation role="fragment:brackets">
       <element name="mfenced">
         <attribute name="open"><text value="("/></attribute>
         <attribute name="close"><text value=")"/></attribute>
         <element name="mrow">
-          <attribute prefix="jobad" name="xref"><id/></attribute>
+          <attribute prefix="jobad" name="mmtref"><id/></attribute>
           <hole/>
         </element>
       </element>
@@ -423,14 +407,14 @@
         <attribute prefix="jobad" name="close"><text value=")"/></attribute>
         <attribute name="class" value="brackets"/>
         <element name="mrow">
-          <attribute prefix="jobad" name="xref"><id/></attribute>
+          <attribute prefix="jobad" name="mmtref"><id/></attribute>
           <hole/>
         </element>
       </element>
   </notation>
   <notation role="fragment:nobrackets">
       <element name="mrow">
-        <attribute prefix="jobad" name="xref"><id/></attribute>
+        <attribute prefix="jobad" name="mmtref"><id/></attribute>
           <hole/>
       </element>
   </notation>
