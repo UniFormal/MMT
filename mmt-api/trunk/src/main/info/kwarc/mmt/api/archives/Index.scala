@@ -27,6 +27,8 @@ trait IndexedArchive extends WritableArchive {
        }
        relFileHandle.close
     }
+    /* obsolete
+       used to write notation file using fresh iterator on all notations declared within one of the theories of this document
     private def writeToNot(mod: Module, nots : Iterator[presentation.Notation]) {
        mod match {
           case t: DeclaredTheory =>
@@ -42,6 +44,7 @@ trait IndexedArchive extends WritableArchive {
           case _ => // nothing to do
        }
     }
+    */
     // stores for each file the time of the last call of produceNarrCont
     private val narrContTimestamps = new Timestamps(root / compiledDim, root / "META-INF" / "timestamps" / compiledDim)
     /** Generate content, narration, notation, and relational from compiled. */
@@ -59,8 +62,6 @@ trait IndexedArchive extends WritableArchive {
               writeToContent(mod)
               // write relational file
               writeToRel(mod)
-              // write notation file using fresh iterator on all notations declared within one of the theories of this document
-              writeToNot(mod, controller.notstore.getDefaults)
            }}
            narrContTimestamps.set(inPath)
         }

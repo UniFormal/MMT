@@ -16,7 +16,7 @@ var latin = {
 	info: {
 		'identifier' : 'kwarc.latin.main',
 		'title' : 'Main LATIN Service',
-		'author': 'Kwarc',
+		'author': 'MMT developer team',
 		'description' : 'The main service for browsing LATIN repository',
 		'version' : '1.0',
 		'dependencies' : [],
@@ -46,7 +46,7 @@ var latin = {
 		//updateVisibility(document.documentElement);
 		$('#currentstyle').text(this.notstyle.split("?").pop());
 		var query = window.location.search.substring(1);
-		this.latin_navigate(query);
+		this.navigate(query);
 	},
 	
 	ajaxReplaceIn : function (url, targetid) {
@@ -60,7 +60,7 @@ var latin = {
 			   });
 	},
 	
-	latin_navigate : function (uri) {
+	navigate : function (uri) {
 		// main div
 		var url = this.adaptMMTURI(uri, '', true);
 		this.ajaxReplaceIn(url, 'main');
@@ -115,7 +115,7 @@ var latin = {
 		}
 		// highlight variable declaration
 		if (target.hasAttribute('jobad:varref')) {
-			/* var v = $(target).parents('mrow').children().filter('[jobad:xref=' +  target.attr('jobad:varref') + ']');
+			/* var v = $(target).parents('mrow').children().filter('[jobad:mmtref=' +  target.attr('jobad:varref') + ']');
 			   this.setSelected(v[0]);*/
 			alert("Unsupported");
 			return true;
@@ -142,7 +142,9 @@ var latin = {
 		}
 		// variable declaration
 		if (target.hasAttribute('jobad:varref')) {
-			var v = $(target).parents('mrow').children().filter('[jobad:xref=' +  target.attr('jobad:varref') + ']');
+			var v = $(target).parents('mrow').children().filter(function() {
+                           return $(this).attr('jobad:mmtref') == target.attr('jobad:varref');
+			})
 			this.setSelected(v[0]);
 			return true;
 		}
@@ -155,12 +157,13 @@ var latin = {
 		this.focusIsMath = ($(this.focus).closest('math').length !== 0);
 		var res = this.visibMenu();
 		
-		if (this.isSelected(target)) {
-			//setCurrentPosition(target);		
+		if ($(target).hasClass('folder') || this.focusIsMath) {
+			return res;
+		} else if (this.focusIsMath) {
+			//setCurrentPosition(target);
+			this.focus = this.getSelectedParent(target)
 			res["infer type"] = this.inferType();
 	  		return res;
-		} else if ($(target).hasClass('folder') || this.focusIsMath) {
-			return res;
 		} else {
 			return false;
 		}

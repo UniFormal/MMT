@@ -101,7 +101,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
    /** retrieves an applicable server plugin */
-   def getServerPlugin(uriComps : List[String]) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(uriComps))
+   def getServerPlugin(cont : String) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(cont))
    /** retrieves an applicable Foundation */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
 

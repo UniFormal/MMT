@@ -205,7 +205,7 @@ class Controller extends ROController with Logger {
     *  @param nset the style from which to select
     *  @param key the notation key identifying the knowledge item to be presented
     */
-   def get(nset : MPath, key : NotationKey) : Notation = {
+   def get(nset : MPath, key : NotationKey) : SimpleNotation = {
       iterate (notstore.get(nset,key))
    }
    /** adds a knowledge item */
@@ -236,12 +236,12 @@ class Controller extends ROController with Logger {
    def clear {
       memory.clear
    }
-   /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
+   /** releases all resources that are not handled by the garbage collection */
    def cleanup {
       extman.cleanup
       //closes all open svn sessions from storages in backend
       backend.cleanup
-      if (server.isDefined) stopServer
+      server foreach {_.stop}
    }
    /** reads a file containing a document and returns the Path of the document found in it
     * the reader is chosen according to the file ending: omdoc, elf, or mmt
@@ -294,30 +294,6 @@ class Controller extends ROController with Logger {
    protected var home = File(System.getProperty("user.dir"))
    def getHome = home
    def setHome(h: File) {home = h}
-
-   /** starts the HTTP server on the given port */
-   def startServer(port : Int) {
-    server match {
-      case Some(serv) => log("server already started on port " + serv.port)
-      case None if (Util.isTaken(port)) => log("port " + port + " is taken. Server not started.")
-      case _ =>
-        val serv = new Server(port, this)
-        serv.start
-        log("Server started at http://localhost:" + port)
-        server = Some(serv)
-    }
-  }
-  
-   /** stops the HTTP server */
-   def stopServer {
-    server match {
-      case Some(serv) => 
-        serv.stop
-        log("Server stopped")
-        server = None
-      case None => log("server is not running, so it cant be stopped")
-    }
-  }
 
    def reportException[A](a: => A) {
        try {a}
@@ -417,8 +393,22 @@ class Controller extends ROController with Logger {
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
-	      case ServerOn(p) => startServer(p)
-	      case ServerOff => stopServer
+	      case ServerOn(port) => server match {
+            case Some(serv) => logError("server already started on port " + serv.port)
+            case None if (Util.isTaken(port)) => logError("port " + port + " is taken, server not started.")
+            case _ =>
+              val serv = new Server(port, this)
+              serv.start
+              log("Server started at http://localhost:" + port)
+              server = Some(serv)
+          }
+	      case ServerOff => server match {
+            case Some(serv) => 
+              serv.stop
+              log("Server stopped")
+              server = None
+            case None => log("server not running")
+          }
 	      case Scala =>
 	         val interp = new MMTILoop(this)
             interp.run

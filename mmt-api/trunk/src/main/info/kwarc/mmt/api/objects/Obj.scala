@@ -417,6 +417,11 @@ object OMAMaybeNil {
    }
 }
 
+/**
+ * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as complex binder
+ * 
+ * It does not subsume the OMID case
+ */
 object ComplexTerm {
    def apply(p: GlobalName, args: List[Term], con: Context, scopes: List[Term]) =
       if (args.isEmpty && con.isEmpty && scopes.isEmpty) OMS(p)
@@ -425,7 +430,7 @@ object ComplexTerm {
          if (args.isEmpty) OMBINDC(OMS(p), con,scopes)
          else OMBINDC(OMA(OMS(p), args), con, scopes)
    def unapply(t: Term) : Option[(GlobalName, List[Term], Context, List[Term])] = t match {
-      case OMS(p) => Some((p, Nil, Context(), Nil))
+      //case OMS(p) => Some((p, Nil, Context(), Nil))
       case OMA(OMS(p), args) => Some(p, args, Context(), Nil)
       case OMBIND(OMS(p), con, scope) => Some((p, Nil, con, List(scope)))
       case OMBIND(OMA(OMS(p), args), con, scope) => Some((p, args, con, List(scope)))

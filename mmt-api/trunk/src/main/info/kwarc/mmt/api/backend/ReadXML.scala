@@ -119,9 +119,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 		         log("style " + name + " found")
 			      val npath = base ? name
 		         val from = Path.parse(xml.attr(m,"from"), base)
-		         val defaults = Defaults.parse(xml.attr(m, "defaults", "use"))
                val to = Path.parse(xml.attr(m, "to"), utils.mmt.mimeBase)
-		         val nset = new Style(base, name, defaults, from, to, report)
+		         val nset = new Style(base, name, from, to)
 		         add(nset, md)
 		         docParent map (dp => add(MRef(dp, npath, true)))
 		         readNotations(npath, from, notations)
@@ -208,8 +207,6 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly
             log("warning: ignoring deprecated alias declaration")
-         case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols
-            readNotations(tpath, base, s)
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
             doPat(name, Some(params), decls, None, md)
