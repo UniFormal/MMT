@@ -63,7 +63,7 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as plugin")
           val pl = ext.asInstanceOf[Plugin]
           loadedPlugins ::= pl
-          pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == clsJ)) addExtension(d, Nil)}
+          pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == java.lang.Class.forName(d))) addExtension(d, Nil)}
           pl.init(controller, args)
        }
        if (ext.isInstanceOf[Foundation]) {
