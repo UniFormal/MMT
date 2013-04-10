@@ -3,7 +3,7 @@ log file jomdoc.log
 //log+ presenter
 //log+ backend
 log+ controller
-//log+ extman
+log+ extman
 //log+ reader
 log+ archive    
 //log+ checker
@@ -19,14 +19,18 @@ log+ server
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 extension info.kwarc.mmt.lf.Plugin
 extension info.kwarc.mmt.api.objects.ErrorsPlugin
-//extension info.kwarc.mmt.lf.LFF
+extension info.kwarc.mmt.lf.LFF
 
-archive add /home/mihnea/public_html/dr_bsc/frameIT
-archive frameit compile
-archive frameit content
+// do all file path-specific archive registrations in this file (which you do not commit)
+file ../../paths.mmt
+
+//archive frameit compile
+//archive frameit content
 //archive frameit extract
 
-//file ../../paths.mmt
+//archive mmt compile
+//archive mmt content
+//archive mmt validate
 
 //archive urtheories clean
 //archive urtheories compile
