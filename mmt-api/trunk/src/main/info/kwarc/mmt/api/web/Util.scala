@@ -16,8 +16,8 @@ object Util {
      val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
      <span jobad:href={p.toPath}>{text}</span>
    }*/
-   def ahref(p: Path) =
-      <a href="#" onclick={navigate(p)}>{p.last}</a>
+   def ahref(p: Path) = <a href="#" mmtlink={p.toPath}>{p.last}</a>
+     // <a href="#" onclick={navigate(p)}>{p.last}</a>
    def navigate(p: Path) = 
       "latin.navigate('" + p.toPath + "')"
    

@@ -11,6 +11,24 @@ var latin = {
 	focusIsMath : false,    
 	notstyle : 'http://cds.omdoc.org/styles/lf/mathml.omdoc?twelf',  // hard-coding a default style for LF content
 	
+	/* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
+	//URI of the symbol clicked on
+	currentURI : null,
+	//URI of the OMDoc ContentElement that generated the math object clicked on
+	currentElement : null,
+	//name of the component of currentElement that generated the math object clicked on
+	currentComponent : null,
+	//position of the subobject clicked on within its math object
+	currentPosition : null,
+	
+	setCurrentPosition : function (elem){
+		var math = $(elem).closest('math');
+		this.currentElement = math.attr('jobad:owner');
+		this.currentComponent = math.attr('jobad:component');
+		this.currentPosition = this.getSelectedParent(elem).getAttribute('jobad:xref');
+	},
+	
+
 	/* JOBAD Interface  */ 
 	
 	info: {
@@ -92,10 +110,15 @@ var latin = {
 	
 	leftClick: function(target, JOBADInstance) {
 	   	//handling clicks on parts of the document - active only for elements that have jobad:href
+        if(target.hasAttribute('mmtlink')) {
+			var uri = target.attr('mmtlink');
+			console.log(uri);
+			this.navigate(uri);
+		}
 		if(target.hasAttribute('loadable')) {
 			var elem = target.parent().get(0);
 			var ref = this.load(elem);
-			$(ref).find('span').removeAttr('onclick');
+			$(ref).find('span').removeAttr('onclick'); //hack, should be removed in the mmt/style
 			$(ref).find('span').attr('foldable', 'true');
 			$(elem).replaceWith(ref);
 		}
@@ -154,21 +177,131 @@ var latin = {
 	
 	contextMenuEntries: function(target, JOBADInstance) {
 		this.focus = target;
+		console.log(this.focus);
 		this.focusIsMath = ($(this.focus).closest('math').length !== 0);
 		var res = this.visibMenu();
-		
-		if ($(target).hasClass('folder') || this.focusIsMath) {
-			return res;
-		} else if (this.focusIsMath) {
-			//setCurrentPosition(target);
+
+		if (this.focusIsMath) {
+			this.setCurrentPosition(target);
 			this.focus = this.getSelectedParent(target)
 			res["infer type"] = this.inferType();
 	  		return res;
+			if (target.hasAttribute("jobad:href")) {
+				this.currentURI = target.getAttribute('jobad:href');
+				res["show type"] =  this.showComp('type');
+				res["show definition"] =  this.showComp('definition');
+				res["(un)mark occurrences"] =  this.showOccurs();
+				res["open in new window"] = this.openCurrent();
+				res["show URI"] =  alert(currentURI);
+				res["get OMDoc"] = this.openCurrentOMDoc();
+			}
+		} else if ($(target).hasClass('folder') || this.focusIsMath) {
+			return res;
 		} else {
 			return false;
 		}
 	},
 	
+	/* Second Menu Dependencies */
+	/** opens current URI in a new window as OMDoc */
+	openCurrentOMDoc : function () {
+		var url = this.adaptMMTURI(currentURI, 'xml', false);  
+		window.open(url, '_blank', '', false);
+	},
+
+	/** opens current MMT URI in a new window */
+	openCurrent : function () {
+		var url = this.adaptMMTURI(currentURI, '', true);
+		window.open(url, '_blank', '', false);
+	},
+
+	/** highlights all occurrences of the current URI */
+	showOccurs : function (){
+		var occs = $('mo').filterMAttr('jobad:href', currentURI).toggleMClass('math-occurrence')
+	},
+	
+	// helper function to produce xml attributes: key="value"
+	XMLAttr : function (key, value) {return ' ' + key + '="' + value + '"';},
+	// helper function to produce xml elements: <tag>content</tag> or <tag/>
+	XMLElem : function (tag, content) {return XMLElem1(tag, null, null, content);},
+	// helper function to produce xml elements with 1 attribute: <tag key="value">content</tag> or <tag key="value"/>
+	XMLElem1 : function (tag, key, value, content) {
+		var atts = (key == null) ? "" : this.XMLAttr(key,value);
+		var begin = '<' + tag + atts;
+		if (content == null) {
+			return begin + '/>';
+		} else {
+			return begin + '>' + content + '</' + tag + '>';
+		}
+	},
+	
+	//helper functions to build queries (as XML strings)
+	Qindividual : function (p) {return this.XMLElem1('individual', 'uri', p);},
+	Qcomponent : function (o, c) {return this.XMLElem1('component', 'index', c, o);},
+	Qsubobject : function (o, p) {return this.XMLElem1('subobject', 'position', p, o);},
+	Qtype : function (o,meta) {return this.XMLElem1('type', 'meta', meta, o);},
+	QtypeLF : function (o) {return this.Qtype(o, 'http://cds.omdoc.org/foundations?LF');},
+	Qpresent : function (o) {return this.XMLElem1('present', 'style', this.notstyle, o);},
+
+	/** sends type inference query to server for the currentComponent and currentPosition */
+	inferType : function (){
+		var query = this.Qpresent(this.QtypeLF(this.Qsubobject(this.Qcomponent(this.Qindividual(this.currentElement), this.currentComponent), this.currentPosition)));
+		this.execQuery(query,
+				  function(result) {this.setLatinDialog(result.firstChild.firstChild.firstChild, 'type');}
+				 );
+	},
+	
+	/** shows a component of the current MMT URI in a dialog */
+	showComp : function (comp) {
+		var query = this.Qpresent(this.Qcomponent(this.Qindividual(this.currentURI), comp));
+		execQuery(query,
+				  function(result){this.setLatinDialog(result.firstChild.firstChild.firstChild, comp);}
+				 );
+	},
+	
+	execQuery : function (q, cont) {
+		$.ajax({
+			url:'/:query', 
+			type:'POST',
+			data:q,
+			processData:false,
+			contentType:'text/xml',
+			success:cont,
+		});
+	},
+	
+	/*
+	  There are some small UI problems left to fix:
+	  - context menu accessed from within lookup window should be on top of lookup window, currently underneath
+	  - lookup window should not move when scrolling vertically
+	  - title bar should be thinner
+	  - title bar should only show the cd and name component, but not the cdbase of the symbol href (full href should be shown as @title)
+	*/
+	setLatinDialog : function (content, title){
+		var dia = $("#latin-dialog");
+		if (dia.length == 0) {
+			this.dialog_init();
+  			var dia = $("#latin-dialog");
+  		}
+		dia.dialog('option', 'title', title);
+		dia[0].replaceChild(content, dia[0].firstChild);
+		dia.dialog('open');
+	},
+	
+	dialog_init : function (){
+		//create and initialize the dialog
+		var div = document.createElement('div');
+		div.setAttribute("id", "latin-dialog");
+		document.body.appendChild(div);
+		var span = document.createElement('span');
+		div.appendChild(span)
+		$('#latin-dialog').dialog({ autoOpen: false});
+	},
+	
+
+
+
+
 	
 	/* Helper Functions  */
 	getSelectedParent : function (elem){

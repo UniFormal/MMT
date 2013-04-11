@@ -80,7 +80,7 @@ object Action extends RegexParsers {
    private def presentation = present | deps | defaultPresent
    private def present = content ~ ("present" ~> str) ^^ {case c ~ p => Present(c,p)}
    private def deps = path <~ "deps" ^^ {case p => Deps(p)}
-   private def defaultPresent = content ^^ {c => Present(c, "string")}
+   private def defaultPresent = content ^^ {c => Present(c, "text")}
    private def content = closure | elaboration | component | get
    private def closure = path <~ "closure" ^^ {p => Closure(p)}
    private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   

@@ -43,7 +43,7 @@ var edit = {
     				url += " component " + comp
     			}
     		}
-    		url += "?text";    
+    		//url += "?text";    
     		function cont(data) {
     			console.log(path);
     			console.log(comp);
