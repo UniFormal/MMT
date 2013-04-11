@@ -368,7 +368,7 @@ class TextNotation(val name: GlobalName, val markers: List[Marker], val preceden
   
    private def markerString = markers.map(_.toString).mkString(" ")
    def toText = markerString + (if (precedence != Precedence.integer(0)) " prec " + precedence.toString else "")
-   override def toString = "Notation for " + name + ": " + markerString
+   override def toString = markerString
    def toNode = 
      <text-notation name={name.toPath} precedence={precedence.toString} markers={markerString}/>
    // the first delimiter of this notation

@@ -266,6 +266,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       state.home = doc.path
       //auxiliary function to unify "view" and "implicit view"
       def doView(isImplicit: Boolean) {
+    	       
                val name = readLocalPath
                val ns = DPath(state.namespaces.default)
                val vpath = ns ? name
@@ -595,6 +596,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                seCont(a)
             //assignment to include
             case "include" =>
+               log("found include")
                val from = readMPath(view.path)
                readDelimiter("=")
                val mor = OMMOD(readMPath(view.path)) //readParsedObject(view.to)
@@ -733,6 +735,7 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
     */
    def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
+      log(se.toNode.toString)
       SourceRef.update(se, SourceRef(state.container.uri,currentSourceRegion))
       controller.add(se)
    }

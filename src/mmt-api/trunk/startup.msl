@@ -11,6 +11,8 @@ log+ archive
 //log+ query
 log+ catalog
 log+ server
+log+ structure-parser
+log+ parser
 //log+ abox
 //log+ parser
 //log+ presenter
@@ -45,7 +47,7 @@ file ../../paths.mmt
 //mws http://localhost:6284
 server on 8080
 //browser on
-base http://docs.omdoc.org/urtheories
+base http://docs.omdoc.org/test
 
 //extension info.kwarc.mmt.mizar.test.MwsService
 //extension info.kwarc.mmt.tptp.TptpCompiler
