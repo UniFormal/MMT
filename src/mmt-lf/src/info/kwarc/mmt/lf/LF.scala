@@ -172,8 +172,8 @@ object ApplyGeneral {
 
 
 /** The LF foundation. Implements type checking and equality */
-class LFF extends Foundation with Logger {
-   val logPrefix = "lf"
+class LFF extends Foundation {
+   override val logPrefix = "lf"
    val foundTheory = LF.lftheory
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit fl : FoundationLookup) : Boolean = {
       log("typing\n" + tm.toString + "\n" + tp.toString)

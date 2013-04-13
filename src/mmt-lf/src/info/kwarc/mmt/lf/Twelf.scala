@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.backend._
 import utils.File
 import utils.FileConversion._
 
-import info.kwarc.mmt.twelf._
+import info.kwarc.mmt.twelf.Catalog
 
 import java.io._
 import scala.collection.mutable.HashSet
@@ -38,7 +38,7 @@ class Twelf extends Compiler {
    var chatter : Int = 5
    var catalogOpt : Option[Catalog] = None
    var port = 8083
-   private def log(msg : => String) {report("twelf", msg)}
+   override val logPrefix = "twelf"
    
    /** 
     * creates and intializes a Catalog
@@ -46,6 +46,7 @@ class Twelf extends Compiler {
     */
    override def init(con: frontend.Controller, args: List[String]) {
       super.init(con, Nil)
+      if (args.isEmpty) throw ParseError("no path to Twelf given")
       path = File(args(0))
       val cat = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
       cat.init    //  throws PortUnavailable
