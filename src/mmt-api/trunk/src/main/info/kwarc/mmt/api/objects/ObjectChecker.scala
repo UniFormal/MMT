@@ -62,6 +62,11 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     */
    def getPartialSolution : Context = solution
    /**
+    * @return the context containing only the unsolved variables
+    * This solution may contain unsolved variables, and there may be unresolved constraints. 
+    */   
+   def getUnsolvedVariables : Context = solution.filter(_.df.isEmpty)
+   /**
     * @return the current list of unresolved constraints
     */
    def getConstraints : List[Judgement] = delayed.map(_.constraint)
@@ -370,7 +375,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          case OMV(m) if unknowns.isDeclared(m) =>
             val fvs = tm2.freeVars
             if (fvs.isEmpty) {
-                val res = solve(m, tm2)
+               val res = solve(m, tm2)
                tpOpt foreach {case tp => solveType(m, tp)}
                res
             }

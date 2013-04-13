@@ -735,12 +735,11 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
     */
    def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
-      log(se.toNode.toString)
+      //log(se.toNode.toString)
       SourceRef.update(se, SourceRef(state.container.uri,currentSourceRegion))
       controller.add(se)
    }
 }
-
 
 
 class SequentialReader extends java.io.Reader {

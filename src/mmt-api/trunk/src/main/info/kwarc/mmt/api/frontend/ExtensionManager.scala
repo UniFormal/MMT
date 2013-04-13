@@ -8,9 +8,10 @@ import parser._
 import utils._
 import web._
 
-trait Extension {
+trait Extension extends Logger {
    protected var controller : Controller = null
    protected var report : Report = null
+   val logPrefix = getClass.toString
    /** initialization (empty by default) */
    def init(controller: Controller, args: List[String]) {
       this.controller = controller
@@ -50,7 +51,7 @@ class ExtensionManager(controller: Controller) extends Logger {
 
    /** adds an Importer and initializes it */
    def addExtension(cls: String, args: List[String]) {
-       log("adding importer " + cls)
+       log("adding extension " + cls)
        val clsJ = java.lang.Class.forName(cls)
        val ext = try {
           val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
@@ -58,14 +59,13 @@ class ExtensionManager(controller: Controller) extends Logger {
        } catch {
           case e : java.lang.Exception => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
-       ext.init(controller, args)
        if (ext.isInstanceOf[Plugin]) {
           log("  ... as plugin")
           val pl = ext.asInstanceOf[Plugin]
           loadedPlugins ::= pl
           pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == java.lang.Class.forName(d))) addExtension(d, Nil)}
-          pl.init(controller, args)
        }
+       ext.init(controller, args)
        if (ext.isInstanceOf[Foundation]) {
           log("  ... as foundation")
           foundations ::= ext.asInstanceOf[Foundation]

@@ -14,10 +14,12 @@ class Validator(controller: Controller) extends Logger {
          val result = logGroup{solver(v.judgement)}
          val tc = controller.globalLookup.getComponent(v.component)
          // if solved, this substitutes all unknowns; if not, we still substitute partially
-         val subs = solver.getPartialSolution.toPartialSubstitution
+         val psol = solver.getPartialSolution
+         val remUnknowns = solver.getUnsolvedVariables 
+         val subs = psol.toPartialSubstitution
          val tI = v.judgement.wfo ^ subs //fill in inferred values
-         val tIS = SimplifyInferred(tI,Context()) //substitution may have created redexes
-         tc.analyzed = tIS
+         val tIS = SimplifyInferred(tI,remUnknowns) //substitution may have created redexes
+         tc.analyzed = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
          //now report result/errors
          val solution = solver.getSolution
          logGroup {
