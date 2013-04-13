@@ -59,9 +59,9 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
  * @param report the logging handler
  * @param style the notation style used for presentation
  */
-class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter with Logger {
+class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
    init(c, Nil)
-   val logPrefix = "presenter"
+   override val logPrefix = "presenter"
    private var nextID : Int = 0 // the next available id (for generating unique ids)
    
    def isApplicable(format: String) = format == style.toPath

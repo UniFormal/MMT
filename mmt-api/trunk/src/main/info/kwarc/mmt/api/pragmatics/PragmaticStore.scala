@@ -1,9 +1,8 @@
 package info.kwarc.mmt.api.pragmatics
 import info.kwarc.mmt.api._
 
-
-//experimental
-
+//TODO this should look into includes as well; but this is subsumed by the next TODO
+//TODO this should be abolished in favor of a RoleHandler
 class PragmaticStore {
    private val features = new utils.HashMapToSet[MPath, Feature]
    def add(fs: Feature*) = fs foreach {f => features(f.theory) += f}
@@ -29,4 +28,3 @@ class PragmaticStore {
       None
    }
 }
-

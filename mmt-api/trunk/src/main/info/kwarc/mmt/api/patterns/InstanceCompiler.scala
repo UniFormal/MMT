@@ -34,7 +34,7 @@ class InstanceCompiler extends Compiler {
   def isApplicable(src : String) : Boolean = src == "omdoc"    
   
   private var tptppath : String = null
-  private def log(msg: => String) {report("comp. pragmatic:", msg)}    
+  override val logPrefix = "comp. pragmatic"    
   override def init(con: Controller, args: List[String]) {
      tptppath = args(0)     
      super.init(con, Nil)
