@@ -10,8 +10,8 @@ import scala.Console._
 
 object Integrator {
 
-   val uomstart = "    // UOM start "
-   val uomend = "    // UOM end"
+   val uomstart = "  // UOM start "
+   val uomend = "  // UOM end"
 
    private def getCode(in : BufferedReader) : String = {
      var line = in.readLine
@@ -20,7 +20,7 @@ object Integrator {
      if (line.startsWith(uomend)) {
        return ""
      }
-     return line + getCode(in)
+     return line + "\n" + getCode(in)
    }
 
    def getSnippets(in : BufferedReader, base: Path) : List[(GlobalName, String)] = {
@@ -34,18 +34,40 @@ object Integrator {
      }
      return getSnippets(in, base)
    }
+   
+   def mkVarDecl(arg: String) : VarDecl = {
+     var nt = arg.split(":")
+     var tp = nt(1) match {
+       case "Term" => Scala.symbol("Term")
+       case "List[Term]" => OMA(Scala.symbol("List"), List(Scala.symbol("Term")))
+     } 
+     VarDecl(LocalName(nt(0)), Some(tp), None)
+   }
+   
+   def mkLambda(code: String) : Term = {
+     val lp = code.indexOf("(") + 1
+     val rp = code.indexOf(")")
+     val args = code.substring(lp, rp).replace(" ", "").split(",")
+     val body = Scala(code.substring(code.indexOf("{") + 1, code.length - 1))
+     var con = Context()
+     if (args(0) == "") {
+       body
+     } else {
+       args.foreach(con ++= mkVarDecl(_))
+       ScalaLambda(con, body)
+     }
+   }
 
    def doModule(controller: Controller, mod: Module, scalaFile: File) {
 	   val out = new BufferedReader(new FileReader(scalaFile))
 	   val snippets = getSnippets(out, mod.path)
-      out.close
+       out.close
       
-      def merge(c: Constant, code: String) =
-         Constant(c.home, c.name, c.alias, c.tp, Some(Scala(code)), c.rl, c.not)
+       def merge(c: Constant, code: String) =
+         Constant(c.home, c.name, c.alias, c.tp, Some(mkLambda(code)), c.rl, c.not)
       
 	   snippets foreach {
 	  	 case (path,code) => 
-	  	   println(path, code)
 	  	   controller.globalLookup.get(path) match {
            case oldcons : Constant =>
               val newcons = merge(oldcons, code)
