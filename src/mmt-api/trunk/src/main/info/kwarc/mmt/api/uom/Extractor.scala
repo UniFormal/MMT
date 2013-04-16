@@ -13,16 +13,18 @@ import utils.FileConversion._
 
 /** apply/unapply methods for the constructor Scala(code: String): Term to represent escaped Scala code in an MMT Term */
 object Scala {
+   val cd = DPath(utils.mmt.baseURI / "foundations") ? "Scala"
    def apply(t: String) = OMSemiFormal(Text("scala", t))
    def unapply(t: Term) : Option[String] = t match {
       case OMSemiFormal(List(Text("scala", t))) => Some(t)
       case _ => None
    }
+   def symbol(s: String) = OMS(cd ? s)
 }
 
 object ScalaLambda {
-   val cd = DPath(utils.mmt.baseURI / "foundations") ? "Scala"
-   val path = cd ? "Lambda"
+   val path = Scala.cd ? "Lambda"
+   def apply(con: Context, t: Term) = OMBIND(OMID(this.path), con, t) 
    def unapply(t: Term) : Option[(Context,Term)] = t match {
       case OMBIND(OMID(this.path), con, t) => Some((con,t))
       case t => Some((Context(),t))
@@ -281,11 +283,11 @@ object Extractor {
                       (defaultNames, " //unexpected assignment in MMT view")
              }
              var o = ""
+             o += s"  // UOM start " + apath.toPath + "\n"
              o += s"  def $scalaName(${varNames.zip(varTypes).map(p => p._1 + ": " + p._2).mkString(", ")}) : Term = {\n"
-             o += s"    // UOM start " + apath.toPath + "\n"
              o += s"    $impl\n"
-             o += s"    // UOM end " + apath.toPath + "\n"
              o += s"  }\n"
+             o += s"  // UOM end " + apath.toPath + "\n"
              val normalArgs = arity.arguments.length - (if (lastArgIsSeq(arity)) 1 else 0)
              var implConstr = Range(0,normalArgs).map(_ => "A").mkString("") + (if (lastArgIsSeq(arity)) "S" else "")
              if (implConstr == "") implConstr = "constant"
