@@ -5,13 +5,15 @@ import objects._
 import uom._
 import utils._
 
-class SimplificationRuleGenerator extends RoleHandler {
+class SimplificationRuleGenerator extends RoleHandler with Logger {
+  override val logPrefix = "rule-gen"
   case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
   def isApplicable(role: String) : Boolean = role == "Simplify"
   def apply(c: symbols.Constant) {
     //TODO error msgs 
     if (! c.tp.isEmpty) {
-    	val tm = c.tp.get
+      val tm = c.tp.get
+      try {
     	tm match {
     	  case FunType(ctx, scp) => 
     	    scp match {
@@ -47,9 +49,11 @@ class SimplificationRuleGenerator extends RoleHandler {
     	              // check that all var names are different
     	              val varls = bfr ++ ins ++ aft
     	              val unique = varls.distinct
-    	              if (varls.length != unique.length) throw DoesNotMatch()
+    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unqique variables")
     	              
  	            	  val simplify = new DepthRule(outer, inr){
+    	                val ruleName : String = c.name.toString
+    	                override def toString = String.format("%-60s", head.toPath) + " of " + ruleName
  	            	   	private val bfrNames = bfr.reverse
  	            	   	private val aftNames = aft.reverse
  	            	   	private val insNames = ins
@@ -79,6 +83,10 @@ class SimplificationRuleGenerator extends RoleHandler {
     	    }
     	  case _ => // impossible case
     	}
+      } catch {
+        case e : DoesNotMatch => log(tm.toString + "does not match Simplification rule pattern")
+        case e : Throwable => throw(e)
+      }
     }
   }
 }
