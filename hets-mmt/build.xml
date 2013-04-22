@@ -112,7 +112,7 @@
             <lib>
                 <fileset file="${deploy}/mmt/mmt-api.jar" />  
                 <fileset file="${deploy}/mmt/mmt-lf.jar" />     
-            	<fileset file="${lib}/scala-library.jar" />
+            	<fileset file="${scala.dir}/scala-library.jar" />
             	<fileset file="${tiscaf}" />
             </lib>
             <zipfileset dir="${lib}" includes="*.txt" prefix="doc"/>
@@ -129,6 +129,10 @@
 		</copy>
 		<copy todir="">
 			<fileset file="${build}/${jar-standalone}"/>
+		</copy>
+		<copy todir="${deploy}/mmt">
+			<fileset file="${build}/${jar-standalone}"/>
+			<fileset file="${build}/${jar}"/>
 		</copy>
 	</target>
 	
