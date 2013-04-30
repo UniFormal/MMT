@@ -14,6 +14,7 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     if (! c.tp.isEmpty) {
       val tm = c.tp.get
       try {
+        val ruleName : String = c.name.toString
     	tm match {
     	  case FunType(ctx, scp) => 
     	    scp match {
@@ -39,20 +40,20 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	            	        inr = inner
     	            	        ins = args map {
     	            	          case OMV(x) => x
-    	            	          case _ => throw DoesNotMatch()
+    	            	          case _ => throw DoesNotMatch(ruleName + " not a variable for inner operation")
     	            	        }
     	            	        isBefore = false
     	            	     } else
-    	            	        throw DoesNotMatch()    	  
+    	            	        throw DoesNotMatch(ruleName + " more than 1 inner operation detected")    	  
     	              }
-    	              if (isBefore) throw DoesNotMatch() // check that inner OMA was detected
+    	              if (isBefore) throw DoesNotMatch("no inner operator detected in " + ruleName) // check that inner OMA was detected
     	              // check that all var names are different
     	              val varls = bfr ++ ins ++ aft
     	              val unique = varls.distinct
-    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unqique variables")
+//    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unqique variables in " + ruleName)
     	              
  	            	  val simplify = new DepthRule(outer, inr){
-    	                val ruleName : String = c.name.toString
+    	                
     	                override def toString = String.format("%-60s", head.toPath) + " of " + ruleName
  	            	   	private val bfrNames = bfr.reverse
  	            	   	private val aftNames = aft.reverse
@@ -76,15 +77,15 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
  	            	  }
  	            	  controller.extman.ruleStore.add(simplify)
     	              
-    	            case _ => // no match
+    	            case _ => throw DoesNotMatch(ruleName + " no outer op")
     	          }
     	        }
-    	      case _ => // no match 
+    	      case _ => throw DoesNotMatch(ruleName + " not an Eq")
     	    }
-    	  case _ => // impossible case
+    	  case _ => throw DoesNotMatch(ruleName + " not a FunType")
     	}
       } catch {
-        case e : DoesNotMatch => log(tm.toString + "does not match Simplification rule pattern")
+        case e : DoesNotMatch => log(e.msg)
         case e : Throwable => throw(e)
       }
     }
