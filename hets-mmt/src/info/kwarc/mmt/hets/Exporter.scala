@@ -44,7 +44,6 @@ class Exporter(c : Controller = new Controller) {
 				}
 			case OMA(OMS(s),args) => 
 			  					<app name={s.name.toPath}>
-									{/* if p_i, produce another node? */}
 									{args map(x => toNode(x))} 
 								</app>
 			case OMBIND(OMS(s),ctx,bd) =>

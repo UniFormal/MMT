@@ -57,16 +57,20 @@ object Main {
     	 return
      } 
      
-       try {         
+       try {
+         println("current dir " + getCurrentDir)
          val flag = args(0)
          println("flag: " + flag)
          val filename = args(1) // take first argument - file name of the source
          
          //TODO make global
-         val controller = new frontend.Controller
-         val uri = new utils.URI(None,None,List(hetstest + "?" + filename))
-         controller.handleLine("archive add /home/aivaras/TPTP/MMT/theories")  
-         controller.handleLine("archive mmt source-structure")                 
+         println("initiating controller")
+         val controller = new info.kwarc.mmt.api.frontend.Controller
+//         val uri = new utils.URI(None,None,List(hetstest + "?" + filename))
+//         controller.handleLine("archive mmt source-structure")                 
+//         controller.handleLine("archive add /home/aivaras/TPTP/MMT/urtheories")
+//         controller.handleLine("archive add /home/aivaras/TPTP/MMT/test")
+         controller.handleLine("file /home/aivaras/TPTP/test/hets.msl")
          
          val fl = File(new java.io.File(filename))
          if (!(new java.io.File(filename).exists())) {
@@ -80,10 +84,11 @@ object Main {
          if (argl contains "-newLogic") {
            println("reading new logic")
            println("..from file " + filename)
-         
+
            // parse mmt doc
            val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
-           val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
+           val (doc, err) = controller.read(File(new java.io.File(filename)), None) 
+             //controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
            source.close()
            if (!err.isEmpty) {
         	   println("errors while reading " + filename + " encountered:")
@@ -96,32 +101,36 @@ object Main {
            
            // ----------- RUN ----------------------------         
          
-           println(controller.library.toString)
+//           println(controller.library.toString)
            val theo =  controller.localLookup.getTheory(DPath(utils.URI(hetstest)) ? thname) match {
          		case d : DeclaredTheory => d
          		case _ => throw TheoryLookupError("attempted retrieving not a DeclaredTheory")
-           }           
+           }
+           println(theo)
            val tls = new Theory2LogicSyntax()
            println("translating " + thname + " to logic syntax")
            val ls = tls.translateTheory(theo)
+           println(ls)
            println("compiling pseudo-code")
          
            val dir : String = "/home/aivaras/Hets-src/"
          
-       	   val lw = new LogicWriter
+       	   val lw = new LogicWriter(ls)
        	   println("writing to files in " + dir + thname)
          
-//           lw.compile(ls, thname, dir)
+           lw.compile(ls, thname, dir)
          
                   
            println("new logic read and compiled")
+           controller.handleLine("exit")
          }
          // ========================================================
          else if (argl contains "-readSpec") {        	
            // parse logic spec
            println("reading logic specification")
            val source = scala.io.Source.fromFile(new java.io.File(filename),"UTF-8")       
-           val (doc, err) = controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
+           val (doc, err) = controller.read(File(new java.io.File(filename)), None) 
+             //controller.textReader.readDocument(source, DPath(uri))(controller.termParser.apply(_))
            source.close()           
            if (!err.isEmpty) {
         	   println("errors while reading " + filename + " encountered:")
@@ -153,12 +162,14 @@ object Main {
 //
 //        case e : FileNotFoundException => println("no such file: " + args(0) + ", check spelling")
 //        case e : IOException => println("IO exception")
-//        case e => println("unknown error:")
-//        				throw e
-//        				e.printStackTrace()
+        case e : Throwable => println("unknown error:")
+        				throw e
+        				e.printStackTrace()
       }
        
      
      
    }
+   
+   def getCurrentDir : String = new java.io.File( "." ).getCanonicalPath()
 }

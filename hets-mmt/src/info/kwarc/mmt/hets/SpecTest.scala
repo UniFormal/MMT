@@ -40,16 +40,23 @@ object SpecTest {
     	 println("No arguments given. Expecting 'flag filepath' [-outDir filepath] arguments.\nTerminating.")
     	 return
      } 
-     try {         
+     try {      
+    	 val argl = args.toList
+    	 val controller = new frontend.Controller
+         controller.handleLine("file startup.msl")
+//    	 if ( argl.length == 1) {
+//           controller.handleLine(argl.head)
+//         }
+    	 
          val flag = args(0)
          println("flag: " + flag)
+         
          val filename = args(1) // take first argument - file name of the source
-         var outDir = "../../theories/source/hets-test"
+         var outDir = "../../../test/source/hets-test"
          if (args.contains("-outDir")) { outDir = args(args.length - 1) }                    
          
          //TODO make global
-         val controller = new frontend.Controller
-         controller.handleLine("file startup.msl")
+         
          
          val fl = File(new java.io.File(filename))
          if (!(new java.io.File(filename).exists())) {
@@ -57,7 +64,7 @@ object SpecTest {
            return
          }
 
-         val argl = args.toList
+         
          
          if (argl contains "-readSpec") {        	
            // parse logic spec
@@ -94,6 +101,7 @@ object SpecTest {
            }
            println(th.toString())
          }
+           
        } // <------------ end of main
        
       catch {
