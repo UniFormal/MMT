@@ -19,7 +19,7 @@ object Util {
    def ahref(p: Path) = <a href="#" mmtlink={p.toPath}>{p.last}</a>
      // <a href="#" onclick={navigate(p)}>{p.last}</a>
    def navigate(p: Path) = 
-      "latin.navigate('" + p.toPath + "')"
+      "navigation.navigate('" + p.toPath + "')"
    
    /** yields a breadcrumb navigation bar as a sequence of links */
    def breadcrumbs(path : Path) : Node = {

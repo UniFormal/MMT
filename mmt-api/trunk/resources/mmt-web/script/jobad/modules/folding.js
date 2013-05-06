@@ -1,6 +1,6 @@
 var folding = {
 	info: {
-		'identifier' : 'kwarc.latin.editing',
+		'identifier' : 'kwarc.mmt.folding',
 		'title' : 'LATIN Editing Service',
 		'author': 'Kwarc',
 		'description' : 'The editing service for LATIN-MMT content',

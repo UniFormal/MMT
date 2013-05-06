@@ -1,6 +1,6 @@
 var edit = {
 	info: {
-		'identifier' : 'kwarc.latin.editing',
+		'identifier' : 'kwarc.mmt.editing',
 		'title' : 'LATIN Editing Service',
 		'author': 'Kwarc',
 		'description' : 'The editing service for LATIN-MMT content',

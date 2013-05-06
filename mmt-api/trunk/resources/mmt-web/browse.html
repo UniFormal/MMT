@@ -1,7 +1,9 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:jobad="http://omdoc.org/presentation">
 <head>
-   <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/>
+  <meta charset="UTF-8" />
+ <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> --> 
+
   <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
   <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
   <link rel="stylesheet" type="text/css" href="/css/jobad/jobad.css"/>
@@ -12,7 +14,7 @@
   <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
 
   <script src="script/codemirror2/lib/codemirror.js"></script>
-  <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css">
+  <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css"/>
   <script src="script/codemirror2/mode/lf/lf.js"></script>
 
   <script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
@@ -23,9 +25,12 @@
   <!-- JOBAD -->
   <script type="text/javascript" src="/script/jobad/JOBAD.js"></script>
   <!-- Services Deps -->
+  <script type="text/javascript" src="/script/jobad/mmt-html.js"></script>
   <script type="text/javascript" src="/script/jobad/mathml.js"></script>
   <!-- JOBAD Services -->
-  <script type="text/javascript" src="/script/jobad/modules/latin.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/navigation.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/hovering.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/interactive-viewing.js"></script>
   <script type="text/javascript" src="/script/jobad/modules/edit.js"></script>
   <script type="text/javascript" src="/script/jobad/modules/folding.js"></script>
    
@@ -33,11 +38,12 @@
   <script type="text/javascript">
 	var JOBAD1;
 	$(function(){	
-
 	JOBAD1 = new JOBAD($("#main"));
-	JOBAD1.modules.load("kwarc.latin.main", []);
-	JOBAD1.modules.load("kwarc.latin.editing", []);
-	JOBAD1.modules.load("kwarc.latin.folding", []);
+	JOBAD1.modules.load("kwarc.mmt.navigation", []);
+	JOBAD1.modules.load("kwarc.mmt.hovering", []);
+	JOBAD1.modules.load("kwarc.mmt.intvw", []);
+	JOBAD1.modules.load("kwarc.mmt.editing", []);
+	JOBAD1.modules.load("kwarc.mmt.folding", []);
 	JOBAD1.Setup();
 	})		
   </script>
