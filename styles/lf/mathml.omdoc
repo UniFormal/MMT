@@ -93,7 +93,7 @@
 
    <notation role="Variable">
     <element name="mrow">
-      <attribute prefix="jobad" name="xref">
+      <attribute prefix="jobad" name="mmtref">
         <id/>
       </attribute>
       <element name="mi">

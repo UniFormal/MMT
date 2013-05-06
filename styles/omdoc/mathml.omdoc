@@ -470,6 +470,7 @@
  
   <notation role="toplevel">
     <element name="math">
+	  <attribute name="xmlns" value="http://www.w3.org/1998/Math/MathML"/>
       <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
       <attribute prefix="jobad" name="owner"><component index="1"/></attribute>
       <attribute prefix="jobad" name="component"><component index="2"/></attribute>
@@ -481,6 +482,7 @@
   </notation>
   <notation role="fragment:symname">
    <element name="math">
+	 <attribute name="xmlns" value="http://www.w3.org/1998/Math/MathML"/>
      <element name="mo">
        <attribute name="class" value="symdecl"/>
        <hole index="0"/>
