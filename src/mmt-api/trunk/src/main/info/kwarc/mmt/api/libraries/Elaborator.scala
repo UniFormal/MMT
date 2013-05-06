@@ -229,5 +229,39 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
   def escape(s : String) = {
     s.replace("/","|").replace("?","!")
   }
+  
+  def gatherConstants(thy : DeclaredTheory) : List[Constant] = {
+    var constants : List[Constant] = Nil 		
+    thy.components foreach {
+      case c : Constant => constants = constants ::: List(c) //MPath may be irrelevant, otherwise needs changing
+      case _ => 
+    }
+    constants
+  }
+  
+  def flatten(thy : DeclaredTheory) : DeclaredTheory = {
+    var includes : HashSet[MPath] = new HashSet[MPath]()
+    var constants : List[Constant] = Nil
+    thy.components collect {
+      case s : DeclaredStructure =>
+      if (s.name.isAnonymous) {
+        val inclPath = s.from.toMPath
+        controller.get(inclPath) match {
+          case inclThy : DeclaredTheory => 
+            val flatInclThy = flatten(inclThy)
+            constants = constants ::: gatherConstants(flatInclThy)
+          case _ => 
+        }
+      }
+      case c : Constant => 
+        constants = constants ::: c :: Nil
+    }
+    
+   val nt = new DeclaredTheory(thy.parent, thy.name, thy.meta)
+   constants.foreach(nt add _)
+   nt    
+  }
+  
+  
 }
 

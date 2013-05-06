@@ -16,7 +16,9 @@ import java.net._
 import java.io._
 import scala.util.parsing.json.JSONObject
 
-case class ServerError(n: Node) extends java.lang.Throwable
+case class ServerError(msg: String) extends java.lang.Throwable {
+  def toNode = <p class="error"> Server Error: {msg} </p>
+}
 
 /** An HTTP RESTful server. */
 class Server(val port: Int, controller: Controller) extends HServer {
@@ -49,7 +51,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
   }
   
   private def bodyAsString(tk: HTalk): String = {
-    val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError(<error message="no body found"/>))
+    val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError("no body found"))
     new String(bodyArray, "UTF-8")
   }
 
@@ -58,7 +60,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
     val bodyXML = try {
       scala.xml.XML.loadString(bodyString).head
     } catch {
-      case _ : Throwable => throw ServerError(<error message="invalid XML"/>)
+      case _ : Throwable => throw ServerError("invalid XML")
     }
     scala.xml.Utility.trim(bodyXML)
   }
@@ -121,13 +123,13 @@ class Server(val port: Int, controller: Controller) extends HServer {
           val q = ontology.Query.parse(bodyAsXML(tk))
           controller.evaluator.evaluate(q)
         } catch {
-          case ParseError(s) => throw ServerError(<error message={ s }/>)
-          case GetError(s) => throw ServerError(<error message={ s }/>)
+          case ParseError(s) => throw ServerError(s)
+          case GetError(s) => throw ServerError(s)
         }
         val resp = res.toNode
         XmlResponse(resp).act(tk)
       } catch {
-        case ServerError(n) => XmlResponse(n).act(tk)
+        case se : ServerError => XmlResponse(se.toNode).act(tk)
       }
     }
   }
@@ -184,9 +186,9 @@ class Server(val port: Int, controller: Controller) extends HServer {
                case Some(s) => 
                  Path.parse(s) match {
                    case mp : MPath =>  objects.OMMOD(mp)
-                   case _ => throw ServerError(<error><message> expected mpath found : {s} </message></error>)
+                   case _ => throw ServerError("expected mpath found : " + s)
                  }
-               case _ => throw ServerError(<error><message> expected a scope (mpath) passed in header </message></error>)
+               case _ => throw ServerError("expected a scope (mpath) passed in header")
              }
              val termParser = controller.termParser
              val tm = try {
@@ -214,7 +216,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
         }
         val tqs = qt.transformSearchQuery(mwsquery, params)
         def wrapMWS(n: Node): Node = <mws:query output="xml" limitmin={ offset.toString } answsize={ size.toString }>{ n }</mws:query>
-        val mws = controller.extman.getMWS.getOrElse(throw ServerError(<error message="no MathWebSearch engine defined"/>))
+        val mws = controller.extman.getMWS.getOrElse(throw ServerError("no MathWebSearch engine defined"))
 
         tqs.map(q => println(wrapMWS(q)))
         val res = tqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q))) // calling MWS via HTTP post
@@ -223,7 +225,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
         val answrs = res.flatMap(_.child)
         <mws:answset total={ total.toString } size={ totalsize.toString } xmlns:mws="http://www.mathweb.org/mws/ns">{ answrs }</mws:answset>
       } catch {
-        case ServerError(n) => n
+        case se : ServerError => se.toNode
         case e: ParseError => <error><message>{ e.getMessage }</message></error>
         case e : Throwable => <error><message>error translating query : {e.getMessage()}</message></error>
       }
@@ -238,9 +240,9 @@ class Server(val port: Int, controller: Controller) extends HServer {
   private def PostResponse : HLet = new HLet {
     def act(tk : HTalk) {
       try {
-        val content = tk.req.param("body").getOrElse(throw ServerError(<error><message>found no body in post req</message></error>))
+        val content = tk.req.param("body").getOrElse(throw ServerError("found no body in post req"))
         val format = tk.req.param("format").getOrElse("mmt")
-        val dpathS = tk.req.param("dpath").getOrElse(throw ServerError(<error><message>expected dpath</message></error>))
+        val dpathS = tk.req.param("dpath").getOrElse(throw ServerError("expected dpath"))
         val dpath = DPath(URI(dpathS))
         log("Received content : " + content)
         controller.textParser.apply(parser.Reader(content), dpath)
@@ -270,7 +272,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
 
   private def ParserResponse : HLet = new HLet {
     def act(tk : HTalk) {
-      val text = tk.req.param("text").getOrElse(throw ServerError(<error><message>found no text to parse</message></error>))
+      val text = tk.req.param("text").getOrElse(throw ServerError("found no text to parse"))
       val save = tk.req.param("save").map(_ == "true").getOrElse(false) //if save parameter is "true" then save otherwise don't
       tk.req.query.split("\\?").toList match {
         case strDPath :: strThy :: Nil =>
@@ -337,7 +339,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
               response("pres") = l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString("")
               JsonResponse(JSONObject(response.toMap)).act(tk)
           }
-        case _ => throw ServerError(<error><message> invalid theory name in query : {tk.req.query}</message></error>)
+        case _ => throw ServerError("invalid theory name in query : {tk.req.query}")
       }
     }
   }
