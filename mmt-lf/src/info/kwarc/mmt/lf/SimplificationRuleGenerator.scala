@@ -50,7 +50,7 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	              // check that all var names are different
     	              val varls = bfr ++ ins ++ aft
     	              val unique = varls.distinct
-    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unqique variables in " + ruleName)
+    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unique variables in " + ruleName)
     	              
  	            	  val simplify = new DepthRule(outer, inr){
     	                
