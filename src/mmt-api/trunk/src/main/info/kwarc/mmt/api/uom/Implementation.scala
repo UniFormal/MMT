@@ -48,6 +48,18 @@ object Implementation {
       if (args.length != 3) throw UOMError("bad number of arguments")
       f(args(0), args(1), args(2))
    }
+   
+   /** convenience factory for functions of type obj x obj x obj -> obj */
+   def AAAA(name: GlobalName)(f: (Term,Term,Term,Term) => Term): Implementation = S(name) {args =>
+      if (args.length != 4) throw UOMError("bad number of arguments")
+      f(args(0), args(1), args(2), args(3))
+   }
+   
+   /** convenience factory for functions of type obj x obj x obj -> obj */
+   def AAAAA(name: GlobalName)(f: (Term,Term,Term,Term,Term) => Term): Implementation = S(name) {args =>
+      if (args.length != 5) throw UOMError("bad number of arguments")
+      f(args(0), args(1), args(2), args(3), args(4))
+   }
    /** convenience factory for functions of type obj x obj* -> obj */
    def AS(name: GlobalName)(f: (Term,List[Term]) => Term): Implementation = S(name) {args =>
       if (args.isEmpty) throw UOMError("too few arguments")
