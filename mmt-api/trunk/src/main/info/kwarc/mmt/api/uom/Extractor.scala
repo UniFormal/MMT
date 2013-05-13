@@ -13,7 +13,7 @@ import utils.FileConversion._
 
 /** apply/unapply methods for the constructor Scala(code: String): Term to represent escaped Scala code in an MMT Term */
 object Scala {
-   val cd = DPath(utils.mmt.baseURI / "foundations") ? "Scala"
+   val cd = DPath(utils.mmt.baseURI / "urtheories") ? "Scala"
    def apply(t: String) = OMSemiFormal(Text("scala", t))
    def unapply(t: Term) : Option[String] = t match {
       case OMSemiFormal(List(Text("scala", t))) => Some(t)
