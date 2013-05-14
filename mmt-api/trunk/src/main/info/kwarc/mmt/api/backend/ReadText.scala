@@ -64,6 +64,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   }
   
+  private var keyW : List[String] = Nil
+  
   /** errors that occur during parsing */
    object TextParseError {
      def apply(pos: SourcePosition, s : String) = SourceError("structure-parser", SourceRef(dpath.uri, pos.toRegion), s)
@@ -1560,6 +1562,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       }
       else if (flat.codePointAt(i) == '}')    // end of signature body
         return i + 1
+//      else if crawlIdentifier(i)
       else
         throw TextParseError(toPos(i), "unknown declaration in signature body")
       keepComment = None          // reset the last semantic comment stored
@@ -1597,7 +1600,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      val matches = controller.pragmatic.pragmaticHead(t) match {
         case OMA(OMID(`pattern`), args) => args
         case OMID(`pattern`) => Nil
-//        case f : OMA => List(f)
+        case p : OMID => List(p)
+        case f : OMA => List(f)
         case _ => { println(t.toString())
         throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)}
      }
