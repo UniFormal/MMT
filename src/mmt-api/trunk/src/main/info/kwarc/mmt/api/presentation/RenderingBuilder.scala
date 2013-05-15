@@ -122,7 +122,7 @@ class XMLBuilder extends RenderingHandler with RenderingResult[Node] {
       inAttribute match {
          case None => state match {
             case Nil => preamble = preamble + str
-            case Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, true, c ++ List(scala.xml.Text(str)) : _*) :: rest
+            case Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, false, c ++ List(scala.xml.Text(str)) : _*) :: rest
          }
          case Some(_) => attribute = attribute + str
       }
@@ -133,7 +133,7 @@ class XMLBuilder extends RenderingHandler with RenderingResult[Node] {
                case e : Elem => state = List(e)
                case _ => preamble = preamble + N.toString
             }
-            case Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, true, c ++ List(N) : _*) :: rest
+            case Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, false, c ++ List(N) : _*) :: rest
          }
       case Some(_) => throw XMLError
    }
@@ -148,7 +148,7 @@ class XMLBuilder extends RenderingHandler with RenderingResult[Node] {
    } */
    def elementStart(prefix : String, label : String) {
       inAttribute match {
-         case None => state = Elem(prefixOpt(prefix), label, Null, TopScope, true) :: state
+         case None => state = Elem(prefixOpt(prefix), label, Null, TopScope, false) :: state
          case Some(_) => throw XMLError
       }
       
@@ -159,7 +159,7 @@ class XMLBuilder extends RenderingHandler with RenderingResult[Node] {
            state match {
              case Nil => ()
              case _ :: Nil => ()
-             case e :: Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, true, c ++ List(e) : _*) :: rest
+             case e :: Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, false, c ++ List(e) : _*) :: rest
            }
          case _ => throw XMLError
       }
