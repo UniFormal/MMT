@@ -4,20 +4,23 @@ import libraries._
 import objects.Conversions._
 import scala.collection.mutable.{HashMap,HashSet}
 
+/** empty class as a type abbreviation */
+class RuleMap[R <: Rule] extends HashMap[ContentPath,R]
+
 /** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
  * 
  *  It maintains a separate set of TypingRule's for every subtype of Rule; the Rule's are indexed by their heads.
  *  An instance of RuleStore is created by the ExtensionManager.
  */
 class RuleStore {
-   val typingRules = new HashMap[ContentPath,TypingRule]
-   val inferenceRules = new HashMap[ContentPath, InferenceRule]
-   val computationRules = new HashMap[ContentPath, ComputationRule]
-   val universeRules = new HashMap[ContentPath, UniverseRule]
-   val equalityRules = new HashMap[ContentPath, EqualityRule]
-   val atomicEqualityRules = new HashMap[ContentPath, AtomicEqualityRule]
-   val solutionRules = new HashMap[ContentPath, SolutionRule]
-   val forwardSolutionRules = new HashMap[ContentPath, ForwardSolutionRule]
+   val typingRules = new RuleMap[TypingRule]
+   val inferenceRules = new RuleMap[InferenceRule]
+   val computationRules = new RuleMap[ComputationRule]
+   val universeRules = new RuleMap[UniverseRule]
+   val equalityRules = new RuleMap[EqualityRule]
+   val atomicEqualityRules = new RuleMap[AtomicEqualityRule]
+   val solutionRules = new RuleMap[SolutionRule]
+   val forwardSolutionRules = new RuleMap[ForwardSolutionRule]
    val introProvingRules = new utils.HashMapToSet[ContentPath, IntroProvingRule]
    val elimProvingRules = new utils.HashMapToSet[ContentPath, ElimProvingRule]
 

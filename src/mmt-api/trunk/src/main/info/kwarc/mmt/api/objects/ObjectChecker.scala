@@ -9,6 +9,17 @@ import frontend._
 import objects.Conversions._
 import scala.collection.mutable.{HashSet,HashMap}
 
+/* ideas
+ * inferType guarantees well-formedness (not done yet by LambdaTerm)
+ *   but what if there unknowns whose type cannot be inferred? Is that even possible?
+ * checkEquality with type assumes well-typing if
+ * checkEquality without type infers both types and checks their equality
+ * checkTyping is simply solveType, inferType and checkEquality; no typingRules (works at least if there are unknows)?
+ *   does that work for all type-formers?
+ * equality calls simplify only if no equality rule is found; then it includes computation, definition expansion
+ * limitedSimplify must include computation, definition expansion, but can stop on GlobalChange; but safety is usually needed
+ */
+
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
 class DelayedConstraint(val constraint: Judgement) {
   private val freeVars = constraint.freeVars
@@ -202,9 +213,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          }
        // the foundation-dependent cases
        case tm =>
-         limitedSimplify(tp) {t => t.head flatMap {h =>
-           ruleStore.typingRules.get(h)
-         }} match {
+         limitedSimplify(tp,ruleStore.typingRules) match {
            case (tpS, Some(rule)) =>
              rule(this)(tm, tpS)
            case (tpS, None) =>
@@ -281,7 +290,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
      }
      //foundation-dependent cases if necessary
      val res = resFoundInd orElse {
-         val (tmS, ruleOpt) = limitedSimplify(tm) {t => t.head flatMap {h => ruleStore.inferenceRules.get(h)}}
+         val (tmS, ruleOpt) = limitedSimplify(tm,ruleStore.inferenceRules)
          ruleOpt match {
            case Some(rule) => rule(this)(tmS)
            case None => None
@@ -295,7 +304,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    def checkUniverse(univ: Term)(implicit stack: Stack): Boolean = {
      log("universe: " + stack.context + " |- " + univ + " : universe")
      report.indent
-     val res = limitedSimplify(univ) {u => u.head flatMap {h => ruleStore.universeRules.get(h)}} match {
+     val res = limitedSimplify(univ, ruleStore.universeRules) match {
         case (uS, Some(rule)) => rule(this)(uS)
         case (uS, None) => delay(Universe(stack, uS))  
      }
@@ -338,7 +347,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
            itp.getOrElse(return false)
       }
       // try to simplify the type until an equality rule is applicable 
-      limitedSimplify(tp) {tp => tp.head flatMap {h => ruleStore.equalityRules.get(h)}} match {
+      limitedSimplify(tp, ruleStore.equalityRules) match {
          case (tpS, Some(rule)) => rule(this)(tm1S, tm2S, tpS)
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
@@ -405,7 +414,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       val results = unknowns.zipWithIndex map {
          case (vd @ VarDecl(x, Some(tp), None, _*), i) =>
             implicit val con : Context = unknowns.take(i)
-            limitedSimplify(tp) {t => t.head flatMap {h => ruleStore.forwardSolutionRules.get(h)}} match {
+            limitedSimplify(tp, ruleStore.forwardSolutionRules) match {
                case (tpS, Some(rule)) if rule.priority == priority => rule(this)(vd)
                case _ => false 
             }
@@ -414,11 +423,20 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       results.exists(_ == true)
    }
    
+   /** special case of the version below where we simplify until an applicable rule is found
+    *  @param tm the term to simplify
+    *  @param rm the RuleMap from which an applicable rule is needed
+    *  @param stack the context of tm
+    *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
+    */  
+   private def limitedSimplify[R <: Rule](tm: Term, rm: RuleMap[R])(implicit stack: Stack): (Term,Option[R]) =
+      limitedSimplify[R](tm)(t => t.head flatMap {h => rm.get(h)})
+   
    /** applies ComputationRule's to simplify a term until some condition is satisfied;
     *  A typical case is transformation into weak head normal form.
     *  @param tm the term to simplify (It may be simple already.)
     *  @param simple a term is considered simple if this function returns a non-None result
-    *  @param its context
+    *  @param stack the context of tm
     *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
     */  
    private def limitedSimplify[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack): (Term,Option[A]) = {
