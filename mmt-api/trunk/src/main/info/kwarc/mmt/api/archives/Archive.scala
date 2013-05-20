@@ -48,13 +48,16 @@ abstract class WritableArchive extends ROArchive {
     val id = properties("id")
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
    
-    val sourceDim = properties("source")
-    val compiledDim = properties("compiled")
+    val sourceDim = properties.get("source").getOrElse("source")
+    val compiledDim = properties.get("compiled").getOrElse("compiled")
     val sourceDir = root / sourceDim
     val narrationDir = root / "narration"
     val contentDir = root / "content"
     val relDir = root / "relational"
     val flatDir = root / "flat"
+    
+    val timestamps = new TimestampManager(this, root / "META-INF" / "timestamps" )
+    val errors     = new ErrorManager(this)
     
     def includeDir(n: String) : Boolean = n != ".svn"
 
@@ -125,11 +128,10 @@ abstract class WritableArchive extends ROArchive {
   * 
   * Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
   */
-class Archive(val root: File, val properties: Map[String,String], val compsteps: Option[List[CompilationStep]], val report: Report)
-    extends WritableArchive with CompilableArchive with ValidatedArchive with IndexedArchive with ScalaArchive with ZipArchive {
+class Archive(val root: File, val properties: Map[String,String], val report: Report)
+    extends WritableArchive with ValidatedArchive with ScalaArchive with ZipArchive {
 
    val rootString = root.toString
-   
    def clean(in: List[String] = Nil, dim: String) {
        traverse(dim, in, _ => true) {case Current(inFile, inPath) =>
          deleteFile(inFile)
@@ -236,6 +238,29 @@ class Archive(val root: File, val properties: Map[String,String], val compsteps:
       }
     }
 
+    def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
+       if (relDir.exists) {
+          traverse("relational", in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
+             ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
+          }
+          //TODO this should only add implicits for the dependencies it read
+          controller.depstore.getDeps foreach {
+             case Relation(Includes, to: MPath, from: MPath) => controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
+             case Relation(HasMeta, thy: MPath, meta: MPath) => controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
+             case _ => 
+          }
+       }
+    }
+/*
+    def readNotation(in: List[String] = Nil, controller: Controller) {
+       if ((root / "notation").exists) {
+          traverse("notation", in, Archive.extensionIs("not")) {case Current(inFile, inPath) =>
+             val thy = Archive.ContentPathToMMTPath(inPath)
+             File.ReadLineWise(inFile) {line => controller.notstore.add(presentation.Notation.parseString(line, thy))}
+          }
+       }
+    }
+*/
     def produceMWS(in : List[String] = Nil, dim: String) {
         val sourceDim = dim match {
           case "mws-flat" => "flat"
@@ -325,19 +350,3 @@ object Archive {
     /** returns a functions that filters by file name extension */
     def extensionIs(e: String) : String => Boolean = _.endsWith("." + e)  
 }
-
-/*
-object ArchiveTest {
-    def main(args: Array[String]) {
-    val controller = new Controller(NullChecker, new ConsoleReport)
-    controller.handle(ExecFile(File("test.mmt")))
-    val archive = controller.backend.getArchive("latin").get
-    //twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
-    //val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
-    //println(errors.mkString("\n"))
-    archive.sourceToNarr()
-    archive.narrToCont()
-    archive.toMar()
-    controller.cleanup
-    }
-}*/

@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import backend._
 import presentation._
 import libraries._
+import archives.BuildTarget
 import parser._
 import utils._
 import web._
@@ -11,7 +12,7 @@ import web._
 trait Extension extends Logger {
    protected var controller : Controller = null
    protected var report : Report = null
-   val logPrefix = getClass.toString
+   def logPrefix = getClass.toString
    /** initialization (empty by default) */
    def init(controller: Controller, args: List[String]) {
       this.controller = controller
@@ -31,13 +32,13 @@ trait Extension extends Logger {
  */
 class ExtensionManager(controller: Controller) extends Logger {
    
-   private var foundations : List[Foundation] = Nil
-   private var compilers : List[Compiler] = List(new MMTCompiler(controller))
-   private var querytransformers : List[QueryTransformer] = Nil
-   private var roleHandlers: List[RoleHandler] = Nil
-   private var presenters : List[Presenter] = List(TextPresenter,OMDocPresenter,controller.presenter)
-   private var serverPlugins : List[ServerPlugin] = Nil
-   private var loadedPlugins : List[Plugin] = Nil
+   private[frontend] var foundations   : List[Foundation]   = Nil
+   private[frontend] var targets       : List[BuildTarget]  = Nil
+   private[frontend] var querytransformers : List[QueryTransformer] = Nil
+   private[frontend] var roleHandlers  : List[RoleHandler]  = Nil
+   private[frontend] var presenters    : List[Presenter]    = Nil
+   private[frontend] var serverPlugins : List[ServerPlugin] = Nil
+   private[frontend] var loadedPlugins : List[Plugin]       = Nil
    
            var lexerExtensions : List[LexerExtension] =
               List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), new NumberLiteralHandler(true))
@@ -48,6 +49,16 @@ class ExtensionManager(controller: Controller) extends Logger {
 
    val ruleStore = new objects.RuleStore
    val pragmaticStore = new pragmatics.PragmaticStore
+   
+   def addDefaultExtensions {
+      targets    ::= new MMTCompiler
+      targets    ::= new archives.Index
+      presenters ::= TextPresenter
+      presenters ::= OMDocPresenter
+      presenters ::= controller.presenter
+      // initialize all extensions
+      getAll.foreach(_.init(controller, Nil))
+   }
 
    /** adds an Importer and initializes it */
    def addExtension(cls: String, args: List[String]) {
@@ -74,9 +85,9 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as role handler")
           roleHandlers ::= ext.asInstanceOf[RoleHandler]
        }
-       if (ext.isInstanceOf[Compiler]) {
+       if (ext.isInstanceOf[BuildTarget]) {
           log("  ... as compiler")
-          compilers ::= ext.asInstanceOf[Compiler]
+          targets ::= ext.asInstanceOf[BuildTarget]
        }
        if (ext.isInstanceOf[QueryTransformer]) {
           log("  ... as query transformer")
@@ -93,7 +104,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    }
 
    /** retrieves an applicable Compiler */
-   def getCompiler(src: String) : Option[Compiler] = compilers.find(_.isApplicable(src))
+   def getTarget(src: String) : Option[BuildTarget] = targets.find(_.isApplicable(src))
    /** retrieves an applicable Compiler */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
    /** retrieves an applicable Compiler */
@@ -110,13 +121,13 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getMWS : Option[URI] = mws
    
    /** retrieves all registered extensions */
-   private def getAll = foundations:::compilers:::querytransformers:::roleHandlers:::presenters:::serverPlugins:::loadedPlugins
+   private def getAll = foundations:::targets:::querytransformers:::roleHandlers:::presenters:::serverPlugins:::loadedPlugins
    
    def stringDescription = {
       def mkL(label: String, es: List[Extension]) =
          if (es.isEmpty) "" else label + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
       mkL("foundations", foundations) +
-      mkL("compilers", compilers) +
+      mkL("build targets", targets) +
       mkL("querytransformers", querytransformers) +
       mkL("roleHandlers", roleHandlers) +
       mkL("presenters", presenters) +
@@ -127,6 +138,12 @@ class ExtensionManager(controller: Controller) extends Logger {
    
    def cleanup {
       getAll.foreach(_.destroy)
-      compilers = Nil
-   } 
+      foundations = Nil
+      targets = Nil
+      querytransformers = Nil
+      roleHandlers = Nil
+      presenters = Nil
+      serverPlugins = Nil
+      loadedPlugins = Nil
+   }
 }

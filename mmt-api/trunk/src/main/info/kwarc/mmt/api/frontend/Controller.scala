@@ -99,7 +99,12 @@ class Controller extends ROController with Logger {
    /** moc.propagator - handling change propagation */
    val propagator = new moc.OccursInImpactPropagator(memory)
    
-        
+   private def init {
+      extman.addDefaultExtensions
+   }
+   init
+   
+   
    //not sure if this really belong here, map from jobname to some state info
    val states = new collection.mutable.HashMap[String, ParserState]
          
@@ -336,19 +341,15 @@ class Controller extends ROController with Logger {
 	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
-	         backend.openArchive(f)
+	         val arch = backend.openArchive(f)
+	         extman.targets.foreach {t => t.register(arch)}
          case AddSVNArchive(url, rev) =>
            backend.openArchive(url, rev)
-          case ArchiveBuild(id, dim, in, params) =>
+          case ArchiveBuild(id, key, mod, in, args) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
-            dim match {
-               case "compile" => arch.produceCompiled(in)
-               case "compile*" => arch.updateCompiled(in)
-               case "content" => arch.produceNarrCont(in)
-               case "content*" => arch.updateNarrCont(in)
+            key match {
                case "check" => arch.check(in, this)
                case "validate" => arch.validate(in, this)
-               case "delete" => arch.deleteNarrCont(in)
                case "clean" => List("compiled", "narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
                case "enrich" =>
@@ -356,7 +357,7 @@ class Controller extends ROController with Logger {
                  arch.produceEnriched(in,me, this)
                case "source-terms" | "source-structure" => arch match {
                   case arch: archives.MMTArchive =>
-                     arch.readSource(in, this, dim.endsWith("-terms"))
+                     arch.readSource(in, this, key.endsWith("-terms"))
                      log("done reading source")
                   case _ => log("archive is not an MMT archive")
                }
@@ -364,9 +365,11 @@ class Controller extends ROController with Logger {
                   arch.readRelational(in, this, "rel")
                   arch.readRelational(in, this, "occ")
                   log("done reading relational index")
+               /*
                case "notation" => 
                   arch.readNotation(in, this)
                   log("done reading notation index")
+                */
                case "mws"          => arch.produceMWS(in, "content")
                case "mws-flat"     => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
@@ -382,9 +385,18 @@ class Controller extends ROController with Logger {
                      logError("exactly 1 parameter required for test command, found " + in.mkString(""))
                   else
                      arch.loadJava(this, in(0), false, true)
-               case "present"      => params.foreach(p => arch.producePres(Nil,p, this))
-               case "close"        => backend.closeArchive(id)
-               case d => log("ignoring unknown dimension " + d)
+               case "present"      => args.foreach(p => arch.producePres(Nil,p, this))
+               case "close"        =>
+                  val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+                  extman.targets.foreach {t => t.register(arch)}
+                  backend.closeArchive(id)
+               case d =>
+                  extman.getTarget(d) match {
+                     case Some(buildTarget) =>
+                        buildTarget(mod, arch, in, args)
+                     case None =>
+                        logError("unknown dimension " + d + ", ignored")
+                  }
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 

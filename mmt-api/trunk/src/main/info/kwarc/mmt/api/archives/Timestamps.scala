@@ -32,3 +32,12 @@ class Timestamps(srcFolder: File, stampFolder: File) {
       else if (get(path) < (srcFolder / path).lastModified()) Modified
       else Unmodified
 }
+
+class TimestampManager(archive: WritableArchive, mainStampFolder: File) {
+   private val timestamps = new scala.collection.mutable.ListMap[String,Timestamps]
+   def apply(key: String) = timestamps(key)
+   def add(key: String, inDim: String) {
+      if (! timestamps.isDefinedAt(key))
+         timestamps(key) = new Timestamps(archive.root / inDim, mainStampFolder / key)
+   }
+}
