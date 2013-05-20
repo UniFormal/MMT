@@ -261,11 +261,6 @@ class Compiler(log: LogicSyntax) extends Program {
    private def upc(string : String) : String = string.head.toUpper + string.substring(1)
    
    private def getCons(ex : EXP) : EXP = {
-     def pred(x : EXP) : Boolean = ex match {
-       case x : CONS => true
-       case _ => false
-     }
-//     log.get.filter(  )
      ID("")
    }
 }

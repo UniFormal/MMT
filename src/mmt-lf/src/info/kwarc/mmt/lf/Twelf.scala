@@ -1,7 +1,7 @@
 package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.backend._
+import archives._
+import backend._
 import utils.File
 import utils.FileConversion._
 
@@ -27,9 +27,9 @@ object Twelf {
 /** Utility for starting the catalog and calling the Twelf compiler
   */
 class Twelf extends Compiler {
-   def isApplicable(src: String) = src == "twelf"
+   val key = "twelf-omdoc"
    
-   override def includeFile(n: String) : Boolean = n.endsWith(".elf")
+   def includeFile(n: String) : Boolean = n.endsWith(".elf")
    
    var path : File = null
    /** Twelf setting "set unsafe ..." */
@@ -38,7 +38,6 @@ class Twelf extends Compiler {
    var chatter : Int = 5
    var catalogOpt : Option[Catalog] = None
    var port = 8083
-   override val logPrefix = "twelf"
    
    /** 
     * creates and intializes a Catalog
@@ -52,24 +51,22 @@ class Twelf extends Compiler {
       cat.init    //  throws PortUnavailable
       catalogOpt = Some(cat)
    }
-   override def register(arch: Archive, dim: String) {
-      addCatalogLocation(arch.root / dim)
+   override def register(arch: Archive) {
+      val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
+      val stringLoc = (arch.root / dim).getPath
+      catalogOpt.foreach(_.addStringLocation(stringLoc))
+      super.register(arch)
    }
    override def destroy {
       catalogOpt.foreach(_.destroy)
    }
    
-   /** add a location to the catalog */
-   def addCatalogLocation(f: File) {
-       catalogOpt.foreach(_.addStringLocation(f.getPath))
-   }
-
    /** 
      * Compile a Twelf file to OMDoc
      * @param in the input Twelf file 
      * @param out the file in which to put the generated OMDoc
      */
-   def compile(in: File, dpath: Option[DPath], out: File) : List[SourceError] = {
+   def buildOne(in: File, dpath: Option[DPath], out: File) : List[SourceError] = {
       File(out.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
