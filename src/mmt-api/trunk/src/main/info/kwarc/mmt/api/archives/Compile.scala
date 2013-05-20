@@ -5,8 +5,9 @@ import backend._
 import utils._
 import utils.FileConversion._
 
+// obsolete; Compiler now inherits from BuildTarget
+/*
 trait CompilableArchive extends WritableArchive {
-    val compsteps: Option[List[CompilationStep]]
     // stores for each file the time of the last call of produceCompiled
     private val compiledTimestamps = new Timestamps(root / sourceDim, root / "META-INF" / "timestamps" / sourceDim)
     /** apply all compilation steps, e.g., from "source" into "compiled" */
@@ -58,3 +59,4 @@ trait CompilableArchive extends WritableArchive {
        }
     }
 }
+*/

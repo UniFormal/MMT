@@ -276,6 +276,5 @@ trait NotationBasedPresenter extends Presenter {
  * this class must be initialized after instantiation to set the controller
  */
 class StructureAndObjectPresenter(controller: frontend.Controller) extends StructurePresenter(true) with NotationBasedPresenter {
-      init(controller, Nil)
       def isApplicable(format: String) = format == "text/notations"
 }

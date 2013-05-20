@@ -86,6 +86,7 @@ span.crumb {
    top: 110px;
    left: 0;
    width: 250px;
+   resize: horizontal;
 }
 
 #pathtree {

@@ -36,20 +36,31 @@ object Action extends RegexParsers {
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
      private def mathpathTNT = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
-   private def archive = archopen | archdim | archmar | archpres | svnarchopen
+   private def archive = archopen | archdim | archmar | archpres | svnarchopen | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
+     private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
+       case id ~ keymod ~ in ~ args =>
+            val segs = MyList.fromString(in.getOrElse(""), "/")
+            val (key,mod) = if (keymod.startsWith("-"))
+               (keymod.substring(1), archives.Clean)
+            else if (keymod.endsWith("*"))
+               (keymod.substring(0,keymod.length-1), archives.Update)
+            else
+               (keymod, archives.Build)
+            ArchiveBuild(id, key, mod, segs, args)
+     }
      private def archdim = "archive" ~> str ~ dimension ~ (str ?) ^^ {
        case id ~ dim ~ s =>
             val segs = MyList.fromString(s.getOrElse(""), "/")
-            ArchiveBuild(id, dim, segs)
+            ArchiveBuild(id, dim, archives.Build, segs)
      }
      private def archpres = "archive" ~> str ~ ("present" ~> str) ~ (str ?) ^^ { 
         case id ~ p ~ s =>
            val segs = MyList.fromString(s.getOrElse(""), "/")
-           ArchiveBuild(id, "present", segs, List(p))
+           ArchiveBuild(id, "present", archives.Build, segs, List(p))
         }
-     private def dimension = "compile*" | "compile" | "content*" | "content" | "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
+     private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "register" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
    private def extension = "extension" ~> str ~ (str *) ^^ {case c ~ args => AddExtension(c, args)}
@@ -225,10 +236,12 @@ case class AddArchive(folder : java.io.File) extends Action {override def toStri
 case class AddSVNArchive(url : String,  rev : Int) extends Action {override def toString = "SVN archive add " + url + "@" + rev}
 
 /** builds a dimension in a previously opened archive */
-case class ArchiveBuild(id: String, dim: String, in : List[String], params: List[String] = Nil) extends Action {override def toString = "archive " + id + " " + dim + in.mkString(" ","/","")}
+case class ArchiveBuild(id: String, dim: String, modifier: archives.BuildTargetModifier, in : List[String], params: List[String] = Nil) extends Action {
+   override def toString = "archive " + id + " " + modifier.toString(dim) + " " + in.mkString(" ","/","")
+}
 
 /** builds a dimension in a previously opened archive */
-case class ArchiveMar(id: String, file: File) extends Action {override def toString = "archive " + id + " mar " + file}
+case class ArchiveMar(id: String, file: File) extends Action {override def toString = s"archive $id mar $file"}
 
 /** add MathWebSearch as a web service */
 case class AddMWS(uri: URI) extends Action {override def toString = "mws " + uri}

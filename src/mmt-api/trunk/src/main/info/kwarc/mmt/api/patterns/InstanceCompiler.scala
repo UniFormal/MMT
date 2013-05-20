@@ -1,4 +1,6 @@
- package info.kwarc.mmt.api.patterns
+// outdated TPTP pattern-checker
+/*
+package info.kwarc.mmt.api.patterns
 
  import info.kwarc.mmt.api._
 
@@ -132,7 +134,7 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 } 
 
  }
- 
+
  // controller with patterns in it
  class PatternController {
 	 
@@ -155,6 +157,7 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 	 controller.add(theorem) 
  }
  
+
  // compilation test
  object CompTest {
 	 
@@ -175,3 +178,4 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 	 }
 	 
 }
+*/
