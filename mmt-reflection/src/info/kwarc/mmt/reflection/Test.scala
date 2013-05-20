@@ -34,37 +34,37 @@ object Test {
       controller.add(NatR)
 
       //generic type of natural numbers in the theory Nat
-      val nat = new Constant(OMID(Nat.path),
+      val nat = Constant(OMID(Nat.path),
         LocalName("nat"), None,
           Some(LF.ktype), None, None, None)
       controller.add(nat)
 
       //zero constructor in the theory Nat
-      val zero = new Constant(OMID(Nat.path),
+      val zero = Constant(OMID(Nat.path),
         LocalName("zero"), None,
           Some(OMID(nat.path)), None, None, None)
       controller.add(zero)
 
       //successor constructor in the theory Nat
-      val succ = new Constant(OMID(Nat.path),
+      val succ = Constant(OMID(Nat.path),
         LocalName("succ"), None,
           Some(Arrow(OMID(nat.path),OMID(nat.path))), None, None, None)
       controller.add(succ)
 
       //reflected type of natural numbers in the theory NatR
-      val nat_refl = new Constant(OMID(NatR.path),
+      val nat_refl = Constant(OMID(NatR.path),
         LocalName("N"), None,
           Some(LF.ktype), Some(ReflType(OMMOD(NatR.path), OMID(nat.path))), None, None)
       controller.add(nat_refl)
 
       //zero constructor reflected from the theory Nat down to the theory NatR
-      val zero_refl = new Constant(OMID(NatR.path),
+      val zero_refl = Constant(OMID(NatR.path),
         LocalName("0"), None,
           Some(OMID(nat_refl.path)), Some(TermRefl(OMMOD(NatR.path), OMID(zero.path))), None, None)
       controller.add(zero_refl)
 
       //successor constructor reflected from the theory Nat down to the theory NatR
-      val succ_refl = new Constant(OMID(NatR.path),
+      val succ_refl = Constant(OMID(NatR.path),
         LocalName("s"), None,
           Some(Arrow(OMID(nat_refl.path),OMID(nat_refl.path))), Some(TermRefl(OMMOD(NatR.path), OMID(succ.path))), None, None)
       controller.add(succ_refl)
@@ -92,7 +92,7 @@ object Test {
               Apply(OMV("f"),OMV("n"))))))
       val sigma = Record(List(sigma_n,sigma_z, sigma_s))
 
-      val add = new Constant(OMID(NatR.path),
+      val add = Constant(OMID(NatR.path),
         LocalName("add"), None,
         Some(Arrow(OMID(nat_refl.path),
           Arrow(OMID(nat_refl.path),OMID(nat_refl.path)))),

@@ -29,14 +29,13 @@ import objects.Conversions._
 case class ReflectionError(msg : String) extends java.lang.Throwable(msg)
 
 object Reflection {
-   val base = new DPath(utils.URI("http", "cds.omdoc.org") / "foundations" / "reflection" / "termReflection.omdoc")
-   val theory = base ? "TermReflection"
+   val base = new DPath(utils.URI("http", "cds.omdoc.org") / "urtheories" / "reflection")
+   val theory = base ? "Terms"
    def constant(name : String) : GlobalName = theory ? name
-   val intro = constant("introduction")
-   val elim = constant("elimination")
-   val rtype = constant("refltype")
-   val eval = constant("evaluation")
-   val ttype = constant("type")
+   val rtype = constant("formation")
+   val intro = constant("intro")
+   val elim = constant("elim")
+   val eval = constant("eval")
 }
 
 /* apply methods and extractor methods for Scala
