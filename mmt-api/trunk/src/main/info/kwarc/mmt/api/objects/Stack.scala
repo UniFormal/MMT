@@ -24,7 +24,8 @@ case class Stack(frames: List[Frame]) {
 object Stack {
    def apply(f: Frame) : Stack = Stack(List(f))
    def apply(t: MPath) : Stack = empty(OMMOD(t))
-   def apply(t: MPath, c: Context) : Stack = Stack(Frame(OMMOD(t), c))
-   def empty(t: Term) : Stack = Stack(Frame(t, Context()))
+   def apply(t: Term, c: Context) : Stack = Stack(Frame(t, c))
+   def apply(t: MPath, c: Context) : Stack = Stack(OMMOD(t), c)
+   def empty(t: Term) : Stack = Stack(t, Context())
 }
 
