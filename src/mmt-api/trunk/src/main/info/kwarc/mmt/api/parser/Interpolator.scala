@@ -34,15 +34,16 @@ class MMTInterpolator(controller: frontend.Controller) {
      controller.handleLine(command)
    }
    
-   private def parse(sc: StringContext, ts: List[Term], top: Option[TextNotation]) = {
+   private def parse(sc: StringContext, ts: List[Term], top: Option[TextNotation], check: Boolean) = {
          val strings = sc.parts.iterator
          val args = ts.iterator
          val buf = new StringBuffer(strings.next)
-         var sub = Substitution()
+         var cont = Context()
          var i = 0
          while(strings.hasNext) {
             val name = LocalName("$_" + i.toString)
-            sub = sub ++ Sub(name, args.next)
+            val arg = args.next
+            cont = cont ++ VarDecl(name, None, Some(arg))
             buf.append(name)
             buf.append(strings.next)
             i += 1
@@ -57,19 +58,32 @@ class MMTInterpolator(controller: frontend.Controller) {
               case GlobalName(t,_) => t
            }
         }
-        val pu = ParsingUnit(SourceRef.anonymous(str), theory, sub.asContext, str, top) 
+        val pu = ParsingUnit(SourceRef.anonymous(str), theory, cont, str, top) 
         val t = controller.termParser(pu)
-        t ^ sub
+        if (check) {
+	        val stack = Stack(theory, cont)
+	        val (tR, tpR) = Solver.check(controller, stack, t).getOrElse {
+	           throw InvalidObject(t, "term was parsed but did not type-check")
+	        }
+	        val tRS = tR ^ cont.toPartialSubstitution
+	        tRS
+        } else
+          t
    }
    
    implicit class MMTContext(sc: StringContext) {
-      def mmt(ts: Term*): Term = parse(sc, ts.toList, None)
+      def mmt(ts: Term*): Term = parse(sc, ts.toList, None, false)
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
-	      controller.uom.simplify(t)
+	     controller.uom.simplify(t)
+      }
+      def r(ts: Term*): Term = parse(sc, ts.toList, None, true)
+      def rs(ts: Term*): Term = {
+         val t = r(ts : _*)
+	     controller.uom.simplify(t)
       }
       def cont(ts: Term*) : Context = {
-         val t = parse(sc, ts.toList, Some(TextNotation.contextNotation))
+         val t = parse(sc, ts.toList, Some(TextNotation.contextNotation), false)
          t match {
             case OMBINDC(_,con, Nil) => con
             case _ => throw ParseError("not a context")

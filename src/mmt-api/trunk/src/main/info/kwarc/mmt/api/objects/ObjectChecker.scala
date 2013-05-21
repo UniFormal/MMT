@@ -494,3 +494,18 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
 //TODO
 //equality judgment should be solved by simplification if no other rule is available
 //equality freeness rule should provide type if known to avoid re-inference
+
+object Solver {
+  /** reconstructs a single term and returns the reconstructed term and its type */
+  def check(controller: Controller, stack: Stack, tm: Term): Option[(Term,Term)] = {
+      val (unknowns,tmU) = parser.AbstractObjectParser.splitOffUnknowns(tm)
+      val etp = LocalName("expected_type")
+      val oc = new Solver(controller, stack.theory, unknowns ++ VarDecl(etp, None, None))
+      val j = Typing(stack, tmU, OMV(etp))
+      oc(j)
+      oc.getSolution map {sub =>
+          val tmR = tmU ^ sub
+          (tmR, sub("expected_type").get) // must be defined if there is a solution
+      }
+  }
+}
