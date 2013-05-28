@@ -81,7 +81,7 @@ object Action extends RegexParsers {
    private def clear = "clear" ^^ {case _ => Clear}
    private def exit = "exit" ^^ {case _ => Exit}
 
-   private def getaction = diff | tofile | towindow | respond | print | defaultget
+   private def getaction = diff | tofile | towindow | respond | print | defaultget 
    private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
    private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
    private def towindow = presentation ~ ("window" ~> str) ^^ {case p ~ w => GetAction(ToWindow(p,w))}
