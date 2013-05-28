@@ -5,23 +5,26 @@ log console
 //log+ presenter
 //log+ backend
 //log+ controller
-//log+ extman
+log+ extman
 //log+ reader
-log+ archive    
+//log+ archive    
 //log+ checker
 //log+ object-checker
-//log+ query
+log+ query
 //log+ catalog
-//log+ server
+log+ server
 //log+ uom
 //log+ abox
 //log+ structure-parser
 //log+ parser
 //log+ scanner
 //log+ lf
+log+ planetary
 
 extension info.kwarc.mmt.lf.Plugin
 extension info.kwarc.mmt.lf.LFF
+extension info.kwarc.mmt.planetary.PlanetaryPlugin
+
 //extension info.kwarc.mmt.dedukti.DeduktiPresenter
 
 archive add /home/mihnea/kwarc/oaff/urtheories
@@ -34,8 +37,6 @@ archive add /home/mihnea/kwarc/oaff/test
 archive test compile
 archive test content
 archive test validate
-
-
 
 mathpath fs http://cds.omdoc.org/styles ../../../styles
 base http://docs.omdoc.org/mmt
