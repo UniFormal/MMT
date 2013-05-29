@@ -26,8 +26,6 @@ extension info.kwarc.mmt.lf.LFF
 extension info.kwarc.mmt.planetary.PlanetaryPlugin
 
 archive add ../../oaff/urtheories
-//archive urtheories compile
-//archive urtheories content
 
 archive add ../../oaff/latin
 
