@@ -10,6 +10,6 @@
 	<classpathentry kind="lib" path="mmt/mmt-owl.jar"/>
 	<classpathentry kind="lib" path="mmt/mmt-tptp.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/mihnea/kwarc/mmt/deploy/mmt/planetary-mmt.jar"/>
+	<classpathentry kind="lib" path="mmt/planetary-mmt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
