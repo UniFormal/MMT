@@ -60,15 +60,15 @@ class MMTInterpolator(controller: frontend.Controller) {
         }
         val pu = ParsingUnit(SourceRef.anonymous(str), theory, cont, str, top) 
         val t = controller.termParser(pu)
+        val tI = t ^ cont.toPartialSubstitution
         if (check) {
 	        val stack = Stack(theory, cont)
-	        val (tR, tpR) = Solver.check(controller, stack, t).getOrElse {
+	        val (tR, tpR) = Solver.check(controller, stack, tI).getOrElse {
 	           throw InvalidObject(t, "term was parsed but did not type-check")
 	        }
-	        val tRS = tR ^ cont.toPartialSubstitution
-	        tRS
+	        tR
         } else
-          t
+          tI
    }
    
    implicit class MMTContext(sc: StringContext) {
