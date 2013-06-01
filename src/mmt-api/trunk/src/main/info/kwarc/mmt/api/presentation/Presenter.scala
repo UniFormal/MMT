@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import objects._
+import objects.Conversions._
 
 /**
  * A Presenter transforms MMT content into presentation
@@ -19,6 +20,34 @@ abstract class Presenter extends frontend.Extension {
       apply(o, sb)
       sb.get
    }
+   /** transforms into pragmatic form and tries to retrieve a notation
+    *  
+    *  if the term but not the pragmatic form has a notation, the strict form is retained 
+    */
+   protected def getNotation(t: Term) : (Term, List[Position], Option[ComplexNotation]) = {
+      //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
+      def tryTerm(t: Term): Option[ComplexNotation] = t match {
+         case ComplexTerm(p, args, vars, scs) =>
+            val numArgs = args.length
+            val numVars = vars.length
+            val numScs  = scs.length
+            controller.get(p) match {
+               case c: symbols.Constant => c.not
+               case p: patterns.Pattern => p.not
+               case _ => None
+            }
+         case _ => None
+      }
+      val (tP, posP) = controller.pragmatic.pragmaticHeadWithPositions(t)
+      tryTerm(tP) match {
+         case Some(n) => (tP, posP, Some(n))
+         case None    => tryTerm(t) match {
+            case Some(n) => (t, Position.positions(t), Some(n))
+            case None => (tP, posP, None)
+         }
+      }
+   } 
+   
 }
 
 /**

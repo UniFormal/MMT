@@ -11,26 +11,22 @@ var interactiveViewing = {
 	},
 	
 
-	contextMenuEntries: function(target, JOBADInstance) {
-		mmt.focus = target;
-		mmt.focusIsMath = ($(mmt.focus).closest('math').length !== 0);
+	contextMenuEntries: function(targetArray, JOBADInstance) {
+	   target = targetArray[0]  //for some reason jobad passes [target] instead of target
+		mmt.setCurrentPosition(target);
 		var res = this.visibMenu();
-
-		if (mmt.focusIsMath) {
-			mmt.setCurrentPosition(target);
-			mmt.focus = mmt.getSelectedParent(target)
+      if (mmt.focusIsMath) {
 			var me = this;
-			res["infer type"] = function() {me.inferType()};
-	  		return res;
-			if (target.hasAttribute("jobad:href")) {
-				mmt.currentURI = target.getAttribute('jobad:href');
-				res["show type"] =  this.showComp('type');
-				res["show definition"] =  this.showComp('definition');
-				res["(un)mark occurrences"] =  this.showOccurs();
-				res["open in new window"] = mmt.openCurrent();
-				res["show URI"] =  alert(currentURI);
-				res["get OMDoc"] = mmt.openCurrentOMDoc();
+			res["infer type"] = me.inferType;
+			if (mmt.currentURI !== null) {
+				res["show type"] = this.showComp('type');
+				res["show definition"] = this.showComp('definition');
+				res["(un)mark occurrences"] = this.showOccurs;
+				res["show URI"] = function(){alert(mmt.currentURI)};
+				res["open in new window"] = mmt.openCurrent;
+				//res["get OMDoc"] = mmt.openCurrentOMDoc();
 			}
+			return res;
 		} else if ($(target).hasClass('folder') || mmt.focusIsMath) {
 			return res;
 		} else {
@@ -38,18 +34,22 @@ var interactiveViewing = {
 		}
 	},
 	
-	/* Second Menu Dependencies */
-
-	/** highlights all occurrences of the current URI */
+	/* functions for context menu items */
+	
+	/* highlights all occurrences of the current URI */
 	showOccurs : function (){
-		var occs = $('mo').filterMAttr('jobad:href', currentURI).toggleMClass('math-occurrence')
+		$('mo').filter(function(index){
+		    return this.getAttribute('jobad:href') == mmt.currentURI;
+	   }).toggleMClass('math-occurrence');
 	},
 	
-
-	/** sends type inference query to server for the currentComponent and currentPosition */
+	/* sends type inference query to server for the currentComponent and currentPosition */
 	inferType : function (){
-		var query = mmt.Qpresent(mmt.QtypeLF(mmt.Qsubobject(mmt.Qcomponent(mmt.Qindividual(mmt.currentElement), mmt.currentComponent), mmt.currentPosition)));
-		mmt.execQuery(query,
+		var query = qmt.present(qmt.type(
+		    qmt.subobject(qmt.component(qmt.individual(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
+		    uris.lf
+		));
+		qmt.exec(query,
 				  function(result) {
 					  try {
 						  var pres = result.firstChild.firstChild.firstChild;
@@ -61,17 +61,19 @@ var interactiveViewing = {
 				 );
 	},
 	
-	/** shows a component of the current MMT URI in a dialog */
-	showComp : function (comp) {
-		var query = mmt.Qpresent(mmt.Qcomponent(mmt.Qindividual(mmt.currentURI), comp));
-		execQuery(query,
-				  function(result){mmt.setLatinDialog(result.firstChild.firstChild.firstChild, comp);}
-				 );
+	/* shows a component of the current MMT URI in a dialog */
+	showComp : function(comp) {
+	   return function(){
+		   var query = qmt.present(qmt.component(qmt.individual(mmt.currentURI), comp));
+		   qmt.exec(query,
+			   	     function(result){mmt.setLatinDialog(result.firstChild.firstChild.firstChild, mmt.currentURI);}
+				      );
+		}
 	},
 	
 	
 	/* Helper Functions  */
-	/** These seem innacurate now looking at the mathml. e.g. brackets are not mo but mfenced*/
+	/* These seem innacurate now looking at the mathml. e.g. brackets are not mo but mfenced*/
 	setVisib : function(prop, val){
 		var root = mmt.focusIsMath ? mmt.getSelectedParent(mmt.focus) : mmt.focus.parentNode;
 		console.log(root);

@@ -39,13 +39,13 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
     * @return the applicable notation, see https://svn.kwarc.info/repos/kwarc/rabe/Scala/doc/mmt.pdf
     * @throws PresentationError if notation found
     */
-   def get(path : MPath, key : NotationKey) : SimpleNotation = {
+   def get(path : MPath, key : NotationKey) : StyleNotation = {
       log("looking up notation for " + key)
       report.indent
       val nset = try {sets(path)}
                  catch {case _ : Throwable => throw frontend.NotFound(path)}
       //look up key in all visible sets, return first found notation
-      def getDeep(key : NotationKey) : Option[SimpleNotation] = {
+      def getDeep(key : NotationKey) : Option[StyleNotation] = {
          //a list containing all imported sets in depth-first order
          //value is cached in visible
          log("looking in styles for key " + key)
@@ -80,7 +80,7 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
               case (Some(hn), Some(ln)) =>
                  log("merging notations")
                  // the default notation may force being wrapped around lowNot
-                 if (hn.wrap) SimpleNotation(ln.nset, ln.key, hn.presentation.fill(ln.presentation), false)
+                 if (hn.wrap) StyleNotation(ln.nset, ln.key, hn.presentation.fill(ln.presentation), false)
                  else ln
               case (None, None) =>
                  throw GetError("no notation found for " + key + " in style " + path)
@@ -102,7 +102,7 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
             imports += (e.from, e.to)
             mem.ontology += ontology.Includes(e.to, e.from)
             visible = scala.collection.mutable.HashMap.empty
-         case e : SimpleNotation =>
+         case e : StyleNotation =>
             if (sets.isDefinedAt(e.nset))
                sets(e.nset).add(e)
             else

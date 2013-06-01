@@ -84,7 +84,7 @@ trait MMTObject {
    def toNodeID(pos : Position) =
       if (args.isEmpty) OMID(path).toNode
       else
-      <om:OMA>{components.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
+      <om:OMA>{components.zipWithIndex.map({case (m,i) => m.toNodeID(pos/i)})}
       </om:OMA> % pos.toIDAttr
    def toCML = 
      if (args.isEmpty) <m:csymbol>{path.toPath}</m:csymbol>
@@ -158,7 +158,7 @@ case class OMID(path: ContentPath) extends Term {
    def toNodeID(pos : Position) = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}/> % pos.toIDAttr
       case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.toPath}/> % pos.toIDAttr
-      case thy % name => <om:OMS name={name.toPath}>{thy.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
+      case thy % name => <om:OMS name={name.toPath}>{thy.toNodeID(pos / 0)}</om:OMS> % pos.toIDAttr
    }
    def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
 }
@@ -183,10 +183,10 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
    def components = binder :: context.toList ::: scopes
    def role = Role_binding
    def toNodeID(pos : Position) = 
-      <om:OMBIND>{binder.toNodeID(pos + 0)}
+      <om:OMBIND>{binder.toNodeID(pos / 0)}
                  {context.toNodeID(pos)}
                  {scopes.zipWithIndex.map {
-                    case (s,i) => s.toNodeID(pos + (numVars + i + 1))
+                    case (s,i) => s.toNodeID(pos / (numVars + i + 1))
                  }}
       </om:OMBIND> % pos.toIDAttr
    override def toString = "(" + binder + " [" + context + "] " + scopes.map(_.toString).mkString(" ") + ")"  
@@ -233,8 +233,8 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def components = fun :: args
    override def toString = (fun :: args).map(_.toString).mkString("(", " ", ")")
    def toNodeID(pos : Position) =
-      <om:OMA>{fun.toNodeID(pos + 0)}
-              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
+      <om:OMA>{fun.toNodeID(pos / 0)}
+              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
       </om:OMA> % pos.toIDAttr
    def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
@@ -286,8 +286,8 @@ case class OME(error : Term, args : List[Term]) extends Term {
    def role = Role_application(None)
    def components = error :: args
    def toNodeID(pos : Position) =
-      <om:OMA>{error.toNodeID(pos + 0)}
-              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
+      <om:OMA>{error.toNodeID(pos / 0)}
+              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
       </om:OMA> % pos.toIDAttr
    def ^(sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = error.freeVars_ ::: args.flatMap(_.freeVars_)   
@@ -307,8 +307,8 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    override def strip = arg.strip
    override def toString = "{" + arg + " : " + key + " -> " + value + "}"
    def toNodeID(pos : Position) = 
-      <om:OMATTR><om:OMATP>{key.toNodeID(pos+0)}{value.toNodeID(pos+2)}</om:OMATP>
-                 {arg.toNodeID(pos+1)}
+      <om:OMATTR><om:OMATP>{key.toNodeID(pos/0)}{value.toNodeID(pos/2)}</om:OMATP>
+                 {arg.toNodeID(pos/1)}
       </om:OMATTR> % pos.toIDAttr
    def ^ (sub : Substitution) = OMATTR(arg ^ sub, key, value ^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_

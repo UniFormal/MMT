@@ -37,7 +37,7 @@ object AbstractObjectParser {
            var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
            if (c.name.last == "_") names ::= c.name.init.toString
            //the unapplied notations consisting just of the name 
-           val nots = names map (n => new TextNotation(c.path, List(Delim(n)), presentation.Precedence.neginfinite))
+           val nots = names map (n => new TextNotation(c.path, Mixfix(List(Delim(n))), presentation.Precedence.neginfinite))
            c.not.toList ::: nots
         case p: patterns.Pattern =>
            p.not.toList

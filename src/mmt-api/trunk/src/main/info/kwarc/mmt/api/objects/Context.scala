@@ -47,8 +47,8 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    def head = None
    def components = List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted))
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
-   private def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
-   private def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
+   private def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos / 1)}</type>).getOrElse(Nil)
+   private def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos / 2)}</definition>).getOrElse(Nil)
    private def attrsN(pos : Position) = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
 }
 
@@ -124,7 +124,7 @@ case class Context(variables : VarDecl*) extends Obj {
    }
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNodeID(pos : Position) =
-     <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + i)})}</om:OMBVAR>
+     <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos / i)})}</om:OMBVAR>
    def toCML = 
      <m:bvar>{this.map(v => v.toCML)}</m:bvar>
    def head = None
@@ -141,7 +141,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    }
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
-   def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos + 1)}</om:OMV>
+   def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos / 1)}</om:OMV>
    def toCML : Node = <m:mi name={name.toPath}>{target.toCML}</m:mi>
    def components = List(StringLiteral(name.toString), target)
    override def toString = name + "/" + target.toString
@@ -173,7 +173,7 @@ case class Substitution(subs : Sub*) extends Obj {
    }
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNodeID(pos : Position) =
-      <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos + x._2))}</om:OMBVAR>
+      <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos / x._2))}</om:OMBVAR>
    def toCML = asContext.toCML
    def head = None
    def role : Role = Role_substitution

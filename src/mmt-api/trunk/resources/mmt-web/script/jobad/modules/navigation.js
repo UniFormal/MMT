@@ -34,8 +34,8 @@ var navigation = {
 	},
 
 	leftClick: function(target, JOBADInstance) {
-	   	//handling clicks on parts of the document - active only for elements that have jobad:href
-        if(target.hasAttribute('mmtlink')) {
+	   //handling clicks on parts of the document
+      if(target.hasAttribute('mmtlink')) {
 			var uri = target.attr('mmtlink');
 			console.log(uri);
 			this.navigate(uri);

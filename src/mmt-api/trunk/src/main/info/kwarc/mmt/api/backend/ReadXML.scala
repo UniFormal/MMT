@@ -279,7 +279,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                   val role = info.kwarc.mmt.api.Role.parse(r)
 	               val key = NotationKey(forpath, role)
 	               log("notation read for " + key)
-                  val not = presentation.Notation.parse(N, nset, key)
+                  val not = presentation.StyleNotation.parse(N, nset, key)
                   add(not)
                }
 	        case <include/> =>
