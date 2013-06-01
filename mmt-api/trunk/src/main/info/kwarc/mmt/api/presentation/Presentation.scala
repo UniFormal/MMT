@@ -12,6 +12,7 @@ sealed abstract class Presentation {
    }
    /** fill the Hole s of an expression */
    def fill(plug : Presentation*) : Presentation = this
+   def toNode: Node = <unimplemented/> //TODO
 }
 
 /** produces a string */
@@ -147,7 +148,7 @@ object Brackets {
 	def apply(arg : Presentation) = Fragment("brackets", arg)
 }
 object EBrackets {
-	def apply(arg : Presentation, elevel : Int) = Fragment("ebrackets", arg, Text(elevel.toString))
+	def apply(arg : Presentation) = Fragment("ebrackets", arg)
 }
 object NoBrackets {
 	def apply(arg : Presentation) = Fragment("nobrackets", arg)

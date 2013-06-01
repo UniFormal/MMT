@@ -62,30 +62,46 @@ class Pragmatics(controller: Controller) {
          case d: DefinedTheory => OMBINDC(binder, context, scopes) //TODO what to do here?
       }
    }
-   def pragmaticHead(t: Term) : Term = t match {
+   /**
+    * removes the strict symbols to obtain a pragmatic term
+    * @param t the strict term
+    * @return (tP,ps) where tP is the pragmatic version of t and ps gives the positions of the components of tP in t
+    *   i.e., (tP.components zip ps) forall {(c,p) => t.subobject(p) = c}
+    */
+   def pragmaticHead(t: Term) : Term = {
+      pragmaticHeadWithPositions(t)._1
+   }
+   def pragmaticHeadWithPositions(t: Term) : (Term, List[Position]) = {
+      pragmaticHeadAux(t,Position.positions(t))
+   }
+   private def pragmaticHeadAux(t: Term, pos: List[Position]) : (Term, List[Position]) = t match {
       case OMA(OMS(apply @ OMMOD(meta) % _), fun :: args) =>
          ps.getApplication(meta) match {
             case Some(a) =>
                if (a.apply == apply) {
-                  val prag = args match {                  
+                  val (tP, posP) = args match {
                      case List(OMBIND(OMS(lambda @ OMMOD(meta2) % _), context, scope)) =>
+                        
                         ps.getHOAS(meta2) match {
                            case Some(h) =>
-                              if (h.apply == apply && h.lambda == lambda)
-                                 OMBIND(fun, context, scope)
-                              else
-                                 OMA(fun, args)
+                              if (h.apply == apply && h.lambda == lambda) {
+                                 // OMA(apply, fun, OMBIND(lambda, context, scope)) ---> OMBIND(fun, context, scope)
+                                 val tP = OMBIND(fun, context, scope)
+                                 val posP = pos(1) :: Position.positions(tP).tail.map(p => pos(2)/p)
+                                 (tP, posP)
+                              } else
+                                 (OMA(fun, args), pos.tail)
                            case None =>
-                                 OMA(fun, args)
+                                 (OMA(fun, args), pos.tail)
                         }
-                     case _ =>   OMA(fun, args)
+                     case _ =>   (OMA(fun, args), pos.tail)
                   }
-                  pragmaticHead(prag)
+                  pragmaticHeadAux(tP, posP)
                } else
-                  t
-            case _ => t
+                  (t,pos)
+            case _ => (t,pos)
          }
-      case _ => t
+      case _ => (t,pos)
    }
 }
 

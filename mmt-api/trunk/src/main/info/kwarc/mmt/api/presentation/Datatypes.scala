@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 
+/* superseded by parser.Fixity
 /** The fixity of a notation determines the relative placement of operator and arguments. */
 sealed abstract class Fixity(s: String) {
    override def toString = s
@@ -45,6 +46,8 @@ case object AssocNone extends Associativity("none")
 case object Left extends Associativity("left")
 /** right-associative, i.e., restoring of brackets from the right */
 case object Right extends Associativity("right")
+
+*/
 
 /**
  * InfInt: integers with positive and negative infinity

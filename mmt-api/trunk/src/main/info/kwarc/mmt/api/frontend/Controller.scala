@@ -210,7 +210,7 @@ class Controller extends ROController with Logger {
     *  @param nset the style from which to select
     *  @param key the notation key identifying the knowledge item to be presented
     */
-   def get(nset : MPath, key : NotationKey) : SimpleNotation = {
+   def get(nset : MPath, key : NotationKey) : StyleNotation = {
       iterate (notstore.get(nset,key))
    }
    /** adds a knowledge item */

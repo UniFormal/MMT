@@ -10,13 +10,13 @@ case object IgnoresDefaults extends Defaults("ignore")
 /** Stores a set of notations for presentation */
 class Style(val parent : DPath, name : LocalPath, val from : Path, val to : Path)
                 extends PresentationElement {
-   private val notations = new scala.collection.mutable.HashMap[NotationKey,SimpleNotation]
+   private val notations = new scala.collection.mutable.HashMap[NotationKey,StyleNotation]
    def path = parent ? name
    /**
     * adds a notation element 
     */
-   def add(n : SimpleNotation) {notations(n.key) = n}
-   def get(key : NotationKey) : Option[SimpleNotation] = {notations.get(key)}
+   def add(n : StyleNotation) {notations(n.key) = n}
+   def get(key : NotationKey) : Option[StyleNotation] = {notations.get(key)}
    val role = Role_Notationset
    val components = Nil //TODO
    override def toString = "style " + name + notations.values.map("\t" + _.toString).mkString(" {\n","\n","\n}")

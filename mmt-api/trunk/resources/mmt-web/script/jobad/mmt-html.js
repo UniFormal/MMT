@@ -1,20 +1,77 @@
 /* Utility functions and state provided for MMT/OMDoc-based html documents */
 
-/** Global Utils */
+// the following functions $.fn.f add functionality to jQuery and can be used as $(...).f
+
+// contrary to the built-in jQuery analogues, these work for 'pref:name' attributes and math elements
+// do not replace calls to these function with the jQuery analogues!
+
 $.fn.hasAttribute = function(name) {  
 	return (typeof this.attr(name) !== 'undefined' && this.attr(name) !== false);
 };
 
+/* helper function for the methods below: gets the classes of an element as an array */
+function getClassArray(elem) {
+   var classes = (elem.hasAttribute('class')) ? elem.getAttribute('class') : "";
+   return classes.split(/\s+/);
+}
+
+/* add a class cl to all matched elements */
+$.fn.addMClass = function(cl){
+   this.each(function(){
+      if (this.hasAttribute('class'))
+         $(this).attr('class', $(this).attr('class') + ' ' + cl);   
+      else
+         this.setAttribute('class', cl);
+   });
+   return this;
+}
+/* remove a class cl from all matched elements */
+$.fn.removeMClass = function(cl){
+   this.each(function(){
+      var classes = getClassArray(this);
+      var newclasses = classes.filter(function(elem){return (elem !== cl) && (elem !== "")});
+      var newclassesAttr = newclasses.join(' ');
+      if (newclassesAttr == "")
+         $(this).removeAttr('class');
+      else
+         this.setAttribute('class', newclassesAttr);
+   });
+   return this;
+}
+/* toggle class cl in all matched elements */
+$.fn.toggleMClass = function(cl){
+   this.each(function(){
+      var classes = getClassArray(this);
+      if (classes.indexOf(cl) == -1)
+         $(this).addMClass(cl);
+      else
+         $(this).removeMClass(cl);
+   });
+   return this;
+}
+/* keep elements that have class cl */
+$.fn.filterMClass = function(cl){
+   return this.filter(function(){
+      var classes = getClassArray(this);
+      return (classes.indexOf(cl) !== -1)
+   });
+}
+// end $.fn.f functions
+
+
+/* some common URIs */
+var uris = {
+   lf : "http://cds.omdoc.org/urtheories?LF",
+   twelfstyle : "http://cds.omdoc.org/styles/lf/mathml.omdoc?twelf",
+};
+
 var mmt = {
-	/* state fields */
+	/* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
   	// focus: holds a reference to the object that was clicked by the user
 	focus : null,
 	// focus: true if focus is within a math object
 	focusIsMath : false,    
-	notstyle : 'http://cds.omdoc.org/styles/lf/mathml.omdoc?twelf',  //for now hard-coding a default style for LF content
-   	
-	/* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
-	//URI of the symbol clicked on
+	//jobad:href of the object clicked on (if any)
 	currentURI : null,
 	//URI of the OMDoc ContentElement that generated the math object clicked on
 	currentElement : null,
@@ -23,20 +80,30 @@ var mmt = {
 	//position of the subobject clicked on within its math object
 	currentPosition : null, 
 	
-	setCurrentPosition : function (elem){
-		console.log(elem);
-		var math = $(elem).closest('math');
-		//console.log(math.wrap("<span></span>").parent().html());
-		this.currentElement = math.attr('jobad:owner');
-		this.currentComponent = math.attr('jobad:component');
-		this.currentPosition = this.getSelectedParent(elem).getAttribute('jobad:mmtref');
-		
-		console.log(this.currentElement);
-		console.log(this.currentComponent);
-		console.log(this.currentPosition);
+	/* set focus, focusIsMath, currentURI, currentElement, currentComponent, currentPosition according to elem */
+	setCurrentPosition : function(elem){
+	   var math = $(elem).closest('math')
+		this.focusIsMath = (math.length !== 0);
+		if (this.focusIsMath) {
+		   this.focus = this.getSelectedParent(elem);
+	   	this.currentElement = math.attr('jobad:owner');
+		   this.currentComponent = math.attr('jobad:component');
+		   this.currentPosition = this.focus.getAttribute('jobad:mmtref');
+		} else {
+		   this.focus = elem
+	   	this.currentElement = null;
+		   this.currentComponent = null;
+		   this.currentPosition = null;
+		}
+		if (elem.hasAttribute("jobad:href")) {
+			mmt.currentURI = elem.getAttribute('jobad:href');
+		} else {
+		   mmt.currentURI = null;
+		}
 	},
 	
-   	/**
+	notstyle : uris.twelfstyle,
+   /*
 	 * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
 	 * act: String: action to call on MMTURI
 	 * present: Boolean: add presentation to action
@@ -86,44 +153,11 @@ var mmt = {
 	
 	/** opens current MMT URI in a new window */
 	openCurrent : function () {
-		var url = this.adaptMMTURI(currentURI, '', true);
+		var url = this.adaptMMTURI(this.currentURI, '', true);
 		window.open(url, '_blank', '', false);
 	},
 	
-		// helper function to produce xml attributes: key="value"
-	XMLAttr : function (key, value) {return ' ' + key + '="' + value + '"';},
-	// helper function to produce xml elements: <tag>content</tag> or <tag/>
-	XMLElem : function (tag, content) {return XMLElem1(tag, null, null, content);},
-	// helper function to produce xml elements with 1 attribute: <tag key="value">content</tag> or <tag key="value"/>
-	XMLElem1 : function (tag, key, value, content) {
-		var atts = (key == null) ? "" : this.XMLAttr(key,value);
-		var begin = '<' + tag + atts;
-		if (content == null) {
-			return begin + '/>';
-		} else {
-			return begin + '>' + content + '</' + tag + '>';
-		}
-	},
-	
-	//helper functions to build queries (as XML strings)
-	Qindividual : function (p) {return this.XMLElem1('individual', 'uri', p);},
-	Qcomponent : function (o, c) {return this.XMLElem1('component', 'index', c, o);},
-	Qsubobject : function (o, p) {return this.XMLElem1('subobject', 'position', p, o);},
-	Qtype : function (o,meta) {return this.XMLElem1('type', 'meta', meta, o);},
-	QtypeLF : function (o) {return this.Qtype(o, 'http://cds.omdoc.org/foundations?LF');},
-	Qpresent : function (o) {return this.XMLElem1('present', 'style', this.notstyle, o);},
-	
-	execQuery : function (q, cont) {
-		$.ajax({
-			url:'/:query', 
-			type:'POST',
-			data:q,
-			processData:false,
-			contentType:'text/xml',
-			success:cont,
-		});
-	},
-	
+
 	/*
 	  There are some small UI problems left to fix:
 	  - context menu accessed from within lookup window should be on top of lookup window, currently underneath
@@ -153,24 +187,24 @@ var mmt = {
 	},
 
 	getSelectedParent : function (elem){
-		var s = $(elem).parents().andSelf().filter('.math-selected');
+		var s = $(elem).parents().andSelf().filterMClass('math-selected');
 		if (s.length == 0)
 			return elem;
 		else
 			return s[0];
 	},
 	
-		unsetSelected : function(){
-		$('.math-selected').removeClass('math-selected');
+	unsetSelected : function(){
+		$('.math-selected').removeMClass('math-selected');
 	},
 	
 	isSelected : function(target) {
-		target.hasClass("math-selected");
+		$(target).filterMClass("math-selected").length !== 0;
 	},
 	
 	setSelected : function(target){
 		this.unsetSelected();
-		$(target).addClass('math-selected');
+		$(target).addMClass('math-selected');
 	},
 	
 	
@@ -208,3 +242,42 @@ var mmt = {
 
 };
 
+// helper functions to build XML elements as strings (used by qmt)
+var XML = {
+   // helper function to produce xml attributes: key="value"
+	attr : function (key, value) {return ' ' + key + '="' + value + '"';},
+	// helper function to produce xml elements: <tag>content</tag> or <tag/>
+	elem : function (tag, content) {return this.elem1(tag, null, null, content);},
+	// helper function to produce xml elements with 1 attribute: <tag key="value">content</tag> or <tag key="value"/>
+	elem1 : function (tag, key, value, content) {
+		var atts = (key == null) ? "" : this.attr(key,value);
+		var begin = '<' + tag + atts;
+		if (content == null) {
+			return begin + '/>';
+		} else {
+			return begin + '>' + content + '</' + tag + '>';
+		}
+	},
+};
+
+// functions to build and run QMT queries
+var qmt = {
+   // helper functions to build queries (as XML strings)
+	individual : function (p) {return XML.elem1('individual', 'uri', p);},
+	component : function (o, c) {return XML.elem1('component', 'index', c, o);},
+	subobject : function (o, p) {return XML.elem1('subobject', 'position', p, o);},
+	type : function (o,meta) {return XML.elem1('type', 'meta', meta, o);},
+	present : function (o) {return XML.elem1('present', 'style', mmt.notstyle, o);},
+
+	/* executes a QMT query (as constructed by helper functions) via ajax and runs a continuation on the result */
+	exec : function (q, cont) {
+		$.ajax({
+			url:'/:query', 
+			type:'POST',
+			data:q,
+			processData:false,
+			contentType:'text/xml',
+			success:cont,
+		});
+	},
+};

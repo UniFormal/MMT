@@ -4,7 +4,7 @@ import objects._
 import modules._
 import moc._
 import parser.TextNotation
-import presentation.{NotationProperties, StringLiteral, Omitted}
+import presentation.{StringLiteral, Omitted}
 
 /**
  * A Constant represents an MMT constant.<p>

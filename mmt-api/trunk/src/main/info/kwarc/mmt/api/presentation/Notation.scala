@@ -28,27 +28,43 @@ abstract class Notation extends PresentationElement {
    def toNode : Node
 }
 
-abstract class ComplexNotation extends Notation {
-   def precedence : Precedence
+/** an interface for notations that can be used to present complex objects */ 
+trait ComplexNotation extends Notation {
+   def precedence: Precedence
    def presentation(args: Int, vars: Int, scopes: Int): Presentation
 }
 
-
 /**
- * Main representation of a notation
+ * A notation in a style, used for rendering
  * @param nset the containing style
  * @param key the notation key
- * @param pres the presentation to be used
- * @param oPrec the output precedence (used for bracket generation)
+ * @param presentation the presentation to be used
  * @param wrap a flag indicating whether this notation should be wrapped more with a more specific one if applicable
  */
-case class SimpleNotation(nset : MPath, key : NotationKey, pres : Presentation, wrap : Boolean) extends Notation {
-   override def toString = maintoString + " " + pres.toString
-  def toNode = <notation/>
-  def presentation = pres
+// TODO abolish wrap in favor of fragment:constantwrapper
+// TODO NotationKey should only be role; no merging in NotationStore
+// TODO fragment:superscript, fragment:fraction, follow MathML
+case class StyleNotation(nset : MPath, key : NotationKey, presentation : Presentation, wrap : Boolean) extends Notation {
+   override def toString = maintoString + " " + presentation.toString
+   def toNode = <notation wrap={if (wrap) "true" else null}>{presentation.toNode}</notation>
 }
 
-sealed abstract class NotationProperties extends metadata.HasMetaData {
+object StyleNotation {
+   /**
+    * parses a StyleNotation from XML
+    */
+   def parse(N : Node, nset : MPath, key : NotationKey) : Notation = {
+       val wrap = xml.attr(N, "wrap") match {
+          case "true" | "1" => true
+          case "" | "false" | "0" => false
+          case s => throw ParseError("illegal boolean value: " + s)
+       }
+       StyleNotation(nset, key, Presentation.parse(N.child), wrap)
+   }
+}
+
+/*
+sealed abstract class NotationProperties {
    val impl : Int
    val oPrec : Precedence
    def toNode : scala.xml.Elem
@@ -209,3 +225,5 @@ object Notation {
                  catch {case _ : Throwable => throw ParseError("illegal number of implicit arguments: " + s)}
     }
 }
+
+*/
