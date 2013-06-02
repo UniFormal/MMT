@@ -48,8 +48,6 @@ abstract class Fixity(val fixityString: String) {
       case _:ImplicitArg => false // remove the implicit markers
       case _ => true
    }
-   
-   def presentation(args: Int, vars: Int, scopes: Int): Option[Presentation] = None
 }
 
 /** the standard FixityParser for a list of Marker's */
