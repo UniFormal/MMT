@@ -500,8 +500,8 @@ object Obj {
             val morph = parseTerm(child(2), nbase)
             OMM(arg, morph)
          case <OMA>{child @ _*}</OMA> =>
-            if (child.length <= 1)
-               throw ParseError("No arguments given: " + N.toString)
+            if (child.length == 0)
+               throw ParseError("No operator given: " + N.toString)
             val fun = parseTerm(child.head, base)
             val args = child.tail.toList.map(parseTerm(_, nbase))
             OMA(fun, args)

@@ -37,7 +37,7 @@ object AbstractObjectParser {
            var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
            if (c.name.last == "_") names ::= c.name.init.toString
            //the unapplied notations consisting just of the name 
-           val nots = names map (n => new TextNotation(c.path, Mixfix(List(Delim(n))), presentation.Precedence.neginfinite))
+           val nots = names map (n => new TextNotation(c.path, Mixfix(List(Delim(n))), presentation.Precedence.infinite))
            c.not.toList ::: nots
         case p: patterns.Pattern =>
            p.not.toList
@@ -223,11 +223,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                      }
                      finalArgs ::= arg
                   }
-                  // number of implicit arguments that have to be inserted after the given arguments
-                  // can currently only be non-zero if a binding follows
-                  val numLastImplArgs = if (! orderedVars.isEmpty) {
-                     orderedVars.head._1.number - finalArgs.length - 1
-                  } else 0
+                  // number of implicit arguments that have to be inserted after the explicit arguments
+                  val numLastImplArgs = arity.arguments.reverse.takeWhile(_.isInstanceOf[ImplicitArg]).length
                   Range(0, numLastImplArgs).foreach(_ => finalArgs ::= null)
                   // replace each 'null' with a fresh meta-variable
                   finalArgs = finalArgs.map {
@@ -333,8 +330,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
        else
           makeError("top notation did not match whole input: " + n.toString, pu.source.region)(pu)
     }
-    // now scan with all notations in decreasing order of precedence
-    qnotations reverseMap {
+    // now scan with all notations in increasing order of precedence
+    qnotations map {
          case (priority,nots) => sc.scan(nots)
     }
     log("scan result: " + sc.tl.toString)

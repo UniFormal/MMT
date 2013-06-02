@@ -40,7 +40,7 @@ abstract class Fixity(val fixityString: String) {
    /** @return the arguments for serialization */
    def argumentStrings: List[String]
    def argumentString: String = argumentStrings.mkString(" ")
-   override def toString = "%%" + fixityString + argumentString
+   override def toString = "%%" + fixityString + " " + argumentString
    /** @return a complete list of Marker's */
    def allMarkers : List[Marker]
    /** @return the list of only those markers that are relevant for parsing */
@@ -133,9 +133,9 @@ case class RuleFixity(name: GlobalName, implParams: Int, explParams: Int, hypos:
    def argumentStrings = List(implParams.toString, explParams.toString, hypos.toString)
    def allMarkers =
       SymbolName(name) ::
-      Range(0,implParams).map {i => ImplicitArg(i)}.toList :::
-      Range(0,explParams).map {i => Arg(implParams + i)}.toList :::
-      Range(0,hypos).map {i => Arg(implParams + explParams + i)}.toList
+      Range(0,implParams).map {i => ImplicitArg(i+1)}.toList :::
+      Range(0,explParams).map {i => Arg(implParams + i +1 )}.toList :::
+      Range(0,hypos).map {i => Arg(implParams + explParams + i + 1)}.toList
 } 
 
 /*

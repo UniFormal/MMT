@@ -12,6 +12,15 @@ sealed abstract class Delimiter extends Marker {
    def text : String
 }
 
+/** helper object */
+object Delimiter {
+   /** matches any Delimiter */
+   def unapply(m: Marker): Option[String] = m match {
+      case d: Delimiter => Some(d.text)
+      case _ => None
+   }
+}
+
 /** a delimiter
  * @param s the delimiting String, %w for whitespace
  */
@@ -113,16 +122,16 @@ object Marker {
    def parse(name: GlobalName, s: String) = s match {
          case "%i" => InstanceName(name)
          case "%n" => SymbolName(name)
-         case s: String if s.startsWith("D") =>
+         case s: String if s.startsWith("%D") =>
             // Ds ---> delimiter s (used to escape special delimiters)
-            if (s.length == 1)
+            if (s.length == 2)
                throw ParseError("not a valid marker " + s) 
             else
-               Delim(s.substring(1))
-         case s: String if s.startsWith("I") =>
+               Delim(s.substring(2))
+         case s: String if s.startsWith("%I") =>
             // In ---> implicit argument
             try {
-               val n = s.substring(1).toInt
+               val n = s.substring(2).toInt
                ImplicitArg(n)
             } catch {
                case e: Throwable => throw ParseError("not a valid marker " + s) 

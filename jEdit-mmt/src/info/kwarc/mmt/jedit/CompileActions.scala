@@ -20,7 +20,7 @@ class CompileActions(mmtplugin: MMTPlugin) {
       log("compile" + " " + archive + " " + path.mkString("","/",""))
       val arch = controller.backend.getArchive(archive).getOrElse(return)
       // call build method on the respective archive
-      controller.handle(frontend.ArchiveBuild(archive, "compile", path))
+      controller.handle(frontend.ArchiveBuild(archive, "compile", archives.Build, path, Nil))
       // read out the errors
       arch.traverse("source", path, _ => true, false) {case archives.Current(inFile, inPath) =>
          errorSource.removeFileErrors(inFile.toString)
@@ -37,7 +37,7 @@ class CompileActions(mmtplugin: MMTPlugin) {
    }
    /** compiles a buffer or directory */
    def compile(file: String) {
-      controller.backend.getArchives find {a => file.startsWith((a.root / "source").toString)} match {
+      controller.backend.getArchives find {a => file.startsWith((a.sourceDir).toString)} match {
          case None =>
            log("not compiling buffer/directory " + file)
          case Some(a) =>
