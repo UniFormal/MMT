@@ -112,15 +112,14 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @return whatever application to the delayed judgment returns
     */
    private def activate: Boolean = {
-     delayed foreach {_.solved(newsolutions)}
-      val res = delayed find {_.isActivatable} match {
+      delayed foreach {_.solved(newsolutions)}
+      newsolutions = Nil
+      delayed find {_.isActivatable} match {
          case None => true
          case Some(dc) =>
            delayed = delayed filterNot (_ == dc)
            apply(dc.constraint)
       }
-      newsolutions = Nil
-      res
    }
    /** registers the solution for a variable
     * 

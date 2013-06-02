@@ -117,7 +117,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                hd.numCurrentTokens = 0
          }
          val app = an.applicable(currentToken, currentIndex, availableFutureTokens) //true by invariant but must be called for precondition of an.apply
-         assert(app == Applicable)
+         assert(app == Applicable) // catch mean implementation errors
       }
       logWithState(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
       resetPicker

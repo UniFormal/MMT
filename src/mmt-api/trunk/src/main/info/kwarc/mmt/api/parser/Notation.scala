@@ -14,7 +14,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * A TextNotation is a Notation that can be used for parsing objects in text syntax
  * @param name the symbol to which this notation applies
  * @param allMarkers the Markers making up the notation
- * @param precendence the precedence, notations with higher precedence are used first, thus grab larger subterms
+ * @param precendence the precedence, notations with lower precedence are tried first, thus grab larger subterms
  * 
  * a typed Var must be preceded by a Delim because Var.key does not trigger the notation
  * 
@@ -29,8 +29,7 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
    val nset = name.module.toMPath
   
    def toText = fixity.toString + (if (precedence != Precedence.integer(0)) " prec " + precedence.toString else "")
-
-   override def toString = toText
+   override def toString = "notation for " + name.toString + ": " + toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")" 
    def toNode = 
      <text-notation name={name.toPath} precedence={precedence.toString} fixity={fixity.fixityString} arguments={fixity.argumentString}/>
 
@@ -45,8 +44,9 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
                args ::= a
             else if (a.number < 0)
                scopes ::= a
-            else
+            else {
                throw InvalidNotation("illegal marker: " + a)
+            }
          case v: VariableComponent =>
             vars ::= v
          case _ =>
@@ -188,7 +188,7 @@ object TextNotation {
     * 
     * notations with round brackets must have a higher precedence than this to be recognized
     */
-   val bracketLevel = Precedence.integer(1000000)
+   val bracketLevel = Precedence.integer(-1000000)
    /** 
     * a special Notation for utils.mmt.brackets
     * matches ( 1 ) with precedence bracketLevel
@@ -237,13 +237,14 @@ object TextNotation {
        var tokens = str.split("\\s+").toList.filter(_ != "")
        val i = tokens.indexOf("prec")
        val prec = if (i != -1) {
-           tokens = tokens.take(i)
-           tokens.drop(i) match {
+          val rest = tokens.drop(i)
+          tokens = tokens.take(i)
+          rest match {
                case _ :: p :: Nil => Precedence.parse(p)
                case _ => throw ParseError("precedence not found: " + str)
            }
        } else if (str.contains("("))
-           Precedence.integer(1000001)
+           Precedence.integer(-1000001)
        else
            Precedence.integer(0)
        val (fixityString, arguments) = if (! tokens.isEmpty && tokens.head.startsWith("%%")) {
