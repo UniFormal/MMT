@@ -4,6 +4,7 @@ import frontend._
 import objects._
 import objects.Conversions._
 import utils._
+import parser._
 
 /** This class collects the parameters that are globally fixed during one presentation task.
  * @param rh the rendering handler that collects the generated output
@@ -18,11 +19,11 @@ case class GlobalParams(rh : RenderingHandler, nset : MPath)
  * @param inObject a flag to indicate whether the presented expression is a declaration or an object
  */
 case class LocalParams(ids : List[(String,String)], pos : Position,
-                       inObject : Boolean, iPrec : Precedence, context : List[VarData]) {
+                       inObject : Boolean, bracketInfo : Option[BracketInfo], context : List[VarData]) {
    def asContext = Context(context map (_.decl) : _*)
 }
 object LocalParams {
-   val objectTop = LocalParams(Nil, Position.Init, true, Precedence.neginfinite, Nil)
+   val objectTop = LocalParams(Nil, Position.Init, true, None, Nil)
 }
 /** This class stores information about a bound variable.
  * @param decl the variable declaration
@@ -142,21 +143,24 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                   notationOpt match {
                      case Some(notation) =>
                         val pres = notation.presentation(numArgs, numVars, numScs)
-                        val ip = newlpar.iPrec // input precedence, i.e., precedence of the opearator in the direct superexpression
-                        val op = notation.precedence // output precedence, i.e., precedence of this operator
-                        // case-split according to how much stronger the outer operator binds than the inner one
-                        // the stronger the inner operator binds, the less necessary its brackets are
-                        val d = ip.prec - op.prec
-                        if (d.positive || d == Finite(0)) Brackets(pres) // TODO: ties should be handled using associativity
-                        else if (d == NegInfinite) NoBrackets(pres)
-                        else EBrackets(pres) 
+                        lpar.bracketInfo match {
+                           case None => NoBrackets(pres)
+                           case Some(BracketInfo(precOpt, delOpt)) =>
+                              val outerPrecedence = precOpt.getOrElse(Precedence.neginfinite)
+                              val delimitation = delOpt.getOrElse(0)
+                              val brack = Presenter.bracket(outerPrecedence, delimitation, notation)
+                              if (brack > 0) Brackets(pres)
+                              else if (brack < 0) NoBrackets(pres)
+                              else EBrackets(pres)
+                        }
                      case None =>
                         // default presentation
                         implicit def convert(i:Int) = NumberedIndex(i)
-                        var pres: Presentation = Component(0,None)
-                        if (numArgs > 0) pres += OpSep() + Iterate(1, numArgs, ArgSep(), None)
-                        if (numVars > 0) pres += OpSep() + Iterate(numArgs+1, numArgs+numVars, ArgSep(), None)
-                        if (numScs > 0)  pres += OpSep() + Iterate(numArgs+numVars+1, -1, ArgSep(), None)
+                        val bi = BracketInfo(Some(Precedence.infinite)) // maximal bracketing since we don't know anything
+                        var pres: Presentation = Component(0,bi)
+                        if (numArgs > 0) pres += OpSep() + Iterate(1, numArgs, ArgSep(), bi)
+                        if (numVars > 0) pres += OpSep() + Iterate(numArgs+1, numArgs+numVars, ArgSep(), bi)
+                        if (numScs > 0)  pres += OpSep() + Iterate(numArgs+numVars+1, -1, ArgSep(), bi)
                         Brackets(pres)
                   }
                case _ =>
@@ -165,7 +169,6 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             }
             val contComps = ContentComponents(comps, Nil, None, Some(o))
             render(presentation, contComps, Some(posP), List(0), gpar, newlpar)
-            
       }
    }
    
@@ -253,14 +256,14 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             recurse(Components(NumberedIndex(current), Presentation.Empty, last, post, step, sep, body))
         case Id => gpar.rh(lpar.pos.toString)
         case Index => gpar.rh(lpar.pos.current.toString)
-        case Neighbor(offset, ip) =>
+        case Neighbor(offset, bi) =>
             val i = ind.head + offset
             if (i < 0 || i >= comps.length)
                throw new PresentationError("offset out of bounds")
             comps(i) match {
                case o: Obj =>
                   if (lpar.inObject)
-                     present(o, gpar, lpar.copy(pos = lpar.pos / pos(i), iPrec = ip.getOrElse(Precedence.neginfinite)))
+                     present(o, gpar, lpar.copy(pos = lpar.pos / pos(i), bracketInfo = Some(bi)))
                   else 
                      //transition from structural to object level
                      present(ObjToplevel(o, comps.getObjectPath(i)), gpar, LocalParams.objectTop)

@@ -228,7 +228,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   val openable = notations flatMap {not =>
                      val delim = not.firstDelimString
                      val m = delim.isDefined && ActiveNotation.matches(delim.get, currentToken.word, futureTokens)
-                     if (m && not.openLeftArgs <= numCurrentTokens)
+                     if (m && not.openArgs(false) <= numCurrentTokens)
                         List((not, delim.get.length))
                      else
                         Nil

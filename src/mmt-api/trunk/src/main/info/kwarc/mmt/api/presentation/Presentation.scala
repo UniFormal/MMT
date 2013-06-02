@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Node,NodeSeq}
 
+case class BracketInfo(prec: Option[Precedence] = None, delimitation : Option[Int] = None)
+
 /** This is the type of a simple language of presentation expressions that may be used in Notation and are evaluated by Presenter */
 sealed abstract class Presentation {
    /** concatenation */
@@ -68,12 +70,12 @@ case class Components(begin : CIndex, pre : Presentation, end : CIndex, post : P
 
 /** short hand to iterate over a list of components */
 object Iterate {
-	def apply(b : CIndex, e : CIndex, s : Presentation, p : Option[Precedence]) =
+	def apply(b : CIndex, e : CIndex, s : Presentation, p : BracketInfo) =
 		Components(b, Presentation.Empty, e, Presentation.Empty, 1, s, Recurse(p))
 }
 /** short hand to recurse into a single component */
 object Component {
-	def apply(index : CIndex, q : Option[Precedence]) = Iterate(index, index, Presentation.Empty, q)
+	def apply(index : CIndex, q : BracketInfo) = Iterate(index, index, Presentation.Empty, q)
 }
 
 /** produces the current index in a loop */
@@ -83,10 +85,10 @@ case object Index extends Presentation
  * @param offset the index of the component relative to the current index in the loop
  * @param prec the input precedence to be used (no brackets if None)
  */
-case class Neighbor(offset : Int, prec : Option[Precedence]) extends Presentation
+case class Neighbor(offset : Int, prec : BracketInfo) extends Presentation
 /** short hand to recurse into the current component */
 object Recurse {
-	def apply(p : Option[Precedence]) = Neighbor(0, p)
+	def apply(p : BracketInfo) = Neighbor(0, p)
 }
 
 /** like Components but nests instead of concatenating, step should contain Hole to indicate nesting */
@@ -193,19 +195,21 @@ object Presentation {
             Element(xml.attr(n,"prefix"), xml.attr(n,"name"), atts.reverse, elems.reverse)
          case <attribute>{pres @ _*}</attribute> => throw ParseError("attribute only permitted within element")
          case <recurse/> =>
-            Neighbor(int(xml.attr(n, "offset", "0")), precOpt(xml.attr(n, "precedence")))
+            val bi = BracketInfo(precOpt(xml.attr(n, "precedence")))
+            Neighbor(int(xml.attr(n, "offset", "0")), bi)
          case <hole>{child @ _*}</hole> => Hole(int(xml.attr(n, "index", "0")), parse(child))
          case <id/> => Id 
          case <index/> => Index
          case <nset/> => TheNotationSet 
          case <component/> =>
             val index = cindex(xml.attr(n, "index"))
-            Component(index, precOpt(xml.attr(n, "precedence")))
+            val bi = BracketInfo(precOpt(xml.attr(n, "precedence")))
+            Component(index, bi)
          case <components>{child @ _*}</components> =>
             val begin = cindex(xml.attr(n, "begin", "0"))
             val end = cindex(xml.attr(n, "end", "-1"))
             val step = int(xml.attr(n, "step", "1"))
-            var (pre : Presentation, post : Presentation, sep : Presentation, body : Presentation) = (Empty, Empty, Empty, Recurse(None))
+            var (pre : Presentation, post : Presentation, sep : Presentation, body : Presentation) = (Empty, Empty, Empty, Recurse(BracketInfo()))
             for (c <- child) c match {
                case <separator>{s @ _*}</separator> => sep = parse(s)
                case <body>{b @ _*}</body> => body = parse(b)

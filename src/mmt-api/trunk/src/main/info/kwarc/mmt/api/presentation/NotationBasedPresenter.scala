@@ -176,72 +176,44 @@ trait NotationBasedPresenter extends Presenter {
    private def recurse(o: Obj, rh: RenderingHandler, bracket: TextNotation => Boolean) {
        o match {
          case term: Term =>
-            val termP = controller.pragmatic.pragmaticHead(term)
-            def getNotation(t: Term) : Option[TextNotation] = t match {
-               case OMID(_) => None //avoid trying to render constants using a notation
-               case ComplexTerm(p, args, context, scopes) =>
-                  controller.globalLookup.getO(p) match {
-                     case Some(c: Constant) => c.not
-                     case Some(p: Pattern) => p.not
-                     case _ => None
+            val (termP, _, notOpt) = getNotation(term)
+            notOpt match {
+               case None =>
+                  doDefaultTerm(termP, rh)
+               case Some(not) =>
+                  // try to render using notation, defaults to doDefaultTerm for some errors
+                  val ComplexTerm(p, args, context, scopes) = termP
+                  if (! not.canHandle(args.length, context.length, scopes.length))
+                     return doDefaultTerm(termP, rh)
+                  val br = bracket(not)
+   
+                  /*
+                   * @param position the position into which we recurse
+                   * @return a function that determines whether the child has to be bracketed
+                   */
+                  def childrenMustBracket(position: Int) =
+                     (childNot: TextNotation) => Presenter.bracket(not.precedence, position, childNot) > 0
+                  val markers = not.flatten(args.length, context.length, scopes.length)
+                  // currentPostion: -1: left-open argument; 0: middle argument; 1: right-open
+                  val numDelims = markers.count(_.isInstanceOf[parser.Delimiter])
+                  var numDelimsSeen = 0
+                  def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
+                  def doChild(child: Obj) {recurse(child, rh, childrenMustBracket(currentPosition))}
+                  
+                  if (br) doOperator("(", rh)
+                  markers.foreach {
+                     case Arg(n) if n > 0 =>
+                        doChild(args(n-1))
+                     case Arg(n) if n < 0 =>
+                        doChild(scopes(-n-args.length-context.length-1))
+                     case Var(n, typed, _) => //sequence variables impossible due to flattening
+                        doChild(context(n-args.length-1))
+                     case d: parser.Delimiter =>
+                        numDelimsSeen += 1
+                        doDelimiter(p, d, rh)
+                     case s: SeqArg => //impossible due to flattening
                   }
-               case _ => None
-            }
-            // tries to render using notation, defaults to doDefaultTerm for some errors
-            def doNotation(t: Term, not: TextNotation) {
-               val ComplexTerm(p, args, context, scopes) = t
-               if (! not.canHandle(args.length, context.length, scopes.length))
-                  return doDefaultTerm(termP, rh)
-               val br = bracket(not)
-
-               /*
-                * @param position the position into which we recurse
-                * @return a function that determines whether the child has to be bracketed
-                *
-                * TODO bracketing improvements
-                * - independent of precedence, often no brackets are needed when recursing
-                *     - from the left argument of a left-open notation into a right-closed notation
-                *     - from a middle argument into a left- and right-closed notation
-                *     - the right argument of a right-open notation into a left-closed notation
-                * - when multiple arguments occur without delimiter, brackets are usually needed
-                * - generally, omitting brackets may screw up parsing 
-                */
-               def childrenMustBracket(position: Int) = (childNot: TextNotation) => position match {
-                  //the = case puts brackets into x * (y / z) if * and / have the same precedence
-                  case 1 => not.precedence <= childNot.precedence && childNot.isLeftOpen
-                  case 0 => not.precedence < childNot.precedence
-                  case -1 => not.precedence <= childNot.precedence //&& childNot.isRightOpen
-                  case _ => throw ImplementationError("illegal position")
-               }
-
-               val markers = not.flatten(args.length, context.length, scopes.length)
-               // currentPostion: -1: left argument; 0: middle argument; 1: right
-               val numDelims = markers.count(_.isInstanceOf[parser.Delimiter])
-               var numDelimsSeen = 0
-               def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
-               def doChild(child: Obj) {recurse(child, rh, childrenMustBracket(currentPosition))}
-               
-               if (br) doOperator("(", rh)
-               markers.foreach {
-                  case Arg(n) if n > 0 =>
-                     doChild(args(n-1))
-                  case Arg(n) if n < 0 =>
-                     doChild(scopes(-n-args.length-context.length-1))
-                  case Var(n, typed, _) => //sequence variables impossible due to flattening
-                     doChild(context(n-args.length-1))
-                  case d: parser.Delimiter =>
-                     numDelimsSeen += 1
-                     doDelimiter(p, d, rh)
-                  case s: SeqArg => //impossible due to flattening
-               }
-               if (br) doOperator(")", rh)
-            }
-            getNotation(termP) match {
-               case None => getNotation(term) match {
-                  case None => doDefaultTerm(termP, rh)
-                  case Some(not) => doNotation(term, not)
-               }
-               case Some(not) => doNotation(termP, not)
+                  if (br) doOperator(")", rh)
             }
          case VarDecl(n,tp,df, _*) =>
                doVariable(n, rh)

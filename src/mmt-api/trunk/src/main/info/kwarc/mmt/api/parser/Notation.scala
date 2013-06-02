@@ -139,16 +139,21 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
       }
    }
    
-   //TODO add other cases & check presentation
-   /* restriction:
-    *  sequence arguments always go to -1
-    *  sequence variables always go to -2
+   /**
+    * flattens and transforms markers into Presentation
     */
-   def presentation(args: Int, vars: Int, scopes: Int) = fixity.presentation(args, vars, scopes) getOrElse {
-     val tokens = flatten(args, vars, scopes) map {
-       case d : Delimiter => ArgSep() + Fragment("constant", PText(name.toPath), PText(d.text)) + ArgSep()
-       case Arg(p) => Component(NumberedIndex(p.abs),Some(precedence.weaken))
-       case Var(n, _, None) => Component(NumberedIndex(n), None)
+   def presentation(args: Int, vars: Int, scopes: Int) = {
+     val flatMarkers = flatten(args, vars, scopes)
+     val numDelims = flatMarkers.count(_.isInstanceOf[parser.Delimiter])
+     var numDelimsSeen = 0
+     val tokens = flatMarkers.map {
+       case d : Delimiter =>
+          numDelimsSeen += 1
+          ArgSep() + Fragment("constant", PText(name.toPath), PText(d.text)) + ArgSep()
+       case Arg(p) =>
+          val delimitation = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
+          Component(NumberedIndex(p.abs), BracketInfo(Some(precedence), Some(delimitation)))
+       case Var(n, _, None) => Component(NumberedIndex(n), BracketInfo())
        case SeqArg(n,sep) => throw ImplementationError("non-flat marker")
        case Var(n,_,Some(sep)) => throw ImplementationError("non-flat marker")
      }
@@ -160,9 +165,10 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
       case SeqArg(_, Delim(s)) => Some(s)
       case _ => None
    }
-   def openLeftArgs : Int = {
+   def openArgs(fromRight: Boolean) : Int = {
       var i = 0
-      markers foreach {
+      val ms = if (fromRight) markers.reverse else markers
+      ms foreach {
          case a: Arg => i += 1
          case a: ImplicitArg =>
          case _:SeqArg => return i+1
@@ -171,7 +177,8 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
       }
       i
    }
-   def isLeftOpen = openLeftArgs > 0
+   def isLeftOpen = openArgs(false) > 0
+   def isRightOpen = openArgs(true) > 0
 }
 
 object TextNotation {
