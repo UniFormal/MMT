@@ -181,6 +181,7 @@ var mmt = {
 	  - title bar should only show the cd and name component, but not the cdbase of the symbol href (full href should be shown as @title)
 	*/
 	setLatinDialog : function (content, title){
+        console.log("got here");
 		var dia = $("#latin-dialog");
 		if (dia.length == 0) {
 			this.dialog_init();
@@ -285,13 +286,15 @@ var qmt = {
 	present : function (o) {return XML.elem1('present', 'style', mmt.notstyle, o);},
 
 	/* executes a QMT query (as constructed by helper functions) via ajax and runs a continuation on the result */
-	exec : function (q, cont) {
+    exec : function (q, cont) {
+	   var qUrl = mmt.makeURL('/:query');
 		$.ajax({
-			url:'/:query', 
+			url:qUrl, 
 			type:'POST',
 			data:q,
+		    dataType : 'xml',
 			processData:false,
-			contentType:'text/xml',
+			contentType:'text/plain',
 			success:cont,
 		});
 	},
