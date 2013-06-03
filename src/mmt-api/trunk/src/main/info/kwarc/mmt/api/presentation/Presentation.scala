@@ -176,6 +176,18 @@ object Presentation {
       if (List("present", "atomic") contains t) t
       else throw ParseError("invalid test " + t)
    }
+   private def parseInElement(nodes: NodeSeq): (List[Presentation],List[Attribute]) = {
+      var atts : List[Attribute] = Nil
+      var elems : List[Presentation] = Nil
+      for (c <- nodes) c match {
+         case <attribute/> =>
+            atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), Text(xml.attr(c, "value")))
+         case <attribute>{value @ _*}</attribute> =>
+            atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), parse(value)(true))
+         case p => elems ::= parse(p)
+      }
+      (elems.reverse, atts.reverse)
+   }
    /** parses presentation from XML */
    def parse(N : NodeSeq)(implicit inAttr: Boolean = false) : Presentation = {
       val ps = for (n <- N) yield n match {
@@ -183,16 +195,8 @@ object Presentation {
 /*         case <procinstr/> => ProcInstr(xml.attr(n, "target"), xml.attr(n, "text")) */
          case <element>{pres @ _*}</element> =>
             if (inAttr) throw ParseError("element not permitted within attribute")
-            var atts : List[Attribute] = Nil
-            var elems : List[Presentation] = Nil
-            for (c <- n.child) c match {
-               case <attribute/> =>
-                  atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), Text(xml.attr(c, "value")))
-               case <attribute>{value @ _*}</attribute> =>
-                  atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), parse(value)(true))
-               case p => elems ::= parse(p)
-            }
-            Element(xml.attr(n,"prefix"), xml.attr(n,"name"), atts.reverse, elems.reverse)
+            val (elems, atts) = parseInElement(pres)
+            Element(xml.attr(n,"prefix"), xml.attr(n,"name"), atts, elems)
          case <attribute>{pres @ _*}</attribute> => throw ParseError("attribute only permitted within element")
          case <recurse/> =>
             val bi = BracketInfo(precOpt(xml.attr(n, "precedence")))
@@ -253,7 +257,8 @@ object Presentation {
                case scala.xml.PrefixedAttribute(p, k, v, _) => Attribute(p, k, Text(v.text)) 
                case scala.xml.UnprefixedAttribute(k, v, _) => Attribute("", k, Text(v.text))
             }
-            Element("", label, pAtts.toList, (e.child map parse).toList)
+            val (elemsIn, attsIn) = parseInElement(e.child)
+            Element("", label, pAtts.toList ::: attsIn, elemsIn)
          case scala.xml.Comment(_) => Empty
          case _ => throw ParseError("illegal presentation item: " + n)
       }

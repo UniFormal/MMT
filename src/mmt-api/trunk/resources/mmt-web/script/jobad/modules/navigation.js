@@ -43,9 +43,15 @@ var navigation = {
 		if(target.hasAttribute('loadable')) {
 			var elem = target.parent().get(0);
 			var ref = mmt.load(elem);
-			$(ref).find('span').removeAttr('onclick'); //hack, should be removed in the mmt/style
 			$(ref).find('span').attr('foldable', 'true');
 			$(elem).replaceWith(ref);
+		}
+		if(target.hasAttribute('jobad:flattenable')) {
+			var elem = target.parent().get(0);
+			var loaded = mmt.load(elem);
+			var fc = $(elem).children().filterMClass('flat-container');
+			fc.children().replaceWith(loaded);
+			fc.toggle()
 		}
 		if(target.hasAttribute('foldable')) {
 			var content = $(target).parent().find('table').toggle();				

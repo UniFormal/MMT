@@ -73,25 +73,19 @@ var interactiveViewing = {
 	
 	
 	/* Helper Functions  */
-	/* These seem innacurate now looking at the mathml. e.g. brackets are not mo but mfenced*/
 	setVisib : function(prop, val){
-		var root = mmt.focusIsMath ? mmt.getSelectedParent(mmt.focus) : mmt.focus.parentNode;
-		console.log(root);
-		if (val == 'true')
-			$(root).find('.' + prop).removeClass(prop + '-hidden');
-		if (val == 'false')
-			$(root).find('.' + prop).addClass(prop + '-hidden');
-	},
-	
-	quoteSetVisib : function(prop, val){
-		var me = this;
-		return function(){ me.setVisib(prop,val) };
+		var root = mmt.focusIsMath ? mmt.focus : mmt.focus.parentNode;
+		if (val)
+			$(root).find('.' + prop).removeMClass(prop + '-hidden');
+		if (!val)
+			$(root).find('.' + prop).addMClass(prop + '-hidden');
 	},
 	
 	visibSubmenu : function(prop){
+	   var me = this;
 		return {
-			"show" : this.quoteSetVisib(prop, true),
-			"hide" : this.quoteSetVisib(prop, false)
+			"show" : function(){me.setVisib(prop,true)},
+			"hide" : function(){me.setVisib(prop,false)},
 		};
 	},
 	
@@ -99,7 +93,6 @@ var interactiveViewing = {
 	    return {
 			"reconstructed types" :  this.visibSubmenu('reconstructed'),
 			"implicit arguments" : this.visibSubmenu('implicit-arg'),
-			"implicit binders" : this.visibSubmenu('implicit-binder'),
 			"redundant brackets" : this.visibSubmenu('brackets'),
 		}
 	},		

@@ -193,7 +193,7 @@ trait NotationBasedPresenter extends Presenter {
                    */
                   def childrenMustBracket(position: Int) =
                      (childNot: TextNotation) => Presenter.bracket(not.precedence, position, childNot) > 0
-                  val markers = not.flatten(args.length, context.length, scopes.length)
+                  val (markers,_) = not.flatten(args.length, context.length, scopes.length)
                   // currentPostion: -1: left-open argument; 0: middle argument; 1: right-open
                   val numDelims = markers.count(_.isInstanceOf[parser.Delimiter])
                   var numDelimsSeen = 0

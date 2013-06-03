@@ -63,12 +63,13 @@
            "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
        });
    });
+    
    var graphWindow = null;
    function openGraph(focus) {
       var graphWindow = window.open("/graph.html");
    };
    
-
+   $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
   </script>
 </head>
 
@@ -102,9 +103,11 @@
     
     
     <div id="main">
-       <div></div>
+      <div></div>
     </div>
-
+   
+   <div id="latin-dialog"><span/></div>
+    
    </div>
 
 </body>

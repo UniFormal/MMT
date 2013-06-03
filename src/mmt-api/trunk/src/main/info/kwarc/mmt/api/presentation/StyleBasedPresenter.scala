@@ -63,7 +63,6 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
 class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
    init(c, Nil)
    override val logPrefix = "presenter"
-   private var nextID : Int = 0 // the next available id (for generating unique ids)
    
    def isApplicable(format: String) = format == style.toPath
    def apply(s : StructuralElement, rh: RenderingHandler) {
@@ -288,8 +287,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             gpar.rh(gpar.nset.toPath.replace("?","%3F"))
         case Hole(i, default) => recurse(default)
         case GenerateID(name, scope) =>
-           val id = "generated_" + nextID
-           nextID += 1
+           val id = "generated_" + StyleBasedPresenter.getNextID
            val newlpar = lpar.copy(ids = (name, id) :: lpar.ids)
            render(scope, comps, compPos, ind, gpar, newlpar)
         case UseID(name) => lpar.ids find (_._1 == name) match {
@@ -320,6 +318,15 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
               case c => throw PresentationError("cannot infer type of " + c)
            }
      }
+   }
+}
+
+/** static state for StyleBasedPresenter in order to avoid generating the same ID twice */
+object StyleBasedPresenter {
+   private var nextID : Int = 0 // the next available id (for generating unique ids)
+   def getNextID = {
+      nextID += 1
+      nextID
    }
 }
 
