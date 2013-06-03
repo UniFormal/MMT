@@ -103,7 +103,20 @@ var mmt = {
 	},
 	
 	notstyle : uris.twelfstyle,
+
    /*
+	* Converts a relative to an absolute url if the base url is set.
+    * Necessary when used within another application to connect with external mmt server (e.g. in planetary)
+    */
+    makeURL : function(relUrl) {
+		if ((typeof mmtUrl) != 'undefined') {
+			return mmtUrl + relUrl; //compute absolute uri to external mmt server
+		} else { 
+			return relUrl;
+		}	
+	},
+
+	/*
 	 * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
 	 * act: String: action to call on MMTURI
 	 * present: Boolean: add presentation to action
@@ -117,7 +130,8 @@ var mmt = {
 			var pres = "_present_" + this.notstyle;
 		else
 			var pres = '';
-		return '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
+        var relativeURL = '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
+		return this.makeURL(relativeURL);
 	},
 
     ajaxReplaceIn : function (url, targetid) {
@@ -147,12 +161,13 @@ var mmt = {
 
 	/** opens current URI in a new window as OMDoc */
 	openCurrentOMDoc : function () {
-		var url = this.adaptMMTURI(currentURI, 'xml', false);  
+		var url = this.adaptMMTURI(this.currentURI, 'xml', false);  
 		window.open(url, '_blank', '', false);
 	},
 	
 	/** opens current MMT URI in a new window */
 	openCurrent : function () {
+        console.log(this);
 		var url = this.adaptMMTURI(this.currentURI, '', true);
 		window.open(url, '_blank', '', false);
 	},
