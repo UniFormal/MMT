@@ -45,7 +45,11 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    def toCML = toOpenMath.toCML
    def role = Role_Variable
    def head = None
-   def components = List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted))
+   def components =
+      List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted)) :::
+      //temporary hack: if any other attribution is present, the type is assumed to be reconstructed
+      //and returning a 4th components indicates that 
+      (if (ats.isEmpty) Nil else List(StringLiteral("")))
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
    private def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos / 1)}</type>).getOrElse(Nil)
    private def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos / 2)}</definition>).getOrElse(Nil)
@@ -211,20 +215,20 @@ object Context {
 
 /** helper object */
 object VarDecl {
-   def parseAttrs[T <: Obj, D <: Obj](N: Seq[Node], base: Path, parseType: Node => T, parseDef : Node => D, parseOther : Node => Term) :
-                                                    (Option[T], Option[D], List[(GlobalName,Term)]) = {
-      var tp : Option[T] = None
-      var df : Option[D] = None
+   def parseAttrs(N: Seq[Node], base: Path) : (Option[Term], Option[Term], List[(GlobalName,Term)]) = {
+      var tp : Option[Term] = None
+      var df : Option[Term] = None
       var attrs : List[(GlobalName, Term)] = Nil
       var left = N.toList
       while (left != Nil) {
          left.head match {
-            case <type>{t}</type> => tp = Some(parseType(t))
-            case <definition>{t}</definition> => df = Some(parseDef(t))
+            case <type>{t}</type> => tp = Some(Obj.parseTerm(t, base))
+            case <definition>{t}</definition> => df = Some(Obj.parseTerm(t, base))
             case a @ <attribution>{t}</attribution> =>
                val key = Path.parseS(xml.attr(a, "key"), base)
-               val value = parseOther(t)
+               val value = Obj.parseTerm(t, base)
                attrs = (key, value) :: attrs
+            /* //no support for OpenMath style OMATTR
             case k @ <OMS/> =>
                val key = Obj.parseOMS(k, base) match {
                   case g: GlobalName => g
@@ -239,22 +243,24 @@ object VarDecl {
                   case _ =>
                      val value = parseOther(vl)
                      attrs = (key, value) :: attrs
-               }
+               }*/
          }
          left = left.tail
       }
       (tp, df, attrs.reverse)
    }
    def parse(N: Node, base: Path) : VarDecl = {
-      val pTerm = (x:Node) => Obj.parseTerm(x, base)
       N match {      
+         // no support for OpenMath style attributed variables
+         /*
          case <OMATTR><OMATP>{ats @ _*}</OMATP>{v}</OMATTR> =>
             val name = LocalName.parse(xml.attr(v, "name"))
             val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
             VarDecl(name, tp, df, attrs : _*)
+         */
          case <OMV>{ats @ _*}</OMV> =>
             val name = LocalName.parse(xml.attr(N, "name"))
-            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
+            val (tp, df, attrs) = parseAttrs(ats, base)
             VarDecl(name, tp, df, attrs : _*)
          case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
       }

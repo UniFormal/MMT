@@ -20,14 +20,9 @@ abstract class Structure extends Symbol with Link {
    val from = OMMOD(fromPath)
    val to = home
    def toTerm = if (name.isAnonymous) OMIDENT(to) else OMDL(home, name)
-   /**
-    * computes induced symbols, compare the corresponding method in {@link info.kwarc.mmt.api.symbols.StructureAssignment}
-    * @param sym a symbol of the domain theory of the structure
-    * @return the induced symbol
-    */
    protected def outerComponents = List(
          StringLiteral(if (name.isAnonymous) "include" else name.toString),
-         from)
+         StringLiteral(fromPath.toPath))
    protected def outerString = if (name.isAnonymous) "include " + from.toString else path + " : " + from.toString
    def toNode =
          <import name={if (name.isAnonymous) null else name.toPath} from={fromPath.toPath} implicit={if (! name.isAnonymous && isImplicit) "true" else null}>
@@ -39,7 +34,7 @@ abstract class Structure extends Symbol with Link {
 /**
  * A DeclaredStructure represents an MMT structure given by a list of assignments.<p>
  * 
- * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
+ * @param home the [[info.kwarc.mmt.api.objects.Term]] representing the parent theory
  * @param name the name of the structure
  * @param from the domain theory
  * @param isImplicit true iff the link is implicit
@@ -54,7 +49,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MP
  /**
   * A DefinedStructure represents an MMT structure given by an existing morphism.<p>
   * 
-  * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
+  * @param home the [[info.kwarc.mmt.api.objects.Term]] representing the parent theory
   * @param name the name of the structure
   * @param from the domain theory
   * @param df the definiens

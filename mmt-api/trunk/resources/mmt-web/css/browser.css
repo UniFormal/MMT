@@ -4,7 +4,7 @@ body {
  margin-top: 0px;
  margin-left:0px;
  margin-right:0px;
- background: #eeeeee;
+ background: white;
 }
 
 #top {
@@ -82,11 +82,11 @@ span.crumb {
 #sidebar {
    background: lightgray;
    position: absolute;
-   overflow: auto;
+   overflow: scroll;
    top: 110px;
    left: 0;
    width: 250px;
-   resize: horizontal;
+   resize: both;
 }
 
 #pathtree {

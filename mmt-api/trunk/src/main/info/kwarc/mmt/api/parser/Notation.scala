@@ -101,7 +101,7 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
     * 
     * pre: canHandle(args, vars, scs) == true
     */
-   def flatten(args: Int, vars: Int, scs: Int) : List[Marker] = {
+   def flatten(args: Int, vars: Int, scs: Int) : (List[Marker], List[ImplicitArg]) = {
       val arity = getArity
       val (perSeqArg, seqArgCutOff) = arity.distributeArgs(args)
       val (perSeqVar, seqVarCutOff) = arity.distributeVars(vars)
@@ -119,7 +119,11 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
          }
          if (p > 0) i else -i
       }
-      markers.flatMap {
+      val implicits = arity.arguments.flatMap {
+         case ImplicitArg(n) => List(ImplicitArg(remap(n)))
+         case _ => Nil
+      }
+      val flatMarkers = markers.flatMap {
          case Arg(n) =>
             List(Arg(remap(n)))
          case SeqArg(n, sep) if n > 0 =>
@@ -137,19 +141,29 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
          case d: Delimiter =>
             List(d)
       }
+      (flatMarkers, implicits)
    }
    
    /**
     * flattens and transforms markers into Presentation
     */
    def presentation(args: Int, vars: Int, scopes: Int) = {
-     val flatMarkers = flatten(args, vars, scopes)
+     val (flatMarkers, implicits) = flatten(args, vars, scopes)
+     val implicitsP = implicits map {
+        case ImplicitArg(n) =>
+           Fragment("implicit", Component(NumberedIndex(n), BracketInfo())) + ArgSep()
+     }
      val numDelims = flatMarkers.count(_.isInstanceOf[parser.Delimiter])
      var numDelimsSeen = 0
      val tokens = flatMarkers.map {
        case d : Delimiter =>
           numDelimsSeen += 1
-          ArgSep() + Fragment("constant", PText(name.toPath), PText(d.text)) + ArgSep()
+          val delim = ArgSep() + Fragment("constant", PText(name.toPath), PText(d.text)) + ArgSep()
+          if (numDelimsSeen == 1) {
+             // add implicit arguments to the first delimiter
+             delim + PList(implicitsP)
+          } else
+             delim
        case Arg(p) =>
           val delimitation = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
           Component(NumberedIndex(p.abs), BracketInfo(Some(precedence), Some(delimitation)))

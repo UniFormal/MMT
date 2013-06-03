@@ -62,7 +62,7 @@ $.fn.filterMClass = function(cl){
 /* some common URIs */
 var uris = {
    lf : "http://cds.omdoc.org/urtheories?LF",
-   twelfstyle : "http://cds.omdoc.org/styles/lf/mathml.omdoc?twelf",
+   mathmlstyle : "http://cds.omdoc.org/styles/omdoc/mathml.omdoc?html5",
 };
 
 var mmt = {
@@ -102,7 +102,7 @@ var mmt = {
 		}
 	},
 	
-	notstyle : uris.twelfstyle,
+	notstyle : uris.mathmlstyle,
 
    /*
 	* Converts a relative to an absolute url if the base url is set.
@@ -146,16 +146,18 @@ var mmt = {
 	},
 		
 	load : function (elem) {
-		var url = this.adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
-		var res = null;
-		$.ajax({ 'url': url,
-				 'dataType': 'xml',
-				 'async': false,
-				 'success': function cont(data) {res = data;}
-			   });
-		//proxyAjax('get', url, '', cont, false, 'text/xml');
-		elem.removeAttribute('jobad:load');
-		return res.firstChild;
+	   if (elem.hasAttribute('jobad:load')) {
+         var url = this.adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
+         var res = null;
+         $.ajax({ 'url': url,
+                'dataType': 'xml',
+                'async': false,
+                'success': function cont(data) {res = data;}
+               });
+         //proxyAjax('get', url, '', cont, false, 'text/xml');
+         elem.removeAttribute('jobad:load');
+         return res.firstChild;
+      }
 	},
 	
 
@@ -183,25 +185,11 @@ var mmt = {
 	setLatinDialog : function (content, title){
         console.log("got here");
 		var dia = $("#latin-dialog");
-		if (dia.length == 0) {
-			this.dialog_init();
-  			var dia = $("#latin-dialog");
-  		}
 		dia.dialog('option', 'title', title);
 		dia[0].replaceChild(content, dia[0].firstChild);
 		dia.dialog('open');
 	},
 	
-	dialog_init : function (){
-		//create and initialize the dialog
-		var div = document.createElement('div');
-		div.setAttribute("id", "latin-dialog");
-		document.body.appendChild(div);
-		var span = document.createElement('span');
-		div.appendChild(span)
-		$('#latin-dialog').dialog({ autoOpen: false});
-	},
-
 	getSelectedParent : function (elem){
 		var s = $(elem).parents().andSelf().filterMClass('math-selected');
 		if (s.length == 0)
