@@ -4,19 +4,19 @@
 <style name="html5">
 
   <notation role="Document">
-  <generateid name="//fold//">
-    <fragment name="folder"><text value="document "/></fragment>
-      <element name="span">
-         <attribute prefix="jobad" name="href"><component index="0"/></attribute>
-         <component index="1"/>
-      </element>
-    <fragment name="foldee">
-       <components begin="2" end="-1">
-         <body>
-          <element name="tr"><element name="td"><recurse/></element></element>
-         </body>
-       </components>
-    </fragment>
+     <generateid name="//fold//">
+       <fragment name="folder"><text value="document "/></fragment>
+         <element name="span">
+            <attribute prefix="jobad" name="href"><component index="0"/></attribute>
+            <component index="1"/>
+         </element>
+       <fragment name="foldee">
+          <components begin="2" end="-1">
+            <body>
+             <element name="tr"><element name="td"><recurse/></element></element>
+            </body>
+          </components>
+       </fragment>
     </generateid>
   </notation>
   
@@ -92,37 +92,6 @@
         <components begin="3" end="-1"/>
       </arg>
     </fragment>
-  </notation>
-<!-- TODO: this must become a special case of structures -->
-  <notation role="Include">
-    <element name="tr">
-      <element name="td">
-         <attribute name="colspan" value="3"/>
-         <if index="1" test="present">
-           <then>
-             <element name="div">
-               <attribute prefix="jobad" name="load"><component index="1"/></attribute>
-               <element name="span">
-                 <attribute name="onclick" value="flatClick(event.target.parentNode)"/>
-                 <attribute name="class" value="keyword"/>
-                 <text value="include "/>
-               </element>
-               <component index="0"/>
-               <element name="div">
-                  <attribute name="class" value="flat-container"/>
-                  <attribute name="style" value="display:none"/>
-               </element>
-             </element>
-          </then>
-          <else>
-             <element name="span">
-               <text value="include "/>
-             </element>
-             <component index="0"/>
-          </else>
-       </if>
-     </element>
-   </element>
   </notation>
   
   <notation role="Constant">
@@ -259,26 +228,30 @@
   </notation>
   
   <notation role="Structure">
-    <element name="tr">
-      <attribute name="class" value="omdoc-structure"/>
-      <element name="td"><component index="0"/></element>
-      <element name="td">
-        <attribute name="class" value="operator"/>
+    <l:tr class="omdoc-structure">
+      <l:td valign="top"><component index="0"/></l:td>
+      <l:td class="operator" valign="top">
         <text value=":"/>
-      </element>
-      <element name="td"><component index="1"/></element>
-    </element>
-    <element name="tr">
-      <element name="td"/>
-      <element name="td"/>
+      </l:td>
       <element name="td">
-        <element name="table">
+        <attribute prefix="jobad" name="load"><component index="1"/></attribute>
+        <element name="span">
+           <attribute prefix="jobad" name="flattenable" value="true"/>
+           <component index="1"/>
+        </element>
+        <l:div class="flat-container" style="display:none"><l:div/></l:div>
+      </element>
+    </l:tr>
+    <l:tr>
+      <l:td/>
+      <l:td>
+        <l:table>
           <components begin="2" end="-1">
             <body><element name="tr"><recurse/></element></body>
           </components>
-        </element>
-      </element>
-    </element>
+        </l:table>
+      </l:td>
+    </l:tr>
   </notation>
 
   <notation role="ConAss StrAss">
@@ -304,18 +277,6 @@
         <component index="3"/>
       </attribute>
       <hole><component index="1"/></hole>
-    </element>
-  </notation>
-
-  <notation role="constant structure" wrap="true">
-    <element name="mo">
-      <attribute prefix="jobad" name="mmtref">
-        <id/>
-      </attribute>
-      <attribute prefix="jobad" name="href">
-        <component index="3"/>
-      </attribute>
-      <hole><component index="2"/></hole>
     </element>
   </notation>
 
@@ -390,33 +351,26 @@
   </notation>
   
   <notation role="fragment:brackets">
-      <element name="mfenced">
-        <attribute name="open"><text value="("/></attribute>
-        <attribute name="close"><text value=")"/></attribute>
-        <element name="mrow">
-          <attribute prefix="jobad" name="mmtref"><id/></attribute>
-          <hole/>
-        </element>
-      </element>
+      <l:mrow>
+        <attribute prefix="jobad" name="mmtref"><id/></attribute>
+        <l:mo class="operator"><text value="("/></l:mo>
+        <hole/>
+        <l:mo class="operator"><text value=")"/></l:mo>
+      </l:mrow>
   </notation>
   <notation role="fragment:ebrackets">
-      <element name="mfenced">
-        <attribute name="open"><text value=""/></attribute>
-        <attribute name="close"><text value=""/></attribute>
-        <attribute prefix="jobad" name="open"><text value="("/></attribute>
-        <attribute prefix="jobad" name="close"><text value=")"/></attribute>
-        <attribute name="class" value="brackets"/>
-        <element name="mrow">
-          <attribute prefix="jobad" name="mmtref"><id/></attribute>
-          <hole/>
-        </element>
-      </element>
+      <l:mrow>
+        <attribute prefix="jobad" name="mmtref"><id/></attribute>
+        <l:mo class="operator brackets brackets-hidden"><text value="("/></l:mo>
+        <hole/>
+        <l:mo class="operator brackets brackets-hidden"><text value=")"/></l:mo>
+      </l:mrow>
   </notation>
   <notation role="fragment:nobrackets">
-      <element name="mrow">
+      <l:mrow>
         <attribute prefix="jobad" name="mmtref"><id/></attribute>
           <hole/>
-      </element>
+      </l:mrow>
   </notation>
   <notation role="fragment:opsep">
     <element name="mspace"><attribute name="width" value=".2em"/></element>
@@ -464,7 +418,7 @@
     <element name="div">
       <attribute name="xmlns" value="http://www.w3.org/1999/xhtml"/>
       <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
-                   <components/>
+      <components/>
     </element>
   </notation>
  
