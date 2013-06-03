@@ -393,12 +393,10 @@
      <fragment name="opsep"/>
      <hole index="1"/>
   </notation>
-  <notation role="fragment:operimp">
-     <hole index="0"/>
-     <element name="mrow">
-        <attribute name="class" value="implicit-arg implicit-arg-hidden"/>
-        <hole index="1"/>
-     </element>
+  <notation role="fragment:implicit">
+     <l:mrow class="implicit-arg implicit-arg-hidden">
+        <hole/>
+     </l:mrow>
   </notation>
   <notation role="fragment:tree">
     <l:mrow>
