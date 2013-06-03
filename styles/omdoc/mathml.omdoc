@@ -325,8 +325,18 @@
       </element>
       <if test="present" index="1">
         <then>
-            <element name="mo"><text value=":"/></element>
-            <component index="1"/>
+           <if test="present" index="3">
+              <then>
+                 <l:mrow class="reconstructed reconstructed-hidden">
+                    <element name="mo"><text value=":"/></element>
+                    <component index="1"/>
+                 </l:mrow>
+              </then>
+              <else>
+                <element name="mo"><text value=":"/></element>
+                <component index="1"/>
+              </else>
+           </if>
         </then>
       </if>
       <if test="present" index="2">
