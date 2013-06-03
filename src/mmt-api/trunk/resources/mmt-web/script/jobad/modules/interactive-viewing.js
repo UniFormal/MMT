@@ -23,7 +23,7 @@ var interactiveViewing = {
 				res["show definition"] = this.showComp('definition');
 				res["(un)mark occurrences"] = this.showOccurs;
 				res["show URI"] = function(){alert(mmt.currentURI)};
-				res["open in new window"] = mmt.openCurrent;
+				res["open in new window"] = function() {mmt.openCurrent();};
 				//res["get OMDoc"] = mmt.openCurrentOMDoc();
 			}
 			return res;
