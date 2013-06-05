@@ -13,7 +13,7 @@ import presentation.{StringLiteral,Omitted}
  * @param name the name of the module
  */
 sealed abstract class Module(val parent : DPath, val name : LocalPath) extends ContentElement {
-   def path = parent ? name
+   def path: MPath = parent ? name
    def toTerm = OMMOD(path)
 }
 

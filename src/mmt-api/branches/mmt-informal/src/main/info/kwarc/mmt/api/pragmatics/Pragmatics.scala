@@ -29,46 +29,79 @@ class Pragmatics(controller: Controller) {
          }
       } else tryMeta
    }
-   def strictBinding(theory: MPath, binder: Term, context: Context, scope: Term): Term = {
+   def strictAttribution(theory: MPath, key: Term, value: Term): Term = {
       lup.getTheory(theory) match {
          case d: DeclaredTheory => d.meta match {
-            case None => OMBIND(binder, context, scope)
+            case None => value // not returning OMA(key, List(value)) here means the outermost key (e.g., the : is dropped)
+            case Some(meta) =>
+               ps.getTyping(meta) match {
+                  case None =>
+                     strictAttribution(meta, key, value)
+                  case Some(h) =>
+                     val arg = strictApplication(theory, key, List(value))
+                     strictAttribution(meta, OMID(h.hastype), arg)
+               }
+         }
+         case d: DefinedTheory => OMA(key, List(value)) //TODO what to do here?
+      }
+      
+   }
+   def strictBinding(theory: MPath, binder: Term, context: Context, scopes: List[Term]): Term = {
+      lup.getTheory(theory) match {
+         case d: DeclaredTheory => d.meta match {
+            case None => OMBINDC(binder, context, scopes)
             case Some(meta) =>
                ps.getHOAS(meta) match {
                   case None =>
-                     strictBinding(meta, binder, context, scope)
+                     strictBinding(meta, binder, context, scopes)
                   case Some(h) =>
-                     val arg = strictBinding(meta, OMID(h.lambda), context, scope)
-                     strictApplication(meta, OMID(h.apply), List(arg))
+                     val arg = strictBinding(meta, OMID(h.lambda), context, scopes)
+                     strictApplication(meta, OMID(h.apply), List(binder, arg))
                }
          }
-         case d: DefinedTheory => OMBIND(binder, context, scope) //TODO what to do here?
+         case d: DefinedTheory => OMBINDC(binder, context, scopes) //TODO what to do here?
       }
    }
-   def pragmaticHead(t: Term) : Term = t match {
+   /**
+    * removes the strict symbols to obtain a pragmatic term
+    * @param t the strict term
+    * @return (tP,ps) where tP is the pragmatic version of t and ps gives the positions of the components of tP in t
+    *   i.e., (tP.components zip ps) forall {(c,p) => t.subobject(p) = c}
+    */
+   def pragmaticHead(t: Term) : Term = {
+      pragmaticHeadWithPositions(t)._1
+   }
+   def pragmaticHeadWithPositions(t: Term) : (Term, List[Position]) = {
+      pragmaticHeadAux(t,Position.positions(t))
+   }
+   private def pragmaticHeadAux(t: Term, pos: List[Position]) : (Term, List[Position]) = t match {
       case OMA(OMS(apply @ OMMOD(meta) % _), fun :: args) =>
          ps.getApplication(meta) match {
             case Some(a) =>
                if (a.apply == apply) {
-                  val prag = args match {                  
+                  val (tP, posP) = args match {
                      case List(OMBIND(OMS(lambda @ OMMOD(meta2) % _), context, scope)) =>
+                        
                         ps.getHOAS(meta2) match {
                            case Some(h) =>
-                              if (h.apply == apply && h.lambda == lambda)
-                                 OMBIND(fun, context, scope)
-                              else
-                                 OMA(fun, args)
+                              if (h.apply == apply && h.lambda == lambda) {
+                                 // OMA(apply, fun, OMBIND(lambda, context, scope)) ---> OMBIND(fun, context, scope)
+                                 val tP = OMBIND(fun, context, scope)
+                                 val posP = pos(1) :: Position.positions(tP).tail.map(p => pos(2)/p)
+                                 (tP, posP)
+                              } else
+                                 (OMA(fun, args), pos.tail)
                            case None =>
-                                 OMA(fun, args)
+                                 (OMA(fun, args), pos.tail)
                         }
-                     case _ =>   OMA(fun, args)
+                     case _ =>   (OMA(fun, args), pos.tail)
                   }
-                  pragmaticHead(prag)
+                  pragmaticHeadAux(tP, posP)
                } else
-                  t
-            case _ => t
+                  (t,pos)
+            case _ => (t,pos)
          }
-      case _ => t
+      case _ => (t,pos)
    }
 }
 
@@ -87,7 +120,7 @@ trait HOAS extends Application {
 }
 
 //what about the other typing judgements - often there is more than one
-abstract class Typing extends Feature {
+trait Typing extends Feature {
    val hastype : GlobalName 
    def makeStrict(j: objects.Typing) = Inhabitation(j.stack, OMA(OMID(hastype), List(j.tm, j.tp)))
    def makePragmatic(j: Judgement) = j match {

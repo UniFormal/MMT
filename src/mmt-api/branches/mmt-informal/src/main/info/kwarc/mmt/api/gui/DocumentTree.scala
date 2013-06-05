@@ -89,13 +89,13 @@ class TreePane(controller: Controller) extends JPanel {
 
    setLayout(new BorderLayout())
 
-   val items = List(Item("text", "text"), Item("XML", "xml"), Item("rendered", "pres"))
+   val items = List(Item("plain", "text"), Item("text", "text/notations"), Item("XML", "xml"), Item("rendered", "pres"))
    val styleTextArea = new JTextField(style.toPath, 30)
    private val buttons = Swing.RadioButtonPanel(items : _*){id =>
       mode = id
       if (mode == "pres")
          try {style = Path.parseM(styleTextArea.getText, style)}
-         catch {case _ => styleTextArea.setText("error: " + styleTextArea.getText)}
+         catch {case _ : Throwable => styleTextArea.setText("error: " + styleTextArea.getText)}
    }
    
    buttons.add(styleTextArea)
@@ -124,17 +124,10 @@ class TreePane(controller: Controller) extends JPanel {
             }
             if (se != null) {
                content.setText("")
-               mode match {
-                  case "text" => content.setText(se.toString)
-                  case "xml"  =>
-                     val pp = new scala.xml.PrettyPrinter(100, 2)
-                     val sb = new StringBuilder
-                     pp.format(se.toNode, sb)
-                     content.setText(sb.result)
-                  case "pres" => 
-                     controller.presenter(presentation.StrToplevel(se), presentation.GlobalParams(rb, style))
-                     //content.setText(rb.get) //content.loadContent(rb.get)
+               val presenter = controller.extman.getPresenter(mode) getOrElse {
+                  new presentation.StyleBasedPresenter(controller,style)
                }
+               presenter(se, rb)
             }
          }
       }

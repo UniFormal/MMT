@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.api.gui
 
 import javafx.application.Platform
@@ -79,3 +80,5 @@ class FXPanel extends JFXPanel {
    // initialize the instance
    init
 }
+
+*/

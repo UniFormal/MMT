@@ -153,17 +153,11 @@ object Differ {
    * @return the (strict) diff representing the difference between old and nw 
    */
 	private def compareInstances(old : Instance, nw : Instance) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-	  if (old.pattern != nw.pattern) {
-	    changes = UpdateComponent(old.path, PatternComponent, Some(OMID(old.pattern)), Some(OMID(nw.pattern))) :: changes
-	  }
-
-	  if (old.matches != nw.matches) {
-      changes = UpdateComponent(old.path, MatchesComponent, Some(old.matches), Some(nw.matches)) :: changes
-    }
-
-    new StrictDiff(changes)
+     var changes : List[StrictChange] = Nil
+     if (old.tp != nw.tp) {
+	    changes = UpdateComponent(old.path, TypeComponent, Some(old.tp), Some(nw.tp)) :: changes
+	   }
+     new StrictDiff(changes)
 	}
 	
 	/**

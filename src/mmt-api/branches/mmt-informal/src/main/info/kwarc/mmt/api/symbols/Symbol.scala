@@ -6,7 +6,12 @@ import info.kwarc.mmt.api.objects._
 /**
  * A Symbol represents an MMT symbol.<p>
  */
-abstract class Symbol extends Declaration
+abstract class Symbol extends Declaration {
+   /** every MMT symbol takes a list of parameters
+    * empty by default, may be overridden when constructing instances
+    */
+   val parameters = Context()
+}
 
 /**
  * An Assignment represents an MMT assignment.<p>

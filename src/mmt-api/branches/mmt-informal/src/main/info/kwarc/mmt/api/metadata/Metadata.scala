@@ -25,9 +25,13 @@ class MetaData {
    def delete(key: GlobalName) {
       data = data.filter(md => md.key != key)
    }
-   def update(key: GlobalName, values: List[Obj]) {
+   def update(key: GlobalName, values: Obj*) {
       delete(key)
       values map  {value => add(new MetaDatum(key, value))}
+   }
+   def update(key: GlobalName, value: URI) {
+      delete(key)
+      add(Link(key, value))
    }
    def keys = data.map(_.key).distinct
    /** get all metadata */
@@ -35,9 +39,13 @@ class MetaData {
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
    def getValues(key: GlobalName) : List[Obj] = get(key).map(_.value)
-   def getLink(key: GlobalName) : List[URI] = data.mapPartial {
-      case Link(k, u) if k == key => Some(u)
-      case _ => None
+   def getLinks(key: GlobalName) : List[URI] = data.flatMap {
+      case Link(k, u) if k == key => List(u)
+      case _ => Nil
+   }
+   def getTags : List[GlobalName] = data.flatMap {
+      case Tag(key) => List(key)
+      case _ => Nil
    }
    def toNode = <metadata>{data.map(_.toNode)}</metadata>
    // def toString
@@ -57,7 +65,7 @@ object MetaData {
               }
               case e => e
            }
-           (scala.xml.Elem(p,l,a,s,cs2 : _*), md)
+           (scala.xml.Elem(p,l,a,s,true,cs2 : _*), md)
         case n => (n, None)
       }
       (newnode, mdxml.map(d => parse(d, base)))
@@ -80,14 +88,14 @@ object MetaData {
 /**
  * an individual MetaDatum
  * @param key the key, must be a symbol in the theory of the respective metadata theory
- * @param value the object, must be well-formed object over the respective metadata theory
+ * @param value the object (may be null, which indicates tags)
  */
 class MetaDatum(val key: GlobalName, val value: Obj) {
    def toNode = this match {
-      case Link(key, uri) => <link rel={key.toPath} resource={uri.toString}/> 
+      case Link(key, uri) => <link rel={key.toPath} resource={uri.toString}/>
+      case Tag(key) => <tag property={key.toPath}/>
       case _ => <meta property={key.toPath}>{value.toOBJNode}</meta> 
    }
-   // def toString
 }
 
 /** helper object */
@@ -98,6 +106,9 @@ object MetaDatum {
       case <link/> =>
          val key = Path.parseS(xml.attr(node, "rel"), keyBase)
          Link(key, URI(xml.attr(node, "resource")))
+      case <tag/> =>
+         val key = Path.parseS(xml.attr(node, "property"), keyBase)
+         Tag(key)
       case Elem(_,"meta",_,_,literal @ _*) => //strangely, XML matching does not work
          val key = Path.parseS(xml.attr(node, "property"), keyBase)
          new MetaDatum(key, OMSTR(literal.text)) // TODO: for now parsing everything into a string
@@ -114,4 +125,10 @@ object Link {
       case OMURI(uri) => Some((d.key, uri))
       case _ => None
    }
+}
+
+/** apply/unapply methods for tags: a tag is a MetaDatum whose value is null */
+object Tag {
+   def apply(key: GlobalName) = new MetaDatum(key, null)
+   def unapply(d: MetaDatum) : Option[GlobalName] = if (d.value == null) Some(d.key) else None
 }

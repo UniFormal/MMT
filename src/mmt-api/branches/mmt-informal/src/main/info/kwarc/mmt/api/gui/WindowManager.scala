@@ -24,15 +24,15 @@ class Window(val id: String, wm: WindowManager) extends JWindow() {
 
 class WindowManager(val controller: Controller) {
    private var windows : List[Window] = Nil
-   private var browser: Option[JFrame] = None
+   private var gui: Option[JFrame] = None
    def openBrowser {
-      val b = new Browser(this)
+      val b = new GUIFrame(this)
       //b.paint
-      browser = Some(b)
+      gui = Some(b)
    }
    def closeBrowser {
-      browser.foreach(_.dispose)
-      browser = None
+      gui.foreach(_.dispose)
+      gui = None
    }
    def getWindow(id: String) : Window = {
       windows.find(_.id == id) match {

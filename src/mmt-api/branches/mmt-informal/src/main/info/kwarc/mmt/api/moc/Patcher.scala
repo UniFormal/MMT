@@ -38,7 +38,7 @@ object Patcher {
         controller.memory.content.update(dnew)
       case UpdateMetadata(path,key,old,nw) => 
         val md = controller.memory.content.get(path).metadata
-        md.update(key, nw)
+        md.update(key, nw:_*)
       case PragmaticChange(name, diff, tp, mp, desc) => patch(diff, controller)
       
     }
@@ -76,18 +76,17 @@ object Patcher {
     case (v : DefinedView,  DefComponent, Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
 
     /** Constants */
-    case (c : Constant, DefComponent, Some(s : Term)) => new Constant(c.home, c.name, c.alias, c.tp, Some(s), c.rl, c.not)
-    case (c : Constant, DefComponent, None) => new Constant(c.home, c.name, c.alias, c.tp, None, c.rl, c.not)
-    case (c : Constant, TypeComponent, Some(s : Term)) => new Constant(c.home, c.name, c.alias, Some(s), c.df, c.rl, c.not)
-    case (c : Constant, TypeComponent, None) => new Constant(c.home, c.name, c.alias, None, c.df, c.rl, c.not)
+    case (c : Constant, DefComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, c.tp, Some(s), c.rl, c.not)
+    case (c : Constant, DefComponent, None) => Constant(c.home, c.name, c.alias, c.tp, None, c.rl, c.not)
+    case (c : Constant, TypeComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, Some(s), c.df, c.rl, c.not)
+    case (c : Constant, TypeComponent, None) => Constant(c.home, c.name, c.alias, None, c.df, c.rl, c.not)
 
     /** Patterns */
-    case(p : Pattern,  ParamsComponent, Some(params : Context)) => new Pattern(p.home, p.name, params, p.body)
-    case(p : Pattern,  PatternBodyComponent, Some(body : Context)) => new Pattern(p.home, p.name, p.params, body)
+    case(p : Pattern,  ParamsComponent, Some(params : Context)) => new Pattern(p.home, p.name, params, p.body, p.not)
+    case(p : Pattern,  PatternBodyComponent, Some(body : Context)) => new Pattern(p.home, p.name, p.params, body, p.not)
 
     /** Instances */
-    case(i : Instance, PatternComponent, Some(OMID(pattern : GlobalName))) => new Instance(i.home,i.name, pattern, i.matches)
-    case(i : Instance,  MatchesComponent, Some(matches : Substitution)) => new Instance(i.home, i.name, i.pattern, matches)
+    case(i : Instance, TypeComponent, Some(OMA(OMID(p), matches))) if i.pattern == p => new Instance(i.home, i.name, i.pattern, matches)
 
     /** ConstantAssignments */
     case(c : ConstantAssignment, DefComponent, Some(target : Term)) => new ConstantAssignment(c.home, c.name, c.alias, Some(target))
@@ -98,8 +97,7 @@ object Patcher {
     case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +
                                 "compName = " + comp +  "\n" +
-                                "newComp = " + nw.toString + "\n" +
-                                "(Likely caused by mismatched diff and patcher implementations)")
+                                "newComp = " + nw.toString)
  
   }
   

@@ -35,7 +35,7 @@ trait Body[S <: Declaration] {
    /** retrieve a declaration, None if not present */ 
    def getO(name : LocalName) : Option[S] =
       try {Some(get(name))}
-      catch {case _ => None}
+      catch {case _ : Throwable => None}
    /** same as get(LocalName(name)) */ 
    def get(name : String) : S = get(LocalName(name))
    /** retrieves the most specific applicable declaration

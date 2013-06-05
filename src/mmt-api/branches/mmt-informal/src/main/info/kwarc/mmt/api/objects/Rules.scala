@@ -2,7 +2,10 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import libraries._
 import objects.Conversions._
-import scala.collection.mutable.{HashMap}
+import scala.collection.mutable.{HashMap,HashSet}
+
+/** empty class as a type abbreviation */
+class RuleMap[R <: Rule] extends HashMap[ContentPath,R]
 
 /** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
  * 
@@ -10,14 +13,23 @@ import scala.collection.mutable.{HashMap}
  *  An instance of RuleStore is created by the ExtensionManager.
  */
 class RuleStore {
-   val typingRules = new HashMap[ContentPath,TypingRule]
-   val inferenceRules = new HashMap[ContentPath, InferenceRule]
-   val computationRules = new HashMap[ContentPath, ComputationRule]
-   val universeRules = new HashMap[ContentPath, UniverseRule]
-   val equalityRules = new HashMap[ContentPath, EqualityRule]
-   val atomicEqualityRules = new HashMap[ContentPath, AtomicEqualityRule]
-   val solutionRules = new HashMap[ContentPath, SolutionRule]
-   val forwardSolutionRules = new HashMap[ContentPath, ForwardSolutionRule]
+   val typingRules = new RuleMap[TypingRule]
+   val inferenceRules = new RuleMap[InferenceRule]
+   val computationRules = new RuleMap[ComputationRule]
+   val universeRules = new RuleMap[UniverseRule]
+   val equalityRules = new RuleMap[EqualityRule]
+   val atomicEqualityRules = new RuleMap[AtomicEqualityRule]
+   val solutionRules = new RuleMap[SolutionRule]
+   val forwardSolutionRules = new RuleMap[ForwardSolutionRule]
+   val introProvingRules = new utils.HashMapToSet[ContentPath, IntroProvingRule]
+   val elimProvingRules = new utils.HashMapToSet[ContentPath, ElimProvingRule]
+
+   /** the DepthRule's that this UOM will use, hashed by (outer,inner) pairs */
+   val depthRules = new utils.HashMapToSet[(GlobalName,GlobalName), uom.DepthRule]
+   /** the BreadthRule's that this UOM will use, hashed by (outer,inner) pairs */
+   val breadthRules = new utils.HashMapToSet[GlobalName, uom.BreadthRule]
+   /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
+   val abbrevRules = new utils.HashMapToSet[GlobalName, uom.AbbrevRule]
    
    /** add some Rule to this RuleStore */
    def add(rs: Rule*) {
@@ -30,36 +42,46 @@ class RuleStore {
          case r: AtomicEqualityRule => atomicEqualityRules(r.head) = r
          case r: SolutionRule => solutionRules(r.head) = r
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
+         case r: IntroProvingRule => introProvingRules(r.head) += r
+         case r: ElimProvingRule => elimProvingRules(r.head) += r
+         case r: uom.DepthRule => depthRules((r.outer,r.inner)) += r
+         case r: uom.BreadthRule => breadthRules(r.head) += r
+         case r: uom.AbbrevRule => abbrevRules(r.head) += r
       }
    }
    def add(rs: RuleSet) {
-      add(rs.rules : _*)
+      rs.rules.foreach(add(_))
    }
-}
-
-/** A pair (theory, context) used by rules
- * @param theory the theory
- * @param context the context
- */
-case class Frame(theory : Term, context : Context) {
-   def ^(subs: Substitution) = Frame(theory, context ^ subs)
-}
-
-case class Stack(frames: List[Frame]) {
-   def pop = Stack(frames.tail)
-   def push(f: Frame) = Stack(f::frames)
-   def theory = frames.head.theory
-   def context = frames.head.context
-   /** applies the same substitution to all contexts on this stack
-    */
-   def ^(subs: Substitution) = Stack(frames.map(_ ^ subs))
-   def ++(con: Context) = Stack(Frame(theory, context ++ con) :: frames.tail)
-}
-
-object Stack {
-   def apply(f: Frame) : Stack = Stack(List(f))
-   def apply(t: MPath) : Stack = empty(OMMOD(t))
-   def empty(t: Term) : Stack = Stack(Frame(t, Context()))
+   
+   def stringDescription = {
+      var res = ""
+      def mkM[A<:Rule](label: String, map: HashMap[ContentPath,A]) {
+         if (! map.isEmpty) {
+            res += "  " + label + "\n"
+            map.values.foreach {r => res += "    " + r.toString + "\n\n"}
+         }
+      }
+      def mkS[A, B<:Rule](label: String, map: utils.HashMapToSet[A,B]) {
+         if (! map.isEmpty) {
+            res += "  " + label + "\n"
+            map.foreach {e => e._2.foreach {r => res += "    " + r.toString + "\n\n"}}
+         }
+      }
+      mkM("typing rules", typingRules) 
+      mkM("inference rules", inferenceRules)
+      mkM("computation rules", computationRules)
+      mkM("universe rules", universeRules)
+      mkM("equality rules", equalityRules)
+      mkM("atomic equality rules", atomicEqualityRules)
+      mkM("solution rules", solutionRules)
+      mkM("forwardSolution rules", forwardSolutionRules)
+      mkS("intro proving rules", introProvingRules)
+      mkS("elim proving rules", elimProvingRules)
+      mkS("depth rules", depthRules)
+      mkS("breadth rules", breadthRules)
+      mkS("abbrev rules", abbrevRules)
+      res
+   }
 }
 
 /** the type of all Rules
@@ -70,12 +92,22 @@ object Stack {
 trait Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    val head: GlobalName
+   override def toString = String.format("%-60s", head.toPath) + " of " + getClass.toString 
 }
 
-/** A RuleSet groups some rules together */
-abstract class RuleSet {
-   val rules: List[Rule]
+/** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
+trait RuleSet {
+   val rules = new HashSet[Rule]
+
+   def declares(rs: Rule*) {rs foreach {rules += _}}
+   def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
+
+   def allRules = rules
+   def depthRules = rules filter {_.isInstanceOf[uom.DepthRule]}
+   def breadthRules = rules filter {_.isInstanceOf[uom.BreadthRule]}
+   def abbrevRules = rules filter {_.isInstanceOf[uom.AbbrevRule]}
 }
+
 
 /** An TypingRule checks a term against a type.
  *  It may recursively call other checks.
@@ -191,11 +223,42 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the term that contains the unknown to be solved
     *  @param tm2 the second term 
-    *  @param tpOpt their type, if known
-    *  @param context their context
+    *  @param stack the context
     *  @return false if this rule is not applicable;
     *    if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack): Boolean
+}
+
+/** A continuation returned by [[info.kwarc.mmt.api.objects.ProvingRule]] */
+abstract class ApplicableProvingRule {
+  def label: String
+  //def ranking: Int
+  def apply() : Term
+}
+
+/** An IntroProvingRule solves a goal with a certain head.
+ */
+abstract class IntroProvingRule(val head: GlobalName) extends Rule {
+   /** 
+    * @param goal the type for which a term is needed
+    * @param stack the context
+    * @return if applicable, a continuation that applies the rule
+    */
+   def apply(goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
+}
+
+/**
+ * An ElimProvingRule uses a term of a given type with a given head.
+ */
+abstract class ElimProvingRule(val head: GlobalName) extends Rule {
+   /** 
+    * @param evidence the proof of the fact, typically an OMS or OMV
+    * @param fact the type representing the judgment to be used (whose type is formed from head)
+    * @param goal the type for which a term is needed
+    * @param stack the context
+    * @return if applicable, a continuation that applies the rule
+    */
+   def apply(evidence: Term, fact: Term, goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
 }

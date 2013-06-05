@@ -36,7 +36,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    
    private def modulesGetNF(p : MPath) : Module =
       try {modules(p)}
-      catch {case _ => if (false) throw GetError("module does not exist: " + p)
+      catch {case _ : Throwable => if (false) throw GetError("module does not exist: " + p)
                        else     throw new frontend.NotFound(p)
             }
    def log(s : => String) = report("library", s)
@@ -221,7 +221,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                  }
                  val newAlias = alias orElse c.alias.map(namePrefix / _)
                  val newDef = target orElse c.df.map(_ * l.toTerm)
-                 new Constant(l.to, newName, newAlias, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
+                 Constant(l.to, newName, newAlias, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
               case r: Structure => assigOpt match {
                   case Some(a: DefLinkAssignment) =>
                       new DefinedStructure(l.to, newName, r.fromPath, a.target, false)
@@ -316,7 +316,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                get(p.module % !(hd)) match {
                   case s : Structure => Some(s.from % tl)
                }
-            } catch {case _ => None}
+            } catch {case _ : Throwable => None}
          case !(hd) => None
          case _ => None
    }

@@ -11,6 +11,9 @@ abstract class Judgement {
    */ 
   def freeVars : HashSet[LocalName]
   val stack: Stack
+   /** a toString method that may call a continuation on its objects
+    */
+   def present(cont: Obj => String) = toString 
 }
 
 /** A WFJudgment defines well-formed objects */
@@ -30,6 +33,8 @@ case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends J
      fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
      ret
    }
+   override def present(cont: Obj => String): String =
+      stack.toString + " |- " + cont(t1) + " = " + cont(t2) + (if (t.isDefined) " : " + cont(t.get) else "")
 }
 
 /** represents a typing judgement
@@ -43,6 +48,8 @@ case class Typing(stack: Stack, tm: Term, tp: Term) extends WFJudgement {
     ret
   }
   val wfo = tm
+  override def present(cont: Obj => String): String =
+      stack.toString + " |- " + cont(tm) + " : " + cont(tp)
 }
 
 case class Universe(stack: Stack, univ: Term) extends WFJudgement {
@@ -53,6 +60,8 @@ case class Universe(stack: Stack, univ: Term) extends WFJudgement {
     ret
   }
   val wfo = univ
+  override def present(cont: Obj => String): String =
+      stack.toString + " |- " + cont(univ) + " UNIVERSE"
 }
 
 case class Inhabitation(stack: Stack, tp: Term) extends Judgement {

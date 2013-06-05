@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
+import objects.Term
 import utils.MyList._
 
 
@@ -21,24 +22,37 @@ object TokenList {
     * The SourcePositions in the Tokens are only correct if all line endings contain a '\n'.
     * (The '\n' counts when counting the offset.) 
     */
-   def apply(s: String, first: SourcePosition = SourcePosition(0,0,0)) : TokenList = {
-      val l = s.length
+   def apply(s: String, first: SourcePosition = SourcePosition(0,0,0), em: EscapeManager) : TokenList = {
+      val l = first.offset + s.length
       // lexing state
       var i = first  // position of net Char in s
       var current = "" // previously read prefix of the current Token
       var connect = false // current.last.getType == CONNECTOR_PUNCTUATION
+      var skipEscaped = 0 //number of characters to skip, normally 0 
       var whitespace = true //there was a whitespace before the current Token
-      var tokens : List[Token] = Nil // Token's found so far in reverse order
+      var tokens : List[TokenListElem] = Nil // Token's found so far in reverse order
+      //end the current Token
+      def endToken {
+         if (current != "") {
+            tokens ::= Token(current, i-current.length, whitespace)
+            current = ""
+            whitespace = false
+         }
+      }
       // the lexing loop
       while (i.offset < l) {
-         val c = s(i.offset) // current Char
+         val c = s(i.offset-first.offset) // current Char
          val tp = c.getType // current Char's type
-         // whitespace always starts a new Token, 
-         if (c.isWhitespace) {
-            if (current != "") {
-               tokens ::= Token(current, i-current.length, whitespace)
-               current = ""
-            }
+         if (skipEscaped > 0) {
+            skipEscaped -= 1
+         } else em(s,i.offset-first.offset, i) match {
+           case Some(escaped) =>
+               endToken
+               tokens ::= escaped
+               skipEscaped = escaped.length-1
+           case None => if (c.isWhitespace) {
+            // whitespace always starts a new Token, 
+            endToken
             whitespace = true
          } else {
             // we are in a Token
@@ -50,13 +64,13 @@ object TokenList {
                // letters, marks, and numbers continue the Token
                case _ if c.isLetter =>
                   current += c
-               // the special MMT delimiters continue a multi-character Token; using . instead of /
-               case _ if (c == '?' || c == '.') && current != "" =>
+               // the special MMT delimiters continue a multi-character Token
+               case _ if (c == '?' || c == '/') && current != "" =>
                   current += c
                case COMBINING_SPACING_MARK | ENCLOSING_MARK | NON_SPACING_MARK =>
                   current += c
                case DECIMAL_DIGIT_NUMBER | LETTER_NUMBER | OTHER_NUMBER =>
-                  current += c
+                  current += c               
                // connectors are remembered
                case CONNECTOR_PUNCTUATION =>
                   current += c
@@ -64,26 +78,21 @@ object TokenList {
                // everything else:
                case _ =>
                   // end previous Token, if any
-                  if (current != "") {
-                     tokens ::= Token(current, i-current.length, whitespace)
-                     current = ""
-                     whitespace = false
-                  }
+                  endToken
                   // look ahead: if a connector follows, start a multi-character Token
                   // otherwise, create a single-character Token
-                  if (i.offset < l-1 && s(i.offset+1).getType == CONNECTOR_PUNCTUATION) {
+                  if (i.offset < l-1 && s(i.offset-first.offset+1).getType == CONNECTOR_PUNCTUATION) {
                      current += c
                   } else {
                      tokens ::= Token(c.toString, i, whitespace)
                   }
             }
             whitespace = false
-         }
+         }}
          if (c == '\n') i = i.nl else i += 1
       }
       //add the last Token, if any
-      if (current != "")
-         tokens ::= Token(current, i-current.length, whitespace)
+      endToken
       new TokenList(tokens.reverse)
    }
 }
@@ -99,6 +108,8 @@ class TokenList(private var tokens: List[TokenListElem]) {
    def apply(n: Int) = tokens(n)
    /** returns a sublist of elements */
    def apply(from: Int, to: Int) = tokens.slice(from, to)
+   /** returns all tokens */
+   def getTokens = tokens
    /**
     * @param an the notation to reduce
     * @return the slice reduced into 1 Token 
@@ -120,11 +131,14 @@ class TokenList(private var tokens: List[TokenListElem]) {
             doFoundArg(fa)
          case FoundSeqArg(_, args) =>
             args foreach doFoundArg
-         case FoundVar(_, _, _, tpOpt) =>
-            tpOpt foreach doFoundArg
+         case fv : FoundVar =>
+            fv.getVars foreach {
+               case SingleFoundVar(_,_,tpOpt) =>
+                  tpOpt foreach doFoundArg
+            }
       }
       val (from,to) = an.fromTo
-      val matched = new MatchedList(newTokens.reverse, an)
+      val matched = new MatchedList(newTokens.reverse, an, tokens(from).firstPosition, tokens(to-1).lastPosition)
       tokens = tokens.take(from) ::: matched :: tokens.drop(to)
       (from,to)
    }
@@ -147,15 +161,50 @@ case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
 }
 
 /** the type of objects that may occur in a [[info.kwarc.mmt.api.parser.TokenList]] */
-trait TokenListElem
+trait TokenListElem {
+   def firstPosition: SourcePosition
+   def lastPosition: SourcePosition
+   def region = SourceRegion(firstPosition,lastPosition)
+}
+
+/** subtype of TokenListElem that defines some methods generally */
+abstract class PrimitiveTokenListElem(text: String) extends TokenListElem {
+   override def toString = text //+ "@" + first.toString
+   val length = text.length
+   /** the region spanned by this Token, from first to last character */
+   val lastPosition = {
+      SourcePosition(firstPosition.offset+length, firstPosition.line, firstPosition.column+length-1)
+   }
+}
 
 /** A Token is the basic TokenListElem
  * @param word the characters making up the Token (excluding whitespace)
  * @param first the index of the first character
  * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
+ * @param firstPosition the SourcePosition of the first character
+*  */
+case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean) extends PrimitiveTokenListElem(word)
+
+/** An ExternalToken is anything produced by an EscapeHandler
+ * @param text the characters making up the literal
+ * @param firstPosition the SourcePosition of the first character
  */
-case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean) extends TokenListElem {
-   override def toString = word //+ "@" + first.toString
+abstract class ExternalToken(text:String) extends PrimitiveTokenListElem(text) {
+   /** a continuation function called by the parser when parsing this Token
+    * 
+    * @param outer the ParsingUnit during which this ExternalToken was encountered
+    * @param boundVars the context
+    * @param parser the parser calling this function
+    */
+   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser): Term
+}
+
+/** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
+ * @param term the result of parsing
+ */
+case class CFExternalToken(text:String, firstPosition: SourcePosition, term: Term) extends ExternalToken(text) {
+   /** returns simply term */
+   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser) = term
 }
 
 /**
@@ -168,7 +217,8 @@ case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: 
  * 
  * TokenSlice's in an.getFound are invalid. 
  */
-class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) extends TokenListElem {
+class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation,
+                  val firstPosition: SourcePosition, val lastPosition: SourcePosition) extends TokenListElem {
    override def toString = if (tokens.isEmpty)
      "{" + an.notation.name.last + "}"
    else
@@ -192,6 +242,8 @@ class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation) exten
  * @param tokens the TokenList that is to be reduced
  */
 class UnmatchedList(val tl: TokenList) extends TokenListElem {
+   val firstPosition = tl(0).firstPosition
+   val lastPosition = tl(tl.length-1).lastPosition
    var scanner: Scanner = null
    override def toString = "{unmatched " + tl.toString + " unmatched}"
 }

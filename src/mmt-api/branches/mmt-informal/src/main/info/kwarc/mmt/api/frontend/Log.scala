@@ -4,14 +4,16 @@ import utils._
 
 /** extended by all classes that use the logging aspect */
 trait Logger {
-   val report: Report
-   val logPrefix: String
+   // fields are def's not val's to avoid surprises during instantiation/inheritance
+   protected def report: Report
+   def logPrefix: String
    protected def log(s : => String) = report(logPrefix, s)
    protected def logGroup[A](a: => A) : A = {
       report.indent
       try {a}
       finally {report.unindent}
    }
+   protected def logError(s : => String) = report("error", "(" + logPrefix + ") " + s)
 }
 
 /** Instances of Report handle all output to the user */
@@ -36,8 +38,8 @@ class Report {
    private var handlers : List[ReportHandler] = Nil
    /** adds a ReportHandler */
    def addHandler(h: ReportHandler) {
-      handlers ::= h
       log("report", "logging to " + h)
+      handlers ::= h
    }
    /** removes all ReportHandlers with a certain id */
    def removeHandler(id: String) {handlers = handlers.filter(_.id != id)}
@@ -48,6 +50,7 @@ class Report {
    /** decrease indentation */
    def unindent {ind = ind.substring(2)}
 
+   //this should not be here, if needed, a special LogHandler should be added temporarily
    private var mem : List[String] = Nil
    private var rec = false
    def record {rec = true}
@@ -61,6 +64,7 @@ object Report {
 
 abstract class ReportHandler(val id: String) {
    def apply(ind: String, group: String, msg: String)
+   override def toString = id
 }
 
 /** outputs to standard output */
@@ -69,7 +73,6 @@ object ConsoleHandler extends ReportHandler("console") {
       val m = ind + group + ": " + msg
       println(m)
    }
-   override def toString = "console"
 }
 
 /** outputs to a file */

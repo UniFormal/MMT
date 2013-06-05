@@ -39,6 +39,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
       val om = xml.namespace("om") // inlining this into XML literal does not work
       <om:OMOBJ xmlns:om={om}>{toNode}</om:OMOBJ>
    }
+   def toCML: Node
    /** applies a substitution to an object (computed immediately)
     *  capture is avoided by renaming bound variables that are free in sub */
    // TODO use an internal auxiliary method for subsitution that carries along a precomputed list of free variables in sub to avoid recomputing it at every binder
@@ -53,7 +54,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
      pos.indices.tail.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
             val newContext = obj match {
-               case OMBINDC(_,context, _,_) => con ++ context.take(i)
+               case OMBINDC(_,context,_) => con ++ context.take(i)
                case _ => con
             }
             obj.components(i) match {
@@ -64,7 +65,14 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
    def head : Option[ContentPath]
    /** the governing path required by Content is the head, if any */
    def governingPath = head
-   def toCML: Node
+   /** replaces metadata of this with those of o
+    * 
+    * @param o the original object
+    * call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata 
+    */
+   def copyFrom(o: Obj) {
+      metadata = o.metadata
+   }
 }
 
 trait MMTObject {
@@ -76,7 +84,7 @@ trait MMTObject {
    def toNodeID(pos : Position) =
       if (args.isEmpty) OMID(path).toNode
       else
-      <om:OMA>{components.zipWithIndex.map({case (m,i) => m.toNodeID(pos+i)})}
+      <om:OMA>{components.zipWithIndex.map({case (m,i) => m.toNodeID(pos/i)})}
       </om:OMA> % pos.toIDAttr
    def toCML = 
      if (args.isEmpty) <m:csymbol>{path.toPath}</m:csymbol>
@@ -103,6 +111,14 @@ sealed abstract class Term extends Obj {
    /** This permits the syntax term % sym for path composition */
    def %(n: LocalName) : GlobalName = GlobalName(this,n)
    def %(n: String) : GlobalName = GlobalName(this,LocalName(n))
+   /** applies copyFrom and returns this
+    * 
+    * @return this object but with the metadata from o
+    */
+   def from(o: Term): Term = {
+      copyFrom(o)
+      this
+   }
 }
 
 /**
@@ -142,7 +158,7 @@ case class OMID(path: ContentPath) extends Term {
    def toNodeID(pos : Position) = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}/> % pos.toIDAttr
       case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.toPath}/> % pos.toIDAttr
-      case thy % name => <om:OMS name={name.toPath}>{thy.toNodeID(pos + 0)}</om:OMS> % pos.toIDAttr
+      case thy % name => <om:OMS name={name.toPath}>{thy.toNodeID(pos / 0)}</om:OMS> % pos.toIDAttr
    }
    def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
 }
@@ -159,40 +175,37 @@ object OMS {
  * An OMBINDC represents a binding with condition
  * @param binder the binder
  * @param context the bound variables (from outside to inside)
- * @param condition an optional condition on the variables
- * @param body the scope/body/matrix of the binder
+ * @param scopes the scopes/bodies/matrices of the binder (usually exactly 1)
  */
-case class OMBINDC(binder : Term, context : Context, condition : Option[Term], body : Term) extends Term  {
+case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends Term  {
    def head = binder.head
    val numVars = context.variables.length
-   def components = binder :: context.toList ::: List(body) //condition.getOrElse(Omitted)
+   def components = binder :: context.toList ::: scopes
    def role = Role_binding
    def toNodeID(pos : Position) = 
-      <om:OMBIND>{binder.toNodeID(pos + 0)}
+      <om:OMBIND>{binder.toNodeID(pos / 0)}
                  {context.toNodeID(pos)}
-                 {if (condition.isDefined) condition.get.toNodeID(pos + (numVars + 2))}
-                 {body.toNodeID(pos + (numVars + 1))}
+                 {scopes.zipWithIndex.map {
+                    case (s,i) => s.toNodeID(pos / (numVars + i + 1))
+                 }}
       </om:OMBIND> % pos.toIDAttr
-   override def toString = "(" + binder + " [" + context + "] " + body + ")"  
+   override def toString = "(" + binder + " [" + context + "] " + scopes.map(_.toString).mkString(" ") + ")"  
    def ^(sub : Substitution) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
       val subN = sub ++ alpha
-      OMBINDC(binder ^ sub, newCon ^ sub, condition.map(_ ^ subN), body ^ subN)
+      OMBINDC(binder ^ sub, newCon ^ sub, scopes.map(_ ^ subN)).from(this)
    }
-   private[objects] def freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: (body.freeVars ::: condition.map(_.freeVars_).getOrElse(Nil)).filterNot(x => context.isDeclared(x))      
-   def toCML = condition match {
-     case Some(cond) => <m:apply>{binder.toCML}{context.toCML}<m:condition>{cond.toCML}</m:condition>{body.toCML}</m:apply>
-     case None => <m:apply>{binder.toCML}{context.toCML}{body.toCML}</m:apply>
-   }
+   private[objects] def freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
+   def toCML = <m:apply>{binder.toCML}{context.toCML}{scopes.map(_.toCML)}</m:apply>
 }
 
 /**
  * OMBIND represents a binding without condition
  */
 object OMBIND {
-	def apply(binder : Term, context : Context, body : Term) = OMBINDC(binder, context, None, body)
+	def apply(binder : Term, context : Context, body : Term) = OMBINDC(binder, context, List(body))
 	def unapply(t : Term): Option[(Term,Context,Term)] = t match {
-		case OMBINDC(b,c,None,s) => Some((b,c,s))
+		case OMBINDC(b,c,List(s)) => Some((b,c,s))
 		case _ => None
 	}
 }
@@ -205,7 +218,7 @@ object OMBIND {
 case class OMM(arg : Term, via : Term) extends Term with MMTObject {
    val path = mmt.morphismapplication
    def args = List(arg,via)
-   def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub) 
+   def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: via.freeVars_
 }
 
@@ -220,11 +233,10 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def components = fun :: args
    override def toString = (fun :: args).map(_.toString).mkString("(", " ", ")")
    def toNodeID(pos : Position) =
-      <om:OMA>{fun.toNodeID(pos + 0)}
-              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
+      <om:OMA>{fun.toNodeID(pos / 0)}
+              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
       </om:OMA> % pos.toIDAttr
-    
-   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)) //.flatMap(_.items))
+   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
 }
@@ -245,9 +257,14 @@ case class OMV(name : LocalName) extends Term {
    override def toString = name.toString
    def ^(sub : Substitution) =
 	   sub(name) match {
-	  	   case Some(t: Term) => t
-	  	   case Some(_) => 
-	  	     throw SubstitutionUndefined(name, "substitution is applicable but does not provide a term")
+	  	   case Some(t) => t match {
+	  	      //substitution introduces structure-sharing if the same variable occurs more than once
+	  	      //that is normally useful for efficiency
+	  	      //but it the two occurrences carry different metadata (in particular, different source-references), it is undesirable
+	  	      //for the most important case of variable renamings, the OMV case below avoids structure sharing and preserves metadata 
+	  	      case OMV(x) => OMV(x).from(this)
+	  	      case _ => t
+	  	   }
 	  	   case None => this
        }
    private[objects] def freeVars_ = List(name)
@@ -268,10 +285,10 @@ case class OME(error : Term, args : List[Term]) extends Term {
    def role = Role_application(None)
    def components = error :: args
    def toNodeID(pos : Position) =
-      <om:OMA>{error.toNodeID(pos + 0)}
-              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos+(i+1))})}
+      <om:OMA>{error.toNodeID(pos / 0)}
+              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub))
+   def ^(sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = error.freeVars_ ::: args.flatMap(_.freeVars_)   
    def toCML = <m:apply>{error.toCML}{args.map(_.toCML)}</m:apply>
 }
@@ -289,21 +306,20 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    override def strip = arg.strip
    override def toString = "{" + arg + " : " + key + " -> " + value + "}"
    def toNodeID(pos : Position) = 
-      <om:OMATTR><om:OMATP>{key.toNodeID(pos+0)}{value.toNodeID(pos+2)}</om:OMATP>
-                 {arg.toNodeID(pos+1)}
+      <om:OMATTR><om:OMATP>{key.toNodeID(pos/0)}{value.toNodeID(pos/2)}</om:OMATP>
+                 {arg.toNodeID(pos/1)}
       </om:OMATTR> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMATTR(arg ^ sub, key ^ sub, value ^ sub)
+   def ^ (sub : Substitution) = OMATTR(arg ^ sub, key, value ^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
 
 }
 
-case class OMREF(uri: URI, var value: Option[Term] = None, var under: Substitution = Substitution()) extends Term {
-   def ^(sub: Substitution) = OMREF(uri, value, under ^ sub)
-   private[objects] def freeVars_ = value.map(_.freeVars_).getOrElse(Nil).filter(x => under.maps(x))
+case class OMREF(uri: URI, var value: Option[Term] = None) extends Term {
+   def ^(sub: Substitution) = this
+   private[objects] def freeVars_ = Nil
    def isDefined = value.isDefined
    def set(t: Term) {value = Some(t)}
-   def get : Option[Term] = value map (_ ^ under)
    def head = value flatMap {_.head}
    def role = Role_reference
    def components = List(StringLiteral(uri.toString), value.getOrElse(Omitted))
@@ -336,7 +352,7 @@ abstract class OMLiteral extends Term {
    val value : Any
    def tag: String
    override def toString = value.toString
-   def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, scala.xml.Text(value.toString)) 
+   def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, true, scala.xml.Text(value.toString)) 
    def ^(sub : Substitution) = this
    private[objects] def freeVars_ = Nil
 }
@@ -378,7 +394,7 @@ case class OMSemiFormal(tokens: List[SFObjectElem]) extends Term with SFContentE
          case Formal(t) => Formal(t ^ sub)
          case i => i
       }
-      OMSemiFormal(newtokens)
+      OMSemiFormal(newtokens).from(this)
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
    def toCML = <m:apply><csymbol>OMSemiFormal</csymbol>tokens.map(_.toCML)</m:apply>
@@ -401,6 +417,51 @@ object OMAMaybeNil {
 }
 
 /**
+ * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as complex binder
+ * 
+ * It does not subsume the OMID case
+ */
+object ComplexTerm {
+   def apply(p: GlobalName, args: List[Term], con: Context, scopes: List[Term]) =
+      if (args.isEmpty && con.isEmpty && scopes.isEmpty) OMS(p)
+      else if (con.isEmpty && scopes.isEmpty) OMA(OMS(p), args)
+      else
+         if (args.isEmpty) OMBINDC(OMS(p), con,scopes)
+         else OMBINDC(OMA(OMS(p), args), con, scopes)
+   def unapply(t: Term) : Option[(GlobalName, List[Term], Context, List[Term])] = t match {
+      //case OMS(p) => Some((p, Nil, Context(), Nil))
+      case OMA(OMS(p), args) => Some(p, args, Context(), Nil)
+      case OMBIND(OMS(p), con, scope) => Some((p, Nil, con, List(scope)))
+      case OMBIND(OMA(OMS(p), args), con, scope) => Some((p, args, con, List(scope)))
+      case _ => None
+   }
+}
+
+
+/* this may prove useful to pattern-match through OMREF elements 
+abstract class TermCompanion[A] {
+   def strictUnapply(t:Term): A
+   def unapply(t: Term): Option[A] = t match {
+      case r: OMREF => r.value map unapply
+      case t =>
+         try {Some(strictUnapply(t))}
+         catch {case e: ClassCastException => None}
+   }
+}
+
+object OMID extends TermCompanion[ContentPath] {
+   def strictUnapply(t: Term) = t.asInstanceOf[OMID].path
+}
+object OMA extends TermCompanion[(Term,List[Term])] {
+   def strictUnapply(t: Term) = {
+      val a = t.asInstanceOf[OMA]
+      (t.fun,t.args)
+   }
+}
+*/
+
+
+/**
  * Obj contains the parsing methods for objects.
  * There is one parsing method for each syntactic class of objects: terms, morphisms, theories.
  */
@@ -417,14 +478,13 @@ object Obj {
       //N can set local cdbase attribute; if not, it is copied from the parent
       val nbase = newBase(N, base)
       //this function unifies the two cases for binders in the case distinction below
-      def doBinder(binder : Node, context : Node, condition : Option[Node], body : Node) = {
+      def doBinder(binder : Node, context : Node, scopes : List[Node]) = {
          val bind = parseTerm(binder, nbase)
          val cont = Context.parse(context, base)
          if (cont.isEmpty)
             throw new ParseError("at least one variable required in " + cont.toString)
-         val cond = condition.map(parseTerm(_, nbase))
-         val bod = parseTerm(body, nbase)
-         OMBINDC(bind, cont, cond, bod)
+         val scopesP = scopes.map(parseTerm(_, nbase))
+         OMBINDC(bind, cont, scopesP)
       }
       N match {
          case <OMS/> =>
@@ -439,18 +499,16 @@ object Obj {
             val morph = parseTerm(child(2), nbase)
             OMM(arg, morph)
          case <OMA>{child @ _*}</OMA> =>
-            if (child.length <= 1)
-               throw ParseError("No arguments given: " + N.toString)
+            if (child.length == 0)
+               throw ParseError("No operator given: " + N.toString)
             val fun = parseTerm(child.head, base)
             val args = child.tail.toList.map(parseTerm(_, nbase))
             OMA(fun, args)
          case <OME>{child @ _*}</OME> =>
             val ch = child.toList.map(parseTerm(_, nbase))
             OME(ch.head,ch.tail)
-         case <OMBIND>{binder}{context}{condition}{body}</OMBIND> =>
-           	doBinder(binder, context, Some(condition), body)
-         case <OMBIND>{binder}{context}{body}</OMBIND> =>
-            doBinder(binder, context, None, body)
+         case <OMBIND>{binder}{context}{scopes @ _*}</OMBIND> =>
+            doBinder(binder, context, scopes.toList)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
             val k = parseTerm(key, nbase)
             if (! k.isInstanceOf[OMID])
@@ -463,6 +521,13 @@ object Obj {
             val t = parseTerm(n, nbase)
             OMATTR(t, k.asInstanceOf[OMID], v)
          case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
+         case <OMSF>{nodes @ _*}</OMSF> =>
+            val sf = nodes.toList.map {
+               case node @ <text>{scala.xml.PCData(t)}</text> => Text(xml.attr(node, "format"), t)
+               case <node>{n}</node> => XMLNode(n)
+               case n => Formal(parseTerm(n, nbase))
+            }
+            OMSemiFormal(sf)
          case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
          case <OMSTR>{s @ _*}</OMSTR> => OMSTR(s.text)
          case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding

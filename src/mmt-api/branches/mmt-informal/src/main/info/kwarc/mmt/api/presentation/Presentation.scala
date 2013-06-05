@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Node,NodeSeq}
 
+case class BracketInfo(prec: Option[Precedence] = None, delimitation : Option[Int] = None)
+
 /** This is the type of a simple language of presentation expressions that may be used in Notation and are evaluated by Presenter */
 sealed abstract class Presentation {
    /** concatenation */
@@ -12,6 +14,7 @@ sealed abstract class Presentation {
    }
    /** fill the Hole s of an expression */
    def fill(plug : Presentation*) : Presentation = this
+   def toNode: Node = <unimplemented/> //TODO
 }
 
 /** produces a string */
@@ -24,10 +27,6 @@ case class Element(prefix : String, label : String, attributes : List[Attribute]
       Element(prefix, label, attributes.map(_.fill(plug : _*)), children.map(_.fill(plug : _*)))
 }
 
-/*
-case class XMLDecl(version : String, encoding : String) extends Presentation
-case class ProcInstr(target : String, text : String) extends Presentation
-*/
 /** produces an XML attribute */
 case class Attribute(prefix : String, name : String, value : Presentation) {
    def fill(plug : Presentation*) = Attribute(prefix, name, value.fill(plug : _*))
@@ -71,12 +70,12 @@ case class Components(begin : CIndex, pre : Presentation, end : CIndex, post : P
 
 /** short hand to iterate over a list of components */
 object Iterate {
-	def apply(b : CIndex, e : CIndex, s : Presentation, p : Option[Precedence]) =
+	def apply(b : CIndex, e : CIndex, s : Presentation, p : BracketInfo) =
 		Components(b, Presentation.Empty, e, Presentation.Empty, 1, s, Recurse(p))
 }
 /** short hand to recurse into a single component */
 object Component {
-	def apply(index : CIndex, q : Option[Precedence]) = Iterate(index, index, Presentation.Empty, q)
+	def apply(index : CIndex, q : BracketInfo) = Iterate(index, index, Presentation.Empty, q)
 }
 
 /** produces the current index in a loop */
@@ -86,10 +85,10 @@ case object Index extends Presentation
  * @param offset the index of the component relative to the current index in the loop
  * @param prec the input precedence to be used (no brackets if None)
  */
-case class Neighbor(offset : Int, prec : Option[Precedence]) extends Presentation
+case class Neighbor(offset : Int, prec : BracketInfo) extends Presentation
 /** short hand to recurse into the current component */
 object Recurse {
-	def apply(p : Option[Precedence]) = Neighbor(0, p)
+	def apply(p : BracketInfo) = Neighbor(0, p)
 }
 
 /** like Components but nests instead of concatenating, step should contain Hole to indicate nesting */
@@ -151,7 +150,7 @@ object Brackets {
 	def apply(arg : Presentation) = Fragment("brackets", arg)
 }
 object EBrackets {
-	def apply(arg : Presentation, elevel : Int) = Fragment("ebrackets", arg, Text(elevel.toString))
+	def apply(arg : Presentation) = Fragment("ebrackets", arg)
 }
 object NoBrackets {
 	def apply(arg : Presentation) = Fragment("nobrackets", arg)
@@ -162,11 +161,11 @@ object Presentation {
    def Empty = PList(Nil)
    private def cindex(s : String) : CIndex = {
       try {NumberedIndex(s.toInt)}
-      catch {case _ => NamedIndex(s)}//throw ParseError("illegal index: " + s)}
+      catch {case _ : Throwable => NamedIndex(s)}//throw ParseError("illegal index: " + s)}
    }
    private def int(s : String) : Int = {
       try {s.toInt}
-      catch {case _ => throw ParseError("illegal index: " + s)}
+      catch {case _ : Throwable => throw ParseError("illegal index: " + s)}
    }
    private def precOpt(s : String) = s match {
       case "" => None
@@ -177,6 +176,18 @@ object Presentation {
       if (List("present", "atomic") contains t) t
       else throw ParseError("invalid test " + t)
    }
+   private def parseInElement(nodes: NodeSeq): (List[Presentation],List[Attribute]) = {
+      var atts : List[Attribute] = Nil
+      var elems : List[Presentation] = Nil
+      for (c <- nodes) c match {
+         case <attribute/> =>
+            atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), Text(xml.attr(c, "value")))
+         case <attribute>{value @ _*}</attribute> =>
+            atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), parse(value)(true))
+         case p => elems ::= parse(p)
+      }
+      (elems.reverse, atts.reverse)
+   }
    /** parses presentation from XML */
    def parse(N : NodeSeq)(implicit inAttr: Boolean = false) : Presentation = {
       val ps = for (n <- N) yield n match {
@@ -184,31 +195,25 @@ object Presentation {
 /*         case <procinstr/> => ProcInstr(xml.attr(n, "target"), xml.attr(n, "text")) */
          case <element>{pres @ _*}</element> =>
             if (inAttr) throw ParseError("element not permitted within attribute")
-            var atts : List[Attribute] = Nil
-            var elems : List[Presentation] = Nil
-            for (c <- n.child) c match {
-               case <attribute/> =>
-                  atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), Text(xml.attr(c, "value")))
-               case <attribute>{value @ _*}</attribute> =>
-                  atts ::= Attribute(xml.attr(c, "prefix"), xml.attr(c, "name"), parse(value)(true))
-               case p => elems ::= parse(p)
-            }
-            Element(xml.attr(n,"prefix"), xml.attr(n,"name"), atts.reverse, elems.reverse)
+            val (elems, atts) = parseInElement(pres)
+            Element(xml.attr(n,"prefix"), xml.attr(n,"name"), atts, elems)
          case <attribute>{pres @ _*}</attribute> => throw ParseError("attribute only permitted within element")
          case <recurse/> =>
-            Neighbor(int(xml.attr(n, "offset", "0")), precOpt(xml.attr(n, "precedence")))
+            val bi = BracketInfo(precOpt(xml.attr(n, "precedence")))
+            Neighbor(int(xml.attr(n, "offset", "0")), bi)
          case <hole>{child @ _*}</hole> => Hole(int(xml.attr(n, "index", "0")), parse(child))
          case <id/> => Id 
          case <index/> => Index
          case <nset/> => TheNotationSet 
          case <component/> =>
             val index = cindex(xml.attr(n, "index"))
-            Component(index, precOpt(xml.attr(n, "precedence")))
+            val bi = BracketInfo(precOpt(xml.attr(n, "precedence")))
+            Component(index, bi)
          case <components>{child @ _*}</components> =>
             val begin = cindex(xml.attr(n, "begin", "0"))
             val end = cindex(xml.attr(n, "end", "-1"))
             val step = int(xml.attr(n, "step", "1"))
-            var (pre : Presentation, post : Presentation, sep : Presentation, body : Presentation) = (Empty, Empty, Empty, Recurse(None))
+            var (pre : Presentation, post : Presentation, sep : Presentation, body : Presentation) = (Empty, Empty, Empty, Recurse(BracketInfo()))
             for (c <- child) c match {
                case <separator>{s @ _*}</separator> => sep = parse(s)
                case <body>{b @ _*}</body> => body = parse(b)
@@ -252,7 +257,8 @@ object Presentation {
                case scala.xml.PrefixedAttribute(p, k, v, _) => Attribute(p, k, Text(v.text)) 
                case scala.xml.UnprefixedAttribute(k, v, _) => Attribute("", k, Text(v.text))
             }
-            Element("", label, pAtts.toList, (e.child map parse).toList)
+            val (elemsIn, attsIn) = parseInElement(e.child)
+            Element("", label, pAtts.toList ::: attsIn, elemsIn)
          case scala.xml.Comment(_) => Empty
          case _ => throw ParseError("illegal presentation item: " + n)
       }

@@ -35,14 +35,29 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
    private def delete(n: Int) {
       left = left.drop(n)
    }
-   /** move a delimiter from left to found */
+   /**
+    * move a delimiter from left to found and addPrepickedDelims if necessary
+    */
    private def deleteDelim(index: Int) {
-      found ::= FoundDelim(index, left.head.asInstanceOf[Delimiter])
+      val delim = left.head.asInstanceOf[Delimiter]
+      found ::= FoundDelim(index, delim)
       left = left.tail
+      val token = scanner.tl(index).asInstanceOf[Token]
+      addPrepickedDelims(delim, token)
+   }
+   /**
+    * pre: delim.startsWith(token)
+    * 
+    * for each additional character c in delim, add Delim(c) to the front
+    * this has the effect of skipping the subsequent Tokens that have been used already after matching token against delim
+    */ 
+   def addPrepickedDelims(delim: Delimiter, token: Token) {
+      val prepicked = delim.text.substring(token.word.length).toList.map(c => Delim(c.toString))
+      left = prepicked ::: left
    }
    /** pick all available Token's as Arg(n) */
-   private def PickAll(n: Int) {
-      found ::= FoundArg(scanner.pick(numCurrentTokens), n)
+   private def PickAll(n: Int) : FoundArg = {
+      FoundArg(scanner.pick(numCurrentTokens), n)
    }
    /** pick the exactly ns.length available Token's as ns.map(Arg(_)) */
    private def PickSingles(ns: List[Int]) {
@@ -84,26 +99,81 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
       case FoundSeqArg(m, _) :: _ if m == n => true
       case _ => false
    }
-   private def inVar(n: Int) = found match {
-      case FoundVar(m, _, _, None) :: _ if m == n => true
-      case _ => false
-   }
-
+   
   /**
    * @param currentToken the currently scanned token
    * @return true if the notation can be applied at this point
    * i.e., currentToken is (one of the) delimiter(s) expected next and currentTokens matches the currently expected arguments
    */
-  def applicable(currentToken: Token, currentIndex: Int): Applicability = {
+  def applicable(currentToken: Token, currentIndex: Int, futureTokens: String): Applicability = {
+      //shortcut: true if delimiter s matches at the currentIndex
+      def matches(s: String) = ActiveNotation.matches(s, currentToken.word, futureTokens)
+      // now the actual applicability check in 2 cases
+      // first: if we are in a bound variable, step through the corresponding state machine
+      val result: Applicability = found match {
+         case (fv : FoundVar) :: _ =>
+            val vm = fv.marker
+            val nextDelim = left match {
+               case Var(_,_,_) :: Delimiter(s) :: _=> Some(s)
+               case Var(_,_,_) :: Nil => None
+               case _ => throw ImplementationError("invalid notation") //variable must be followed by nothing or Delim
+            }
+            //we are in a bound variable (sequence)
+            fv.state match {
+               case FoundVar.BeforeName => onApply {
+                  fv.newVar(currentIndex, currentToken)
+                  fv.state = FoundVar.AfterName
+               }
+               case FoundVar.AfterName =>
+                  if (nextDelim.isDefined && matches(nextDelim.get)) {
+                     onApply {
+                        fv.state = FoundVar.Done
+                        delete(1)
+                        deleteDelim(currentIndex)
+                     }
+                  } else if (vm.sep.isDefined && vm.sep.get.text == currentToken.word) {
+                     onApply {
+                        fv.state = FoundVar.BeforeName
+                     }
+                  } else if (vm.typed) {
+                     fv.state = FoundVar.InType
+                     NotApplicable //start shifting the type
+                  } else {
+                     Abort
+                  }
+               case FoundVar.InType =>
+                  if (nextDelim.isDefined && matches(nextDelim.get)) {
+                     onApply {
+                        val fa = PickAll(vm.number)
+                        fv.newType(fa)
+                        fv.state = FoundVar.Done
+                        delete(1)
+                        deleteDelim(currentIndex)
+                     }
+                  } else if (vm.sep.isDefined && vm.sep.get.s == currentToken.word) {
+                     onApply {
+                        val fa = PickAll(vm.number)
+                        fv.newType(fa)
+                        fv.state = FoundVar.BeforeName
+                     }
+                  } else NotApplicable //shift and stay in this state
+                  
+               case FoundVar.Done => null //nothing to do anymore, skip to remaining cases
+            }
+         case _ => null //skip to all other cases
+      }
+      if (result != null) return result
+      // second: otherwise, try to match the current Token against an upcoming delimiter
       Arg.split(left) match {
-         case (ns, Delim(s) :: _) if s == currentToken.word => ns match {
+         case (ns, Delimiter(s) :: _) if matches(s) =>
+            ns match {
             case Nil =>
                onApply {
                   deleteDelim(currentIndex)
                }
             case List(n) =>
                onApply {
-                  PickAll(n)
+                  found ::= PickAll(n)
                   delete(1)
                   deleteDelim(currentIndex)
                }
@@ -114,26 +184,21 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
                   deleteDelim(currentIndex)
                }
          }
-         case (Nil, SecDelim(s, wsAllowed) :: _) =>
-             if (s == currentToken.word && (wsAllowed || ! currentToken.whitespaceBefore) && numCurrentTokens == 0) {
-                onApply {
-                   deleteDelim(currentIndex)
-                }
-             } else {
-                Abort
-             }
-         case (Nil, SeqArg(n, Delim(s)) :: _) if s == currentToken.word =>
+         case (Nil, SeqArg(n, Delimiter(s)) :: _) if matches(s) =>
               onApply {
                  PickAllSeq(n)
+                 addPrepickedDelims(Delim(s), currentToken)
               }
-         case (Nil, SeqArg(n, Delim(t)) :: Delim(s) :: _) if t != currentToken.word && s == currentToken.word =>
-              if (inSeqArg(n) && numCurrentTokens > 0) {
+         case (Nil, SeqArg(n, Delimiter(t)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
+              if (numCurrentTokens > 0) {
+                 //picks the last element of the sequence (possibly the only one)
                  onApply {
                     PickAllSeq(n)
                     delete(1)
                     deleteDelim(currentIndex)
                  }
-              } else if (! inSeqArg(n) && numCurrentTokens == 0) {
+              } else if (numCurrentTokens == 0) {
+                 //picks nothing and finds an empty sequence
                  onApply {
                     SeqDone(n)
                     delete(1)
@@ -141,42 +206,42 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
                  }
               } else
                  NotApplicable //abort?
-         // variable without type: x t | rest
-         case (Nil, Var(n, Delim(s)) :: Delim(t) :: _) if ! inVar(n) && s != currentToken.word && t == currentToken.word =>
-              if (numCurrentTokens == 1) {
-                 onApply {
-                    val vr = scanner.pick(1)
-                    val name = vr.toList(0).asInstanceOf[Token]
-                    found ::= FoundVar(n, vr.start, name, None)
-                    delete(1)
-                    deleteDelim(currentIndex)
-                 }
-              } else {
-                 NotApplicable //abort
-              }
-         // variable with type: x s | type rest
-         case (Nil, Var(n, Delim(s)) :: _) if ! inVar(n) && s == currentToken.word =>
-              if (numCurrentTokens == 1) {
-                 onApply {
-                    val vr = scanner.pick(1)
-                    val name = vr.toList(0).asInstanceOf[Token]
-                    found ::= FoundVar(n, vr.start, name, None)
-                 }
-              } else {
-                 NotApplicable //abort
-              }
-         // type of variable: type s | rest
-         case (Nil, Var(n, _) :: Delim(s) :: _) if inVar(n) && s == currentToken.word =>
-                 onApply {
-                    found match {
-                       case FoundVar(_, pos, name, _) :: tail =>
-                          val fa = FoundArg(scanner.pick(numCurrentTokens), n)
-                          found = FoundVar(n, pos, name, Some(fa)) :: tail
+         // start a variable
+         case (Nil, (vm @ Var(n, _, sep)) :: rest) =>
+            numCurrentTokens match {
+               case 0 => onApply {
+                   //start a variable and take the current Token as the first variable name
+                   val fv = new FoundVar(vm)
+                   fv.newVar(currentIndex, currentToken)
+                   fv.state = FoundVar.AfterName
+                   found ::= fv
+               } /*
+               // removed because
+               //  - there is no way to make sure the shifted Token is a variable name
+               //  - it's confusing that it does not also check for the type key or the separator
+               case 1 =>
+                  rest match {
+                     case Delimiter(s) :: _ if matches(s) => onApply {
+                          //parse a single untyped variable
+                          //the previous Token is the name
+                          //the current Token must be the next Delim
+                          //this case is only possible if vm is the first marker and the next Delim is what opened the notation
+                          val vr = scanner.pick(1)
+                          val name = vr.toList(0) match {
+                             case t: Token => t
+                             case _ => ???
+                          }
+                          val fv = new FoundVar(vm)
+                          fv.newVar(vr.start, name)
+                          fv.state = FoundVar.Done
+                          found ::= fv
                           delete(1)
                           deleteDelim(currentIndex)
-                       case _ => // impossible
-                    }
-                 }
+                     }
+                     case _ => Abort
+                  }*/
+               case _ => Abort // should be impossible
+            }
          case _ => NotApplicable
       }
    }
@@ -199,7 +264,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
     */
    def closable : Applicability = {
       Arg.split(left) match {
-         case (Nil, SeqArg(n, Delim(s)) :: Nil) =>
+         case (Nil, SeqArg(n, Delimiter(s)) :: Nil) =>
               if (inSeqArg(n) && numCurrentTokens > 0) {
                  onApply {
                     PickAllSeq(n)
@@ -212,13 +277,38 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
                  }
               } else
                  NotApplicable
-         case (Nil, Var(_,_) :: _) =>
-            // we can never close if we are waiting for a variable
-            NotApplicable
+         case (Nil, (vm: Var) :: Nil) => found match {
+            case (fv: FoundVar) :: _ =>
+                  //the last thing found was a variable, probably fv.marker == vm
+                  fv.state match {
+                     case FoundVar.BeforeName =>
+                        //separator found before, need name now
+                        NotApplicable
+                     case FoundVar.AfterName => onApply {
+                        //close leaving variable untyped
+                        fv.state = FoundVar.Done
+                        delete(1)
+                     }
+                     case FoundVar.InType => onApply {
+                        //pick type and close
+                        val fa = PickAll(vm.number)
+                        fv.newType(fa)
+                        fv.state = FoundVar.Done
+                        delete(1)
+                     }
+                     case FoundVar.Done =>
+                        //fv is done already, then vm must refer to another variable (i.e., fv.marker != vm)
+                        // can't close because we still need to parse vm
+                        NotApplicable
+                  }
+            case _ => 
+                // can't close because we've never started vm, still need to parse vm
+                NotApplicable
+         }
          case (List(n), Nil) =>
             // one argument taking all available Token's
             onApply {
-               PickAll(n)
+               found ::= PickAll(n)
                delete(1)
             }
             // as many arguments as there are Token's
@@ -246,15 +336,22 @@ object ActiveNotation {
     * 
     * essentially, a Notation is applicable if the next Token matches the next Delimiter it expects
     */
-   type Applicability = Int
+   sealed abstract class Applicability
    /** a value of type Applicability expressing that the notation is applicable */
-   val Applicable = 1
+   case object Applicable extends Applicability
    /** a value of type Applicability expressing that the notation is not applicable now
     * (but may be applicable later if the current Token is shifted)
     */
-   val NotApplicable = 0
+   case object NotApplicable extends Applicability
    /** a value of type Applicability expressing that the notation cannot be applied anymore
     * (and parsing should backtrack)
     */
-   val Abort = -1
+   case object Abort extends Applicability
+   
+   /**
+    * true if delim equals currentToken, possibly after extending currentToken with some characters from futureTokens
+    */
+   def matches(delim: String, currentToken: String, futureTokens: String) = {
+      delim.length >= currentToken.length && (currentToken+futureTokens).startsWith(delim)
+   }
 }

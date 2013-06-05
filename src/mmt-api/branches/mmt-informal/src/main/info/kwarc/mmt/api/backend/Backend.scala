@@ -188,7 +188,7 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
       
       val revision = path.doc.version match {
         case None => rev
-        case Some(s) => try {s.toInt} catch {case _ => rev}
+        case Some(s) => try {s.toInt} catch {case _ : Throwable => rev}
       }
       val N : scala.xml.Node = repository.checkPath(target, revision) match {
         case SVNNodeKind.FILE => 
@@ -312,35 +312,8 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
                    properties(key) = value
                 }
              }
-             properties.get("compilation") foreach {value =>
-                val l = value.split("->").toList.map(_.trim)  // List(..., format@folder, ...)
-                var dims = l map {s =>
-                   val i = s.indexOf("@")
-                   (s.substring(0,i), s.substring(i+1)) // List(..., (format,folder), ...)
-                }
-                val source :: compiles = dims
-                properties("format") = source._1
-                properties("source") = source._2
-                val compiled = compiles.foldLeft[(String,String)](source) {case ((format,from), (newformat, to)) =>
-                   extman.getCompiler(format) match {
-                      case Some(c) => compsteps = compsteps map {CompilationStep(from, to, c) :: _}
-                      case None =>
-                        log("no compiler registered for format " + format)
-                        compsteps = None
-                   }
-                   (newformat, to)
-                }
-                if (compiled._1 != "omdoc")
-                   log("compilation chain does not end in omdoc:" + compiled)
-                else
-                   properties("compiled") = compiled._2
-             }
           }
-          val arch = if (properties.get("type") == Some("mmt"))
-              new Archive(root, properties, compsteps map {_.reverse}, report) with MMTArchive
-          else
-              new Archive(root, properties, compsteps map {_.reverse}, report)
-          compsteps foreach {_ foreach {case CompilationStep(from,_,compiler) => compiler.register(arch, from)}}
+          val arch = new Archive(root, properties, report)
           addStore(arch)
           arch
       }
@@ -357,9 +330,6 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
       getArchive(id) foreach {arch =>
          removeStore(arch)
          removeStore(arch.narrationBackend)
-         arch.compsteps foreach {_ foreach {
-           case CompilationStep(from,_,compiler) => compiler.unregister(arch, from)
-         }}
       }
    }
    

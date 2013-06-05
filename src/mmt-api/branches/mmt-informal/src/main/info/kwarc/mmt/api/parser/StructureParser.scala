@@ -4,6 +4,7 @@ import frontend._
 import documents._
 import modules._
 import symbols._
+import patterns._
 import objects._
 
 import scala.collection.mutable.{ListMap,HashMap}
@@ -12,8 +13,9 @@ import scala.collection.mutable.{ListMap,HashMap}
  * This class bundles all state that is maintained by a [[info.kwarc.mmt.api.parser.StructureParser]]
  * 
  * @param reader the input stream, from which the parser reads
+ * @param container the MMT URI of the input stream (used for back-references)
  */
-class ParserState(val reader: Reader) {
+class ParserState(val reader: Reader, val container: DPath) {
    /**
     * the namespace mapping set by
     * {{{
@@ -21,19 +23,23 @@ class ParserState(val reader: Reader) {
     * }}}
     * commands
     */
-   val namespace = new ListMap[String,DPath]
-   /**
-    * the default namespace set by
-    * {{{
-    * namespace URI
-    * }}}
-    * commands
-    */
-   var defaultNamespace: DPath = utils.mmt.mmtbase
+   var namespaces = new utils.NamespaceMap
+   namespaces.default = utils.mmt.mmtbase.uri
+
+   /** uri at current parsing location */
+   var home : Path = DPath(namespaces.default)
    
-   def copy(reader: Reader = reader, defaultNamespace:DPath = defaultNamespace) = {
-      val s = new ParserState(reader)
-      s.defaultNamespace = defaultNamespace
+   /** the position at which the current StructuralElement started */ 
+   var startPosition = reader.getSourcePosition
+   
+   /** all errors encountered during parsing, in reverse order */()
+   var errors : List[SourceError] = Nil
+   /** all errors encountered during parsing */()
+   def getErrors = errors.reverse
+   
+   def copy(reader: Reader = reader) = {
+      val s = new ParserState(reader, container)
+      s.namespaces = namespaces
       s
    }
 }
@@ -92,7 +98,7 @@ trait InTheoryParser {
 abstract class StructureParser(controller: Controller) extends frontend.Logger {
    val report = controller.report
    val logPrefix = "structure-parser"
-   
+
    /**
     * a table of external parsers that can parser declarations in a document, indexed by keyword
     * 
@@ -112,40 +118,63 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * For grouping elements (documents, modules with body), this is called on the empty element first
     * and then on each child.
     */
-   def seCont(se: StructuralElement): Unit
+   def seCont(se: StructuralElement)(implicit state: ParserState): Unit
    /**
     * A continuation function called on every ParsingUnit that was found
     * 
     * Objects are opaque to the parser, and parsing is deferred via this function.
     */
-   def puCont(pu: ParsingUnit): Term
+   def puCont(pu: ParsingUnit)(implicit state: ParserState): Term
    /**
     * A continuation function called on every error that was found
     * 
     * Error handling is very lenient and will recover wherever possible.
+    * 
+    * Default implementation adds every error to the ParserState
     */
-   def errorCont(err: SourceError): Unit
+   def errorCont(err: SourceError)(implicit state: ParserState) {
+      state.errors ::= err
+   }
+   
+   /** called at the end of a document or module, does common bureaucracy */
+   protected def end(s: StructuralElement)(implicit state: ParserState) {
+      //extend source reference until end of element
+      SourceRef.get(s) foreach {r => 
+         SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
+      }
+      log("end " + s.path)
+   }
    
    /** the main interface function
     * 
     * @param r a Reader holding the input stream
     * @param dpath the MMT URI of the stream
     */
-   def apply(r: Reader, dpath: DPath) {
-      val state = new ParserState(r)
-      state.defaultNamespace = dpath
+   def apply(r: Reader, dpath: DPath) : (Document,ParserState) = {
+      val state = new ParserState(r, dpath)
+      apply(state, dpath)
+   }
+   
+   def apply(state : ParserState, dpath : DPath) : (Document,ParserState) = {
+      state.namespaces.default = dpath.uri
+      state.home = dpath
       val doc = new Document(dpath)
-      seCont(doc)
+      seCont(doc)(state)
       logGroup {
          readInDocument(doc)(state)
       }
       log("end " + dpath)
+      (doc,state)
    }
 
    /** convenience function to create SourceError's */
    private def makeError(reg: SourceRegion, s: String) =
       SourceError("structure-parser", SourceRef(null, reg), s)
-   
+  
+   /** the region from the start of the current structural element to the current position */
+   protected def currentSourceRegion(implicit state: ParserState) =
+      SourceRegion(state.startPosition, state.reader.getSourcePosition)
+      
    /** read a LocalName from the stream
     * @throws SourceError iff ill-formed or empty
     */
@@ -177,7 +206,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      try {Path.parseD(s, base)}
+      val sexp = state.namespaces.expand(s)
+      try {Path.parseD(sexp, base)}
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
@@ -189,7 +219,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      try {Path.parseM(s, base)}
+      val sexp = state.namespaces.expand(s)
+      try {Path.parseM(sexp, base)}
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
@@ -201,7 +232,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val (s, reg) = state.reader.readToken
       if (s == "")
          throw makeError(reg, "MMT URI expected")
-      try {Path.parseS(s, base)}
+      val sexp = state.namespaces.expand(s)
+      try {Path.parseS(sexp, base)}
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
@@ -219,17 +251,26 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       else
          throw makeError(delim._2, delims.map("'" + _ + "'").mkString("" ," or ", "") + "expected")
    }
+   
+   def readParsedObject(scope: Term, context: Context = Context())(implicit state: ParserState) = {
+      val (obj, reg) = state.reader.readObject
+      val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, Context(), obj)
+      val parsed = puCont(pu)
+      (obj,reg,parsed)
+   }
   
    /** the main loop for reading declarations that can occur in documents
     * @param doc the containing Document (must be in the controller already)
     */
    private def readInDocument(doc: Document)(implicit state: ParserState) {
+      state.home = doc.path
       //auxiliary function to unify "view" and "implicit view"
       def doView(isImplicit: Boolean) {
+    	       
                val name = readLocalPath
-               val ns = state.defaultNamespace
+               val ns = DPath(state.namespaces.default)
                val vpath = ns ? name
-               val mref = MRef(doc.path, vpath)
+               val mref = MRef(doc.path, vpath, true)
                seCont(mref)
                readDelimiter(":")
                val from = readMPath(vpath)
@@ -237,8 +278,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val to = readMPath(vpath)
                readDelimiter("abbrev", "=") match {
                   case "abbrev" =>
-                     val (obj, reg) = state.reader.readObject
-                     val df = puCont(ParsingUnit(vpath $ DefComponent, OMMOD(vpath), Context(), obj))
+                     val (_,_,df) = readParsedObject(OMMOD(vpath))
                      val thy = new DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
                      seCont(thy)
                   case "=" =>
@@ -247,11 +287,12 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      logGroup {
                         readInView(v)
                      }
-                     log("end " + vpath)
+                     end(v)
                }
       }
       if (state.reader.endOfDocument) return
       val (keyword, reg) = state.reader.readToken
+      state.startPosition = reg.start
       try {
          keyword match {
             case "" =>
@@ -269,24 +310,23 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                logGroup {
                   readInDocument(d)
                }
-               log("end " + dpath)
+               end(d)
             case "namespace" =>
                val ns = readDPath(doc.path)
-               state.defaultNamespace = ns 
+               state.namespaces.default = ns.uri
             case "import" =>
                val (n,_) = state.reader.readToken
                val ns = readDPath(doc.path)
-               state.namespace(n) = ns
+               state.namespaces.prefixes(n) = ns.uri
             case "theory" =>
                val name = readLocalPath
-               val ns = state.defaultNamespace
+               val ns = DPath(state.namespaces.default)
                val tpath = ns ? name
-               val mref = MRef(doc.path, tpath)
+               val mref = MRef(doc.path, tpath, true)
                seCont(mref)
                var delim = state.reader.readToken
                if (delim._1 == "abbrev") {
-                  val (obj, reg) = state.reader.readObject
-                  val df = puCont(ParsingUnit(tpath $ DefComponent, OMMOD(tpath), Context(), obj))
+                  val (_,_,df) = readParsedObject(OMMOD(tpath))
                   val thy = new DefinedTheory(ns, name, df)
                   seCont(thy)
                } else {
@@ -315,7 +355,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      logGroup {
                         readInTheory(t, patterns)
                      }
-                     log("end " + tpath)
+                     end(t)
                   } else {
                      throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
                   }
@@ -353,21 +393,25 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * this function handles one declaration if possible, then calls itself recursively
     */
    private def readInTheory(thy: DeclaredTheory, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
+      state.home = thy.path
       //this case occurs if lower methods have already read the GS marker
       if (state.reader.endOfModule) return
       try {
          val (keyword, reg) = state.reader.readToken
+         state.startPosition = reg.start
+         def fail(s: String) = throw makeError(reg,s)
          keyword match {
             //this case occurs if we read the GS or marker
             case "" =>
                if (state.reader.endOfModule) {
                   return
                } else
-                  throw makeError(reg, "keyword expected, within theory " + thy.path).copy(fatal = true)
+                  fail("keyword expected, within theory " + thy.path)
             //Constant
             case "constant" =>
                val name = readName
-               readConstant(name, thy.path)
+               val c = readConstant(name, thy.path, OMMOD(thy.path))
+               seCont(c)
             //PlainInclude
             case "include" =>
                val from = readMPath(thy.path)
@@ -381,16 +425,17 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             //Pattern
             case "pattern" =>
                val name = readName
+               
                //TODO
             //Instance
             case "instance" =>
                val name = readName
                thy.meta match {
                   case None =>
-                     throw makeError(reg, "instance declaration illegal without meta-theory")
+                     fail("instance declaration illegal without meta-theory")
                   case Some(mt) =>
                      val pattern = readSPath(mt)
-                     readInstance(name, pattern)
+                     readInstance(name, thy.path, pattern)
                }
             case k =>
                // other keywords are treated as ...
@@ -399,7 +444,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   // 1) an instance of a Pattern with LocalName k visible in meta-theory 
                   val pattern = patOpt.get._2
                   val name = readName
-                  readInstance(name, pattern)
+                  readInstance(name, thy.path, pattern)
                } else {
                   val parsOpt = inTheoryParsers.get(k)
                   if (parsOpt.isDefined) {
@@ -411,7 +456,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   } else {
                      // 3) a constant with name k
                      val name = LocalName.parse(k)
-                     readConstant(name, thy.path)
+                     val c = readConstant(name, thy.path, OMMOD(thy.path))
+                     seCont(c)
                   }
                }
          }
@@ -428,67 +474,106 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param name the name of the constant
     * @param the containing [[info.kwarc.mmt.api.modules.DeclaredTheory]]
     */
-   private def readConstant(name: LocalName, tpath: MPath)(implicit state: ParserState) {
-      val cpath = tpath ? name
+   private def readConstant(name: LocalName, parent: MPath, scope: Term)(implicit state: ParserState): Constant = {
+      val cpath = parent ? name
       //initialize all components as omitted
-      var tp : Option[Term] = None
-      var df : Option[Term] = None
+      val tpC = new TermContainer
+      var dfC = new TermContainer
       var al : Option[LocalName] = None
       var nt : Option[TextNotation] = None
+      var rl : Option[String] = None
+      var pr : Option[Context] = None
       // every iteration reads one delimiter and one object
-      // @ alias or : TYPE or = DEFINIENS or # NOTATION 
+      // @ alias or : TYPE or = DEFINIENS or # NOTATION
+      //TODO remove "##" here and in the case split below, only used temporarily for latex integration
+      val keys = List(":","=","#", "##","@", "of", "role")
+      val keyString = keys.map("'" + _ + "'").mkString(", ")
+
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
-         if (! List(":","=","#","@").contains(delim)) {
+         if (! keys.contains(delim)) {
             // error handling
             if (delim == "") {
                if (! state.reader.endOfDeclaration)
-                  errorCont(makeError(treg, "expected '@' or ':' or '=' or '#'"))
+                  errorCont(makeError(treg, "expected " + keyString))
             } else { 
                if (! state.reader.endOfObject)
                   state.reader.readObject
-               errorCont(makeError(treg, "expected '@' or ':' or '=' or '#', ignoring the next object"))
+               errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
             }
          } else {
-            val (obj, oreg) = state.reader.readObject
-            def doComponent(c: DeclarationComponent) = {
-               val tm = puCont(ParsingUnit(cpath $ c, OMMOD(tpath), Context(), obj))
-               Some(tm)
+            def doComponent(c: DeclarationComponent, tc: TermContainer) {
+               val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
+               tc.read = obj
+               tc.parsed = tm
             }
             // the main part, which branches based on the delimiter
             delim match {
+               case "of" =>
+                  if (pr.isDefined) {
+                     errorCont(makeError(treg, "parameters of this constant already given, ignored"))
+                     state.reader.readObject
+                  } else {
+                     val (obj, reg) = state.reader.readObject
+                     val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, Context(), obj, Some(TextNotation.contextNotation))
+                     val parsed = puCont(pu)
+                     parsed match {
+                        case OMBINDC(utils.mmt.context, cont, Nil) =>
+                           pr = Some(cont)
+                        case _ =>
+                           errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
+                     }
+                  }
                case ":" =>
-                  if (tp.isDefined)
-                     errorCont(makeError(oreg, "type of this constant already given, ignored"))
-                  else
-                     tp = doComponent(TypeComponent)
+                  if (tpC.read.isDefined) {
+                     errorCont(makeError(treg, "type of this constant already given, ignored"))
+                     state.reader.readObject
+                  } else
+                     doComponent(TypeComponent, tpC)
                case "=" =>
-                  if (df.isDefined)
-                     errorCont(makeError(oreg, "definiens of this constant already given, ignored"))
-                  else
-                     df = doComponent(DefComponent)
-               case "#" =>
+                  if (dfC.read.isDefined) {
+                     errorCont(makeError(treg, "definiens of this constant already given, ignored"))
+                     state.reader.readObject
+                  } else
+                     doComponent(DefComponent, dfC)
+               case "#" | "##" =>
+                  val (notString,reg) = state.reader.readObject
                   if (nt.isDefined)
-                     errorCont(makeError(oreg, "notation of this constant already given, ignored"))
+                     errorCont(makeError(treg, "notation of this constant already given, ignored"))
                   else {
-                     val notString = obj
                      val notation = TextNotation.parse(notString, cpath)
                      nt = Some(notation)
                   }
                case "@" =>
+                  val (str,_) = state.reader.readObject
                   if (al.isDefined)
-                     errorCont(makeError(oreg, "alias of this constant already given, ignored"))
-                  else
-                     al = Some(LocalName.parse(obj))
+                     errorCont(makeError(treg, "alias of this constant already given, ignored"))
+                  else {
+                     al = Some(LocalName.parse(str))
+                  }
+               case "role" =>
+                 val (str,_) = state.reader.readObject
+                 rl = Some(str)                 
                //TODO read metadata
             }
          }
       }
-      val c = new Constant(OMMOD(tpath), name, al, tp, df, None, nt)
-      seCont(c)
+      new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt) {
+         override val parameters = pr.getOrElse(Context())
+      }
    }
-   private def readInstance(name: LocalName, pattern: GlobalName)(implicit state: ParserState) {
-      
+   private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
+      val args = if (state.reader.endOfDeclaration)
+         Nil
+      else { 
+         val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
+         controller.pragmatic.pragmaticHead(tm) match {
+            case OMAMaybeNil(OMID(`pattern`), args) => args
+            case _ => throw makeError(reg, "not an instance of pattern " + pattern.toPath)
+         }
+      }
+      val instance = new Instance(OMMOD(tpath), name, pattern, args)
+      seCont(instance)
    }
    
    private def readInView(view: DeclaredView)(implicit state: ParserState) {
@@ -496,6 +581,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       if (state.reader.endOfModule) return
       try {
          val (keyword, reg) = state.reader.readToken
+         state.startPosition = reg.start
          keyword match {
             //this case occurs if we read the GS or marker
             case "" =>
@@ -506,13 +592,15 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             //Constant
             case "constant" =>
                val name = readName
+               val a = readConstant(name, view.path, view.to).toConstantAssignment
+               seCont(a)
             //assignment to include
             case "include" =>
+               log("found include")
                val from = readMPath(view.path)
-               readDelimiter(":=")
-               val (obj, reg) = state.reader.readObject
-               val mor = puCont(ParsingUnit(view.path $ DefComponent, view.to, Context(), obj))
-               val as = new DefLinkAssignment(view.toTerm, LocalName.Anon, from, mor)
+               readDelimiter("=")
+               val mor = OMMOD(readMPath(view.path)) //readParsedObject(view.to)
+               val as = new DefLinkAssignment(view.toTerm, LocalName(ComplexStep(from)), from, mor)
                seCont(as)
             //Pattern
             case "pattern" =>
@@ -539,12 +627,11 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      reader.setSourcePosition(reg.start)
                      parsOpt.get.apply(this, reader)
                   } else {
+                */
                      // 3) a constant with name k
                      val name = LocalName.parse(k)
-                     readConstant(name, view.path)
-                  }
-               }
-                */
+                     val a = readConstant(name, view.path, view.to).toConstantAssignment
+                     seCont(a)
          }
       } catch {
          case e: SourceError =>
@@ -557,6 +644,72 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    
    //TODO, text syntax for styles?
    //def readInStyle(style: MPath)(implicit state: ParserState) {}
+   
+   /** API Functions **/
+   
+   /**
+    * Reads a document from a string
+    * @param docURI the base uri (location) of the document
+    * @param docS the document string
+    */
+   def readDocument(docURI : DPath, docS : String) {
+     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(docS)))
+     apply(r, docURI)
+     r.close
+   }
+		   			
+   /**
+    * reads a module from a string
+    * @param dpath the uri of the parent document
+    * @param modS the module string
+    * @param docBaseO optionally the base uri of the containing document 
+    * @param namespace the namespace declarations found so far
+    */
+   def readModule(dpath : DPath, 
+		   	      modS : String, 
+                  docBaseO : Option[DPath] = None, 
+                  namespace : ListMap[String, DPath] = new ListMap) {
+     //building parsing state
+     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(modS)))
+     val state = new ParserState(r, docBaseO.getOrElse(null))
+     docBaseO.map(dp => state.namespaces.default = dp.uri)
+     namespace map { p =>
+       state.namespaces.prefixes(p._1) = p._2.uri
+     }
+     val doc = controller.getDocument(dpath)
+     //calling parse function
+     readInDocument(doc)(state)
+     r.close
+   }
+   
+   /**
+    * reads a constant from a string
+    * @param mpath the uri of the parent module
+    * @param modS the constant string
+    * @param docBaseO optionally the base uri of the containing document 
+    * @param namespace the namespace declarations found so far
+    */
+   def readConstant(mpath : MPath, 
+		   	        conS : String, 
+                    docBaseO : Option[DPath] = None, 
+                    namespace : ListMap[String, DPath] = new ListMap) = {
+     //building parsing state
+     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(conS)))
+     val state = new ParserState(r, docBaseO.getOrElse(null))
+     docBaseO.map(dp => state.namespaces.default = dp.uri)
+     namespace map { p =>
+       state.namespaces.prefixes(p._1) = p._2.uri
+     }
+     
+     val thy = controller.globalLookup.getTheory(mpath) match {
+       case d : DeclaredTheory => d
+       case _ => throw ImplementationError("Expected declared theory at path" + mpath)
+     }
+     val patterns = Nil //TODO
+     //calling parse function
+     
+     readInTheory(thy, patterns)(state)
+   }
 }
 
 /**
@@ -565,9 +718,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
 class StructureAndObjectParser(controller: Controller) extends StructureParser(controller) {
    /**
     * parsing units are parsed by the termParser of the controller
-    * if that fails, the [[info.kwarc.mmt.api.parser.DefaultParser]] is used
+    * if that fails, the [[info.kwarc.mmt.api.parser.DefaultObjectParser]] is used
     */
-   def puCont(pu: ParsingUnit): Term = {
+   def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
       val obj = try {
          controller.termParser(pu)  
       } catch {
@@ -580,21 +733,50 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
    /**
     * structural elements are added to controller
     */
-   def seCont(se: StructuralElement) {
+   def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
+      //log(se.toNode.toString)
+      SourceRef.update(se, SourceRef(state.container.uri,currentSourceRegion))
       controller.add(se)
    }
-   private var errors: List[SourceError] = Nil
-   /**
-    * errors are reported and stored
-    */
-   def errorCont(err: SourceError) {
-      errors ::= err
-      report(err)
-   }
-   /** returns all errors since the last reset, in order of occurrence */
-   def getErrors = errors.reverse
-   /** resets the error list */
-   def resetErrors {errors = Nil}
 }
+
+
+class SequentialReader extends java.io.Reader {
+  var text : List[Char] = Nil
+  
+  def appendLine(line : String) = {
+    text ++= "\n".toCharArray.toList 
+    text ++= line.toCharArray().toList
+  }
+  
+  
+  def read(cbuf : Array[Char], offset : Int, len : Int) : Int = {
+    while (!ready) 
+      Thread.sleep(10)
+    var i = 0
+    while (i < len && (offset + i) < text.length) {
+      cbuf(i) = text.head
+      text = text.tail
+      i += 1
+    }
+    i
+  }
+  
+  def close() = {
+    //nothing to do
+  }
+  
+  def isDone = text.isEmpty
+    
+  override def ready() = !text.isEmpty
+}
+
+class SeqBufReader(in: SequentialReader = new SequentialReader) extends java.io.BufferedReader(in) {
+  def appendLine(line : String) = in.appendLine(line)
+  
+  def isDone = in.isDone
+}
+
+
 

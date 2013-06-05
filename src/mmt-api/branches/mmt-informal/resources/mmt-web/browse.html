@@ -1,29 +1,52 @@
-<!DOCTYPE HTML>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:jobad="http://omdoc.org/presentation">
 <head>
-   <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/>
+  <meta charset="UTF-8" />
+ <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> --> 
+
   <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
   <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
-  <link rel="stylesheet" type="text/css" href="/css/jobad/jobad.css"/>
-  <link rel="stylesheet" type="text/css" href="/css/jobad/jqcontextmenu.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/JOBAD.css"/>
   <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
- <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
+  <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
   <link rel="shortcut icon" href="/favicon.ico" />
   <script type="text/javascript" src="/script/jquery/jquery.js"></script>
   <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
 
   <script src="script/codemirror2/lib/codemirror.js"></script>
-  <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css">
+  <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css"/>
   <script src="script/codemirror2/mode/lf/lf.js"></script>
 
   <script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
-  <script type="text/javascript" src="/script/jquery/jqcontextmenu.js"></script>
   <script type="text/javascript" src="/script/tree/jquery.hotkeys.js"></script>
   <script type="text/javascript" src="/script/tree/jquery.jstree.js"></script>
-  <script type="text/javascript" src="/script/jobad/service.js"></script>
-  <script type="text/javascript" src="/script/jobad/latin.js"></script>
+  <!-- JOBAD Deps -->
+  <script type="text/javascript" src="/script/jobad/deps/underscore-min.js"></script>
+  <!-- JOBAD -->
+  <script type="text/javascript" src="/script/jobad/JOBAD.js"></script>
+  <!-- Services Deps -->
+  <script type="text/javascript" src="/script/jobad/mmt-html.js"></script>
   <script type="text/javascript" src="/script/jobad/mathml.js"></script>
-  <script type="text/javascript" src="/script/jobad/folding.js"></script>
+  <!-- JOBAD Services -->
+  <script type="text/javascript" src="/script/jobad/modules/navigation.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/hovering.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/interactive-viewing.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/edit.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/folding.js"></script>
+   
+    <!-- JOBAD Init -->
+  <script type="text/javascript">
+	var JOBAD1;
+	$(function(){	
+	JOBAD1 = new JOBAD($("#main"));
+	JOBAD1.modules.load("kwarc.mmt.navigation", []);
+	JOBAD1.modules.load("kwarc.mmt.hovering", []);
+	JOBAD1.modules.load("kwarc.mmt.intvw", []);
+	JOBAD1.modules.load("kwarc.mmt.editing", []);
+	JOBAD1.modules.load("kwarc.mmt.folding", []);
+	JOBAD1.Setup();
+	})		
+  </script>
   
   <script type="text/javascript">
     $(function () {
@@ -40,12 +63,13 @@
            "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
        });
    });
+    
    var graphWindow = null;
    function openGraph(focus) {
       var graphWindow = window.open("/graph.html");
    };
    
-
+   $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
   </script>
 </head>
 
@@ -79,9 +103,11 @@
     
     
     <div id="main">
-       <div></div>
+      <div></div>
     </div>
-
+   
+   <div id="latin-dialog"><span/></div>
+    
    </div>
 
 </body>

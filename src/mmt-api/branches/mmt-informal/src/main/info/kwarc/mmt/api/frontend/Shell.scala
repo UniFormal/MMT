@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.utils._
 
+import javax.swing.UIManager
+
 /** Creates a Controller and provides a shell interface to it.
  * The command syntax is given by the Action class and the parser in its companion object.
 
@@ -27,6 +29,7 @@ class Shell() extends {
          // default behavior: execute command line arguments, read further commands from standard input
          case _ =>
       }
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
       val command = args.mkString("", " ", "")
       try {
          controller.handleLine(command)
@@ -42,7 +45,7 @@ class Shell() extends {
            controller.report(e)
            controller.cleanup
            throw e
-         case e =>
+         case e : Throwable =>
            controller.cleanup
            throw e
       }

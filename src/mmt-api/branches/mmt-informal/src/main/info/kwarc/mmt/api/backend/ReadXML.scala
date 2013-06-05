@@ -15,7 +15,7 @@ import scala.xml.{Node,NodeSeq}
 
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
 class XMLReader(controller : frontend.Controller) extends Reader(controller) {
-   private def log(s : String) = report("reader", s)
+   val logPrefix = "reader"
    /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
       cont(e)
@@ -44,11 +44,9 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
            val d = new Document(location)
            add(d)
            readModules(path, Some(location), modules)
-           location
         case <mmtabox>{decls @ _*}</mmtabox> =>
            readAssertions(decls)
-           location
-        case _ => throw new ParseError("document expected: " + D)
+        case _ => throw ParseError("document expected: " + D)
       }
    }
    
@@ -119,11 +117,10 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	         case (_, <rel>{_*}</rel>) => Unit //ignoring logical relations, produced by Twelf, but not implemented yet
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
-			     val npath = base ? name
+			      val npath = base ? name
 		         val from = Path.parse(xml.attr(m,"from"), base)
-		         val defaults = Defaults.parse(xml.attr(m, "defaults", "use"))
-                 val to = Path.parse(xml.attr(m, "to"), utils.mmt.mimeBase)
-		         val nset = new Style(base, name, defaults, from, to, report)
+               val to = Path.parse(xml.attr(m, "to"), utils.mmt.mimeBase)
+		         val nset = new Style(base, name, from, to)
 		         add(nset, md)
 		         docParent map (dp => add(MRef(dp, npath, true)))
 		         readNotations(npath, from, notations)
@@ -134,20 +131,21 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                  readModules(base, Some(dpath), mods)
              case (base : MPath, <notation>{_*}</notation>) =>
                  readNotations(base, base, m)
-	         case (_,_) => throw new ParseError("module level element expected: " + m)
+	         case (_,_) => throw ParseError("module level element expected: " + m)
          }}
       }
    }
    def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
       val thy = OMMOD(tpath)
-      def doPat(name : LocalName, parOpt : Option[Node], con : Node, md: Option[MetaData]) {
+      def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : Option[Node], md: Option[MetaData]) {
     	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
     	 	  case Some(par) => Context.parse(par, base)
     	 	  case None      => Context()
     	  }
     	  val cn = Context.parse(con, base)
-    	  val p = new Pattern(thy, name, pr, cn)
+        val notation = xmlNotation.map(TextNotation.parse(_, tpath ? name))
+    	  val p = new Pattern(thy, name, pr, cn, notation)
     	  add(p, md)
       }
       for (s <- symbols) {
@@ -166,7 +164,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                case "" => None
                case r => Some(r)
             }
-            val c = new Constant(thy, name, alias, tp, df, rl, notation)  //TODO parse <notation>
+            val c = Constant(thy, name, alias, tp, df, rl, notation)  //TODO parse <notation>
             add(c,md)
          }
          s2 match {
@@ -209,18 +207,23 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly
             log("warning: ignoring deprecated alias declaration")
-         case <notation>{_*}</notation> => //TODO: default notations should be part of the symbols
-            readNotations(tpath, base, s)
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, Some(params), decls, md)
+            doPat(name, Some(params), decls, None, md)
+         case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{not}</notation></pattern> =>
+            log("pattern with name " + name + " found")
+            doPat(name, Some(params), decls, Some(not), md)
          case <pattern><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, None, decls, md)         
-         case <instance>{sb}</instance> =>
+            doPat(name, None, decls, None, md)         
+         case <pattern><declarations>{decls}</declarations><notation>{not}</notation></pattern> =>
+            log("pattern with name " + name + " found")
+            doPat(name, None, decls, Some(not), md)         
+         case <instance>{ns @ _*}</instance> =>
             val p = xml.attr(s2,"pattern")
          	log("instance " + name.toString + " of pattern " + p + " found")
-            val inst = new Instance(thy,name,Path.parseS(p,base),Substitution.parse(sb,base))
+         	val args = ns map (Obj.parseTerm(_, base))
+            val inst = new Instance(thy,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
@@ -276,7 +279,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                   val role = info.kwarc.mmt.api.Role.parse(r)
 	               val key = NotationKey(forpath, role)
 	               log("notation read for " + key)
-                  val not = presentation.Notation.parse(N, nset, key)
+                  val not = presentation.StyleNotation.parse(N, nset, key)
                   add(not)
                }
 	        case <include/> =>
@@ -342,7 +345,7 @@ object XMLReader {
               } else
                  e
            }
-           (scala.xml.Elem(p,l,a,s,cs2 : _*), n)
+           (scala.xml.Elem(p,l,a,s,true,cs2 : _*), n)
        case n => (n, None)
    }
 }

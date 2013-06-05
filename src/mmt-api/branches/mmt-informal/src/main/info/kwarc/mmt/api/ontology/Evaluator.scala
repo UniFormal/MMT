@@ -93,7 +93,7 @@ class Evaluator(controller: Controller) {
          val found = extman.getFoundation(mt).getOrElse(throw GetError("no applicable type inference engine defined"))
          evaluateESet(of) foreach {
             case List(o) => o match { 
-               case OMBINDC(`free`, cont, _, obj) =>
+               case OMBIND(`free`, cont, obj) =>
                  res += List(found.inference(obj, cont)(lup))
                case t: Term => res += List(found.inference(t, Context())(lup))
                case o => throw GetError("object exists but is not a term: " + o)
@@ -157,11 +157,11 @@ class Evaluator(controller: Controller) {
               case p: Path => 
                  val rb = new presentation.XMLBuilder
                  val e = controller.get(p)
-                 controller.presenter(e, presentation.GlobalParams(rb, style))
+                 (new presentation.StyleBasedPresenter(controller,style)).apply(e, rb)
                  res += XMLResult(rb.get)
               case o : Obj =>
                  val rb = new presentation.XMLBuilder
-                 controller.presenter(o, presentation.GlobalParams(rb, style))
+                 (new presentation.StyleBasedPresenter(controller,style)).apply(o, rb)
                  res += XMLResult(rb.get)
               case _ => throw ImplementationError("evaluation of ill-typed query")
            }

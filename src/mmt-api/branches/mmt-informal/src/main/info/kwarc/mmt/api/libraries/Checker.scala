@@ -14,7 +14,9 @@ import utils.MyList.fromList
 import objects.Conversions._
 
 /**
- * A Checker that checks only knowledge items whose well-formedness is foundation-independent.
+ * A StructureChecker traverses structural elements and checks them structurally.
+ * 
+ * Deriving classes may override unitCont and reCont to customize the behavior.
  */
   //Note: Even Library.addUnchecked checks that declarations can only be added to atomic declared theories/views.
   //Therefore, the home modules are not checked here.
@@ -40,27 +42,40 @@ class StructureChecker(controller: Controller) extends Logger {
      println("nrDecls : " + nrDecls)
    }
 
+  /** called on every validation unit, empty by default */
+  def unitCont(vu: ValidationUnit) {}
+  /** called on every relational element produced, empty by default */
+  def reCont(re: RelationalElement) {}
 
-  private def tryForeach[A](args: Iterable[A])(fun: A => Unit) {
-      args foreach {a =>
-        try {fun(a)}
-        catch {case e @ Invalid(msg) => controller.report(e)}
-      }
-   }
+  def errorCont(er: Invalid) {
+     errors ::= er
+  }
+  private var errors: List[Invalid] = Nil
+  
+  /** checks a StructuralElement, given by its URI */
+  def apply(p: Path): List[Invalid] = {
+      apply(controller.get(p))
+  }
+
    /** checks a StructuralElement
     * @param e the element to check
-    * @param reCont a continuation called on all RelationalElement's produced while checking objects
-    * @param unitCont a continuation called on every validation unit
-    */ 
-   def check(e : StructuralElement)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
+    */
+   def apply(e : StructuralElement): List[Invalid] = {
+      errors = Nil
+      check(e)
+      errors.reverse
+   }
+   private def check(p: Path) {
+      check(controller.get(p))
+   }
+   private def check(e : StructuralElement) {
       val path = e.path
       log("checking " + path)
       implicit val rel = (p: Path) => reCont(RefersTo(path, p))
       implicit val lib = controller.globalLookup
       e match {
-         case d: Document => tryForeach(d.getLocalItems) {
-            i => check(i.target)
-         }
+         case d: Document => d.getLocalItems foreach check
+         case r: XRef => if (r.isGenerated) check(r.target)
          case t: DeclaredTheory =>
             nrThys += 1
             nrIncls += controller.memory.content.visible(OMMOD(t.path)).size
@@ -68,7 +83,7 @@ class StructureChecker(controller: Controller) extends Logger {
             t.meta map {mt =>
               checkTheory(OMMOD(mt))
             }
-            tryForeach(t.getPrimitiveDeclarations) {
+            t.getPrimitiveDeclarations foreach {
                d => check(d)
             }
          case t: DefinedTheory =>
@@ -77,40 +92,47 @@ class StructureChecker(controller: Controller) extends Logger {
             nrViews += 1
             checkTheory(v.from)
             checkTheory(v.to)
-
-            tryForeach(v.getPrimitiveDeclarations) {
-               d => check(d)
-            }
+            v.getPrimitiveDeclarations foreach check
          case v: DefinedView =>
             checkTheory(v.from)
             checkTheory(v.to)
             checkMorphism(v.df, v.from, v.to)
          case s: DeclaredStructure =>
             checkTheory(s.from)
-            tryForeach(s.getPrimitiveDeclarations) {
-               d => check(d)
-            }
+            s.getPrimitiveDeclarations foreach check
          case s: DefinedStructure =>
             checkTheory(s.from)
             checkMorphism(s.df, s.from, s.home)
          case c : Constant =>
+            val parR = checkContext(c.home, Context(), c.parameters)
+            //TODO reconstruction in parameters
             c.tp foreach {t => 
                val (unknowns,tU) = parser.AbstractObjectParser.splitOffUnknowns(t)
-               val tR = checkTerm(c.home, unknowns, tU)
-               OMMOD.unapply(c.home) foreach {p =>
-                  val j = Universe(Stack(p), tR)
-                  unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+               val (tR,valid) = checkTermTop(c.home, c.parameters ++ unknowns, tU)
+               if (valid) {
+                  OMMOD.unapply(c.home) foreach {p =>
+                     val j = Universe(Stack(p, c.parameters), tR)
+                     unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+                  }
                }
             }
             c.df foreach {d => 
                val (unknowns,dU) = parser.AbstractObjectParser.splitOffUnknowns(d)
-               val dR = checkTerm(c.home, unknowns, dU)
-               OMMOD.unapply(c.home) foreach {p =>
-                  c.tp foreach {tp =>
-                      val j = Typing(Stack(p), dR, tp)
-                      unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+               val (dR, valid) = checkTermTop(c.home, c.parameters ++ unknowns, dU)
+               if (valid) {
+                  OMMOD.unapply(c.home) foreach {p =>
+                     c.tp foreach {tp =>
+                         val j = Typing(Stack(p, c.parameters), dR, tp)
+                         unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+                     }
                   }
                }
+            }
+            // apply every applicable RoleHandler
+            c.rl foreach {r =>
+              controller.extman.getRoleHandler(r) foreach { h =>
+                 h.apply(c)
+              }
             }
             /*
             val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
@@ -125,37 +147,50 @@ class StructureChecker(controller: Controller) extends Logger {
             */
          //TODO: compatibility of multiple assignments to the same knowledge item
          case a : ConstantAssignment =>
-            val (t,l) = try {
-               content.getDomain(a)
+            val tlOpt = try {
+               Some(content.getDomain(a))
             } catch { 
-              case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
+              case e: GetError =>
+                 errorCont(InvalidElement(a,"invalid assignment",e))
+                 None
             }
-            val c = content.getConstant(t.path ? a.name)
-            a.target foreach {t => checkTerm(l.to, t)}
+            tlOpt foreach {case (t,l) =>
+               val c = content.getConstant(t.path ? a.name)
+               a.target foreach {t => checkTermTop(l.to, Context(), t)}
+            }
          case a : DefLinkAssignment =>
-            val (t,l) = try {
-               content.getDomain(a)
+            val tlOpt = try {
+               Some(content.getDomain(a))
             } catch { 
-              case e: GetError => throw Invalid("invalid assignment").setCausedBy(e)
+               case e: GetError =>
+                  errorCont(InvalidElement(a,"invalid assignment",e))
+                  None
             }
-            if (a.name.isAnonymous) {
-               checkMorphism(a.target, OMMOD(a.from), l.to)
-            } else {
-               val s = content.getStructure(t.path ? a.name)
-               if (s.fromPath != a.from) throw Invalid("import-assignment has bad domain: found " + a.from + " expected " + s.from) 
-               checkMorphism(a.target, s.from, l.to)
+            tlOpt foreach {case (t,l) =>
+               if (a.name.isAnonymous) {
+                  checkMorphism(a.target, OMMOD(a.from), l.to)
+               } else {
+                  /* temporarily disabled because it fails when a meta-morphism is checked (lookup of the meta-theory as a structure fails)
+                  val s = content.getStructure(t.path ? a.name)
+                  if (s.fromPath != a.from) errorCont(InvalidElement(a, "import-assignment has bad domain: found " + a.from + " expected " + s.from)) 
+                  checkMorphism(a.target, s.from, l.to)
+                  */
+               }
             }
          case p : Pattern =>
             checkContext(p.home, Context(), p.params)
             checkContext(p.home, p.params, p.body)
          case i : Instance => 
-            val pt = try {
-               content.getPattern(i.pattern)
+            val ptOpt = try {
+               Some(content.getPattern(i.pattern))
             } catch {
-               case e: GetError => throw Invalid("invalid pattern: " + i.pattern).setCausedBy(e)
+               case e: GetError =>
+                  errorCont(InvalidElement(i,"invalid pattern: " + i.pattern,e))
+                  None
             }
+            ptOpt foreach {pt => checkSubstitution(i.home, pt.getSubstitution(i), pt.params, Context())}
             //TODO mihnea's instances already refer to their elaboration in their matches
-            checkSubstitution(i.home, i.matches, pt.params, Context())
+            
 /*        case a : Alias =>
             mem.content.get(a.forpath)
             if (mem.content.imports(a.forpath.parent, a.parent))
@@ -174,10 +209,6 @@ class StructureChecker(controller: Controller) extends Logger {
       }
    }
    
-   def check(p: Path)(implicit reCont : RelationalElement => Unit, unitCont: ValidationUnit => Unit) {
-      check(controller.get(p))
-   }
-
 /*   
    def check(cp: CPath) {
       content.getO(cp.parent) match {
@@ -249,43 +280,58 @@ class StructureChecker(controller: Controller) extends Logger {
            //TODO check same meta-theory?
            val tsR = ts map {t => checkTheory(t)}
            TUnion(tsR)
-        case _ => throw Invalid("not a valid theory " + t)
+        case _ =>
+           errorCont(InvalidObject(t, "not a valid theory"))
+           t
       }
    }
    
+   private case object NotInferrable extends java.lang.Throwable
   /** checks whether a morphism object is well-formed and infers its type
     *  @param m the theory
     *  @return the reconstructed morphism, its domain and codomain
+    *    domain and codomain are null in case of errors 
     */
-   def inferMorphism(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = m match {
+   def inferMorphism(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = try {
+      inferMorphismAux(m)
+   } catch {case NotInferrable => (m, null, null)}
+   def inferMorphismAux(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = m match {
      case OMMOD(p) =>
         val l = controller.globalLookup.getLink(p)
         pCont(p)
         (m, l.from, l.to)
      case OMDL(to, name) =>
         checkTheory(to)
-        val from = content.get(to % name) match {
-           case l: Structure => l.from
-           case _ => throw Invalid("invalid morphism " + m)
+        content.get(to % name) match {
+           case l: Structure =>
+              (m, l.from, to)
+           case _ =>
+              errorCont(InvalidObject(m,"invalid morphism"))
+              throw NotInferrable
         }
         // TODO pCont ??
-        (m, from, to)
      case OMIDENT(t) =>
         checkTheory(t)
         (m, t, t)
-     case OMCOMP(Nil) => throw Invalid("cannot infer type of empty composition")
-     case OMCOMP(hd::Nil) => inferMorphism(hd)
+     case OMCOMP(Nil) =>
+        errorCont(InvalidObject(m,"cannot infer type of empty composition"))
+        throw NotInferrable
+     case OMCOMP(hd::Nil) => inferMorphismAux(hd)
      case OMCOMP(hd :: tl) =>
-        val (hdR, r, s1) = inferMorphism(hd)
-        val (tlR, s2, t) = inferMorphism(OMCOMP(tl))
-        val l = content.getImplicit(s1,s2) match { 
-           case Some(l) => l
-           case None => throw Invalid("ill-formed morphism: " + hd + " cannot be composed with " + tl)
+        val (hdR, r, s1) = inferMorphismAux(hd)
+        val (tlR, s2, t) = inferMorphismAux(OMCOMP(tl))
+        content.getImplicit(s1,s2) match { 
+           case Some(l) =>
+              (OMCOMP(hdR, l, tlR), r, t)
+           case None =>
+              errorCont(InvalidObject(m, "ill-formed morphism: " + hd + " cannot be composed with " + tl))
+              throw NotInferrable
         }
-        (OMCOMP(hdR, l, tlR), r, t)
-     case Morph.Empty => throw Invalid("cannot infer type of empty morphism")
+     case Morph.Empty =>
+        errorCont(InvalidObject(m, "cannot infer type of empty morphism"))
+        throw NotInferrable
      case MUnion(ms) =>
-        val infs = ms map {m => inferMorphism(m)}
+        val infs = ms map {m => inferMorphismAux(m)}
         val rms  = infs map {i => i._1}
         val doms = infs map {i => i._2}
         val cods = infs map {i => i._3}
@@ -303,10 +349,15 @@ class StructureChecker(controller: Controller) extends Logger {
     */
    def checkMorphism(m : Term, dom : Term, cod : Term)(implicit pCont: Path => Unit) : Term = {
       val (l,d,c) = inferMorphism(m)
-      (content.getImplicit(dom, d), content.getImplicit(c, cod)) match {
-         case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
-         case _ => throw Invalid("ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c)
-      }
+      if (d != null && c != null) {
+        (content.getImplicit(dom, d), content.getImplicit(c, cod)) match {
+           case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
+           case _ =>
+             errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c))
+             m
+        }
+      } else 
+         m
    }
 
    /**
@@ -315,7 +366,14 @@ class StructureChecker(controller: Controller) extends Logger {
     * @param s the term
     * @return the reconstructed term
     */
-   def checkTerm(home: Term, s : Term)(implicit pCont: Path => Unit) : Term = checkTerm(home, Context(), s)
+   def checkTermTop(home: Term, context : Context, s : Term)(implicit pCont: Path => Unit) : (Term, Boolean) = {
+      val n = errors.length
+      val t = checkTerm(home, context, s)
+      if (errors.length == n)
+         (t, true) // no new errors
+      else
+         (t, false)      
+   }
    /**
     * Checks structural well-formedness of a term in context relative to a home theory.
     * @param home the home theory
@@ -327,50 +385,50 @@ class StructureChecker(controller: Controller) extends Logger {
 //         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>
 //            if (! content.imports(from, h))
 //               throw Invalid(from + " is not imported into " + h + " in " + s)
-//            checkTerm(home, context, OMID(from % ln))
-         case OMS(GlobalName(t,n)) =>
-            val path = t % n
-            val ce = try {content.get(t % n)}
+//            checkTerm(home, context, OMID(from % ln).from(s))
+         case OMS(path) =>
+            val ceOpt = try {content.getO(path)}
                     catch {case e: GetError =>
-                                throw Invalid("ill-formed constant reference").setCausedBy(e)
+                                errorCont(InvalidObject(s, "ill-formed constant reference"))
                     }
-            ce match {
-               case c : Constant =>
+            ceOpt match {
+               case Some(c : Constant) =>
                   if (! content.hasImplicit(c.home, home))
-                     throw Invalid("constant " + ce.path + " is not imported into home theory " + home)
-               case _ => throw Invalid(path + " does not refer to constant")
+                     errorCont(InvalidObject(s, "constant " + c.path + " is not imported into home theory " + home))
+               case _ => errorCont(InvalidObject(s, "path does not refer to constant"))
             }
             pCont(path)
             s
          case OMV(name) =>
-            if (! context.isDeclared(name)) throw Invalid("variable is not declared: " + name)
+            if (! context.isDeclared(name))
+               errorCont(InvalidObject(s, "variable is not declared"))
             s
          case OMA(fun, args) =>
             val funR = checkTerm(home, context, fun)
             val argsR = args map {a => checkTerm(home, context, a)}
-            OMA(funR, argsR)
-         case OMBINDC(binder, bound, condition, scope) =>
+            OMA(funR, argsR).from(s)
+         case OMBINDC(binder, bound, scopes) =>
             val binderR = checkTerm(home, context, binder)
             val boundR = checkContext(home, context, bound)
-            val conditionR = condition map {c => checkTerm(home, context ++ bound, c)}
-            val scopeR = checkTerm(home,  context ++ bound, scope)
-            OMBINDC(binderR, boundR, conditionR, scopeR)
+            val scopesR = scopes map {c => checkTerm(home, context ++ bound, c)}
+            OMBINDC(binderR, boundR, scopesR).from(s)
          case OMATTR(arg, key, value) =>
             val argR = checkTerm(home, context, arg)
             checkTerm(home, context, key)
             val valueR = checkTerm(home, context, value)
-            OMATTR(argR, key, valueR)
+            OMATTR(argR, key, valueR).from(s)
          case OMM(arg, morph) =>
             val (morphR, from, to) = inferMorphism(morph)
-            if (! content.hasImplicit(to, home))
-               throw Invalid("codomain of morphism is not imported into expected home theory")
-            val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
-            OMM(arg, morph)
+            if (from != null && to != null && ! content.hasImplicit(to, home)) {
+               errorCont(InvalidObject(s, "codomain of morphism is not imported into expected home theory"))
+               val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
+               OMM(argR, morph).from(s)
+            } else s
          case OMHID => s//TODO
          case OME(err, args) =>
             val errR  = checkTerm(home, context, err)
             val argsR = args.map(checkTerm(home, context, _))
-            OME(errR, argsR)
+            OME(errR, argsR).from(s)
          case OMFOREIGN(node) => s //TODO
          case OMI(i) => s //TODO check if integers are permitted
          case OMSTR(str) => s //TODO check if strings are permitted
@@ -388,12 +446,14 @@ class StructureChecker(controller: Controller) extends Logger {
     * @return the reconstructed context
     * if context is valid, then this succeeds iff context ++ con is valid
     */
-   def checkContext(home: Term, context: Context = Context(), con: Context)(implicit pCont: Path => Unit) : Context = {
-      con.zipWithIndex map {
-    	  case (VarDecl(name, tp, df, attrs @_*), i) => 
-    	     val tpR = tp.map(x => checkTerm(home, context ++ con.take(i), x)) 
-    	     val dfR = df.map(x => checkTerm(home, context ++ con.take(i), x)) 
-    	     VarDecl(name, tpR, dfR, attrs :_*) //TODO check attribution
+   def checkContext(home: Term, context: Context, con: Context)(implicit pCont: Path => Unit) : Context = {
+      con.mapVarDecls {case (c, vd @ VarDecl(name, tp, df, attrs @_*)) =>
+             val currentContext = context ++ c 
+    	     val tpR = tp.map(x => checkTerm(home, currentContext, x)) 
+    	     val dfR = df.map(x => checkTerm(home, currentContext, x)) 
+    	     val vdR = VarDecl(name, tpR, dfR, attrs :_*) //TODO check attribution
+    	     vdR.copyFrom(vd)
+    	     vdR
       }
    }
    /**
@@ -405,13 +465,23 @@ class StructureChecker(controller: Controller) extends Logger {
     * @return the reconstructed substitution
     */
    def checkSubstitution(home: Term, subs: Substitution, from: Context, to: Context)(implicit pCont: Path => Unit) : Substitution = {
-      if (from.length != subs.length) throw Invalid("substitution " + subs + " has wrong number of cases for context " + from)
-      (from zip subs) map {       
-    	  case (VarDecl(n,tp,df,attrs @ _*), Sub(m,t)) if n == m =>
-    	     val tR = checkTerm(home,to,t)
-    	     Sub(m,tR)
-    	  case (v,s) =>
-    	     throw Invalid("illegal case " + s + " for declaration " + v)
+      if (from.length != subs.length) {
+         errorCont(InvalidObject(subs, "substitution has wrong number of cases for context " + from))
+         subs
+      } else {
+         (from zip subs) map {       
+       	  case (VarDecl(n,tp,df,attrs @ _*), Sub(m,t)) if n == m =>
+       	     val tR = checkTerm(home,to,t)
+       	     Sub(m,tR)
+       	  case (v,s) =>
+       	     errorCont(InvalidObject(subs, "illegal case " + s + " for declaration " + v))
+       	     s
+         }
       }
    }
+}
+
+class StructureAndObjectChecker(controller: Controller) extends StructureChecker(controller) {
+   val vdt = new Validator(controller)
+   override def unitCont(vu: ValidationUnit) {vdt.apply(vu)(errorCont)}
 }

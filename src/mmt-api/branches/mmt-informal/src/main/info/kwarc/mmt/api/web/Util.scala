@@ -9,17 +9,17 @@ import ontology._
 import modules._
 
 object Util {
-   def div(n: List[Node]) : Node = xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), n :_*)
+   def div(n: List[Node]) : Node = xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), true, n :_*)
    def div(s: String) : Node = div(List(scala.xml.Text(s)))
    /*
    def link(xhtml : NodeSeq, p : Path) = {
      val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
      <span jobad:href={p.toPath}>{text}</span>
    }*/
-   def ahref(p: Path) =
-      <a href="#" onclick={navigate(p)}>{p.last}</a>
+   def ahref(p: Path) = <a href="#" mmtlink={p.toPath}>{p.last}</a>
+     // <a href="#" onclick={navigate(p)}>{p.last}</a>
    def navigate(p: Path) = 
-      "latin_navigate('" + p.toPath + "')"
+      "navigation.navigate('" + p.toPath + "')"
    
    /** yields a breadcrumb navigation bar as a sequence of links */
    def breadcrumbs(path : Path) : Node = {
@@ -40,7 +40,7 @@ object Util {
       // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
       //<div xmlns={utils.xml.namespace("xhtml")} xmlns:jobad={utils.xml.namespace("jobad")}>{crumbs}</div>
       xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"),
-                              NamespaceBinding("jobad", utils.xml.namespace("jobad"), TopScope)), crumbs : _*)
+                              NamespaceBinding("jobad", utils.xml.namespace("jobad"), TopScope)), true, crumbs : _*)
    }
    
    def item(p : Path, state : String, label : Option[String] = None) = 
@@ -76,23 +76,24 @@ object Util {
     * If the resource is in the JAR, then the JAR must look like 
     *       jar-name.jar/some-path/resource.txt
     * If the resource is a separate file and the code is run from outside any JAR, then the folder structure must look like
-    *       compiled-folder
-    *        |--top-level-package-name/../class-files
-    *        |--some-path/resource.txt 
+    *       project-folder
+    *        |--bin/main/info/...
+    *        |--resources/mmt-web/ 
     * @return stream to the resource, if found, null otherwise. **The caller must close the stream after reading!**
     */
   def loadResource(path : String) : java.io.InputStream = {
     val stream = getClass.getResourceAsStream("/mmt-web/" + path)  // the file inside the JAR
-    if (false) //(stream != null)
+    if (stream != null)
         return stream
     else {
         val filePath : String = try {
+          //the folder containing the class files
           val binaryFolder : java.io.File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toString)  // e.g. .../lfcatalog/trunk/build/main
-          val resourceFolder : String = binaryFolder.getParentFile.getParentFile.toString + "/resources/mmt-web"  // e.g. .../lfcatalog/trunk/resources/mmt-web
+          val resourceFolder : String = binaryFolder.getParentFile.toString + "/../resources/mmt-web"
           (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + "/" + path
         }
         catch {
-          case _ => return null
+          case _ : Throwable => return null
         }
         //println("trying to get resource from "  + filePath)
         val file = new java.io.File(filePath)  // the file on disk

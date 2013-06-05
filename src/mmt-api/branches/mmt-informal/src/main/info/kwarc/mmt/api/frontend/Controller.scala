@@ -52,14 +52,14 @@ abstract class ROController {
 /** A Controller is the central class maintaining all MMT knowledge items.
   * It stores all stateful entities and executes Action commands.
   */  
-class Controller extends ROController {
+class Controller extends ROController with Logger {
    def this(r: Report) {
       this()
       report_ = r
    }
    /** handles all output and log messages */
    private var report_ : Report = new Report 
-   def report = report_
+   val report = report_
    /** maintains all knowledge */
    val memory = new Memory(report)
    val depstore = memory.ontology
@@ -67,6 +67,9 @@ class Controller extends ROController {
    val notstore = memory.presentation
    val docstore = memory.narration
 
+   /** text-based presenter for error messages, logging, etc. */
+   val presenter = new StructureAndObjectPresenter(this)
+   
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
    /** pragmatic MMT features besides Patterns */
@@ -79,24 +82,31 @@ class Controller extends ROController {
    val termParser = new ObjectParser(this)
    /** the MMT parser (native MMT text syntax) */
    val textParser = new StructureAndObjectParser(this)
+   /** a basic structure checker */
+   val checker = new StructureAndObjectChecker(this)
    /** the MMT parser (Twelf text syntax) */
    val textReader = new TextReader(this)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
-   /** the checker for the validation of ContentElement's and objects */
-   val checker = new StructureChecker(this)
-   /** the MMT rendering engine */
-   val presenter = new presentation.Presenter(this, report)
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the universal machine, a computation engine */
-   val uom = new UOM(report)
+   val uom = new UOM(this)
    /** the window manager */
    val winman = new WindowManager(this)
    /** moc.refiner - handling pragmatic changes in scope */ 
    val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
    /** moc.propagator - handling change propagation */
    val propagator = new moc.OccursInImpactPropagator(memory)
+   
+   private def init {
+      extman.addDefaultExtensions
+   }
+   init
+   
+   
+   //not sure if this really belong here, map from jobname to some state info
+   val states = new collection.mutable.HashMap[String, ParserState]
          
    
    def detectChanges(elems : List[ContentElement]) : StrictDiff = {
@@ -105,7 +115,7 @@ class Controller extends ROController {
          val old = globalLookup.get(elem.path)
          moc.Differ.diff(old, elem).changes
        } catch {
-         case e => elem match {
+         case e : Throwable => elem match {
            case m : Module => List(AddModule(m))
            case d : Declaration => List(AddDeclaration(d))
            case _ => throw ImplementationError("Updating element not supported for " + elem.toString)
@@ -121,16 +131,13 @@ class Controller extends ROController {
    
    def update(diff : StrictDiff, withChanges : List[String] = Nil) : Set[CPath] = {     
      val changes = diff.changes     
-     println(changes)
      val pChanges = refiner(new StrictDiff(changes), Some(withChanges))
-     println("pchanges : " + pChanges.changes)
      val propDiff = pChanges ++ propagator(pChanges)
-     println("pdiff : " + propDiff.changes)
      moc.Patcher.patch(propDiff, this)
      propagator.boxedPaths
    }
 
-   protected def log(s : => String) = report("controller", s)
+   val logPrefix = "controller"
 
    /** a lookup that uses only the current memory data structures */
    val localLookup = new Lookup(report) {
@@ -153,17 +160,23 @@ class Controller extends ROController {
    /** loads a path via the backend and reports it */
    protected def retrieve(path : Path) {
       log("retrieving " + path)
-      report.indent
-      // get, ...
-      backend.get(path) {
-        // read, ...
-        case (u,n) =>
-          xmlReader.readDocuments(DPath(u), n) {
-           // and add the content with URI path
-           e => add(e)
-        }
+      logGroup {
+         // get, ...
+         try {
+           backend.get(path) {
+              // read, ...
+              case (u,n) =>
+                 xmlReader.readDocuments(DPath(u), n) {
+                 // and add the content with URI path
+                 e => add(e)
+              }
+           }
+         } catch {
+            case BackendError(p) =>
+               log("retrieval failed for " + p)
+               throw GetError("retrieval failed for " + p) 
+         }
       }
-      report.unindent
       log("retrieved " + path)
    }
    /**
@@ -182,14 +195,13 @@ class Controller extends ROController {
       catch {
          case NotFound(p : Path) if ! previous.exists(_ == p) => retrieve(p); iterate(a, p :: previous)
          case NotFound(p : Path) => throw GetError("retrieval failed for " + p) 
-         case e => throw e
       }
    }
    /** retrieves a knowledge item */
    def get(path : Path) : StructuralElement = {
       path match {
          case p : DPath => iterate (docstore.get(p))
-         case p : MPath => iterate (try {library.get(p)} catch {case _ => notstore.get(p)})
+         case p : MPath => iterate (try {library.get(p)} catch {case _: java.lang.Exception => notstore.get(p)})
          case p : GlobalName => iterate (library.get(p))
          case _ : CPath => throw ImplementationError("cannot retrieve component paths")
       }
@@ -198,7 +210,7 @@ class Controller extends ROController {
     *  @param nset the style from which to select
     *  @param key the notation key identifying the knowledge item to be presented
     */
-   def get(nset : MPath, key : NotationKey) : Notation = {
+   def get(nset : MPath, key : NotationKey) : StyleNotation = {
       iterate (notstore.get(nset,key))
    }
    /** adds a knowledge item */
@@ -229,39 +241,53 @@ class Controller extends ROController {
    def clear {
       memory.clear
    }
-   /** releases all resources that are not handled by the garbage collection (currently: only the Twelf catalog) */
+   /** releases all resources that are not handled by the garbage collection */
    def cleanup {
       extman.cleanup
       //closes all open svn sessions from storages in backend
       backend.cleanup
-      if (server.isDefined) stopServer
+      server foreach {_.stop}
    }
    /** reads a file containing a document and returns the Path of the document found in it
     * the reader is chosen according to the file ending: omdoc, elf, or mmt
+    * @param f the input file
+    * @param docBase the base path to use for relative references
+    * @return the read Document and a list of errors that were encountered
     */
-   def read(f: File, docBase : Option[DPath] = None) : DPath = {
-      val dpath = docBase getOrElse DPath(URI.fromJava(f.toURI))
+   def read(f: File, docBase : Option[DPath] = None) : (Document,List[SourceError]) = {
+      // use docBase, fall back to logical document id given by an archive, fall back to file:f
+      val dpath = docBase orElse
+                  backend.resolvePhysical(f).map {
+                     case (arch, p) => DPath(arch.narrationBase / p)
+                  } getOrElse
+                  DPath(utils.FileURI(f))
+      delete(dpath)
       f.getExtension match {
          case Some("omdoc") =>
             val N = utils.xml.readFile(f)
-            var p: DPath = null
+            var doc: Document = null
             xmlReader.readDocument(dpath, N) {
                case d: Document =>
                   add(d)
-                  p = d.path
+                  doc = d
                case e => add(e)
             }
-            p
-         case Some("elf") | Some("mmt") =>
+            (doc, Nil)
+         case Some("elf") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
             val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
             source.close
             if (!errorList.isEmpty)
               log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
-            dpath
-         case Some("mmt-new") =>
-            textParser(Reader(f), dpath)
-            dpath
+            (doc, errorList.toList)
+         case Some("mmt") =>
+            val r = Reader(f)
+            try {
+               val (doc, state) = textParser(r, dpath)
+               (doc, state.getErrors)
+            } finally {
+               r.close
+            }
          case Some(e) => throw ParseError("unknown file extension: " + f)
          case None => throw ParseError("unknown document format: " + f)
       }
@@ -270,39 +296,15 @@ class Controller extends ROController {
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
    /** base URL In the local system */
-   protected var home = File(".")
+   protected var home = File(System.getProperty("user.dir"))
    def getHome = home
    def setHome(h: File) {home = h}
-
-   /** starts the HTTP server on the given port */
-   def startServer(port : Int) {
-    server match {
-      case Some(serv) => log("server already started on port " + serv.port)
-      case None if (Util.isTaken(port)) => log("port " + port + " is taken. Server not started.")
-      case _ =>
-        val serv = new Server(port, this)
-        serv.start
-        log("Server started at http://localhost:" + port)
-        server = Some(serv)
-    }
-  }
-  
-   /** stops the HTTP server */
-   def stopServer {
-    server match {
-      case Some(serv) => 
-        serv.stop
-        log("Server stopped")
-        server = None
-      case None => log("server is not running, so it cant be stopped")
-    }
-  }
 
    def reportException[A](a: => A) {
        try {a}
        catch {
     	   case e : info.kwarc.mmt.api.Error => report(e)
-         case e : java.lang.Throwable => report("error", e.getMessage)
+         case e : java.lang.Exception => report("error", e.getMessage)
        }
    }
    /** executes a string command */
@@ -311,7 +313,7 @@ class Controller extends ROController {
            Action.parseAct(l, base, home)
         } catch {
            case ParseError(msg) =>
-              log(msg)
+              logError(msg)
               return
         }
         handle(act)
@@ -331,9 +333,7 @@ class Controller extends ROController {
             }
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
-	      case AddImporter(c, args) => extman.addImporter(c, args)
-	      case AddPlugin(c) => extman.addPlugin(c, Nil)
-	      case AddFoundation(c, args) => extman.addFoundation(c, args)
+	      case AddExtension(c, args) => extman.addExtension(c, args)
 	      case AddTNTBase(f) =>
 	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
@@ -341,27 +341,23 @@ class Controller extends ROController {
 	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
-	         backend.openArchive(f)
+	         val arch = backend.openArchive(f)
+	         extman.targets.foreach {t => t.register(arch)}
          case AddSVNArchive(url, rev) =>
            backend.openArchive(url, rev)
-          case ArchiveBuild(id, dim, in, params) =>
+          case ArchiveBuild(id, key, mod, in, args) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
-            dim match {
-               case "compile" => arch.produceCompiled(in)
-               case "compile*" => arch.updateCompiled(in)
-               case "content" => arch.produceNarrCont(in)
-               case "content*" => arch.updateNarrCont(in)
+            key match {
                case "check" => arch.check(in, this)
                case "validate" => arch.validate(in, this)
-               case "delete" => arch.deleteNarrCont(in)
-               case "clean" => List("narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
+               case "clean" => List("compiled", "narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
                case "enrich" =>
                  val me = new ModuleElaborator(this)
                  arch.produceEnriched(in,me, this)
                case "source-terms" | "source-structure" => arch match {
                   case arch: archives.MMTArchive =>
-                     arch.readSource(in, this, dim.endsWith("-terms"))
+                     arch.readSource(in, this, key.endsWith("-terms"))
                      log("done reading source")
                   case _ => log("archive is not an MMT archive")
                }
@@ -369,16 +365,38 @@ class Controller extends ROController {
                   arch.readRelational(in, this, "rel")
                   arch.readRelational(in, this, "occ")
                   log("done reading relational index")
+               /*
                case "notation" => 
                   arch.readNotation(in, this)
                   log("done reading notation index")
-               case "mws" => arch.produceMWS(in, "content")
-               case "mws-flat" => arch.produceMWS(in, "mws-flat")
+                */
+               case "mws"          => arch.produceMWS(in, "content")
+               case "mws-flat"     => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
-               case "extract" => arch.extractScala(in, "source")
-               case "integrate" => arch.integrateScala(in, "source")
-               case "present" => params.foreach(p => arch.producePres(Nil,p, this))
-               case "close" => backend.closeArchive(id)
+               case "extract"      => arch.extractScala(this, in)
+               case "integrate"    => arch.integrateScala(this, in)
+               case "register"     =>
+                  if (in.length != 1)
+                     logError("exactly 1 parameter required for register command, found " + in.mkString(""))
+                  else
+                     arch.loadJava(this, in(0), true, false)
+               case "test"         =>
+                  if (in.length != 1)
+                     logError("exactly 1 parameter required for test command, found " + in.mkString(""))
+                  else
+                     arch.loadJava(this, in(0), false, true)
+               case "present"      => args.foreach(p => arch.producePres(Nil,p, this))
+               case "close"        =>
+                  val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+                  extman.targets.foreach {t => t.register(arch)}
+                  backend.closeArchive(id)
+               case d =>
+                  extman.getTarget(d) match {
+                     case Some(buildTarget) =>
+                        buildTarget(mod, arch, in, args)
+                     case None =>
+                        logError("unknown dimension " + d + ", ignored")
+                  }
             }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
@@ -387,8 +405,25 @@ class Controller extends ROController {
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
-	      case ServerOn(p) => startServer(p)
-	      case ServerOff => stopServer
+	      case ServerOn(port) => server match {
+            case Some(serv) => logError("server already started on port " + serv.port)
+            case None if (Util.isTaken(port)) => logError("port " + port + " is taken, server not started.")
+            case _ =>
+              val serv = new Server(port, this)
+              serv.start
+              log("Server started at http://localhost:" + port)
+              server = Some(serv)
+          }
+	      case ServerOff => server match {
+            case Some(serv) => 
+              serv.stop
+              log("Server stopped")
+              server = None
+            case None => log("server not running")
+          }
+	      case Scala =>
+	         val interp = new MMTILoop(this)
+            interp.run
 	      case Clear => clear
 	      case ExecFile(f) =>
 	         var line : String = null
@@ -406,10 +441,10 @@ class Controller extends ROController {
             tg.exportDot(f)
 	      case Check(p) =>
 	         try {
-	            checker.check(p)( _ => (), _ => None)
+	            checker(p)
 	            log("check succeeded")
 	         } catch {
-	          case e: Error =>
+	          case e: Invalid =>
 	            log("check failed\n" + e.getMessage)
 	         }
 	      case DefaultGet(p) => handle(GetAction(Print(p)))

@@ -18,9 +18,17 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    val attrs = ats.toList
    /** self-written copy method that does not allow changing attributions
     * (because sequence arguments and copy do not work together) */
-   def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) =
-      VarDecl(name, tp, df, ats:_*)
-   def ^(sub : Substitution) = VarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
+   def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) = {
+      val vd = VarDecl(name, tp, df, ats:_*)
+      vd.copyFrom(this)
+      vd
+   }
+   def toTerm = OMV(name)
+   def ^(sub : Substitution) = {
+      val vd = VarDecl(name, tp.map(_ ^ sub), df.map(_ ^ sub))
+      vd.copyFrom(this)
+      vd
+   }
    private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil) 
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
@@ -37,10 +45,14 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    def toCML = toOpenMath.toCML
    def role = Role_Variable
    def head = None
-   def components = List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted))
+   def components =
+      List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted)) :::
+      //temporary hack: if any other attribution is present, the type is assumed to be reconstructed
+      //and returning a 4th components indicates that 
+      (if (ats.isEmpty) Nil else List(StringLiteral("")))
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
-   private def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos + 1)}</type>).getOrElse(Nil)
-   private def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos + 2)}</definition>).getOrElse(Nil)
+   private def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos / 1)}</type>).getOrElse(Nil)
+   private def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos / 2)}</definition>).getOrElse(Nil)
    private def attrsN(pos : Position) = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
 }
 
@@ -75,6 +87,15 @@ case class Context(variables : VarDecl*) extends Obj {
       }
       Context(newvars : _*)
    }
+   /** applies a function to each VarDecl, each time in the respective context
+    * @return the list of results
+    */
+   def mapVarDecls[A](f: (Context,VarDecl) => A): List[A] = {
+      variables.zipWithIndex.toList map {case (vd, i) =>
+         val con = Context(variables.take(i) : _*)
+         f(con, vd)
+      }
+   }
    
    /** substitutes in all variable declarations except for the previously declared variables
     *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
@@ -107,7 +128,7 @@ case class Context(variables : VarDecl*) extends Obj {
    }
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNodeID(pos : Position) =
-     <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos + i)})}</om:OMBVAR>
+     <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos / i)})}</om:OMBVAR>
    def toCML = 
      <m:bvar>{this.map(v => v.toCML)}</m:bvar>
    def head = None
@@ -117,10 +138,14 @@ case class Context(variables : VarDecl*) extends Obj {
 
 /** a case in a substitution */		
 case class Sub(name : LocalName, target : Term) extends Obj {
-   def ^(sub : Substitution) = Sub(name, target ^ sub)
+   def ^(sub : Substitution) = {
+     val s = Sub(name, target ^ sub)
+     s.copyFrom(this)
+     s
+   }
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
-   def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos + 1)}</om:OMV>
+   def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos / 1)}</om:OMV>
    def toCML : Node = <m:mi name={name.toPath}>{target.toCML}</m:mi>
    def components = List(StringLiteral(name.toString), target)
    override def toString = name + "/" + target.toString
@@ -133,12 +158,10 @@ case class Substitution(subs : Sub*) extends Obj {
    def ++(n:String, t:Term) : Substitution = this ++ Sub(LocalName(n),t)
    def ++(s: Sub) : Substitution = this ++ Substitution(s)
    def ++(that: Substitution) : Substitution = this ::: that
-   def ^(sub : Substitution) = this map {
-	   case Sub(v,t) => Sub(v, t ^ sub)
-   }
+   def ^(sub : Substitution) = this map {s => s ^ sub}
    private[objects] def freeVars_ = (this flatMap {_.freeVars_})
    def maps(n: LocalName): Boolean = this exists {_.name == n}
-   def apply(v : LocalName) : Option[Obj] = subs.reverse.find(_.name == v).map(_.target)
+   def apply(v : LocalName) : Option[Term] = subs.reverse.find(_.name == v).map(_.target)
    def isIdentity : Boolean = subs forall {
       case Sub(n, OMV(m)) => m == n
       case _ => false 
@@ -154,11 +177,12 @@ case class Substitution(subs : Sub*) extends Obj {
    }
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNodeID(pos : Position) =
-      <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos + x._2))}</om:OMBVAR>
+      <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos / x._2))}</om:OMBVAR>
    def toCML = asContext.toCML
    def head = None
    def role : Role = Role_substitution
    def components = subs.toList
+   def isEmpty = components.isEmpty
 }
 
 /** helper object */
@@ -177,6 +201,7 @@ object Context {
 	      if (forbidden contains x) {
    	      val xn = rename(x)
             val vdn = VarDecl(xn, tp map {_ ^ sub}, df map {_ ^ sub}, ats : _*)
+            vdn.copyFrom(vd)
    	      sub = sub ++ OMV(x) / OMV(xn)
    	      vdn
 	      } else {
@@ -190,20 +215,20 @@ object Context {
 
 /** helper object */
 object VarDecl {
-   def parseAttrs[T <: Obj, D <: Obj](N: Seq[Node], base: Path, parseType: Node => T, parseDef : Node => D, parseOther : Node => Term) :
-                                                    (Option[T], Option[D], List[(GlobalName,Term)]) = {
-      var tp : Option[T] = None
-      var df : Option[D] = None
+   def parseAttrs(N: Seq[Node], base: Path) : (Option[Term], Option[Term], List[(GlobalName,Term)]) = {
+      var tp : Option[Term] = None
+      var df : Option[Term] = None
       var attrs : List[(GlobalName, Term)] = Nil
       var left = N.toList
       while (left != Nil) {
          left.head match {
-            case <type>{t}</type> => tp = Some(parseType(t))
-            case <definition>{t}</definition> => df = Some(parseDef(t))
+            case <type>{t}</type> => tp = Some(Obj.parseTerm(t, base))
+            case <definition>{t}</definition> => df = Some(Obj.parseTerm(t, base))
             case a @ <attribution>{t}</attribution> =>
                val key = Path.parseS(xml.attr(a, "key"), base)
-               val value = parseOther(t)
+               val value = Obj.parseTerm(t, base)
                attrs = (key, value) :: attrs
+            /* //no support for OpenMath style OMATTR
             case k @ <OMS/> =>
                val key = Obj.parseOMS(k, base) match {
                   case g: GlobalName => g
@@ -218,22 +243,24 @@ object VarDecl {
                   case _ =>
                      val value = parseOther(vl)
                      attrs = (key, value) :: attrs
-               }
+               }*/
          }
          left = left.tail
       }
       (tp, df, attrs.reverse)
    }
    def parse(N: Node, base: Path) : VarDecl = {
-      val pTerm = (x:Node) => Obj.parseTerm(x, base)
       N match {      
+         // no support for OpenMath style attributed variables
+         /*
          case <OMATTR><OMATP>{ats @ _*}</OMATP>{v}</OMATTR> =>
             val name = LocalName.parse(xml.attr(v, "name"))
             val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
             VarDecl(name, tp, df, attrs : _*)
+         */
          case <OMV>{ats @ _*}</OMV> =>
             val name = LocalName.parse(xml.attr(N, "name"))
-            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
+            val (tp, df, attrs) = parseAttrs(ats, base)
             VarDecl(name, tp, df, attrs : _*)
          case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
       }

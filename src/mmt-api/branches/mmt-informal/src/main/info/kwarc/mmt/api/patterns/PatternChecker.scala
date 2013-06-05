@@ -66,7 +66,7 @@ class PatternChecker(controller: Controller) extends Elaborator {
       sub = z.foldLeft(sub)((a,b) => a ++ b)
       mat.metaContext.toSubstitution
       val c = constants(0)
-      Some(new Instance(c.home,c.name,GlobalName(c.home, pattern.name),sub))
+      Some(new Instance(c.home,c.name,GlobalName(c.home, pattern.name),sub.map(_.target)))
       
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  
@@ -144,14 +144,14 @@ class Matcher(controller : Controller, var metaContext : Context) {
             // OM symbol
             case (OMS(a),OMS(b)) => apply(OMID(a),OMID(b), con)
             // conditional binder
-            case (OMBINDC(b1, ctx1, cond1, bod1), OMBINDC(b2,ctx2,cond2,bod2)) => 
+            case (OMBINDC(b1, ctx1, scopes1), OMBINDC(b2,ctx2,scopes2)) => 
               val res1 = apply(b1,b2,con) 
-              val res2 = apply(cond1,cond2,con ++ ctx1)  
-              val res3 = apply(bod1,bod2,con ++ ctx1)
-              (res1,res2,res3) match {
-                case (Some(a), Some(b), Some(c)) => Some(a ++ b ++ c)
-                case _ => None
+              val res2 = scopes1.zip(scopes2).map {
+                 case (s1,s2) => apply(s1,s2,con ++ ctx1)
               }
+              if (res1.isDefined && res2.forall(_.isDefined))
+                 Some(res2.foldLeft(res1.get) {case (x,y) => x ++ y.get})
+              else None
             // var to anything  
             case (OMV(v), x) => if (metaContext.isDeclared(v)) Some(Substitution(Sub("OMV to Term", OMV(v)))) else None 
             // check if constant and variable types are the same                        
@@ -214,11 +214,11 @@ object PatternTest  {
   val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
   val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))// problem base
 
-  val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
-  val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
-  val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F"))) )
-  val typedConDef = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedConDef"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMV("A")))),Some(OMV("D"))))
-  val theorem = new Pattern(OMID(tptpbase ? "THF0"), LocalName("theorem"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F")))),Some(OMV("D"))))
+  val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"), None)
+  val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), None )
+  val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F"))), None )
+  val typedConDef = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedConDef"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMV("A")))),Some(OMV("D"))), None)
+  val theorem = new Pattern(OMID(tptpbase ? "THF0"), LocalName("theorem"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F")))),Some(OMV("D"))), None)
   val controller = new Controller
   controller.handleLine("file pattern-test.msl")// run what's written in this file first - add logs, archives etc.
   controller.add(baseType)
@@ -251,7 +251,7 @@ object PatternTest  {
       controller.globalLookup.getPattern(tptpbase ? "THF0" ? "baseType")
     } catch {
 //      case GetError(m) => throw GetError(m)
-      case e => e.printStackTrace()
+      case e : Throwable => e.printStackTrace()
     }
     val pattTheory = controller.globalLookup.getTheory(tptpbase ? "THF0") match {
       case t : DeclaredTheory => t
@@ -269,7 +269,6 @@ object PatternTest  {
            pc.patternCheck(List(a),p) match {
              case Some(ins) => {
             	 println(a.name + " matches " + p.name)
-            	 ins.matches
             	 println("substitution: " + ins.matches.toString())
              }
              case _ =>

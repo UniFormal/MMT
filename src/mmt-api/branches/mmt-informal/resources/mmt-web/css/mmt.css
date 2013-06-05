@@ -38,12 +38,18 @@ mi {
     background: silver;
 }
 
-.reconstructed mo, .implicit-arg mo, .implicit-binder mo,
-.reconstructed mi, .implicit-arg mi, .implicit-binder mi,
-.reconstructed, .implicit-arg, .implicit-binder {
+.brackets mo {
    color : gray;
 }
-.reconstructed-hidden, .implicit-arg-hidden, .implicit-binder-hidden{
+.reconstructed {
+   border-top-style : dotted;
+   border-width: thin
+}
+.implicit-arg {
+   border-bottom-style : dotted;
+   border-width: thin
+}
+.reconstructed-hidden, .implicit-arg-hidden, .brackets-hidden {
    display: none;
 }
 

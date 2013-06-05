@@ -4,7 +4,9 @@ import utils.MyList._
 
 import scala.annotation.tailrec
 
-case class Ambiguous() extends java.lang.Throwable
+case class Ambiguous(notations: List[TextNotation]) extends {
+   val message = "multiple notations apply: " + notations.map(_.toString).mkString(",")
+} with Error(message)
 
 import ActiveNotation._
 
@@ -55,6 +57,26 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
       sl
    }
    
+   /**
+    * a string consisting of all the single-character Tokens that follow the current one without whitespace
+    * 
+    * these may be used to lengthen the current Token to match Tokens that were taken apart by the lexer
+    */ 
+   private def availableFutureTokens : String = {
+      val len = tl.length
+      var delim = ""
+      var i = currentIndex+1
+      while (i < len) {
+         tl(i) match {
+            case Token(w,_,false) if w.length == 1 =>
+               delim += w
+               i += 1
+            case _ => return delim
+         }
+      }
+      delim
+   }
+   
    /** the currently open notations, inner-most first */
    private var active: List[ActiveNotation] = Nil
    /**
@@ -66,7 +88,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
    private def checkActive(ans: List[ActiveNotation], closable: Int) : (Int, Applicability) = ans match {
       case Nil => (closable, NotApplicable)
       case an::rest => 
-         an.applicable(currentToken, currentIndex) match {
+         an.applicable(currentToken, currentIndex, availableFutureTokens) match {
             case Applicable =>
                (closable, Applicable)
             case Abort =>
@@ -79,7 +101,9 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                }
          }
    }
-   /** applies the first active notation (precondition: must be applicable) */
+   /** applies the first active notation (precondition: must be applicable)
+    * @param leftOpen notation may be left-open, i.e., it has not been applied before
+    */
    private def applyFirst(leftOpen: Boolean) {
       val an = active.head
       // left-open notations get all Token's that were shifted in the surrounding group
@@ -92,8 +116,10 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                an.numCurrentTokens = hd.numCurrentTokens
                hd.numCurrentTokens = 0
          }
+         val app = an.applicable(currentToken, currentIndex, availableFutureTokens) //true by invariant but must be called for precondition of an.apply
+         assert(app == Applicable) // catch mean implementation errors
       }
-      log("applying current notation at " + currentToken + ", found so far: " + an)
+      logWithState(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
       resetPicker
       val toClose = an.apply
       // we count how much active.head picked and
@@ -110,7 +136,9 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
       if (toClose)
          closeFirst(false)
    }
-   /** closes the first active notation (precondition: must be closable) */
+   /** closes the first active notation (precondition: must be closable)
+    * @param rightOpen true if the notation may still pick from the right during a call to its close method
+    */
    private def closeFirst(rightOpen: Boolean) {
        log("closing current notation")
        val an = active.head
@@ -156,6 +184,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
          case ul: UnmatchedList => 
             if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, report) //initialize scanner if necessary
             ul.scanner.scan(notations)
+         case e: ExternalToken =>
          case t: Token =>
             // impossible in MatchedList produced by TokenList.reduce, not called for UnmatchedList or Token
             throw ImplementationError("single Token in MatchedList")
@@ -172,6 +201,8 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
             advance
          case ul: UnmatchedList =>
             scanRecursively(ul)
+            advance
+         case e: ExternalToken =>
             advance
          case t : Token =>
             currentToken = t
@@ -191,22 +222,41 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   Range(0,closable) foreach {_ => closeFirst(true)}
                   applyFirst(false)
                case NotApplicable =>
-                  //determine if a new notation can be opened 
-                  val applicable = notations filter {a => a.applicable(currentToken)}
-                  applicable match {
-                     case hd :: Nil =>
+                  val futureTokens = availableFutureTokens
+                  //openable is the list of notations that can be opened, paired with the length of the delim they match
+                  //if multiple notations can be opened, we open the one with the longest first delim
+                  val openable = notations flatMap {not =>
+                     val delim = not.firstDelimString
+                     val m = delim.isDefined && ActiveNotation.matches(delim.get, currentToken.word, futureTokens)
+                     if (m && not.openArgs(false) <= numCurrentTokens)
+                        List((not, delim.get.length))
+                     else
+                        Nil
+                  }
+                  log("openable: " + openable.map(_._1).mkString(", "))
+                  //the longest firstDelim of an openable notation
+                  val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)._2
+                  openable.filter(_._2 == longestDelim) match {
+                     case (hd,_) :: Nil =>
                         //open the notation and apply it
-                        /* opening a left-open notation when the current notation is closable (e.g., because it's right-open)
-                           should be an error: no unique reading for - a + b */
                         log("opening notation at " + currentToken)
-                        val an = hd.open(this, currentIndex)
+                        if (hd.isLeftOpen) {
+                           /* at this point, all active notations are right-open
+                            * thus, opening a left-open notation, leads to the ambiguity of association, e.g.,
+                            * there is no unique reading for a-b+c
+                            * closing all closable notations has the effect of associating to the left, i.e., (a-b)+c
+                            * that corresponds to the left-to-right reading convention
+                            * alternatively, one could flag an error
+                            */
+                           Range(0,closable) foreach {_ => closeFirst(true)}
+                        }
+                        val an = new ActiveNotation(this, hd, currentIndex)
                         active ::= an
-                        an.applicable(currentToken, currentIndex) //true by invariant but must be called for precondition of apply
                         applyFirst(true)
                      case Nil =>
                         //move one token forward
                         advance
-                     case _ => throw Ambiguous() //some kind of ambiguity-handling here (maybe look for next delimiter)
+                     case l => throw Ambiguous(l.map(_._1)) //some kind of ambiguity-handling here (maybe look for next delimiter)
                   }
             }
       }
@@ -235,7 +285,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
     * @param nots the notations to scan for
     */
    def scan(nots: List[TextNotation]) {
-      log("scanning " + tl)
+      log("scanning " + tl + " with notations " + nots.mkString(","))
       notations = nots
       currentIndex = 0
       numCurrentTokens = 0
@@ -262,7 +312,7 @@ case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
  * @param n the number of the Arg
  */
 case class FoundArg(slice: TokenSlice, n: Int) extends Found {
-   override def toString = n.toString + ":" + slice.toString
+   override def toString = slice.toString
    def fromTo = Some((slice.start,slice.next))
 }
 /** represents an [[info.kwarc.mmt.api.parser.SeqArg]] that was found
@@ -273,20 +323,62 @@ case class FoundSeqArg(n: Int, args: List[FoundArg]) extends Found {
    override def toString = n.toString + args.map(_.toString).mkString(":(", " ", ")")
    def fromTo = if (args.isEmpty) None else Some((args.head.slice.start, args.last.slice.next))
 }
-/** represents a [[info.kwarc.mmt.api.parser.Var]] that was found
- * @param n the number of the Var
- * @param vr the found variable
- * @param tp the found type, if provided 
+
+/** helper class for representing a single found variable
+ * @param pos first Token
+ * @param name the variable name
+ * @param tp the optional type
  */
-case class FoundVar(n: Int, pos: Int, name: Token, tp: Option[FoundArg]) extends Found {
-   override def toString = name.toString + ":" + tp.map(_.toString).getOrElse("_")
-   def fromTo = if (tp.isEmpty) Some((pos, pos+1)) else Some((pos, tp.get.slice.next))
+case class SingleFoundVar(val pos: Int, val name: Token, tp: Option[FoundArg]) {
+   def to = tp match {
+      case Some(t) => t.fromTo.get._2
+      case None => pos+1
+   }
 }
-/** represents an [[info.kwarc.mmt.api.parser.SeqVar]] that was found
- * @param n the number of the SeqVar
- * @param vrs the variables that were found 
+/** represents a [[info.kwarc.mmt.api.parser.Var]] that was found
+ * @param marker the Var marker found
+ * @param vrs the variables
+ * 
+ * the sequence variable parser is a state machine
+ * {{{
+ *                                        |---------------- next delim -----------------------------------------|
+ * state:  0                       1      |                             2                                   -1  V
+ * expect: name --- pick name ---> type, sep., next delim --- else ---> sep, next delim --- next delim ---> skip delim, end
+ *   ^                                    | sep                     sep |   | else ^
+ *   | ------------ skip sep -------------|------------------------------   |------|
+ * }}}
  */
-case class FoundSeqVar(n: Int, vrs: List[FoundVar]) extends Found {
-   override def toString = n.toString + ":" + vrs.map(_.toString).mkString("(", " ", ")")
-   def fromTo = if (vrs.isEmpty) None else Some((vrs.head.fromTo.get._1, vrs.last.fromTo.get._2))
+class FoundVar(val marker: Var) extends Found {
+   /** the found variables in reverse order */
+   private var vrs: List[SingleFoundVar] = Nil
+   /** the current state */
+   var state: FoundVar.State = FoundVar.BeforeName
+   /** the found variables */
+   def getVars = vrs.reverse
+   /** start a new variable */
+   def newVar(pos: Int, name: Token) {
+      vrs ::= SingleFoundVar(pos, name, None)
+   }
+   /**
+    * set the type of the current variable
+    * pre: variable exists and has no type
+    */
+   def newType(fa: FoundArg) {
+      vrs = vrs.head.copy(tp = Some(fa)) :: vrs.tail
+   }
+   
+   override def toString = "{V" + (if (state != FoundVar.Done) state else "")  + " " + getVars.map(v => v.name.toString + v.tp.map(":" + _.toString).getOrElse("")).mkString(",") + " V}"
+   def fromTo = Some((vrs.last.pos,vrs.head.to))
+}
+/** helper object */
+object FoundVar {
+   type State = Int
+   /** state in FoundVar: just before parsing the variable name */
+   val BeforeName = 0
+   /** state in FoundVar: just after parsing the variable name */
+   val AfterName = 1
+   /** state in FoundVar: there is a type, some Otkens of which have been shifted */
+   val InType = 2
+   /** final state in FoundVar */
+   val Done = -1
 }

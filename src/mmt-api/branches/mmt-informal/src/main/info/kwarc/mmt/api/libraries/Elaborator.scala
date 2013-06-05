@@ -12,31 +12,12 @@ import collection.immutable.{HashSet, HashMap}
 
 /** an Elaborator takes a StructuralElement and produces further StructuralElement that are the result of elaborating the former */
 abstract class Elaborator {
-  /** @param e the StructuralElement that is elaborated
-   * @param cont a function that is applied to each produced StructuralElement */
-
-  def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit
-
-  protected def rewrite(t : Term)(implicit rules : HashMap[Path,Term]) : Term = t match {
-    case OMID(path) => rules.get(path) match {
-      case None => t
-      case Some(tm) => tm
-    }
-    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
-    case OMBINDC(b, context, condition, body) =>
-      val nwctx = Context(context.variables.map(v =>
-        VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite), v.attrs.map(p => (p._1, rewrite(p._2))) :_*)
-      ) :_ *)
-      OMBINDC(rewrite(b), nwctx, condition.map(rewrite), rewrite(body))
-    case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))
-    case OME(err, args) => OME(rewrite(err), args.map(rewrite))
-    case OMATTR(arg, key, value) => OMATTR(rewrite(arg), key, rewrite(value)) //TODO maybe handle key (here) & uri (below)
-    case OMREF(uri, value, under) => OMREF(uri, value.map(rewrite), Substitution(under.subs.map(s => Sub(s.name, rewrite(s.target))) :_*))
-    case _ => t
-  }
-
+  /**
+   * @param e the StructuralElement that is elaborated
+   * @param cont a function that is applied to each produced StructuralElement
+   */
+   def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit)
 }
-
 
 /**
  * Elaborates modules by enriching with induced statements
@@ -56,6 +37,23 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
     println("decls : " + decls)
   }
 
+  private def rewrite(t : Term)(implicit rules : HashMap[Path,Term]) : Term = t match {
+    case OMID(path) => rules.get(path) match {
+      case None => t
+      case Some(tm) => tm
+    }
+    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
+    case OMBINDC(b, context, scopes) =>
+      val nwctx = Context(context.variables.map(v =>
+        VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite), v.attrs.map(p => (p._1, rewrite(p._2))) :_*)
+      ) :_ *)
+      OMBINDC(rewrite(b), nwctx, scopes.map(rewrite))
+    case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))
+    case OME(err, args) => OME(rewrite(err), args.map(rewrite))
+    case OMATTR(arg, key, value) => OMATTR(rewrite(arg), key, rewrite(value)) //TODO maybe handle key (here) & uri (below)
+    case OMREF(uri, value) => OMREF(uri, value.map(rewrite))
+    case _ => t
+  }
 
   private def etaReduce(t : Term) : Term = {  //TODO check context
     t match {
@@ -144,7 +142,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
                 val ass = s.get(x)
                 ass match {
                   case conAss : ConstantAssignment =>
-                    val genCons = new Constant(conAss.home, conAss.name, conAss.alias, None, conAss.target, None, None)
+                    val genCons = Constant(conAss.home, conAss.name, conAss.alias, None, conAss.target, None, None)
                     newDecs += genCons
                   case _ => None
                 }
@@ -164,7 +162,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
           val ntp = c.tp.map(rewrite(_)(rewriteRules))
           val ndf = c.tp.map(rewrite(_)(rewriteRules))
 
-          val nc = new Constant(nwHome, nwName, c.alias, ntp, ndf, c.rl, c.not)
+          val nc = Constant(nwHome, nwName, c.alias, ntp, ndf, c.rl, c.not)
           nt.add(nc)
           decls += 1
         case _ => nt.add(_)
@@ -197,7 +195,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               if (p == t.path) {    // view from this theory
               val nwIndThy = new DeclaredTheory(v.to.toMPath.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
                 newDecs foreach { c =>
-                  val nc = new Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
+                  val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
                   nwIndThy.add(nc)
                   decls += 1
                 }
@@ -210,7 +208,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
 
                       val nwIndThy = new DeclaredTheory(t.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
                         newDecs foreach { c =>
-                          val nc = new Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
+                          val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
 
                           nwIndThy.add(nc)
                           decls += 1
@@ -231,5 +229,39 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
   def escape(s : String) = {
     s.replace("/","|").replace("?","!")
   }
+  
+  def gatherConstants(thy : DeclaredTheory) : List[Constant] = {
+    var constants : List[Constant] = Nil 		
+    thy.components foreach {
+      case c : Constant => constants = constants ::: List(c) //MPath may be irrelevant, otherwise needs changing
+      case _ => 
+    }
+    constants
+  }
+  
+  def flatten(thy : DeclaredTheory) : DeclaredTheory = {
+    var includes : HashSet[MPath] = new HashSet[MPath]()
+    var constants : List[Constant] = Nil
+    thy.components collect {
+      case s : DeclaredStructure =>
+      if (s.name.isAnonymous) {
+        val inclPath = s.from.toMPath
+        controller.get(inclPath) match {
+          case inclThy : DeclaredTheory => 
+            val flatInclThy = flatten(inclThy)
+            constants = constants ::: gatherConstants(flatInclThy)
+          case _ => 
+        }
+      }
+      case c : Constant => 
+        constants = constants ::: c :: Nil
+    }
+    
+   val nt = new DeclaredTheory(thy.parent, thy.name, thy.meta)
+   constants.foreach(nt add _)
+   nt    
+  }
+  
+  
 }
 

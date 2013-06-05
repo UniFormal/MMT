@@ -3,7 +3,7 @@ log file jomdoc.log
 //log+ presenter
 //log+ backend
 log+ controller
-//log+ extman
+log+ extman
 //log+ reader
 log+ archive    
 //log+ checker
@@ -11,33 +11,32 @@ log+ archive
 //log+ query
 log+ catalog
 log+ server
+log+ structure-parser
+log+ parser
 //log+ abox
 //log+ parser
 //log+ presenter
 //log+ lf
 
 mathpath fs http://cds.omdoc.org/styles ../../../styles
-plugin info.kwarc.mmt.lf.Plugin
-foundation info.kwarc.mmt.lf.LFF
+extension info.kwarc.mmt.lf.Plugin
+extension info.kwarc.mmt.api.objects.ErrorsPlugin
+extension info.kwarc.mmt.lf.LFF
 
+// do all file path-specific archive registrations in this file (which you do not commit)
 file ../../paths.mmt
 
-importer info.kwarc.mmt.api.backend.MMTCompiler
-archive add ../../../theories
+//archive frameit compile
+//archive frameit content
+//archive frameit extract
 
-//log+ backend
-//archive mmt clean
-//archive mmt source-structure
 //archive mmt compile
 //archive mmt content
-//archive mmt relational
-//archive mmt notation
-//archive mmt check
 //archive mmt validate
 
-//archive latin clean
-//archive latin compile
-//archive latin content
+//archive urtheories clean
+//archive urtheories compile
+//archive urtheories content
 //archive latin relational
 //archive latin check
 //archive latin notation
@@ -48,7 +47,7 @@ archive add ../../../theories
 //mws http://localhost:6284
 server on 8080
 //browser on
-base http://docs.omdoc.org/mmt
+base http://docs.omdoc.org/test
 
-//importer info.kwarc.mmt.mizar.test.MwsService
-//importer info.kwarc.mmt.tptp.TptpCompiler
+//extension info.kwarc.mmt.mizar.test.MwsService
+//extension info.kwarc.mmt.tptp.TptpCompiler

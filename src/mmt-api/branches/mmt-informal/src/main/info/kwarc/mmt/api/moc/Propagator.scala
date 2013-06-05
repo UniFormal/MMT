@@ -157,7 +157,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
       case c : Constant => new HashSet[Path]() + dec.path + CPath(c.path, TypeComponent) + CPath(c.path, DefComponent)
       case s : Structure => new HashSet[Path]() + dec.path + CPath(s.path, DomComponent)
       case p : Pattern => new HashSet[Path]() + dec.path + CPath(p.path, ParamsComponent) + CPath(p.path, PatternBodyComponent)
-      case i : Instance => new HashSet[Path]() + dec.path + CPath(i.path, PatternComponent) + CPath(i.path, MatchesComponent)
+      case i : Instance => new HashSet[Path]() + dec.path + CPath(i.path, TypeComponent)
       case a : ConstantAssignment => new HashSet[Path]() + dec.path + CPath(a.path, DefComponent)
       case d : DefLinkAssignment => new HashSet[Path]() + dec.path + CPath(d.path, DefComponent)
       case s : SFDeclaration => new HashSet[Path]() + s.path
@@ -302,7 +302,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
             case _ => //TODO
           }
         } catch {
-          case _ => //TODO
+          case _ : Throwable => //TODO
         }
       }
         

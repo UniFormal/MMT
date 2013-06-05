@@ -1,4 +1,6 @@
- package info.kwarc.mmt.api.patterns
+// outdated TPTP pattern-checker
+/*
+package info.kwarc.mmt.api.patterns
 
  import info.kwarc.mmt.api._
 
@@ -34,7 +36,7 @@ class InstanceCompiler extends Compiler {
   def isApplicable(src : String) : Boolean = src == "omdoc"    
   
   private var tptppath : String = null
-  private def log(msg: => String) {report("comp. pragmatic:", msg)}    
+  override val logPrefix = "comp. pragmatic"    
   override def init(con: Controller, args: List[String]) {
      tptppath = args(0)     
      super.init(con, Nil)
@@ -42,7 +44,7 @@ class InstanceCompiler extends Compiler {
     
   case class CompilationError(msg : String) extends java.lang.Throwable(msg)     
     
-  override def compile(in : File, out : File) : List[SourceError] = {
+  def compile(in : File, dpath: Option[DPath], out : File) : List[SourceError] = {
     var errors: List[SourceError] = Nil
     val fileName = in.toJava.getName
     val path = in.toJava.getPath
@@ -91,26 +93,26 @@ class InstanceCompiler extends Compiler {
 
 //  val thName = fileName
 // retrieve constant declarations
-val constTheory = patcon.controller.globalLookup.getTheory(pbbase  ? thName) match {
-case c : DeclaredTheory => c
-case _ => throw CompilationError("not a declared theory " + pbbase + "?" + thName)
+		val constTheory = patcon.controller.globalLookup.getTheory(pbbase  ? thName) match {
+		case c : DeclaredTheory => c
+		case _ => throw CompilationError("not a declared theory " + pbbase + "?" + thName)
 		}
-val constList : List[Constant] = constTheory.getConstants
-// retrieve patterns    
-val pattTheory = patcon.controller.globalLookup.getTheory(tptpbase ? "THF0") match {
-case t : DeclaredTheory => t
-case _ => throw GetError("not a declared theory " + tptpbase + "?" + "THF0")      
-}        
-val pattList : List[Pattern] = pattTheory.getPatterns
-// get list of all Instance for the theory
-val inst =  pc.getInstance(constList, pattList)
+		val constList : List[Constant] = constTheory.getConstants
+		// retrieve patterns    
+		val pattTheory = patcon.controller.globalLookup.getTheory(tptpbase ? "THF0") match {
+		case t : DeclaredTheory => t
+		case _ => throw GetError("not a declared theory " + tptpbase + "?" + "THF0")      
+		}        
+		val pattList : List[Pattern] = pattTheory.getPatterns
+		// get list of all Instance for the theory
+		val inst =  pc.getInstance(constList, pattList)
 
-// write to output file            
-write(out.setExtension("omdoc"), fileDir, fileName, inst)
-// log errors
-if (!errors.isEmpty) errors.foreach(e => log(e.toString))
+		// write to output file            
+		write(out.setExtension("omdoc"), fileDir, fileName, inst)
+		// log errors
+		if (!errors.isEmpty) errors.foreach(e => log(e.toString))
 
-errors
+		errors
 }  
 
 def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
@@ -132,7 +134,7 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 } 
 
  }
- 
+
  // controller with patterns in it
  class PatternController {
 	 
@@ -143,11 +145,11 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 	 controller.handleLine("archive add /home/aivaras/TPTP/tptp")
 	 controller.handleLine("archive add /home/aivaras/TPTP/LogicAtlas")
 	 
-	 val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"))
-	 val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))) )
-	 val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "THF0" ? "$istrue"), List(OMV("F"))) )
-	 val typedConDef = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedConDef"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMV("A")))),Some(OMV("D"))))
-	 val theorem = new Pattern(OMID(tptpbase ? "THF0"), LocalName("theorem"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "THF0" ? "$istrue"), List(OMV("F")))),Some(OMV("D"))))
+	 val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"), None)
+	 val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), None )
+	 val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "THF0" ? "$istrue"), List(OMV("F"))), None )
+	 val typedConDef = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedConDef"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMV("A")))),Some(OMV("D"))), None)
+	 val theorem = new Pattern(OMID(tptpbase ? "THF0"), LocalName("theorem"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) ++ OMV("D") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))), VarDecl(LocalName("c"),Some(OMA(OMS(tptpbase ? "THF0" ? "$istrue"), List(OMV("F")))),Some(OMV("D"))), None)
 	 controller.add(baseType)
 	 controller.add(typedCon)
 	 controller.add(axiom)
@@ -155,6 +157,7 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 	 controller.add(theorem) 
  }
  
+
  // compilation test
  object CompTest {
 	 
@@ -168,10 +171,11 @@ def write(out: File, fileDir: String, name: String, ins : List[Instance]) = {
 		 val in = File(new java.io.File("/home/aivaras/TPTP/tptp/compiled/Problems/AGT/AGT027^1.omdoc"))
 		 val out = File(new java.io.File("/home/aivaras/TPTP/tptp/pragmatic/Problems/AGT/AGT027^1.omdoc"))
 		 
-		 compiler.compile(in, out)
+		 compiler.compile(in, None, out)
 		 
 		 println("\nENDofCompTest")
 		 
 	 }
 	 
 }
+*/

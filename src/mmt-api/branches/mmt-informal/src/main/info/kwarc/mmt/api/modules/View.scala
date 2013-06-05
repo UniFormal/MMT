@@ -17,6 +17,10 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
 class DeclaredView(doc : DPath, name : LocalPath, val from : Term, val to : Term, val isImplicit : Boolean)
       extends View(doc, name) with DeclaredModule[Assignment] with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_View
+   def getIncludes: List[MPath] = getDeclarations.flatMap {
+      case PlainViewInclude(_,_,v) => List(v)
+      case _ => Nil
+   } 
 }
 
  /**

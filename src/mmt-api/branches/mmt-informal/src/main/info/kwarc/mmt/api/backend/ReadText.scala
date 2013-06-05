@@ -15,6 +15,8 @@ import scala.collection.mutable._
 class TextReader(controller : frontend.Controller, cont : StructuralElement => Unit) extends Reader(controller) {
   def this(ctrl : frontend.Controller) = this(ctrl, ctrl.add)
 
+  val logPrefix = "textReader"
+
   // ------------------------------- private vars -------------------------------
 
   /** array containing all the lines in the file */
@@ -36,7 +38,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   private var dpath : DPath = null
 
   /** input format */
-  private var format : String = null
   private var puCont : ParsingUnit => Term = null 
 
   // temporary variable used during parsing: the namespace URI which is in effect at the current place in the file
@@ -62,6 +63,8 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     }
 
   }
+  
+  private var keyW : List[String] = Nil
   
   /** errors that occur during parsing */
    object TextParseError {
@@ -136,8 +139,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
          else if (flat.startsWith("%view", i))
            i = crawlView(i)
          else if (flat.startsWith("%spec", i)) {
-           //TODO read logic spec
-//           throw TextParseError(toPos(i), "reading spec!")
            i = crawlSpec(i)
          }
          else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) // unknown top-level %-declaration => ignore it
@@ -319,9 +320,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     // computes the return value. i is assumed to be the position after the end of the term
     def computeReturnValue = {
       val term = getSlice(start, i - 1)
-      val pu = ParsingUnit(component, theory, context, term)
+      val pu = ParsingUnit(getSourceRef(start, i - 1), theory, context, term)
       val obj = try {
-         puCont(pu)  
+         puCont(pu)
       } catch {
          case e: ParseError =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
@@ -330,7 +331,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
             errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
             DefaultObjectParser(pu)
       }
-      addSourceRef(obj, start, i - 1)
+      
       Pair(obj, i)
     }
 
@@ -620,23 +621,25 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val cpath = parent.path ? cstName
 
     // read the optional type
-    var constantType : Option[Term] = None
+    val constantType = new TermContainer
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), cpath $ TypeComponent, parent.toTerm)
-      constantType = Some(term)
+      constantType.read = getSlice(i, posAfter - 1)
+      constantType.parsed = term
       i = posAfter
       i = skipwscomments(i)
     }
 
     // read the optional definition
-    var constantDef : Option[Term] = None
+    val constantDef = new TermContainer
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
       val (term, posAfter) = crawlTerm(i, Nil, List("#"), cpath $ DefComponent, parent.toTerm)
-      constantDef = Some(term)
+      constantDef.read = getSlice(i, posAfter - 1)
+      constantDef.parsed = term
       i = posAfter
       i = skipwscomments(i)
     }
@@ -1029,12 +1032,24 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
      // parse the pattern body
      val (body, posAfterPatternBody) = crawlPatternBody(i, patternMPath, parameterContext)
-     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body)
-
      i = expectNext(posAfterPatternBody, "}")
      i = skipwscomments(i+1)
+         // read the optional notation
+
+    var patternNotation : Option[TextNotation] = None
+    if (flat.codePointAt(i) == '#') {
+      i += 1  // jump over '#'
+      i = skipwscomments(i)
+      val (not, posAfter) = crawlNotation(i, List("."), parent.path ? name)
+      addSourceRef(not, i, posAfter - 1)
+      patternNotation = Some(not)
+      i = posAfter
+      i = skipwscomments(i)
+    }
+
      val endsAt = expectNext(i, ".")
 
+     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body, patternNotation)
      // add the semantic comment and source reference
      addSemanticComment(pattern, oldComment)
      addSourceRef(pattern, start, endsAt)
@@ -1196,11 +1211,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       else if (flat.startsWith("%pattern", i)) {
         // read pattern declaration
         i = crawlPatternDeclaration(i, parent)
-      }
-      //TODO
-      else if (flat.startsWith("%pattern", i)) {
-        // read pattern instance
-        //i = crawlInstanceDeclaration(i, parent)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
@@ -1373,15 +1383,13 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     addSourceRef(view, start, endsAt)
 
     // add a link to this view to the narrative document
-    add(MRef(dpath, view.path))
+    add(MRef(dpath, view.path, true))
     return endsAt + 1
   }
 
 
   // ------------------------------- auxiliary methods -------------------------------
 
-
-  private def log(s : String) = report("textReader", s)
 
   /** tells the controller given as class parameter to add the StructuralElement */
   private def add(e : StructuralElement) {
@@ -1521,16 +1529,15 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
   private def crawlSpecBody(start: Int, parent: DeclaredTheory) : Int =
   {
     var i = start + 1       // jump over '{'
-    keepComment = None          // reset the last semantic comment stored
+    keepComment = None          // reset the last semantic comment store/
     i = skipwscomments(i)       // check whether there is a new semantic comment
-    var foundMeta = false
+     
     
     // parent theorem
     var thm : Term = null
     
     while (i < flat.length) {
       if (flat.startsWith("%include", i)) {
-        val q = flat.substring(i)
         // read include declaration        
 //        i = crawlIncludeDeclaration(i, parent)
         i = crawlKeyword(i, "%include")
@@ -1542,11 +1549,12 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       }
       else if (flat.startsWith("%instance", i)) {
         // read pattern instance
-        i = skipws(crawlKeyword(start, "%instance"))
+        i = skipws(crawlKeyword(i, "%instance"))
+        val meta = parent.meta.getOrElse(throw TextParseError(toPos(i), "instance declaration reuqires meta-theory") )
         val (name, positionAfter) = crawlIdentifier(i)
         i = positionAfter
         i = skipwscomments(i)
-        val pattern = parent.path ? name
+        val pattern = meta ? name
         i = crawlInstanceDeclaration(i, parent.toTerm, pattern)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
@@ -1554,6 +1562,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       }
       else if (flat.codePointAt(i) == '}')    // end of signature body
         return i + 1
+//      else if crawlIdentifier(i)
       else
         throw TextParseError(toPos(i), "unknown declaration in signature body")
       keepComment = None          // reset the last semantic comment stored
@@ -1575,8 +1584,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      */
    private def crawlInstanceDeclaration(start: Int, parent: Term, pattern: GlobalName) : Int =
    {
-     //var domain : Option[Term] = None
-     //var isImplicit : Boolean = false
      var i = start
      val oldComment = keepComment
      // parse instance name
@@ -1585,20 +1592,22 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = positionAfter
      i = skipwscomments(i)
      val instancePath = parent % nameI     
-
-     var args : List[Term] = Nil
-     while (flat.charAt(i) != '.') {
-        val Pair(t,posAfter) = crawlTerm(i, Nil, List(","), instancePath $ DefComponent, parent)
-        args = args ::: List(t)
-        i = posAfter
+     val Pair(t,posAfter) = if (flat.charAt(i) != '.') {
+        crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, parent)
      }
+     else
+        (OMS(pattern), i)
+     val matches = controller.pragmatic.pragmaticHead(t) match {
+        case OMA(OMID(`pattern`), args) => args
+        case OMID(`pattern`) => Nil
+        case p : OMID => List(p)
+        case f : OMA => List(f)
+        case _ => { println(t.toString())
+        throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)}
+     }
+     i = posAfter
      val endsAt = expectNext(i, ".")
-//     // add the semantic comment and source reference
-//     addSemanticComment(pattern, oldComment)
-//     addSourceRef(pattern, start, endsAt)
-
-//     // add the pattern instance to the parent theory
-      val matches = null
+     // add the pattern instance to the parent theory           
       val instance = new Instance(parent, nameI, pattern, matches)
       add(instance)
      
@@ -1607,7 +1616,6 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
   
 }
-
 
 
 

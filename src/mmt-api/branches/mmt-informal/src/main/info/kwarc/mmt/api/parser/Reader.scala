@@ -14,7 +14,7 @@ import utils._
  * 
  */
 // This class generally uses integers (0 to 65535 and -1 for end-of-file) to represent characters.  
-class Reader(jr: java.io.BufferedReader) {
+class Reader(val jr: java.io.BufferedReader) {
    import Reader._
    
    /** the delimiter that terminated the previous read operation */
@@ -69,7 +69,7 @@ class Reader(jr: java.io.BufferedReader) {
          c = jr.read
       }
       ignoreLineFeed = false
-      if (! c.toChar.isWhitespace)
+      if (! whitespace(c))
          sourcePosition = SourcePosition(offset, line, column)
       if (c == '\n' || c == '\r') {
           line += 1
@@ -88,7 +88,7 @@ class Reader(jr: java.io.BufferedReader) {
       var c:Int = 0
       do {
          c = read
-      } while (! List(-1,US,RS,GS,FS).contains(c) && c.toChar.isWhitespace)
+      } while (whitespace(c))
       c
    }
    
@@ -120,7 +120,11 @@ class Reader(jr: java.io.BufferedReader) {
           {} //unbalanced escape
        lastDelimiter = c
        val end = sourcePosition
-       (buffer.result.trim, SourceRegion(start, end))
+       var res = buffer.result
+       // remove trailing whitespace
+       while (res != "" && whitespace(res.last))
+          res = res.substring(0, res.length - 1)
+       (res, SourceRegion(start, end))
    }
    /** reads until end of current document, terminated by the ASCII character FS (decimal 28)
     */
@@ -137,6 +141,9 @@ class Reader(jr: java.io.BufferedReader) {
    /** reads until end of current Token, terminated by whitespace
     */
    def readToken = readUntil(32,US,RS,GS,FS)
+   /** reads until EOF
+    */
+   def readAll = readUntil()
    
    /** closes the underlying Reader */
    def close {
@@ -150,6 +157,7 @@ object Reader {
    def apply(file: File) = new Reader(File.Reader(file))
    def apply(s: String) = new Reader(new java.io.BufferedReader(new java.io.StringReader(s)))
    //Note: 28-31 have isWhitespace == true
+   def whitespace(c:Int) = ! List(-1,US,RS,GS,FS,escape,unescape).contains(c) && c.toChar.isWhitespace
    /** the ASCII character FS (decimal 28) ends MMT documents */
    val FS = 28
    /** the ASCII character GS (decimal 29) ends MMT modules */
@@ -158,8 +166,10 @@ object Reader {
    val RS = 30
    /** the ASCII character GS (decimal 31) ends MMT objects */
    val US = 31
-   /** the ASCII character PU1 (decimal 145) begins escaped parts */
-   val escape = 145
-   /** the ASCII character PU2 (decimal 146) ends escaped parts */
-   val unescape = 146
+   /** the ASCII character ESC (decimal 27) begins escaped parts */
+   val escape = 27
+   val escapeChar = '\u001b'
+   /** the ASCII character CAN (decimal 24 ends escaped parts */
+   val unescape = 24
+   val unescapeChar = '\u0018'
 }

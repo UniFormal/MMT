@@ -11,7 +11,7 @@ case class File(toJava: java.io.File) {
          sf
       else
          new java.io.File(toJava, s)
-      File(newfile)
+      File(newfile.getCanonicalPath)
    }
    /** appends one path segment */
    def /(s:String) : File = File(new java.io.File(toJava, s))
@@ -26,6 +26,7 @@ case class File(toJava: java.io.File) {
       else
         File(par).segments ::: List(name)
    }
+   def isAbsolute = toJava.isAbsolute
    override def toString = toJava.toString
    def getExtension : Option[String] = {
        val name = toJava.getName
@@ -44,7 +45,7 @@ case class File(toJava: java.io.File) {
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
 object FileURI {
-   def apply(f: File) = URI(Some("file"), None, f.segments, true)
+   def apply(f: File) = URI(Some("file"), None, f.segments, f.isAbsolute)
    def unapply(u: URI) : Option[File] =
      if (u.scheme == Some("file") && (u.authority == None || u.authority == Some("")))
        Some(File(new java.io.File(u)))
@@ -70,7 +71,7 @@ object File {
          try {
             proc(line)
          } catch {
-            case e => r.close; throw e 
+            case e : Throwable => r.close; throw e 
          }
       }
       r.close
