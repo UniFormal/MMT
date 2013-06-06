@@ -102,7 +102,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             val key = NotationKey(Some(s.path), s.role)
             val notation = controller.get(gpar.nset, key)
             render(notation.presentation, s.contComponents, None, List(0), gpar, lpar)
-         case s:SemiFormalObject =>
+         case s:OMSemiFormal =>
             s.components.foreach(c => present(c, gpar, lpar)) //could be much better
          case o1: Obj =>
             val (o, posP, notationOpt) = o1 match {

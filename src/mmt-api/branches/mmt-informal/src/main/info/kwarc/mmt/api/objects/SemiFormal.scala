@@ -14,14 +14,14 @@ sealed trait SFDocElem extends SFContentElem {
 }
 
 case class SFDocNode(label : String, child : List[SFDocElem]) extends SFDocElem {
-  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, child.map(_.toNode) :_*)
+  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, false, child.map(_.toNode) :_*)
   def components = presentation.StringLiteral(label) :: child.flatMap(_.components)
 }
 
 sealed trait SFModuleElem extends SFDocElem 
 
 case class SFModuleNode(label : String, child : List[SFModuleElem]) extends SFModuleElem {
-  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, child.map(_.toNode) :_*)
+  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, false, child.map(_.toNode) :_*)
   def components = presentation.StringLiteral(label) :: child.flatMap(_.components)
 }
 
@@ -33,7 +33,7 @@ case class FormalDeclaration(decl : Declaration) extends SFModuleElem {
 sealed trait SFDeclElem extends SFModuleElem
 
 case class SFDeclNode(label : String, child : List[SFDeclElem]) extends SFDeclElem {
-  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, child.map(_.toNode) :_*)
+  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, false, child.map(_.toNode) :_*)
   def components = presentation.StringLiteral(label) :: child.flatMap(_.components)
 }
 
@@ -47,7 +47,7 @@ sealed trait SFObjectElem extends SFModuleElem {
 }
 
 case class SFObjectNode(label : String, child : List[SFObjectElem]) extends SFObjectElem {
-  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, child.map(_.toNode) :_*)
+  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, false, child.map(_.toNode) :_*)
   def components = presentation.StringLiteral(label) :: child.flatMap(_.components)
   def freeVars  = child.flatMap(_.freeVars)
 }
