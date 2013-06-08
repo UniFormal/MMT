@@ -117,7 +117,7 @@ class Controller extends ROController with Logger {
        } catch {
          case e : Throwable => elem match {
            case m : Module => List(AddModule(m))
-           case d : Declaration => List(AddDeclaration(d))
+           case d : Symbol => List(AddDeclaration(d))
            case _ => throw ImplementationError("Updating element not supported for " + elem.toString)
          }   
        }

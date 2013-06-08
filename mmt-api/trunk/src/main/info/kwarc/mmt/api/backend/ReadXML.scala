@@ -230,6 +230,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          }
       }
    }
+   //TODO merge with readSymbols
    def readAssignments(link : Term, base : Path, assignments : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (amd <- assignments) {
          val (a, md) = MetaData.parseMetaDataChild(amd, base) 
@@ -239,10 +240,16 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             case al => Some(LocalName.parse(al))
          }
          a match {
+            case <constant><definition>{t}</definition></constant> =>
+               log("assignment for " + name + " found")
+               val tg = Obj.parseTerm(t, base)
+               val m = ConstantAssignment(link, name, alias, Some(tg))
+               add(m, md)
+            //TODO remove this case when Twelf exports correctly
             case <constant>{t}</constant> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseTerm(t, base)
-               val m = new ConstantAssignment(link, name, alias, Some(tg))
+               val m = ConstantAssignment(link, name, alias, Some(tg))
                add(m, md)
             case <import>{_*}</import> =>
                log("assignment for " + name + " found")
@@ -252,11 +259,16 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                   case _ => throw ParseError("domain of imported morphism must be atomic")
                }
                rest.child match {
+                  case List(<definition>{t}</definition>) =>
+                     val tg = Obj.parseTerm(t, base)
+                     val m = DefLinkAssignment(link, name, fromPath, tg)
+                     add(m, md)
+                  //TODO remove this case when Twelf exports correctly
                   case List(<value>{t}</value>) =>
                      val tg = Obj.parseTerm(t, base)
-                     val m = new DefLinkAssignment(link, name, fromPath, tg)
+                     val m = DefLinkAssignment(link, name, fromPath, tg)
                      add(m, md)
-                  case c => throw ParseError("value expected: " + c)
+                  case c => throw ParseError("definition expected: " + c)
                }
             case <open/> =>
                //TODO: remove this case when Twelf exports correctly

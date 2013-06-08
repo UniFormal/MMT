@@ -20,6 +20,8 @@ abstract class Structure extends Symbol with Link {
    val from = OMMOD(fromPath)
    val to = home
    def toTerm = if (name.isAnonymous) OMIDENT(to) else OMDL(home, name)
+   /** override in order to permit implicit structures (identified by their domain) */
+   override def implicitKey = Some(fromPath)
    protected def outerComponents = List(
          StringLiteral(if (name.isAnonymous) "include" else name.toString),
          StringLiteral(fromPath.toPath))
@@ -42,8 +44,6 @@ abstract class Structure extends Symbol with Link {
 class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MPath, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_Structure
-   /** override in order to permit implicit structures (identified by their domain) */
-   override def implicitKey = Some(fromPath)
 }
 
  /**
@@ -52,7 +52,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MP
   * @param home the [[info.kwarc.mmt.api.objects.Term]] representing the parent theory
   * @param name the name of the structure
   * @param from the domain theory
-  * @param df the definiens
+  * @param df the definiens (the target if we see this as an assignment to a structure)
   * @param isImplicit true iff the link is implicit
   */
 class DefinedStructure(val home : Term, val name : LocalName, val fromPath : MPath, val df : Term, val isImplicit : Boolean)

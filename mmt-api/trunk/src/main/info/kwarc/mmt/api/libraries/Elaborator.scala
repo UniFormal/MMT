@@ -141,8 +141,8 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               s.domain map {x =>
                 val ass = s.get(x)
                 ass match {
-                  case conAss : ConstantAssignment =>
-                    val genCons = Constant(conAss.home, conAss.name, conAss.alias, None, conAss.target, None, None)
+                  case conAss : Constant =>
+                    val genCons = Constant(conAss.home, conAss.name, conAss.alias, None, conAss.df, None, None)
                     newDecs += genCons
                   case _ => None
                 }
@@ -184,8 +184,8 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               var viewRewrRules = new HashMap[Path,Term]
 
               v.components collect {
-                case ca : ConstantAssignment =>
-                  ca.target.foreach {t =>
+                case ca : Constant =>
+                  ca.df.foreach {t =>
                      println((p ? ca.name).toString + " #->#" + etaReduce(t).toString)
                      viewRewrRules += (p ? ca.name -> etaReduce(t))
                   }
