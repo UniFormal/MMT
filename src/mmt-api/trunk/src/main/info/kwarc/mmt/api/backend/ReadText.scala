@@ -1092,7 +1092,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(i, ".")
 
     // add the constant assignment to the controller
-    val constantAssignment = new ConstantAssignment(parent.toTerm, apath.name, None, Some(term))
+    val constantAssignment = ConstantAssignment(parent.toTerm, apath.name, None, Some(term))
     add(constantAssignment)
 
     // add semantic comment and source references
@@ -1131,7 +1131,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
 
     // add the structure assignment to the controller
     val domain = null //TODO should be domain of morphism
-    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName(strName), domain, morphism)
+    val defLinkAssignment = DefLinkAssignment(parent.toTerm, LocalName(strName), domain, morphism)
     add(defLinkAssignment)
 
     // add semantic comment and source references
@@ -1161,7 +1161,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
     // add the include assignment to the controller
-    val defLinkAssignment = new DefLinkAssignment(parent.toTerm, LocalName.Anon, domain, morphism)
+    val defLinkAssignment = DefLinkAssignment(parent.toTerm, LocalName.Anon, domain, morphism)
     add(defLinkAssignment)
 
     // add semantic comment and source references

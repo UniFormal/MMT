@@ -55,7 +55,7 @@ object Differ {
 	
 	def diff(old : StructuralElement, nw : StructuralElement) : StrictDiff = (old,nw) match {
 	  case (o : Module, n : Module) => compareModules(o, n)
-	  case (o : Declaration, n : Declaration) => compareDeclarations(o, n)
+	  case (o : Symbol, n : Symbol) => compareDeclarations(o, n)
 	  case _ => throw ImplementationError("Cannot diff between " + old.toString + " and " + nw.toString)	  
 	}
 	
@@ -161,44 +161,12 @@ object Differ {
 	}
 	
 	/**
-   * compares two constant assignments 
-   * @param old the first assignment
-   * @param nw the second assignment
-   * @return the (strict) diff representing the difference between old and nw 
-   */
-	private def compareConstantAssignments(old : ConstantAssignment, nw : ConstantAssignment) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-    if (old.target != nw.target) {
-      changes = UpdateComponent(old.path, DefComponent, old.target, nw.target) :: changes
-    }
-	  
-	  new StrictDiff(changes)
-	}
-	
-	/**
-   * compares two definitional link assignments 
-   * @param old the first assignment
-   * @param nw the second assignment
-   * @return the (strict) diff representing the difference between old and nw 
-   */
-	private def compareDefLinkAssignments(old : DefLinkAssignment, nw : DefLinkAssignment) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-    if (old.target != nw.target) {
-      changes = UpdateComponent(old.path, DefComponent, Some(old.target), Some(nw.target)) :: changes
-    }
-
-	  new StrictDiff(changes)
-	}
-	
-	/**
    * compares two declarations 
    * @param old the first declaration
    * @param nw the second declaration
    * @return the (strict) diff representing the difference between old and nw 
    */
-  private def compareDeclarations(old : Declaration, nw : Declaration) : StrictDiff = {
+  private def compareDeclarations(old : Symbol, nw : Symbol) : StrictDiff = {
     (old,nw) match {
       case (o : Constant, n : Constant) =>
         compareConstants(o,n)
@@ -208,25 +176,8 @@ object Differ {
         comparePatterns(o,n)
       case (o : Instance, n : Instance) =>
         compareInstances(o,n)
-      case (o : ConstantAssignment, n : ConstantAssignment) =>
-        compareConstantAssignments(o,n)
-      case (o : DefLinkAssignment, n : DefLinkAssignment) =>
-        compareDefLinkAssignments(o,n)
     }
   }
-  
-  /**
-   * Gets the declarations in a module
-   * @param m the module
-   * @return the list of declarations in m
-   */
-  private def _declarations(m : Module) : List[Declaration] = {
-    m.components.flatMap(x => x match {
-      case d : Declaration => List(d)
-      case _ => Nil
-    })
-  }
-    
 
 	/**
 	 * compares two modules
@@ -237,25 +188,27 @@ object Differ {
 	private def compareModules(old : Module, nw : Module) : StrictDiff = {
       //getting all declarations stored in each library
 
-	  val od = _declarations(old)
-	  val nd = _declarations(nw)
-	  
-	  // checking for declarations pairs having the same name aka same declaration with two versions
-	  // due to name uniqueness max size of each filtered list is 0 or 1
-	  // making the final result contain all declaration names that exist in both library versions
-	  val matched = nd.flatMap(n => od.filter(o => n.name.toString == o.name.toString).map((_,n)))
-	  
-	  //filtering away matched paths
-	  val unmatchedold = od.filterNot(x => matched.exists(y => x.name.toString == y._1.name.toString))
-	  val unmatchednew = nd.filterNot(x => matched.exists(y => x.name.toString == y._1.name.toString))
-
-    //generating adds & deletes
-    val oldch : List[StrictChange] = unmatchedold.map(x => DeleteDeclaration(x))
-    val newch : List[StrictChange] = unmatchednew.map(x => AddDeclaration(x))
-
-	  //comparing declaration pairs to see how (if at all) they were updated over the two versions
-	  val updates : List[StrictChange] = matched.flatMap(x => compareDeclarations(x._1,x._2).changes)
-	  val innerChanges = new StrictDiff(updates ++ oldch ++ newch)
+	  def getInnerChanges(old: DeclaredModule, nw: DeclaredModule) = {
+   	  val od = old.getDeclarations
+   	  val nd = nw.getDeclarations
+   	  
+   	  // checking for declarations pairs having the same name aka same declaration with two versions
+   	  // due to name uniqueness max size of each filtered list is 0 or 1
+   	  // making the final result contain all declaration names that exist in both library versions
+   	  val matched = nd.flatMap(n => od.filter(o => n.name == o.name).map((_,n)))
+   	  
+   	  //filtering away matched paths
+   	  val unmatchedold = od.filterNot(x => matched.exists(y => x.name == y._1.name))
+   	  val unmatchednew = nd.filterNot(x => matched.exists(y => x.name == y._1.name))
+   
+        //generating adds & deletes
+        val oldch : List[StrictChange] = unmatchedold.map(x => DeleteDeclaration(x))
+        val newch : List[StrictChange] = unmatchednew.map(x => AddDeclaration(x))
+   
+   	  //comparing declaration pairs to see how (if at all) they were updated over the two versions
+   	  val updates : List[StrictChange] = matched.flatMap(x => compareDeclarations(x._1,x._2).changes)
+   	  new StrictDiff(updates ++ oldch ++ newch)
+	  }
 	  
 	  (old,nw) match {
 	    case (o : DeclaredTheory, n : DeclaredTheory) =>
@@ -271,7 +224,7 @@ object Differ {
             }
         }
 
-	      new StrictDiff(changes) ++ innerChanges
+	     new StrictDiff(changes) ++ getInnerChanges(o, n)
 
 	    case (o : DefinedTheory, n : DefinedTheory) =>
         var changes : List[StrictChange] = Nil
@@ -280,7 +233,7 @@ object Differ {
 	        changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
         }
 
-	      new StrictDiff(changes) ++ innerChanges
+	      new StrictDiff(changes)
 	      
 	    case (o : DeclaredView, n : DeclaredView) =>
         var changes : List[StrictChange] = Nil
@@ -293,7 +246,7 @@ object Differ {
           changes = UpdateComponent(o.path, CodComponent, Some(o.to), Some(n.to)) :: changes
         }
 
-        new StrictDiff(changes)  ++ innerChanges
+        new StrictDiff(changes)  ++ getInnerChanges(o, n)
 
 	    case (o : DefinedView, n : DefinedView) =>
         var changes : List[StrictChange] = Nil
@@ -310,7 +263,7 @@ object Differ {
           changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
         }
 
-	      new StrictDiff(changes)  ++ innerChanges
+	      new StrictDiff(changes)
 	  }
 	}	
 	

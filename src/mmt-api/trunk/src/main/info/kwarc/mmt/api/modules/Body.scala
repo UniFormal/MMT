@@ -16,7 +16,7 @@ import scala.xml.Node
  * 
  * @param S Symbol for theories and Assignment for links
  */
-trait Body[S <: Declaration] {
+trait Body[S <: Symbol] {
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */

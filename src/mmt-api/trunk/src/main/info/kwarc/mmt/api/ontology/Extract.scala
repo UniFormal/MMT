@@ -22,7 +22,7 @@ object Extractor {
          case _ => 
       }
       e match {
-         case t: DeclaredModule[_] =>
+         case t: DeclaredModule =>
             t.getDeclarations foreach {d => {
                val dec = Declares(path,d.path)
                d match {
@@ -48,8 +48,6 @@ object Extractor {
                      f(dec)
                      f(IsInstance(i.path))
                      f(IsInstanceOf(i.path, i.pattern))
-                  case _: Assignment =>
-                     f(dec)
                }
             }}
          case _ =>

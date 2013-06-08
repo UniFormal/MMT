@@ -132,7 +132,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     
     //declaration paths
     mod.components collect {
-      case dec : Declaration => cpaths ++= containedPaths(dec)
+      case dec : Symbol => cpaths ++= containedPaths(dec)
     }
     
     //component paths
@@ -151,14 +151,15 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
    * and its component paths
    * @param dec : the declaration
    */
-  private def containedPaths(dec : Declaration) : HashSet[Path] = {
+  private def containedPaths(dec : Symbol) : HashSet[Path] = {
+    val h = new HashSet[Path]()
     dec match {
-      case c : Constant => new HashSet[Path]() + dec.path + CPath(c.path, TypeComponent) + CPath(c.path, DefComponent)
-      case s : Structure => new HashSet[Path]() + dec.path + CPath(s.path, DomComponent)
-      case p : Pattern => new HashSet[Path]() + dec.path + CPath(p.path, ParamsComponent) + CPath(p.path, PatternBodyComponent)
-      case i : Instance => new HashSet[Path]() + dec.path + CPath(i.path, TypeComponent)
-      case a : ConstantAssignment => new HashSet[Path]() + dec.path + CPath(a.path, DefComponent)
-      case d : DefLinkAssignment => new HashSet[Path]() + dec.path + CPath(d.path, DefComponent)
+      case c : Constant => h + dec.path + CPath(c.path, TypeComponent) + CPath(c.path, DefComponent)
+      case s : Structure => h + dec.path + CPath(s.path, DomComponent)
+      case p : Pattern => h + dec.path + CPath(p.path, ParamsComponent) + CPath(p.path, PatternBodyComponent)
+      case i : Instance => h + dec.path + CPath(i.path, TypeComponent)
+      //case a : ConstantAssignment => h + dec.path + CPath(a.path, DefComponent)
+      //case d : DefLinkAssignment => h + dec.path + CPath(d.path, DefComponent)
     } 
   }
   
@@ -243,12 +244,6 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
 
       /* Instance */
       case (i : Instance, _) => None
-
-      /* ConstantAssignments */
-      case (c : ConstantAssignment, DefComponent) => makeChange(c.target)
-
-      /* DefLinkAssignment */
-      case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
     }
     chOpt.toList
     case _ => Nil  
@@ -342,6 +337,9 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       case (v : View, DomComponent) => makeChange(Some(v.from))
       case (v : DefinedView, DefComponent) => makeChange(Some(v.df))
 
+      /* DefinedStructure */
+      case (d : DefinedStructure, DefComponent) => makeChange(Some(d.df))
+
       /* Constants */
       case (c : Constant, TypeComponent) => makeChange(c.tp)
       case (c : Constant, DefComponent) => makeChange(c.df)
@@ -352,11 +350,6 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       /* Instance */
       case (i : Instance, _) => None
 
-      /* ConstantAssignments */
-      case (c : ConstantAssignment, DefComponent) => makeChange(c.target)
-
-      /* DefLinkAssignment */
-      case (d : DefLinkAssignment, DefComponent) => makeChange(Some(d.target))
     }
     chOpt.toList
     case _ => Nil  
@@ -430,12 +423,12 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
           changes.head match {
             //definition is deleted -> one more undefined constant -> assignment needed for it
             case UpdateComponent(cPath, DefComponent, Some(s), None) => 
-              val ca = new ConstantAssignment(mod, lname, None, Some(emptyBox))
+              val ca = ConstantAssignment(mod, lname, None, Some(emptyBox))
               List(AddDeclaration(ca))                
            
             //definition is added -> one less undefined constant -> assignment for it no longer needed
             case UpdateComponent(cPath, DefComponent, None, Some(s)) => 
-              val ca = mem.content.getConstantAssignment(mod.toMPath ? lname)
+              val ca = mem.content.getConstant(mod.toMPath ? lname)
               List(DeleteDeclaration(ca))
             
             case _ => Nil

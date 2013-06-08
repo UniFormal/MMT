@@ -35,10 +35,6 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case e : Constant => e case _ => throw GetError(msg(path))} 
    def getStructure(path : GlobalName, msg : Path => String = defmsg) : Structure =
      get(path) match {case e : Structure => e case _ => throw GetError(msg(path))} 
-   def getConstantAssignment(path : GlobalName, msg : Path => String = defmsg) : ConstantAssignment =
-     get(path) match {case e : ConstantAssignment => e case _ => throw GetError(msg(path))} 
-   def getDefLinkAssignment(path : GlobalName, msg : Path => String = defmsg) : DefLinkAssignment =
-     get(path) match {case e : DefLinkAssignment => e case _ => throw GetError(msg(path))} 
    def getPatternAssignment(path : GlobalName, msg : Path => String = defmsg) : PatternAssignment =
      get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
@@ -48,7 +44,6 @@ abstract class Lookup(val report : frontend.Report) {
       (se,path.component) match {
          case (c: Constant, TypeComponent) => c.tpC
          case (c: Constant, DefComponent) => c.dfC
-         case (c: ConstantAssignment, DefComponent) => throw GetError("missing case")
          case _ => throw GetError("illegal component: " + path)
       }
    }
@@ -88,17 +83,22 @@ abstract class Lookup(val report : frontend.Report) {
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
    
-  /** gets the source of an Assignment declared in a DeclaredLink
-    * @param a the assignment
-    * @return the containing link and the source theory
+  /**
+    * gets the domain in which a Constant was declared
+    * 
+    * This can be used to retrieve the source of an assignment declared in a DeclaredLink.
+    * It is also the official way to test whether a Constant is an assignment.
+    * @param a the Constant declaration/assignment
+    * @return if assignment: the source theory and the containing link; if declaration: the containing theory
     */
-   def getDomain(a: Assignment) : (DeclaredTheory,DeclaredLink) = {
+   def getDomain(a: Symbol) : (DeclaredTheory,Option[DeclaredLink]) = {
       val p = a.home match {
          case OMMOD(p) => p
          case OMDL(OMMOD(p), name) => OMMOD(p) % name 
          case _ => throw GetError("non-atomic link")
       }
       val l = get(p) match {
+         case t: DeclaredTheory => return (t, None)
          case l: DeclaredLink => l
          case _ => throw GetError("non-declared link") 
       }
@@ -109,7 +109,7 @@ abstract class Lookup(val report : frontend.Report) {
          }
          case _ => throw GetError("domain of declared link is not a declared theory")
       }
-      (dom,l)
+      (dom,Some(l))
    }
    
    /**
@@ -129,12 +129,12 @@ abstract class Lookup(val report : frontend.Report) {
    /**
     * A Traverser that recursively eliminates all explicit morphism applications.
     * apply(t,m) can be used to apply a morphism to a term.
-    */                                     // TODO term
+    */
    object ApplyMorphs extends Traverser[Term] {
       def traverse(t: Term)(implicit con: Context, morph: Term) = t match {
          case OMM(arg, via) => traverse(arg)(con, OMCOMP(morph, via))
          case OMID(theo % ln) =>
-           val aOpt = getConstantAssignment(morph % ln).target
+           val aOpt = getConstant(morph % ln).df
            aOpt match {
               case None => t
               case Some(t) => traverse(t)
