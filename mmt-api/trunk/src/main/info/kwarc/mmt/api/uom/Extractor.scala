@@ -207,7 +207,7 @@ object Extractor {
              var o = s"  def ${nameToScalaQ(c.path)}($argtpString): Term\n"
              out.println(o)
           }
-        case s: DeclaredStructure if ! s.name.isAnonymous =>
+        case s: DeclaredStructure if ! s.isAnonymous =>
              // unnamed structures have been handled above already
              out.println("val " + nameToScalaQ(s.path) + ": " + mpathToScala(s.fromPath))
         case _ => 

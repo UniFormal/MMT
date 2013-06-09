@@ -19,15 +19,16 @@ abstract class Structure extends Symbol with Link {
    val fromPath : MPath
    val from = OMMOD(fromPath)
    val to = home
-   def toTerm = if (name.isAnonymous) OMIDENT(to) else OMDL(home, name)
+   def toTerm = if (isAnonymous) OMIDENT(to) else OMDL(home, name)
+   def isAnonymous = name == LocalName(fromPath)
    /** override in order to permit implicit structures (identified by their domain) */
    override def implicitKey = Some(fromPath)
    protected def outerComponents = List(
-         StringLiteral(if (name.isAnonymous) "include" else name.toString),
+         StringLiteral(if (isAnonymous) "include" else name.toString),
          StringLiteral(fromPath.toPath))
-   protected def outerString = if (name.isAnonymous) "include " + from.toString else path + " : " + from.toString
+   protected def outerString = if (isAnonymous) "include " + from.toString else path + " : " + from.toString
    def toNode =
-         <import name={if (name.isAnonymous) null else name.toPath} from={fromPath.toPath} implicit={if (! name.isAnonymous && isImplicit) "true" else null}>
+         <import name={if (isAnonymous) null else name.toPath} from={fromPath.toPath} implicit={if (! isAnonymous && isImplicit) "true" else null}>
             {getMetaDataNode}
             {innerNodes}
           </import>
@@ -61,9 +62,9 @@ class DefinedStructure(val home : Term, val name : LocalName, val fromPath : MPa
 }
 
 object Include {
-   def apply(home: Term, from: MPath) = new DeclaredStructure(home, LocalName.Anon, from, true)
+   def apply(home: Term, from: MPath) = new DeclaredStructure(home, LocalName(from), from, true)
    def unapply(t: ContentElement) : Option[(Term,MPath)] = t match {
-      case d: DeclaredStructure if d.name.isAnonymous => Some((d.to, d.fromPath)) //TODO can there be assignments?
+      case d: DeclaredStructure if d.isAnonymous => Some((d.to, d.fromPath)) //TODO can there be assignments?
       case _ => None
    }
 }

@@ -55,38 +55,11 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
     case _ => t
   }
 
-  private def etaReduce(t : Term) : Term = {  //TODO check context
-    t match {
-      case OMBIND(binder, context, OMA(fun, args)) =>
-        val expectedArgs = context.components.map(vd => OMV(vd.name))
-        if (expectedArgs == args) {
-          fun
-        } else {
-          t
-        }
-      case OMBIND(binder, context, OMBIND(binder2, context2, OMA(fun, args))) =>
-        val expectedArgs = context.components.map(vd => OMV(vd.name)) ::: context2.components.map(vd => OMV(vd.name))
-        if (expectedArgs == args) {
-          fun
-        } else {
-          t
-        }
-      case OMBIND(binder, context, OMBIND(binder2, context2, OMBIND(binder3, context3, OMA(fun, args)))) =>
-        val expectedArgs = context.components.map(vd => OMV(vd.name)) ::: context2.components.map(vd => OMV(vd.name))  ::: context3.components.map(vd => OMV(vd.name))
-        if (expectedArgs == args) {
-          fun
-        } else {
-          t
-        }
-      case _ => t
-    }
-  }
-
   def getIncludes(t : Term) : HashSet[MPath] = {
     var includes : HashSet[MPath] = new HashSet[MPath]()
     content.get(t.toMPath).components collect {
       case s : DeclaredStructure =>
-      if (s.name.isAnonymous)
+      if (s.isAnonymous)
         includes += s.from.toMPath
     }
 
@@ -100,7 +73,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
 
     t.components collect {
       case s : DeclaredStructure =>
-      if (s.name.isAnonymous) {
+      if (s.isAnonymous) {
         includes += s.from.toMPath
         includes ++= getIncludes(s.from)
 
@@ -108,9 +81,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
         imports ::= s
       }
     }
-
     includes.map(p => Include(OMMOD(t.path), p)).toList ::: imports
-
   }
 
   /**
@@ -186,8 +157,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               v.components collect {
                 case ca : Constant =>
                   ca.df.foreach {t =>
-                     println((p ? ca.name).toString + " #->#" + etaReduce(t).toString)
-                     viewRewrRules += (p ? ca.name -> etaReduce(t))
+                     viewRewrRules += (p ? ca.name -> t)
                   }
               }
 
@@ -244,7 +214,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
     var constants : List[Constant] = Nil
     thy.components collect {
       case s : DeclaredStructure =>
-      if (s.name.isAnonymous) {
+      if (s.isAnonymous) {
         val inclPath = s.from.toMPath
         controller.get(inclPath) match {
           case inclThy : DeclaredTheory => 

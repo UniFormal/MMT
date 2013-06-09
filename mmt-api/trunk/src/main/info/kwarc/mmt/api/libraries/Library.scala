@@ -45,16 +45,22 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
     * returns all module paths indexed by this library
     */
    def getAllPaths = modules.keys
-   
+   /**
+    * special case of get with more specific types
+    */
    def getModule(p : MPath) : Module = modulesGetNF(p)
    
    /**
-    * Dereferences a path and returns the found ContentElement.
-    * @param path the path to be dereferenced
-    * @return the content element
+    * Special case of get that throws GetError with a standard error message
     */
    def get(p: Path) : ContentElement =
       get(p, msg => throw GetError("error while retrieving " + p + ": " + msg))
+   /**
+    * Dereferences a path and returns the found ContentElement.
+    * @param path the path to be dereferenced
+    * @param error the continuation to call on the error message
+    * @return the content element
+    */
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
       case doc ? !(mod) => modulesGetNF(doc ? mod)
@@ -151,8 +157,6 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
 
    /** thrown by getInLink if the link provides no assignment */
    private case class PartialLink() extends java.lang.Throwable
-   
-   //TODO definition expansion
    /** auxiliary method of get to unify lookup in structures and views
     * @throws PartialLink() if no assignment provided
     */
@@ -165,7 +169,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
             case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
             case a: DefinedLink => get(a.df % ln, error)
          }
-         case None => throw PartialLink() 
+         case None =>
+            // TODO multiple ComplexSteps resulting from inclusions in a row must be normalized away somewhere
+            throw PartialLink() 
       }
    }
 
@@ -267,10 +273,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
       case OMMOD(p) =>
          getTheory(p) match {
             case t: DefinedTheory => importsTo(t.df)
-            case t: DeclaredTheory =>
-              val mt = t.meta map {p => Iterator(OMMOD(p))} getOrElse(Iterator.empty)
-              val incls = t.iterator filter {case s: Structure => s.name.isAnonymous; case _ => false} map {case s: Structure => s.from}
-              mt ++ incls
+            case t: DeclaredTheory => t.getIncludes.map(OMMOD(_)).iterator
          }
       case TheoryExp.Empty => Iterator.empty
       case TUnion(ts) => (ts flatMap importsTo).iterator //TODO remove duplicates

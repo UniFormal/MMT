@@ -193,16 +193,17 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                case OMMOD(p) => p
                case _ => throw ParseError("domain of structure must be atomic")
             }
+            val adjustedName = if (name.length > 0) name else LocalName(fromPath)
             val isImplicit = parseImplicit(s2) 
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = new DefinedStructure(thy, name, fromPath, df, isImplicit)
+                  val s = new DefinedStructure(thy, adjustedName, fromPath, df, isImplicit)
                   add(s,md)
                case assignments =>
-                  val s = new DeclaredStructure(thy, name, fromPath, isImplicit)
+                  val s = new DeclaredStructure(thy, adjustedName, fromPath, isImplicit)
                   add(s,md)
-                  readAssignments(OMDL(thy, name), base, assignments)
+                  readAssignments(OMDL(thy, adjustedName), base, assignments)
             }
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly

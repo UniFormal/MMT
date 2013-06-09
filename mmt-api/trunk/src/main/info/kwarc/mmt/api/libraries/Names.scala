@@ -27,7 +27,7 @@ object Names {
       get(home) match {
          case None => Nil
          case Some(t) =>
-            val names = t.getDeclarations mapPartial {d => if (d.name.isAnonymous) None else Some(d.name)}
+            val names = t.domain.toList
             names.filter(_.toString.startsWith(partialName)).map(n => Completion(t.path, n))
       }
    }

@@ -272,8 +272,12 @@ case class OMV(name : LocalName) extends Term {
    def toCML = <m:ci>{name.toPath}</m:ci>
 }
 
+/** helper object */
 object OMV {
+   /** convenience */
    def apply(n: String) : OMV = OMV(LocalName(n))
+   /** the name of an anonymous variable (_) */
+   val anonymous = LocalName("_")
 }
 
 /**
