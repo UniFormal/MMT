@@ -96,7 +96,7 @@ class StructureChecker(controller: Controller) extends Logger {
          case v: DefinedView =>
             checkTheory(v.from)
             checkTheory(v.to)
-            checkMorphism(v.df, v.from, v.to)
+            checkMorphism(v.df, Some(v.from), v.to)
          case s: DeclaredStructure =>
             checkTheory(s.from)
             s.getPrimitiveDeclarations foreach check
@@ -106,17 +106,28 @@ class StructureChecker(controller: Controller) extends Logger {
                case None =>
                   // declaration in a theory
                   checkTheory(s.from)
-                  checkMorphism(s.df, s.from, s.home)
+                  checkMorphism(s.df, Some(s.from), s.home)
                case Some(link) =>
                   // assignment in a link
-                  if (s.name.isAnonymous) {
-                     checkMorphism(s.df, OMMOD(s.fromPath), link.to)
+                  val sR = if (s.isAnonymous) {
+                     val (dfR, dom) = checkMorphism(s.df, None, link.to)
+                     dom match {
+                        case Some(OMMOD(p)) =>
+                           //TODO check if p is included into link.from
+                           //TODO if s.from is given (and not a dummy), it must be equal to p
+                           val sR = ViewInclude(s.home, p, dfR)
+                           link.replace(s.name, sR)
+                           sR
+                        case _ =>
+                           errorCont(InvalidElement(s, "cannot infer atomic domain of assignment"))
+                           s
+                     }
                   } else {
-                     /* temporarily disabled because it fails when a meta-morphism is checked (lookup of the meta-theory as a structure fails)
-                     val s = content.getStructure(t.path ? a.name)
-                     if (s.fromPath != a.from) errorCont(InvalidElement(a, "import-assignment has bad domain: found " + a.from + " expected " + s.from)) 
-                     checkMorphism(a.target, s.from, l.to)
-                     */
+                     val sOrg = content.getStructure(thy.path ? s.name)
+                     if (sOrg.fromPath != s.from)
+                        errorCont(InvalidElement(s, "import-assignment has bad domain: found " + s.from + " expected " + sOrg.from)) 
+                     checkMorphism(s.df, Some(s.from), s.home)
+                     s
                   }
             }
          case c : Constant =>
@@ -132,8 +143,8 @@ class StructureChecker(controller: Controller) extends Logger {
             // if link: the source constant and its translated components
             val linkInfo = linkOpt map {link =>
                val cOrg = content.getConstant(thy.path ? c.name)
-               val expTypeOpt = cOrg.tp map {t => t * link.toTerm}
-               val expDefOpt = cOrg.df map {t => t * link.toTerm}
+               val expTypeOpt = cOrg.tp map {t => content.ApplyMorphs(t, link.toTerm)}
+               val expDefOpt = cOrg.df map {t => content.ApplyMorphs(t, link.toTerm)}
                (cOrg, expTypeOpt, expDefOpt)
             }
             // auxiliary function for structural checking of a term
@@ -300,7 +311,7 @@ class StructureChecker(controller: Controller) extends Logger {
     *  @return the reconstructed morphism, its domain and codomain
     *    domain and codomain are null in case of errors 
     */
-   def inferMorphism(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = try {
+   private def inferMorphism(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = try {
       inferMorphismAux(m)
    } catch {case NotInferrable => (m, null, null)}
    def inferMorphismAux(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = m match {
@@ -350,22 +361,42 @@ class StructureChecker(controller: Controller) extends Logger {
    }
    
    /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
+    *  domain may be omitted, in which case it is inferred
     *  @param m the morphism
-    *  @param dom the domain
+    *  @param domOpt the domain, None if it is to be inferred
     *  @param cod the codomain
-    *  @return the reconstructed morphism (with necessary implicit morphisms inserted)
+    *  @return the reconstructed morphism (with necessary implicit morphisms inserted) and the inferred domain (if not provided)
     */
-   def checkMorphism(m : Term, dom : Term, cod : Term)(implicit pCont: Path => Unit) : Term = {
+   def checkMorphism(m : Term, domOpt : Option[Term], cod : Term)(implicit pCont: Path => Unit) : (Term, Option[Term]) = {
       val (l,d,c) = inferMorphism(m)
       if (d != null && c != null) {
-        (content.getImplicit(dom, d), content.getImplicit(c, cod)) match {
-           case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
-           case _ =>
-             errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c))
-             m
-        }
-      } else 
-         m
+         val implCod = content.getImplicit(c, cod)
+         domOpt match {
+            case Some(dom) =>
+               val implDom = content.getImplicit(dom, d)
+               val mR = (implDom, implCod) match {
+                  case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
+                  case _ =>
+                    errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c))
+                    m
+               }
+               (mR, None)
+            case None =>
+               val mR = implCod match {
+                  case Some(l1) => OMCOMP(l, l1)
+                  case None =>
+                    errorCont(InvalidObject(m, "ill-formed morphism: expected ? -> " + cod + ", found " + d + " -> " + c))
+                    m
+               }
+               (mR, Some(d))
+         }
+      } else {
+         errorCont(InvalidObject(m,
+               "cannot infer type of morphism: expected " + domOpt.getOrElse("?") + " -> " + cod +
+               ", found " + (if (d == null) "?" else d) + " -> " + (if (c == null) "?" else c)
+               ))
+         (m, None)
+      }
    }
 
    /**

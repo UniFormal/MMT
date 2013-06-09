@@ -29,11 +29,14 @@ object DefLinkAssignment {
       new DefinedStructure(home, name, from, target, false)
 }
 
+object ViewInclude {
+   def apply(home: Term, from: MPath, included: Term) = DefLinkAssignment(home, LocalName(from), from, included)
+}
+
 /** apply/unapply methods for the special case where a view includes another view */ 
 object PlainViewInclude {
    /** pre: included is  view with domain from */
-   def apply(home: Term, from: MPath, included: MPath) = 
-      DefLinkAssignment(home, LocalName(ComplexStep(from)), from, OMMOD(included))
+   def apply(home: Term, from: MPath, included: MPath) = ViewInclude(home, from, OMMOD(included))
    def unapply(s: Symbol) : Option[(Term, MPath, MPath)] = {
       s match {
          case d : DefinedStructure => d.name match {

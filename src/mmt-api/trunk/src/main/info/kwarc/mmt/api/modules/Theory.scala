@@ -4,7 +4,6 @@ import symbols._
 import libraries._
 import objects._
 import utils._
-import utils.MyList._
 import presentation.{StringLiteral,Omitted}
 
 abstract class Theory(doc : DPath, name : LocalPath) extends Module(doc, name)
@@ -22,33 +21,33 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
    /** convenience method to obtain all constants */
-   def getConstants:List[Constant] = getDeclarations.mapPartial {
-      case c: Constant => Some(c)
-      case _ => None
+   def getConstants:List[Constant] = getDeclarations.flatMap {
+      case c: Constant => List(c)
+      case _ => Nil
    }
    /** convenience method to obtain all included theories (including a possible meta-theory) */
    def getIncludes:List[MPath] = meta.toList ::: getIncludesWithoutMeta 
    /** convenience method to obtain all included theories (without a possible meta-theory) */
    def getIncludesWithoutMeta:List[MPath] = {
-    getDeclarations.mapPartial {
-        case s:Structure if s.name.isAnonymous => Some(s.fromPath)
-        case _ => None
+    getDeclarations.flatMap {
+        case PlainInclude(from, _) => List(from)
+        case _ => Nil
      }
    }   
    /** convenience method to obtain all named structures */
-   def getNamedStructures:List[Structure] = getDeclarations.mapPartial {
-      case s: Structure if ! s.name.isAnonymous => Some(s)
-      case _ => None
+   def getNamedStructures:List[Structure] = getDeclarations.flatMap {
+      case s: Structure if ! s.isAnonymous => List(s)
+      case _ => Nil
    }   
    /** convenience method to obtain all patterns */
-   def getPatterns:List[patterns.Pattern] = getDeclarations.mapPartial {
-      case p: patterns.Pattern => Some(p)
-      case _ => None
+   def getPatterns:List[patterns.Pattern] = getDeclarations.flatMap {
+      case p: patterns.Pattern => List(p)
+      case _ => Nil
    }
    /** convenience method to obtain all pattern instances */
-   def getInstances:List[patterns.Instance] = getDeclarations.mapPartial {
-      case p: patterns.Instance => Some(p)
-      case _ => None
+   def getInstances:List[patterns.Instance] = getDeclarations.flatMap {
+      case p: patterns.Instance => List(p)
+      case _ => Nil
    }
    override def compNames = List(("name", 0), ("meta",1))
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString

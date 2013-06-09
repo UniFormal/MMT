@@ -44,54 +44,7 @@ class ParserState(val reader: Reader, val container: DPath) {
 }
 
 /**
- * classes implementing InDocParser may be registered with a [[info.kwarc.mmt.api.parser.StructureParser]]
- * to extend MMT
- */
-trait InDocParser {
-   /**
-    * Called to parse a declaration in a Document if the respective keyword has been read.
-    * @param sp the StructureParser that is calling this extension
-    * @param r the reader from which further input can be read
-    * @param document the current document
-    * @param keyword the keyword that was read
-    * 
-    *  the keyword but nothing else has been read already when this is called
-    */
-   def apply(sp: StructureParser, s: ParserState, document: Document, keyword: String)
-}
-
-/**
- * classes implementing InTheoryParser may be registered with a [[info.kwarc.mmt.api.parser.StructureParser]]
- * to extend MMT
- */
-trait InModuleParser {
-   /**
-    * Called to parse a declaration in a DeclaredModule if the respective keyword has been read.
-    * @param sp the StructureParser that is calling this extension
-    * @param r the reader from which further input can be read
-    * @param module the current module
-    * @param keyword the keyword that was read
-
-    * the keyword but nothing else has been read already when this is called
-    */
-   def apply(sp: StructureParser, s: ParserState, module: DeclaredModule, keyword: String)
-}
-
-/**
- * a parser that works within documents and modules in the same way
- */
-trait InDocOrModuleParser extends InDocParser with InModuleParser {
-   def parse(sp: StructureParser, s: ParserState, se: StructuralElement, kw: String) 
-   def apply(sp: StructureParser, s: ParserState, document: Document, kw: String) {
-      parse(sp, s, document, kw)
-   }
-   def apply(sp: StructureParser, s: ParserState, module: DeclaredModule, kw: String) {
-      parse(sp, s, module, kw)
-   }
-}
-
-/**
- * A StructureParser read MMT declarations (but not objects) and
+ * A StructureParser reads MMT declarations (but not objects) and
  * defers to continuation functions for the found StructuralElement, ParsingUnits, and SourceErrors.
  * 
  * This class provides 3 things
@@ -101,27 +54,14 @@ trait InDocOrModuleParser extends InDocParser with InModuleParser {
  * These methods throw do not read more than necessary from the stream and
  * throw [[info.kwarc.mmt.api.SourceError]] where appropriate.
  * 
- * 2) It maintains the parse state via an implicit argument
+ * 2) It is stateless and maintains the parse state via an implicit argument of type
  * [[info.kwarc.mmt.api.parser.ParserState]] in most functions.
  * 
- * 3) It leaves processing of MMT entities application-independent via high-level continuation functions. 
+ * 3) It leaves processing of MMT entities application-independently via high-level continuation functions. 
  */
 abstract class StructureParser(controller: Controller) extends frontend.Logger {
    val report = controller.report
    val logPrefix = "structure-parser"
-
-   /**
-    * a table of external parsers that can parser declarations in a document, indexed by keyword
-    * 
-    *  plugins may register parsers here to extend MMT with new keywords
-    */
-   val inDocParsers = new HashMap[String,InDocParser]
-   /**
-    * a table of external parsers that can parser declarations in a theory, indexed by keyword
-    * 
-    *  plugins may register parsers here to extend MMT with new keywords
-    */
-   val inModuleParsers = new HashMap[String,InModuleParser]
    
    /**
     * A continuation function called on every StructuralElement that was found
@@ -378,7 +318,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                }
             case k =>
                // other keywords are treated as parser plugins
-               val extParser = inDocParsers.get(k).getOrElse {
+               val extParser = controller.extman.getParserExtension(doc, k).getOrElse {
                   throw makeError(reg, "unknown keyword: " + k)
                }
                val (mod, mreg) = state.reader.readModule
@@ -440,8 +380,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   case link: DeclaredLink =>
                      val from = readMPath(link.path)
                      readDelimiter("=")
-                     val mor = OMMOD(readMPath(link.path)) //readParsedObject(view.to)
-                     val as = DefLinkAssignment(link.toTerm, LocalName(ComplexStep(from)), from, mor)
+                     val incl = readMPath(link.path) //readParsedObject(view.to)
+                     val as = PlainViewInclude(link.toTerm, from, incl)
                      seCont(as)
                }
             //Pattern
@@ -472,7 +412,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   val name = readName
                   readInstance(name, mod.path, pattern)
                } else {
-                  val parsOpt = inModuleParsers.get(k)
+                  val parsOpt = controller.extman.getParserExtension(mod, k)
                   if (parsOpt.isDefined) {
                      // 2) a parser plugin identified by k
                      val (decl, reg) = state.reader.readDeclaration
@@ -510,36 +450,26 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val cpath = parent ? name
       //initialize all components as omitted
       val tpC = new TermContainer
-      var dfC = new TermContainer
+      val dfC = new TermContainer
       var al : Option[LocalName] = None
       var nt : Option[TextNotation] = None
       var rl : Option[String] = None
       var pr : Option[Context] = None
+      val cons = new Constant(OMMOD(parent), name, None, tpC, dfC, None, None)
       // every iteration reads one delimiter and one object
       // @ alias or : TYPE or = DEFINIENS or # NOTATION
       //TODO remove "##" here and in the case split below, only used temporarily for latex integration
       val keys = List(":","=","#", "##","@", "of", "role")
       val keyString = keys.map("'" + _ + "'").mkString(", ")
 
+      def doComponent(c: DeclarationComponent, tc: TermContainer) {
+         val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
+         tc.read = obj
+         tc.parsed = tm
+      }
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
-         if (! keys.contains(delim)) {
-            // error handling
-            if (delim == "") {
-               if (! state.reader.endOfDeclaration)
-                  errorCont(makeError(treg, "expected " + keyString))
-            } else { 
-               if (! state.reader.endOfObject)
-                  state.reader.readObject
-               errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
-            }
-         } else {
-            def doComponent(c: DeclarationComponent, tc: TermContainer) {
-               val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
-               tc.read = obj
-               tc.parsed = tm
-            }
-            // the main part, which branches based on the delimiter
+            // branch based on the delimiter
             delim match {
                case "of" =>
                   if (pr.isDefined) {
@@ -585,14 +515,29 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   }
                case "role" =>
                  val (str,_) = state.reader.readObject
-                 rl = Some(str)                 
-               //TODO read metadata
+                 rl = Some(str)
+               case k => controller.extman.getParserExtension(cons, k) match {
+                  case Some(parser) =>
+                     val (obj, reg) = state.reader.readObject
+                     val reader = Reader(obj)
+                     reader.setSourcePosition(reg.start)
+                     parser(this, state.copy(reader), cons, k)
+                  case None =>
+                     if (! state.reader.endOfDeclaration) {
+                        errorCont(makeError(treg, "expected " + keyString))
+                     } else if (k != "") { 
+                        if (! state.reader.endOfObject)
+                           state.reader.readObject
+                        errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
+                     }
             }
          }
       }
-      new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt) {
+      val constant = new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt) {
          override val parameters = pr.getOrElse(Context())
       }
+      constant.metadata = cons.metadata
+      constant
    }
    private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
       val args = if (state.reader.endOfDeclaration)

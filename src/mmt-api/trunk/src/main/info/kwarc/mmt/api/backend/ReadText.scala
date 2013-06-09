@@ -1161,7 +1161,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
     // add the include assignment to the controller
-    val defLinkAssignment = DefLinkAssignment(parent.toTerm, LocalName.Anon, domain, morphism)
+    val defLinkAssignment = DefLinkAssignment(parent.toTerm, LocalName(domain), domain, morphism)
     add(defLinkAssignment)
 
     // add semantic comment and source references

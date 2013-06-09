@@ -39,9 +39,9 @@ class ExtensionManager(controller: Controller) extends Logger {
    private[frontend] var presenters    : List[Presenter]    = Nil
    private[frontend] var serverPlugins : List[ServerPlugin] = Nil
    private[frontend] var loadedPlugins : List[Plugin]       = Nil
-   
-           var lexerExtensions : List[LexerExtension] =
-              List(GenericEscapeHandler, new PrefixEscapeHandler('\\'), new NumberLiteralHandler(true))
+   private[frontend] var parserExtensions : List[ParserExtension] = Nil
+   var lexerExtensions : List[LexerExtension] = Nil
+
    private var mws : Option[URI] = None
 
    val report = controller.report
@@ -56,6 +56,11 @@ class ExtensionManager(controller: Controller) extends Logger {
       presenters ::= TextPresenter
       presenters ::= OMDocPresenter
       presenters ::= controller.presenter
+      parserExtensions ::= parser.MetadataParser
+      parserExtensions ::= parser.CommentIgnorer
+      lexerExtensions ::= GenericEscapeHandler
+      lexerExtensions ::= new PrefixEscapeHandler('\\')
+      lexerExtensions ::= new NumberLiteralHandler(true)
       // initialize all extensions
       getAll.foreach(_.init(controller, Nil))
    }
@@ -97,6 +102,10 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as presenter")
           presenters ::= ext.asInstanceOf[Presenter]
        }
+       if (ext.isInstanceOf[ParserExtension]) {
+          log("  ... as parser extension")
+          parserExtensions ::= ext.asInstanceOf[ParserExtension]
+       }
        if (ext.isInstanceOf[ServerPlugin]) {
           log("  ... as server plugin")
           serverPlugins ::= ext.asInstanceOf[ServerPlugin]
@@ -105,14 +114,16 @@ class ExtensionManager(controller: Controller) extends Logger {
 
    /** retrieves an applicable Compiler */
    def getTarget(src: String) : Option[BuildTarget] = targets.find(_.isApplicable(src))
-   /** retrieves an applicable Compiler */
+   /** retrieves an applicable query transformer */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
-   /** retrieves an applicable Compiler */
+   /** retrieves an applicable role handler */
    def getRoleHandler(role: String) : List[RoleHandler] = roleHandlers.filter(_.isApplicable(role))
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
    /** retrieves an applicable server plugin */
    def getServerPlugin(cont : String) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(cont))
+   /** retrieves an applicable parser extension */
+   def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] = parserExtensions find {_.isApplicable(se, keyword)}
    /** retrieves an applicable Foundation */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
 
@@ -121,7 +132,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getMWS : Option[URI] = mws
    
    /** retrieves all registered extensions */
-   private def getAll = foundations:::targets:::querytransformers:::roleHandlers:::presenters:::serverPlugins:::loadedPlugins
+   private def getAll = foundations:::targets:::querytransformers:::roleHandlers:::presenters:::serverPlugins:::parserExtensions:::loadedPlugins
    
    def stringDescription = {
       def mkL(label: String, es: List[Extension]) =
@@ -132,6 +143,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       mkL("roleHandlers", roleHandlers) +
       mkL("presenters", presenters) +
       mkL("serverPlugins", serverPlugins) +
+      mkL("parserExtensions", parserExtensions)
       mkL("plugins", loadedPlugins) +
       "rules\n" + ruleStore.stringDescription 
    }
@@ -145,5 +157,6 @@ class ExtensionManager(controller: Controller) extends Logger {
       presenters = Nil
       serverPlugins = Nil
       loadedPlugins = Nil
+      parserExtensions = Nil
    }
 }

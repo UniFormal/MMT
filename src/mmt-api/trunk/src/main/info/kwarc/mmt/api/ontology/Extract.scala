@@ -33,7 +33,7 @@ object Extractor {
                        f(IsAliasFor(c.home % a, c.path))
                      }
                   case s: Structure =>
-                     if (s.name.isAnonymous) {
+                     if (s.isAnonymous) {
                         f(Includes(t.path, TheoryExp.simplify(s.from).toMPath))
                      } else {
                         f(dec)

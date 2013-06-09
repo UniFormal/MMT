@@ -56,29 +56,13 @@ abstract class Lookup(val report : frontend.Report) {
          }
       }
    *  But we cannot case-split over an abstract type parameter due to Scala's compilation-time type erasure.
-   *  Maybe reflection could be used to work around that.
    */
    
-/* FR: I removed these methods from the interface because in most cases the method visible (implemented based on implicit morphisms) is enough and better. 
-   def imports(from: Term, to: Term) : Boolean
-   def importsTo(to: Term) : Iterator[Term]
-   def importsToFlat(to: Term, found: HashSet[Term] = new HashSet[Term]) : HashSet[Term] = {
-      val imps = importsTo(to)
-      imps foreach {i =>
-         if (! (found contains i)) {
-            found += i
-            importsToFlat(i, found)
-         }
-      }
-      found
-   }
-*/ 
-
    def visible(to: Term): HashSet[Term]
    def getImplicit(from: Term, to: Term) : Option[Term]
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
-   def getDeclarationsInScope(mod : Term) : List[Content]
+   //def getDeclarationsInScope(mod : Term) : List[Content]
    
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
@@ -133,11 +117,11 @@ abstract class Lookup(val report : frontend.Report) {
    object ApplyMorphs extends Traverser[Term] {
       def traverse(t: Term)(implicit con: Context, morph: Term) = t match {
          case OMM(arg, via) => traverse(arg)(con, OMCOMP(morph, via))
-         case OMID(theo % ln) =>
-           val aOpt = getConstant(morph % ln).df
+         case OMS(theo ?? ln) =>
+           val aOpt = getConstant(morph % (LocalName(theo) / ln)).df
            aOpt match {
               case None => t
-              case Some(t) => traverse(t)
+              case Some(df) => traverse(df)
            }
          case t => Traverser(this,t)
       }
