@@ -1,0 +1,33 @@
+log console
+log file theories.log
+//log+ report
+log+ extman
+log+ structure-parser
+//log+ parser
+//log+ scanner
+//log+ backend
+log+ archive
+//log+ controller
+//log+ presenter
+//log+ notation
+//log+ library
+log+ validator
+log+ frameit
+//log+ object-checker
+mathpath fs http://cds.omdoc.org/styles ../../../styles
+
+extension info.kwarc.mmt.lf.Plugin
+extension info.kwarc.mmt.frameit.FrameitPlugin
+
+archive add ../../oaff/urtheories
+archive add ../../oaff/openmath
+archive openmath register info.kwarc.oaff.openmath.uom
+
+archive add ../../../public_html/dr_bsc/frameIT/
+//archive frameit clean
+build frameit mmt-omdoc
+build frameit index
+//archive frameit validate
+//archive frameit notation
+server on 8080
+base http://docs.omdoc.org/mmt
