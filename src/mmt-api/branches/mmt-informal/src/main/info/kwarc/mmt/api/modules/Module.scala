@@ -20,8 +20,7 @@ sealed abstract class Module(val parent : DPath, val name : LocalPath) extends C
 /**
  * Module given by a set of statements
  */
-trait DeclaredModule[S <: Declaration] extends Body[S] {
-}
+trait DeclaredModule extends Module with Body[Symbol]
 
 /**
  * Module given by existing modules/morphisms

@@ -22,12 +22,11 @@ class ParserState(val reader: Reader, val container: DPath) {
     * import prefix URI
     * }}}
     * commands
+    * 
+    * the initial default namespace is the URI of the container
     */
    var namespaces = new utils.NamespaceMap
-   namespaces.default = utils.mmt.mmtbase.uri
-
-   /** uri at current parsing location */
-   var home : Path = DPath(namespaces.default)
+   namespaces.default = container.uri
    
    /** the position at which the current StructuralElement started */ 
    var startPosition = reader.getSourcePosition
@@ -45,42 +44,7 @@ class ParserState(val reader: Reader, val container: DPath) {
 }
 
 /**
- * classes implementing InDocParser may be registered with a [[info.kwarc.mmt.api.parser.StructureParser]]
- * to extend MMT
- */
-trait InDocParser {
-   /**
-    * Called to parse a declaration in a Document if the respective keyword has been read.
-    * @param sp the StructureParser that is calling this extension
-    * @param r the reader from which further input can be read
-    * @param document the current document
-    * @param keyword the keyword that was read
-    * 
-    *  the keyword but nothing else has been read already when this is called
-    */
-   def apply(sp: StructureParser, s: ParserState, document: Document, keyword: String)
-}
-
-/**
- * classes implementing InTheoryParser may be registered with a [[info.kwarc.mmt.api.parser.StructureParser]]
- * to extend MMT
- */
-trait InTheoryParser {
-   /**
-    * Called to parse a declaration in a Document if the respective keyword has been read.
-    * @param sp the StructureParser that is calling this extension
-    * @param r the reader from which further input can be read
-    * @param theory the current theory
-    * @param keyword the keyword that was read
-
-    * the keyword but nothing else has been read already when this is called
-    */
-   def apply(sp: StructureParser, s: ParserState, theory: DeclaredTheory, keyword: String)
-}
-
-
-/**
- * A StructureParser read MMT declarations (but not objects) and
+ * A StructureParser reads MMT declarations (but not objects) and
  * defers to continuation functions for the found StructuralElement, ParsingUnits, and SourceErrors.
  * 
  * This class provides 3 things
@@ -90,27 +54,14 @@ trait InTheoryParser {
  * These methods throw do not read more than necessary from the stream and
  * throw [[info.kwarc.mmt.api.SourceError]] where appropriate.
  * 
- * 2) It maintains the parse state via an implicit argument
+ * 2) It is stateless and maintains the parse state via an implicit argument of type
  * [[info.kwarc.mmt.api.parser.ParserState]] in most functions.
  * 
- * 3) It leaves processing of MMT entities application-independent via high-level continuation functions. 
+ * 3) It leaves processing of MMT entities application-independently via high-level continuation functions. 
  */
 abstract class StructureParser(controller: Controller) extends frontend.Logger {
    val report = controller.report
    val logPrefix = "structure-parser"
-
-   /**
-    * a table of external parsers that can parser declarations in a document, indexed by keyword
-    * 
-    *  plugins may register parsers here to extend MMT with new keywords
-    */
-   val inDocParsers = new HashMap[String,InDocParser]
-   /**
-    * a table of external parsers that can parser declarations in a theory, indexed by keyword
-    * 
-    *  plugins may register parsers here to extend MMT with new keywords
-    */
-   val inTheoryParsers = new HashMap[String,InTheoryParser]
    
    /**
     * A continuation function called on every StructuralElement that was found
@@ -157,7 +108,6 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    
    def apply(state : ParserState, dpath : DPath) : (Document,ParserState) = {
       state.namespaces.default = dpath.uri
-      state.home = dpath
       val doc = new Document(dpath)
       seCont(doc)(state)
       logGroup {
@@ -168,8 +118,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    }
 
    /** convenience function to create SourceError's */
-   private def makeError(reg: SourceRegion, s: String) =
-      SourceError("structure-parser", SourceRef(null, reg), s)
+   private def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
+      SourceError("structure-parser", SourceRef(state.container.uri, reg), s)
   
    /** the region from the start of the current structural element to the current position */
    protected def currentSourceRegion(implicit state: ParserState) =
@@ -263,32 +213,30 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param doc the containing Document (must be in the controller already)
     */
    private def readInDocument(doc: Document)(implicit state: ParserState) {
-      state.home = doc.path
       //auxiliary function to unify "view" and "implicit view"
       def doView(isImplicit: Boolean) {
-    	       
-               val name = readLocalPath
-               val ns = DPath(state.namespaces.default)
-               val vpath = ns ? name
-               val mref = MRef(doc.path, vpath, true)
-               seCont(mref)
-               readDelimiter(":")
-               val from = readMPath(vpath)
-               readDelimiter("->","→")
-               val to = readMPath(vpath)
-               readDelimiter("abbrev", "=") match {
-                  case "abbrev" =>
-                     val (_,_,df) = readParsedObject(OMMOD(vpath))
-                     val thy = new DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
-                     seCont(thy)
-                  case "=" =>
-                     val v = new DeclaredView(ns, name, OMMOD(from), OMMOD(to), isImplicit)
-                     seCont(v)
-                     logGroup {
-                        readInView(v)
-                     }
-                     end(v)
+         val name = readLocalPath
+         val ns = DPath(state.namespaces.default)
+         val vpath = ns ? name
+         val mref = MRef(doc.path, vpath, true)
+         seCont(mref)
+         readDelimiter(":")
+         val from = readMPath(vpath)
+         readDelimiter("->","→")
+         val to = readMPath(vpath)
+         readDelimiter("abbrev", "=") match {
+            case "abbrev" =>
+               val (_,_,df) = readParsedObject(OMMOD(vpath))
+               val thy = new DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
+               seCont(thy)
+            case "=" =>
+               val v = new DeclaredView(ns, name, OMMOD(from), OMMOD(to), isImplicit)
+               seCont(v)
+               logGroup {
+                  readInModule(v, Nil)
                }
+               end(v)
+         }
       }
       if (state.reader.endOfDocument) return
       val (keyword, reg) = state.reader.readToken
@@ -312,11 +260,12 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                }
                end(d)
             case "namespace" =>
-               val ns = readDPath(doc.path)
+               // default namespace is set relative to current default namespace
+               val ns = readDPath(DPath(state.namespaces.default))
                state.namespaces.default = ns.uri
             case "import" =>
                val (n,_) = state.reader.readToken
-               val ns = readDPath(doc.path)
+               val ns = readDPath(DPath(state.namespaces.default))
                state.namespaces.prefixes(n) = ns.uri
             case "theory" =>
                val name = readLocalPath
@@ -353,7 +302,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                            }
                      }
                      logGroup {
-                        readInTheory(t, patterns)
+                        readInModule(t, patterns)
                      }
                      end(t)
                   } else {
@@ -369,13 +318,19 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                }
             case k =>
                // other keywords are treated as parser plugins
-               val extParser = inDocParsers.get(k).getOrElse {
+               val extParser = controller.extman.getParserExtension(doc, k).getOrElse {
                   throw makeError(reg, "unknown keyword: " + k)
                }
                val (mod, mreg) = state.reader.readModule
                val reader = Reader(mod)
                reader.setSourcePosition(mreg.start)
                extParser(this, state.copy(reader), doc, k)
+         }
+         // check that the reader is at the end of a module level declaration, throws error otherwise
+         if (! state.reader.endOfModule) {
+            val (rest, reg) = state.reader.readModule
+            if (rest != "")
+               throw makeError(reg, "extraneous tokens, ignored: " + rest)
          }
       } catch {
          case e: SourceError =>
@@ -392,10 +347,13 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * 
     * this function handles one declaration if possible, then calls itself recursively
     */
-   private def readInTheory(thy: DeclaredTheory, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
-      state.home = thy.path
+   private def readInModule(mod: DeclaredModule, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
       //this case occurs if lower methods have already read the GS marker
       if (state.reader.endOfModule) return
+      val scope = mod match {
+         case t: DeclaredTheory => OMMOD(t.path)
+         case l: DeclaredLink => l.to 
+      }
       try {
          val (keyword, reg) = state.reader.readToken
          state.startPosition = reg.start
@@ -406,36 +364,44 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                if (state.reader.endOfModule) {
                   return
                } else
-                  fail("keyword expected, within theory " + thy.path)
+                  fail("keyword expected, within module " + mod.path)
             //Constant
             case "constant" =>
                val name = readName
-               val c = readConstant(name, thy.path, OMMOD(thy.path))
+               val c = readConstant(name, mod.path, scope)
                seCont(c)
             //PlainInclude
             case "include" =>
-               val from = readMPath(thy.path)
-               if (! state.reader.endOfDeclaration) {
-                  val (rest, reg) = state.reader.readDeclaration
-                  if (rest != "")
-                     throw makeError(reg, "end of declaration expected, found and ignored " + rest)
+               mod match {
+                  case thy: DeclaredTheory =>
+                     val from = readMPath(thy.path)
+                     val incl = PlainInclude(from, thy.path)
+                     seCont(incl)
+                  case link: DeclaredLink =>
+                     val from = readMPath(link.path)
+                     readDelimiter("=")
+                     val incl = readMPath(link.path) //readParsedObject(view.to)
+                     val as = PlainViewInclude(link.toTerm, from, incl)
+                     seCont(as)
                }
-               val incl = PlainInclude(from, thy.path)
-               seCont(incl)
             //Pattern
             case "pattern" =>
                val name = readName
-               
                //TODO
             //Instance
             case "instance" =>
-               val name = readName
-               thy.meta match {
-                  case None =>
-                     fail("instance declaration illegal without meta-theory")
-                  case Some(mt) =>
-                     val pattern = readSPath(mt)
-                     readInstance(name, thy.path, pattern)
+               mod match {
+                  case thy: DeclaredTheory =>
+                     val name = readName
+                     thy.meta match {
+                        case None =>
+                           fail("instance declaration illegal without meta-theory")
+                        case Some(mt) =>
+                           val pattern = readSPath(mt)
+                           readInstance(name, thy.path, pattern)
+                     }
+                  case link: DeclaredLink =>
+                     fail("instance declaration in link")
                }
             case k =>
                // other keywords are treated as ...
@@ -444,22 +410,27 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   // 1) an instance of a Pattern with LocalName k visible in meta-theory 
                   val pattern = patOpt.get._2
                   val name = readName
-                  readInstance(name, thy.path, pattern)
+                  readInstance(name, mod.path, pattern)
                } else {
-                  val parsOpt = inTheoryParsers.get(k)
+                  val parsOpt = controller.extman.getParserExtension(mod, k)
                   if (parsOpt.isDefined) {
                      // 2) a parser plugin identified by k
                      val (decl, reg) = state.reader.readDeclaration
                      val reader = Reader(decl)
                      reader.setSourcePosition(reg.start)
-                     parsOpt.get.apply(this, state.copy(reader), thy, k)
+                     parsOpt.get.apply(this, state.copy(reader), mod, k)
                   } else {
                      // 3) a constant with name k
                      val name = LocalName.parse(k)
-                     val c = readConstant(name, thy.path, OMMOD(thy.path))
+                     val c = readConstant(name, mod.path, scope)
                      seCont(c)
                   }
                }
+         }
+         if (! state.reader.endOfDeclaration) {
+            val (rest, reg) = state.reader.readDeclaration
+            if (rest != "")
+               throw makeError(reg, "end of declaration expected, found and ignored: " + rest)
          }
       } catch {
          case e: SourceError =>
@@ -467,47 +438,38 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             if (! state.reader.endOfDeclaration)
                state.reader.readDeclaration
       }
-      readInTheory(thy, patterns) // compiled code is not actually tail-recursive
+      readInModule(mod, patterns) // compiled code is not actually tail-recursive
    }
    
    /** reads the components of a [[info.kwarc.mmt.api.symbols.Constant]]
     * @param name the name of the constant
-    * @param the containing [[info.kwarc.mmt.api.modules.DeclaredTheory]]
+    * @param parent the containing [[info.kwarc.mmt.api.modules.DeclaredModule]]
+    * @param scope the home theory for term components
     */
    private def readConstant(name: LocalName, parent: MPath, scope: Term)(implicit state: ParserState): Constant = {
       val cpath = parent ? name
       //initialize all components as omitted
       val tpC = new TermContainer
-      var dfC = new TermContainer
+      val dfC = new TermContainer
       var al : Option[LocalName] = None
       var nt : Option[TextNotation] = None
       var rl : Option[String] = None
       var pr : Option[Context] = None
+      val cons = new Constant(OMMOD(parent), name, None, tpC, dfC, None, None)
       // every iteration reads one delimiter and one object
       // @ alias or : TYPE or = DEFINIENS or # NOTATION
       //TODO remove "##" here and in the case split below, only used temporarily for latex integration
       val keys = List(":","=","#", "##","@", "of", "role")
       val keyString = keys.map("'" + _ + "'").mkString(", ")
 
+      def doComponent(c: DeclarationComponent, tc: TermContainer) {
+         val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
+         tc.read = obj
+         tc.parsed = tm
+      }
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
-         if (! keys.contains(delim)) {
-            // error handling
-            if (delim == "") {
-               if (! state.reader.endOfDeclaration)
-                  errorCont(makeError(treg, "expected " + keyString))
-            } else { 
-               if (! state.reader.endOfObject)
-                  state.reader.readObject
-               errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
-            }
-         } else {
-            def doComponent(c: DeclarationComponent, tc: TermContainer) {
-               val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
-               tc.read = obj
-               tc.parsed = tm
-            }
-            // the main part, which branches based on the delimiter
+            // branch based on the delimiter
             delim match {
                case "of" =>
                   if (pr.isDefined) {
@@ -553,14 +515,29 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   }
                case "role" =>
                  val (str,_) = state.reader.readObject
-                 rl = Some(str)                 
-               //TODO read metadata
+                 rl = Some(str)
+               case k => controller.extman.getParserExtension(cons, k) match {
+                  case Some(parser) =>
+                     val (obj, reg) = state.reader.readObject
+                     val reader = Reader(obj)
+                     reader.setSourcePosition(reg.start)
+                     parser(this, state.copy(reader), cons, k)
+                  case None =>
+                     if (! state.reader.endOfDeclaration) {
+                        errorCont(makeError(treg, "expected " + keyString))
+                     } else if (k != "") { 
+                        if (! state.reader.endOfObject)
+                           state.reader.readObject
+                        errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
+                     }
             }
          }
       }
-      new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt) {
+      val constant = new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt) {
          override val parameters = pr.getOrElse(Context())
       }
+      constant.metadata = cons.metadata
+      constant
    }
    private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
       val args = if (state.reader.endOfDeclaration)
@@ -574,72 +551,6 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       }
       val instance = new Instance(OMMOD(tpath), name, pattern, args)
       seCont(instance)
-   }
-   
-   private def readInView(view: DeclaredView)(implicit state: ParserState) {
-      //this case occurs if lower methods have already read the GS marker
-      if (state.reader.endOfModule) return
-      try {
-         val (keyword, reg) = state.reader.readToken
-         state.startPosition = reg.start
-         keyword match {
-            //this case occurs if we read the GS or marker
-            case "" =>
-               if (state.reader.endOfModule) {
-                  return
-               } else
-                  throw makeError(reg, "keyword expected, within view " + view.path).copy(fatal = true)
-            //Constant
-            case "constant" =>
-               val name = readName
-               val a = readConstant(name, view.path, view.to).toConstantAssignment
-               seCont(a)
-            //assignment to include
-            case "include" =>
-               log("found include")
-               val from = readMPath(view.path)
-               readDelimiter("=")
-               val mor = OMMOD(readMPath(view.path)) //readParsedObject(view.to)
-               val as = new DefLinkAssignment(view.toTerm, LocalName(ComplexStep(from)), from, mor)
-               seCont(as)
-            //Pattern
-            case "pattern" =>
-               //TODO
-            //Instance
-            case "instance" =>
-               //TODO
-            case k =>
-               //TODO
-               // other keywords are treated as ...
-               /*
-               val patOpt = patterns.find(_._1 == k)
-               if (patOpt.isDefined) {
-                  // 1) an instance of a Pattern with LocalName k visible in meta-theory 
-                  val pattern = patOpt.get._2
-                  val name = readName
-                  readInstance(name, pattern)
-               } else {
-                  val parsOpt = inTheoryParsers.get(k)
-                  if (parsOpt.isDefined) {
-                     // 2) a parser plugin identified by k
-                     val (decl, reg) = state.reader.readDeclaration
-                     val reader = Reader(decl)
-                     reader.setSourcePosition(reg.start)
-                     parsOpt.get.apply(this, reader)
-                  } else {
-                */
-                     // 3) a constant with name k
-                     val name = LocalName.parse(k)
-                     val a = readConstant(name, view.path, view.to).toConstantAssignment
-                     seCont(a)
-         }
-      } catch {
-         case e: SourceError =>
-            errorCont(e)
-            if (! state.reader.endOfDeclaration)
-               state.reader.readDeclaration
-      }
-      readInView(view) // compiled code is not actually tail-recursive
    }
    
    //TODO, text syntax for styles?
@@ -707,8 +618,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
      }
      val patterns = Nil //TODO
      //calling parse function
-     
-     readInTheory(thy, patterns)(state)
+     readInModule(thy, patterns)(state)
    }
 }
 

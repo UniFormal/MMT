@@ -24,7 +24,7 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
 case class SourceError(
     origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil,
     warning: Boolean = false, fatal: Boolean = false
- ) extends Error(origin + ": source error at " + ref.region.start.twoDimStringFromOne + ": " + mainMessage) {
+ ) extends Error(origin + ": source error at " + ref.toString + ": " + mainMessage) {
     override def getMessage = mainMessage + extraMessages.mkString("\n","\n","\n")
 }
 /** errors that occur during compiling */

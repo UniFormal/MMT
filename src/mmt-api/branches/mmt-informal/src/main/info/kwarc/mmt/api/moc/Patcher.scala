@@ -45,35 +45,39 @@ object Patcher {
 
   }
   
-  private def copyDecls(old : DeclaredTheory, nw : DeclaredTheory) : DeclaredTheory = {
-    old.components collect {
+  private def copyDecls(old : DeclaredModule, nw : DeclaredModule) {
+    old.getDeclarations collect {
       case s : Symbol => nw.add(s)
     }
-    nw
-  }
-  
-  private def copyDecls(old : DeclaredView, nw : DeclaredView) : DeclaredView = {
-    old.components collect {
-      case s : Assignment => nw.add(s)
-    }
-    nw
   }
   
   def updateComponent(d : ContentElement, comp : DeclarationComponent,  old : Option[Obj], nw : Option[Obj]) : ContentElement = (d, comp, nw) match {
-
     /** Theories */
-    case (t : DeclaredTheory, DomComponent, Some(OMMOD(p))) => copyDecls(t, new DeclaredTheory(t.parent, t.name, Some(p)))
-
-    case (t : DeclaredTheory, DomComponent, None) => copyDecls(t, new DeclaredTheory(t.parent, t.name, None))
-      
-    case (t : DefinedTheory,  DefComponent, Some(df : Term)) => new DefinedTheory(t.parent, t.name, df)
-
+    case (t : DeclaredTheory, DomComponent, Some(OMMOD(p))) =>
+       val tN = new DeclaredTheory(t.parent, t.name, Some(p))
+       copyDecls(t, tN)
+       tN
+    case (t : DeclaredTheory, DomComponent, None) =>
+       val tN = new DeclaredTheory(t.parent, t.name, None)
+       copyDecls(t, tN)
+       tN
+    case (t : DefinedTheory,  DefComponent, Some(df : Term)) =>
+       new DefinedTheory(t.parent, t.name, df)
     /** Views */
-    case (v : DeclaredView, CodComponent, Some(to : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, v.from, to, v.isImplicit))
-    case (v : DeclaredView, DomComponent, Some(from : Term)) => copyDecls(v, new DeclaredView(v.parent, v.name, from, v.to, v.isImplicit))
-    case (v : DefinedView, CodComponent, Some(to : Term)) => new DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
-    case (v : DefinedView, DomComponent, Some(from : Term)) => new DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
-    case (v : DefinedView,  DefComponent, Some(df : Term)) => new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
+    case (v : DeclaredView, CodComponent, Some(to : Term)) =>
+       val vN = new DeclaredView(v.parent, v.name, v.from, to, v.isImplicit)
+       copyDecls(v, vN)
+       vN
+    case (v : DeclaredView, DomComponent, Some(from : Term)) =>
+       val vN = new DeclaredView(v.parent, v.name, from, v.to, v.isImplicit)
+       copyDecls(v, vN)
+       vN
+    case (v : DefinedView, CodComponent, Some(to : Term)) =>
+       new DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
+    case (v : DefinedView, DomComponent, Some(from : Term)) =>
+       new DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
+    case (v : DefinedView,  DefComponent, Some(df : Term)) =>
+       new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
 
     /** Constants */
     case (c : Constant, DefComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, c.tp, Some(s), c.rl, c.not)
@@ -87,12 +91,6 @@ object Patcher {
 
     /** Instances */
     case(i : Instance, TypeComponent, Some(OMA(OMID(p), matches))) if i.pattern == p => new Instance(i.home, i.name, i.pattern, matches)
-
-    /** ConstantAssignments */
-    case(c : ConstantAssignment, DefComponent, Some(target : Term)) => new ConstantAssignment(c.home, c.name, c.alias, Some(target))
-
-    /** DefLinkAssignments */
-    case(d : DefLinkAssignment, DefComponent, Some(target : Term)) => new DefLinkAssignment(d.home, d.name, d.from, target)
 
     case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +

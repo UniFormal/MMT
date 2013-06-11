@@ -21,7 +21,7 @@ abstract class Delete(val s : StructuralElement) extends Change
 object Add {
   def apply(s : StructuralElement) : Add = s match {
     case p : PresentationElement => AddPresentation(p)
-    case d : Declaration => AddDeclaration(d)
+    case d : Symbol => AddDeclaration(d)
     case m : Module => AddModule(m)
   }
 }
@@ -29,7 +29,7 @@ object Add {
 object Delete {
   def apply(s : StructuralElement) : Delete = s match {
     case p : PresentationElement => DeletePresentation(p)
-    case d : Declaration => DeleteDeclaration(d)
+    case d : Symbol => DeleteDeclaration(d)
     case m : Module => DeleteModule(m)
   }
 }
@@ -259,7 +259,7 @@ trait ChangeDeclaration extends ContentChange {
 }
 
 
-case class AddDeclaration(d : Declaration) extends AddContent(d) with ChangeDeclaration {
+case class AddDeclaration(d : Symbol) extends AddContent(d) with ChangeDeclaration {
   def getReferencedURI = d.path
 
   def toNode = 
@@ -270,7 +270,7 @@ case class AddDeclaration(d : Declaration) extends AddContent(d) with ChangeDecl
   def toNodeFlat = <change type="add" path={d.path.toPath}> {d.toNode} </change> :: Nil
 }
 
-case class DeleteDeclaration(d : Declaration) extends DeleteContent(d) with ChangeDeclaration {
+case class DeleteDeclaration(d : Symbol) extends DeleteContent(d) with ChangeDeclaration {
   def getReferencedURI = d.path
 
   def toNode =

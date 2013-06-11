@@ -96,37 +96,107 @@ class StructureChecker(controller: Controller) extends Logger {
          case v: DefinedView =>
             checkTheory(v.from)
             checkTheory(v.to)
-            checkMorphism(v.df, v.from, v.to)
+            checkMorphism(v.df, Some(v.from), v.to)
          case s: DeclaredStructure =>
             checkTheory(s.from)
             s.getPrimitiveDeclarations foreach check
          case s: DefinedStructure =>
-            checkTheory(s.from)
-            checkMorphism(s.df, s.from, s.home)
+            val (thy, linkOpt) = content.getDomain(s)
+            linkOpt match {
+               case None =>
+                  // declaration in a theory
+                  checkTheory(s.from)
+                  checkMorphism(s.df, Some(s.from), s.home)
+               case Some(link) =>
+                  // assignment in a link
+                  val sR = if (s.isAnonymous) {
+                     val (dfR, dom) = checkMorphism(s.df, None, link.to)
+                     dom match {
+                        case Some(OMMOD(p)) =>
+                           //TODO check if p is included into link.from
+                           //TODO if s.from is given (and not a dummy), it must be equal to p
+                           val sR = ViewInclude(s.home, p, dfR)
+                           link.replace(s.name, sR)
+                           sR
+                        case _ =>
+                           errorCont(InvalidElement(s, "cannot infer atomic domain of assignment"))
+                           s
+                     }
+                  } else {
+                     val sOrg = content.getStructure(thy.path ? s.name)
+                     if (sOrg.fromPath != s.from)
+                        errorCont(InvalidElement(s, "import-assignment has bad domain: found " + s.from + " expected " + sOrg.from)) 
+                     checkMorphism(s.df, Some(s.from), s.home)
+                     s
+                  }
+            }
          case c : Constant =>
+            // check if we are in a theory or link
+            // (thy,None): c is constant in theory thy
+            // (thy, Some(l)): c is assignment in link l from thy
+            val (thy, linkOpt) = content.getDomain(c)
+            // the home theory of the components of c
+            val scope = linkOpt match {
+               case None => OMMOD(thy.path)
+               case Some(link) => link.to
+            }
+            // if link: the source constant and its translated components
+            val linkInfo = linkOpt map {link =>
+               val cOrg = content.getConstant(thy.path ? c.name)
+               val expTypeOpt = cOrg.tp map {t => content.ApplyMorphs(t, link.toTerm)}
+               val expDefOpt = cOrg.df map {t => content.ApplyMorphs(t, link.toTerm)}
+               (cOrg, expTypeOpt, expDefOpt)
+            }
+            // auxiliary function for structural checking of a term
+            // returns unknown variables, structural reconstruction, result of latter
+            def prepareTerm(t: Term) : (Context, Term, Boolean) = {
+               val (unknowns,tU) = parser.AbstractObjectParser.splitOffUnknowns(t)
+               val (tR, valid) = checkTermTop(scope, c.parameters ++ unknowns, tU)
+               (unknowns, tR, valid)
+            }
             val parR = checkContext(c.home, Context(), c.parameters)
             //TODO reconstruction in parameters
+            // check that the type of c (if given) is a universe
             c.tp foreach {t => 
-               val (unknowns,tU) = parser.AbstractObjectParser.splitOffUnknowns(t)
-               val (tR,valid) = checkTermTop(c.home, c.parameters ++ unknowns, tU)
+               val (unknowns, tR, valid) = prepareTerm(t)
                if (valid) {
-                  OMMOD.unapply(c.home) foreach {p =>
-                     val j = Universe(Stack(p, c.parameters), tR)
-                     unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+                  val j = Universe(Stack(scope, c.parameters), tR)
+                  unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+               }
+            }
+            // if assignment: translate the type of cOrg
+            linkInfo foreach {
+               case (_, Some(expType), _) => c.tp match {
+                  case Some(tp) =>
+                     // c already has a type: keep it, but check equality
+                     //TODO
+                  case None =>
+                     // c has no type: use the translated type
+                     c.tpC.analyzed = expType
+               }
+               case _ => // cOrg has no type, nothing to do
+            }
+            // check that the definiens of c (if given) type-checks against the type of c (if given)
+            c.df foreach {d =>
+               val (unknowns, dR, valid) = prepareTerm(d)
+               if (valid) {
+                  c.tp foreach {tp =>
+                      val j = Typing(Stack(scope, c.parameters), dR, tp)
+                      unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
                   }
                }
             }
-            c.df foreach {d => 
-               val (unknowns,dU) = parser.AbstractObjectParser.splitOffUnknowns(d)
-               val (dR, valid) = checkTermTop(c.home, c.parameters ++ unknowns, dU)
-               if (valid) {
-                  OMMOD.unapply(c.home) foreach {p =>
-                     c.tp foreach {tp =>
-                         val j = Typing(Stack(p, c.parameters), dR, tp)
-                         unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
-                     }
-                  }
+            // if assignment: translate the definiens of cOrg
+            linkInfo foreach {
+               case (_, _, Some(expDef)) => c.df match {
+                  case Some(df) =>
+                     // c already has a definiens: keep it, but check equality
+                     //TODO
+                  case None =>
+                     // c has no definiens: use the translated definiens
+                     c.dfC.analyzed = expDef
                }
+               case _ => // cOrg has no definiens, nothing to do
             }
             // apply every applicable RoleHandler
             c.rl foreach {r =>
@@ -140,43 +210,7 @@ class StructureChecker(controller: Controller) extends Logger {
                val trace = foundation.tracedTyping(None, Some(t))
                trace foreach {t => reCont(DependsOn(c.path $ "type", t))}
             }
-            c.df map {t =>
-               val trace = foundation.tracedTyping(c.df, c.tp)
-               trace foreach {t => reCont(DependsOn(c.path $ "definition", t))}
-            }
             */
-         //TODO: compatibility of multiple assignments to the same knowledge item
-         case a : ConstantAssignment =>
-            val tlOpt = try {
-               Some(content.getDomain(a))
-            } catch { 
-              case e: GetError =>
-                 errorCont(InvalidElement(a,"invalid assignment",e))
-                 None
-            }
-            tlOpt foreach {case (t,l) =>
-               val c = content.getConstant(t.path ? a.name)
-               a.target foreach {t => checkTermTop(l.to, Context(), t)}
-            }
-         case a : DefLinkAssignment =>
-            val tlOpt = try {
-               Some(content.getDomain(a))
-            } catch { 
-               case e: GetError =>
-                  errorCont(InvalidElement(a,"invalid assignment",e))
-                  None
-            }
-            tlOpt foreach {case (t,l) =>
-               if (a.name.isAnonymous) {
-                  checkMorphism(a.target, OMMOD(a.from), l.to)
-               } else {
-                  /* temporarily disabled because it fails when a meta-morphism is checked (lookup of the meta-theory as a structure fails)
-                  val s = content.getStructure(t.path ? a.name)
-                  if (s.fromPath != a.from) errorCont(InvalidElement(a, "import-assignment has bad domain: found " + a.from + " expected " + s.from)) 
-                  checkMorphism(a.target, s.from, l.to)
-                  */
-               }
-            }
          case p : Pattern =>
             checkContext(p.home, Context(), p.params)
             checkContext(p.home, p.params, p.body)
@@ -190,21 +224,6 @@ class StructureChecker(controller: Controller) extends Logger {
             }
             ptOpt foreach {pt => checkSubstitution(i.home, pt.getSubstitution(i), pt.params, Context())}
             //TODO mihnea's instances already refer to their elaboration in their matches
-            
-/*        case a : Alias =>
-            mem.content.get(a.forpath)
-            if (mem.content.imports(a.forpath.parent, a.parent))
-               Success(List(IsAlias(a.path), IsAliasFor(a.path, a.forpath)))
-            else
-               Fail("illegal alias")
-         case a : Open =>
-            val str = mem.content.getStructure(a.parent)
-            val source = try {mem.content.getSymbol(str.from ? a.name)}
-                         catch {case _ => return Fail("open of non-existing constant")}
-            val name = a.as.map(LocalName(_)).getOrElse(a.name)
-            val al = new Alias(str.to, name, str.to ? str.name / source.name)
-            Reconstructed(List(a, al), List(IsOpen(a.path)))
-*/
          case _ => //succeed for everything else
       }
    }
@@ -292,7 +311,7 @@ class StructureChecker(controller: Controller) extends Logger {
     *  @return the reconstructed morphism, its domain and codomain
     *    domain and codomain are null in case of errors 
     */
-   def inferMorphism(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = try {
+   private def inferMorphism(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = try {
       inferMorphismAux(m)
    } catch {case NotInferrable => (m, null, null)}
    def inferMorphismAux(m : Term)(implicit pCont: Path => Unit) : (Term, Term, Term) = m match {
@@ -342,22 +361,42 @@ class StructureChecker(controller: Controller) extends Logger {
    }
    
    /** checks whether a morphism object is well-formed relative to a library, a domain and a codomain
+    *  domain may be omitted, in which case it is inferred
     *  @param m the morphism
-    *  @param dom the domain
+    *  @param domOpt the domain, None if it is to be inferred
     *  @param cod the codomain
-    *  @return the reconstructed morphism (with necessary implicit morphisms inserted)
+    *  @return the reconstructed morphism (with necessary implicit morphisms inserted) and the inferred domain (if not provided)
     */
-   def checkMorphism(m : Term, dom : Term, cod : Term)(implicit pCont: Path => Unit) : Term = {
+   def checkMorphism(m : Term, domOpt : Option[Term], cod : Term)(implicit pCont: Path => Unit) : (Term, Option[Term]) = {
       val (l,d,c) = inferMorphism(m)
       if (d != null && c != null) {
-        (content.getImplicit(dom, d), content.getImplicit(c, cod)) match {
-           case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
-           case _ =>
-             errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c))
-             m
-        }
-      } else 
-         m
+         val implCod = content.getImplicit(c, cod)
+         domOpt match {
+            case Some(dom) =>
+               val implDom = content.getImplicit(dom, d)
+               val mR = (implDom, implCod) match {
+                  case (Some(l0), Some(l1)) => OMCOMP(l0, l, l1)
+                  case _ =>
+                    errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + d + " -> " + c))
+                    m
+               }
+               (mR, None)
+            case None =>
+               val mR = implCod match {
+                  case Some(l1) => OMCOMP(l, l1)
+                  case None =>
+                    errorCont(InvalidObject(m, "ill-formed morphism: expected ? -> " + cod + ", found " + d + " -> " + c))
+                    m
+               }
+               (mR, Some(d))
+         }
+      } else {
+         errorCont(InvalidObject(m,
+               "cannot infer type of morphism: expected " + domOpt.getOrElse("?") + " -> " + cod +
+               ", found " + (if (d == null) "?" else d) + " -> " + (if (c == null) "?" else c)
+               ))
+         (m, None)
+      }
    }
 
    /**

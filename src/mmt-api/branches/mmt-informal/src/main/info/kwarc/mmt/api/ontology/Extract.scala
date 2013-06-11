@@ -22,7 +22,7 @@ object Extractor {
          case _ => 
       }
       e match {
-         case t: DeclaredModule[_] =>
+         case t: DeclaredModule =>
             t.getDeclarations foreach {d => {
                val dec = Declares(path,d.path)
                d match {
@@ -33,7 +33,7 @@ object Extractor {
                        f(IsAliasFor(c.home % a, c.path))
                      }
                   case s: Structure =>
-                     if (s.name.isAnonymous) {
+                     if (s.isAnonymous) {
                         f(Includes(t.path, TheoryExp.simplify(s.from).toMPath))
                      } else {
                         f(dec)
@@ -48,8 +48,6 @@ object Extractor {
                      f(dec)
                      f(IsInstance(i.path))
                      f(IsInstanceOf(i.path, i.pattern))
-                  case _: Assignment =>
-                     f(dec)
                   case _: SFDeclaration => 
                      f(dec)
                }

@@ -207,7 +207,7 @@ object Extractor {
              var o = s"  def ${nameToScalaQ(c.path)}($argtpString): Term\n"
              out.println(o)
           }
-        case s: DeclaredStructure if ! s.name.isAnonymous =>
+        case s: DeclaredStructure if ! s.isAnonymous =>
              // unnamed structures have been handled above already
              out.println("val " + nameToScalaQ(s.path) + ": " + mpathToScala(s.fromPath))
         case _ => 
@@ -273,7 +273,7 @@ object Extractor {
                       (defaultNames, s"OMS($implemented)") //constants are often not implemented
                    else
                       (defaultNames, "throw Unimplemented(\"" + scalaName + "\")")
-                case Some(a: ConstantAssignment) => a.target match {
+                case Some(a: Constant) => a.df match {
                    case Some(ScalaLambda(con, Scala(s))) =>
                       (con.variables.map(_.name.toPath), s)
                    case _ =>

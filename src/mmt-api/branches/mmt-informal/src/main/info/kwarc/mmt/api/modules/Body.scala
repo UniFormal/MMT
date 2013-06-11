@@ -16,19 +16,16 @@ import scala.xml.Node
  * 
  * @param S Symbol for theories and Assignment for links
  */
-trait Body[S <: Declaration] {
+trait Body[S <: Symbol] {
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */
    protected val statements = new scala.collection.mutable.HashMap[LocalName,S]
-   /** the set of unnamed statement */
-   protected val implicits  = new scala.collection.mutable.HashSet[S]
    /** all declarations in reverse order of addition */
    protected var order : List[S] = Nil
-   //invariant: "prefixes" stores all prefixes for all LocalPaths in the domain of "statements", together with a counter how often they occur
-   //protected val prefixes = new scala.collection.mutable.HashMap[LocalName,Int]
    /** true iff a declaration for a name is present */ 
    def declares(name: LocalName) = statements.isDefinedAt(name)
+   /** the set of names of all declarations */
    def domain = statements.keySet
    /** retrieve a named declaration, may throw exception if not present */ 
    def get(name : LocalName) : S = statements(name)
@@ -47,7 +44,7 @@ trait Body[S <: Declaration] {
       statements.get(name) match {
          case Some(d) => Some((d, rest))
          case None => name match {
-            case LocalName.Anon => None
+            case LocalName(Nil) => None //should be impossible
             case !(n) => None
             case ln \ n => getMostSpecific(ln, n / rest)
          }
@@ -55,63 +52,32 @@ trait Body[S <: Declaration] {
    /** adds a named or unnamed declaration, throws exception if name already declared */ 
    def add(s : S) {
 	      val name = s.name
-	 /*     val pr = name.prefixes
-	      if (prefixes.isDefinedAt(name))
-	         throw AddError("a statement name with prefix " + name + " already exists")
-	      if (pr.exists(statements.isDefinedAt(_)))
-	         throw AddError("a statement name for a prefix of " + name + " already exists")
-	      //increase counters for all prefixes of the added statement
-	      pr.foreach(p => prefixes(p) = prefixes.getOrElse(p,0) + 1) */
-	      if (name.isAnonymous) {
-	         s.implicitKey match {
-	           case None => throw AddError("an unnamed declaration must have a key")
-	           case Some(key) => get(key) match {
-	              case Some(_) => throw AddError("an unnamed declaration with the same key already exists: " +  s.toString)
-	              case None => implicits += s
-	           }
-	         }
-	      } else {
-            if (statements.isDefinedAt(name)) {
-               //statements.toList.map(x => println(x._2))
-               throw AddError("a declaration for the name " + name + " already exists")
-            }
-            s.alternativeName foreach {a =>
-               if (statements.isDefinedAt(a))
-                  throw AddError("a declaration for the name " + a + " already exists")
-               statements(a) = s
-            }
-	         statements(name) = s
-	      }
-	      order = s :: order
+         if (statements.isDefinedAt(name)) {
+            throw AddError("a declaration for the name " + name + " already exists")
+         }
+         s.alternativeName foreach {a =>
+            if (statements.isDefinedAt(a))
+               throw AddError("a declaration for the name " + a + " already exists")
+            statements(a) = s
+         }
+         statements(name) = s
+         order = s :: order
    }
    /** delete a named declaration (does not have to exist) */
    def delete(name : LocalName) {
       statements.get(name) foreach {s =>
-         //decrease counters for all prefixes of the deleted statement
-         /*name.prefixes.foreach(p => {
-            val i = prefixes(p)
-            if (i > 1) prefixes(p) = i - 1
-            else prefixes -= p
-         })*/
          statements -= s.name
          s.alternativeName foreach {a => statements -= a} 
          order = order.filter(_.name != name)
       }
    }
-   /** replace an named declaration with another one (preserving the order) */
-   /* this is deprecated, call replace below instead
-     def replace(old : S, nw : S) {
-     statements -= old.name
-     statements(nw.name) = nw
-     order = order.foldRight[List[S]](Nil)((x,o) => if (x.path == old.path) {nw :: o} else {x :: o})
-   }*/ 
    /** updates a named declaration (preserving the order) */
    def update(s : S) = {
 	   replace(s.name, s)
    }
    /** replaces a named declaration with others (preserving the order) */
+   //TODO alternativeNames
    def replace(name: LocalName, decs: S*) {
-      if (name.isAnonymous) return
       var seen : List[S] = Nil
       var tosee : List[S] = order
       var continue = true
@@ -131,24 +97,10 @@ trait Body[S <: Declaration] {
         if (statements.isDefinedAt(d.name))
            throw AddError("a declaration for the name " + d.name + " already exists")
         statements(d.name) = d
-        //TODO: this also has to update the aliases
-      }
-   }
-   /** gets the unnamed declaration with a certain key */
-   def get(key: MPath) : Option[S] = {
-      implicits find {d => d.implicitKey == Some(key)}
-   }
-   /** deletes the unnamed declaration with a certain key */
-   def delete(key: MPath) {
-      get(key) match {
-         case Some(d) =>  
-            implicits -= d
-            order = order filterNot(_ == d)
-         case None =>
       }
    }
    /** true iff no declarations present */
-   def isEmpty = statements.isEmpty && implicits.isEmpty
+   def isEmpty = statements.isEmpty
    /** the list of declarations in the order of addition, includes declarations generated by MMT */
    def getDeclarations = order.reverse
    /** the list of declarations in the order of addition, excludes declarations generated by MMT */

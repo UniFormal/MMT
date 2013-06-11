@@ -80,10 +80,6 @@ abstract class StructurePresenter(printDelims: Boolean) extends Presenter {
          case s: DefinedStructure =>
             rh("structure " + s.name + " : " + s.fromPath.toPath + " abbrev ")
             apply(s.df, rh)
-         case a: ConstantAssignment =>
-            apply(a.toConstant, indent)
-         case a: DefLinkAssignment =>
-            apply(a.toStructure, indent)
       }
       rh("\n")
    }

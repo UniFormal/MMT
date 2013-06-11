@@ -111,7 +111,7 @@ case class MPath(parent : DPath, name : LocalPath) extends ContentPath {
 case class GlobalName(module: Term, name: LocalName) extends ContentPath {
    def doc = utils.mmt.mmtbase
    def ^! = if (name.length == 1) module.toMPath else GlobalName(module, name.init)
-   def last = if (name.isAnonymous) "_" else name.last.toPath
+   def last = name.last.toPath
    def apply(args: List[Term]) : Term = OMA(OMID(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
    /** true iff the parent is a named module and each include step is simple */
@@ -121,7 +121,7 @@ case class GlobalName(module: Term, name: LocalName) extends ContentPath {
 
 /**
  * A LocalPath represents a local MMT module (relative to a document).
- * @param fragments the list of (in MMT: slash-separated) components
+ * @param fragments the non-empty list of (in MMT: slash-separated) components
  */
 case class LocalPath(fragments : List[String]) {
    def this(n : String) = {this(List(n))}
@@ -160,11 +160,11 @@ case class LocalName(steps: List[LNStep]) {
    def toPath : String = steps.map(s => xml.encodeURI(s.toString)).mkString("", "/", "")
    /** human-oriented string representation of this name, no encoding, possibly shortened */
    override def toString : String = steps.map(_.toPath).mkString("", "/", "")
-   def isAnonymous = this == LocalName.Anon
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
    def apply(step: String) : LocalName = LocalName(SimpleStep(step))
+   def apply(p: MPath) : LocalName = LocalName(ComplexStep(p))
    /** parses a LocalName that has no []-wrapped segments */
    def parse(s:String) = {
       val ref = Path.parseLocal(s)
@@ -172,7 +172,6 @@ object LocalName {
    }
    /** parses a LocalName, complex segments are parsed relative to base */
    def parse(base: Path, s: String) = Path.parseLocal(s).toLocalName(base)
-   val Anon = LocalName(List())
 }
 /** a step in a LocalName */
 abstract class LNStep {
@@ -186,10 +185,9 @@ abstract class LNStep {
 case class SimpleStep(name: String) extends LNStep {
    def toPath = name
 }
-/** an include declaration; these are unnamed and identified by the imported theory */
+/** an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure */
 case class ComplexStep(path: MPath) extends LNStep {
    def toPath = "[" + path.toPath + "]"
-   /** true iff the IncludeStep is a named module */
 }
 
 case class CPath(parent: ContentPath, component: DeclarationComponent) extends Path {

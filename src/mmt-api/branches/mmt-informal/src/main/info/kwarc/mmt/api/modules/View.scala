@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
   * @param isImplicit true iff the link is implicit
   */
 class DeclaredView(doc : DPath, name : LocalPath, val from : Term, val to : Term, val isImplicit : Boolean)
-      extends View(doc, name) with DeclaredModule[SFAssignment] with DeclaredLink {
+      extends View(doc, name) with DeclaredModule with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_View
    def getIncludes: List[MPath] = getDeclarations.flatMap {
       case PlainViewInclude(_,_,v) => List(v)

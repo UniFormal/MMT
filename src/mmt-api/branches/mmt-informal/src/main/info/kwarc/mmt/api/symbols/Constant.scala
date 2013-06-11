@@ -25,8 +25,6 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
   def tp = tpC.get
   def df = dfC.get
   
-  def toConstantAssignment = new ConstantAssignment(home, name, alias, df)
-  
   override def compNames = List(("name", 0), ("type",1), ("definition", 2))
   def components = List(StringLiteral(name.toPath), tp.getOrElse(Omitted), df.getOrElse(Omitted),
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))

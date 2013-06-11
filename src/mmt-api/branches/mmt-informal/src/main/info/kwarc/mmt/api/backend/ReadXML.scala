@@ -193,16 +193,17 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                case OMMOD(p) => p
                case _ => throw ParseError("domain of structure must be atomic")
             }
+            val adjustedName = if (name.length > 0) name else LocalName(fromPath)
             val isImplicit = parseImplicit(s2) 
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = new DefinedStructure(thy, name, fromPath, df, isImplicit)
+                  val s = new DefinedStructure(thy, adjustedName, fromPath, df, isImplicit)
                   add(s,md)
                case assignments =>
-                  val s = new DeclaredStructure(thy, name, fromPath, isImplicit)
+                  val s = new DeclaredStructure(thy, adjustedName, fromPath, isImplicit)
                   add(s,md)
-                  readAssignments(OMDL(thy, name), base, assignments)
+                  readAssignments(OMDL(thy, adjustedName), base, assignments)
             }
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly
@@ -233,6 +234,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          }
       }
    }
+   //TODO merge with readSymbols
    def readAssignments(link : Term, base : Path, assignments : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (amd <- assignments) {
          val (a, md) = MetaData.parseMetaDataChild(amd, base) 
@@ -242,10 +244,16 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             case al => Some(LocalName.parse(al))
          }
          a match {
+            case <constant><definition>{t}</definition></constant> =>
+               log("assignment for " + name + " found")
+               val tg = Obj.parseTerm(t, base)
+               val m = ConstantAssignment(link, name, alias, Some(tg))
+               add(m, md)
+            //TODO remove this case when Twelf exports correctly
             case <constant>{t}</constant> =>
                log("assignment for " + name + " found")
                val tg = Obj.parseTerm(t, base)
-               val m = new ConstantAssignment(link, name, alias, Some(tg))
+               val m = ConstantAssignment(link, name, alias, Some(tg))
                add(m, md)
             case <import>{_*}</import> =>
                log("assignment for " + name + " found")
@@ -255,11 +263,16 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                   case _ => throw ParseError("domain of imported morphism must be atomic")
                }
                rest.child match {
-                  case <value>{t}</value> :: Nil =>
+                  case List(<definition>{t}</definition>) =>
                      val tg = Obj.parseTerm(t, base)
-                     val m = new DefLinkAssignment(link, name, fromPath, tg)
+                     val m = DefLinkAssignment(link, name, fromPath, tg)
                      add(m, md)
-                  case c => throw ParseError("value expected: " + c)
+                  //TODO remove this case when Twelf exports correctly
+                  case List(<value>{t}</value>) =>
+                     val tg = Obj.parseTerm(t, base)
+                     val m = DefLinkAssignment(link, name, fromPath, tg)
+                     add(m, md)
+                  case c => throw ParseError("definition expected: " + c)
                }
             case <open/> =>
                //TODO: remove this case when Twelf exports correctly

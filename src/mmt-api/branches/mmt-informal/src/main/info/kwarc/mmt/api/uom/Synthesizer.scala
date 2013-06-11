@@ -63,18 +63,12 @@ object Integrator {
 	   val snippets = getSnippets(out, mod.path)
        out.close
       
-       def merge(c: Constant, code: String) =
-         Constant(c.home, c.name, c.alias, c.tp, Some(mkLambda(code)), c.rl, c.not)
-      
 	   snippets foreach {
 	  	 case (path,code) => 
 	  	   controller.globalLookup.get(path) match {
-           case oldcons : Constant =>
-              val newcons = merge(oldcons, code)
-              controller.library.update(newcons)
-           case oldass : ConstantAssignment =>
-              val newass = merge(oldass.toConstant, code).toConstantAssignment
-              controller.library.update(newass)
+           case c : Constant =>
+              val cN = Constant(c.home, c.name, c.alias, c.tp, Some(mkLambda(code)), c.rl, c.not)
+              controller.library.update(cN)
            case _ =>
          }
 	   }

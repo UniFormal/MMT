@@ -14,11 +14,7 @@ class Closer(controller: Controller) {
    def apply(p: MPath) {
        lup.get(p) match {
           case d: DeclaredTheory =>
-             d.meta foreach apply
-             d.getPrimitiveDeclarations foreach {
-                case PlainInclude(from, _) => apply(from)
-                case _ =>
-             }
+             d.getIncludes foreach apply
              elab.elaborate(d)
           case _ =>
        }
