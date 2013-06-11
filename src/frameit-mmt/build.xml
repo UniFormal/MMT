@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="frameit-mmt" default="deploy" basedir=".">
+
+    <property name="deploy" value="../../deploy"/>
+	
+    <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+    <path id="scalac.classpath">
+        <pathelement location="${deploy}/lib/scala-library.jar"/>
+        <pathelement location="${deploy}/lib/scala-compiler.jar"/>
+        <pathelement location="${deploy}/lib/scala-reflect.jar"/>
+        <pathelement location="${deploy}/lfcatalog/lfcatalog.jar"/>
+        <pathelement location="${deploy}/lib/tiscaf.jar"/>
+    	<pathelement location="${deploy}/mmt/mmt-api.jar"/>
+        <pathelement location="bin"/>
+    </path>
+    <path id="scaladoc.classpath">
+        <path refid="scalac.classpath"/>
+    </path>
+
+    <!-- This defines the task scalac (which is similar to javac but for scala). -->
+
+    <taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="compile" depends="init">
+        <mkdir dir="bin"/>
+        <scalac destdir="bin" srcdir="src" classpathref="scalac.classpath" deprecation="yes" unchecked="yes"/>
+    </target>
+
+    <target name="build" depends="compile">
+        <jar destfile="${ant.project.name}.jar">
+            <fileset dir="bin"/>
+        </jar>
+    </target>
+
+	<!--
+    <target name="scaladoc" depends="init">
+        <mkdir dir="${apidocs}"/>
+        <scaladoc
+            destdir="${apidocs}"
+            doctitle="${prj}"
+            docversion="${mmt.version}"
+            sourcepath="${src.main}"
+            classpathref="scaladoc.classpath"
+            srcdir="${src.main}">
+            <include name="**/*.scala"/>
+        </scaladoc>
+    </target>
+-->
+    <target name="deploy" depends="build">
+        <copy todir="${deploy}/mmt">
+            <fileset file="${ant.project.name}.jar"/>
+        </copy>
+    </target>
+
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
+</project>
