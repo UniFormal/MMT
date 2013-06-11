@@ -32,9 +32,18 @@ case class FormalDeclaration(decl : Declaration) extends SFModuleElem {
 
 sealed trait SFDeclElem extends SFModuleElem
 
-case class SFDeclNode(label : String, child : List[SFDeclElem]) extends SFDeclElem {
-  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, false, child.map(_.toNode) :_*)
-  def components = presentation.StringLiteral(label) :: child.flatMap(_.components)
+case class SFDeclNode(node : scala.xml.Node, childO : Option[List[SFDeclElem]] = None) extends SFDeclElem {
+  def toNode = childO match {
+    case Some(children) => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, children.map(_.toNode) :_*)
+    case None => node
+  }
+  
+  override def toString = toNode.toString
+  
+  def components = childO match {
+    case Some(children) => presentation.StringLiteral(node.label) :: children.flatMap(_.components)
+    case None => presentation.XMLLiteral(node) :: Nil
+  }
 }
 
 case class FormalComponent(comp : Obj) extends SFDeclElem {
@@ -46,10 +55,21 @@ sealed trait SFObjectElem extends SFModuleElem {
      def freeVars : List[LocalName]
 }
 
-case class SFObjectNode(label : String, child : List[SFObjectElem]) extends SFObjectElem {
-  def toNode = new scala.xml.Elem(null, label, scala.xml.Null, scala.xml.TopScope, false, child.map(_.toNode) :_*)
-  def components = presentation.StringLiteral(label) :: child.flatMap(_.components)
-  def freeVars  = child.flatMap(_.freeVars)
+case class SFObjectNode(node : scala.xml.Node, childO : Option[List[SFObjectElem]]) extends SFObjectElem {
+ def toNode = childO match {
+    case Some(children) => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, children.map(_.toNode) :_*)
+    case None => node
+  }
+  
+  def components = childO match {
+    case Some(children) => presentation.StringLiteral(node.label) :: children.flatMap(_.components)
+    case None => presentation.XMLLiteral(node) :: Nil
+  }
+  
+  def freeVars  = childO match {
+    case None => Nil
+    case Some(child) => child.flatMap(_.freeVars)
+  }
 }
 
 case class Text(format: String, obj: String) extends SFObjectElem {

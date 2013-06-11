@@ -225,6 +225,9 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          	val args = ns map (Obj.parseTerm(_, base))
             val inst = new Instance(thy,name,Path.parseS(p,base),args.toList)
             add(inst, md)
+         case <sfdeclaration>{ns @ _*}</sfdeclaration> =>           
+           val decl = new SFDeclaration(thy, name, ns.map(nd => SFDeclNode(nd, None)).toList)
+           add(decl, md)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
          }

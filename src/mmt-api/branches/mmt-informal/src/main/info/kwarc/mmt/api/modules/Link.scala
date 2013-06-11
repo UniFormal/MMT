@@ -34,7 +34,7 @@ trait Link {
   *
   * Declared links are constructed empty. {@link info.kwarc.mmt.api.modules.StatementSet[Assignment]} is derived to hold a set of name-indexed assignments.
   */
-trait DeclaredLink extends Link with Body[Assignment]
+trait DeclaredLink extends Link with Body[SFAssignment]
 
   /**
    * A DeclaredLink represents an MMT link given by an existing morphism.

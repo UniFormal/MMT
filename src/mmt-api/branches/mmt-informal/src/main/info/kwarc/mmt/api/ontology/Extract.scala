@@ -50,6 +50,8 @@ object Extractor {
                      f(IsInstanceOf(i.path, i.pattern))
                   case _: Assignment =>
                      f(dec)
+                  case _: SFDeclaration => 
+                     f(dec)
                }
             }}
          case _ =>

@@ -83,6 +83,7 @@ object Role {
       case "Notation" => Role_Notation
       case "Toplevel" => Role_StrToplevel
       case "module" => Role_ModRef
+      case "SFDecl" => Role_SFDecl
       case "structure" => Role_StructureRef
       case "constant" => Role_ConstantRef
       case "complex-constant" => Role_ComplexConstantRef

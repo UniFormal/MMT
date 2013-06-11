@@ -153,6 +153,7 @@ trait NotationBasedPresenter extends Presenter {
          case Formal(t) => apply(t, rh)
          case objects.Text(format, t) => rh(t)
          case XMLNode(n) => rh(n.toString)
+         case on : SFObjectNode => rh(on.toNode.toString)
       }
          
       //TODO other cases

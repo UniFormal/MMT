@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.presentation._
 
 /**
  * Declaration unifies MMT symbols and MMT assignments.
@@ -36,10 +37,9 @@ abstract class Declaration extends ContentElement {
    def implicitKey : Option[MPath] = None
 }
 
-class SFDeclaration(val home : Term, val tokens : List[SFDeclElem]) extends Declaration {
-  val name = LocalName.Anon
+class SFDeclaration(val home : Term, val name : LocalName, val tokens : List[SFDeclElem]) extends Declaration with SFSymbol with SFAssignment {
   lazy val mpath = home.toMPath
-  def components = home :: tokens.flatMap(_.components)
+  def components = StringLiteral(name.toPath) :: StringLiteral(tokens.mkString(" ")) :: Nil
   def role = Role_SFDecl
-  def toNode = <SFDeclaration home={mpath.toPath}>{tokens.map(_.toNode)}</SFDeclaration>
+  def toNode = <sfdeclaration name={name.toPath}>{tokens.map(_.toNode)}</sfdeclaration>
 }

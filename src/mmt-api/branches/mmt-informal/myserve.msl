@@ -31,6 +31,7 @@ extension info.kwarc.mmt.stex.STeXImporter
 archive add /home/mihnea/kwarc/oaff/urtheories
 archive add /home/mihnea/kwarc/oaff/smglo
 build smglo stex-omdoc 
+build smglo index
 
 //archive add /home/mihnea/kwarc/oaff/latin
 //archive add /home/mihnea/kwarc/oaff/openmath
@@ -40,7 +41,7 @@ build smglo stex-omdoc
 //archive test content
 //archive test validate
 
-mathpath fs http://cds.omdoc.org/styles ../../../styles
+mathpath fs http://cds.omdoc.org/styles ../../../../styles
 base http://docs.omdoc.org/mmt
 server on 8080
 

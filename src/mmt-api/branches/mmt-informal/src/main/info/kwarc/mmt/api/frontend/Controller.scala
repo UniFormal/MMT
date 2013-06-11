@@ -218,7 +218,7 @@ class Controller extends ROController with Logger {
       iterate (e match {
          case c : ContentElement => memory.content.add(c)
          case p : PresentationElement => notstore.add(p)
-         case d : NarrativeElement => docstore.add(d) 
+         case d : NarrativeElement => docstore.add(d)
       })
    }
 

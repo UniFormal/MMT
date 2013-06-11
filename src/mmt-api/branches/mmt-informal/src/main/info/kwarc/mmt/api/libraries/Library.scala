@@ -344,6 +344,8 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          (c,e) match {
             case (t: DeclaredTheory, e: Symbol) => t.add(e)
             case (l: DeclaredLink, e: Assignment) => l.add(e)
+            case (t: DeclaredTheory, e: SFDeclaration) => t.add(e)
+            case (l: DeclaredLink, e: SFDeclaration) => l.add(e)
             case _ => throw AddError("only addition of symbols to declared theories or assignments to declared links allowed")
          }
     }
