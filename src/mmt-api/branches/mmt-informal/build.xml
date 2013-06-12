@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="mmt-api" default="build" basedir=".">
+<project name="immt-api" default="build" basedir=".">
 
-    <property name="deploy" value="../../../deploy"/>
+    <property name="deploy" value="../../../../deploy"/>
 
 	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
