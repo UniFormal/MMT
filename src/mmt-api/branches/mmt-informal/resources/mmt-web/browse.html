@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:jobad="http://omdoc.org/presentation">
+<head>
+  <meta charset="UTF-8" />
+ <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> --> 
+
+  <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/JOBAD.css"/>
+  <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
+  <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+  <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
+
+  <script src="script/codemirror2/lib/codemirror.js"></script>
+  <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css"/>
+  <script src="script/codemirror2/mode/lf/lf.js"></script>
+
+  <script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
+  <script type="text/javascript" src="/script/tree/jquery.hotkeys.js"></script>
+  <script type="text/javascript" src="/script/tree/jquery.jstree.js"></script>
+  <!-- JOBAD Deps -->
+  <script type="text/javascript" src="/script/jobad/deps/underscore-min.js"></script>
+  <!-- JOBAD -->
+  <script type="text/javascript" src="/script/jobad/JOBAD.js"></script>
+  <!-- Services Deps -->
+  <script type="text/javascript" src="/script/jobad/mmt-html.js"></script>
+  <script type="text/javascript" src="/script/jobad/mathml.js"></script>
+  <!-- JOBAD Services -->
+  <script type="text/javascript" src="/script/jobad/modules/navigation.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/hovering.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/interactive-viewing.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/edit.js"></script>
+  <script type="text/javascript" src="/script/jobad/modules/folding.js"></script>
+   
+    <!-- JOBAD Init -->
+  <script type="text/javascript">
+	var JOBAD1;
+	$(function(){	
+	JOBAD1 = new JOBAD($("#main"));
+	JOBAD1.modules.load("kwarc.mmt.navigation", []);
+	JOBAD1.modules.load("kwarc.mmt.hovering", []);
+	JOBAD1.modules.load("kwarc.mmt.intvw", []);
+	JOBAD1.modules.load("kwarc.mmt.editing", []);
+	JOBAD1.modules.load("kwarc.mmt.folding", []);
+	JOBAD1.Setup();
+	})		
+  </script>
+  
+  <script type="text/javascript">
+    $(function () {
+       $("#pathtree").jstree({
+           "core" : {"animation": 0},
+           "xml_data" : {
+              "ajax" : {
+                 "url" : "/:tree",
+                 "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
+              },
+              "xsl" : "nest"
+           },
+           "themes" : {"theme" : "classic", "icons" : false},
+           "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
+       });
+   });
+    
+   var graphWindow = null;
+   function openGraph(focus) {
+      var graphWindow = window.open("/graph.html");
+   };
+   
+   $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
+  </script>
+</head>
+
+<body>
+
+   <div style="width:100%">
+     
+    <div id="top">
+      <div id="title">The MMT Web Server</div>
+      <div id="menu_bar">
+        <span class="pagelink"><a href="">Browser</a></span>
+        <span class="pagelink"><a href="/search.html">Search</a></span>
+        <span class="pagelink"><a href="javascript:openGraph('')">Graph View</a></span>
+        <span class="pagelink"><a href="/uom.html">Universal Machine</a></span>
+        <span class="pagelink"><a href="/admin.html" target="_blank">Administration</a></span>
+      </div>
+    </div>
+   
+    <div id="styleselector">
+      Style: <span id="currentstyle"/><br/>
+      <!--<input type="text" size="20" id="inputstyle"></input><button onclick="javascript:setStyle($('#inputstyle').val())">set</button> -->
+    </div>
+    
+    <div id="breadcrumbs">
+      <div></div>
+    </div>
+
+    <div id="sidebar">
+       <div id="pathtree"></div>
+    </div>
+    
+    
+    <div id="main">
+      <div></div>
+    </div>
+   
+   <div id="latin-dialog"><span/></div>
+    
+   </div>
+
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mmt-api" default="build" basedir=".">
+
+    <property name="deploy" value="../../../deploy"/>
+
+	<!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+    <path id="scalac.classpath">
+        <fileset dir="${deploy}/lib/">
+          <include name="*.jar"/>
+        </fileset>
+    	<pathelement location="lib/jfxrt.jar"/>
+        <pathelement location="bin"/>
+    </path>
+	
+    <path id="scaladoc.classpath">
+        <path refid="scalac.classpath"/>
+    </path>
+
+    <!-- This defines the task scalac (which is similar to javac but for scala). -->
+
+    <taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="compile" depends="init">
+        <mkdir dir="bin"/>
+        <scalac destdir="bin" srcdir="src" classpathref="scalac.classpath" deprecation="yes" unchecked="yes"/>
+    </target>
+
+    <target name="build" depends="compile">
+        <jar destfile="${ant.project.name}.jar">
+            <manifest>
+                <attribute name="Main-Class" value="info.kwarc.mmt.api.frontend.Run"/>
+            	 <attribute name="Class-Path" value="."/>
+            </manifest>
+            <service type="info.kwarc.tntbase.pluginapi.TntIntegrationPlugin"><!-- produces wrong directory, fix by updating to ant 1.7.1 -->
+                <provider classname="${root.pkg}.tntplugin.TNTValidation"/>
+                <provider classname="${root.pkg}.tntplugin.TNTPresenter"/>
+            </service>
+            <fileset dir="resources" />
+            <fileset dir="bin"/>
+        </jar>
+    </target>
+
+    <target name="deploy" depends="build">
+        <copy todir="${deploy}/mmt">
+            <fileset file="${ant.project.name}.jar"/>
+        </copy>
+    </target>
+
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
+</project>

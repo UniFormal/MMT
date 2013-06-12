@@ -1,0 +1,212 @@
+/*TOOLTIPS*/
+.tip {
+   text-align: left;
+   width:auto;
+   max-width:500px;
+}
+
+.tip-title {
+  font-size: 11px;
+  text-align:center;
+  margin-bottom:2px;
+}
+
+#graph-container {
+    width:800px;
+	top:50px;
+    left:100px;
+    background-color:#fafafa;
+    color:#ccc;
+    height:600px;
+    position:absolute;
+	border-style:dashed;
+	border-width:1px;
+}
+
+#graph {
+    position:relative;
+    width:800px;
+    height:600px;
+    margin:auto;
+    overflow:hidden;
+}
+
+/*TOOLTIPS*/
+.tip {
+    color: #111;
+    width: 139px;
+    background-color: white;
+    border:1px solid #ccc;
+    -moz-box-shadow:#555 2px 2px 8px;
+    -webkit-box-shadow:#555 2px 2px 8px;
+    -o-box-shadow:#555 2px 2px 8px;
+    box-shadow:#555 2px 2px 8px;
+    opacity:0.9;
+    filter:alpha(opacity=90);
+    font-size:10px;
+    font-family:Verdana, Geneva, Arial, Helvetica, sans-serif;
+    padding:7px;
+}
+
+#inner-details {
+    font-size:0.8em;
+    list-style:none;
+    margin:7px;
+}
+
+#log {
+    position:absolute;
+    top:10px;
+    font-size:1.0em;
+    font-weight:bold;
+    color:#23A4FF;
+}
+
+#command {
+	position: absolute;
+	top: 0px;
+	left: 800px;
+	width: 300px;
+	height: 600px;
+	border-style: dashed;
+	border-width: 1px;
+	color: #0a0a0a;
+}
+
+#theory_content {
+	width: 800px;
+	left: 100px;
+	border-style: dashed;
+	border-width: 1px;
+}
+
+#adjacencies {
+	position: absolute;
+	width: 300px;
+	height: 500px;
+	top: 600px;
+	left: 800px;
+	border-style: dashed;
+	border-width: 1px;
+	padding: 5px 5px 5px 5px;
+	color: #000000;
+}
+
+#command .header {
+	font: bold 13px Verdana;
+	color: white;
+	background: #616161;
+	text-transform: uppercase;
+	padding: 7px 0 7px 31px;
+	clear: both;
+}
+
+#command .header .section {
+	text-decoration: none;
+	display: block;
+	color: white;
+	cursor: pointer;
+}
+
+#command ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	margin-bottom: 0;
+	cursor: default;
+}
+
+#command ul li {
+	padding: 0 0 3px 10px;
+}
+
+#command ul li input {
+	font: normal 12px Arial;
+	background: #E9E9E9;
+	display: inline-block;
+	padding: 5px 0;
+	line-height: 17px;
+	padding-left: 8px;
+	text-decoration: none;
+}
+
+#command ul li span.menuitem {
+	font: normal 12px Arial;
+	background: #E9E9E9;
+	display: inline-block;
+	padding: 5px 5px;
+	line-height: 17px;
+	padding-left: 8px;
+	text-decoration: none;
+}
+
+#command ul li span.menuitem:hover {
+	color: white;
+	background: black;
+	cursor: pointer;
+}
+
+span.legend {
+	display:block;
+}
+
+#command .legend .nodes {
+	width: 200px;
+	float: left;
+}
+
+#command .legend.edges {
+	width: 100px;
+	float: right;
+}
+
+.circle {
+	float: left;
+	display: block;
+	width: 10px;
+	height: 10px;
+	background: #333;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	position: relative;
+	top: 6px;
+}
+
+.red {
+	background: #ff0000;
+}
+
+.orange {
+	background: #ffaa00;
+}
+
+.square {
+	float: left;
+	display: block;
+	width: 10px;
+	height: 10px;
+	background: #333;
+	position: relative;
+	top: 5px;
+}
+
+.lightgray {
+	background: #ADAD85;
+}
+
+.blue {
+	background: blue;
+}
+
+.green {
+	background: green;
+}
+
+.darkgray {
+	background: #52527A;
+}
+
+span.name {
+	cursor: pointer;
+	color: #000000;
+}

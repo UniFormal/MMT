@@ -1,0 +1,23 @@
+#localcommands {
+   position: fixed;
+   top: 0%;
+   height: 5%;
+   width: 90%;
+}
+
+#output {
+   position: fixed;
+   top: 5%;
+   height: 88%;
+   width: 90%;
+   border-style: solid;
+   border-width: thin;
+   padding: 5px;
+}
+
+#remotecommands {
+   position: fixed;
+   top: 95%;
+   height: 5%;
+   width: 90%;
+}

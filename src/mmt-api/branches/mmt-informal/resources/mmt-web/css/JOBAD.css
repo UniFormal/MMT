@@ -1,0 +1,99 @@
+/*
+	JOBAD.css
+	Contains JOBAD UI CSS Data
+*/
+
+/* general */
+.JOBAD {
+	/* general JOBAD class applied to all JOBAD items */
+}
+
+/* JOBAD Hover */
+.JOBAD.JOBAD_Hover {
+	position: fixed;
+	background-color: #696969;
+	-webkit-border-radius: 5;
+	-moz-border-radius: 5;
+	border-radius: 5;
+	border: 1px solid #000000;
+}
+
+/* JOBAD ContextMenu */
+.JOBAD.JOBAD_Contextmenu {
+	/* applied to the context menu */
+}
+
+/* JOBAD Sidebar */
+.JOBAD.JOBAD_Sidebar {
+	/* applied to all sidebar elements (including parent) */
+}
+
+
+.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Group, .JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Single {
+	/* JOBAD Sidebar Group or single */
+	position: absolute;
+	right: 0px; 
+}
+
+.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_group_element {
+	position: relative;
+}
+
+.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Wrapper {
+	/* wraps the element that has a sidebar */
+	width: 100%;
+	float: left;
+	overflow: hidden;	
+}
+
+.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Container {
+	/* Contains all sidebar elements */
+	height: 1px; /* something positive */
+	position: relative;
+	float: right;
+}
+
+.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Notification {
+	/* Sidebar Notifications */
+	-webkit-border-radius: 5;
+	-moz-border-radius: 5;
+	border-radius: 5;
+}
+
+.JOBAD_Sidebar_Hover {
+	position: fixed;
+	-webkit-border-radius: 5;
+	-moz-border-radius: 5;
+	border-radius: 5;
+}
+
+.JOBAD.JOBAD_Sidebar.JOBAD_Notification_info {
+	/* Information */
+	background-color: #0033FF;
+	border: 1px solid #0000FF;
+}
+.JOBAD.JOBAD_Sidebar.JOBAD_Notification_warning {
+	/* Warning */
+	background-color: #FFFF00;
+	border: 1px solid #FFAA00;
+}
+.JOBAD.JOBAD_Sidebar.JOBAD_Notification_error {
+	/* Error */	
+	background-color: red;
+	border: 1px solid red;
+}
+
+/*
+	JOBAD jQuery UI CSS compatibility fixes
+*/
+
+/* fix for bad size */
+.ui-widget { font-size: 62.5%; }
+/* vertical tabs (for module manager) */
+.ui-tabs-vertical { width: 55em; }
+.ui-tabs-vertical .ui-tabs-nav { padding: .2em .1em .2em .2em; float: left; width: 12em; }
+.ui-tabs-vertical .ui-tabs-nav li { clear: left; width: 100%; border-bottom-width: 1px !important; border-right-width: 0 !important; margin: 0 -1px .2em 0; }
+.ui-tabs-vertical .ui-tabs-nav li a { display:block; }
+.ui-tabs-vertical .ui-tabs-nav li.ui-tabs-active { padding-bottom: 0; padding-right: .1em; border-right-width: 1px; border-right-width: 1px; }
+.ui-tabs-vertical .ui-tabs-panel { padding: 1em; float: right; width: 40em;}
+

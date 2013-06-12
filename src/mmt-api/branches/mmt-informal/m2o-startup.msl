@@ -1,0 +1,15 @@
+log console
+log+ archive
+//log+ controller
+//log+ backend
+//log+ library
+mathpath fs http://latin.omdoc.org/ /home/mihnea/kwarc/oaff/mml/lib/
+extension info.kwarc.mmt.mizar.mizar.translator.MizarCompiler
+archive add /home/mihnea/kwarc/oaff/mml/     
+archive mml compile
+//archive mml content
+//http://latin.omdoc.org/foundations/mizar/mizar-curry.omdoc
+//http://latin.omdoc.org/foundations/mizar/HIDDEN.omdoc
+//http://latin.omdoc.org/foundations/mizar/mizar-patterns.omdoc
+//archive mml flat
+//archive mml mws-flat
