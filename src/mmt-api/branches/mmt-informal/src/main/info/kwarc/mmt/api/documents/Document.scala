@@ -51,6 +51,20 @@ class Document(val path : DPath) extends NarrativeElement {
            case r => r.toNode
         }}
      </omdoc>
+        
+   /** 
+    * prints document with all references expanded
+    */
+   def toNodeExpanded(lib: Lookup, docstore : DocStore) : scala.xml.Node = 
+      <omdoc base={path.toPath}>
+        {items map {
+           case r : DRef => docstore.get(r.target).toNodeExpanded(lib, docstore) //to remove wrapping <omdoc> element, necessary?
+           case r : MRef => lib.get(r.target).toNode
+           case r : SRef => lib.get(r.target).toNode
+           case r => r.toNode //narrative element
+        }}
+     </omdoc>
+     
 }
 
 trait DocumentItem extends Content {

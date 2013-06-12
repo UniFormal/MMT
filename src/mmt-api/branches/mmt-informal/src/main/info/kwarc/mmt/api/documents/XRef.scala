@@ -6,12 +6,12 @@ import presentation._
 /**
  * An XRef represents a reference from a document to an external document part or module.
  * An XRef is semantically equivalent to copy-pasting the referenced module.
- * All documents are reprgesented as lists of XRefs no matter whether a module is given locally or remotely.
+ * All documents are represented as lists of XRefs no matter whether a module is given locally or remotely.
  * @param parent the containing document
  * @param target the referenced module
  * @param generated true iff the module was given directly in the document rather than referenced remotely
  */
-abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElement with DocumentItem {
+sealed abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElement with DocumentItem {
    val path = parent
    def components = List(StringLiteral(target.toString), StringLiteral(target.last))
    def toNode : scala.xml.Node
@@ -41,6 +41,20 @@ object MRef {
       if (generated) r.setOrigin(DocumentSkeleton)
       r
    }
+}
+
+/** reference to a Statement/Symbol */
+class SRef(p : DPath, override val target : GlobalName) extends XRef(p, target) {
+  val role = Role_SRef
+  def toNode = <sref target={target.toPath}/>
+}
+object SRef {
+  def apply(p : DPath, target : GlobalName, generated: Boolean = false) : SRef = {
+    val r = new SRef(p, target)
+    if (generated) r.setOrigin(DocumentSkeleton)
+    r
+    
+  }
 }
 
 class NRef(p: DPath, target: DPath) extends XRef(p, target) {

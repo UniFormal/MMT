@@ -13,6 +13,7 @@ abstract class Role(override val toString : String, componentNames : (String,Int
 case object Role_Document            extends Role("Document")
 case object Role_DRef                extends Role("DRef")
 case object Role_MRef                extends Role("MRef")
+case object Role_SRef                extends Role("SRef")
 case object Role_Narration           extends Role("Narration")
 case object Role_DeclaredTheory      extends Role("Theory", ("name", 0), ("meta", 1))
 case object Role_DefinedTheory       extends Role("Theory", ("name", 0), ("definiens", 1))

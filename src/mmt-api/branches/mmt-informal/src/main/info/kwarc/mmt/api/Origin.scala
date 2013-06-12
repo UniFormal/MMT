@@ -17,4 +17,3 @@ case object MetaInclude extends Origin
 case class InstanceElaboration(instance: GlobalName) extends Origin
 /** obtained by replacing document parts with references */
 case object DocumentSkeleton extends Origin
-
