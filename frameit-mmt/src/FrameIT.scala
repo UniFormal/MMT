@@ -27,7 +27,7 @@ class FrameitPlugin extends ServerPlugin with Logger {
    
    def apply(uriComps: List[String]): Option[HLet] = {
      try {
-       uriComps.tail match {
+       uriComps match {
          case "get" :: _ => Some(GetResponse)
          case _ => None
        }
