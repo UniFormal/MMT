@@ -155,7 +155,7 @@ object UnsafeBeta extends BreadthRule(Apply.path){
  * LocalName.Anon is used for x */ 
 object ExpandArrow extends ComputationRule(Arrow.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
-      case Arrow(a,b) => Some(Pi(LocalName.Anon, a, b))
+      case Arrow(a,b) => Some(Pi(OMV.anonymous, a, b))
       case _ => None
    }
 }
