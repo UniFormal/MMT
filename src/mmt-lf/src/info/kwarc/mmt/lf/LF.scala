@@ -80,7 +80,7 @@ object Pi {
             apply(Context(rest:_*), s)      
          Some(n,t,newScope)
 	   case OMA(LF.arrow,args) =>
-	      val name = LocalName.Anon
+	      val name = OMV.anonymous
 	      if (args.length > 2)
 	     	 Some((name, args(0), OMA(LF.arrow, args.tail)))
 	      else
@@ -148,7 +148,7 @@ object FunType {
   def unapply(t: Term): Option[(List[(Option[LocalName], Term)], Term)] = t match {
       case Pi(name, tp, bd) =>
          val nm = name match {
-            case LocalName.Anon => None
+            case OMV.anonymous => None
             case x => Some(x)
          }
          val (remainingArgs,ultimateScope) = unapply(bd).get //always returns non-None
