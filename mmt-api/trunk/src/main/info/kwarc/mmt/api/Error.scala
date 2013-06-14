@@ -50,8 +50,8 @@ abstract class Invalid(s: String) extends Error(s)
 case class InvalidElement(elem: StructuralElement, s : String, causedBy: Error = null) extends Invalid("invalid element: " + s + ": " + elem.path.toPath) {
     if (causedBy != null) setCausedBy(causedBy)
 }    
-/** errors that occur when structural elements are invalide */
-case class InvalidObject(obj: objects.Obj, s : String) extends Invalid("invalid object: " + s + ": " + obj)
+/** errors that occur when objects are invalid */
+case class InvalidObject(obj: objects.Obj, s : String) extends Invalid("invalid object: " + s)
 /** errors that occur when presenting a knowledge item */
 case class PresentationError(s : String) extends Error(s)
 /** errors that occur when registering extensions  */
