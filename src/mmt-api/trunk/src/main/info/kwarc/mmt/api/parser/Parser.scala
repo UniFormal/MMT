@@ -202,13 +202,9 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             val head = OMID(con)
             //construct a Term according to args, vars, and scopes
             //this includes sorting args and vars according to the abstract syntax
-            if (args == Nil && vars == Nil && scopes == Nil) {
-                  //no args, vars, scopes --> OMID
-                  if (arity.isConstant)
-                    head
-                  else
-                    //no args but an empty sequence argument ---> OMA(_,Nil)
-                    OMA(head, Nil)
+            if (arity.isConstant && args == Nil && vars == Nil && scopes == Nil) {
+               //no args, vars, scopes --> OMID
+               head
             } else {
                   // order the arguments
                   val orderedArgs = args.sortBy(_._1)
@@ -260,6 +256,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   }
                   if (finalVars == Nil && scopes == Nil) {
                      // no vars, scopes --> OMA
+                     // finalArgs may be Nil
                      prag.strictApplication(con.module.toMPath, head, finalArgs)
                   } else if (finalVars != Nil) {
                      val context = Context(finalVars : _*)
