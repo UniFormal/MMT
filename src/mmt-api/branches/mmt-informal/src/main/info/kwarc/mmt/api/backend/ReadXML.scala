@@ -65,6 +65,17 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	         log("mref to " + t + " found")
 	         val r = MRef(docParent.get, Path.parseM(t,modParent), false)
 	         add(r)
+         case <sref/> => 
+             val t = xml.attr(m, "target")
+             log("mref to " + t + " found")
+	         val r = SRef(docParent.get, Path.parseS(t,modParent), false)
+	         add(r)
+         case <definition>{_*}</definition> => 
+             val targetsS = xml.attr(m, "for").split(" ")
+             val targets = targetsS.map(st => Path.parseS(st, modParent))
+             val contentXML = m.child.head
+             val content = Narration.parseNarrativeObject(contentXML)
+             new Definition(targets.toList, content)
          case scala.xml.Comment(_) =>
          case <metadata>{_*}</metadata> => //TODO
          case _ =>

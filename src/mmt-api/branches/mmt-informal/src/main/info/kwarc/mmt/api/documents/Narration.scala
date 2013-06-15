@@ -3,44 +3,65 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.presentation.{XMLLiteral}
 import objects._
 
-trait SemiFormalXML {
+
+object Narration {
+  def parseNarrativeObject(n : scala.xml.Node) : NarrativeObject= {
+    new NarrativeText(n.toString) //TODO
+  }
+  
+}
+
+trait NarrativeObject extends Content {
   def toNode : scala.xml.Node 
+  def role = Role_NarrativeObject
+  def governingPath = None
+
 }
 
-class ObjectNode(val tokens : List[SemiFormalObject]) extends SemiFormalXML with SemiFormalObjectList {
-  def toNode = <omtext>{tokens map (_.toNode)}</omtext> 
-  override def toString = tokens.map(_.toString).mkString(""," ", "")
+class NarrativeText(val text : String) extends NarrativeObject {
+  def toNode = scala.xml.Text(text)
+  def components = presentation.StringLiteral(text) :: Nil
 }
 
-class XMLNode(val node : scala.xml.Node) extends SemiFormalXML {
-  def toNode = node
+class NarrativeTerm(val term : Term) extends NarrativeObject {
+  def toNode = term.toNode
+  def components = term :: Nil
 }
 
-class SemiFormalNode(val node : scala.xml.Node,val child : List[SemiFormalNode]) extends SemiFormalXML {
+class NarrativeRef(val target : Path, val text : String) extends NarrativeObject {
+  def toNode = <om:ref link={target.toPath}> {text} </om:ref>
+  def toHTML = <span jobad:href={target.toPath}> {text} </span>
+  def components = presentation.StringLiteral(text) :: Nil
+}
+
+class NarrativeNode(val node : scala.xml.Node,val child : List[NarrativeObject]) extends NarrativeObject {
   def toNode = new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, child.map(_.toNode) :_ *)
+  def components = child
 }
 
 /* A Narration instance represents unstructured narrative content
  * such as sentences and paragraphs.
  * The tokens it contains are words, sentences, or mathematical objects. 
  */
-abstract class Narration(val text : SemiFormalXML) extends DocumentItem {
+abstract class Narration(val content : NarrativeObject) extends DocumentItem {
+  def toHTML : scala.xml.Node = scala.xml.Text("") //TODO
   def role = Role_Narration
   def governingPath = None
+  
 }
 
 
-class Definition(val targets : List[GlobalName], text : SemiFormalXML) extends Narration(text) {
-  def toNode = <definition for="target"> {text.toNode} </definition>  
-  def components =  XMLLiteral(text.toNode) :: Nil //TODO  
+class Definition(val targets : List[GlobalName], content : NarrativeObject) extends Narration(content) {
+  def toNode = <definition for={targets.mkString(" ")}> {content.toNode} </definition>  
+  def components =  content :: Nil //TODO  
 }
 
-class Example(val targets : List[GlobalName], text : SemiFormalXML) extends Narration(text) {
-  def toNode = <example for="target"> {text.toNode} </example>  
-  def components =  XMLLiteral(text.toNode) :: Nil //TODO      
+class Example(val targets : List[GlobalName], content : NarrativeObject) extends Narration(content) {
+  def toNode = <example for="target"> {content.toNode} </example>  
+  def components =  XMLLiteral(content.toNode) :: Nil //TODO      
 }
 
-class Assertion(val targets : List[GlobalName], text : SemiFormalXML) extends Narration(text) {
-  def toNode = <assertion for="target"> {text.toNode} </assertion>
-  def components =  XMLLiteral(text.toNode) :: Nil //TODO      
+class Assertion(val targets : List[GlobalName], content : NarrativeObject) extends Narration(content) {
+  def toNode = <assertion for="target"> {content.toNode} </assertion>
+  def components =  XMLLiteral(content.toNode) :: Nil //TODO      
 }

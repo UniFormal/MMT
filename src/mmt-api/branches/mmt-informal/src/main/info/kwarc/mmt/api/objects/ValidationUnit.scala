@@ -32,7 +32,8 @@ class Validator(controller: Controller) extends Logger {
                solver.getConstraints foreach {
                   case j: WFJudgement =>
                      errorCont(InvalidObject(j.wfo, j.present(controller.presenter.asString)))
-                  case j => errorCont(InvalidObject(v.judgement.wfo, "unresolved constraint: " + j.present(controller.presenter.asString)))
+                  case j =>
+                     errorCont(InvalidObject(v.judgement.wfo, "unresolved constraint: " + j.present(controller.presenter.asString)))
                }
                //errorCont(InvalidObject(v.judgement.wfo, solver.toString))
             }

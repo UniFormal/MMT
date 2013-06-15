@@ -150,6 +150,7 @@ trait NotationBasedPresenter extends Presenter {
          case objects.Text(format, t) => rh(t)
          case XMLNode(n) => rh(n.toString)
       }
+      case OMHID => //nothing to do
          
       //TODO other cases
    }}
@@ -225,16 +226,22 @@ trait NotationBasedPresenter extends Presenter {
                doVariable(n, rh)
                doOperator("=", rh)
                recurse(t, rh, noBrackets)
-         case c: Context => c.init.foreach {v =>
-               recurse(v, rh, noBrackets)
-               doOperator(", ", rh)
+         case c: Context =>
+            if (! c.isEmpty) {
+               c.init.foreach {v =>
+                  recurse(v, rh, noBrackets)
+                  doOperator(", ", rh)
+               }
+               recurse(c.last, rh, noBrackets)
             }
-            recurse(c.last, rh, noBrackets)  
-         case s: Substitution => s.init.foreach {c =>
-               recurse(c, rh, noBrackets)
-               doOperator(", ", rh)
+         case s: Substitution =>
+            if (! s.isEmpty) {
+               s.init.foreach {c =>
+                  recurse(c, rh, noBrackets)
+                  doOperator(", ", rh)
+               }
+               recurse(s.last, rh, noBrackets)
             }
-            recurse(s.last, rh, noBrackets) 
        }
    }
 }

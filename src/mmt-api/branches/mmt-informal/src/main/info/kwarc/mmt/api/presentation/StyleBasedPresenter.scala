@@ -5,6 +5,7 @@ import objects._
 import objects.Conversions._
 import utils._
 import parser._
+import documents._
 
 /** This class collects the parameters that are globally fixed during one presentation task.
  * @param rh the rendering handler that collects the generated output
@@ -104,6 +105,33 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             render(notation.presentation, s.contComponents, None, List(0), gpar, lpar)
          case s:SemiFormalObject =>
             s.components.foreach(c => present(c, gpar, lpar)) //could be much better
+         case n:Narration => 
+           val key = NotationKey(None,n.role)
+           val notation = controller.get(gpar.nset, key)
+           render(notation.presentation, n.contComponents, None, List(0), gpar, lpar)
+         case no:NarrativeObject => no match {
+           case nd : NarrativeNode => 
+             gpar.rh.elementStart("", nd.node.label)
+             var attrs = nd.node.attributes 
+             attrs foreach {m => 
+               m.key
+               gpar.rh.attributeStart("", m.key)
+               gpar.rh(m.value.toString)
+               gpar.rh.attributeEnd()
+             }
+             nd.child.map(ch => present(ch, gpar, lpar))
+             gpar.rh.elementEnd()
+           case nt: NarrativeText =>
+             gpar.rh(" ")
+             gpar.rh(nt.text)
+             gpar.rh(" ")
+           case nr: NarrativeRef => 
+             gpar.rh(nr.toHTML) //todo style to jobad compatible markup
+           case nr: NarrativeTerm => 
+             present(nr.term, gpar, lpar)
+             
+         }
+           
          case o1: Obj =>
             val (o, posP, notationOpt) = o1 match {
                case t: Term => getNotation(t)

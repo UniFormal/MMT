@@ -13,7 +13,10 @@ abstract class Judgement {
   val stack: Stack
    /** a toString method that may call a continuation on its objects
     */
-   def present(cont: Obj => String) = toString 
+  def present(cont: Obj => String) = toString
+  def presentStack(cont: Obj => String) = {
+     stack.theory.toString + "; " + cont(stack.context)
+  }
 }
 
 /** A WFJudgment defines well-formed objects */
@@ -34,7 +37,7 @@ case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends J
      ret
    }
    override def present(cont: Obj => String): String =
-      stack.toString + " |- " + cont(t1) + " = " + cont(t2) + (if (t.isDefined) " : " + cont(t.get) else "")
+      presentStack(cont) + " |- " + cont(t1) + " = " + cont(t2) + (if (t.isDefined) " : " + cont(t.get) else "")
 }
 
 /** represents a typing judgement
@@ -49,7 +52,7 @@ case class Typing(stack: Stack, tm: Term, tp: Term) extends WFJudgement {
   }
   val wfo = tm
   override def present(cont: Obj => String): String =
-      stack.toString + " |- " + cont(tm) + " : " + cont(tp)
+      presentStack(cont) + " |- " + cont(tm) + " : " + cont(tp)
 }
 
 case class Universe(stack: Stack, univ: Term) extends WFJudgement {
