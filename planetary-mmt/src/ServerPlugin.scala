@@ -76,16 +76,21 @@ class PlanetaryPlugin extends ServerPlugin with Logger {
    }
    
    private def getDescendants(p : Path) : List[String] = {
-     getChildren(p) match {
-       case Nil => List(p.last + " " + p.toString, "")
-       case l => (p.last + " " + p.toString) :: l.map(getDescendants).flatten ::: List("")
+     try {
+       getChildren(p) match {
+         case Nil => List(p.last + " " + p.toString, "")
+         case l => (p.last + " " + p.toString) :: l.map(getDescendants).flatten ::: List("")
+       }
+     } catch {
+       case x : Error => Nil //if MMT Error silently ignore
+       case x : Throwable => Nil // also silently ignore
      }
    }
    
    private def getChildren(p : Path) : List[Path] = {
      controller.get(p).components collect {
        case ref : XRef => ref.target
-     }
+     } 
    }
    
    
