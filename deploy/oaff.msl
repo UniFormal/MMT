@@ -31,6 +31,9 @@ archive add ../../oaff/latin
 
 archive add ../../oaff/openmath
 
+archive add ../../oaff/smglo
+
+
 mathpath fs http://cds.omdoc.org/styles ../styles
 base http://docs.omdoc.org/mmt
 server on 8080
