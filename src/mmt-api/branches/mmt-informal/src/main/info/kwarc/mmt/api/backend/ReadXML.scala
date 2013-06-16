@@ -74,7 +74,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
              val targetsS = xml.attr(m, "for").split(" ")
              val targets = targetsS.map(st => Path.parseS(st, modParent))
              val contentXML = m.child.head
-             val content = Narration.parseNarrativeObject(contentXML)
+             val content = Narration.parseNarrativeObject(contentXML)(modParent)
              val d = new Definition(modParent, targets.toList, content)
              add(d)
          case scala.xml.Comment(_) =>

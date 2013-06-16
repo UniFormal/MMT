@@ -5,8 +5,18 @@ import objects._
 
 
 object Narration {
-  def parseNarrativeObject(n : scala.xml.Node) : NarrativeObject= {
-    new NarrativeText(n.toString) //TODO
+  def parseNarrativeObject(n : scala.xml.Node)(implicit dpath : DPath) : NarrativeObject = n.label match {
+    case "#PCDATA" => new NarrativeText(n.toString)
+    case "OMOBJ" => new NarrativeTerm(Obj.parseTerm(n, dpath))
+  
+    case "ref" => 
+      val targetS = (n \ "@target").text
+      val target = Path.parse(targetS, dpath)
+      val text = n.child.head.toString
+      new NarrativeRef(target, text)
+    case _ => 
+      val child = n.child.map(parseNarrativeObject)
+      new NarrativeNode(n, child.toList)
   }
   
 }
@@ -24,7 +34,7 @@ class NarrativeText(val text : String) extends NarrativeObject {
 }
 
 class NarrativeTerm(val term : Term) extends NarrativeObject {
-  def toNode = term.toNode
+  def toNode = <om:OMOBJ> {term.toNode} </om:OMOBJ>
   def components = term :: Nil
 }
 
@@ -44,7 +54,6 @@ class NarrativeNode(val node : scala.xml.Node,val child : List[NarrativeObject])
  * The tokens it contains are words, sentences, or mathematical objects. 
  */
 abstract class Narration(val dpath : DPath, val content : NarrativeObject) extends NarrativeElement with DocumentItem {
-  def toHTML : scala.xml.Node = scala.xml.Text("") //TODO
   def role = Role_Narration
   def path = dpath
   def parent = dpath
