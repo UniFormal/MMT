@@ -99,12 +99,6 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             render(notation.presentation, ContentComponents(c :: opComps), None, List(0), gpar, lpar)
          case l: Literal =>
             gpar.rh(l)
-         case s: StructuralElement =>
-            val key = NotationKey(Some(s.path), s.role)
-            val notation = controller.get(gpar.nset, key)
-            render(notation.presentation, s.contComponents, None, List(0), gpar, lpar)
-         case s:SemiFormalObject =>
-            s.components.foreach(c => present(c, gpar, lpar)) //could be much better
          case n:Narration => 
            val key = NotationKey(None,n.role)
            val notation = controller.get(gpar.nset, key)
@@ -128,10 +122,15 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
            case nr: NarrativeRef => 
              gpar.rh(nr.toHTML) //todo style to jobad compatible markup
            case nr: NarrativeTerm => 
-             present(nr.term, gpar, lpar)
-             
+             present(nr.term, gpar, lpar)             
          }
-           
+         case s: StructuralElement =>
+            val key = NotationKey(Some(s.path), s.role)
+            val notation = controller.get(gpar.nset, key)
+            render(notation.presentation, s.contComponents, None, List(0), gpar, lpar)
+         case s:SemiFormalObject =>
+            s.components.foreach(c => present(c, gpar, lpar)) //could be much better
+            
          case o1: Obj =>
             val (o, posP, notationOpt) = o1 match {
                case t: Term => getNotation(t)

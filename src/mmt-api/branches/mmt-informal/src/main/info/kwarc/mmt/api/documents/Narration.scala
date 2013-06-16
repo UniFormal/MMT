@@ -43,25 +43,25 @@ class NarrativeNode(val node : scala.xml.Node,val child : List[NarrativeObject])
  * such as sentences and paragraphs.
  * The tokens it contains are words, sentences, or mathematical objects. 
  */
-abstract class Narration(val content : NarrativeObject) extends DocumentItem {
+abstract class Narration(val dpath : DPath, val content : NarrativeObject) extends NarrativeElement with DocumentItem {
   def toHTML : scala.xml.Node = scala.xml.Text("") //TODO
   def role = Role_Narration
-  def governingPath = None
-  
+  def path = dpath
+  def parent = dpath
 }
 
 
-class Definition(val targets : List[GlobalName], content : NarrativeObject) extends Narration(content) {
+class Definition(dpath : DPath, val targets : List[GlobalName], content : NarrativeObject) extends Narration(dpath, content) {
   def toNode = <definition for={targets.mkString(" ")}> {content.toNode} </definition>  
   def components =  content :: Nil //TODO  
 }
 
-class Example(val targets : List[GlobalName], content : NarrativeObject) extends Narration(content) {
+class Example(dpath : DPath, val targets : List[GlobalName], content : NarrativeObject) extends Narration(dpath, content) {
   def toNode = <example for="target"> {content.toNode} </example>  
   def components =  XMLLiteral(content.toNode) :: Nil //TODO      
 }
 
-class Assertion(val targets : List[GlobalName], content : NarrativeObject) extends Narration(content) {
+class Assertion(dpath : DPath, val targets : List[GlobalName], content : NarrativeObject) extends Narration(dpath, content) {
   def toNode = <assertion for="target"> {content.toNode} </assertion>
   def components =  XMLLiteral(content.toNode) :: Nil //TODO      
 }
