@@ -124,6 +124,14 @@
         </then>
       </if>
   </notation>
+
+
+    <notation role="Narration">
+    <element name="tr">
+      <attribute name="class" value="omdoc-symbol"/>
+      <element name="td"><component index="0"/></element>
+    </element>
+  </notation>
   
   <notation role="Pattern">
     <element name="tr">
