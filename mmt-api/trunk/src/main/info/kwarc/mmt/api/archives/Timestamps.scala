@@ -12,10 +12,7 @@ case object Unmodified extends Modification
 class Timestamps(srcFolder: File, stampFolder: File) {
    def set(path: List[String]) {
       val file = stampFolder / path
-      file.getParentFile.mkdirs()
-      val out = File.Writer(file)
-      out.write(System.currentTimeMillis.toString)
-      out.close
+      File.write(file,System.currentTimeMillis.toString)
    }
    def get(path: List[String]) : Long = {
       val file = stampFolder / path

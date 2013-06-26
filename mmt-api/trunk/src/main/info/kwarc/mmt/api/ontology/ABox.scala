@@ -26,10 +26,10 @@ class RelStore(report : frontend.Report) {
    /** retrieves all Relation declarations */
    def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
 
-   def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
-   def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
+   //def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
+   //def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
 
-   /** adds a declaration */
+   /** adds a RelationalElement */
    def +=(d : RelationalElement) {
       log(d.toString)
       d match {
@@ -43,50 +43,21 @@ class RelStore(report : frontend.Report) {
       }
    }
    
-   /** deletes a path from the relation library */
-   def deleteSubj(subj : Path) {
-     // currently implementation is quite ugly, restructuring might be useful
-     val sd = subjects.flatMap(x => x._2.flatMap(y => if (y == subj) List((x._1,y)) else Nil))
-     sd.map(p => subjects -= (p._1,p._2))
-     val od = objects.flatMap(x => x._2.flatMap(y => if (x._1._1 == subj) List((x._1,y)) else Nil))
-     od.map(p => objects -= (p._1,p._2))
-     val dd = dependencies.flatMap(x => x._2.flatMap(y => if (x._1._1 == subj) List((x._1,y)) else Nil))
-     dd.map(p => dependencies -= (p._1,p._2))
-     
-     
+   /** deletes all RelationalElements with a given subject */
+   def deleteSubject(subj : Path) {
      types -= subj
-     val id = individuals.flatMap(x => x._2.flatMap(y => if (y == subj) List((x._1,y)) else Nil))
-     id.map(p => individuals -= (p._1,p._2))     
+     individuals.values.foreach {v => v -= subj} 
+     subjects.values.foreach {v => v -= subj}
+     objects.keys.foreach {k =>
+        if (k._1 == subj)
+           objects -= k 
+     }
+     dependencies.keys.foreach {k =>
+        if (k._1 == subj)
+           dependencies -= k 
+     }
    }
 
-
-  /*
-
-   /** renames a path from the relation library */
-   def renameSubj(old : Path, nw : Path) {
-	 // currently implementation is quite ugly, restructuring might me useful
-     val sd = subjects.flatMap(x => x._2.flatMap(y => if (y == old) List((x._1,y)) else Nil))
-     sd.map(p => subjects -= (p._1,p._2))
-     sd.map(p => subjects += (p._1,nw))
-     val od = objects.flatMap(x => x._2.flatMap(y => if (x._1._1 == old) List((x._1,y)) else Nil))
-     od.map(p => objects -= (p._1,p._2))
-     od.map(p => objects += ((nw,p._1._2),p._2))
-     
-     val dd = dependencies.flatMap(x => x._2.flatMap(y => if (x._1._1 == old) List((x._1,y)) else Nil))
-     dd.map(p => dependencies -= (p._1,p._2))
-     dd.map(p => dependencies += ((nw,p._1._2),p._2))
-     
-     types(nw) = types(old)
-     types -= old
-     val id = individuals.flatMap(x => x._2.flatMap(y => if (y == old) List((x._1,y)) else Nil))
-     id.map(p => individuals -= (p._1,p._2))     
-     id.map(p => individuals += (p._1,nw))     
-     
-   }
-
-   */
-
-   
    def queryList(start : Path, q : RelationExp) : List[Path] = {
       var ps : List[Path] = Nil
       query(start, q) {p => ps ::= p}

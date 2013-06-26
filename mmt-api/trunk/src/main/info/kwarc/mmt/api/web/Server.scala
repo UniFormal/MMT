@@ -73,10 +73,6 @@ class Server(val port: Int, controller: Controller) extends HServer {
       Util.getComponents(req.uriPath) match {
         case ":tree" :: _ => Some(XmlResponse(tree(req.query)))
         case ":query" :: _ => Some(QueryResponse)
-        case ":graph" :: _ =>
-          val mmtpath = Path.parse(req.query, controller.getBase)
-          val json: JSONType = graph(mmtpath)
-          Some(JsonResponse(json))
         case ":breadcrumbs" :: _ =>
           val mmtpath = Path.parse(req.query, controller.getBase)
           val node = scala.xml.Utility.trim(Util.breadcrumbs(mmtpath))
@@ -344,7 +340,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
     }
   }
 
-
+  
   /** Response when the first path component is :mmt */
   private def MmtResponse: HLet = new HLet {
     def act(tk: HTalk) {
@@ -509,6 +505,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
     }
   }
 
+  /*
   def kindToColor(kind: String) : String = kind match {
       case "Meta" => "#0000ff"
       case "Include" => "#adad85"
@@ -559,6 +556,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
             )}))
       )})
   }
+  */
 }
 
 // Initial rewrites not implemented

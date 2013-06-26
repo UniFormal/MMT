@@ -11,7 +11,10 @@ object xml {
       N
    }
    
-   /** writes an XML Node to a file */
+   /** writes an XML Node to a file
+    *  
+    * overwrites existing files, creates directories if necessary
+    */
    def writeFile(N : scala.xml.Node, file : java.io.File) {
       file.getParentFile.mkdirs
       val out = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file),"UTF-8"))

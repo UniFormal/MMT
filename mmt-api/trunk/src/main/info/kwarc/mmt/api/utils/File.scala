@@ -58,7 +58,15 @@ object File {
    def apply(s: String) : File = File(new java.io.File(s))
    
    def Writer(f: File) = new PrintWriter(new OutputStreamWriter(new FileOutputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+   /**
+    * convenience method for writing a string into a file
+    * 
+    * overwrites existing files, creates directories if necessary
+    * @param f the target file
+    * @param s the content to write
+    */
    def write(f: File, s: String) {
+      f.toJava.getParentFile.mkdirs
       val fw = Writer(f)
       fw.write(s)
       fw.close
