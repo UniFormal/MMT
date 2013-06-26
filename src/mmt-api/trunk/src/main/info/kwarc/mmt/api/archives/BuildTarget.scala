@@ -79,7 +79,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
    /** the output archive folder */
    val outDim: String
    /** the file extension used for generated files, defaults to outDim, override as needed */
-   val outExt: String = outDim
+   def outExt: String = outDim
    /**
     * there is no inExt, instead we test to check which files should be used; 
     * this is often a test for the file extension

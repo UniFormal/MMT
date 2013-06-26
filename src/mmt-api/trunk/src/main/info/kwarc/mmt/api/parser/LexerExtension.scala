@@ -97,9 +97,12 @@ case class QuotePart(text: String) extends QuoteEvalPart
 case class EvalPart(text: String) extends QuoteEvalPart
 
 /**
- * A LexerExtension that lexes natural number literals
+ * A LexerExtension that lexes nested formal/informal terms
  * 
- * accepts nonLetter digit*
+ * @param bQ beginning of quoted (informal) part at toplevel or inside a formal part
+ * @param eQ end of quoted (informal) part
+ * @param bE beginning of evaluated (formal) part inside an informal part
+ * @param eE end of evaluated (formal) part 
  */
 class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExtension {
   def applicable(s: String, i: Int) = s.substring(i).startsWith(bQ)
@@ -176,13 +179,18 @@ trait EscapeHandler extends LexerExtension {
 }
 
 trait SemiFormalParser {
+   val formatOpt: Option[String]
    def parse(begin: String, text: String, end: String): Term = {
-      //TODO clean up
-      val r = Reader(text)
-      val (format,_) = r.readToken
-      val (rest,_) = r.readAll
-      r.close
-      OMSemiFormal(objects.Text(format, rest))
+      formatOpt match {
+         case Some(format) =>
+            OMSemiFormal(objects.Text(format, text))
+         case None => 
+            val r = Reader(text)
+            val (format,_) = r.readToken
+            val (rest,_) = r.readAll
+            r.close
+            OMSemiFormal(objects.Text(format, rest))
+      }
    }
 }
 
@@ -237,7 +245,13 @@ abstract class SymmetricEscapeHandler(delim: Char, exceptAfter: Char) extends Es
 }
 
 
-object GenericEscapeHandler extends AsymmetricEscapeHandler(Reader.escapeChar.toString, Reader.unescapeChar.toString) with SemiFormalParser
+object GenericEscapeHandler extends AsymmetricEscapeHandler(Reader.escapeChar.toString, Reader.unescapeChar.toString) with SemiFormalParser {
+   val formatOpt = None
+}
+object QuoteHandler extends SymmetricEscapeHandler('\"', '\\') with SemiFormalParser {
+   val formatOpt = Some("quoted")
+}
+
 object IEEEFloatLiteral extends AsymmetricEscapeHandler("f\"", "\"") {
    def parse(begin: String, text: String, end: String): Term = ???
 }

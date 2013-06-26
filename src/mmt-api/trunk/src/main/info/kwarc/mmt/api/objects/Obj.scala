@@ -570,9 +570,9 @@ object Obj {
 
   private def fromPathEncodingAux(s: String) : Term =
      try {
-        s match {
-           case MPathEncodedOMS(p: ContentPath) => OMID(p)
+       s match {
            case MPathEncodedOMA(p: ContentPath, args) => OMA(OMID(p), args map fromPathEncodingAux)
+           case MPathEncodedOMS(p: ContentPath) => OMID(p)
            case _ => throw ParseError("not an MPath-encoded Term: " + s)
         }
      } catch {case e: ParseError => 
@@ -589,9 +589,26 @@ object Obj {
   private object MPathEncodedOMA {
       def unapply(s: String): Option[(Path,List[String])] =
          if (s.startsWith("(") && s.endsWith(")")) {
-            val parts = s.substring(1,s.length - 1).split(sepString).toList
-            val op = Path.parse(parts.head)
-            Some((op, parts.tail))
+            // s is of the form (op___(op___arg___arg)___arg) where ___ == sepString
+            var left = s.substring(1,s.length-1).split(sepString).toList
+            var found : List[String] = Nil
+            var level = 0
+            var current: List[String] = Nil
+            while (! left.isEmpty) {
+               val head = left.head
+               left = left.tail
+               current ::= head
+               if (head.startsWith("(")) level += 1
+               if (head.endsWith(")")) level -= 1
+               if (level == 0) {
+                  found ::= current.reverse.mkString(sepString)
+                  current = Nil
+               }
+            }
+            found = found.reverse
+            // now found is of the form List(op, (op___arg___arg), arg) 
+            val op = Path.parse(found.head)
+            Some((op, found.tail))
          }
          else
            None

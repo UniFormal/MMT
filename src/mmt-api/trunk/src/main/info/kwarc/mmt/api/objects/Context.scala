@@ -228,7 +228,7 @@ object VarDecl {
                val key = Path.parseS(xml.attr(a, "key"), base)
                val value = Obj.parseTerm(t, base)
                attrs = (key, value) :: attrs
-            /* //no support for OpenMath style OMATTR
+            //TODO remove support for OpenMath style OMATTR
             case k @ <OMS/> =>
                val key = Obj.parseOMS(k, base) match {
                   case g: GlobalName => g
@@ -238,12 +238,12 @@ object VarDecl {
                if (left == Nil) throw ParseError("missing attribution value: " + N)
                val vl = left.head
                key match {
-                  case mmt.mmttype => tp = Some(parseType(vl))
-                  case mmt.mmtdef => df = Some(parseDef(vl))
+                  case mmt.mmttype => tp = Some(Obj.parseTerm(vl, base))
+                  case mmt.mmtdef => df = Some(Obj.parseTerm(vl, base))
                   case _ =>
-                     val value = parseOther(vl)
+                     val value = Obj.parseTerm(vl, base)
                      attrs = (key, value) :: attrs
-               }*/
+               }
          }
          left = left.tail
       }

@@ -63,7 +63,7 @@ object Action extends RegexParsers {
      private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "register" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
-   private def extension = "extension" ~> str ~ (str *) ^^ {case c ~ args => AddExtension(c, args)}
+   private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ {case c ~ args => AddExtension(c, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
    private def server = serveron | serveroff
      private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
@@ -108,7 +108,9 @@ object Action extends RegexParsers {
    private def file = str ^^ {s => File(home.resolve(s))}
    private def uri = str ^^ {s => URI(s)}
    private def int = str ^^ {s => s.toInt}
+   private def strMaybeQuoted = quotedStr | str
    private def str = "\\S+"r        //regular expression for non-empty word without whitespace
+   private def quotedStr = ("\".*\""r) ^^ {s => s.substring(1,s.length-1)}       //regular expression for quoted string (that may contain whitespace)
    /** parses an action from a string, relative to a base path */
    def parseAct(s:String, b : Path, h: File) : Action = {
       base = b
