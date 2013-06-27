@@ -55,13 +55,13 @@ case class InvalidObject(obj: objects.Obj, s : String) extends Invalid("invalid 
 /** errors that occur when presenting a knowledge item */
 case class PresentationError(s : String) extends Error(s)
 /** errors that occur when registering extensions  */
-case class ExtensionError(s : String) extends Error(s)
+case class RegistrationError(s : String) extends Error(s)
 /** errors that are not supposed to occur, e.g., when input violates the precondition of a method */
 case class ImplementationError(s : String) extends Error("implementation error: " + s)      
 /** errors that occur during substitution with name of the variable for which the substitution is defined */
 case class SubstitutionUndefined(name: LocalName, m: String) extends Error("Substitution undefined at " + name.toString + "; " + m)
 
-/** errors that do not fit any of the above categories */
-case class OtherError(s : String) extends Error(s)
-
 case class LookupError(name : LocalName) extends Error("variable " + name.toString + " not declared in context")
+
+/** base class for errors that are thrown by an extension */
+abstract class ExtensionError(prefix: String, s : String) extends Error(prefix + ": " + s)

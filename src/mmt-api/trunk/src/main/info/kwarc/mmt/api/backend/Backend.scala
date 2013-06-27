@@ -168,7 +168,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
       val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
-          val entries = target.list().toList.filter(_ != ".svn") //TODO: should be an exclude pattern
+          val entries = target.list().toList.filter(x => x != ".svn" && x != ".omdoc") //TODO: should be an exclude pattern
           val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
           Storage.virtDoc(entries, relativePrefix)
         } else throw BackendError(path)

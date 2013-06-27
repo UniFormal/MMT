@@ -7,8 +7,11 @@ import scala.collection.mutable.{HashSet,HashMap}
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
+ * 
  * Triples (subject, binary, object) are hashed three ways so that for any two components
  * the set of third components can be retrieved efficiently.
+ * 
+ * Use [[TheoryGraph]] for theory graph-level querying 
  */
 class RelStore(report : frontend.Report) {
    private val individuals = new HashMapToSet[Unary, Path]
@@ -61,6 +64,11 @@ class RelStore(report : frontend.Report) {
    def queryList(start : Path, q : RelationExp) : List[Path] = {
       var ps : List[Path] = Nil
       query(start, q) {p => ps ::= p}
+      ps
+   }
+   def querySet(start : Path, q : RelationExp) : HashSet[Path] = {
+      var ps = new HashSet[Path]()
+      query(start, q) {p => ps += p}
       ps
    }
    /**

@@ -34,7 +34,7 @@ trait Link {
   *
   * Declared links are constructed empty. Body is derived to hold a set of name-indexed assignments.
   */
-trait DeclaredLink extends Link with Body[Symbol]
+trait DeclaredLink extends Link with Body
 
   /**
    * A DeclaredLink represents an MMT link given by an existing morphism.

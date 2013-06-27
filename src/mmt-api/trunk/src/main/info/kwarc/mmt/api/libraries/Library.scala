@@ -350,19 +350,20 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
             case _ => throw AddError("only addition of symbols to declared theories or assignments to declared links allowed")
          }
     }
-    e match {
-       case l: Link if l.isImplicit =>
-          try {
-             implicitGraph(l.from, l.to) = l.toTerm
-          } catch {case AlreadyDefined(m) =>
-             throw AddError("implicit link " + l.path + " in conflict with existing implicit morphism " + m)
+    try {
+       e match {
+          case l: Link if l.isImplicit =>
+                implicitGraph(l.from, l.to) = l.toTerm
+          case t: DeclaredTheory => t.meta match {
+             case Some(m) =>
+                implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(t.toTerm)
+             case None =>
           }
-       case t: DeclaredTheory => t.meta match {
-          case Some(m) => implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(t.toTerm)
-          case None =>
+          case _ =>
+          //TODO add equational axioms
        }
-       case _ =>
-       //TODO add equational axioms
+    } catch {case AlreadyDefined(m) =>
+       throw AddError("implicit link induced by " + e.path + " in conflict with existing implicit morphism " + m)
     }
   }
 
