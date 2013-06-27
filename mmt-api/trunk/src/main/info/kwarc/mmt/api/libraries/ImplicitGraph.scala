@@ -47,7 +47,10 @@ class LabeledHashRelation[N,E] {
    }.mkString("\n")
 }
 
-
+/**
+ * thrown if the uniqueness condition of UniqueGraph is violated
+ *  @param value the existing value
+ */
 case class AlreadyDefined[E](value: E) extends java.lang.Throwable
 
 /** A diagram of theories and morphisms.

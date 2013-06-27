@@ -15,8 +15,8 @@ class MMTCompiler extends Compiler {
 
   def includeFile(n: String) : Boolean = n.endsWith(".mmt") || n.endsWith(".elf")
     
-  def buildOne(in: File, dpath: Option[DPath], out: File) : List[SourceError] = {
-    val (doc, errorList) = controller.read(in, dpath)
+  def buildOne(in: File, dpath: DPath, out: File) : List[SourceError] = {
+    val (doc, errorList) = controller.read(in, Some(dpath))
     val invErrors = controller.checker(doc)
     val outFile = out.setExtension("omdoc")
     File.write(outFile, doc.toNodeResolved(controller.localLookup).toString)

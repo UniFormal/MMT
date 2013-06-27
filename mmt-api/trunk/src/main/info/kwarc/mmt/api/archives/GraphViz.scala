@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
+import documents._
+import ontology._
 import utils._
 
 class GraphViz extends TraversingBuildTarget {
@@ -22,14 +24,16 @@ class GraphViz extends TraversingBuildTarget {
       }
    }
    
-   def buildOne(inFile: File, dpathOpt: Option[DPath], outFile: File): List[Error] = {
-      val (doc,_) = controller.read(inFile, dpathOpt)
-      val mods = doc.getItems.flatMap {
-         case r: documents.MRef => List(r.target)
-         case _ => Nil
-      }
+   /** creates dot file and calls graphviz on it to produce svg file
+    *
+    *  the resulting theory graph contains all modules declared anywhere in this document  
+    */
+   def buildOne(inFile: File, dpath: DPath, outFile: File): List[Error] = {
+      val theories = controller.depstore.querySet(dpath, Transitive(+Declares) * HasType(IsTheory))
+      val views = controller.depstore.querySet(dpath, Transitive(+Declares) * HasType(IsView))
       val dotFile = outFile.setExtension("dot")
-      tg.exportDot(dotFile)(p => mods.contains(p))
+      val gv = new ontology.GraphExporter(theories, views, tg)
+      gv.exportDot(dotFile)
       val command : List[String] = List("\"" + graphviz + "\"", "-Tsvg", "-o" + outFile, dotFile.toString)
       log(command.mkString(" "))
       val proc = new java.lang.ProcessBuilder(command: _*).start() // use .inheritIO() for debugging
@@ -38,9 +42,13 @@ class GraphViz extends TraversingBuildTarget {
       if (ev != 0) {
          val scanner = new java.util.Scanner(proc.getErrorStream).useDelimiter("\\A")
          val message = if (scanner.hasNext) scanner.next else ""
-         val error = OtherError("graphviz error: " + message)
-         List(error)
+         List(LocalError(message))
       } else
          Nil
+   }
+   
+   /** same as buildOne but for the document given by the directory */
+   override def buildDir(inDir: File, dpath: DPath, outFile: File): List[Error] = {
+      buildOne(inDir, dpath, outFile)
    }
 }

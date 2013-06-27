@@ -441,7 +441,8 @@ class Controller extends ROController with Logger {
 	      case Read(f) => read(f)
 	      case Graph(f) =>
 	         val tg = new TheoryGraph(depstore)
-            tg.exportDot(f)(_ => true)
+	         val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
+            gv.exportDot(f)
 	      case Check(p) =>
 	         try {
 	            checker(p)

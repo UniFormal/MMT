@@ -15,7 +15,8 @@ object Extractor {
       e match {
          case d: Document =>
             f(IsDocument(d.path))
-            d.getLocalItems.foreach {x =>
+            //TODO should getLocalItems but then it wouldn't work for documents created from folders
+            d.getItems.foreach {x =>
                f(Declares(d.path, x.target))
             }
          case t: Theory =>
