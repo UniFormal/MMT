@@ -176,7 +176,10 @@ var mmt = {
 	
 	sideBarClick : function(event,p) {
 	      if (event.detail == 1) navigation.navigate(p);
-	      else if (event.detail == 2) graphWindow.navigateGraph(p);
+	      else if (event.detail == 2) {
+	         if (graphWindow == null) openGraph();
+	         graphWindow.navigateGraph(p);
+	      }
 	},
 
 	/*
