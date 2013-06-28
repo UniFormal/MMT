@@ -130,13 +130,13 @@ var mmt = {
 			var pres = "_present_" + this.notstyle;
 		else
 			var pres = '';
-        var relativeURL = '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
+      var relativeURL = '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
 		return this.makeURL(relativeURL);
 	},
 
     ajaxReplaceIn : function (url, targetid) {
 		function cont(data) {
-			var targetnode = $('#' + targetid).children('div');
+			var targetnode = $('#' + targetid).children();
 			targetnode.replaceWith(data.firstChild);
 		}
 		$.ajax({ 'url': url,
@@ -144,7 +144,7 @@ var mmt = {
 				 'success': cont
 			   });
 	},
-		
+	
 	load : function (elem) {
 	   if (elem.hasAttribute('jobad:load')) {
          var url = this.adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
@@ -174,6 +174,10 @@ var mmt = {
 		window.open(url, '_blank', '', false);
 	},
 	
+	sideBarClick : function(event,p) {
+	      if (event.detail == 1) navigation.navigate(p);
+	      else if (event.detail == 2) graphWindow.navigateGraph(p);
+	},
 
 	/*
 	  There are some small UI problems left to fix:

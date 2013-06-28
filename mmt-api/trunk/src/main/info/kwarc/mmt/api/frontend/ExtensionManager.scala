@@ -13,8 +13,13 @@ trait Extension extends Logger {
    protected var controller : Controller = null
    protected var report : Report = null
    
-   /** the prefix used to identify this extension for logging, by default the qualified class name */
-   def logPrefix = getClass.toString
+   lazy val defaultPrefix = {
+      val s = getClass.toString
+      val p = s.lastIndexOf(".")
+      if (p == -1) s else s.substring(p+1)
+   }
+   /** the prefix used to identify this extension for logging, by default the class name */
+   def logPrefix = defaultPrefix
    
    /** a custom error class for this extension */
    case class LocalError(s: String) extends ExtensionError(logPrefix, s)
@@ -68,6 +73,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= QuoteHandler
       lexerExtensions ::= new PrefixEscapeHandler('\\')
       lexerExtensions ::= new NumberLiteralHandler(true)
+      serverPlugins   ::= new web.SVGServer
       // initialize all extensions
       getAll.foreach(_.init(controller, Nil))
    }

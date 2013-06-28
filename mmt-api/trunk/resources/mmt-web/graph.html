@@ -1,13 +1,21 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/" xmlns:jobad="http://omdoc.org/presentation">
 <head>
+  <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+  <script type="text/javascript" src="/script/jobad/mmt-html.js"></script>
   <script type="text/javascript">
     var mainWindow = window.opener;
     function navigate(to) {
        mainWindow.navigation.navigate(to);
     };
+    function navigateGraph(doc){
+       mmt.ajaxReplaceIn('/:graph?' + doc, 'graph')
+    }
   </script>
 </head>
 <body>
-  <object data="graph.dot.svg" type="image/svg+xml" /> 
+  <div id="graph">
+  <div/>
+  </div>
+  <!--<object data="graph.dot.svg" type="image/svg+xml" />--> 
 </body>
 </html>
