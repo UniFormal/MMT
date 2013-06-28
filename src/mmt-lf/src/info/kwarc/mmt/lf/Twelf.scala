@@ -36,7 +36,7 @@ class Twelf extends Compiler {
    var unsafe : Boolean = true
    /** Twelf setting "set chatter ..." */
    var chatter : Int = 5
-   var catalogOpt : Option[Catalog] = None
+   var catalog : Catalog = null
    var port = 8083
    
    /** 
@@ -47,26 +47,26 @@ class Twelf extends Compiler {
       super.init(con, Nil)
       if (args.isEmpty) throw ParseError("no path to Twelf given")
       path = File(args(0))
-      val cat = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
-      cat.init    //  throws PortUnavailable
-      catalogOpt = Some(cat)
+      catalog = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
+      catalog.init    //  throws PortUnavailable
    }
    override def register(arch: Archive) {
       val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
       val stringLoc = (arch.root / dim).getPath
-      catalogOpt.foreach(_.addStringLocation(stringLoc))
+      catalog.addStringLocation(stringLoc)
       super.register(arch)
    }
    override def destroy {
-      catalogOpt.foreach(_.destroy)
+      catalog.destroy
    }
    
    /** 
      * Compile a Twelf file to OMDoc
      * @param in the input Twelf file 
+     * @param dpath unused (could be passed to Twelf as the default namespace in the future)
      * @param out the file in which to put the generated OMDoc
      */
-   def buildOne(in: File, dpath: Option[DPath], out: File) : List[SourceError] = {
+   def buildOne(in: File, dpath: DPath, out: File) : List[SourceError] = {
       File(out.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
@@ -75,9 +75,7 @@ class Twelf extends Compiler {
       val output = new BufferedReader(new InputStreamReader(proc.getInputStream()))
       input.println("set chatter " + chatter)
       input.println("set unsafe " + unsafe)
-      catalogOpt foreach {cat =>
-         input.println("set catalog " + cat.queryURI)
-      }
+      input.println("set catalog " + catalog.queryURI)
       input.println("loadFile " + in)
       input.println("Print.OMDoc.printDoc " + in + " " + out.setExtension("omdoc"))
       input.println("OS.exit")
@@ -101,17 +99,3 @@ class Twelf extends Compiler {
       errors.reverse
    }
 }
-
-/*
-object TwelfTest {
-   def main(args: Array[String]) {
-      val twelf = new Twelf(File("c:\\twelf-mod\\bin\\twelf-server.bat"))
-      twelf.init
-      twelf.addCatalogLocation(File("c:/Twelf/Unsorted/testproject/source"))
-      //twelf.check(File("e:\\other\\twelf-mod\\examples-mod\\test.elf"), File(".")) 
-      val errors = twelf.compile(File("c:/Twelf/Unsorted/testproject/source/test.elf"), File("c:/Twelf/Unsorted/testproject/source/test.omdoc"))
-      println(errors.mkString("\n"))
-      twelf.destroy
-   }
-}
-*/
