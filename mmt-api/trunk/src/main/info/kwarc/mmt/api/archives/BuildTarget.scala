@@ -129,7 +129,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
          val errors = buildOne(inFile, DPath(a.narrationBase / inPath), outFile)
            errorMap(inPath) = errors
            if (! errors.isEmpty) {
-             log(errors.mkString("errors follow\n", "\n", "\n"))
+             log("errors follow")
+             errors foreach log
            }
            a.timestamps(key).set(inPath)
        }, {

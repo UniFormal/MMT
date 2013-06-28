@@ -8,13 +8,13 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
    private var causedBy: Option[java.lang.Throwable] = None
    def setCausedBy(e: java.lang.Throwable): Error = {causedBy = Some(e); this}
    def getCausedBy : Option[java.lang.Throwable] = causedBy
-   def msg : String = {
+   def longMsg : String = {
       val causedByMsg = causedBy match {
         case None => ""
-        case Some(e: Error) => "\ncaused by\n" + e.msg
+        case Some(e: Error) => "\ncaused by\n" + e.longMsg
         case Some(e) => "\ncaused by\n" + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n","\n","")
       }
-      shortMsg + "\n" + stackTrace + causedByMsg
+      getMessage + "\n" + stackTrace + causedByMsg
    }
    def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
    override def toString = shortMsg
