@@ -61,7 +61,8 @@ class Index extends BuildTarget {
     
    private def buildDir(a: Archive, inPath: List[String]) {
         val doc = controller.get(DPath(a.narrationBase / inPath)).asInstanceOf[Document]
-        writeToRel(doc, a.relDir / inPath / ".omdoc")
+        val inPathFile = Archive.narrationSegmentsAsFile(inPath, "omdoc")
+        writeToRel(doc, a.relDir / inPathFile)
    }
     
     /** deletes content, narration, notation, and relational; argument is treated as paths in narration */

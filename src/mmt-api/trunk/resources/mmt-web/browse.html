@@ -65,8 +65,8 @@
    });
     
    var graphWindow = null;
-   function openGraph(focus) {
-      var graphWindow = window.open("/graph.html");
+   function openGraph() {
+      graphWindow = window.open("/graph.html");
    };
    
    $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
@@ -82,7 +82,7 @@
       <div id="menu_bar">
         <span class="pagelink"><a href="">Browser</a></span>
         <span class="pagelink"><a href="/search.html">Search</a></span>
-        <span class="pagelink"><a href="javascript:openGraph('')">Graph View</a></span>
+        <span class="pagelink"><a href="javascript:openGraph()">Graph View</a></span>
         <span class="pagelink"><a href="/uom.html">Universal Machine</a></span>
         <span class="pagelink"><a href="/admin.html" target="_blank">Administration</a></span>
       </div>

@@ -29,7 +29,7 @@ abstract class ROArchive extends Storage with Logger {
   val logPrefix = "archive"
   
   val narrationBackend : Storage
-
+  
   /** Get a module from content folder (wrapped in <omdoc>) */
   def get(m: MPath) : scala.xml.Node
 
@@ -54,6 +54,7 @@ abstract class WritableArchive extends ROArchive {
     val narrationDir = root / "narration"
     val contentDir = root / "content"
     val relDir = root / "relational"
+    val svgDir = root / "svg"
     val flatDir = root / "flat"
     
     val timestamps = new TimestampManager(this, root / "META-INF" / "timestamps" )
@@ -67,7 +68,7 @@ abstract class WritableArchive extends ROArchive {
        val p = MMTPathToContentPath(m)
        utils.xml.readFile(p)
     }
-
+    
     protected val custom : ArchiveCustomization = {
        properties.get("customization") match {
           case None => new DefaultCustomization
@@ -75,9 +76,9 @@ abstract class WritableArchive extends ROArchive {
        }
     }
     
-    /** compilation errors */
-    protected val compErrors = new LinkedHashMap[List[String], List[SourceError]]
-    def getErrors(l: List[String]) = compErrors.getOrElse(l, Nil)
+    // obsolete compilation errors
+    //protected val compErrors = new LinkedHashMap[List[String], List[SourceError]]
+    //def getErrors(l: List[String]) = compErrors.getOrElse(l, Nil)
 
     protected def deleteFile(f: File) {
        log("deleting " + f)
@@ -346,6 +347,28 @@ object Archive {
        val uri = m.parent.uri
        val schemeString = uri.scheme.map(_ + "..").getOrElse("")
        (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(escape(m.name.flat) + ".omdoc")
+    }
+   /**
+    * Makes sure that a path refers to a file, not to a folder, using .extension files to store information about folders  
+    * @param segs a path in a folder with narration structure
+    * @param extension a file extension
+    * @return segs with an appended segment ".extension" if there is no such segment yet
+    */
+    def narrationSegmentsAsFile(segs: List[String], extension: String) : List[String] = {
+      if (! segs.isEmpty && segs.last.endsWith("."+extension)) segs
+      else segs ::: List("."+extension)
+    }
+   /**
+    * Inverse of narrationSegmentsAsFile  
+    * @param segs a path in a folder with narration structure that ends in ".extension"
+    * @param extension a file extension
+    * @return segs with a final segment ".extension" removed if there is one
+    * 
+    * This is inverse to narrationSegmentsAsFile if all files and no folders in the respective dimension end in ".extension"
+    */
+    def narrationSegmentsAsFolder(segs: List[String], extension: String) : List[String] = {
+      if (! segs.isEmpty && segs.last == "." + extension) segs.init
+      else segs
     }
     /** returns a functions that filters by file name extension */
     def extensionIs(e: String) : String => Boolean = _.endsWith("." + e)  
