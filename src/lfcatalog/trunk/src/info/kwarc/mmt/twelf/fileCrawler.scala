@@ -399,7 +399,7 @@ class FileCrawler(file : File) {
   private def crawlCommentThrowBlock(start: Int) : Int = 
   {
     var i = start + "%{".length
-    i = flat.indexOf("}%", i)
+    i = flat.indexOf("}%", i) //TODO handle nested comments
     if (i == -1)
       throw ParseError(toPair(start, lineStarts) + ": error: comment does not close")
       return i + "}%".length
