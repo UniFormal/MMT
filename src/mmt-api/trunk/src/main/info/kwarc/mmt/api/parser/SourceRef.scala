@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils._
  */
 case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   /** inverse of SourceRegion.parse */
-  override def toString = start.toString + "-" + end
+  override def toString = start.toString + "-" + end.toString
   /** l.c-l.c*/
   def twoDimString = start.twoDimString + "-" + end.twoDimString
   /** number of characters in this region */

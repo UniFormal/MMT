@@ -90,7 +90,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
             case e: Error =>
               controller.report(e)
               controller.report.clear
-              Some(XmlResponse(Util.div("error: " + e.msg)))
+              Some(XmlResponse(Util.div("error: " + e.longMsg)))
           }
         case ":change" :: _ => Some(ChangeResponse)
         case ":uom" :: _ => Some(UomResponse)
@@ -377,7 +377,7 @@ class Server(val port: Int, controller: Controller) extends HServer {
       } catch {
         case e: Error =>
            val ns = utils.xml.namespace("html")
-           XmlResponse(<div xmlns={ns}>{e.msg.split("\\n").map(s => <p>{s}</p>)}</div>).act(tk)
+           XmlResponse(<div xmlns={ns}>{e.longMsg.split("\\n").map(s => <p>{s}</p>)}</div>).act(tk)
       }
     }
   }

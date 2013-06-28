@@ -8,6 +8,7 @@ trait Logger {
    protected def report: Report
    def logPrefix: String
    protected def log(s : => String) = report(logPrefix, s)
+   protected def log(e: Error) = report(e)
    protected def logGroup[A](a: => A) : A = {
       report.indent
       try {a}
@@ -24,10 +25,10 @@ class Report {
    /** logs a message if logging is switched on for the group */
    def apply(group : => String, msg : => String) : Unit =
 	   if (groups.contains(group) || groups.contains("*")) log(group, msg)
-   /** outputs an error (category "error") */
+   /** outputs an error (categories "error" and "debug" for short and long message, respectively) */
    def apply(e : Error) {
-	   apply("error", e.msg)
-	   apply("debug", "\n" + e.stackTrace)
+	   apply("error", e.shortMsg)
+	   apply("debug", e.longMsg)
 	}
    /** definitely logs a message */
    private def log(group : => String, msg : => String) {
