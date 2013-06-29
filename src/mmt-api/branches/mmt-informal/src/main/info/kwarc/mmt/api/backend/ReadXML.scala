@@ -59,6 +59,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	         val d = xml.attr(m, "target")
 	         log("dref to " + d + " found")
 	         val r = DRef(docParent.get, Path.parseD(d,modParent), false)
+	         println(d, " ", r.target)
 	         add(r)
          case <mref/> =>
 	         val t = xml.attr(m, "target")
@@ -73,7 +74,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          case <definition>{_*}</definition> => 
              val targetsS = xml.attr(m, "for").split(" ")
              val targets = targetsS.map(st => Path.parseS(st, modParent))
-             val contentXML = m.child.head
+             val contentXML = m.child.find(_.label == "CMP").getOrElse(throw ParseError("Expected CMP inside definition"))
              val content = Narration.parseNarrativeObject(contentXML)(modParent)
              val d = new Definition(modParent, targets.toList, content)
              add(d)

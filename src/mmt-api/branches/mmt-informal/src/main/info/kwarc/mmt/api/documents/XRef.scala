@@ -21,7 +21,7 @@ sealed abstract class XRef(val parent : DPath, val target : Path) extends Narrat
 /** reference to a document section */
 class DRef(p : DPath, override val target : DPath) extends XRef(p, target) {
    val role = Role_DRef
-   def toNode = <omdoc href={target.toPath}/>
+   def toNode = <dref target={target.toPath}/>
 }
 object DRef {
    def apply(p : DPath, target : DPath, generated: Boolean = false): DRef = {

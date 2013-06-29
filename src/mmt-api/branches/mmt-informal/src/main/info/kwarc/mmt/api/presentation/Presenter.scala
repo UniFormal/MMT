@@ -21,6 +21,7 @@ abstract class Presenter extends frontend.Extension {
       apply(o, sb)
       sb.get
    }
+   
    /** transforms into pragmatic form and tries to retrieve a notation
     *  
     *  if the term but not the pragmatic form has a notation, the strict form is retained 
@@ -117,11 +118,13 @@ object OMDocPresenter extends Presenter {
    def apply(c : StructuralElement, rh : RenderingHandler) {
       val sb = new scala.collection.mutable.StringBuilder
       pp.format(c.toNode, sb)
-      rh(sb.result)
+      //rh(sb.result)
+      rh(c.toNode) //must be type node, otherwise XML rh will escape it
    }
    def apply(o: Obj, rh: RenderingHandler) {
       val sb = new scala.collection.mutable.StringBuilder
       pp.format(o.toNode, sb)
-      rh(sb.result)
+      //rh(sb.result)
+      rh(o.toNode)
    }
 }

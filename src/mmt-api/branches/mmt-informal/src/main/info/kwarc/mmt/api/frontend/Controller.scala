@@ -197,6 +197,7 @@ class Controller extends ROController with Logger {
          case NotFound(p : Path) => throw GetError("retrieval failed for " + p) 
       }
    }
+   
    /** retrieves a knowledge item */
    def get(path : Path) : StructuralElement = {
       path match {

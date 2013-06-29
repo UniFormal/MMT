@@ -34,7 +34,7 @@ class NarrativeText(val text : String) extends NarrativeObject {
 }
 
 class NarrativeTerm(val term : Term) extends NarrativeObject {
-  def toNode = <om:OMOBJ> {term.toNode} </om:OMOBJ>
+  def toNode = new scala.xml.Elem("om", "OMOBJ", new scala.xml.PrefixedAttribute("xmlns","om", "http://www.openmath.org/OpenMath", scala.xml.Null), scala.xml.TopScope, false, term.toNode)
   def components = term :: Nil
 }
 
