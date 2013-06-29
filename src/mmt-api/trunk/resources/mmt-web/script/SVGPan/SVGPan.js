@@ -1,3 +1,4 @@
+// FR: some adaptations as marked by FR
 /** 
  *  SVGPan library 1.2.2
  * ======================
@@ -80,11 +81,10 @@ var zoomScale = 0.2; // Zoom sensitivity
 /// <====
 /// END OF CONFIGURATION 
 
-var root = document.documentElement;
-
+var root = document.documentElement; 
 var state = 'none', svgRoot = null, stateTarget, stateOrigin, stateTf;
 
-setupHandlers(root);
+setupHandlers(document.documentElement);
 
 /**
  * Register handlers
@@ -103,26 +103,29 @@ function setupHandlers(root){
 		window.addEventListener('DOMMouseScroll', handleMouseWheel, false); // Others
 }
 
+// FR added: set root to the svg element if it is not the document element; make svgRoot null so that it is reset next time by getRoot
+function setSVGPanRoot(svgDoc) {
+   root = svgDoc;
+   svgRoot = null;
+}
+
 /**
  * Retrieves the root element for SVG manipulation. The element is then cached into the svgRoot global variable.
  */
-function getRoot(root) {
-	if(false){//svgRoot == null) {
-		var r = root.getElementById("viewport") ? root.getElementById("viewport") : root.documentElement, t = r;
-
-		while(t != root) {
+function getRoot(svgDoc) {
+	if(svgRoot == null) {
+		var r = root.firstElementChild; // FR changed, was root.getElementById("viewport") ? root.getElementById("viewport") : root.documentElement,
+		var t = r;
+		while(t != svgDoc) {
 			if(t.getAttribute("viewBox")) {
-				setCTM(r, t.getCTM());
-
+			   if (t.getCTM() != null) // FR added this line
+				   setCTM(r, t.getCTM());
 				t.removeAttribute("viewBox");
 			}
-
 			t = t.parentNode;
 		}
-
 		svgRoot = r;
 	}
-
 	return svgRoot;
 }
 

@@ -65,8 +65,12 @@
    });
     
    var graphWindow = null;
-   function openGraph() {
-      graphWindow = window.open("/graph.html");
+   function openGraph(p) {
+      if (p == null)
+         p = "";
+      else
+         p = "?" + p;
+      graphWindow = window.open("/graph.html" + p);
    };
    
    $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
