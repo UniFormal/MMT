@@ -134,13 +134,15 @@ var mmt = {
 		return this.makeURL(relativeURL);
 	},
 
-    ajaxReplaceIn : function (url, targetid) {
+    ajaxReplaceIn : function (url, targetid, async) {
 		function cont(data) {
 			var targetnode = $('#' + targetid).children();
 			targetnode.replaceWith(data.firstChild);
 		}
+		if (async == null) async = true;
 		$.ajax({ 'url': url,
 				 'dataType': 'xml',
+				 'async': async,
 				 'success': cont
 			   });
 	},
@@ -177,8 +179,10 @@ var mmt = {
 	sideBarClick : function(event,p) {
 	      if (event.detail == 1) navigation.navigate(p);
 	      else if (event.detail == 2) {
-	         if (graphWindow == null) openGraph();
-	         graphWindow.navigateGraph(p);
+	         if (graphWindow == null)
+	            openGraph(p);
+	         else
+	            graphWindow.navigateGraph(p);
 	      }
 	},
 
