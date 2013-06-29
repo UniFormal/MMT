@@ -1,0 +1,49 @@
+<html>
+<body>
+<ul>
+   <li>The sidebar shows the hierarchy of documents and the theories defined within them.
+      <ul>
+         <li>Clicking on a document/theory loads it into the main area.</li>
+         <li>Double-clicking on a document loads its theory graph into the graph window. (If the graph window is not open yet, it is opened as a separate browser window.)</li>
+         <li>The tree can be expanded further below the theories. Then it will show all knowledge in relation to that theory via the MMT ontology. For example, this shows views into or out of the theory.</li>
+      </ul>
+   </li>
+   <li>The main area shows an MMT document or theory.
+      <ul>
+         <li>Nested documents and theories can be expanded in place by clicking on the keyword. Afterwards they can be folded in the same way.</li>
+         <li>Included theories can be loaded in place by clicking on the theory.</li>
+         <li>Each document/theory has a right-click menu that permits setting display options for the whole document/theory.</li>
+      </ul>
+   </li>
+   <li>Mathematical formulas in the main area show a variety of interactive behavior.
+      <ul>
+         <li>Hovering over
+            <ul>
+               <li>an expression selects the respective subexpression.</li>
+               <li>a symbol shows its full MMT URI as a tooltip.</li>
+               <li>a variable selects its declaration.</li>
+            </ul>
+         </li>
+         <li>The right-click menu permits setting visibility options for the selected subexpression.<br/>
+         These show/hide parts of the expression that were infered by the system: 
+            <ul>
+               <li>reconstructed types: the omitted types of bound variables</li>
+               <li>implicit arguments: the omitted arguments to operator applications</li>
+               <li>redundant brackets: brackets that are not needed due to operator precedences</li>
+            </ul>
+         </li>
+         <li>The right-click menu permits retrieving additional information from the server about subexpressions.<br/>
+         This is displayed in a non-modal dialog window:
+            <ul>
+               <li>The type/definiens of the symbol under the cursor.</li>
+               <li>The type of the selected subexpressions. This type is computed dynamically on the server.</li>
+            </ul>
+         </li>
+      </ul>
+   </li>
+   <li>The graph view is a separate browser window showing a theory graph (as SVG). Clicking on a theory or view opens it in the main area.</li>
+</ul>
+
+</body>
+
+</html>
