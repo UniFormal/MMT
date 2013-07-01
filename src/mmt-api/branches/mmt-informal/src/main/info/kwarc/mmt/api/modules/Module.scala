@@ -17,7 +17,7 @@ abstract class Module(val parent : DPath, val name : LocalPath) extends ContentE
 /**
  * Module given by a set of statements
  */
-trait DeclaredModule extends Module with Body[Symbol]
+trait DeclaredModule extends Module with Body
 
 /**
  * Module given by existing modules/morphisms

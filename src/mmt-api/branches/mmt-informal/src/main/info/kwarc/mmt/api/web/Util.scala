@@ -15,12 +15,13 @@ object Util {
    def link(xhtml : NodeSeq, p : Path) = {
      val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
      <span jobad:href={p.toPath}>{text}</span>
-   }*/
+   }
    def ahref(p: Path) = <a href="#" mmtlink={p.toPath}>{p.last}</a>
      // <a href="#" onclick={navigate(p)}>{p.last}</a>
-   def navigate(p: Path) = 
-      "navigation.navigate('" + p.toPath + "')"
-   
+      */
+   /*def navigate(p: Path) = 
+      "sideBarClick('" + p.toPath + "')"
+   */
    /** yields a breadcrumb navigation bar as a sequence of links */
    def breadcrumbs(path : Path) : Node = {
       val ancs = path.ancestors.reverse
@@ -45,7 +46,7 @@ object Util {
    
    def item(p : Path, state : String, label : Option[String] = None) = 
       <item id={p.toPath} state={state}>
-        <content><name href="#" onclick={navigate(p)}>{label.getOrElse(p.last)}</name></content>
+        <content><name href="#" onclick={"mmt.sideBarClick(event, '" + p.toPath + "')"}>{label.getOrElse(p.last)}</name></content>
       </item>
    
    /** returns a string identifying the kind of an edge */

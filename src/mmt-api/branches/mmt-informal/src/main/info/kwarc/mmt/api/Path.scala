@@ -317,10 +317,10 @@ object Path {
                else if (left.startsWith("/[")) {segmentDone; left = left.substring(1); complex}
                else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}
                else                            {charDone; start}
-      } //TODO accept only balanced pairs of []?
+      } //TODO accept only balanced nestings of []?
       //parses a complex segment of the form [URI] (assumes [ has been parsed already)
       def complex {if (left.isEmpty)           {throw ParseError("unclosed '[' in " + s)}
-               else if (left == "]")           {segmentDone}
+               else if (left == "]")           {charDone; segmentDone}
                else if (left.startsWith("]/")) {charDone; segmentDone; left = left.substring(1); start}
                else                            {charDone; complex}
       }

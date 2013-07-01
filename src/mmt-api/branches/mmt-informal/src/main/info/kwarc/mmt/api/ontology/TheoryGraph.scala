@@ -18,10 +18,168 @@ case class StructureEdge(id: Path) extends Edge
 /** an edge together with its end point, optionally may be backwards */
 case class EdgeTo(to: Path, edge: Edge, backwards: Boolean = false)
 
+/** This class provides functions for rendering a theory graph in the gexf and dot graph formats.
+ *  @param theories the minimal set of theories to include
+ *  @param views the minimal set of views to include
+ *  @param tg the theory graph from which further information is obtained
+ */ 
+class GraphExporter(theories: Iterable[Path], views: Iterable[Path], tg: TheoryGraph) {
+   private def gexfNode(id:Path, tp: String) =
+      <node id={id.toPath} label={id.last}><attvalues><attvalue for="type" value={tp}/></attvalues></node>
+   private def gexfEdge(id:String, from: Path, to: Path, tp: String) =
+      <edge id={id} source={from.toPath} target={to.toPath}><attvalues><attvalue for="type" value={tp}/></attvalues></edge>
+   def toGEXF: Node = {
+     var edgeNodes : List[Node] = Nil
+     var edges : List[Node] = Nil
+     theories foreach {from => tg.edgesFrom(from) foreach {case (_, etos) => etos foreach {
+         case EdgeTo(_,_,true) =>
+         case EdgeTo(to, ViewEdge(v), _) =>
+           edgeNodes ::= gexfNode(v, "view")
+           edges ::= gexfEdge("source: " + v.toPath, from, v, "source")
+           edges ::= gexfEdge("target: " + v.toPath, v, to, "target")
+         case EdgeTo(to, StructureEdge(s), _) =>
+           edgeNodes ::= gexfNode(s, "structure")
+           edges ::= gexfEdge("source: " + s.toPath, from, s, "source")
+           edges ::= gexfEdge("target: " + s.toPath, s, to, "target")
+         case EdgeTo(to, MetaEdge, _) =>
+           edges ::= gexfEdge("meta: " + from.toPath + "--" + to.toPath, from, to, "meta")
+         case EdgeTo(to, IncludeEdge, _) =>
+           edges ::= gexfEdge("include: " + from.toPath + "--" + to.toPath, from, to, "include")
+     }}}
+      <gexf xmlns="http://www.gexf.net/1.2draft">
+         <graph defaultedgetype="directed">
+            <attributes>
+               <attribute id="type" title="type" type="string"/>
+            </attributes>
+            <nodes>
+              {theories map {node => gexfNode(node, "theory")}}
+              {edgeNodes}
+            </nodes>
+            <edges>{edges}</edges>
+         </graph>
+      </gexf>
+   }
+   def exportGEXF(filename: utils.File) {
+      utils.File.write(filename, toGEXF.toString)
+   }
+   private def dotNode(id:Path, tp: String, external: Boolean) = {
+      val label = id match {
+         case utils.mmt.mmtbase ? !(name) =>
+            objects.TheoryExp.toString(objects.Obj.fromPathEncoding(name))
+         case _ =>
+            id.last
+      }
+      val tooltipAtt = "tooltip=\"" + tp + " " + id.toPath + "\""
+      val styleAtts = if (external) "style=filled,fillcolor=gray," else ""
+      val uriAtt = "href=\"javascript:parent.navigate('" + id.toPath + "')\""
+      "\"" + id.toPath + "\" [label=\"" + label + "\"," + tooltipAtt + "," + styleAtts + uriAtt + "];"
+   }
+   private def dotEdge(id:Option[Path], from: Path, to: Path, tp: String, external: Boolean) = {
+      val idAtts = id match {
+         case None => "tooltip=\"" + tp + "\""
+         case Some(id) => "label=\"" + id.last + "\", tooltip=\"" + tp + " " + id.toPath + "\"" + 
+           "href=\"javascript:parent.navigate('" + id.toPath + "')\"" 
+      }
+      val styleAtts = tp match {
+         case "view" => "style=dashed,color=\"blue:blue\""
+         case "structure" => "style=bold,color=red"
+         case "include" => "style=solid,color=black"
+         case "meta" => "style=solid,color=green"
+      }
+      val weight = if (external) 1 else 10
+      "\"" + from.toPath + "\" -> \"" + to.toPath + "\" " + s"[$idAtts,$styleAtts,weight=$weight];"
+   }
+   /**
+    * exports in dot format
+    *
+    * the graph includes:
+    *   all theories that have a link into/out of a minimal theory or that are domain/codomain of a minimal view
+    *   all links between these theories
+    *   the minimal theories are clustered
+    */
+   def toDot: String = {
+     var res: List[String] = Nil
+     // all nodes that have been added
+     var nodesDone: List[Path] = Nil
+     // external nodes that have been added
+     var externalNodes: List[Path] = Nil
+     // add the minimal theories
+     res ::= "subgraph cluster_local {"
+     theories.foreach {node =>
+        res ::= dotNode(node, "theory", false)
+        nodesDone ::= node
+     }
+     res ::= "}"
+     def addNodeIfNeeded(p: Path) : Boolean = {
+        if (! nodesDone.contains(p)) {
+           res ::= dotNode(p, "theory", true)
+           nodesDone ::= p
+           externalNodes ::= p
+           true
+        } else
+           false
+     }
+     // adds an edge going out of from
+     def addEdgeIfNeeded(from: Path, eto: EdgeTo, external: Boolean) = eto match {
+         case EdgeTo(to, ViewEdge(v), false) if ! views.exists(_ == v) =>
+            res ::= dotEdge(Some(v), from, to, "view", external)
+         case EdgeTo(to, StructureEdge(s), false) =>
+            res ::= dotEdge(Some(s), from, to, "structure", external)
+         case EdgeTo(to, MetaEdge, false) =>
+            res ::= dotEdge(None,    from, to, "meta", external)
+         case EdgeTo(to, IncludeEdge, false) =>
+            res ::= dotEdge(None,    from, to, "include", external)
+         case _ =>
+     }
+     // add the minimal views
+     views.foreach {view =>
+        val from = tg.domain(view).get
+        val to = tg.codomain(view).get
+        addNodeIfNeeded(from)
+        addNodeIfNeeded(to)
+        res ::= dotEdge(Some(view), from, to, "view", false)
+     }
+     // add all the links from/out of the minimal theories that aren't part of the minimal views
+     theories.foreach {from =>
+       tg.edgesFrom(from) foreach {case (to, etos) =>
+          val externalNode = addNodeIfNeeded(to) // true if the partner node is from a different document
+          // incoming edges (from any node)
+          etos foreach {
+            case EdgeTo(_, ViewEdge(v), true) if ! views.exists(_ == v) =>
+               res ::= dotEdge(Some(v), to, from, "view", externalNode)
+            case EdgeTo(_, StructureEdge(s), true) =>
+               res ::= dotEdge(Some(s), to, from, "structure", externalNode)
+            case EdgeTo(_, MetaEdge, true) =>
+               res ::= dotEdge(None,    to, from, "meta", externalNode)
+            case EdgeTo(_, IncludeEdge, true) =>
+               res ::= dotEdge(None,    to, from, "include", externalNode)
+            case _ =>
+          }
+          // outgoing edges (into external nodes)
+          if (externalNode) etos foreach {eto => addEdgeIfNeeded(from, eto, true)}
+       }
+     }
+     // edges between external nodes
+     externalNodes.foreach {from =>
+        tg.edgesFrom(from) foreach {case (to, etos) =>
+           if (externalNodes.exists(_ == to)) etos foreach {eto => addEdgeIfNeeded(from, eto, true)}
+        }
+     }
+     res.reverse.mkString("digraph MMT {\n", "\n", "}")
+   }
+   /** like toDot but writes to a file */
+   def exportDot(filename: utils.File) {
+      utils.File.write(filename, toDot)
+   }
+}
+
 /** This class adds advanced queries on top of a RelStore that expose the theory graph structure */ 
 class TheoryGraph(rs: RelStore) {
+   /**
+    * provides the nodes of the graph
+    */
    def nodes : Iterator[Path] = rs.getInds(IsTheory)
-   def edges(from: Path, to: Path) : List[Edge] = {
+   /*def edges(from: Path, to: Path) : List[Edge] = {
       var eds : List[Edge] = Nil
       rs.query(from, - HasDomain) {
          link => rs.query(link, + HasCodomain) {
@@ -38,7 +196,12 @@ class TheoryGraph(rs: RelStore) {
          i => if (i == from) eds ::= MetaEdge
       }
       eds
-   }
+   }*/
+   /**
+    * returns all edges into or out of a theory
+    * @param from the theory 
+    * @return all edges, backwards is set for incoming edges
+    */
    def edgesFrom(from: Path) : List[(Path,List[EdgeTo])] = {
       var eds : List[EdgeTo] = Nil
       rs.query(from, - HasDomain) {
@@ -72,101 +235,15 @@ class TheoryGraph(rs: RelStore) {
       }
       filtered.quotient(_.to)
    }
+   /** return the domain of this link, if any */
+   def domain(link: Path) : Option[Path] = {
+      rs.query(link, +HasDomain)(p => return Some(p))
+      return None
+   }
+   /** return the codomain of this link, if any */
+   def codomain(link: Path) : Option[Path] = {
+      rs.query(link, +HasCodomain)(p => return Some(p))
+      return None
+   }
    
-   private def gexfNode(id:Path, tp: String) =
-      <node id={id.toPath} label={id.last}><attvalues><attvalue for="type" value={tp}/></attvalues></node>
-   private def gexfEdge(id:String, from: Path, to: Path, tp: String) =
-      <edge id={id} source={from.toPath} target={to.toPath}><attvalues><attvalue for="type" value={tp}/></attvalues></edge>
-   def toGEXF: Node = {
-     var edgeNodes : List[Node] = Nil
-     var edges : List[Node] = Nil
-     nodes foreach {from => edgesFrom(from) foreach {case (_, etos) => etos foreach {
-         case EdgeTo(_,_,true) =>
-         case EdgeTo(to, ViewEdge(v), _) =>
-           edgeNodes ::= gexfNode(v, "view")
-           edges ::= gexfEdge("source: " + v.toPath, from, v, "source")
-           edges ::= gexfEdge("target: " + v.toPath, v, to, "target")
-         case EdgeTo(to, StructureEdge(s), _) =>
-           edgeNodes ::= gexfNode(s, "structure")
-           edges ::= gexfEdge("source: " + s.toPath, from, s, "source")
-           edges ::= gexfEdge("target: " + s.toPath, s, to, "target")
-         case EdgeTo(to, MetaEdge, _) =>
-           edges ::= gexfEdge("meta: " + from.toPath + "--" + to.toPath, from, to, "meta")
-         case EdgeTo(to, IncludeEdge, _) =>
-           edges ::= gexfEdge("include: " + from.toPath + "--" + to.toPath, from, to, "include")
-     }}}
-      <gexf xmlns="http://www.gexf.net/1.2draft">
-         <graph defaultedgetype="directed">
-            <attributes>
-               <attribute id="type" title="type" type="string"/>
-            </attributes>
-            <nodes>
-              {nodes map {node => gexfNode(node, "theory")}}
-              {edgeNodes}
-            </nodes>
-            <edges>{edges}</edges>
-         </graph>
-      </gexf>
-   }
-   def exportGEXF(filename: utils.File) {
-      val file = utils.File.Writer(filename)
-      file.write(toGEXF.toString)
-      file.close
-   }
-   private def dotNode(id:Path, tp: String) = {
-      val label = id match {
-         case utils.mmt.mmtbase ? !(name) =>
-            objects.TheoryExp.toString(objects.Obj.fromPathEncoding(name))
-         case _ =>
-            id.last
-      }
-      val tooltipAtt = "tooltip=\"" + tp + " " + id.toPath + "\""
-      val uriAtt = "href=\"javascript:parent.navigate('" + id.toPath + "')\""
-      "\"" + id.toPath + "\" [label=\"" + label + "\"," + tooltipAtt + "," + uriAtt + "];\n"
-   }
-   private def dotEdge(id:Option[Path], from: Path, to: Path, tp: String) = {
-      val idAtts = id match {
-         case None => "tooltip=\"" + tp + "\""
-         case Some(id) => "label=\"" + id.last + "\", tooltip=\"" + tp + " " + id.toPath + "\"" + 
-           "href=\"javascript:parent.navigate('" + id.toPath + "')\"" 
-      }
-      val styleAtts = tp match {
-         case "view" => "style=dashed,color=\"blue:blue\""
-         case "structure" => "style=bold,color=red"
-         case "include" => "style=solid,color=black"
-         case "meta" => "style=solid,color=green"
-      }
-      "\"" + from.toPath + "\" -> \"" + to.toPath + "\" [ " + idAtts + "," + styleAtts + "];\n"
-   }
-   def toDot: String = {
-     var res: List[String] = Nil
-     var nodesDone: List[Path] = Nil
-     nodes.foreach {node =>
-        res ::= dotNode(node, "theory")
-        nodesDone ::= node
-     }
-     def addNodeIfNeeded(p: Path) {if (! nodesDone.contains(p))
-        res ::= dotNode(p, "theory")
-        nodesDone ::= p
-     }
-     nodes.foreach {from =>
-       addNodeIfNeeded(from)
-       edgesFrom(from) foreach {case (to, etos) =>
-          addNodeIfNeeded(to)
-          etos foreach {
-            case EdgeTo(_,_,true) =>
-            case EdgeTo(_, ViewEdge(v), _) =>      res ::= dotEdge(Some(v), from, to, "view")
-            case EdgeTo(_, StructureEdge(s), _) => res ::= dotEdge(Some(s), from, to, "structure")
-            case EdgeTo(_, MetaEdge, _) =>         res ::= dotEdge(None,    from, to, "meta")
-            case EdgeTo(_, IncludeEdge, _) =>      res ::= dotEdge(None,    from, to, "include")
-          }
-       }
-     }
-     res.reverse.mkString("digraph MMT {\n", "", "}")
-   }
-   def exportDot(filename: utils.File) {
-      val file = utils.File.Writer(filename)
-      file.write(toDot)
-      file.close
-   }
 }

@@ -13,34 +13,32 @@ import scala.xml.Node
  * It is mixed into theories and links to hold the symbols and assignments, respectively.
  * It provides a name-indexed hash map named declarations, and a set of unnamed declarations.
  * For named declarations, the name must be unique; for unnamed declarations, the field implictKey must be non-empty and unique. 
- * 
- * @param S Symbol for theories and Assignment for links
- */
-trait Body[S <: Symbol] {
+*/
+trait Body {
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */
-   protected val statements = new scala.collection.mutable.HashMap[LocalName,S]
+   protected val statements = new scala.collection.mutable.HashMap[LocalName,Symbol]
    /** all declarations in reverse order of addition */
-   protected var order : List[S] = Nil
+   protected var order : List[Symbol] = Nil
    /** true iff a declaration for a name is present */ 
    def declares(name: LocalName) = statements.isDefinedAt(name)
    /** the set of names of all declarations */
    def domain = statements.keySet
    /** retrieve a named declaration, may throw exception if not present */ 
-   def get(name : LocalName) : S = statements(name)
+   def get(name : LocalName) : Symbol = statements(name)
    /** retrieve a declaration, None if not present */ 
-   def getO(name : LocalName) : Option[S] =
+   def getO(name : LocalName) : Option[Symbol] =
       try {Some(get(name))}
       catch {case _ : Throwable => None}
    /** same as get(LocalName(name)) */ 
-   def get(name : String) : S = get(LocalName(name))
+   def get(name : String) : Symbol = get(LocalName(name))
    /** retrieves the most specific applicable declaration
     * @param name the name of the declaration
     * @param rest the suffix that has been split off so far; this argument should be omitted in calls from outside this class 
     * @return the most specific (longest prefix of name) known declaration (if any) and the remaining suffix
     */
-   def getMostSpecific(name: LocalName, rest : LocalName = LocalName(Nil)) : Option[(S, LocalName)] =
+   def getMostSpecific(name: LocalName, rest : LocalName = LocalName(Nil)) : Option[(Symbol, LocalName)] =
       statements.get(name) match {
          case Some(d) => Some((d, rest))
          case None => name match {
@@ -50,7 +48,7 @@ trait Body[S <: Symbol] {
          }
       }
    /** adds a named or unnamed declaration, throws exception if name already declared */ 
-   def add(s : S) {
+   def add(s : Symbol) {
 	      val name = s.name
          if (statements.isDefinedAt(name)) {
             throw AddError("a declaration for the name " + name + " already exists")
@@ -72,14 +70,14 @@ trait Body[S <: Symbol] {
       }
    }
    /** updates a named declaration (preserving the order) */
-   def update(s : S) = {
+   def update(s : Symbol) = {
 	   replace(s.name, s)
    }
    /** replaces a named declaration with others (preserving the order) */
    //TODO alternativeNames
-   def replace(name: LocalName, decs: S*) {
-      var seen : List[S] = Nil
-      var tosee : List[S] = order
+   def replace(name: LocalName, decs: Symbol*) {
+      var seen : List[Symbol] = Nil
+      var tosee : List[Symbol] = order
       var continue = true
       while (continue && ! tosee.isEmpty) {
          val hd = tosee.head

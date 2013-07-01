@@ -224,20 +224,23 @@ class Controller extends ROController with Logger {
    }
 
    /**
-    * deletes a document or module
+    * deletes a document or module from Memory
     * no change management except that the deletions of scoped declarations are recursive
     *   in particular, the deletion of a document also deletes its subdocuments and modules 
     */
-   def delete(p: Path) {p match {
-      case d: DPath =>
-         val orphaned = docstore.delete(d)
-         orphaned foreach delete
-      case m: MPath =>
-         library.delete(m)
-         notstore.delete(m)
-      case s: GlobalName => library.delete(s)
-      case _ : CPath => throw ImplementationError("cannot delete component paths") //TODO delete component
-   }}
+   def delete(p: Path) {
+      p match {
+         case d: DPath =>
+            val orphaned = docstore.delete(d)
+            orphaned foreach delete
+         case m: MPath =>
+            library.delete(m)
+            notstore.delete(m)
+         case s: GlobalName => library.delete(s)
+         case _ : CPath => throw ImplementationError("cannot delete component paths") //TODO delete component
+      }
+      //depstore.deleteSubject(p)
+   }
    /** clears the state */
    def clear {
       memory.clear
@@ -439,7 +442,8 @@ class Controller extends ROController with Logger {
 	      case Read(f) => read(f)
 	      case Graph(f) =>
 	         val tg = new TheoryGraph(depstore)
-            tg.exportDot(f)
+	         val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
+            gv.exportDot(f)
 	      case Check(p) =>
 	         try {
 	            checker(p)

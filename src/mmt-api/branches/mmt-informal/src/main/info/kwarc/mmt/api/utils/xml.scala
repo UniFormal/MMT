@@ -3,18 +3,21 @@ import scala.xml.{Node, PrettyPrinter}
 
 object xml {
    /** reads an XML file and returns the first Node in it */
-   def readFile(file : java.io.File) : scala.xml.Node = {
-      val src = scala.io.Source.fromFile(file, "utf-8") // utf-8 forced due to error with default codec
+   def readFile(file : File) : scala.xml.Node = {
+      val src = scala.io.Source.fromFile(file.toJava, "utf-8") // utf-8 forced due to error with default codec
       val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
       val N = cp.document()(0)
       src.close
       N
    }
    
-   /** writes an XML Node to a file */
-   def writeFile(N : scala.xml.Node, file : java.io.File) {
-      file.getParentFile.mkdirs
-      val out = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file),"UTF-8"))
+   /** writes an XML Node to a file
+    *  
+    * overwrites existing files, creates directories if necessary
+    */
+   def writeFile(N : scala.xml.Node, file : File) {
+      file.toJava.getParentFile.mkdirs
+      val out = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file.toJava),"UTF-8"))
       out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + new PrettyPrinter(160,2).format(N))
       out.close
    }

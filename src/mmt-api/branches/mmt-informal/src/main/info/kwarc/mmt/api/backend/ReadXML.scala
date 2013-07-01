@@ -26,11 +26,11 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
       cont(e)
    }
    
+   /*
    def read(p : DPath, node : Node, eager : Boolean)(implicit cont: StructuralElement => Unit) = node.label match {
       case "omdoc" => readDocuments(p, node)
-      case "assertions" => readAssertions(node)
       case l => throw ParseError("unexpected label: " + l)
-   }
+   }*/
    /** parses a sequence of documents (xml.Node) into the controller */
    def readDocuments(location : DPath, documents : NodeSeq)(implicit cont: StructuralElement => Unit) {
       documents foreach {readDocument(location, _)}
@@ -44,8 +44,6 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
            val d = new Document(location)
            add(d)
            readModules(path, Some(location), modules)
-        case <mmtabox>{decls @ _*}</mmtabox> =>
-           readAssertions(decls)
         case _ => throw ParseError("document expected: " + D)
       }
    }
@@ -55,6 +53,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
       for (modmd <- modules) {
          val (m, md) = MetaData.parseMetaDataChild(modmd, modParent)
          m match {
+         case <omdoc>{_*}</omdoc> => //TODO: nested Documents
          case <dref/> =>
 	         val d = xml.attr(m, "target")
 	         log("dref to " + d + " found")
@@ -104,7 +103,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
         	     docParent map (dp => add(MRef(dp, tpath, true)))
               body.foreach {d => 
         	              report.indent
-                       readSymbols(tpath, tpath, d)
+                       readSymbols(OMMOD(tpath), tpath, d)
         	              report.unindent
         	     }
 	         case (base : DPath, <view>{_*}</view>) =>
@@ -124,10 +123,11 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	            docParent map (dp => add(MRef(dp, vpath, true)))
 			      body.foreach {d =>
 	               report.indent
-	               readAssignments(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
+	               readSymbols(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
 	               report.unindent
 	            }
-	         case (_, <rel>{_*}</rel>) => Unit //ignoring logical relations, produced by Twelf, but not implemented yet
+	         case (_, <rel>{_*}</rel>) => 
+	            //ignoring logical relations, produced by Twelf, but not implemented yet
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			      val npath = base ? name
@@ -148,8 +148,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          }}
       }
    }
-   def readSymbols(tpath : MPath, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
-      val thy = OMMOD(tpath)
+   //TODO if a notation is used in a Structure, its path is computed wrong
+   def readSymbols(home: Term, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : Option[Node], md: Option[MetaData]) {
     	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
@@ -157,8 +157,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
     	 	  case None      => Context()
     	  }
     	  val cn = Context.parse(con, base)
-        val notation = xmlNotation.map(TextNotation.parse(_, tpath ? name))
-    	  val p = new Pattern(thy, name, pr, cn, notation)
+        val notation = xmlNotation.map(TextNotation.parse(_, home.toMPath ? name))
+    	  val p = new Pattern(home, name, pr, cn, notation)
     	  add(p, md)
       }
       for (s <- symbols) {
@@ -172,12 +172,12 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             log("constant " + name.toString + " found")
             val tp = t.map(Obj.parseTerm(_, base))
             val df = d.map(Obj.parseTerm(_, base))
-            val notation = xmlNotation.map(TextNotation.parse(_, tpath ? name))
+            val notation = xmlNotation.map(TextNotation.parse(_, home.toMPath ? name))
             val rl = xml.attr(s,"role") match {
                case "" => None
                case r => Some(r)
             }
-            val c = Constant(thy, name, alias, tp, df, rl, notation)  //TODO parse <notation>
+            val c = Constant(home, name, alias, tp, df, rl, notation)
             add(c,md)
          }
          s2 match {
@@ -211,12 +211,12 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = new DefinedStructure(thy, adjustedName, fromPath, df, isImplicit)
+                  val s = new DefinedStructure(home, adjustedName, fromPath, df, isImplicit)
                   add(s,md)
                case assignments =>
-                  val s = new DeclaredStructure(thy, adjustedName, fromPath, isImplicit)
+                  val s = new DeclaredStructure(home, adjustedName, fromPath, isImplicit)
                   add(s,md)
-                  readAssignments(OMDL(thy, adjustedName), base, assignments)
+                  readSymbols(s.toTerm, base, assignments) 
             }
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly
@@ -237,58 +237,10 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             val p = xml.attr(s2,"pattern")
          	log("instance " + name.toString + " of pattern " + p + " found")
          	val args = ns map (Obj.parseTerm(_, base))
-            val inst = new Instance(thy,name,Path.parseS(p,base),args.toList)
+            val inst = new Instance(home,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
-         }
-      }
-   }
-   //TODO merge with readSymbols
-   def readAssignments(link : Term, base : Path, assignments : NodeSeq)(implicit cont: StructuralElement => Unit) {
-      for (amd <- assignments) {
-         val (a, md) = MetaData.parseMetaDataChild(amd, base) 
-         val name = LocalName.parse(base, xml.attr(a, "name"))
-         val alias = xml.attr(amd, "alias") match {
-            case "" => None
-            case al => Some(LocalName.parse(al))
-         }
-         a match {
-            case <constant><definition>{t}</definition></constant> =>
-               log("assignment for " + name + " found")
-               val tg = Obj.parseTerm(t, base)
-               val m = ConstantAssignment(link, name, alias, Some(tg))
-               add(m, md)
-            //TODO remove this case when Twelf exports correctly
-            case <constant>{t}</constant> =>
-               log("assignment for " + name + " found")
-               val tg = Obj.parseTerm(t, base)
-               val m = ConstantAssignment(link, name, alias, Some(tg))
-               add(m, md)
-            case <import>{_*}</import> =>
-               log("assignment for " + name + " found")
-               val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(a, "domain", base)
-               val fromPath = from match {
-                  case OMMOD(p) => p
-                  case _ => throw ParseError("domain of imported morphism must be atomic")
-               }
-               rest.child match {
-                  case List(<definition>{t}</definition>) =>
-                     val tg = Obj.parseTerm(t, base)
-                     val m = DefLinkAssignment(link, name, fromPath, tg)
-                     add(m, md)
-                  //TODO remove this case when Twelf exports correctly
-                  case List(<value>{t}</value>) =>
-                     val tg = Obj.parseTerm(t, base)
-                     val m = DefLinkAssignment(link, name, fromPath, tg)
-                     add(m, md)
-                  case c => throw ParseError("definition expected: " + c)
-               }
-            case <open/> =>
-               //TODO: remove this case when Twelf exports correctly
-               log("warning: ignoring deprecated 'open' declaration")
-            case scala.xml.Comment(_) =>
-            case _ => throw ParseError("assignment expected: " + a)
          }
       }
    }
@@ -316,24 +268,6 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             case _ => throw ParseError("notation expected: " + N)
 	     }
 	  }
-   }
-   def readAssertions(assertions : NodeSeq)(implicit cont: StructuralElement => Unit) {
-      val deps = controller.depstore
-      for (ass <- assertions) {
-         log("assertion found: " + ass.toString)
-         ass match {
-	         case <individual/> =>
-	            var pred = xml.attr(ass, "predicate")
-                deps += ontology.Individual(Path.parse(xml.attr(ass, "path"), mmt.mmtbase), Unary.parse(pred))
-	         case <relation/> =>
-	           val subj = Path.parse(xml.attr(ass, "subject"), mmt.mmtbase)
-               val obj  = Path.parse(xml.attr(ass, "object"), mmt.mmtbase)
-	           val pred = Binary.parse(xml.attr(ass, "predicate"))
-	           deps += Relation(pred, subj, obj)
-	         case scala.xml.Comment(_) =>
-	         case  _ => throw ParseError("ABox assertion expected: " + ass)
-         }
-      }
    }
    
    private def parseImplicit(n: Node): Boolean = {

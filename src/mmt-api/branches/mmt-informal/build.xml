@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="immt-api" default="build" basedir=".">
+<project name="immt-api" default="deploy" basedir=".">
 
     <property name="deploy" value="../../../../deploy"/>
 

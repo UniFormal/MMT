@@ -12,7 +12,18 @@ import web._
 trait Extension extends Logger {
    protected var controller : Controller = null
    protected var report : Report = null
-   def logPrefix = getClass.toString
+   
+   lazy val defaultPrefix = {
+      val s = getClass.toString
+      val p = s.lastIndexOf(".")
+      if (p == -1) s else s.substring(p+1)
+   }
+   /** the prefix used to identify this extension for logging, by default the class name */
+   def logPrefix = defaultPrefix
+   
+   /** a custom error class for this extension */
+   case class LocalError(s: String) extends ExtensionError(logPrefix, s)
+   
    /** initialization (empty by default) */
    def init(controller: Controller, args: List[String]) {
       this.controller = controller
@@ -59,8 +70,10 @@ class ExtensionManager(controller: Controller) extends Logger {
       parserExtensions ::= parser.MetadataParser
       parserExtensions ::= parser.CommentIgnorer
       lexerExtensions ::= GenericEscapeHandler
+      lexerExtensions ::= QuoteHandler
       lexerExtensions ::= new PrefixEscapeHandler('\\')
       lexerExtensions ::= new NumberLiteralHandler(true)
+      serverPlugins   ::= new web.SVGServer
       // initialize all extensions
       getAll.foreach(_.init(controller, Nil))
    }
@@ -73,7 +86,7 @@ class ExtensionManager(controller: Controller) extends Logger {
           val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
           Ext.newInstance
        } catch {
-          case e : java.lang.Exception => throw ExtensionError("error while trying to instantiate class " + cls).setCausedBy(e) 
+          case e : java.lang.Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
        if (ext.isInstanceOf[Plugin]) {
           log("  ... as plugin")

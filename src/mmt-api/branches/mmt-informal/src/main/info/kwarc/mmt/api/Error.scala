@@ -8,13 +8,13 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
    private var causedBy: Option[java.lang.Throwable] = None
    def setCausedBy(e: java.lang.Throwable): Error = {causedBy = Some(e); this}
    def getCausedBy : Option[java.lang.Throwable] = causedBy
-   def msg : String = {
+   def longMsg : String = {
       val causedByMsg = causedBy match {
         case None => ""
-        case Some(e: Error) => "\ncaused by\n" + e.msg
+        case Some(e: Error) => "\ncaused by\n" + e.longMsg
         case Some(e) => "\ncaused by\n" + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n","\n","")
       }
-      shortMsg + "\n" + stackTrace + causedByMsg
+      getMessage + "\n" + stackTrace + causedByMsg
    }
    def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
    override def toString = shortMsg
@@ -55,10 +55,13 @@ case class InvalidObject(obj: objects.Obj, s : String) extends Invalid("invalid 
 /** errors that occur when presenting a knowledge item */
 case class PresentationError(s : String) extends Error(s)
 /** errors that occur when registering extensions  */
-case class ExtensionError(s : String) extends Error(s)
+case class RegistrationError(s : String) extends Error(s)
 /** errors that are not supposed to occur, e.g., when input violates the precondition of a method */
 case class ImplementationError(s : String) extends Error("implementation error: " + s)      
 /** errors that occur during substitution with name of the variable for which the substitution is defined */
 case class SubstitutionUndefined(name: LocalName, m: String) extends Error("Substitution undefined at " + name.toString + "; " + m)
 
 case class LookupError(name : LocalName) extends Error("variable " + name.toString + " not declared in context")
+
+/** base class for errors that are thrown by an extension */
+abstract class ExtensionError(prefix: String, s : String) extends Error(prefix + ": " + s)

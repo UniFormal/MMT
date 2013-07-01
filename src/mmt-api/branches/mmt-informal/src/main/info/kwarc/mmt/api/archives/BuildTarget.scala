@@ -79,7 +79,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
    /** the output archive folder */
    val outDim: String
    /** the file extension used for generated files, defaults to outDim, override as needed */
-   val outExt: String = outDim
+   def outExt: String = outDim
    /**
     * there is no inExt, instead we test to check which files should be used; 
     * this is often a test for the file extension
@@ -87,14 +87,22 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * This must be such that all auxiliary files are skipped. 
     */
    def includeFile(name: String) : Boolean
-   
-   /** the main abstract method that implementations must provide: builds one file
-     * @param in the input file 
-     * @param dpath the base URI of the input file
-     * @param out the output file
-     */ 
-   def buildOne(inFile: File, dpath: Option[DPath], outFile: File): List[Error]
 
+   /** the main abstract method that implementations must provide: builds one file
+     * @param inFile the input file 
+     * @param dpath the base URI of the input file
+     * @param outFile the output file
+     */ 
+   def buildOne(inFile: File, dpath: DPath, outFile: File): List[Error]
+
+   /** similar to buildOne but called on every directory (after all its children have been processed)
+     * @param inDir the input directory 
+     * @param dpath the base URI of the directory
+     * @param outFile the output file
+     * This does nothing by default and can be overridden if needed.
+     */ 
+   def buildDir(inDir: File, dpath: DPath, outFile: File): List[Error] = Nil
+   
    /** entry for recursive building */
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
       buildAux(in)(a)
@@ -115,16 +123,21 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse(inDim, in, includeFile, false) {case Current(_,inPath) => errorMap(inPath) = Nil}
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
-       a.traverse(inDim, in, includeFile) {case Current(inFile,inPath) =>
+       a.traverse[Unit](inDim, in, includeFile) ({case Current(inFile,inPath) =>
          val outFile = (a.root / outDim / inPath).setExtension(outExt)
          log(prefix + inFile + " -> " + outFile)
-         val errors = buildOne(inFile, Some(DPath(a.narrationBase / inPath)), outFile)
+         val errors = buildOne(inFile, DPath(a.narrationBase / inPath), outFile)
            errorMap(inPath) = errors
            if (! errors.isEmpty) {
-             log(errors.mkString("errors follow\n", "\n", "\n"))
+             log("errors follow")
+             errors foreach log
            }
            a.timestamps(key).set(inPath)
-       }
+       }, {
+          case (Current(inDir, inPath), _) =>
+             val outFile = a.root / outDim / inPath / ("." + outExt)
+             buildDir(inDir, DPath(a.narrationBase / inPath), outFile)
+       })
     }
    
     /** recursively deletes all files produced in the compilation chain */

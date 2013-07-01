@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
+import documents._
 import modules._
 import symbols._
 import patterns._
@@ -12,9 +13,19 @@ object Extractor {
    def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path
       e match {
+         case d: Document =>
+            f(IsDocument(d.path))
+            //TODO should getLocalItems but then it wouldn't work for documents created from folders
+            d.getItems.foreach {x =>
+               f(Declares(d.path, x.target))
+            }
          case t: Theory =>
             f(IsTheory(path))
-            t match {case t: DeclaredTheory => t.meta map {p => f(HasMeta(path, p))}}
+            t match {
+               case t: DeclaredTheory =>
+                  t.meta foreach {p => f(HasMeta(path, p))}
+               case _ => 
+            }
          case v: View =>
             f(HasDomain(path, v.from.toMPath))
             f(HasCodomain(path, v.to.toMPath))

@@ -34,6 +34,14 @@ class Document(val path : DPath) extends NarrativeElement {
        case r: MRef if r.isGenerated => List(lib.getModule(r.target))
        case _ => Nil
    }
+   /**
+    * @param controller Controller for looking up documents
+    * @return list of modules declared/referenced anywhere in this Document (depth first)  
+    */
+   def collectModules(controller: frontend.Controller): List[MPath] = getItems flatMap {
+      case r: MRef => List(r.target)
+      case d: DRef => controller.get(d.target).asInstanceOf[Document].collectModules(controller)
+   }
    /** adds a child at the end of the documents */
    def add(i : DocumentItem) {
       items = items ::: List(i)
@@ -65,6 +73,10 @@ class Document(val path : DPath) extends NarrativeElement {
         }}
      </omdoc>
      
+}
+
+object Document {
+   
 }
 
 trait DocumentItem extends Content {
