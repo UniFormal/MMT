@@ -7,7 +7,7 @@ import parser._
 /**
  * A Presenter transforms MMT content into presentation
  */
-abstract class Presenter extends frontend.Extension {
+trait Presenter extends frontend.Extension {
    def isApplicable(format: String): Boolean
    def apply(e : StructuralElement, rh : RenderingHandler)
    def apply(o: Obj, rh: RenderingHandler)
