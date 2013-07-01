@@ -22,15 +22,11 @@ class STeXImporter extends Compiler with Logger {
     
   def includeFile(name : String) : Boolean = name.endsWith(".omdoc") //stex/latexml generated omdoc
   
-  def buildOne(inFile : File, dpathO : Option[DPath], outFile : File) : List[Error] = {
+  def buildOne(inFile : File, dpath : DPath, outFile : File) : List[Error] = {
     val src = scala.io.Source.fromFile(inFile.toString)
 	val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
 	val node : Node = cp.document()(0)
-	src.close
-	val dpath = dpathO match {
-      case Some(p) => p
-      case None => DPath(URI(inFile.toString))
-    }
+	src.close	
 	
     val errors = translateArticle(node)(dpath)
  
@@ -49,7 +45,7 @@ class STeXImporter extends Compiler with Logger {
     val errors = translateArticle(node)(dpath)
     errors match {
       case Nil => //returning result
-        val docXML = controller.getDocument(dpath).toNodeResolved(controller.memory.content)
+        val docXML = controller.getDocument(dpath).toNodeExpanded(controller.memory.content, controller.memory.narration)
         docXML.toString
       case _ => //reporting errors
         "Errors Ocurred : " + errors.toString
