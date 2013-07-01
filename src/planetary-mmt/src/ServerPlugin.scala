@@ -14,28 +14,28 @@ import zgs.httpd._
 case class PlanetaryError(val text : String) extends Error(text)
 
 
-class PlanetaryPlugin extends ServerPlugin with Logger {
+class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
   
   override val logPrefix = "planetary"
     
      /** Server */   
-   def isApplicable(uriComp : String) = {
-     uriComp == "planetary"
-   }
-   
-   def apply(uriComps: List[String]): Option[HLet] = {
-     try {
 
+   
+   def apply(uriComps: List[String], query: String, body : Body): HLet = {
+     try {
        uriComps match {
-         case "getArchives" :: _ => Some(getArchivesResponse)
-         case "getPaths" :: _ => Some(getPathsResponse)
-         case "getPresentation" :: _ => Some(getPresentationResponse)
-         case "getCompiled" :: _ => Some(getCompiledResponse)
-         case _ => None
+         case "getArchives" :: _ => getArchivesResponse
+         case "getPaths" :: _ => getPathsResponse
+         case "getPresentation" :: _ => getPresentationResponse
+         case "getCompiled" :: _ => getCompiledResponse
+         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"))
        }
      } catch {
-       case e : Error => log(e.msg); Some(errorResponse(e.msg))
-       case e : Exception => Some(errorResponse("Exception occured : " + e.getMessage()))
+       case e : Error => 
+         log(e.longMsg) 
+         errorResponse(e.longMsg)
+       case e : Exception => 
+         errorResponse("Exception occured : " + e.getMessage())
      }
    }
    
@@ -57,7 +57,7 @@ class PlanetaryPlugin extends ServerPlugin with Logger {
         TextResponse(result).act(tk)
      } catch {
        case e : Error => 
-         log(e.msg)
+         log(e.longMsg)
          errorResponse(e.shortMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage()).act(tk)
@@ -84,7 +84,7 @@ class PlanetaryPlugin extends ServerPlugin with Logger {
        TextResponse(resp).act(tk)       
      } catch {
        case e : Error => 
-         log(e.msg)
+         log(e.longMsg)
          errorResponse(e.shortMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).act(tk)
@@ -129,7 +129,7 @@ class PlanetaryPlugin extends ServerPlugin with Logger {
        TextResponse(response.toString).act(tk)
      } catch {
         case e : Error => 
-         log(e.msg)
+         log(e.longMsg)
          errorResponse(e.shortMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).act(tk)
@@ -145,7 +145,7 @@ class PlanetaryPlugin extends ServerPlugin with Logger {
         TextResponse(result).act(tk)
      } catch {
        case e : Error => 
-         log(e.msg)
+         log(e.longMsg)
          errorResponse(e.shortMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage()).act(tk)
