@@ -67,16 +67,13 @@ class LatexState(val dpath : DPath, controller : Controller) {
   
 }
 
-class LatexPresenter extends Presenter with ServerPlugin with Logger {
+class LatexPresenter extends ServerPlugin("latex") with Presenter with Logger {
    var currentJob : String = ""
      
    override val logPrefix = "latexPlugin"    
      
    val states = new mutable.HashMap[String, LatexState] 
    
-   
-   
-   def isApplicable(format: String) = format == "latex"
    def apply(c : StructuralElement, rh : RenderingHandler) {
       rh(c.toString)
    }
@@ -225,18 +222,18 @@ class LatexPresenter extends Presenter with ServerPlugin with Logger {
      uriComp.head == ":latex"
    }
    
-   def apply(uriComps: List[String]): Option[HLet] = {
+   def apply(uriComps: List[String], query: String, body : Body): HLet = {
      try {
        uriComps.tail match {
-         case "postdecl" :: _ => Some(PostDeclResponse)
-         case "getobjpres" :: _ => Some(GetObjPresResponse)
-         case "context" :: _ => Some(ContextResponse)
-         case _ => None
+         case "postdecl" :: _ => PostDeclResponse
+         case "getobjpres" :: _ => GetObjPresResponse
+         case "context" :: _ => ContextResponse
+         case _ => errorResponse("Invalid request : " + uriComps.mkString("/"))
        }
      } catch {
-       case e : LatexError => Some(errorResponse(e.text))
-       case e : Error => Some(errorResponse(e.msg))
-       case e : Exception => Some(errorResponse("Exception occured : " + e.getMessage()))
+       case e : LatexError => errorResponse(e.text)
+       case e : Error => errorResponse(e.longMsg)
+       case e : Exception => errorResponse("Exception occured : " + e.getMessage())
      }
    }
  
