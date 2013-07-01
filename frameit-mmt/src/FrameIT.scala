@@ -16,24 +16,25 @@ import zgs.httpd._
 case class FrameitError(val text : String) extends Error(text)
 
 
-class FrameitPlugin extends ServerPlugin with Logger {
+class FrameitPlugin extends ServerPlugin("frameit") with Logger {
   
   override val logPrefix = "frameit"
     
      /** Server */   
-   def isApplicable(uriComp : String) = {
-     uriComp == "frameit"
-   }
    
-   def apply(uriComps: List[String]): Option[HLet] = {
+   def apply(uriComps: List[String], query : String, body : web.Body): HLet = {
      try {
        uriComps match {
-         case "get" :: _ => Some(GetResponse)
-         case _ => None
+         case "get" :: _ => GetResponse
+         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"))
+
        }
      } catch {
-       case e : Error => log(e.msg); Some(errorResponse(e.msg))
-       case e : Exception => Some(errorResponse("Exception occured : " + e.getMessage()))
+       case e : Error => 
+         log(e.longMsg)
+         errorResponse(e.longMsg)
+       case e : Exception => 
+         errorResponse("Exception occured : " + e.getMessage())
      }
    }
    
@@ -67,7 +68,7 @@ class FrameitPlugin extends ServerPlugin with Logger {
        var tmS = tm.toString
        TextResponse(tmS).act(tk)
      } catch {
-       case e : Error => log(e.msg);errorResponse(e.shortMsg).act(tk)
+       case e : Error => log(e.longMsg);errorResponse(e.shortMsg).act(tk)
        case e : Exception => errorResponse("Exception occured : " + e.getMessage()).act(tk)
      }
    }
