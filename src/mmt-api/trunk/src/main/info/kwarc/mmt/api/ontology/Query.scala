@@ -59,8 +59,6 @@ case class TheObject(a: Obj) extends Query
 case class Component(of: Query, component: String) extends Query
 /** subobject of an object at a certain position */
 case class SubObject(of: Query, position: Position) extends Query
-/** type of an object */
-case class InferedType(of: Query, found: MPath) extends Query
 /** the set of all elements related to a certain path by a certain relation */
 case class Related(to: Query, by: RelationExp) extends Query
 
@@ -87,8 +85,19 @@ case class Tuple(components: List[Query]) extends Query
 /** projectiong */
 case class Projection(of: Query, index: Int) extends Query
 
-/** the XML object arising from rendering an object */
+// main API functions exposed to the query language
+/** type of an object, infered by a foundation */
+case class InferedType(of: Query, found: MPath) extends Query
+
+/** parse an object, String -> Term */ //TODO
+case class Parse(content: Query, theory: MPath) extends Query
+/** analyze (validation, type inference) an object, String -> (Term,Term) */ //TODO
+case class Analyze(content: Query, theory: MPath) extends Query
+/** evaluate (via UOM) an object, Term -> Term */ //TODO
+case class Evaluate(content: Query, theory: MPath) extends Query
+/** render (presentation) an object, Term -> XML */
 case class Present(content: Query, style: MPath) extends Query
+
 
 /** typing relation between a path and a concept of the MMT ontology */
 case class IsA(e: Query, t: Unary) extends Prop

@@ -38,6 +38,10 @@ mi {
     background: silver;
 }
 
+.math-folded {
+   font-size:10%;
+}
+
 .brackets mo {
    color : gray;
 }

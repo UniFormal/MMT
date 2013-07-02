@@ -31,7 +31,7 @@ abstract class ServerPlugin(context: String) extends Extension {
 }
 
 /** a ServerPlugin that serves the svg file of a documents */
-class SVGServer extends ServerPlugin("graph") {
+class SVGServer extends ServerPlugin("svg") {
    /**
     *  @param path ignored
     *  @param query the document path
@@ -49,3 +49,18 @@ class SVGServer extends ServerPlugin("graph") {
       Server.XmlResponse(node)
    } 
 }
+
+/** a ServerPlugin that serves the svg file of a documents */
+class UOMServer extends ServerPlugin("uom") {
+   /**
+    *  @param path ignored
+    *  @param query the expression as string
+    *  @param body the expression as XML
+    */
+   def apply(path: List[String], query: String, body: Body) = {
+         val input = objects.Obj.parseTerm(body.asXML, controller.getBase)
+         val output = controller.uom.simplify(input)
+         Server.XmlResponse(output.toNode)
+   }
+}
+
