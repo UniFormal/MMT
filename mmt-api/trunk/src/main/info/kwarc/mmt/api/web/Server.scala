@@ -156,7 +156,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         case ":tree" :: _ => Some(TreeResponse)
         case ":query" :: _ => Some(QueryResponse)
         case ":change" :: _ => Some(ChangeResponse)
-        case ":uom" :: _ => Some(UomResponse)
         case ":search" :: _ => Some(MwsResponse)
         case ":parse" :: _ => Some(ParserResponse)
         case ":post" :: _ => Some(PostResponse)
@@ -227,26 +226,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       } catch {
         case e : Error => errorResponse(e).act(tk)
       }
-    }
-  }
-
-  /** Response when the first path component is :uom */
-  private def UomResponse: HLet = new HLet {
-    def act(tk: HTalk) {
-      val resp = tk.req.query match {
-        case "register" => errorResponse("not implemented yet")
-        case "simplify" =>
-          try {
-            val body = new Body(tk)
-            val input = objects.Obj.parseTerm(body.asXML, controller.getBase)
-            val output = controller.uom.simplify(input)
-            XmlResponse(output.toNode)
-          } catch {
-            case e : Error => errorResponse(e)
-          }
-        case _ => errorResponse("illegal command")
-      }
-      resp.act(tk)
     }
   }
 
