@@ -62,6 +62,9 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
  */
 class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
    init(c, Nil)
+   //TODO expandXRefs is a bit of a hack, can be set by callees to presend with refs expanded. 
+   //Any other solution requires changing the APIs
+   var expandXRefs = false 
    override val logPrefix = "presenter"
    
    def isApplicable(format: String) = format == style.toPath
@@ -84,6 +87,12 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
    protected def present(c : Content, gpar : GlobalParams, lpar : LocalParams) {
       log("presenting: " + c)
       c match {
+        case m : documents.XRef if expandXRefs => 
+         	val s = controller.get(m.target)
+            val rb = new XMLBuilder()
+            this.apply(s, rb)
+            val response = rb.get()
+            gpar.rh(response)
          case StrToplevel(c) => 
             val key = NotationKey(None, Role_StrToplevel)
             val notation = controller.get(gpar.nset, key)
