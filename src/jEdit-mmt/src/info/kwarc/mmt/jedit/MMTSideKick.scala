@@ -49,7 +49,7 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
       case c : ContentElement => c match {
         case t: DeclaredTheory => Some(objects.OMMOD(t.path))
         case v: modules.View => None //would have to be parsed to be available
-        case d: Declaration => Some(d.home)
+        case d: Symbol => Some(d.home)
         case _ => None
       }
    }
@@ -156,18 +156,18 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val child = new DefaultMutableTreeNode(new MMTElemAsset(mod, keyword + " " + mod.path.last, reg))
       node.add(child)
       mod match {
-         case m: DeclaredModule[_] =>
+         case m: DeclaredModule =>
             m.getPrimitiveDeclarations foreach {d => buildTree(child, d, reg)}
          case m: DefinedModule =>
       }
    }
    /* build the sidekick outline tree: declaration (in a module) node */
-   private def buildTree(node: DefaultMutableTreeNode, dec: Declaration, defaultReg: SourceRegion) {
+   private def buildTree(node: DefaultMutableTreeNode, dec: Symbol, defaultReg: SourceRegion) {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
+         case PlainViewInclude(_,_,incl) => "include " + incl.last
          case s: Structure => "structure " + s.name.toString
-         case a: DefLinkAssignment => "include " + a.name.toString
-         case d: Declaration => d.role.toString + " " + d.name.toString
+         case c: Constant => c.name.toString
       }
       val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       val child = new DefaultMutableTreeNode(new MMTElemAsset(dec, label, reg))
@@ -276,10 +276,11 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          }
       } catch {case e: java.lang.Throwable =>
          // other error, e.g., by the get methods in buildTree
-         val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, e.getMessage)
+         val msg = e.getClass + ": " + e.getMessage
+         val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, path.toString, 0,0,0, msg)
          e.getStackTrace foreach {m => error.addExtraMessage(m.toString)}
          errorSource.addError(error)
-         log(e.getMessage)
+         log(msg)
       }
       tree
    }

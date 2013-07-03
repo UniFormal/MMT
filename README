@@ -1,6 +1,5 @@
 Directory structure:
- - admin
- - deploy	projects ready to be used without building required
+ - deploy	jar files ready to be used without building; see the README there for further details
  - doc 		MMT documentation
- - src		project sources
- - www		web site
+ - src		individual MMT projects and their sources; see the README there for further details
+ - styles	some styles for generating presentation
