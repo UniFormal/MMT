@@ -58,7 +58,6 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	         val d = xml.attr(m, "target")
 	         log("dref to " + d + " found")
 	         val r = DRef(docParent.get, Path.parseD(d,modParent), false)
-	         println(d, " ", r.target)
 	         add(r)
          case <mref/> =>
 	         val t = xml.attr(m, "target")

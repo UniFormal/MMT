@@ -337,14 +337,14 @@ case class OMREF(uri: URI, var value: Option[Term] = None) extends Term {
  * An OMFOREIGN represents an OpenMath foreign object.
  * @param node the XML element holding the foreign object
  */
-case class OMFOREIGN(node : Node) extends Term {
+case class OMFOREIGN(nodes : Node*) extends Term {
    def head = None
    def role = Role_foreign
-   def components = List(XMLLiteral(node))
-   def toNodeID(pos : Position) = <om:OMFOREIGN>{node}</om:OMFOREIGN> % pos.toIDAttr
+   def components = nodes.map(XMLLiteral).toList
+   def toNodeID(pos : Position) = <om:OMFOREIGN>{nodes}</om:OMFOREIGN> % pos.toIDAttr
    def ^(sub : Substitution) = this
    private[objects] def freeVars_ = Nil
-   def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{Node}</m:apply>
+   def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{nodes}</m:apply>
 }
 /** OpenMath literals
  *  integers, floats, and strings (we omit byte arrays)
@@ -525,10 +525,11 @@ object Obj {
                rest(0) else <OMATTR>{rest}</OMATTR>
             val t = parseTerm(n, nbase)
             OMATTR(t, k.asInstanceOf[OMID], v)
-         case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
-         case <OMSF>{nodes @ _*}</OMSF> =>
+         case <OMFOREIGN>{s @ _*}</OMFOREIGN> => OMFOREIGN(s:_*)
+         case <OMSF>{nodes @ _*}</OMSF> =>            
             val sf = nodes.toList.map {
                case node @ <text>{scala.xml.PCData(t)}</text> => Text(xml.attr(node, "format"), t)
+               case node @ <text>{scala.xml.Text(t)}</text> => Text(xml.attr(node, "format"), t) //some parsers don't use PCData
                case <node>{n}</node> => XMLNode(n)
                case n => Formal(parseTerm(n, nbase))
             }
