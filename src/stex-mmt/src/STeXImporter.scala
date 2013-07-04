@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.parser._
 
 
-import scala.xml.Node
+import scala.xml.{Node,Elem,NamespaceBinding}
 
 class STeXImporter extends Compiler with Logger {
   val key : String = "stex-omdoc"
@@ -41,8 +41,10 @@ class STeXImporter extends Compiler with Logger {
   }
   
   def compileOne(inText : String, dpath : DPath) : String = {
-    val node = scala.xml.Utility.trim(scala.xml.XML.loadString(inText))    
-    val errors = translateArticle(node)(dpath)
+   
+    val node = scala.xml.XML.loadString(clearXmlNS(inText))    
+    val cleanNode = scala.xml.Utility.trim(node)
+    val errors = translateArticle(cleanNode)(dpath)
     errors match {
       case Nil => //returning result
         val docXML = controller.getDocument(dpath).toNodeExpanded(controller.memory.content, controller.memory.narration)
@@ -52,6 +54,12 @@ class STeXImporter extends Compiler with Logger {
     }
 
   } 
+  
+  //just fixing here an latexml bug, to be removed when it's fixed there
+  //removing bad xmlns reference that conflicts with MMT's xmlns
+  def clearXmlNS(s : String) : String = {
+   s.replaceFirst("xmlns=\"http://omdoc.org/ns\"","xmlns=\"http://www.w3.org/1999/xhtml\"")   
+  }
   
 
   val xmlNS = "http://www.w3.org/XML/1998/namespace"
@@ -104,7 +112,13 @@ class STeXImporter extends Compiler with Logger {
         case "imports" => //omdoc import -> mmt (plain) include
           val fromS = (n \ "@from").text
           val from = fromS.split("#").toList match {
-            case dpathS :: localPathS :: Nil => DPath(URI(dpathS)) ? LocalPath(List(localPathS))
+            case dpathS :: localPathS :: Nil =>
+              val dpath = if (dpathS.startsWith("..//") && dpathS(4).isLetter) {
+                Path.parseD(dpathS.substring(4), doc.path)
+              } else {
+                DPath(URI(dpathS))
+              }
+              dpath ? LocalPath(List(localPathS))
             case _ => throw ParseError("invalid stex mpath: " + fromS)
           }
           val include = PlainInclude(from, mpath)
@@ -145,8 +159,6 @@ class STeXImporter extends Compiler with Logger {
           controller.memory.content.update(const) 
           val res = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
           
-          
-          
         case _ => println("Ignoring elem" + n)//TODO
       }
     } catch {
@@ -166,18 +178,22 @@ class STeXImporter extends Compiler with Logger {
             val cd = (n \ "@cd").text
             val name = (n \ "@name").text
             val refPath = Path.parseM("?" + cd, dpath)
+            //computing map of arg names to positions
+            proto.child.tail.zipWithIndex foreach {p => 
+              val name = (p._1 \ "@name").text
+              argMap(name) = p._2 + 1 //args numbers start from 1
+            }
             refPath ? LocalName(name)
-          case _ => throw ParseError("invalid prototype")
+          case _ => throw ParseError("invalid  prototype" + proto)
         }
-        
-      case _ => throw ParseError("invalid prototype")
+      case "OMS" => 
+        val cd = (proto \ "@cd").text
+        val name = (proto \ "@name").text
+        val refPath = Path.parseM("?" + cd, dpath)
+        refPath ? LocalName(name)
+      case _ => throw ParseError("invalid prototype" + proto + rendering)
     }
-    //computing map of arg names to positions
-	proto.child.tail.zipWithIndex foreach {p => 
-	  val name = (p._1 \ "@name").text
-	  argMap(name) = p._2 + 1 //args numbers start from 1
-	}
-   
+
    
    val markers =  parseRenderingMarkers(rendering, argMap.toMap)
    val precS = try {
@@ -248,7 +264,6 @@ class STeXImporter extends Compiler with Logger {
       case "#PCDATA" => new scala.xml.Text(node.toString)
       case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteNode) :_*)
     }
-    
     Obj.parseTerm(rewriteNode(n), dpath)
   }
   
