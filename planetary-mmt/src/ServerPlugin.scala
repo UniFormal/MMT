@@ -28,6 +28,7 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
          case "getPaths" :: _ => getPathsResponse
          case "getPresentation" :: _ => getPresentationResponse
          case "getCompiled" :: _ => getCompiledResponse
+         case "getContentPres" :: _ => getContentPres
          case _ => errorResponse("Invalid request: " + uriComps.mkString("/"))
        }
      } catch {
@@ -58,11 +59,41 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
      } catch {
        case e : Error => 
          log(e.longMsg)
-         errorResponse(e.shortMsg).act(tk)
+         errorResponse(e.longMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage()).act(tk)
      }
    }
+   
+   
+   private def getContentPres : HLet = new HLet {
+     def act(tk : HTalk) = try {
+       val reqS = bodyAsString(tk)
+       val params = JSON.parseRaw(reqS) match {
+         case Some(j : JSONObject) => j.obj
+         case _ => throw ServerError("Invalid JSON " + reqS)
+       }
+       log("Received ContentPres Request : " + params.toString)
+
+       val pathS = params.get("path").getOrElse(throw ServerError("No path found")).toString       
+       val styleS = params.get("style").getOrElse("xml").toString
+       val presenter = controller.extman.getPresenter(styleS) getOrElse {
+         val nset = Path.parseM(styleS, controller.getBase)
+         new StyleBasedPresenter(controller, nset)
+       }
+       val path = Path.parse(pathS)
+       val elem = controller.get(path)
+       val rb = new XMLBuilder()
+       presenter.apply(elem, rb)
+       val response = rb.get()
+       
+       
+       log("Sending Response: " + response)
+       TextResponse(response.toString).act(tk)
+
+     }
+   }
+   
    
    private def getCompiledResponse : HLet = new HLet {
      def act(tk : HTalk) = try {
@@ -71,21 +102,28 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
          case Some(j : JSONObject) => j.obj
          case _ => throw ServerError("Invalid JSON " + reqS)
        }
+       log("Received Compilation Request : " + params.toString)
        val bodyS = params.get("body").getOrElse(throw ServerError("No Body Found")).toString
-       val dpathS = params.get("dpath").getOrElse(throw ServerError("No dpath Found")).toString
-       println("bodyS: " + bodyS)
-       println("dpathS: " + dpathS)
-       
+       val dpathS = params.getOrElse("dpath", "/tmp/").toString
+       val format = params.get("format").getOrElse(throw ServerError("No dpath Found")).toString     
        val dpath = DPath(utils.URI(dpathS))
-       val comp = new STeXImporter()
-       comp.init(controller, Nil)
-       val resp = comp.compileOne(bodyS, dpath)
-       println("Response : " + resp)
-       TextResponse(resp).act(tk)       
+       format match {
+         case "stex" => 
+          val comp = new STeXImporter()
+          comp.init(controller, Nil)
+          val response = comp.compileOne(bodyS, dpath)
+          JsonResponse(response, "Success").act(tk)          
+         case "mmt" => 
+          val reader = parser.Reader(bodyS)
+          val (doc,state) = controller.textParser(reader, dpath)
+          
+          val response = doc.toNodeResolved(controller.memory.content).toString       
+          JsonResponse(response, "Success").act(tk)          
+       }
      } catch {
        case e : Error => 
          log(e.longMsg)
-         errorResponse(e.shortMsg).act(tk)
+         errorResponse(e.longMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).act(tk)
   
@@ -99,38 +137,33 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
          case Some(j : JSONObject) => j.obj
          case _ => throw ServerError("Invalid JSON " + reqS)
        }
+       log("Received Presentation Request : " + params.toString)
+
        val bodyS = params.get("body").getOrElse(throw ServerError("No Body Found")).toString
-       val dpathS = params.get("dpath").getOrElse(throw ServerError("No dpath Found")).toString
-       println(dpathS)
+       val dpathS = params.getOrElse("dpath","/tmp/").toString
        val dpath = DPath(utils.URI(dpathS))
        val styleS = params.get("style").getOrElse("xml").toString
        val presenter = controller.extman.getPresenter(styleS) getOrElse {
          val nset = Path.parseM(styleS, controller.getBase)
-         new StyleBasedPresenter(controller, nset)
+         val p = new StyleBasedPresenter(controller, nset)
+         p.expandXRefs = true
+         p
        }
        val reader = new XMLReader(controller)
-       println("bodyS: " + bodyS)
-       println("dpathS: " + dpathS)
-       
        val bodyXML  = scala.xml.Utility.trim(scala.xml.XML.loadString(bodyS))
+       
        val cont = new Controller
        reader.readDocument(dpath, bodyXML)(cont.add)
        val doc : Document = cont.getDocument(dpath, dp => "doc not found at path " + dp)
        val rb = new XMLBuilder()
        presenter.apply(doc, rb)
        val response = rb.get()
-       /*
-       println(bodyXML)
-       println("\n\n\n")
-       println(doc.toNode)
-       println("\n\n\n")
-       println(response)
-       */
-       TextResponse(response.toString).act(tk)
+       log("Sending Response: " + response)
+       JsonResponse(response.toString, "Success").act(tk)
      } catch {
         case e : Error => 
          log(e.longMsg)
-         errorResponse(e.shortMsg).act(tk)
+         errorResponse(e.longMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).act(tk)
      }
@@ -138,17 +171,41 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
    }
    
    private def getPathsResponse : HLet = new HLet {
-     def act(tk : HTalk) = try {
+     def act(tk : HTalk) = try {        
+       val archives = controller.backend.getArchives map {a => DPath(a.narrationBase)}
+       val pathList = archives.flatMap(getContentPaths)
+       val lines = pathList map { p => 
+         p.last + " " + p.toPath         
+       }
+       val response = lines.mkString("\n")
+       TextResponse(response).act(tk)
+        /* //old implementation, still around for documentation for now, to be removed soon
+         
         val archives = controller.backend.getArchives map { a => (a.id, DPath(a.narrationBase))}
         val result = archives.map(p => ((p._1 + " " + p._2.toPath) :: getDescendants(p._2).tail).mkString("\n")).mkString("\n")
         log("getPaths returning: " + result)
         TextResponse(result).act(tk)
+        * 
+        */
      } catch {
        case e : Error => 
          log(e.longMsg)
          errorResponse(e.shortMsg).act(tk)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage()).act(tk)
+     }
+   }
+   
+   private def getContentPaths(p : Path) : List[MPath] = {
+     try {
+       val paths = controller.get(p).components collect {
+         case ref : DRef => getContentPaths(ref.target)
+         case ref : MRef => ref.target :: Nil
+       }
+       paths.flatten
+     } catch {
+       case x : Error => Nil //if MMT Error silently ignore
+       case x : Throwable => Nil // also silently ignore
      }
    }
    
@@ -177,6 +234,7 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
    
    
    
+   
   // Utils
   private def bodyAsString(tk: HTalk): String = {
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw  PlanetaryError("no body found"))
@@ -184,7 +242,15 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
   }
   
   private def errorResponse(text : String) : HLet = {
-    TextResponse(s"MMT Error in Planetary extension: $text ")
+    JsonResponse("", s"MMT Error in Planetary extension: $text ")
+  }
+  
+  private def JsonResponse(content : String, errors : String) : HLet = {
+      val response = new collection.mutable.HashMap[String, Any]()
+      response("content") = content
+      response("log") = errors
+      log("Sending Response: " + response)
+      JsonResponse(JSONObject(response.toMap))     
   }
   
   /**
@@ -200,4 +266,19 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
         .close
     }
   }
+  
+  /**
+   * A Json response that the server sends back to the browser
+   * @param json the Json message that is sent in the HTTP body
+   */
+  def JsonResponse(json: JSONType): HLet = new HLet {
+    def act(tk: HTalk) {
+      val out: Array[Byte] = json.toString.getBytes("UTF-8")
+      checkCORS(tk).setContentLength(out.size) // if not buffered
+        .setContentType("application/json; charset=utf8")
+        .write(out)
+        .close
+    }
+  }
+  
 }
