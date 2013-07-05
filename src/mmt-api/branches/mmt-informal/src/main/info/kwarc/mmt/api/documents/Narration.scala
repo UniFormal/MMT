@@ -25,7 +25,13 @@ trait NarrativeObject extends Content {
   def toNode : scala.xml.Node 
   def role = Role_NarrativeObject
   def governingPath = None
+}
 
+object NarrativeObject {
+  def fromXML(n : scala.xml.Node) : NarrativeObject = n.label match {
+    case "#PCDATA" => new NarrativeText(n.toString)
+    case _ => new NarrativeNode(n, n.child.map(fromXML).toList)
+  }
 }
 
 class NarrativeText(val text : String) extends NarrativeObject {
@@ -39,7 +45,7 @@ class NarrativeTerm(val term : Term) extends NarrativeObject {
 }
 
 class NarrativeRef(val target : Path, val text : String) extends NarrativeObject {
-  def toNode = <om:ref link={target.toPath}> {text} </om:ref>
+  def toNode = <om:ref target={target.toPath}> {text} </om:ref>
   def toHTML = <span jobad:href={target.toPath}> {text} </span>
   def components = presentation.StringLiteral(text) :: Nil
 }
@@ -48,6 +54,7 @@ class NarrativeNode(val node : scala.xml.Node,val child : List[NarrativeObject])
   def toNode = new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, child.map(_.toNode) :_ *)
   def components = child
 }
+
 
 /* A Narration instance represents unstructured narrative content
  * such as sentences and paragraphs.
@@ -59,6 +66,10 @@ abstract class Narration(val dpath : DPath, val content : NarrativeObject) exten
   def parent = dpath
 }
 
+class PlainNarration(dpath : DPath, content : NarrativeObject) extends Narration(dpath, content) {
+  def toNode = <plain-narration>{content.toNode}</plain-narration>
+  def components = content :: Nil //TODO
+}
 
 class Definition(dpath : DPath, val targets : List[GlobalName], content : NarrativeObject) extends Narration(dpath, content) {
   def toNode = <definition for={targets.mkString(" ")}> {content.toNode} </definition>  

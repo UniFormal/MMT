@@ -69,6 +69,9 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
              log("mref to " + t + " found")
 	         val r = SRef(docParent.get, Path.parseS(t,modParent), false)
 	         add(r)
+         case <plain-narration>{_*}</plain-narration> => 
+             val r = NarrativeObject.fromXML(m.child.head)
+             add(new PlainNarration(docParent.get, r))
          case <definition>{_*}</definition> => 
              val targetsS = xml.attr(m, "for").split(" ")
              val targets = targetsS.map(st => Path.parseS(st, modParent))
