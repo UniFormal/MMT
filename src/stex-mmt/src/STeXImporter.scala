@@ -58,7 +58,8 @@ class STeXImporter extends Compiler with Logger {
   //just fixing here an latexml bug, to be removed when it's fixed there
   //removing bad xmlns reference that conflicts with MMT's xmlns
   def clearXmlNS(s : String) : String = {
-   s.replaceFirst("xmlns=\"http://omdoc.org/ns\"","xmlns=\"http://www.w3.org/1999/xhtml\"")   
+   val s1 = s.replaceAll("xmlns=\"http://www.w3.org/1999/xhtml\"","")   
+   s1.replaceFirst("xmlns=\"http://omdoc.org/ns\"","xmlns=\"http://www.w3.org/1999/xhtml\"")   
   }
   
 
@@ -159,7 +160,9 @@ class STeXImporter extends Compiler with Logger {
           controller.memory.content.update(const) 
           val res = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
           
-        case _ => println("Ignoring elem" + n)//TODO
+        case _ => 
+          val nr = new PlainNarration(doc.path, NarrativeObject.fromXML(n))
+          doc.add(nr)
       }
     } catch {
       case e : Error => errors ::= e
@@ -242,7 +245,7 @@ class STeXImporter extends Compiler with Logger {
       val cd = (n \ "@cd").text
       val name = (n \ "@name").text
       val text = n.child.mkString(" ")
-      val refPath = Path.parseM("?" + cd, dpath)
+      val refPath = Path.parseM(cd + ".omdoc?" + cd, dpath)
       val refName = refPath ? LocalName(name)
       new NarrativeRef(refName, text) 
     case "idx" | "idt" => translateCMP(n.child.head)  //ignore and take first child -- should get to a "term" elem in 2/1 steps
