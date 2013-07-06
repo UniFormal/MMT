@@ -98,4 +98,18 @@ class Twelf extends Compiler {
       }
       errors.reverse
    }
+   
+   def compileOne(inText : String, dpath : DPath) : (String, List[SourceError]) = {
+     val inFileName = "/tmp/in.elf"
+     val outFileName = "/tmp/out.omdoc"
+     val in = new PrintWriter("/tmp/in.elf")
+     in.write(inText)
+     in.close()
+     val errors = buildOne(File(inFileName), dpath, File(outFileName))
+     val source = scala.io.Source.fromFile(outFileName)
+     val lines = source.getLines.mkString("\n")
+     source.close()     
+     (lines, errors)
+   }
+   
 }
