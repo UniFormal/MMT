@@ -7,6 +7,8 @@ import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.stex._
+import info.kwarc.mmt.lf._
+
 
 import scala.util.parsing.json._
 import zgs.httpd._
@@ -111,14 +113,20 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
          case "stex" => 
           val comp = new STeXImporter()
           comp.init(controller, Nil)
-          val response = comp.compileOne(bodyS, dpath)
-          JsonResponse(response, "Success").act(tk)          
+          val (response,errors) = comp.compileOne(bodyS, dpath)
+          JsonResponse(response, errors.mkString("\n")).act(tk)
          case "mmt" => 
           val reader = parser.Reader(bodyS)
           val (doc,state) = controller.textParser(reader, dpath)
           
           val response = doc.toNodeResolved(controller.memory.content).toString       
-          JsonResponse(response, "Success").act(tk)          
+          JsonResponse(response, "Success").act(tk)
+         case "elf" => 
+           val comp = new Twelf()
+           comp.init(controller, List("/home/mihnea/kwarc/data/twelf-mod/bin/twelf-server")) //TODO take from extension list
+           val (response,errors) = comp.compileOne(bodyS, dpath)
+           
+           JsonResponse(response, errors.mkString("\n")).act(tk)
        }
      } catch {
        case e : Error => 
