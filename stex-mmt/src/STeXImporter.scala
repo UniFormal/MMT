@@ -40,17 +40,18 @@ class STeXImporter extends Compiler with Logger {
     errors
   }
   
-  def compileOne(inText : String, dpath : DPath) : String = {
+  def compileOne(inText : String, dpath : DPath) : (String, List[Error]) = {
    
     val node = scala.xml.XML.loadString(clearXmlNS(inText))    
     val cleanNode = scala.xml.Utility.trim(node)
     val errors = translateArticle(cleanNode)(dpath)
+    
     errors match {
       case Nil => //returning result
         val docXML = controller.getDocument(dpath).toNodeExpanded(controller.memory.content, controller.memory.narration)
-        docXML.toString
+        (docXML.toString, Nil)
       case _ => //reporting errors
-        "Errors Ocurred : " + errors.toString
+        ("",errors)
     }
 
   } 
