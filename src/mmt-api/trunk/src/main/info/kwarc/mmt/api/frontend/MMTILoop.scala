@@ -17,6 +17,8 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
          intp.bind("controller", controller)
          val interpolator = new parser.MMTInterpolator(controller)
          intp.bind("interpolator", interpolator)
+         val isimp = new InteractiveSimplifier(controller, this)
+         intp.bind("isimp", isimp)
          intp.interpret("import interpolator._")
       }
       super.loop()

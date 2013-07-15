@@ -7,13 +7,38 @@ import java.net._
 import java.io._
 import java.util.jar._
 
+class UOMState(val t : Term, val path : List[Int]) {
+  def enter(i : Int) : UOMState = new UOMState(t, i :: path)
+  def exit(i : Int) : UOMState = new UOMState(t, path.tail)
+  override def toString = t.toString + "@" + path.mkString("_")  
+}
 
 /** A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
-class UOM(controller: frontend.Controller) extends StatelessTraverser with frontend.Logger {
+class UOM(controller: frontend.Controller) extends Traverser[UOMState] with frontend.Logger {
 
+  
   val report = controller.report
   val logPrefix = "uom"
 
+  /** code for saving a log of the applied operations, can be used later for interactive systems */
+  var simplificationLog : List[(UOMState,Term,Rule)] = Nil
+  var saveLog = true //TODO for now
+  
+  def saveSimplificationResult(start : UOMState, end : Term) = {
+    log("Saving result" +  start + " -> " + end)
+    val (_,_,rule) = simplificationLog.head
+    simplificationLog = (start, end, rule) :: simplificationLog.tail
+    //log(simplificationLog.toString)
+  }
+  
+  def saveSimplificationRule(rule : Rule) = {
+    log("Saving rule " +  rule)
+    simplificationLog ::= (null, null, rule)
+    //log(simplificationLog.toString)
+    
+  }
+  /** end of simplication log functions */
+  
   private val rs = controller.extman.ruleStore
 
    /** applies all DepthRule's that are applicable at toplevel of an OMA
@@ -36,9 +61,11 @@ class UOM(controller: frontend.Controller) extends StatelessTraverser with front
                      ch match {
                         case NoChange =>
                         case LocalChange(args) =>
+                           saveSimplificationRule(rule)
                            return applyDepthRules(outer, before, args ::: afterRest)
                         //return immediately upon GlobalChange
                         case GlobalChange(tS) =>
+                           saveSimplificationRule(rule)
                            return GlobalChange(tS)
                      }
                   }
@@ -63,7 +90,11 @@ class UOM(controller: frontend.Controller) extends StatelessTraverser with front
             case LocalChange(args) =>
                insideS = args
                changed = true
-            case GlobalChange(t) => return GlobalChange(t)
+               saveSimplificationRule(rule)
+
+            case GlobalChange(t) => 
+              saveSimplificationRule(rule)
+              return GlobalChange(t)
          }
       }
       //we have to check for insideS == inside here in case a BreadthRules falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
@@ -75,17 +106,26 @@ class UOM(controller: frontend.Controller) extends StatelessTraverser with front
     * @param context its context, if non-empty
     * @return the simplified Term (if a sensible collection of rules is used that make this method terminate)
     */
-   def simplify(t: Term, context: Context = Context()) = apply(t,context)
+   def simplify(t: Term, context: Context = Context()) = {
+     simplificationLog = Nil
+     val initState = new UOMState(t, Nil)
+     val tS = apply(t,initState, context)
+     log(simplificationLog.mkString("\n"))
+     tS
+   }
    
    /** the simplification method that is called internally during the traversal of a term
     * users should not call this method (call simplify instead) */
-   def traverse(t: Term)(implicit con : Context, init: Unit) : Term =  t match {
+   def traverse(t: Term)(implicit con : Context, init: UOMState) : Term =  t match {
       case OMA(OMS(_), _) =>
          log("simplifying " + t)
+         log("state is" + init.t + "\n at " + init.path.toString)
          report.indent
          val (tS, globalChange) = applyAux(t)
          report.unindent
          log("simplified  " + tS)
+         if (t != tS)
+           saveSimplificationResult(init, tS)
          val tSM = tS.from(t)
          if (globalChange)
             Changed(tSM)
@@ -107,7 +147,7 @@ class UOM(controller: frontend.Controller) extends StatelessTraverser with front
     * @param globalChange true if there has been a GlobalChange so far
     * @return the simplified term and a Boolean indicating whether a GlobalChange occurred
     */
-   private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: Unit) : (Term, Boolean) = t match {
+   private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
       case OMA(OMS(outer), args) =>
          // state (1)
          log("applying depth rules to   " + t)
@@ -121,9 +161,9 @@ class UOM(controller: frontend.Controller) extends StatelessTraverser with front
             case LocalChange(argsS) =>
                // state (2) 
                // by marking with and testing for Simplified(_), we avoid recursing into a term twice
-               val argsSS = argsS map {
-                  case Simplified(a) => a 
-                  case a => Simplified(traverse(a))
+               val argsSS = argsS.zipWithIndex map {
+                  case (Simplified(a),i) => a 
+                  case (a,i) => Simplified(traverse(a)(con, init.enter(i + 1))) // +1 adjusts for the f in OMA(f, args)
                }
                // if any argument changed globally, go back to state (1)
                if (argsSS exists {
