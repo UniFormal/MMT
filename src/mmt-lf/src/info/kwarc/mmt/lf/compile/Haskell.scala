@@ -82,9 +82,13 @@ object Haskell extends FuncLang[String] {
       f.name + f.args.map(arg).mkString("(",",",")") + " : " + exp(f.ret) + " = " + exp(f.body) + "\n"
    }
    def decl(d: DECL) = d match {
-     case a : ADT => "data " + ADTaux(a)
+     case a : ADT => "data " + ADTaux(a) + { 
+       if (!a.typeClasses.isEmpty) " deriving " + a.typeClasses.mkString("( ", ", ", ")\n") else ""
+     }
      case ADTRec(adts) => adts.map(decl).mkString("", "", "")
-     case TYPEDEF(name, df) => "type " + upc(name) + " = " + exp(df) + "\n"
+     case a : TYPEDEF => "type " + upc(a.name) + " = " + exp(a.df) + { 
+       if (!a.typeClasses.isEmpty) " deriving " + a.typeClasses.mkString("( ", ", ", ")") else ""
+     } + "\n"
      case f: FUNCTION => {
 //       println(f.args.map(a => exp(a.tp) + f.ret))
         f.name + " :: " + f.args.map(a => exp(a.tp)).mkString("", " -> ", " -> ") + 
@@ -92,7 +96,9 @@ object Haskell extends FuncLang[String] {
         f.name + " " + f.args.map(_.name).mkString("", " ", " = ") + exp(f.body) + "\n"
      }
      case FUNCTIONRec(fs) => fs.map(decl).mkString("", "\n", "")
-     case RECORD(name, fields) => "data " + upc(name) + " = " + upc(name) + fields.map {case FIELD(n,v) => n + " :: " + exp(v)}.mkString("{", ",", "}")
+     case a : RECORD => "data " + upc(a.name) + " = " + upc(a.name) + a.fields.map {case FIELD(n,v) => n + " :: " + exp(v)}.mkString("{", ",", "}") + { 
+       if (!a.typeClasses.isEmpty) " deriving " + a.typeClasses.mkString("( ", ", ", ")\n") else ""
+     }
      case EXCEPTION(e) => ""
    }
    private var ids: List[(String,Boolean)] = Nil
@@ -109,10 +115,7 @@ object Haskell extends FuncLang[String] {
    }
    private def declName(d : DECL) : List[(String,Boolean)] = d match {
      case TYPEDEF(a,b) => (a,true) :: declName(b)
-     case ADT(a,b) => (a,true) :: (b map declName flatten)
-//    	 val q = b map declName 
-//     }
-//     ( )foldRight(List())(:::)
+     case d : ADT => (d.name,true) :: (d.constructors map declName flatten) ++ d.typeClasses.map((_, true))
      case d : FUNCTION => List((d.name,false)) // function names start with lowercase
      case d : RECORD => List((d.name,true))
      case d : EXCEPTION => List((d.name,true))
@@ -149,7 +152,7 @@ object Haskell extends FuncLang[String] {
      }
    def cas(c: CASE) : String = exp(c.pattern) + " -> " + exp(c.body)
    // auxiliary function: upc(string) = String
-   private def upc(string : String) : String = string.head.toUpper + string.substring(1)
+   def upc(string : String) : String = string.head.toUpper + string.substring(1)
    // haskell native datatypes and checker
    private val haskellTypes : List[String] = List("Integer","Bool")//,"String","Int")
    private def haskellType(name : String) : Boolean = haskellTypes.exists( name == )
@@ -159,7 +162,7 @@ object Haskell extends FuncLang[String] {
    private def fixConflict(s : String, m : scala.collection.mutable.HashMap[String,String]) : String = {
 	   m.applyOrElse(s, {x : String => x})
    }
-   private def fix(s : String) : String = {
+   def fix(s : String) : String = {
      fixNative(fixConflict(s,fixMap))
    }
    // maps the possible conflicts to resolutions

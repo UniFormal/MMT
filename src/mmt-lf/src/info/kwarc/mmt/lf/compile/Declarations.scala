@@ -6,18 +6,33 @@ sealed abstract class DECL
  *  name and id's ADT and CONS respectively
  *  but using implicit conversions in Program, they can also be strings
  *  anonymous record types are not permitted */
-case class ADT(name: String, constructors: List[CONS] = Nil) extends DECL
+case class ADT(name: String, constructors: List[CONS] = Nil) extends DECL {
+  var typeClasses : List[String] = List()
+  def derive(s : String*) : ADT = {typeClasses = typeClasses ++ s.toList; this}
+  def derive(s : List[String]) : ADT = {derive(s : _*); this}
+}
+
+//case class DeriveTypeClass(name : String, constructors: List[CONS] = Nil, tc : List[TYPE]) extends ADT(name, constructors)
+
 /** a group of mutually recursive abstract data types */
 case class ADTRec(adts: List[ADT]) extends DECL
 /** type definition */
-case class TYPEDEF(name: String, df: EXP) extends DECL
+case class TYPEDEF(name: String, df: EXP) extends DECL {
+  var typeClasses : List[String] = List()
+  def derive(s : String*) : TYPEDEF = {typeClasses = typeClasses ++ s.toList; this}
+  def derive(s : List[String]) : TYPEDEF = {derive(s : _*); this}
+}
 /** function definition */
 case class FUNCTION(name: String)(val args: ARG*)(val ret: EXP)(val body: EXP) extends DECL
 /** a group of mutually recursive functions */
 case class FUNCTIONRec(funs: List[FUNCTION]) extends DECL
 /** record type declaration: RECORD(n) ^ c1 :: A1 ^ ... ^ cN :: AN  
  * anonymous record types are not permitted */
-case class RECORD(name: String, fields: List[FIELD] = Nil) extends DECL
+case class RECORD(name: String, fields: List[FIELD] = Nil) extends DECL {
+  var typeClasses : List[String] = List()
+  def derive(s : String*) : RECORD = {typeClasses = typeClasses ++ s.toList; this}
+  def derive(s : List[String]) : RECORD = {derive(s : _*); this}
+}
 /** exception declaration; all exception take a single string argument */
 case class EXCEPTION(name: String) extends DECL
 
@@ -95,6 +110,7 @@ case class DECLHEAD(name: String) {
     *  name adt (constructors)
     */
    def adt(cs: CONS*) = ADT(name, cs.toList)
+   def adtTC(a : ADT, tc : TYPE*) = ADT(a.name, a.constructors)
    /** record type definitions as 
     *  name record (fields)
     */
