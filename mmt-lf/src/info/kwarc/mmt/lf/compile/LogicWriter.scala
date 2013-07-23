@@ -10,7 +10,6 @@ import info.kwarc.mmt.lf.compile._
 import info.kwarc.mmt.api._
 import utils._
 
-
 import modules._
 import symbols._
 import libraries._
@@ -21,33 +20,21 @@ import frontend._
 import patterns._
 import presentation._
 
-class LogicWriter() {
-  
+class LogicWriter(ls : LogicSyntax) {
+	val files = List(
+	    "Logic_<LogicName>.hs",
+	    "AS_BASIC_<LogicName>.hs",
+	    "Parse_<LogicName>.hs"
+	    )
+	
    case class LogicWriterError(msg : String) extends java.lang.Throwable(msg)
-   
-   // a holder for classification to files
-//   private case class FileSys(logicName : String, var basic : List[DECL] = Nil,var sign : List[DECL] = Nil, var morphism : List[DECL] = Nil, var tools : List[DECL] = Nil)
-//   private def split(d : DECL, fs : FileSys) : FileSys = {
-//     d match {
-//     	case d : ADT => fs.basic ::= d
-//     	case d : ADTRec => fs.basic ::= d//l map {x => split(x,fs)} 
-//     	case d : TYPEDEF => if (d.name == "sigs") fs.basic ::= d else fs.basic ::= d
-//     	case d : FUNCTION => fs.tools ::= d 
-//     	case d : FUNCTIONRec => fs.tools ::= d
-//     	case d : RECORD => if (d.name == "theo") fs.basic ::= d else fs.basic ::= d
-//     	case d : EXCEPTION => fs.basic ::= d
-//     	case _ => 
-//     }
-//     fs
-//   }
-  /*
-   * splits logic to files
-   * figure out what part of logic syntax a declaration is --> compile an appropriate file name --> write declaration to file
-   */
    /**
     * ls - logic syntax
     * lname - logic name
     * dir - Hets main directory
+    * 
+    * splits logic to files
+    * figure out what part of logic syntax a declaration is --> compile an appropriate file name --> write declaration to file
     */
   def compile(ls : LogicSyntax, lname : String, hetsdir : String) : Unit = {
     
@@ -61,7 +48,6 @@ class LogicWriter() {
     
     val decls_l = decls.zip(labels)
 
-    // crawl through templates instead?
     val templdir = "/home/aivaras/Hets-src/MMT/newLogicTemplates/" 
     
     comp.getLabels.distinct foreach { x =>
@@ -81,16 +67,19 @@ class LogicWriter() {
     val mainLName = "Logic_" + lname + ".hs"
     val tempL = new java.io.File(templdir + "/" + "Logic.tmpl")
     write(ldir, List(lname), mainLName, tempL)
+
+    write(ldir,List(lname),"Parse_" + lname + ".hs", new java.io.File(templdir + "/Parse.tmpl"))
+    write(ldir,List(lname),"StaticAna" + lname + ".hs", new java.io.File(templdir + "/StaticAna.tmpl"))
+    write(ldir,List(lname),"Sublogic_" + lname + ".hs", new java.io.File(templdir + "/Sublogic.tmpl"))
   }
   
-  /*
-   * takes a list of DECLarations and an output file name, writes declarations to a file
-   */
    /**
     * logdir - output directory
     * cont - generated code
     * filename - destination of generated code file name
     * templ - template file
+    * 
+    * takes a list of DECLarations and an output file name, writes declarations to a file
     */
   def write(logdir : String, cont : List[String], filename : String, templ : java.io.File) : Unit = {
     //TODO GTools has been dropped
@@ -103,10 +92,10 @@ class LogicWriter() {
     println("writing to " + file.toString())
     
     val src = scala.io.Source.fromFile(templ).mkString
-//    println(src)
     val lname = cont.head
     val logic : List[String] = cont.tail
-    File.write(file,src.replaceAll("""<LogicName>""", lname).replaceAll("""<insert>""",logic.mkString))
+    val rep = src.replaceAll("""<LogicName>""", lname).replaceAll("""<insert>""",logic.mkString).replaceAll("""<Form>""", Haskell.fix(Haskell.upc(ls.form.toString)))
+    File.write(file,rep)
 //    fillTemplate(new java.io.File(logdir + "/" + filename), cont)
   }
   

@@ -67,6 +67,20 @@ case class ID(name: String) extends EXP {
    def prepend(s : String) = s + name
    def o(that: ID) = ID(name + "." + that.name)
 }
+
+case class TYPE(name: String) extends EXP
+/** shorthand for function composition
+ * 
+ */
+object COMPOSE extends EXP {
+  var f1: String = null
+  var f2: String = null
+  def apply(fun1: ID, fun2: ID) : Unit = { 
+		  	f1 = fun1.name 
+  			f2 = fun2.name }  
+  def unapply() = Seq(ID(f1), ID(f2)) 
+}
+
 /** function application */
 case class APPLY(fun: String, args: EXP*) extends EXP {
    /** case in a pattern match: id(args) |> body */

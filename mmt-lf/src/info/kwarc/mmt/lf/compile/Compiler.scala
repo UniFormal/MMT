@@ -50,35 +50,38 @@ class Compiler(log: LogicSyntax) extends Program {
          case ConstantSymbol(p, n, args) => CONS(p + "_" + n, id :: argsToEXP(args))
          case VariableSymbol => CONS(c + "_var", List(vrb))
       }
-      val declare(_*) = c adt (cases :_*)
+      val declare(_*) = (c adt (cases :_*)).derive(List("Show","Typeable","Eq"))
    }
    
    // the declarations
    val decls = log.decls map {case Declaration(p, args) =>
      // datatype p = p of a1 ... an
-      val declare(_*) = p adt (p of ((id :: argsToEXP(args) ) : _*) )   
+      val declare(_*) = (p adt (p of ((id :: argsToEXP(args) ) : _*) )).derive(List("Show","Typeable","Eq"))
    }
    // the labeled union type of all declaration types
    val ofdecls = log.decls map {case Declaration(p, _) =>
       CONS(p + "_decl", List(p))
    }
-   val declare(decl, _*) = "decl" adt(ofdecls : _*)
+   val declare(decl, _*) = ("decl" adt(ofdecls : _*)).derive(List("Show","Typeable","Eq"))
    addTag("basic")
    // the type of signatures
-   val declare(sigs) = "sigs" typedef LIST(decl)
+   val declare(sigs) = ("sigs" typedef LIST(decl)).derive("Show","Typeable")
    
    // the type of theories
    val declare(theo, sign, axioms) =
      "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))  
    addTag("sig")
    
-   val declare(basic_spec) = "basic_spec" typedef LIST(decl) 
-   addTag("basic")
+   //FIXME no support for more complex expressions in ADT arguments
+   // cannot declare, matching error
+//   val declare(basic_spec) = "basic_spec" adt List(LIST(decl))
+//   val declare(basic_spec) = "basic_spec" typedef LIST(decl) 
+//   addTag("basic")
    // declare morphism
    val declare(morphism,source,target) = "morphism" record ("source" ::: sigs, "target" ::: sigs)
    addTag("mor")
    // symbols
-   val declare(symb,sname) = "symb" record ("sname" ::: id)
+   val declare(symb,sname) = ("symb" record ("sname" ::: id)).derive(List("Show","Typeable"))
    addTag("basic")
      
    val declare(error) = "error" exception
