@@ -21,6 +21,7 @@ class RuleStore {
    val atomicEqualityRules = new RuleMap[AtomicEqualityRule]
    val solutionRules = new RuleMap[SolutionRule]
    val forwardSolutionRules = new RuleMap[ForwardSolutionRule]
+   
    val introProvingRules = new utils.HashMapToSet[ContentPath, IntroProvingRule]
    val elimProvingRules = new utils.HashMapToSet[ContentPath, ElimProvingRule]
 

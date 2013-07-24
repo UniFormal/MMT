@@ -64,13 +64,13 @@ case class Context(variables : VarDecl*) extends Obj {
    def ++(that : Context) : Context = this ::: that
    /** look up a variable by name, throws LookupError if not declared */
    def apply(name : LocalName) : VarDecl = {
-      variables.reverse.find(_.name == name).getOrElse(throw LookupError(name))
+      variables.reverse.find(_.name == name).getOrElse(throw LookupError(name, this))
    }
-   def isDeclared(name : LocalName) = this.exists(_.name == name)
-   /** returns the de Bruijn index of a variable, starting from 0, throws LookupError if none */
-   def index(name: LocalName): Int = variables.lastIndexWhere(_.name == name) match { 
-	   case -1 => throw LookupError(name)
-	   case i => variables.length - i - 1 
+   def isDeclared(name : LocalName) = index(name).isDefined
+   /** returns the de Bruijn index of a variable, starting from 0 */
+   def index(name: LocalName): Option[Int] = variables.lastIndexWhere(_.name == name) match { 
+	   case -1 => None
+	   case i => Some(variables.length - i - 1) 
    }
    /** the identity substitution of this context */
    def id : Substitution = this map {

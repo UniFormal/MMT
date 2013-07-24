@@ -3,10 +3,6 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
 
-import java.net._
-import java.io._
-import java.util.jar._
-
 class UOMState(val t : Term, val path : List[Int]) {
   def enter(i : Int) : UOMState = new UOMState(t, i :: path)
   def exit(i : Int) : UOMState = new UOMState(t, path.tail)
@@ -15,12 +11,10 @@ class UOMState(val t : Term, val path : List[Int]) {
 
 /** A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
 class UOM(controller: frontend.Controller) extends Traverser[UOMState] with frontend.Logger {
-
-  
   val report = controller.report
   val logPrefix = "uom"
 
-  /** code for saving a log of the applied operations, can be used later for interactive systems */
+  /* code for saving a log of the applied operations, can be used later for interactive systems */
   var simplificationLog : List[(UOMState,Term,Rule)] = Nil
   var saveLog = true //TODO for now
   
@@ -35,11 +29,11 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     log("Saving rule " +  rule)
     simplificationLog ::= (null, null, rule)
     //log(simplificationLog.toString)
-    
   }
-  /** end of simplication log functions */
+  /* end of simplification log functions */
   
   private val rs = controller.extman.ruleStore
+  private val StrictOMA = controller.pragmatic.StrictOMA
 
    /** applies all DepthRule's that are applicable at toplevel of an OMA
     * for each arguments, all rules are tried
@@ -51,10 +45,20 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     */
    private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term]): Change = {
       after match {
-         case Nil => LocalChange(before)
+         case Nil => LocalChange(before) //we don't know if 'before' has a change; but if not, returning NoChange would not actually help in applyAux anyway
          case arg::afterRest =>
+            //auxiliary pattern-matcher to unify the cases for OMA and OMS
+            //in order to permit distinguishing OMA(OMS(p),Nil) and OMS(p), a boolean is returned
+            //that indicates which case applied
+            object OMAorOMS {
+               def unapply(t: Term) = t match {
+                  case StrictOMA(strApps, p, args) => Some((p, args, false))
+                  case OMS(p) => Some((p, Nil, true))
+                  case _ => None
+               } 
+            }
             arg match {
-               case OMAMaybeNil(OMS(inner), inside) =>
+               case OMAorOMS(inner, inside, isOMS) =>
                   rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
                      val ch = rule.apply(before, inside, afterRest)
                      log("rule " + rule + ": " + ch)
@@ -97,7 +101,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
               return GlobalChange(t)
          }
       }
-      //we have to check for insideS == inside here in case a BreadthRules falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
+      //we have to check for insideS == inside here in case a BreadthRule falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
       if (! changed || insideS == inside) NoChange else LocalChange(insideS)
    }
    
@@ -105,12 +109,15 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * @param t the term to simplify
     * @param context its context, if non-empty
     * @return the simplified Term (if a sensible collection of rules is used that make this method terminate)
+    * 
+    * The input term must be fully strictified, and so will be the output term.
+    * Applicability of rules is determined based on the pragmatic form (using controller.pragmatic.StrictOMA).
+    * Rules are passed strict terms and are expected to return strict terms.
     */
    def simplify(t: Term, context: Context = Context()) = {
      simplificationLog = Nil
      val initState = new UOMState(t, Nil)
      val tS = apply(t,initState, context)
-     log(simplificationLog.mkString("\n"))
      tS
    }
    
@@ -118,13 +125,13 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * users should not call this method (call simplify instead) */
    def traverse(t: Term)(implicit con : Context, init: UOMState) : Term =  t match {
       case OMA(OMS(_), _) =>
-         log("simplifying " + t)
+         log("simplifying " + controller.presenter.asString(t))
          log("state is" + init.t + "\n at " + init.path.toString)
-         report.indent
-         val (tS, globalChange) = applyAux(t)
-         report.unindent
-         log("simplified  " + tS)
-         if (t != tS)
+         val (tS, globalChange) = logGroup {
+            applyAux(t)
+         }
+         log("simplified  " + controller.presenter.asString(tS))
+         if (globalChange)
            saveSimplificationResult(init, tS)
          val tSM = tS.from(t)
          if (globalChange)
@@ -142,13 +149,13 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * This method exhaustively applies rules as follows:
     *  (1) --depth rules--> (2) --simplify arguments--> (3) --breadth rules--> (return)
     * If any of the operations causes changes, the automaton goes back to state (1),
-    * but some optimizations are used to avoid simplifying a previously-simplified term again.
+    * but some optimizations are used to avoid traversing a previously-simplified term again.
     * @param t the term to simplify (rules apply only to terms OMA(OMS(_),_)) 
     * @param globalChange true if there has been a GlobalChange so far
     * @return the simplified term and a Boolean indicating whether a GlobalChange occurred
     */
    private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
-      case OMA(OMS(outer), args) =>
+      case StrictOMA(strictApps, outer, args) =>
          // state (1)
          log("applying depth rules to   " + t)
          applyDepthRules(outer, Nil, args) match {
@@ -165,12 +172,13 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
                   case (Simplified(a),i) => a 
                   case (a,i) => Simplified(traverse(a)(con, init.enter(i + 1))) // +1 adjusts for the f in OMA(f, args)
                }
+               val tS = StrictOMA(strictApps, outer, argsSS)
                // if any argument changed globally, go back to state (1)
                if (argsSS exists {
                    case Changed(t) => Changed.eraseMarker(t); true
                    case _ => false
                 })
-                    applyAux(outer(argsSS), globalChange)
+                   applyAux(tS, globalChange)
                else {
                   //state (3)
                   log("applying breadth rules to " + outer(argsSS))
@@ -180,10 +188,10 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
                         applyAux(tSS, true)
                      case LocalChange(argsSSS) =>
                         // go back to state (1)
-                        applyAux(outer(argsSSS), globalChange)
+                        applyAux(StrictOMA(strictApps, outer, argsSSS), globalChange)
                      case NoChange =>
                         // state (4)
-                        (outer(argsSS), globalChange)
+                        (tS, globalChange)
                   }
                }
          }
@@ -192,38 +200,31 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
    }
 }
 
-/** apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
- * UOM uses it to remember that a Term has been simplified already to avoid recursing into it again 
+/**
+ * apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
  */
-object Simplified {
-   private val simplifyProperty = utils.mmt.baseURI / "clientProperties" / "uom" / "simplified"
+class BooleanTermProperty(val property: utils.URI) {
    def apply(t: Term) : Term = {
-     t.clientProperty(simplifyProperty) = true
+     t.clientProperty(property) = true
      t
    }
    def unapply(t: Term): Option[Term] =
-      t.clientProperty.get(simplifyProperty) match {
+      t.clientProperty.get(this.property) match {
           case Some(true) => Some(t)
           case _ => None
       }
+   def eraseMarker(t: Term) {
+      t.clientProperty -= property
+   }
 }
 
-/** apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
- * UOM uses it to remember whether a Term underwent a GlobalChange during simplification
+/**
+ * UOM uses this to remember that a Term has been simplified already to avoid recursing into it again 
+ */
+object Simplified extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
+
+/**
+ * UOM uses this to remember whether a Term underwent a GlobalChange during simplification
  * this information is passed upwards during recursive simplification
  */
-object Changed {
-   private val changeProperty = utils.mmt.baseURI / "clientProperties" / "uom" / "changed"
-   def apply(t: Term) : Term = {
-     t.clientProperty(changeProperty) = true
-     t
-   }
-   def unapply(t: Term): Option[Term] =
-      t.clientProperty.get(changeProperty) match {
-        case Some(true) => Some(t)
-        case _ => None
-      }
-   def eraseMarker(t: Term) {
-      t.clientProperty -= changeProperty
-   }
-}
+object Changed extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "changed")

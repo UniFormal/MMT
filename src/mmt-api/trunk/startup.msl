@@ -1,20 +1,22 @@
 log console
 log file jomdoc.log
+log+ debug
 //log+ presenter
 //log+ backend
-log+ controller
-log+ extman
+//log+ controller
+//log+ extman
 //log+ reader
-log+ archive    
+log+ archive  
+log+ validator
 //log+ checker
 //log+ object-checker
 //log+ query
-log+ catalog
-log+ server
-log+ structure-parser
-log+ parser
-//log+ abox
+//log+ catalog
+//log+ server
+//log+ structure-parser
 //log+ parser
+//log+ scanner
+//log+ abox
 //log+ presenter
 //log+ lf
 
@@ -24,30 +26,20 @@ extension info.kwarc.mmt.api.objects.ErrorsPlugin
 extension info.kwarc.mmt.lf.LFF
 
 // do all file path-specific archive registrations in this file (which you do not commit)
-file ../../paths.mmt
+//file ../../paths.mmt
 
-//archive frameit compile
-//archive frameit content
-//archive frameit extract
+archive add C:\other\oaff\urtheories
+archive add C:\other\oaff\test
 
-//archive mmt compile
-//archive mmt content
-//archive mmt validate
+build test mmt-omdoc checker-test/hott.mmt
 
 //archive urtheories clean
 //archive urtheories compile
 //archive urtheories content
-//archive latin relational
-//archive latin check
-//archive latin notation
-//archive latin enrich
-//archive latin mws-enriched
-//archive latin content logics
 
 //mws http://localhost:6284
-server on 8080
+//server on 8080
 //browser on
 base http://docs.omdoc.org/test
 
-//extension info.kwarc.mmt.mizar.test.MwsService
-//extension info.kwarc.mmt.tptp.TptpCompiler
+exit
