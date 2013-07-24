@@ -225,7 +225,7 @@ case class OMM(arg : Term, via : Term) extends Term with MMTObject {
 /**
  * An OMA represents an application of a term to a list of terms
  * @param fun the function term
- * @param args the list of argument terms
+ * @param args the list of argument terms (may be Nil)
  */
 case class OMA(fun : Term, args : List[Term]) extends Term {
    def head = fun.head
@@ -239,7 +239,15 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)).from(this)
    private[objects] def freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
+}
 
+/** helper object */
+object OMA {
+   /**
+    * special application that elides empty argument lists:
+    * @return f if args is Nil, OMA(f, args) otherwise
+    */
+   def applyMaybeNil(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
 }
 
 /**
@@ -407,18 +415,6 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
 
 object OMSemiFormal {
   def apply(tokens: SemiFormalObject*) : OMSemiFormal = OMSemiFormal(tokens.toList)
-}
-
-/** provides apply/unapply methods for constructing and pattern-matching a function that is may or may not be applied to arguments
- *  Nil is used as the list of arguments in the latter case
- *  This identifies t with OMA(t,Nil).
- */
-object OMAMaybeNil {
-   def apply(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
-   def unapply(t: Term) : Option[(Term,List[Term])]= t match {
-      case OMA(f, args) => Some((f,args))
-      case _ => Some((t, Nil))
-   }
 }
 
 /**

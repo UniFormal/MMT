@@ -33,7 +33,7 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
    override def prompt = "scala-mmt> "
    def run {
       val settings = new Settings
-      settings.usejavacp.value = true
+      settings.usejavacp.value = true // make sure all classes of the Java classpath are available
       //settings.sourceReader.value = "SimpleReader"
       process(settings)
    }

@@ -17,8 +17,8 @@ import ActiveNotation._
 class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.Logger {
    /** logging */
    val logPrefix = "scanner"
-   private def logWithState(s: => String) {
-      log(toString); log(s); log("")
+   private def logState {
+      log(toString)
    }
    override def toString = {
       "token list: " + tl + "\n" +
@@ -88,7 +88,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
    private def checkActive(ans: List[ActiveNotation], closable: Int) : (Int, Applicability) = ans match {
       case Nil => (closable, NotApplicable)
       case an::rest => 
-         an.applicable(currentToken, currentIndex, availableFutureTokens) match {
+         an.applicable(currentToken, availableFutureTokens) match {
             case Applicable =>
                (closable, Applicable)
             case Abort =>
@@ -116,12 +116,12 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                an.numCurrentTokens = hd.numCurrentTokens
                hd.numCurrentTokens = 0
          }
-         val app = an.applicable(currentToken, currentIndex, availableFutureTokens) //true by invariant but must be called for precondition of an.apply
-         assert(app == Applicable) // catch mean implementation errors
+         val app = an.applicable(currentToken, availableFutureTokens) //true by invariant but must be called for precondition of an.apply
+         assert(app == Applicable) // catch subtle implementation errors
       }
-      logWithState(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
+      log(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
       resetPicker
-      val toClose = an.apply
+      val toClose = an.apply(currentIndex)
       // we count how much active.head picked and
       // give the remaining Tokens back to the surrounding group
       if (leftOpen) {
@@ -206,6 +206,8 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
             advance
          case t : Token =>
             currentToken = t
+            logState
+            log("current Token: " + t.word)
             //determine if/how an active notation is applicable
             val (closable, anyActiveApplicable) = checkActive(active, 0)
             log("closable: " + closable + ", next applicable: " + anyActiveApplicable)
@@ -228,7 +230,17 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   val openable = notations flatMap {not =>
                      val delim = not.firstDelimString
                      val m = delim.isDefined && ActiveNotation.matches(delim.get, currentToken.word, futureTokens)
-                     if (m && not.openArgs(false) <= numCurrentTokens)
+                     val openArgs = not.openArgs(false)
+                     // n is true iff there are enough tokens shifted for not to pick from the left
+                     val n = openArgs == 0 || {
+                        val availableTokens = active match {
+                           case Nil => numCurrentTokens
+                           case hd::_ => hd.numCurrentTokens
+                        }
+                        openArgs <= availableTokens
+                     }
+                     // the number of tokens shifted in the surrounding group that can be picked
+                     if (m && n)
                         List((not, delim.get.length))
                      else
                         Nil

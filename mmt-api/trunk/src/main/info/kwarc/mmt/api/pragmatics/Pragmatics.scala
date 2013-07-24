@@ -63,25 +63,31 @@ class Pragmatics(controller: Controller) {
       }
    }
    /**
-    * removes the strict symbols to obtain a pragmatic term
-    * @param t the strict term
-    * @return (tP,ps) where tP is the pragmatic version of t and ps gives the positions of the components of tP in t
-    *   i.e., (tP.components zip ps) forall {(c,p) => t.subobject(p) = c}
+    *  like pragmaticHeadWithPositions
+    *  @param t the strict term
+    *  @return the pragmatic term
     */
    def pragmaticHead(t: Term) : Term = {
-      pragmaticHeadWithPositions(t)._1
+      pragmaticHeadWithInfo(t)._1
    }
-   def pragmaticHeadWithPositions(t: Term) : (Term, List[Position]) = {
-      pragmaticHeadAux(t,Position.positions(t))
+   
+   /**
+    * removes the strict symbols to obtain a pragmatic term
+    * @param t the strict term
+    * @return (tP,apps,ps) where tP is the pragmatic version of t;
+    *   apps gives the Application's undone (innermost first);
+    *   ps gives the positions of the components of tP in t i.e., (tP.components zip ps) forall {(c,p) => t.subobject(p) = c}
+    */
+   def pragmaticHeadWithInfo(t: Term) : (Term, List[Application], List[Position]) = {
+      pragmaticHeadAux(t, Nil, Position.positions(t))
    }
-   private def pragmaticHeadAux(t: Term, pos: List[Position]) : (Term, List[Position]) = t match {
+   private def pragmaticHeadAux(t: Term, apps: List[Application], pos: List[Position]) : (Term, List[Application], List[Position]) = t match {
       case OMA(OMS(apply @ OMMOD(meta) % _), fun :: args) =>
          ps.getApplication(meta) match {
             case Some(a) =>
                if (a.apply == apply) {
                   val (tP, posP) = args match {
                      case List(OMBIND(OMS(lambda @ OMMOD(meta2) % _), context, scope)) =>
-                        
                         ps.getHOAS(meta2) match {
                            case Some(h) =>
                               if (h.apply == apply && h.lambda == lambda) {
@@ -96,13 +102,47 @@ class Pragmatics(controller: Controller) {
                         }
                      case _ =>   (OMA(fun, args), pos.tail)
                   }
-                  pragmaticHeadAux(tP, posP)
+                  pragmaticHeadAux(tP, a :: apps, posP)
                } else
-                  (t,pos)
-            case _ => (t,pos)
+                  (t, apps, pos)
+            case _ => (t, apps, pos)
          }
-      case _ => (t,pos)
+      case _ => (t, apps, pos)
    }
+   
+  /** provides constructor/pattern-matching for pragmatic applications, independent of strictification */ 
+  object StrictOMA {
+     /**
+      * @param t the matched term
+      * @return tuple of
+      *   the list of strict application symbols (outermost first),
+      *   the pragmatic operator,
+      *   the arguments
+      * post-inverse of apply
+      */
+     def unapply(t: Term): Option[(List[GlobalName],GlobalName,List[Term])] = t match {
+        case OMA(OMS(s), hd::tl) =>
+           if (ps.getStrictApps contains s) {
+              unapply(OMA(hd,tl)) match {
+                 case None => Some((Nil, s, hd::tl))
+                 case Some((str, fun, args)) => Some((s::str, fun, args))
+              }
+           } else
+              Some((Nil, s, hd::tl))
+        case _ => None
+     }
+     /**
+      * @param strictApps the strict application symbols to wrap around the application
+      * @param fun the operator
+      * @param args the arguments
+      * @return intuitively: OMA(strictApps, fun, args)
+      * pre-inverse of unapply
+      */
+     def apply(strictApps: List[GlobalName], fun: GlobalName, args: List[Term]) = strictApps match {
+        case hd::tl => OMA(OMS(hd), tl.map(OMS(_)) ::: OMS(fun) :: args)
+        case Nil => OMA(OMS(fun), args)
+     }
+  }
 }
 
 abstract class Feature {

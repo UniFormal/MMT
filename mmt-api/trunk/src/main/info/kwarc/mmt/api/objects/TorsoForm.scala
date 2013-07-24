@@ -19,7 +19,7 @@ case class Appendages(head: GlobalName, extremities: List[Term])
  */  
 case class TorsoForm(torso: Term, apps: List[Appendages]) {
    /** transforms a TorsoForm into the usual form */
-   def toHeadForm = apps.foldRight(torso) {case (Appendages(h,ext), t) => OMA(OMS(h), t::ext)}
+   def toHeadForm : Term = apps.foldRight(torso) {case (Appendages(h,ext), t) => OMA(OMS(h), t::ext)}
    /** only the heads */
    def heads = apps.map(_.head)
 }

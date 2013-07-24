@@ -23,7 +23,8 @@ trait TheoryScala {
              val result = a(tS)
              log((if (result) "PASSED" else "FAILED") + "\n")
            } catch {
-             case Unimplemented(f) => log("unimplemented " + f)
+             case Unimplemented(f) => log("unimplemented " + f + "\n")
+             case e: Error => log("error :" + e.toString + "\n")
            }
            
       }

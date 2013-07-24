@@ -36,7 +36,7 @@ trait Presenter extends frontend.Extension {
             }
          case _ => None
       }
-      val (tP, posP) = controller.pragmatic.pragmaticHeadWithPositions(t)
+      val (tP, _, posP) = controller.pragmatic.pragmaticHeadWithInfo(t)
       tryTerm(tP) match {
          case Some(n) => (tP, posP, Some(n))
          case None    => tryTerm(t) match {

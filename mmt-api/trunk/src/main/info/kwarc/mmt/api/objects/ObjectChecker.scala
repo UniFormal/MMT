@@ -95,7 +95,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    override def toString = {
       "  unknowns: " + unknowns.toString + "\n" +
       "  solution: " + solution.toString + "\n" +
-      "  constraints:\n" + delayed.mkString("  ", "\n  ", "") 
+      "  constraints:\n" + delayed.map(d => d.constraint.present(controller.presenter.asString)).mkString("  ", "\n  ", "") 
    }
    
    /** delays a constraint for future processing
@@ -103,7 +103,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @return true (i.e., delayed Judgment's always return success)
     */
    private def delay(c: Judgement): Boolean = {
-     log("delaying " + c)
+      log("delaying " + c.present(controller.presenter.asString))
       val dc = new DelayedConstraint(c)
       delayed = dc :: delayed
       true
@@ -127,17 +127,18 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @param name the solved variable
     * @param value the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable
     * @return true unless the solution differs from an existing one
+    * precondition: value is well-typed if the the overall check succeeds
     */
    private def solve(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
       log("solving " + name + " as " + value)
-      // use controller.uom.simplify? yes, if well-formedness is guaranteed at this point
-      val valueS = simplify(value)
+      val valueS = controller.uom.simplify(value)
       parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
          checkEquality(valueS, solved.df.get, solved.tp) //TODO
       else {
-         solution = left ::: solved.copy(df = Some(valueS)) :: right
+         val rightS = right ^ (name / valueS) // substitute in solutions of later variables that have been found already
+         solution = left ::: solved.copy(df = Some(valueS)) :: rightS
          newsolutions = name :: newsolutions
          true
       }
@@ -148,13 +149,15 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @param name the variable
     * @param value the type; must not contain object variables, but may contain meta-variables that are declared before the solved variable
     * @return true unless the type differs from an existing one
+    * precondition: value is well-typed if the the overall check succeeds
     */
    private def solveType(name: LocalName, value: Term)(implicit stack: Stack) : Boolean = {
+      val valueS = controller.uom.simplify(value)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined)
-         checkEquality(value, solved.tp.get, None) //TODO
+         checkEquality(valueS, solved.tp.get, None) //TODO
       else {
-         solution = left ::: solved.copy(tp = Some(value)) :: right
+         solution = left ::: solved.copy(tp = Some(valueS)) :: right
          //no need to register this in newsolutions
          true
       }
@@ -327,8 +330,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack : Stack): Boolean = {
       log("equality: " + stack.context + " |- " + tm1 + " = " + tm2 + " : " + tpOpt)
       // simplify to improve chances of equating the terms  
-      val tm1S = simplify(tm1)
-      val tm2S = simplify(tm2)
+      val tm1S = controller.uom.simplify(tm1)
+      val tm2S = controller.uom.simplify(tm2)
       // first, we check for some common cases where it's redundant to do induction on the type
       // identical terms
       if (tm1S == tm2S) return true
@@ -380,22 +383,28 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    private def tryToSolve(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack): Boolean = {
       tm1 match {
          //foundation-independent case: direct solution of an unknown variable
-         case OMV(m) if unknowns.isDeclared(m) =>
+         case OMV(m) =>
+            val mIndex = unknowns.index(m).getOrElse {
+               // if m is not declared in unknowns, i.e., is a bound variable, nothing to do 
+               return false
+            }
+            // fvsEarlier: all unknowns in tm2 are declared before m
             val fvs = tm2.freeVars
-            if (fvs.isEmpty) {
+            val fvsEarlier = fvs.forall {v =>
+               unknowns.index(v) match {
+                  case Some(vIndex) => vIndex > mIndex
+                  case None => false
+               }
+            }
+            if (fvsEarlier) {
+               // we can solve m already, the remaining unknowns in tm2 can be filled in later
                val res = solve(m, tm2)
                tpOpt foreach {case tp => solveType(m, tp)}
                res
-            }
-            else if (fvs.forall(unknowns.isDeclared(_))) //forall {v => context.isDeclaredBefore(v,m)}
-               // delay until other meta-variables are solved
-               // TODO: registering solution in terms of preceding meta-variables might save time
-               delay(Equality(stack,tm1,tm2,tpOpt))
-            else
+            } else
                delay(Equality(stack,tm1,tm2,tpOpt))
                // meta-variable solution has free variable --> type error unless free variable disappears later
-               // TODO: need to simplify tm2 in case free variable disappears
-               
+               // note: tm2 should be simplified - that may make a free variable disappear
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendages(h,_) :: _) if unknowns.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
             ruleStore.solutionRules.get(h) match {
