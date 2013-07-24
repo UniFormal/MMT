@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mmt-api" default="all" basedir=".">
+    <property name="deploy" value="../deploy"/>
+    
+    <target name="api">
+      <ant dir="mmt-api/trunk" target="deploy" inheritAll="false"/>
+    </target>
+    <target name="lf">
+      <ant dir="mmt-lf" target="deploy" inheritAll="false"/>
+    </target>
+    <target name="jEdit">
+      <ant dir="jEdit-mmt" target="deploy" inheritAll="false"/>
+    </target>
+
+    <target name="all" depends="api,lf,jEdit"/>
+</project>
