@@ -12,6 +12,7 @@ object PiTerm extends InferenceRule(Pi.path) {
       tm match {
         case Pi(x,a,b) =>
            if (solver.checkTyping(a, LF.ktype))
+              //TODO error message if x is free in result of inference 
               solver.inferType(b)(stack ++ x % a)
            else
               None
