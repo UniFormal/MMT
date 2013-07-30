@@ -386,8 +386,19 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                }
             //Pattern
             case "pattern" =>
-               val name = readName
-               //TODO
+              mod match {
+                  case thy: DeclaredTheory =>
+                     val name = readName
+                     thy.meta match {
+                        case None =>
+                           fail("pattern declaration illegal without meta-theory")
+                        case Some(mt) =>
+//                           val pattern = readSPath(mt)
+                           readPattern(name: LocalName, thy.path)
+                     }
+                  case link: DeclaredLink =>
+                     fail("pattern declaration in link")
+               }
             //Instance
             case "instance" =>
                mod match {
@@ -547,13 +558,64 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          controller.pragmatic.pragmaticHead(tm) match {
             case OMA(OMID(`pattern`), args) => args
             case OMID(`pattern`) => Nil
+            //case p : OMID => List(p)
+            //case f : OMA => List(f)
             case _ => throw makeError(reg, "not an instance of pattern " + pattern.toPath)
          }
       }
       val instance = new Instance(OMMOD(tpath), name, pattern, args)
       seCont(instance)
    }
-   
+   private def readPattern(name: LocalName, tpath: MPath)(implicit state: ParserState) {
+      val cpath = tpath ? name
+      val tpC = new TermContainer
+      val dfC = new TermContainer
+      var nt : Option[TextNotation] = None// notation
+      var pr : Context = Context()// params
+      var bd : Context = Context()// body
+      def doComponent(c: DeclarationComponent, tc: TermContainer) {
+         val (obj,_,tm) = readParsedObject(OMMOD(tpath), pr)
+         tc.read = obj
+         tc.parsed = tm
+      }
+      while (! state.reader.endOfDeclaration) {
+        val (delim, treg) = state.reader.readToken
+        // branch based on the delimiter
+        delim match {
+          case "::" =>
+            val (obj, reg) = state.reader.readObject
+            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), Context(), obj, Some(TextNotation.contextNotation))
+            val parsed = puCont(pu)
+            parsed match {
+              case OMBINDC(_, cont, Nil) =>
+                pr = pr ++ cont
+              case _ =>
+                errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
+            }
+          case ">>" =>
+            val (obj, reg) = state.reader.readObject
+            // keep parameters in the context
+            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), pr, obj, Some(TextNotation.contextNotation))
+            val parsed = puCont(pu)
+            parsed match {
+              case OMBINDC(_, cont, Nil) =>
+                bd = bd ++ cont
+              case _ =>
+                errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
+            }
+          case "#" | "##" =>
+            val (notString,reg) = state.reader.readObject
+            if (nt.isDefined)
+              errorCont(makeError(treg, "notation of this constant already given, ignored"))
+              else {
+              val notation = TextNotation.parse(notString, cpath)
+              nt = Some(notation)
+              }
+        }
+      }
+      val pattern = new Pattern(OMMOD(tpath),name, pr, bd, nt)
+      seCont(pattern)
+   }
    //TODO, text syntax for styles?
    //def readInStyle(style: MPath)(implicit state: ParserState) {}
    
