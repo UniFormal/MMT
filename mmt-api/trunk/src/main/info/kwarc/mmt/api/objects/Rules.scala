@@ -129,7 +129,7 @@ abstract class TypingRule(val head: GlobalName) extends Rule {
  *  It may recursively infer the types of components.
  *  @param head the head of the term whose type this rule infers 
  */
-abstract class InferenceRule(val head: GlobalName) extends Rule {
+abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends Rule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
