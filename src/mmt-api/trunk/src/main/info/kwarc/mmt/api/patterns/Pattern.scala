@@ -64,7 +64,7 @@ class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, 
    def role = info.kwarc.mmt.api.Role_Instance
    def components = List(OMID(path), OMID(pattern)) ::: matches
    override def toString = 
-     "instance " + name.toString + " of pattern " + pattern.toString + " with " + matches.map(_.toString).mkString(" ")  
+     "instance " + name.toString + " of pattern " + pattern.toString + " with " + { if (matches.isEmpty) "no args" else matches.map(_.toString).mkString("[ ", "; ", "]") }  
 }
 
 
