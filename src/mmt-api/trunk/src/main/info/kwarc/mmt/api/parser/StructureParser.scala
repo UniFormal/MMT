@@ -408,8 +408,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                         case None =>
                            fail("instance declaration illegal without meta-theory")
                         case Some(mt) =>
-                           val pattern = readSPath(mt)
-                           readInstance(name, thy.path, pattern)
+                           readInstance(name, thy.path, None)
                      }
                   case link: DeclaredLink =>
                      fail("instance declaration in link")
@@ -421,7 +420,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   // 1) an instance of a Pattern with LocalName k visible in meta-theory 
                   val pattern = patOpt.get._2
                   val name = readName
-                  readInstance(name, mod.path, pattern)
+                  readInstance(name, mod.path, Some(pattern))
                } else {
                   val parsOpt = controller.extman.getParserExtension(mod, k)
                   if (parsOpt.isDefined) {
@@ -550,20 +549,35 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       constant.metadata = cons.metadata
       constant
    }
-   private def readInstance(name: LocalName, tpath: MPath, pattern: GlobalName)(implicit state: ParserState) {
-      val args = if (state.reader.endOfDeclaration)
-         Nil
-      else { 
+   private def readInstance(name: LocalName, tpath: MPath, patOpt: Option[GlobalName])(implicit state: ParserState) {
+      var pattern: GlobalName = null
+      var arguments: List[Term] = Nil
+      if (state.reader.endOfDeclaration) {
+         patOpt match {
+            case Some(p) => pattern = p
+            case None => throw makeError(state.reader.getSourcePosition.toRegion, "instance declaration expected")
+         }
+      } else { 
          val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
          controller.pragmatic.pragmaticHead(tm) match {
-            case OMA(OMID(`pattern`), args) => args
-            case OMID(`pattern`) => Nil
-            //case p : OMID => List(p)
-            //case f : OMA => List(f)
-            case _ => throw makeError(reg, "not an instance of pattern " + pattern.toPath)
+            case OMA(OMS(pat), args) =>
+               pattern = pat
+               arguments = args
+            case OMS(pat) =>
+               pattern = pat
+            case _ =>
+              val patString = patOpt match {
+                case None => "of a pattern"
+                case Some(p) => "of pattern " + p.toPath
+              }
+              throw makeError(reg, "not an instance of pattern " + patString)
          }
+	     patOpt foreach {p =>
+	         if (p != pattern)
+	            throw makeError(reg, "not an instance of pattern " + p.toPath)
+	     }
       }
-      val instance = new Instance(OMMOD(tpath), name, pattern, args)
+      val instance = new Instance(OMMOD(tpath), name, pattern, arguments)
       seCont(instance)
    }
    private def readPattern(name: LocalName, tpath: MPath)(implicit state: ParserState) {
