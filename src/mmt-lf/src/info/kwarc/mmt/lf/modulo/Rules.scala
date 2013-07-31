@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import objects._
 import info.kwarc.mmt.lf._
 
-object RewriteTerm extends InferenceRule(LFModulo.Rewrite.path) {
+object RewriteTerm extends InferenceRule(LFModulo.Rewrite.path, OfType.path) {
    def apply(solver: Solver)(univ: Term)(implicit stack: Stack) : Option[Term] = univ match {
       case LFModulo.Rewrite(cont, left, right) =>
          val leftI = solver.inferType(left)(stack ++ cont).getOrElse(return None)
