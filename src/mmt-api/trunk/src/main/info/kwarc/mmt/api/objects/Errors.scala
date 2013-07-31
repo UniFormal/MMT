@@ -14,7 +14,7 @@ object Hole {
   }
 }
 
-object HoleTerm extends InferenceRule(Hole.path) {
+object HoleTerm extends InferenceRule(Hole.path, Hole.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack): Option[Term] = Hole.unapply(tm)
 }
 

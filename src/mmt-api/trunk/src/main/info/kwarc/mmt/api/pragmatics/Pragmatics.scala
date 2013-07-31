@@ -164,7 +164,7 @@ trait Typing extends Feature {
    val hastype : GlobalName 
    def makeStrict(j: objects.Typing) = Inhabitation(j.stack, OMA(OMID(hastype), List(j.tm, j.tp)))
    def makePragmatic(j: Judgement) = j match {
-      case Inhabitation(stack, OMA(OMID(this.hastype), List(tm, tp))) => Typing(stack, tm, tp)
+      case Inhabitation(stack, OMA(OMID(this.hastype), List(tm, tp))) => Typing(stack, tm, tp, Some(OMID(this.hastype)))
       case _ => j
    }
 }

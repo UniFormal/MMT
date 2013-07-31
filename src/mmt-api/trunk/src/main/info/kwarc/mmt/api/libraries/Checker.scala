@@ -181,7 +181,7 @@ class StructureChecker(controller: Controller) extends Logger {
                val (unknowns, dR, valid) = prepareTerm(d)
                if (valid) {
                   c.tp foreach {tp =>
-                      val j = Typing(Stack(scope, c.parameters), dR, tp)
+                      val j = Typing(Stack(scope, c.parameters), dR, tp, None)
                       unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
                   }
                }

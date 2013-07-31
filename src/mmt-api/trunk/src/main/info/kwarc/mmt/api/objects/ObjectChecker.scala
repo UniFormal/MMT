@@ -173,7 +173,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
      log("state: \n" + this.toString)
      val subs = solution.toPartialSubstitution
      val mayhold = j match {
-        case Typing(stack, tm, tp) =>
+        case Typing(stack, tm, tp, typS) =>
            checkTyping(tm ^ subs, tp ^ subs)(stack ^ subs)
         case Equality(stack, tm1, tm2, tp) =>
            def prepare(t: Term) = simplify(t ^ subs)(stack)
@@ -222,7 +222,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
              // either this is an atomic type, or no typing rule is known
              inferType(tm) match {
                case Some(itp) => checkEquality(itp, tpS, None)
-               case None => delay(Typing(stack, tm, tpS))
+               case None => delay(Typing(stack, tm, tpS, None))
              }
          }
      }
@@ -509,7 +509,7 @@ object Solver {
       val (unknowns,tmU) = parser.AbstractObjectParser.splitOffUnknowns(tm)
       val etp = LocalName("expected_type")
       val oc = new Solver(controller, stack.theory, unknowns ++ VarDecl(etp, None, None))
-      val j = Typing(stack, tmU, OMV(etp))
+      val j = Typing(stack, tmU, OMV(etp), None)
       oc(j)
       oc.getSolution map {sub =>
           val tmR = tmU ^ sub
