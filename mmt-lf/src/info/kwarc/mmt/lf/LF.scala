@@ -77,7 +77,7 @@ object Pi {
          val newScope = if (rest.isEmpty)
             s
          else
-            apply(Context(rest:_*), s)      
+            apply(Context(rest:_*), s)
          Some(n,t,newScope)
 	   case OMA(LF.arrow,args) =>
 	      val name = OMV.anonymous

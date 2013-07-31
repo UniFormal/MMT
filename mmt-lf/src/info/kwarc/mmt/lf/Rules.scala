@@ -7,7 +7,7 @@ import utils.MyList.fromList
 
 /** the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
  * This rule works for any universe U */
-object PiTerm extends InferenceRule(Pi.path) {
+object PiTerm extends InferenceRule(Pi.path, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
@@ -23,7 +23,7 @@ object PiTerm extends InferenceRule(Pi.path) {
 
 /** the type inference rule x:A|-t:B  --->  lambda x:A.t : Pi x:A.B
  * This rule works for B:U for any universe U */
-object LambdaTerm extends InferenceRule(Lambda.path) {
+object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
@@ -35,7 +35,7 @@ object LambdaTerm extends InferenceRule(Lambda.path) {
 
 /** the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
  * This rule works for B:U for any universe U */
-object ApplyTerm extends InferenceRule(Apply.path) {
+object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
      case Apply(f,t) =>
         solver.inferType(f) flatMap {

@@ -30,7 +30,7 @@ object UniverseKind extends UniverseRule(Typed.kind) {
 }
 
 /** the type inference rule type:kind */
-object UnivTerm extends InferenceRule(Typed.ktype) {
+object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
       case OMS(Typed.ktype) => Some(OMS(Typed.kind))
       case _ => None
