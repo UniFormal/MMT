@@ -11,13 +11,17 @@ import scala.collection.mutable.{HashSet,HashMap}
 
 /* ideas
  * inferType guarantees well-formedness (not done yet by LambdaTerm)
- *   but what if there unknowns whose type cannot be inferred? Is that even possible?
- * checkEquality with type assumes well-typing if
- * checkEquality without type infers both types and checks their equality
- * checkTyping is simply solveType, inferType and checkEquality; no typingRules (works at least if there are unknows)?
- *   does that work for all type-formers?
+ *   but what if there are unknowns whose type cannot be inferred? Is that even possible?
+ * checkEquality with type assumes well-typing
+ * checkEquality without type has 
+   - flag for well-typedness
+       infers type if needed
+       or
+       lazy code to get the type
+   - if flag not set, infers both types and checks their equality
  * equality calls simplify only if no equality rule is found; then it includes computation, definition expansion
  * limitedSimplify must include computation, definition expansion, but can stop on GlobalChange; but safety is usually needed
+ * constants have equality rule: injectivity and implicit arguments used to obtain necessary/sufficient condition (not preserved by morphism); congruence if no rule applicable
  */
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
