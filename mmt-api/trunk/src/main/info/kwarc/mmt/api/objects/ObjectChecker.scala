@@ -338,6 +338,13 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @return false if the Judgment is definitely not provable; true if it has been proved or delayed
     * 
     * This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
+    * 
+    * This method uses the following automaton
+    * A
+    * 1) try a type-based EqualityRule
+    * 2) expand the definition
+    * 
+    * A: run UOM simplification and check if the terms are identical
     */
    def checkEquality(tm1S: Term, tm2S: Term, tpOpt: Option[Term])(implicit stack : Stack): Boolean = {
       log("equality: " + stack.context + " |- " + tm1S + " = " + tm2S + " : " + tpOpt)
@@ -385,6 +392,96 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
               delay(Equality(stack, tm1S, tm2S, Some(tpS)))
       }
    }
+   
+   /**
+    * definition expansion for the torso of a term
+    * the result is immediately simplified
+    * @param t a term whose torso should be expanded
+    * @return (t', changed) where t' is the resulting term and changed is true if an expansion occurred
+    */ 
+   private def expandTorsoDef(t: TorsoForm) : (TorsoForm, Boolean) = t.torso match {
+      case OMS(c) =>
+         content.getConstant(c).df match {
+            case Some(df) =>
+               val tE = TorsoForm(df, t.apps).toHeadForm
+               val tES = controller.uom.simplify(tE)
+               (TorsoForm.fromHeadForm(tES), true)
+            case None => (t, false)
+         }
+      case _ => (t, false)
+   }
+   
+   /**
+    * finds a TermBasedEqualityRule that applies to t1 and any of the terms in t2
+    * rules are looked up based on the torsos of the terms
+    * first found rule is returned
+    */
+   private def findEqRule(t1: TorsoForm, others: List[TorsoForm])(implicit stack : Stack, tp: Term) : Option[Continue[Boolean]] = {
+      OMS.unapply(t1.torso) foreach {c1 =>
+         others foreach {o => 
+            OMS.unapply(o.torso) foreach {c2 =>
+               ruleStore.termBasedEqualityRules(c1,c2) foreach {rule =>
+                  val contOpt = rule(this)(t1.toHeadForm, o.toHeadForm, tp)
+                  if (contOpt.isDefined) return contOpt
+               }
+            }
+         }
+      }
+      return None
+   }
+   
+   /**
+    * checks equality t1 = t2 at an atomic type by expanding the defined constant in the torso
+    * 
+    * Both t1 and t2 are remembered as the chain of terms resulting from repeated definition expansion 
+    * @param torsos1 the chain of terms that led to t1, starting with L (must be non-empty)
+    * @param torsos2 the chain of terms that led to t2, starting with L (must be non-empty)
+    * @param t2Final if true, the definition expansion is not applicable to the torso of t2
+    * @param flipped if true, t1 and t2 have been flipped during recursive calls (false by default)
+    *   This parameter is not semantically necessary but carried around to undo flipping when calling other functions.
+    * @return true if equal 
+    */
+   private def checkEqualityExpandDef(torsos1: List[TorsoForm], torsos2: List[TorsoForm], t2Final: Boolean, flipped: Boolean = false)(implicit stack : Stack, tp: Term) : Boolean = {
+       val t1 = torsos1.head
+       // see if we can expand the head of t1
+       val (tE, changed) = expandTorsoDef(t1)
+       if (changed) {
+          // check if it is identical to one of the terms known to be equal to t2
+          if (torsos2.contains(tE)) return true
+          // check if there is a TermBasedEqualityRule that applies to the new torso of t1 and the torso of a term equal to t2 
+          val contOpt = findEqRule(t1, torsos2)
+          contOpt foreach {cont => return cont.apply()}
+       }
+       // if we failed to prove equality, we have multiple options:
+       (changed, t2Final, flipped) match {
+          // t1 expanded, t2 cannot be expanded anymore --> keep expanding t1
+          case (true, true, _)      => checkEqualityExpandDef(tE::torsos1, torsos2, true, flipped)
+          // t1 expanded, t2 can still be expanded anymore --> continue expanding t2
+          case (true, false, _)     => checkEqualityExpandDef(torsos2, tE::torsos1, false, ! flipped)
+          // t1 cannot be expanded anymore but t2 can ---> continue expanding t2
+          case (false, false, _)    => checkEqualityExpandDef(torsos2, torsos1, true, ! flipped)
+          // neither term can be expanded --> try congruence rule as last resort
+          // if necessary, we undo the flipping of t1 and t2
+          case (false, true, true)  => checkEqualityCongruence(torsos2.head, t1)
+          case (false, true, false) => checkEqualityCongruence(t1, torsos2.head)
+       }
+   }
+   /* open questions:
+    *  when do we delay an equality and which judgment do we delay?
+    *  when is congruence sound (e.g., not if there are still unsolved variables)
+    */
+   /**
+    * tries to prove equality using basic congruence rule
+    * torso and heads must be identical, checkEquality is called in remaining cases 
+    */
+   private def checkEqualityCongruence(t1: TorsoForm, t2: TorsoForm)(implicit stack : Stack, tp: Term): Boolean = {
+      (t1.torso == t2.torso && t1.apps.length == t2.apps.length) &&
+      (t1.apps zip t2.apps).forall {case (Appendages(head1,args1),Appendages(head2,args2)) =>
+          head1 == head2 && args1.length == args2.length &&
+            (args1 zip args2).forall {case (a1, a2) => checkEquality(a1, a2, None)}
+      }
+   }
+   
 
    /** tries to solve an unknown occurring as the torso of tm1 in terms of tm2.
     * It is an auxiliary function of checkEquality because it is called twice to handle symmetry of equality.
