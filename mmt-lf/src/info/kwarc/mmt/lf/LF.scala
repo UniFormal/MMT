@@ -170,6 +170,16 @@ object ApplyGeneral {
    def unapply(t: Term) : Option[(Term,List[Term])] = ApplySpine.unapply(t).orElse(Some((t,Nil)))
 }
 
+/** provides apply/unapply methods for the LF equality symbol */
+object Equality {
+   /** the MMT URI of -> */
+   val path = LF.lftheory ? "equality"
+   def apply(t1 : Term, t2 : Term) = OMA(OMID(path),List(t1,t2))
+   def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(OMID(this.path), List(a,b)) => Some((a, b))
+      case _ => None
+   }
+}
 
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {
