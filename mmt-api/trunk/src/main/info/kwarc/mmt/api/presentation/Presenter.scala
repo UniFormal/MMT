@@ -29,10 +29,9 @@ trait Presenter extends frontend.Extension {
       //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
       def tryTerm(t: Term): Option[TextNotation] = t match {
          case ComplexTerm(p, args, vars, scs) =>
-            controller.get(p) match {
+            controller.globalLookup.getO(p) flatMap {
                case c: symbols.Constant => c.not
                case p: patterns.Pattern => p.not
-               case _ => None
             }
          case _ => None
       }
