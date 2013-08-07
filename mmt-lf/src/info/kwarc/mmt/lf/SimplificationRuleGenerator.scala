@@ -4,13 +4,13 @@ import frontend._
 import objects._
 import uom._
 import utils._
+import parser.ImplicitArg
 
 class SimplificationRuleGenerator extends RoleHandler with Logger {
   override val logPrefix = "rule-gen"
   case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
   def isApplicable(role: String) : Boolean = role == "Simplify"
-  def apply(c: symbols.Constant) {
-    //TODO error msgs 
+  def apply(c: symbols.Constant) = {
     if (! c.tp.isEmpty) {
       val tm = c.tp.get
       try {
@@ -29,32 +29,65 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	              var ins : List[LocalName] = Nil
     	              var aft : List[LocalName] = Nil
     	              var isBefore = true
-    	              val omvs = args.map {
+    	              var implicitArgs : List[OMV] = Nil
+    	              val implArgsOut = controller.globalLookup.getConstant(outer).not match {
+    	                case Some(n) => n.flatten(args.length, 0, 0)._2
+    	                case None => Nil
+    	              }
+    	              if (!implArgsOut.isEmpty) {
+    	                println("implicit arguments")
+    	              }
+//    	              implicitArgs ++= implArgsOut map { case ImplicitArg(n) =>
+//    	                args(n-1) match {
+//    	                  case v : OMV => v
+//    	                  case a => throw DoesNotMatch("argument " + a.toString + " not an OMV")
+//    	                }
+//    	              }
+    	              val omvs = args.zipWithIndex.map { case (arg, i) =>
+    	                if (!implArgsOut.contains(ImplicitArg(i+1))) { 
+    	                arg match {    	                  
     	            	  case OMV(x) =>
     	            	    if (isBefore)
     	            	       bfr ::= x
     	            	    else
     	            	       aft ::= x
     	            	  case ApplyGeneral(OMS(inner), args) =>
+    	            	    val implArgsIn = controller.globalLookup.getConstant(inner).not match {
+    	            	    	case Some(n) => n.flatten(args.length, 0, 0)._2
+    	            	    	case None => Nil
+    	            	    }
+//    	            	    implicitArgs ++= implArgsIn map { case ImplicitArg(n) =>
+//    	            	    	args(n-1) match {
+//    	            	    		case v : OMV => v
+//    	            	    		case a => throw DoesNotMatch("argument " + a.toString + " not an OMV")
+//    	            	    	}
+//    	            	    }
+//    	            	    if (!implArgsIn.contains(ImplicitArg(i+1))) {
     	            	     if (isBefore) {
     	            	        inr = inner
-    	            	        ins = args map {
-    	            	          case OMV(x) => x
+    	            	        args.zipWithIndex foreach {
+    	            	          case (OMV(x), vi) =>
+    	            	            if (!implArgsIn.contains(ImplicitArg(vi+1)))
+    	            	            	ins ::= x
     	            	          case _ => throw DoesNotMatch(ruleName + " not a variable for inner operation")
     	            	        }
     	            	        isBefore = false
     	            	     } else
-    	            	        throw DoesNotMatch(ruleName + " more than 1 inner operation detected")    	  
+    	            	        throw DoesNotMatch(ruleName + " more than 1 inner operation detected " + args)    	  
+//    	            	    }    	            	    
+    	                }
+    	                }
     	              }
     	              if (isBefore) throw DoesNotMatch("no inner operator detected in " + ruleName) // check that inner OMA was detected
     	              // check that all var names are different
-    	              val varls = bfr ++ ins ++ aft
+    	              val varls = (bfr ++ ins ++ aft)
     	              val unique = varls.distinct
-    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unique variables in " + ruleName)
+    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
     	              
  	            	  val simplify = new DepthRule(outer, inr){
     	                
-    	                override def toString = ruleName + " : " + controller.presenter.asString(t1) + " ~~> " + controller.presenter.asString(t2)
+    	                override def toString = ruleName + " : " + controller.presenter.asString(tm) + "  as rule\n" + 
+    	                  String.format("%-60s", head.toPath) + " : " + controller.presenter.asString(t1) + " ~~> " + controller.presenter.asString(t2)
  	            	   	private val bfrNames = bfr.reverse
  	            	   	private val aftNames = aft.reverse
  	            	   	private val insNames = ins
@@ -76,17 +109,17 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
  	            	   	} 	
  	            	  }
  	            	  controller.extman.ruleStore.add(simplify)
-    	              
+    	              log("succesfully registered rule: " + String.format("%-60s", simplify.head.toPath))
     	            case _ => throw DoesNotMatch(ruleName + " no outer op")
     	          }
-    	        }
-    	      case _ => throw DoesNotMatch(ruleName + "equality of not role Eq")
+    	        } else throw DoesNotMatch(OMID(eq).toString + " is not of role Eq in " + ruleName)
+    	      case _ => throw DoesNotMatch(ruleName + " : " + scp + " is not of the form a ~> b")
     	    }
     	  case _ => throw DoesNotMatch(ruleName + " not a FunType")
     	}
       } catch {
         case e : DoesNotMatch => log(e.msg)
-        case e : Throwable => log("unknown error occured, crashlanding..." + e.toString())
+        case e : Throwable => log("unknown error occured in " + c.name + "\nreading tm = " + tm.toString + "\n" + e.toString())
       }
     }
   }
