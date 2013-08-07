@@ -180,7 +180,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
         case Typing(stack, tm, tp, typS) =>
            checkTyping(tm ^ subs, tp ^ subs)(stack ^ subs)
         case Equality(stack, tm1, tm2, tp) =>
-           def prepare(t: Term) = simplify(t ^ subs)(stack)
+           def prepare(t: Term) = controller.uom.simplify(t ^ subs)
            checkEquality(prepare(tm1), prepare(tm2), tp map prepare)(stack ^ subs)
         case Universe(stack, tm) =>
            val stackS = stack ^ subs
@@ -218,6 +218,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
            case Some(t) => checkEquality(t, tp, None)
          }
        // the foundation-dependent cases
+       // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
          limitedSimplify(tp,ruleStore.typingRules) match {
            case (tpS, Some(rule)) =>
@@ -272,12 +273,11 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
 
    /** infers the type of a term by applying InferenceRule's
     * @param tm the term
-    * @param context its Context
+    * @param stack its Context
     * @return the inferred type, if inference succeeded
     *
     * This method should not be called by users (instead, call apply to a typing judgement with an unknown type). It is only public because it serves as a callback for Rule's.
     */
-
    def inferType(tm: Term)(implicit stack: Stack): Option[Term] = {
      log("inference: " + stack.context + " |- " + tm + " : ?")
      report.indent
@@ -295,6 +295,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
        case _ => None
      }
      //foundation-dependent cases if necessary
+     //syntax-driven type inference
      val res = resFoundInd orElse {
          val (tmS, ruleOpt) = limitedSimplify(tm,ruleStore.inferenceRules)
          ruleOpt match {
@@ -307,8 +308,15 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
      res
    }
 
+   /** checks that a term is a universe
+    * @param univ the term
+    * @param stack its Context
+    * @return true if succeeded or delayed
+    *
+    * This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
+    */
    def checkUniverse(univ: Term)(implicit stack: Stack): Boolean = {
-     log("universe: " + stack.context + " |- " + univ + " : universe")
+     log("universe: " + stack.context + " |- " + univ + " : UNIVERSE")
      report.indent
      val res = limitedSimplify(univ, ruleStore.universeRules) match {
         case (uS, Some(rule)) => rule(this)(uS)
@@ -331,11 +339,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * 
     * This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
     */
-   def checkEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack : Stack): Boolean = {
-      log("equality: " + stack.context + " |- " + tm1 + " = " + tm2 + " : " + tpOpt)
-      // simplify to improve chances of equating the terms  
-      val tm1S = controller.uom.simplify(tm1)
-      val tm2S = controller.uom.simplify(tm2)
+   def checkEquality(tm1S: Term, tm2S: Term, tpOpt: Option[Term])(implicit stack : Stack): Boolean = {
+      log("equality: " + stack.context + " |- " + tm1S + " = " + tm2S + " : " + tpOpt)
       // first, we check for some common cases where it's redundant to do induction on the type
       // identical terms
       if (tm1S == tm2S) return true

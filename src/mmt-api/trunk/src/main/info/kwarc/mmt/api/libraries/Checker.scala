@@ -289,9 +289,15 @@ class StructureChecker(controller: Controller) extends Logger {
    def checkTheory(t : Term)(implicit pCont: Path => Unit) : Term = {
      t match {
         case OMMOD(p) =>
-          val thy = controller.globalLookup.getTheory(p)
-          pCont(p)
-          t
+           controller.globalLookup.getO(p) match {
+              case Some(thy: Theory) =>
+                 pCont(p)
+              case Some(_) =>
+                 errorCont(InvalidObject(t, "not a valid theory"))
+              case None =>
+                 errorCont(InvalidObject(t, "not a valid identifier"))
+           }
+           t
         case OMS(mmt.tempty) => t
         case TheoryExp.Empty =>
            t
