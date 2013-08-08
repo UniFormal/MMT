@@ -27,7 +27,8 @@ object Action extends RegexParsers {
 
    private def controller = log | mathpath | archive | extension | mws | server | windowaction | execfile | scala
    private def log = logfile | logconsole | logon | logoff
-     private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f))}
+     private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f, false))}
+     private def logfilets = "log filets" ~> file ^^ {f => AddReportHandler(new FileHandler(f, true))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}

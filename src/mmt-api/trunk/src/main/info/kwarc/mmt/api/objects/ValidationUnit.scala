@@ -22,13 +22,17 @@ class Validator(controller: Controller) extends Logger {
          tc.analyzed = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
          //now report result/errors
          val solution = solver.getSolution
+         val success = result && solution.isDefined
+         if (success)
+            log("success")
+         else
+            log("failure")
          logGroup {
-            if (result && solution.isDefined) {
-               log("validated " + v.component)
+            if (success) {
                log("solution: " + solution.get.toString)
             } else {
                log("errors while validating " + v.component)
-               log(solver.toString)
+               solver.logState
                solver.getConstraints foreach {
                   case j: WFJudgement =>
                      errorCont(InvalidObject(j.wfo, j.present(controller.presenter.asString)))

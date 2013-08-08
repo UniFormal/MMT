@@ -57,6 +57,9 @@ class Report {
    def record {rec = true}
    def recall = mem
    def clear {mem = Nil; rec = false}
+   def cleanup {
+      handlers foreach {_.flush}
+   }
 }
 
 object Report {
@@ -65,6 +68,7 @@ object Report {
 
 abstract class ReportHandler(val id: String) {
    def apply(ind: String, group: String, msg: String)
+   def flush {}
    override def toString = id
 }
 
@@ -77,14 +81,15 @@ object ConsoleHandler extends ReportHandler("console") {
 }
 
 /** outputs to a file */
-class FileHandler(val filename : File) extends ReportHandler(filename.toString) {
+class FileHandler(val filename : File, timestamps: Boolean) extends ReportHandler(filename.toString) {
    private val file = utils.File.Writer(filename)
    private val df = new java.text.SimpleDateFormat("HH:mm:ss.S")
    def time = df.format(new java.util.Date())
    def apply(ind: String, group : String, msg : String) = {
-         val m = time + "\t" + ind + group + ": " + msg
+         val t = if (timestamps) time + "\t" else ""
+         val m = t + ind + group + ": " + msg
          file.println(m)
-         file.flush
    }
+   override def flush {file.flush}
    override def toString = "file " + filename
 }

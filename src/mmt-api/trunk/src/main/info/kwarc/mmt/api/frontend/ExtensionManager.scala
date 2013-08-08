@@ -69,6 +69,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       presenters ::= controller.presenter
       parserExtensions ::= parser.MetadataParser
       parserExtensions ::= parser.CommentIgnorer
+      //parserExtensions ::= new ControlParser
       lexerExtensions ::= GenericEscapeHandler
       lexerExtensions ::= QuoteHandler
       lexerExtensions ::= new PrefixEscapeHandler('\\')
