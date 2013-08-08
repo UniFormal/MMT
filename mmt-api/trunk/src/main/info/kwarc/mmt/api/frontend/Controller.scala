@@ -246,9 +246,13 @@ class Controller extends ROController with Logger {
    }
    /** releases all resources that are not handled by the garbage collection */
    def cleanup {
+      // notify all extensions
       extman.cleanup
-      //closes all open svn sessions from storages in backend
+      //close all open svn sessions from storages in backend
       backend.cleanup
+      // flush logging buffers
+      report.cleanup
+      // stop server
       server foreach {_.stop}
    }
    /** reads a file containing a document and returns the Path of the document found in it
