@@ -28,16 +28,12 @@ case class LFError(msg : String) extends java.lang.Throwable(msg)
 object LF {
    val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
    val lftheory = lfbase ? "LF"
-   val arrow = OMS(lftheory ? "arrow")
-   val Pi = OMS(lftheory ? "Pi")
-   val lambda = OMS(lftheory ? "lambda")
-   val apply = OMS(lftheory ? "apply")
-   val ktype = OMS(Typed.ktype)
    def constant(name : String) = OMS(lftheory ? name)
 }
 
-object OfType {
-   val path = LF.lftheory ? "oftype"
+class LFSym(name: String) {
+   val path = LF.lftheory ? name
+   val term = OMS(path)
 }
 
 /** provides apply/unapply methods for lambda abstraction
@@ -46,12 +42,11 @@ object OfType {
  * 
  * unapply curries automatically 
  */
-object Lambda {
-   val path = LF.lftheory ? "lambda"
-   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.lambda, OMV(name) % tp, body)
-   def apply(con: Context, body : Term) = OMBIND(LF.lambda, con, body)
+object Lambda extends LFSym ("lambda") {
+   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
+   def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @_*), s) if b == LF.lambda || b == LF.constant("implicit_lambda") =>
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @_*), s) if b == this.term || b == LF.constant("implicit_lambda") =>
 	      val newScope = if (rest.isEmpty)
 	         s
 	      else
@@ -67,22 +62,20 @@ object Lambda {
  * 
  * unapply curries automatically 
  */
-object Pi {
-   /** the MMT URI of Pi */
-   val path = LF.lftheory ? "Pi"
-   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(LF.Pi, OMV(name) % tp, body)
-   def apply(con: Context, body : Term) = OMBIND(LF.Pi, con, body)
+object Pi extends LFSym ("Pi") {
+   def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
+   def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == LF.Pi || b == LF.constant("implicit_Pi") =>
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_*), rest @ _*), s) if b == this.term || b == LF.constant("implicit_Pi") =>
          val newScope = if (rest.isEmpty)
             s
          else
             apply(Context(rest:_*), s)
          Some(n,t,newScope)
-	   case OMA(LF.arrow,args) =>
+	   case OMA(Arrow.term,args) =>
 	      val name = OMV.anonymous
 	      if (args.length > 2)
-	     	 Some((name, args(0), OMA(LF.arrow, args.tail)))
+	     	 Some((name, args(0), OMA(Arrow.term, args.tail)))
 	      else
 	     	 Some((name,args(0),args(1)))
 	   case _ => None
@@ -92,13 +85,11 @@ object Pi {
 /** provides apply/unapply methods for simple function type formation
  * the unapply method does not match a dependent function type, even if the variable does not occur
  */
-object Arrow {
-   /** the MMT URI of -> */
-   val path = LF.lftheory ? "arrow"
-	def apply(t1 : Term, t2 : Term) = OMA(LF.arrow,List(t1,t2))
-	def apply(in: List[Term], out: Term) = if (in.isEmpty) out else OMA(LF.arrow, in ::: List(out))
+object Arrow extends LFSym("arrow") {
+	def apply(t1 : Term, t2 : Term) = OMA(this.term,List(t1,t2))
+	def apply(in: List[Term], out: Term) = if (in.isEmpty) out else OMA(this.term, in ::: List(out))
 	def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case OMA(LF.arrow, hd :: tl) => Some((hd, apply(tl.init, tl.last)))
+		case OMA(this.term, hd :: tl) => Some((hd, apply(tl.init, tl.last)))
 		case _ => None
 	}
 }
@@ -106,13 +97,11 @@ object Arrow {
 /** provides apply/unapply methods for application of a term to a single argument
  * the unapply method transparently handles associativity (currying) of application
  */
-object Apply {
-   /** the MMT URI of application */
-   val path = LF.lftheory ? "apply"
-	def apply(f: Term, a: Term) = OMA(LF.apply, List(f, a))
+object Apply extends LFSym("apply") {
+	def apply(f: Term, a: Term) = OMA(this.term, List(f, a))
 	def unapply(t: Term) : Option[(Term,Term)] = t match {
-		case OMA(LF.apply, f :: a) => 
-		   if (a.length > 1) Some((OMA(LF.apply, f :: a.init), a.last))
+		case OMA(this.term, f :: a) => 
+		   if (a.length > 1) Some((OMA(this.term, f :: a.init), a.last))
 			else Some((f,a.head))
 		case _ => None
 	}
@@ -122,9 +111,9 @@ object Apply {
  * the unapply method transparently handles associativity (currying) of application
  */ 
 object ApplySpine {
-	def apply(f: Term, a: Term*) = OMA(LF.apply, f :: a.toList)
+	def apply(f: Term, a: Term*) = OMA(Apply.term, f :: a.toList)
 	def unapply(t: Term) : Option[(Term,List[Term])] = t match {
-		case OMA(LF.apply, f :: args) =>
+		case OMA(Apply.term, f :: args) =>
 		  unapply(f) match {
 		 	 case None => Some((f, args))
 		 	 case Some((c, args0)) => Some((c, args0 ::: args))
@@ -168,17 +157,6 @@ object FunType {
 object ApplyGeneral {
    def apply(f: Term, args: List[Term]) = if (args.isEmpty) f else ApplySpine(f, args :_*)
    def unapply(t: Term) : Option[(Term,List[Term])] = ApplySpine.unapply(t).orElse(Some((t,Nil)))
-}
-
-/** provides apply/unapply methods for the LF equality symbol */
-object Equality {
-   /** the MMT URI of -> */
-   val path = LF.lftheory ? "equality"
-   def apply(t1 : Term, t2 : Term) = OMA(OMID(path),List(t1,t2))
-   def unapply(t : Term) : Option[(Term,Term)] = t match {
-      case OMA(OMID(this.path), List(a,b)) => Some((a, b))
-      case _ => None
-   }
 }
 
 /** The LF foundation. Implements type checking and equality */

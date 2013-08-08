@@ -68,7 +68,6 @@ case class ID(name: String) extends EXP {
    def o(that: ID) = ID(name + "." + that.name)
 }
 
-case class TYPE(name: String) extends EXP
 /** shorthand for function composition
  * 
  */

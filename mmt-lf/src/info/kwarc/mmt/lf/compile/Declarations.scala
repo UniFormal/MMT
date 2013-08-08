@@ -110,7 +110,6 @@ case class DECLHEAD(name: String) {
     *  name adt (constructors)
     */
    def adt(cs: CONS*) = ADT(name, cs.toList)
-   def adtTC(a : ADT, tc : TYPE*) = ADT(a.name, a.constructors)
    /** record type definitions as 
     *  name record (fields)
     */
