@@ -11,7 +11,7 @@ object PiTerm extends InferenceRule(Pi.path, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
-           if (solver.checkTyping(a, LF.ktype))
+           if (solver.checkTyping(a, OMS(Typed.ktype)))
               //TODO error message if x is free in result of inference 
               solver.inferType(b)(stack ++ x % a)
            else
@@ -55,8 +55,8 @@ object PiType extends TypingRule(Pi.path) {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack) : Boolean = {
       (tm,tp) match {
          case (Lambda(x,t,s),Pi(x2,t2,a)) =>
-            solver.checkTyping(t,LF.ktype)(stack) //necessary because checkEquality does not check typing
-            solver.checkEquality(t,t2,Some(LF.ktype))(stack)
+            solver.checkTyping(t,OMS(Typed.ktype))(stack) //necessary because checkEquality does not check typing
+            solver.checkEquality(t,t2,Some(OMS(Typed.ktype)))(stack)
             // solver.checkTyping(t2,LF.ktype)(stack) is redundant after the above have succeeded, but checking it anyway might help solve variables
             val asub = if (x2 == x) a else a ^ (x2 / OMV(x))  
             solver.checkTyping(s, asub)(stack ++ x % t2)
@@ -78,7 +78,7 @@ object Extensionality extends EqualityRule(Pi.path) {
       //TODO pick new variable name properly; currently, a quick optimization 
       val (name, s, t) = (tm1, tm2) match {
          case (Lambda(v, a1, s), Lambda(w, a2, t)) if v == w =>
-            solver.checkEquality(a1, a2, Some(LF.ktype))
+            solver.checkEquality(a1, a2, Some(OMS(Typed.ktype)))
             (v, Some(s), Some(t)) 
          case _ if ! stack.context.isDeclared(x) => (x, None, None)
          case _ => (x / "", None, None)

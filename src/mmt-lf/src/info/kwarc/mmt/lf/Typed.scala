@@ -10,6 +10,22 @@ object Typed {
    val kind = path ? "kind"
 }
 
+
+object OfType {
+   val path = Typed.path ? "oftype"
+}
+
+/** provides apply/unapply methods for the LF equality symbol */
+object Equality {
+   /** the MMT URI of -> */
+   val path = LF.lftheory ? "equality"
+   def apply(t1 : Term, t2 : Term) = OMA(OMID(path),List(t1,t2))
+   def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(OMID(this.path), List(a,b)) => Some((a, b))
+      case _ => None
+   }
+}
+
 /** provides apply/unapply methods for a universes
    in particular, Univ(1), Univ(2) are type and kind, respectively
  */
@@ -33,6 +49,22 @@ object UniverseKind extends UniverseRule(Typed.kind) {
 object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
       case OMS(Typed.ktype) => Some(OMS(Typed.kind))
+      case _ => None
+   }
+}
+
+/** the type inference rule |- A : X, |- B : Y, |- X = Y ---> |- A = B : kind
+ * This rule goes beyond LF but it does not harm because it only adds kinds and thus do not affect types and terms   
+ */
+object EqualityTerm extends InferenceRule(Equality.path, OfType.path) {
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
+      case Equality(a,b) =>
+         val aT = solver.inferType(a)
+         val bT = solver.inferType(b)
+         val equalTypes = solver.checkEquality(a,b,None)
+         if (equalTypes)
+            Some(OMS(Typed.kind))
+         else None
       case _ => None
    }
 }
