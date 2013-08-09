@@ -166,7 +166,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
   private def updateBoxedPaths(diff : Diff, pdiff : Diff) = {
     def isBoxed(tm : Option[Obj]) : Boolean = tm match {
       case None => false
-      case Some(t : OME) => true
+      case Some(OMA(OMID(p),_)) => p == mmt.mmtsymbol("fullbox") || p == mmt.mmtsymbol("emptybox")
       case _ => false
     }
     
@@ -265,7 +265,7 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       
     }
     
-    OME(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
+    OMA(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
   }
   
 }
@@ -370,7 +370,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
         case cp : CPath => OMID(cp.parent)
         case _ => throw ImplementationError("Expected ContentPath or CPath found: " + path.toPath)
       }
-      OME(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
+      OMA(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
   }
   
 }
@@ -416,7 +416,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
   def propFunc(path : Path, changes : Set[ContentChange]) : List[StrictChange] = path match {
     case GlobalName(mod, lname) => 
       
-      val emptyBox = OME(OMID(mmt.mmtsymbol("emptybox")), Nil)
+      val emptyBox = OMA(OMID(mmt.mmtsymbol("emptybox")), Nil)
 
       changes.size match {
         case 1 => 

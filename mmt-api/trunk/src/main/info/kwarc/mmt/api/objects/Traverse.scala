@@ -41,14 +41,11 @@ object Traverser {
          }
 	   t match {
 		   case OMA(fun,args) => OMA(rec(fun), args.map(rec)).from(t)
-		   case OME(err,args) => OME(rec(err), args.map(rec)).from(t)
 		   case OMM(arg,via) => OMM(rec(arg), via)
 		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)).from(t) //TODO traversal into key
 		   case OMBINDC(b,vars,scopes) => OMBINDC(rec(b), recCon(vars), scopes.map(x => rec(x)(con ++ vars, state))).from(t)
 		   case OMID(_) => t
 		   case OMV(_) => t
-		   case OMHID => t
-		   case OMREF(uri, value) => OMREF(uri, value map rec).from(t)
 		   case OMFOREIGN(_) => t
 		   case t: OMLiteral => t
 		   case OMSemiFormal(tokens) => 
@@ -86,12 +83,4 @@ object Substitute extends Traverser[Substitution] {
 	   // in all other cases, traverse
 		case t => Traverser(this,t)
 	}
-}
-
-/** a Traverser that replaces all references with their resolution if available */
-object Flatten extends StatelessTraverser {
-   def traverse(t: Term)(implicit con : Context, init: Unit) : Term = t match {
-      case r: OMREF if (r.isDefined) => traverse(r.value.get)
-      case _ => Traverser(this,t)
-   }
 }

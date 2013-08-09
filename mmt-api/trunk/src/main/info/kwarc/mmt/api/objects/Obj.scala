@@ -32,9 +32,10 @@ trait ClientProperties {
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
 abstract class Obj extends Content with ontology.BaseType with HasMetaData with ClientProperties {
-   /** prints to OpenMath (with OMOBJ wrapper) */
+   /** prints to OpenMath */
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.Init)
+   /** prints to OpenMath (with OMOBJ wrapper) */
    def toOBJNode = {
       val om = xml.namespace("om") // inlining this into XML literal does not work
       <om:OMOBJ xmlns:om={om}>{toNode}</om:OMOBJ>
@@ -119,17 +120,6 @@ sealed abstract class Term extends Obj {
       copyFrom(o)
       this
    }
-}
-
-/**
- * OMHID represents the hidden term.
- */
-case object OMHID extends Term with MMTObject {
-   val path = mmt.mmtsymbol("hidden")
-   def args = Nil
-   def ^(sub : Substitution) = this
-   private[objects] def freeVars_ = Nil
-   override def *(that: Term) = this
 }
 
 /**
@@ -289,24 +279,6 @@ object OMV {
 }
 
 /**
- * An OME represents an application of an error-constructing term to a list of terms
- * @param error the error-constructor
- * @param args the list of argument terms
- */
-case class OME(error : Term, args : List[Term]) extends Term {
-   def head = error.head
-   def role = Role_application(None)
-   def components = error :: args
-   def toNodeID(pos : Position) =
-      <om:OMA>{error.toNodeID(pos / 0)}
-              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
-      </om:OMA> % pos.toIDAttr
-   def ^(sub : Substitution) = OME(error ^ sub, args.map(_ ^ sub)).from(this)
-   private[objects] def freeVars_ = error.freeVars_ ::: args.flatMap(_.freeVars_)   
-   def toCML = <m:apply>{error.toCML}{args.map(_.toCML)}</m:apply>
-}
-
-/**
  * An OMATTR represents an attributed term.
  * @param arg the term without attribution
  * @param key the key (This must be an OMS in OpenMath.)
@@ -326,19 +298,6 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
 
-}
-
-case class OMREF(uri: URI, var value: Option[Term] = None) extends Term {
-   def ^(sub: Substitution) = this
-   private[objects] def freeVars_ = Nil
-   def isDefined = value.isDefined
-   def set(t: Term) {value = Some(t)}
-   def head = value flatMap {_.head}
-   def role = Role_reference
-   def components = List(StringLiteral(uri.toString), value.getOrElse(Omitted))
-   override def toString = uri.toString
-   def toNodeID(pos: Position) = <om:OMREF uri={uri.toString}/>
-   def toCML = <m:ref uri={uri.toString}/>
 }
 
 /**
@@ -390,7 +349,7 @@ case class OMSTR(value : String) extends OMLiteral {
    def toCML = <m:cn>{value}</m:cn>
 }
 
-/** A literal object representing a URI (not part of the OpenMath standard) */
+/** A URI literal (not part of the OpenMath standard) */
 case class OMURI(value: URI) extends OMLiteral {
    def tag = "OMURI"
    def toCML = <m:cn>{value}</m:cn>
@@ -439,32 +398,8 @@ object ComplexTerm {
 }
 
 
-/* this may prove useful to pattern-match through OMREF elements 
-abstract class TermCompanion[A] {
-   def strictUnapply(t:Term): A
-   def unapply(t: Term): Option[A] = t match {
-      case r: OMREF => r.value map unapply
-      case t =>
-         try {Some(strictUnapply(t))}
-         catch {case e: ClassCastException => None}
-   }
-}
-
-object OMID extends TermCompanion[ContentPath] {
-   def strictUnapply(t: Term) = t.asInstanceOf[OMID].path
-}
-object OMA extends TermCompanion[(Term,List[Term])] {
-   def strictUnapply(t: Term) = {
-      val a = t.asInstanceOf[OMA]
-      (t.fun,t.args)
-   }
-}
-*/
-
-
 /**
  * Obj contains the parsing methods for objects.
- * There is one parsing method for each syntactic class of objects: terms, morphisms, theories.
  */
 object Obj {
    //read basattr and compute new base
@@ -506,8 +441,7 @@ object Obj {
             val args = child.tail.toList.map(parseTerm(_, nbase))
             OMA(fun, args)
          case <OME>{child @ _*}</OME> =>
-            val ch = child.toList.map(parseTerm(_, nbase))
-            OME(ch.head,ch.tail)
+            throw ParseError("OME not supported - use OMA: " + N.toString)
          case <OMBIND>{binder}{context}{scopes @ _*}</OMBIND> =>
             doBinder(binder, context, scopes.toList)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>

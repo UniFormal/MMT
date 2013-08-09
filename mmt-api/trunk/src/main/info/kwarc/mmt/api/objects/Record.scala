@@ -4,7 +4,7 @@ import libraries._
 import modules._
 import utils._
 
-case class Record(fields: List[(GlobalName,Term)]){
+case class Record(fields: List[(GlobalName,Term)]) {
 }
 
 object OMREC {
