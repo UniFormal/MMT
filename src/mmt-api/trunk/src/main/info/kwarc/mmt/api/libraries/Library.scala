@@ -107,7 +107,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
             } catch {
                case PartialLink() => get(v.from % name) match {
                   // return default assignment
-                  case c:Constant => ConstantAssignment(v.toTerm, name, None, Some(OMHID))
+                  case c:Constant => ConstantAssignment(v.toTerm, name, None, None)
                   case s:Structure => DefLinkAssignment(v.toTerm, name, s.fromPath, Morph.Empty)
                   case _ => throw ImplementationError("unimplemented default assignment")
                }

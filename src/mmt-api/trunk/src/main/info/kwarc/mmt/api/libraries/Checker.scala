@@ -469,11 +469,6 @@ class StructureChecker(controller: Controller) extends Logger {
                val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
                OMM(argR, morph).from(s)
             } else s
-         case OMHID => s//TODO
-         case OME(err, args) =>
-            val errR  = checkTerm(home, context, err)
-            val argsR = args.map(checkTerm(home, context, _))
-            OME(errR, argsR).from(s)
          case OMFOREIGN(node) => s //TODO
          case OMI(i) => s //TODO check if integers are permitted
          case OMSTR(str) => s //TODO check if strings are permitted

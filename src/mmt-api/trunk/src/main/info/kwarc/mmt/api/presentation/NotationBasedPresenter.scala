@@ -150,8 +150,6 @@ trait NotationBasedPresenter extends Presenter {
          case objects.Text(format, t) => rh(t)
          case XMLNode(n) => rh(n.toString)
       }
-      case OMHID => //nothing to do
-         
       //TODO other cases
    }}
    /**
