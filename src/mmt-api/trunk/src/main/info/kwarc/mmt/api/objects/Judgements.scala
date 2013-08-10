@@ -4,7 +4,8 @@ import objects.Conversions._
 import scala.collection.mutable.{HashSet}
 
 /** the type of object level judgments as used for typing and equality of terms */
-abstract class Judgement {
+abstract class Judgement extends HistoryEntry {
+  lazy val hash = this.hashCode
   /** @return the set of names of the meta-variables occurring in this judgment
    *    Constraints must come with a Context binding all object variables occurring freely in any expressions;
    *    therefore, the remaining free variables are meta-variables
@@ -13,8 +14,9 @@ abstract class Judgement {
   val stack: Stack
    /** a toString method that may call a continuation on its objects
     */
-  def present(cont: Obj => String) = toString
-  def presentStack(cont: Obj => String) = {
+  def present(implicit cont: Obj => String) = presentAntecedent + " |- " + presentSucceedent
+  def presentSucceedent(implicit cont: Obj => String) = toString
+  def presentAntecedent(implicit cont: Obj => String) = {
      stack.theory.toString + "; " + cont(stack.context)
   }
 }
@@ -36,15 +38,15 @@ case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends J
      fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
      ret
    }
-   override def present(cont: Obj => String): String =
-      presentStack(cont) + " |- " + cont(t1) + " = " + cont(t2) + (if (t.isDefined) " : " + cont(t.get) else "")
+   override def presentSucceedent(implicit cont: Obj => String): String =
+      cont(t1) + " = " + cont(t2) + (if (t.isDefined) " : " + cont(t.get) else "")
 }
 
 /** represents a typing judgement
  * context |- tm : tp
  * tpSymb - optionally specified typing symbol
  */
-case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[Term]) extends WFJudgement {
+case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[GlobalName] = None) extends WFJudgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
@@ -52,11 +54,18 @@ case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[Term]) exten
     ret
   }
   val wfo = tm
-  override def present(cont: Obj => String): String =
-      presentStack(cont) + " |- " + cont(tm) + " : " + cont(tp)
+  override def presentSucceedent(implicit cont: Obj => String): String =
+      cont(tm) + " : " + cont(tp)
 }
 
-case class Universe(stack: Stack, univ: Term) extends WFJudgement {
+/**
+ *  The universe judgement determines whether a term may be used as a type, i.e., may occur on the right side of a Typing judgement. 
+ *  
+ *  There are 2 closely related variants of this judgement, which we merge into one:
+ *  In the typing judgement, t:A:U, the universe judgement can be called on A (being in a universe) or U (being a universe).
+ *  @param isIn if true: univ=A; if false, univ=U
+ */
+case class Universe(stack: Stack, univ: Term, isIn: Boolean) extends WFJudgement {
    lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: univ.freeVars_
@@ -64,8 +73,8 @@ case class Universe(stack: Stack, univ: Term) extends WFJudgement {
     ret
   }
   val wfo = univ
-  override def present(cont: Obj => String): String =
-      stack.toString + " |- " + cont(univ) + " UNIVERSE"
+  override def presentSucceedent(implicit cont: Obj => String): String =
+      cont(univ) + " UNIVERSE"
 }
 
 case class Inhabitation(stack: Stack, tp: Term) extends Judgement {

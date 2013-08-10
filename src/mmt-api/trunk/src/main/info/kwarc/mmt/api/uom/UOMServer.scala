@@ -113,6 +113,9 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * The input term must be fully strictified, and so will be the output term.
     * Applicability of rules is determined based on the pragmatic form (using controller.pragmatic.StrictOMA).
     * Rules are passed strict terms and are expected to return strict terms.
+    * 
+    * The code use [[Simplified]] to remember whether a term has been simplified.
+    * So multiple calls to this method do not cause multiple traversals. 
     */
    def simplify(t: Term, context: Context = Context()) = {
      simplificationLog = Nil
@@ -121,29 +124,39 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
      tS
    }
    
+   /** applies simplify to all terms in a context */ 
+   def simplifyContext(c: Context, outer: Context = Context()) : Context = {
+      c.mapTerms {case (inner, t) => simplify(t, outer ++ inner)}
+   }
+   
    /** the simplification method that is called internally during the traversal of a term
     * users should not call this method (call simplify instead) */
+   // by marking with and testing for Simplified(_), we avoid traversing a term twice
+   // Note that certain operations remove the simplified marker: changing the toplevel, substitution application 
    def traverse(t: Term)(implicit con : Context, init: UOMState) : Term =  t match {
+      case Simplified(t) => t
       case OMA(OMS(_), _) =>
          log("simplifying " + controller.presenter.asString(t))
-         log("state is" + init.t + "\n at " + init.path.toString)
-         val (tS, globalChange) = logGroup {
-            applyAux(t)
+         logGroup {
+            log("state is" + init.t + "\n at " + init.path.toString)
+            val (tS, globalChange) = logGroup {
+               applyAux(t)
+            }
+            log("simplified to " + controller.presenter.asString(tS))
+            if (globalChange)
+              saveSimplificationResult(init, tS)
+            val tSM = Simplified(tS.from(t))
+            if (globalChange)
+               Changed(tSM)
+            else
+               tSM
          }
-         log("simplified  " + controller.presenter.asString(tS))
-         if (globalChange)
-           saveSimplificationResult(init, tS)
-         val tSM = tS.from(t)
-         if (globalChange)
-            Changed(tSM)
-         else
-            tSM
       case OMS(p) =>
          rs.abbrevRules(p).headOption match {
            case Some(ar) => ar.term.from(t)
            case None => t
          }
-      case _ => Traverser(this, t)
+      case _ => Simplified(Traverser(this, t))
    }
    /** an auxiliary method of apply that applies simplification rules
     * This method exhaustively applies rules as follows:
@@ -167,10 +180,8 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
                throw ImplementationError("impossible case")
             case LocalChange(argsS) =>
                // state (2) 
-               // by marking with and testing for Simplified(_), we avoid recursing into a term twice
                val argsSS = argsS.zipWithIndex map {
-                  case (Simplified(a),i) => a 
-                  case (a,i) => Simplified(traverse(a)(con, init.enter(i + 1))) // +1 adjusts for the f in OMA(f, args)
+                  case (a,i) => traverse(a)(con, init.enter(i + 1)) // +1 adjusts for the f in OMA(f, args)
                }
                val tS = StrictOMA(strictApps, outer, argsSS)
                // if any argument changed globally, go back to state (1)

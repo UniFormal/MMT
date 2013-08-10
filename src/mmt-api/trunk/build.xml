@@ -26,7 +26,7 @@
 
     <target name="compile" depends="init">
         <mkdir dir="bin"/>
-        <scalac destdir="bin" srcdir="src" classpathref="scalac.classpath" deprecation="yes" unchecked="yes"/>
+        <scalac destdir="bin" srcdir="src/main" classpathref="scalac.classpath" deprecation="yes" unchecked="yes"/>
     </target>
 
     <target name="build" depends="compile">

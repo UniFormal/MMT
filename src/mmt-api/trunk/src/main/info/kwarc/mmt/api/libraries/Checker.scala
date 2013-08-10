@@ -156,11 +156,11 @@ class StructureChecker(controller: Controller) extends Logger {
             }
             val parR = checkContext(c.home, Context(), c.parameters)
             //TODO reconstruction in parameters
-            // check that the type of c (if given) is a universe
+            // check that the type of c (if given) is in a universe
             c.tp foreach {t => 
                val (unknowns, tR, valid) = prepareTerm(t)
                if (valid) {
-                  val j = Universe(Stack(scope, c.parameters), tR)
+                  val j = Universe(Stack(scope, c.parameters), tR, true)
                   unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
                }
             }

@@ -25,7 +25,6 @@ class RuleStore {
    val universeRules = new RuleMap[UniverseRule]
    val equalityRules = new RuleMap[EqualityRule]
    val termBasedEqualityRules = new RuleSetMap2[TermBasedEqualityRule]
-   val atomicEqualityRules = new RuleMap[AtomicEqualityRule]
    val solutionRules = new RuleMap[SolutionRule]
    val forwardSolutionRules = new RuleMap[ForwardSolutionRule]
    
@@ -48,7 +47,6 @@ class RuleStore {
          case r: UniverseRule => universeRules(r.head) = r
          case r: EqualityRule => equalityRules(r.head) = r
          case r: TermBasedEqualityRule => termBasedEqualityRules((r.left,r.right)) += r
-         case r: AtomicEqualityRule => atomicEqualityRules(r.head) = r
          case r: SolutionRule => solutionRules(r.head) = r
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
          case r: IntroProvingRule => introProvingRules(r.head) += r
@@ -81,7 +79,7 @@ class RuleStore {
       mkM("computation rules", computationRules)
       mkM("universe rules", universeRules)
       mkM("equality rules", equalityRules)
-      mkM("atomic equality rules", atomicEqualityRules)
+      mkS("term-based equality rules", termBasedEqualityRules)
       mkM("solution rules", solutionRules)
       mkM("forwardSolution rules", forwardSolutionRules)
       mkS("intro proving rules", introProvingRules)
@@ -134,7 +132,7 @@ abstract class TypingRule(val head: GlobalName) extends Rule {
     *  @param context its context
     *  @return true iff the typing judgment holds
     */
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack) : Boolean
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean
 }
 
 /** An InferenceRule infers the type of an expression
@@ -148,7 +146,7 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
     *  @param context its context
     *  @return the inferred type if inference was possible
     */
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack): Option[Term]
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term]
 }
 
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
@@ -163,7 +161,7 @@ abstract class ComputationRule(val head: GlobalName) extends Rule {
     *  @param context its context
     *  @return the simplified term if simplification was possible
     */
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack): Option[Term]
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term]
 }
 
 /** A UniverseRule checks if a term is a universe
@@ -176,7 +174,7 @@ abstract class UniverseRule(val head: GlobalName) extends Rule {
     *  @param stack its context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(univ: Term)(implicit stack: Stack): Boolean
+   def apply(solver: Solver)(univ: Term)(implicit stack: Stack, history: History): Boolean
 }
 
 /** A EqualityRule checks the equality of two terms based on the head of their type
@@ -191,7 +189,7 @@ abstract class EqualityRule(val head: GlobalName) extends Rule {
     *  @param context their context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
 }
 
 /** A TermBasedEqualityRule checks the equality of two terms with certain heads
@@ -207,15 +205,7 @@ abstract class TermBasedEqualityRule(val left: GlobalName, val right: GlobalName
     *  @param context their context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack): Option[Continue[Boolean]]
-}
-
-/** An AtomicEqualityRule is called to handle equality of atomic terms with the same shape at a base type.
- * Same shape means that their TorsoNormalForm has identical torso and heads.
- * @param head the head of the two terms
- */
-abstract class AtomicEqualityRule(val head: GlobalName) extends Rule {
-  def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Continue[Boolean]]
 }
 
 /** A ForwardSolutionRule solves for an unknown by inspecting its declarations (as opposed to its use)
@@ -230,7 +220,7 @@ abstract class ForwardSolutionRule(val head: GlobalName, val priority: ForwardSo
     *  @param decl the declaration of an unknown
     *  @return true iff it solved a variable
     */
-   def apply(solver: Solver)(decl: VarDecl)(implicit stack: Stack): Boolean
+   def apply(solver: Solver)(decl: VarDecl)(implicit stack: Stack, history: History): Boolean
 }
 
 /** auxiliary object for the class ForwardSolutionRule */
@@ -256,7 +246,7 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
     *    if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean
 }
 
 /** A continuation returned by [[info.kwarc.mmt.api.objects.ProvingRule]] */
