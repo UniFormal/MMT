@@ -14,7 +14,7 @@ class RewriteRuleGenerator extends RoleHandler {
                   case _ => null
                }
                val simpRule = new ComputationRule(leftH) {
-                  def apply(solver: Solver)(tm: Term)(implicit stack: Stack) = {
+                  def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) = {
                      val matcher = new Matcher(context)
                      val matched = matcher(stack.context, tm, left)
                      if (matched) {
