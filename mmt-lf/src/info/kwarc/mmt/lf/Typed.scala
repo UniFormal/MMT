@@ -16,7 +16,7 @@ object OfType {
 }
 
 /** provides apply/unapply methods for the LF equality symbol */
-object Equality {
+object LFEquality {
    /** the MMT URI of -> */
    val path = LF.lftheory ? "equality"
    def apply(t1 : Term, t2 : Term) = OMA(OMID(path),List(t1,t2))
@@ -37,17 +37,17 @@ object Univ {
 
 /** the rule that makes type a valid universe */
 object UniverseType extends UniverseRule(Typed.ktype) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Boolean = tm == OMS(Typed.ktype)
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm == OMS(Typed.ktype)
 }
 
 /** the rule that makes kind a valid universe */
 object UniverseKind extends UniverseRule(Typed.kind) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Boolean = tm == OMS(Typed.kind)
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm == OMS(Typed.kind)
 }
 
 /** the type inference rule type:kind */
 object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case OMS(Typed.ktype) => Some(OMS(Typed.kind))
       case _ => None
    }
@@ -56,12 +56,12 @@ object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
 /** the type inference rule |- A : X, |- B : Y, |- X = Y ---> |- A = B : kind
  * This rule goes beyond LF but it does not harm because it only adds kinds and thus do not affect types and terms   
  */
-object EqualityTerm extends InferenceRule(Equality.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = tm match {
-      case Equality(a,b) =>
-         val aT = solver.inferType(a)
-         val bT = solver.inferType(b)
-         val equalTypes = solver.checkEquality(a,b,None)
+object EqualityTerm extends InferenceRule(LFEquality.path, OfType.path) {
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+      case LFEquality(a,b) =>
+         val aT = solver.inferType(a)(stack, history + "infering left term")
+         val bT = solver.inferType(b)(stack, history + "infering right term")
+         val equalTypes = solver.check(Equality(stack,a,b,None))(history + "types must be equal")
          if (equalTypes)
             Some(OMS(Typed.kind))
          else None
