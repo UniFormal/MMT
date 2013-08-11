@@ -49,10 +49,9 @@ object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
 object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
      case Apply(f,t) =>
-        history += "inferring type of: " + solver.presentObj(f)
-        solver.inferType(f) flatMap {
+        solver.inferType(f)(stack, history.branch) flatMap {
            case tp @ Pi(x,a,b) =>
-               history += "inferred: " + solver.presentObj(tp) 
+               history += "function type is: " + solver.presentObj(tp) 
                solver.check(Typing(stack, t, a))(history + "argument must have domain type")
                Some(b ^ (x / t))
            case _ =>
@@ -73,14 +72,14 @@ object PiType extends TypingRule(Pi.path) {
             solver.check(Equality(stack,t,t2,Some(OMS(Typed.ktype))))(history+"domains must be equal")
             // solver.checkTyping(t2,LF.ktype)(stack) is redundant after the above have succeeded, but checking it anyway might help solve variables
             val asub = if (x2 == x) a else a ^ (x2 / OMV(x))  
-            solver.check(Typing(stack ++ x % t2, s, asub))
+            solver.check(Typing(stack ++ x % t2, s, asub))(history + "type checking rule for Pi")
          case (tm, Pi(x2, t2, a)) =>
             val j = if (stack.context.isDeclared(x2)) {
                val x = OMV(x2 / "")
                Typing(stack ++ x % t2,  Apply(tm, x), a ^ (x2 / x))
             } else
                Typing(stack ++ x2 % t2, Apply(tm, OMV(x2)), a)
-            solver.check(j)
+            solver.check(j)(history + "type checking rule for Pi")
       }
    }
 }
@@ -175,6 +174,33 @@ object ExpandArrow extends ComputationRule(Arrow.path) {
    }
 }
 
+// experimental (requiring that torso is variable does not combine with other solution rules) 
+object SolveMultiple extends SolutionRule(Apply.path) {
+   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = {
+      tm1 match {
+         case ApplySpine(OMV(u), args) =>
+             // solver.unknowns.isDeclared(u) known by precondition
+             // make sure tm1 is of the form u x1 ... xn
+             val bvarArgs = args map {
+                case OMV(x) => x
+                case _ => return false
+             }
+             // split context into bind = x1, ..., xn and the rest
+             val (bind, rest) = stack.context.variables.partition {case vd => bvarArgs contains vd.name}
+             // this guarantees that all xi are declared in stack.context and are distinct 
+             if (bind.distinct.length != bvarArgs.length) return false
+             //TODO check that no variable declaration in rest depends on an xi
+             //TODO use rest instead of stack
+             val cont = Context(bind:_*)
+             // check that Lambda(cont,tm2) is closed
+             val tm2Closed = tm2.freeVars forall {x => cont.isDeclared(x)}
+             if (! tm2Closed) return false
+             solver.solve(u, Lambda(cont, tm2))
+         case _ => false
+      }
+   }
+}
+
 /** This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
  *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
  */
@@ -194,6 +220,7 @@ object Solve extends SolutionRule(Apply.path) {
       }
    }
 }
+
 
 /** the proof step ?:Pi x:A.B ----> lambda x:A.(?:B)
  *
