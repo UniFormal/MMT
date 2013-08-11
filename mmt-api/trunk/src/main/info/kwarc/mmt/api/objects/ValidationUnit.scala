@@ -33,12 +33,12 @@ class Validator(controller: Controller) extends Logger {
                solver.logState(logPrefix)
                val errors = solver.getErrors
                errors foreach {e =>
-                  errorCont(InvalidJudgement(e.narrowDownError))
+                  errorCont(InvalidUnit(v, e.narrowDownError))
                }
                if (errors.isEmpty) {
                   solver.getConstraints foreach {dc =>
                      val h = dc.history.narrowDownError + "unresolved constraint"
-                     errorCont(InvalidJudgement(h))
+                     errorCont(InvalidUnit(v, h))
                   }
                }
             }

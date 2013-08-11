@@ -13,7 +13,7 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   /** l.c-l.c*/
   def twoDimString = start.twoDimString + "-" + end.twoDimString
   /** number of characters in this region */
-  def length = start.offset - end.offset + 1
+  def length = end.offset - start.offset + 1
 }
 
 /** helper object */
