@@ -53,7 +53,7 @@ case class Comment(text: Unit => String) extends HistoryEntry {
  * 
  * @param the nodes of the branch, from leaf to root
  */
-class History(var steps: List[HistoryEntry]) {
+class History(private var steps: List[HistoryEntry]) {
    /** creates and returns a new branch with a child appended to the leaf */
    def +(e: HistoryEntry) : History = new History(e::steps)
    /** shortcut for adding a Comment leaf */
@@ -62,6 +62,10 @@ class History(var steps: List[HistoryEntry]) {
    def +=(e: HistoryEntry) {steps ::= e}
    /** appends a child to the leaf */
    def +=(s: => String) {this += Comment(_ => s)}
+   /** creates a copy of the history that can be passed when branching */
+   def branch = new History(steps)
+   /** get the steps */
+   def getSteps = steps
    /**
     * A History produced by the ObjectChecker starts with the ValidationUnit, but the error is only encountered along the way.
     * 
@@ -80,8 +84,8 @@ class History(var steps: List[HistoryEntry]) {
          }
          i -= 1
       }
-      if (i+1 < steps.length && steps(i+1).isInstanceOf[Comment]) i += 1
-      new History(steps.take(i+1))
+      if (lastWFJ+1 < steps.length && steps(lastWFJ+1).isInstanceOf[Comment]) lastWFJ += 1
+      new History(steps.take(lastWFJ+1))
    }
 }
 
@@ -174,9 +178,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
             report(prefix, "errors:")
             logGroup {
                errors.foreach {e =>
-                  report(prefix, "error: " + e.steps.head.present)
+                  report(prefix, "error: " + e.getSteps.head.present)
                   logGroup {
-                     e.steps.reverse.foreach(s => report(prefix, s.present))
+                     e.getSteps.reverse.foreach(s => report(prefix, s.present))
                   }
                }
             }
@@ -207,6 +211,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          log("delaying (exists already): " + j.present)
       } else {
          log("delaying until level " + until + ": " + j.present)
+         history += "(delayed)"
          val dc = new DelayedConstraint(j, currentLevel, until, history)
          delayed ::= dc
       }
@@ -216,7 +221,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * selects an activatable constraint: a previously delayed constraint if one of its free variables has been solved since
     * @return an activatable constraint if available
     */
-   private def activate: Option[Judgement] = {
+   private def activatable: Option[DelayedConstraint] = {
       delayed foreach {_.solved(newsolutions)}
       newsolutions = Nil
       delayed find {_.isActivatable(currentLevel)} match {
@@ -226,17 +231,12 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
             } else {
                currentLevel += 1
                log("switching to level " + currentLevel)
-               activate
+               activatable
             }
-         case Some(dc) =>
-           delayed = delayed filterNot (_ == dc)
-           val j = dc.constraint
-           logState()
-           log("activating: " + j.present(controller.presenter.asString))
-           Some(j)
+         case Some(dc) => Some(dc)
       }
    }
-   /** registers the solution for a variable
+   /** registers the solution for an unknown variable
     * 
     * If a solution exists already, their equality is checked.
     * @param name the solved variable
@@ -244,13 +244,13 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @return true unless the solution differs from an existing one
     * precondition: value is well-typed if the the overall check succeeds
     */
-   private def solve(name: LocalName, value: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def solve(name: LocalName, value: Term)(implicit stack: Stack, history: History) : Boolean = {
       log("solving " + name + " as " + value)
       val valueS = controller.uom.simplify(value)
       parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
-         check(Equality(stack, valueS, solved.df.get, solved.tp)) //TODO
+         check(Equality(stack, valueS, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
       else {
          val rightS = right ^ (OMV(name) / valueS) // substitute in solutions of later variables that have been found already
          solution = left ::: solved.copy(df = Some(valueS)) :: rightS
@@ -270,7 +270,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       val valueS = controller.uom.simplify(value)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined)
-         check(Equality(stack, valueS, solved.tp.get, None)) //TODO
+         check(Equality(stack, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution") //TODO
       else {
          solution = left ::: solved.copy(tp = Some(valueS)) :: right
          //no need to register this in newsolutions
@@ -307,10 +307,15 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
            checkMorphism(mor ^ subs, prepare(from))(prepareS(stack), history)
      }
      if (mayhold) {
-        val jOpt = activate
-        jOpt match {
+        val dcOpt = activatable
+        dcOpt match {
            case None => true
-           case Some(j) => apply(j, history + "(delayed)")
+           case Some(dc) =>
+              delayed = delayed filterNot (_ == dc)
+              val j = dc.constraint
+              logState()
+              log("activating: " + j.present(controller.presenter.asString))
+              apply(j, dc.history)
         }
      } else false
    }
@@ -376,11 +381,11 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
              rule(this)(tm, tpS)
            case (tpS, None) =>
              // either this is an atomic type, or no typing rule is known
-             inferType(tm) match {
+             inferType(tm)(stack, history.branch) match {
                case Some(itp) =>
                   check(Equality(stack, itp, tpS, None))(history + ("inferred type must be equal to expected type; the term is: " + presentObj(tm)))
                case None =>
-                  delay(Typing(stack, tm, tpS, None))
+                  delay(Typing(stack, tm, tpS, j.tpSymb))
              }
          }
      }
@@ -399,31 +404,32 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     */
    def inferType(tm: Term)(implicit stack: Stack, history: History): Option[Term] = {
      log("inference: " + controller.presenter.asString(tm) + " : ?")
-     report.indent
-     log("in context: " + controller.presenter.asString(stack.context))
-     val resFoundInd = tm match {
-       //foundation-independent cases
-       case OMV(x) => (unknowns ++ stack.context)(x).tp
-       case OMS(p) =>
-         val c = content.getConstant(p)
-         c.tp orElse {
-           c.df match {
-             case None => None
-             case Some(d) => inferType(d) // expand defined constant
-           }
-         }
-       case _ => None
+     history += "inferring type of " + controller.presenter.asString(tm)
+     val res = logGroup {
+        log("in context: " + controller.presenter.asString(stack.context))
+        val resFoundInd = tm match {
+          //foundation-independent cases
+          case OMV(x) => (unknowns ++ stack.context)(x).tp
+          case OMS(p) =>
+            val c = content.getConstant(p)
+            c.tp orElse {
+              c.df match {
+                case None => None
+                case Some(d) => inferType(d) // expand defined constant
+              }
+            }
+          case _ => None
+        }
+        //foundation-dependent cases if necessary
+        //syntax-driven type inference
+        resFoundInd orElse {
+            val (tmS, ruleOpt) = limitedSimplify(tm,ruleStore.inferenceRules)
+            ruleOpt match {
+              case Some(rule) => rule(this)(tmS)
+              case None => None
+            }
+        }
      }
-     //foundation-dependent cases if necessary
-     //syntax-driven type inference
-     val res = resFoundInd orElse {
-         val (tmS, ruleOpt) = limitedSimplify(tm,ruleStore.inferenceRules)
-         ruleOpt match {
-           case Some(rule) => rule(this)(tmS)
-           case None => None
-         }
-     }
-     report.unindent
      log("inferred: " + res.getOrElse("failed"))
      res
    }
@@ -440,7 +446,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
      implicit val stack = j.stack
      if (j.isIn) {
          // the meaning of the judgement is u:U for some universe U, we infer U and recurse
-         inferType(j.univ) match {
+         inferType(j.univ)(stack, history + "inferring universe") match {
              case None =>
                 delay(j)
              case Some(univI) =>
