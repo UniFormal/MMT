@@ -20,11 +20,11 @@ class CompileActions(mmtplugin: MMTPlugin) {
       log("compile" + " " + archive + " " + path.mkString("","/",""))
       val arch = controller.backend.getArchive(archive).getOrElse(return)
       // call build method on the respective archive
-      controller.handle(frontend.ArchiveBuild(archive, "compile", archives.Build, path, Nil))
+      controller.handle(frontend.ArchiveBuild(archive, "mmt-omdoc", archives.Build, path, Nil))
       // read out the errors
       arch.traverse("source", path, _ => true, false) {case archives.Current(inFile, inPath) =>
          errorSource.removeFileErrors(inFile.toString)
-         arch.getErrors(inPath) foreach {case SourceError("compiler", ref, hd, tl, warn, fatal) =>
+         arch.errors("mmt-omdoc")(inPath) foreach {case SourceError("compiler", ref, hd, tl, warn, fatal) =>
             val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
             val error = new DefaultErrorSource.DefaultError(
                 // 0 to avoid giving an end position; errorlist adds the end-column to the lineStart to compute an offset; so we could trick it into displaying multi-line errors
