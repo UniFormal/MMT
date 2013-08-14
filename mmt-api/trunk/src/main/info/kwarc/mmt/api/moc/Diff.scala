@@ -58,20 +58,6 @@ object Differ {
 	  case (o : Symbol, n : Symbol) => compareDeclarations(o, n)
 	  case _ => throw ImplementationError("Cannot diff between " + old.toString + " and " + nw.toString)	  
 	}
-	
-		
-	/**
-	 * checks if two optional objects are equal
-	 * @param old the first optional object
-	 * @param nw  the second optional objects
-	 * @return true if old and nw are equal, false otherwise
-	 */
-  private def areEqual(old : Option[Obj], nw : Option[Obj]) : Boolean = (old,nw) match {
-    case (None,None) => true
-    case (Some(o), None) => false
-    case (None, Some(n)) => false
-    case (Some(o), Some(n)) => o == n
-  }
 
  // recursing inside objects not useful now, but may be in the future
  /*   
@@ -97,16 +83,13 @@ object Differ {
    * @return the (strict) diff representing the difference between old and nw
    */
 	private def compareConstants(old : Constant, nw : Constant) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-    if(!areEqual(old.tp, nw.tp)) {
-       changes = UpdateComponent(old.path, TypeComponent, old.tp, nw.tp) :: changes
-		}
-		
-		if (!areEqual(old.df, nw.df))  {
+      var changes : List[StrictChange] = Nil
+      if(old.tp != nw.tp) {
+        changes = UpdateComponent(old.path, TypeComponent, old.tp, nw.tp) :: changes
+	   }
+		if (old.df != nw.df)  {
 		  changes = UpdateComponent(old.path, DefComponent, old.df, nw.df) :: changes
 		}
-		
 		new StrictDiff(changes)
 	}
 	

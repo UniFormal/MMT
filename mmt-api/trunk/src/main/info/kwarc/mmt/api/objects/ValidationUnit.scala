@@ -8,27 +8,27 @@ case class ValidationUnit(component: CPath, unknowns: Context, judgement: WFJudg
 class Validator(controller: Controller) extends Logger {
       val logPrefix = "validator"
       val report = controller.report
-      def apply(v: ValidationUnit)(errorCont: Invalid => Unit) {
+      def apply(v: ValidationUnit)(errorCont: Invalid => Unit, depCont: CPath => Unit): Term = {
          log("validation unit " + v.component + ": " + v.judgement.present(controller.presenter.asString))
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
-         val result = logGroup{
+         val mayHold = logGroup{
             solver.apply(v.judgement)
          }
-         val tc = controller.globalLookup.getComponent(v.component)
          // if solved, this substitutes all unknowns; if not, we still substitute partially
          val psol = solver.getPartialSolution
          val remUnknowns = solver.getUnsolvedVariables 
          val subs = psol.toPartialSubstitution
          val tI = v.judgement.wfo ^ subs //fill in inferred values
          val tIS = SimplifyInferred(tI,remUnknowns) //substitution may have created redexes
-         tc.analyzed = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
-         //now report result/errors
+         val result = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
+         //now report results, dependencies, errors
          val solution = solver.getSolution
-         val success = result && solution.isDefined
-         if (success)
+         val success = mayHold && solution.isDefined
+         if (success) {
             log("success")
-         else {
-            log("failure" + (if (result) " (not proved)" else " (disproved)"))
+            solver.getDependencies foreach depCont
+         } else {
+            log("failure" + (if (mayHold) " (not proved)" else " (disproved)"))
             logGroup {
                solver.logState(logPrefix)
                val errors = solver.getErrors
@@ -43,6 +43,7 @@ class Validator(controller: Controller) extends Logger {
                }
             }
          }
+         result
       }
       
       /**

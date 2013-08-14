@@ -26,7 +26,7 @@ object ConstantAssignment {
    */
 object DefLinkAssignment {
    def apply(home : Term, name : LocalName, from: MPath, target : Term) =
-      new DefinedStructure(home, name, from, target, false)
+      DefinedStructure(home, name, from, target, false)
 }
 
 object ViewInclude {

@@ -17,20 +17,28 @@ abstract class Module(val parent : DPath, val name : LocalPath) extends ContentE
 /**
  * Module given by a set of statements
  */
-trait DeclaredModule extends Module with Body
+trait DeclaredModule extends Module with Body {
+   /** the meta-theory, domain, and codomain are not part of the term components because it is just a Path */
+   def getComponents = Nil
+}
 
 /**
  * Module given by existing modules/morphisms
  */
-trait DefinedModule extends ModuleDefiniens
+trait DefinedModule extends ModuleDefiniens {
+}
 
 /**
  * A Module or Link given by existing modules/morphisms
  */
 trait ModuleDefiniens {
-  /** the Term that constitutes the definiens */
-   val df : Term
+  /** the TermContainer holding the definiens */
+   val dfC : TermContainer
+   /** the definiens as a Term */
+   def df = dfC.get.get // TODO for now, we assume the definiens is always present
    protected def innerString = " = " + df.toString
    protected def innerNodes = <definition>{df.toNode}</definition>
    protected def innerComponents = List(df)
+   def getComponents = List((DefComponent, dfC))
+   def getDeclarations = Nil
 }

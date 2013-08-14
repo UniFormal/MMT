@@ -76,7 +76,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 		         val (t, body) = seq match {
 		        	 case <definition>{d}</definition> =>
 		        	   val df = Obj.parseTerm(d, tpath)
-		        	   (new DefinedTheory(modParent, name, df), None)
+		        	   (DefinedTheory(modParent, name, df), None)
 		        	 case symbols => 
 				         val meta = xml.attr(m, "meta") match {
 				            case "" => None
@@ -102,7 +102,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	            val (v, body) = m3.child match {
                   case <definition>{d}</definition> :: Nil =>
 		               val df = Obj.parseTerm(d, vpath)
-		               (new DefinedView(modParent, name, from, to, df, isImplicit), None)
+		               (DefinedView(modParent, name, from, to, df, isImplicit), None)
                   case assignments =>
 	 		            (new DeclaredView(base, name, from, to, isImplicit), Some(assignments))
                 }
@@ -198,7 +198,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = new DefinedStructure(home, adjustedName, fromPath, df, isImplicit)
+                  val s = DefinedStructure(home, adjustedName, fromPath, df, isImplicit)
                   add(s,md)
                case assignments =>
                   val s = new DeclaredStructure(home, adjustedName, fromPath, isImplicit)

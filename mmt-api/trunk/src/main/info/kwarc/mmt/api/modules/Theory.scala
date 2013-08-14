@@ -63,7 +63,7 @@ class DeclaredTheory(doc : DPath, name : LocalPath, var meta : Option[MPath])
     </theory>
 }
 
-class DefinedTheory(doc : DPath, name : LocalPath, val df : Term) extends Theory(doc, name) with DefinedModule {
+class DefinedTheory(doc : DPath, name : LocalPath, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
    def role = Role_DefinedTheory
    def components = StringLiteral(name.flat) :: innerComponents
    override def toString = path + innerString
@@ -72,4 +72,9 @@ class DefinedTheory(doc : DPath, name : LocalPath, val df : Term) extends Theory
         {getMetaDataNode}
         {innerNodes}
     </theory>
+}
+
+object DefinedTheory {
+   def apply(doc : DPath, name : LocalPath, df : Term) =
+      new DefinedTheory(doc, name, TermContainer(df))
 }

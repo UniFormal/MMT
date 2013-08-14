@@ -22,7 +22,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precedence) extends ComplexNotation {
+case class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precedence) extends ComplexNotation {
    /** the markers of this notation that should be used for parsing */
    val markers = fixity.markers
    val key = NotationKey(Some(name), Role_application(None))
@@ -202,7 +202,7 @@ object TextNotation {
          case m: Marker => m
          case s: String => Marker.parse(name, s)
       }
-      new TextNotation(name, Mixfix(markers), prec)
+      TextNotation(name, Mixfix(markers), prec)
    }
    
    /** the precedence of the notation ( 1 )

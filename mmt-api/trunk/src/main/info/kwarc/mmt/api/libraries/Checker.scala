@@ -157,12 +157,20 @@ class StructureChecker(controller: Controller) extends Logger {
             val parR = checkContext(c.home, Context(), c.parameters)
             //TODO reconstruction in parameters
             // check that the type of c (if given) is in a universe
-            c.tp foreach {t => 
-               val (unknowns, tR, valid) = prepareTerm(t)
-               if (valid) {
-                  val j = Universe(Stack(scope, c.parameters), tR, true)
-                  unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+            if (c.tpC.isAnalyzedDirty) {
+               c.tpC.parsed foreach {t =>
+                  log("checking type")
+                  val (unknowns, tR, valid) = prepareTerm(t)
+                  if (valid) {
+                     val j = Universe(Stack(scope, parR), tR, true)
+                     unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+                  }
                }
+            } else {
+               if (c.tpC.analyzed.isDefined)
+                  log("skipping type (not dirty)")
+               else
+                  log("no type")
             }
             // if assignment: translate the type of cOrg
             linkInfo foreach {
@@ -177,14 +185,22 @@ class StructureChecker(controller: Controller) extends Logger {
                case _ => // cOrg has no type, nothing to do
             }
             // check that the definiens of c (if given) type-checks against the type of c (if given)
-            c.df foreach {d =>
-               val (unknowns, dR, valid) = prepareTerm(d)
-               if (valid) {
-                  c.tp foreach {tp =>
-                      val j = Typing(Stack(scope, c.parameters), dR, tp, None)
-                      unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+            if (c.dfC.isAnalyzedDirty) {
+               c.dfC.parsed foreach {d =>
+                  log("checking definiens")
+                  val (unknowns, dR, valid) = prepareTerm(d)
+                  if (valid) {
+                     c.tp foreach {tp =>
+                         val j = Typing(Stack(scope, parR), dR, tp, None)
+                         unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+                     }
                   }
                }
+            } else {
+               if (c.dfC.analyzed.isDefined)
+                  log("skipping definiens (not dirty)")
+               else
+                  log("no definiens")
             }
             // if assignment: translate the definiens of cOrg
             linkInfo foreach {
@@ -522,6 +538,21 @@ class StructureChecker(controller: Controller) extends Logger {
 }
 
 class StructureAndObjectChecker(controller: Controller) extends StructureChecker(controller) {
-   val vdt = new Validator(controller)
-   override def unitCont(vu: ValidationUnit) {vdt.apply(vu)(errorCont)}
+   private val vdt = new Validator(controller)
+   /**
+    * calls the Validator on the ValidationUnit,
+    * registers the dependencies, and
+    * (if changed) marks depending components as dirty
+    */
+   override def unitCont(vu: ValidationUnit) {
+      val tc = controller.globalLookup.getComponent(vu.component)
+      tc.dependsOn.clear
+      val analyzed = vdt.apply(vu)(errorCont, tc.dependsOn += _)
+      val changed = Some(analyzed) != tc.analyzed
+      if (changed) {
+         log("changed " + vu.component)
+         tc.analyzed = analyzed
+         controller.memory.content.notifyUpdated(vu.component)
+      }
+   }
 }
