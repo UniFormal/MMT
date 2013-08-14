@@ -117,6 +117,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    private var delayed : List[DelayedConstraint] = Nil
    /** tracks the errors in reverse order of encountering */
    private var errors: List[History] = Nil
+   /** tracks the dependecnies in reverse order of encountering */
+   private var dependencies : List[CPath] = Nil
    /** currentLevel increases during checking, at higher levels more operations are applicable
     *  currently: level 0 for sufficient-necessary rules
     *             level 1 for only sufficient rules
@@ -150,13 +152,15 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @return the current list of errors and their history
     */
    def getErrors : List[History] = errors
+   /**
+    * @return the current list of dependencies
+    */
+   def getDependencies : List[CPath] = dependencies
 
    /** for Logger */ 
    val report = controller.report
    /** prefix used when logging */ 
    val logPrefix = "object-checker"
-   /** shortcut for the global Lookup of the controller; used to lookup Constant's */
-   private val content = controller.globalLookup
    /** shortcut for the RuleStore of the controller; used to retrieve Rule's */
    private val ruleStore = controller.extman.ruleStore
    /** used for rendering objects, should be used by rules if they want to log */
@@ -198,6 +202,25 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
             }
          }
       }
+   }
+   
+   /** retrieves the type type of a constant and registers the dependency
+    *
+    * returns nothing if the type could not be reconstructed
+    */
+   def getType(p: GlobalName): Option[Term] = {
+      val c = controller.globalLookup.getConstant(p)
+      if (c.tpC.analyzed.isDefined) dependencies ::= p $ TypeComponent
+      c.tpC.analyzed
+   }
+   /** retrieves the definiens of a constant and registers the dependency
+    *
+    * returns nothing if the type could not be reconstructed
+    */
+   def getDef(p: GlobalName) : Option[Term] = {
+      val c = controller.globalLookup.getConstant(p)
+      if (c.dfC.analyzed.isDefined) dependencies ::= p $ DefComponent
+      c.dfC.analyzed
    }
 
    /** delays a constraint for future processing
@@ -278,6 +301,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       }
    }
    
+   /** registers an error and returns false */
    def error(message: => String)(implicit history: History): Boolean = {
       errors ::= history + message
       // maybe return true so that more errors are found
@@ -314,7 +338,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
               delayed = delayed filterNot (_ == dc)
               val j = dc.constraint
               logState()
-              log("activating: " + j.present(controller.presenter.asString))
+              log("activating: " + j.present)
               apply(j, dc.history)
         }
      } else false
@@ -365,9 +389,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          case Some(t) => check(Equality(stack, t, tp, None))
        }
        case OMS(p) =>
-         val c = content.getConstant(p)
-         c.tp match {
-           case None => c.df match {
+         getType(p) match {
+           case None => getDef(p) match {
              case None => false //untyped, undefined constant type-checks against nothing
              case Some(d) => check(Typing(stack, d, tp, j.tpSymb)) // expand defined constant
            }
@@ -403,17 +426,16 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * post: if result, typing judgment is covered
     */
    def inferType(tm: Term)(implicit stack: Stack, history: History): Option[Term] = {
-     log("inference: " + controller.presenter.asString(tm) + " : ?")
-     history += "inferring type of " + controller.presenter.asString(tm)
+     log("inference: " + presentObj(tm) + " : ?")
+     history += "inferring type of " + presentObj(tm)
      val res = logGroup {
-        log("in context: " + controller.presenter.asString(stack.context))
+        log("in context: " + presentObj(stack.context))
         val resFoundInd = tm match {
           //foundation-independent cases
           case OMV(x) => (unknowns ++ stack.context)(x).tp
           case OMS(p) =>
-            val c = content.getConstant(p)
-            c.tp orElse {
-              c.df match {
+            getType(p) orElse {
+              getDef(p) match {
                 case None => None
                 case Some(d) => inferType(d) // expand defined constant
               }
@@ -514,7 +536,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     */ 
    private def expandTorsoDef(t: TorsoForm) : (TorsoForm, Boolean) = t.torso match {
       case OMS(c) =>
-         content.getConstant(c).df match {
+         getDef(c) match {
             case Some(df) =>
                val tE = TorsoForm(df, t.apps).toHeadForm
                val tES = controller.uom.simplify(tE)

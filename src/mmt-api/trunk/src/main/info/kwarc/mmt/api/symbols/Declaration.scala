@@ -38,5 +38,4 @@ abstract class Symbol extends ContentElement {
     * empty by default, may be overridden when constructing instances
     */
    val parameters = Context()
-
 }

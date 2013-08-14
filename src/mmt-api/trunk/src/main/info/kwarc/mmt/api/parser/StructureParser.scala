@@ -79,7 +79,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    /**
     * A continuation function called on every error that was found
     * 
-    * Error handling is very lenient and will recover wherever possible.
+    * Error handling will recover wherever possible.
     * 
     * Default implementation adds every error to the ParserState
     */
@@ -227,8 +227,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          readDelimiter("abbrev", "=") match {
             case "abbrev" =>
                val (_,_,df) = readParsedObject(OMMOD(vpath))
-               val thy = new DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
-               seCont(thy)
+               val v = DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
+               seCont(v)
             case "=" =>
                val v = new DeclaredView(ns, name, OMMOD(from), OMMOD(to), isImplicit)
                seCont(v)
@@ -276,7 +276,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                var delim = state.reader.readToken
                if (delim._1 == "abbrev") {
                   val (_,_,df) = readParsedObject(OMMOD(tpath))
-                  val thy = new DefinedTheory(ns, name, df)
+                  val thy = DefinedTheory(ns, name, df)
                   seCont(thy)
                } else {
                   val meta = if (delim._1 == ":") {

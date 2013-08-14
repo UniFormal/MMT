@@ -20,7 +20,8 @@ class PragConst(val home : Term, val name : LocalName,
 
   def role = Role_Constant(rl)
   def components = List(OMID(path))//
- 
+  def getComponents = Nil //TODO
+  def getDeclarations = Nil
   def toNode =
      <pragConst name={name.toPath}>
        <by>{by.map(x => x.toNode)}</by>

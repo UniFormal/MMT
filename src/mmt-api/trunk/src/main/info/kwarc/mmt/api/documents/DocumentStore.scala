@@ -30,15 +30,13 @@ class DocStore(mem : ROMemory, report : Report) extends RODocStore {
    def getDocuments : List[Document] = documents.values.toList 
    /**
     * deletes a document
-    * @param the document to be deleted
-    * @return the list now orphaned documents and modules that are declared in this documents
+    * @param the path of the document to be deleted
+    * @return the deleted document
     * */
-   def delete(p: DPath) : List[Path] = {
-      documents.get(p) match {
-         case None => Nil
-         case Some(doc) =>
-            documents -= p
-            doc.getLocalItems map (_.target)
+   def delete(p: DPath) : Option[Document] = {
+      documents.get(p) map {doc =>
+         documents -= p
+         doc
       }
    }
    /** deletes all documents */
