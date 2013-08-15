@@ -8,9 +8,20 @@
     <target name="lf">
       <ant dir="mmt-lf" target="deploy" inheritAll="false"/>
     </target>
-    <target name="jEdit">
+    <target name="jedit">
       <ant dir="jEdit-mmt" target="deploy" inheritAll="false"/>
     </target>
+    <target name="all" depends="api,lf,jedit"/>
 
-    <target name="all" depends="api,lf,jEdit"/>
+    <target name="clean-api">
+      <ant dir="mmt-api/trunk" target="clean" inheritAll="false"/>
+    </target>
+    <target name="clean-lf">
+      <ant dir="mmt-lf" target="clean" inheritAll="false"/>
+    </target>
+    <target name="clean-jedit">
+      <ant dir="jEdit-mmt" target="clean" inheritAll="false"/>
+    </target>
+
+    <target name="clean" depends="clean-api,clean-lf,clean-jedit"/>
 </project>
