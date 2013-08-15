@@ -8,7 +8,7 @@ case class ValidationUnit(component: CPath, unknowns: Context, judgement: WFJudg
 class Validator(controller: Controller) extends Logger {
       val logPrefix = "validator"
       val report = controller.report
-      def apply(v: ValidationUnit)(errorCont: Invalid => Unit, depCont: CPath => Unit): Term = {
+      def apply(v: ValidationUnit)(errorCont: Invalid => Unit, depCont: CPath => Unit): (Boolean,Term) = {
          log("validation unit " + v.component + ": " + v.judgement.present(controller.presenter.asString))
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
          val mayHold = logGroup{
@@ -37,13 +37,13 @@ class Validator(controller: Controller) extends Logger {
                }
                if (errors.isEmpty) {
                   solver.getConstraints foreach {dc =>
-                     val h = dc.history.narrowDownError + "unresolved constraint"
+                     val h = dc.history + "unresolved constraint"
                      errorCont(InvalidUnit(v, h))
                   }
                }
             }
          }
-         result
+         (success,result)
       }
       
       /**

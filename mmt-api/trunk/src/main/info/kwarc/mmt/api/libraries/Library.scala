@@ -410,11 +410,12 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
       log("updated: " + p)
       logGroup {
          modules.values.foreach {
-            case t: Module =>
-               t.foreachComponent {case (comp,termCont) =>
-                  if (termCont.dependsOn contains p)
+            case m: Module =>
+               m.foreachComponent {case (comp,termCont) =>
+                  if (termCont.dependsOn contains p) {
                      log("setting dirty: " + comp)
                      termCont.setAnalyzedDirty
+                  }
                }
          }
       }

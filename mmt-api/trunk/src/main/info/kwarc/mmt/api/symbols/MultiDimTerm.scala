@@ -13,6 +13,7 @@ class TermDimension {
       term = None
       dirty = false
    }
+   override def toString = term.toString + (if (dirty) " (dirty)" else "")
 }
 
 /** TermContainer acts as the interface between the structural and the object level
@@ -36,6 +37,7 @@ class TermContainer {
    private var _read     : Option[String] = None
    private val _parsed   = new TermDimension
    private val _analyzed = new TermDimension
+   override def toString = "read: " + _read.toString + "\nparsed: " + _parsed.toString + "\nanalyzed: " + _analyzed.toString
    /** the unparsed string representation */
    def read = _read
    /** the parsed representation without further analysis */

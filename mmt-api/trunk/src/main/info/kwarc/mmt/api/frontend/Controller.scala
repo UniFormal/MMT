@@ -287,14 +287,17 @@ class Controller extends ROController with Logger {
    /** deletes a document, deactivates and returns its modules */
    private def deactivateDocument(d: DPath): List[Module] = {
       docstore.delete(d).toList.flatMap {doc =>
-         doc.getLocalItems flatMap {
-            case r: DRef => deactivateDocument(r.target)
-            case r: MRef => get(r.target) match {
-               case m: Module =>
-                  log("deactivating " + m.path)
-                  m.inactive = true
-                  List(m)
-               case _ => Nil // impossible
+         log("deactivating document " + d)
+         logGroup {
+            doc.getLocalItems flatMap {
+               case r: DRef => deactivateDocument(r.target)
+               case r: MRef => get(r.target) match {
+                  case m: Module =>
+                     log("deactivating " + m.path)
+                     m.inactive = true
+                     List(m)
+                  case _ => Nil // impossible
+               }
             }
          }
       }
@@ -323,8 +326,7 @@ class Controller extends ROController with Logger {
                      case (arch, p) => DPath(arch.narrationBase / p)
                   } getOrElse
                   DPath(utils.FileURI(f))
-      log("deactivating")
-      val modules = logGroup {deactivateDocument(dpath)}
+      val modules = deactivateDocument(dpath)
       log("reading " + dpath)
       val result = f.getExtension match {
          case Some("omdoc") =>
@@ -511,13 +513,11 @@ class Controller extends ROController with Logger {
 	         val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
             gv.exportDot(f)
 	      case Check(p) =>
-	         try {
-	            checker(p)
+	         val errors = checker(p)
+	         if (errors == Nil)
 	            log("check succeeded")
-	         } catch {
-	          case e: Invalid =>
-	            log("check failed\n" + e.getMessage)
-	         }
+	         else
+	            log("check failed (see log for error messages)")
 	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
@@ -529,7 +529,6 @@ class Controller extends ROController with Logger {
             case "on" => winman.openBrowser
             case "off" => winman.closeBrowser
          }
-             
          case Exit =>
 	         cleanup 
 	         sys.exit
