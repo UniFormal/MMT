@@ -6,6 +6,7 @@ import uom._
 import utils.MyList.fromList
 
 object Common {
+   /** convenience function for recursively checking the judgement |- a: type */
    def isType(solver: Solver, a: Term)(implicit stack: Stack, history: History) =
       solver.check(Typing(stack, a, OMS(Typed.ktype), Some(OfType.path)))(history + "type of bound variable must be a type")
 }
@@ -19,12 +20,13 @@ object PiTerm extends InferenceRule(Pi.path, OfType.path) {
       tm match {
         case Pi(x,a,b) =>
            isType(solver,a)
-           solver.inferType(b)(stack ++ x % a, history) flatMap {bT =>
-                 if (bT.freeVars contains x) {
-                    solver.error("type of Pi-term has been inferred as shown, but contains free variable " + x)
-                    None
-                 } else
-                    Some(bT)
+           val (xn,sub) = Context.pickFresh(stack.context, x)
+           solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
+              if (bT.freeVars contains xn) {
+                 solver.error("type of Pi-term has been inferred as shown, but contains free variable " + xn)
+                 None
+              } else
+                 Some(bT)
            }
         case _ => None // should be impossible
       }
@@ -38,7 +40,8 @@ object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
       tm match {
         case Lambda(x,a,t) =>
            isType(solver,a)
-           solver.inferType(t)(stack ++ x % a, history) map {b => Pi(x,a,b)}
+           val (xn,sub) = Context.pickFresh(stack.context, x)
+           solver.inferType(t ^? sub)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
         case _ => None // should be impossible
       }
    }
@@ -66,19 +69,17 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
 object PiType extends TypingRule(Pi.path) {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       (tm,tp) match {
-         case (Lambda(x,t,s),Pi(x2,t2,a)) =>
+         case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
             //checking of t:type necessary because checkEquality does not check typing
-            isType(solver,t)
-            solver.check(Equality(stack,t,t2,Some(OMS(Typed.ktype))))(history+"domains must be equal")
-            // solver.checkTyping(t2,LF.ktype)(stack) is redundant after the above have succeeded, but checking it anyway might help solve variables
-            val asub = if (x2 == x) a else a ^ (x2 / OMV(x))  
-            solver.check(Typing(stack ++ x % t2, s, asub))(history + "type checking rule for Pi")
-         case (tm, Pi(x2, t2, a)) =>
-            val j = if (stack.context.isDeclared(x2)) {
-               val x = OMV(x2 / "")
-               Typing(stack ++ x % t2,  Apply(tm, x), a ^ (x2 / x))
-            } else
-               Typing(stack ++ x2 % t2, Apply(tm, OMV(x2)), a)
+            isType(solver,a1)
+            solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history+"domains must be equal")
+            // solver.checkTyping(a2,LF.ktype)(stack) is redundant after the above have succeeded, but checking it anyway might help solve variables
+            val (xn,sub1) = Context.pickFresh(stack.context, x1)
+            val sub2 = x2 / OMV(xn)
+            solver.check(Typing(stack ++ xn % a2, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
+         case (tm, Pi(x2, a2, b)) =>
+            val (xn,sub) = Context.pickFresh(stack.context, x2)
+            val j = Typing(stack ++ xn % a2,  Apply(tm, xn), b ^? sub)
             solver.check(j)(history + "type checking rule for Pi")
       }
    }
@@ -89,17 +90,16 @@ object PiType extends TypingRule(Pi.path) {
 object Extensionality extends TypeBasedEqualityRule(Pi.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
       val Pi(x, a, b) = tp
-      //TODO pick new variable name properly; currently, a quick optimization 
-      val (y, u1, u2) = (tm1, tm2) match {
-         case (Lambda(x1, a1, t1), Lambda(x2, a2, t2)) if x1 == x2 =>
-            solver.check(Equality(stack, a1, a2, Some(OMS(Typed.ktype))))
-            (x1, Some(t1), Some(t2)) 
-         case _ if ! stack.context.isDeclared(x) => (x, None, None)
-         case _ => (x / "", None, None)
+      // pick fresh variable name, trying to reuse existing name 
+      val xBase = (tm1, tm2) match {
+         case (Lambda(x1, _, _), Lambda(x2,_,_)) if x1 == x2 => x1
+         case _ => x
       }
-      val tm1Eval = u1 getOrElse Apply(tm1, OMV(y))
-      val tm2Eval = u2 getOrElse Apply(tm2, OMV(y))
-      solver.check(Equality(stack ++ y % a, tm1Eval, tm2Eval, Some(b)))
+      val (xn,_) = Context.pickFresh(stack.context, xBase)
+      val tm1Eval = Apply(tm1, OMV(xn))
+      val tm2Eval = Apply(tm2, OMV(xn))
+      val bsub = b ^? (x / OMV(xn))
+      solver.check(Equality(stack ++ xn % a, tm1Eval, tm2Eval, Some(bsub)))
    }
 }
 
@@ -116,19 +116,10 @@ object LambdaCongruence extends TermBasedEqualityRule(Lambda.path, Lambda.path) 
             val cont = Continue {
                history += "congruence for lambda"
                val res1 = solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history + "equality of domain types")
-               val a = a1
-               val (x,s1,s2) =
-                  if (x1 == x2)
-                     (x1, t1, t2)
-                  else {
-                     if (! stack.context.isDeclared(x1))
-                        (x1, t1, t2 ^ (x2 / OMV(x1)))
-                     else {
-                        val x = x1 / ""
-                        (x1 / "", t1 ^ (x1 / OMV(x)), t2 ^ (x2 / OMV(x)))
-                     }
-                  }
-               val res2 = solver.check(Equality(stack ++ x % a, s1, s2, None))(history + "equality of scopes")
+               val (xn,_) = Context.pickFresh(stack.context, x1)
+               val t1sub = t1 ^? (x1 / OMV(xn))
+               val t2sub = t2 ^? (x2 / OMV(xn))
+               val res2 = solver.check(Equality(stack ++ xn % a1, t1sub, t2sub, None))(history + "equality of scopes")
                res1 && res2
             }
             Some(cont)
@@ -148,19 +139,10 @@ object PiCongruence extends TermBasedEqualityRule(Pi.path, Pi.path) {
             val cont = Continue {
                history += "congruence for function types"
                val res1 = solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history + "equality of domain types")
-               val a = a1
-               val (x,s1,s2) =
-                  if (x1 == x2)
-                     (x1, t1, t2)
-                  else {
-                     if (! stack.context.isDeclared(x1))
-                        (x1, t1, t2 ^ (x2 / OMV(x1)))
-                     else {
-                        val x = x1 / ""
-                        (x1 / "", t1 ^ (x1 / OMV(x)), t2 ^ (x2 / OMV(x)))
-                     }
-                  }
-               val res2 = solver.check(Equality(stack ++ x % a, s1, s2, None))(history + "equality of scopes")
+               val (xn,_) = Context.pickFresh(stack.context, x1)
+               val t1sub = t1 ^? (x1 / OMV(xn))
+               val t2sub = t2 ^? (x2 / OMV(xn))
+               val res2 = solver.check(Equality(stack ++ xn % a1, t1sub, t2sub, None))(history + "equality of scopes")
                res1 && res2
             }
             Some(cont)
@@ -273,13 +255,32 @@ object SolveMultiple extends SolutionRule(Apply.path) {
 object Solve extends SolutionRule(Apply.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = {
       tm1 match {
-         case Apply(t, OMV(x)) if stack.context.isDeclared(x) =>
-             if (t.freeVars contains x)
+         case Apply(t, OMV(x)) =>
+             val i = stack.context.lastIndexWhere(_.name == x)
+             if (i == -1) return false
+             var dropped = List(x) // the variables that we will remove from the context
+             var newCon : Context = stack.context.take(i) // the resulting context
+             // iterate over the variables vd after x
+             stack.context.drop(i+1) foreach {vd =>
+                if (vd.freeVars.exists(dropped.contains _)) {
+                   // vd depends on x, we use weakening to drop vd as well
+                   dropped ::= vd.name
+                } else {
+                   // append vd to the new context
+                   newCon = newCon ++ vd
+                }
+             }
+             // check whether weakening is applicable: dropped variables may not occur t or Lambda(x,a,tm2)
+             if (t.freeVars.exists(dropped.contains _))
+                // most important special case: x occurs free in t so that eta is not applicable
                 return false
-             stack.context(x) match {
+             if (tm2.freeVars.exists(dropped.filterNot(_ == x) contains _))
+                return false
+             // get the type of x and abstract over it
+             stack.context.variables(i) match {
                 case VarDecl(_, Some(a), _, _*) => 
-                   //TODO remove x from context
-                   solver.check(Equality(stack, t, Lambda(x, a, tm2), None)) // tpOpt map {tp => Pi(x,a,tp)}
+                   val newStack = Stack(stack.frames.head.copy(context = newCon) :: stack.frames.tail)
+                   solver.solveEquality(t, Lambda(x, a, tm2), None)(newStack, history + ("solving by binding " + x)) // tpOpt map {tp => Pi(x,a,tp)}
                 case _ => false
              }
          case _ => false
