@@ -9,7 +9,9 @@ class Plugin extends frontend.Plugin {
       super.init(c, args)
       val em = c.extman
       // type reconstruction rules
-      em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Solve,ExpandArrow)
+      em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,
+            Beta,Extensionality,PiCongruence,LambdaCongruence,
+            Solve,ExpandArrow)
       // computation rules
       em.ruleStore.add(UnsafeBeta)
       // proof rules

@@ -86,20 +86,86 @@ object PiType extends TypingRule(Pi.path) {
 
 /** the extensionality rule (equivalent to Eta) x:A|-f x = g x  --->  f = g  : Pi x:A. B
  * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
-object Extensionality extends EqualityRule(Pi.path) {
+object Extensionality extends TypeBasedEqualityRule(Pi.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
       val Pi(x, a, b) = tp
       //TODO pick new variable name properly; currently, a quick optimization 
-      val (name, s, t) = (tm1, tm2) match {
-         case (Lambda(v, a1, s), Lambda(w, a2, t)) if v == w =>
+      val (y, u1, u2) = (tm1, tm2) match {
+         case (Lambda(x1, a1, t1), Lambda(x2, a2, t2)) if x1 == x2 =>
             solver.check(Equality(stack, a1, a2, Some(OMS(Typed.ktype))))
-            (v, Some(s), Some(t)) 
+            (x1, Some(t1), Some(t2)) 
          case _ if ! stack.context.isDeclared(x) => (x, None, None)
          case _ => (x / "", None, None)
       }
-      val tm1Eval = s getOrElse Apply(tm1, OMV(name))
-      val tm2Eval = t getOrElse Apply(tm2, OMV(name))
-      solver.check(Equality(stack ++ name % a, tm1Eval, tm2Eval, Some(b)))
+      val tm1Eval = u1 getOrElse Apply(tm1, OMV(y))
+      val tm2Eval = u2 getOrElse Apply(tm2, OMV(y))
+      solver.check(Equality(stack ++ y % a, tm1Eval, tm2Eval, Some(b)))
+   }
+}
+
+/** Congruence for Lambda
+ *  
+ *  We cannot use CongruenceRule here because we have to flatten nested lambdas in addition.
+ *  
+ *  This rule is a special case of Extensionality, but it does not make use of the type.
+ */
+object LambdaCongruence extends TermBasedEqualityRule(Lambda.path, Lambda.path) {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+      (tm1,tm2) match {
+         case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) =>
+            val cont = Continue {
+               history += "congruence for lambda"
+               val res1 = solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history + "equality of domain types")
+               val a = a1
+               val (x,s1,s2) =
+                  if (x1 == x2)
+                     (x1, t1, t2)
+                  else {
+                     if (! stack.context.isDeclared(x1))
+                        (x1, t1, t2 ^ (x2 / OMV(x1)))
+                     else {
+                        val x = x1 / ""
+                        (x1 / "", t1 ^ (x1 / OMV(x)), t2 ^ (x2 / OMV(x)))
+                     }
+                  }
+               val res2 = solver.check(Equality(stack ++ x % a, s1, s2, None))(history + "equality of scopes")
+               res1 && res2
+            }
+            Some(cont)
+         case _ => None
+      }
+   }
+}
+
+/** Congruence for Pi
+ *  
+ *  We cannot use CongruenceRule here because we have to flatten nested Pis and consider -> in addition.
+ */
+object PiCongruence extends TermBasedEqualityRule(Pi.path, Pi.path) {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+      (tm1,tm2) match {
+         case (Pi(x1,a1,t1), Pi(x2,a2,t2)) =>
+            val cont = Continue {
+               history += "congruence for function types"
+               val res1 = solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history + "equality of domain types")
+               val a = a1
+               val (x,s1,s2) =
+                  if (x1 == x2)
+                     (x1, t1, t2)
+                  else {
+                     if (! stack.context.isDeclared(x1))
+                        (x1, t1, t2 ^ (x2 / OMV(x1)))
+                     else {
+                        val x = x1 / ""
+                        (x1 / "", t1 ^ (x1 / OMV(x)), t2 ^ (x2 / OMV(x)))
+                     }
+                  }
+               val res2 = solver.check(Equality(stack ++ x % a, s1, s2, None))(history + "equality of scopes")
+               res1 && res2
+            }
+            Some(cont)
+         case _ => None
+      }
    }
 }
 
