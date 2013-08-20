@@ -531,7 +531,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       val tp = tpOpt match {
         case Some(tp) => tp
         case None =>
-           val itp = inferType(tm1S) orElse inferType(tm2S)
+           val itp = inferType(tm1S) orElse inferType(tm2S)(stack, history + "inferring omitted type")
            itp.getOrElse(return delay(Equality(stack, tm1S, tm2S, None)))
       }
       // try to simplify the type until an equality rule is applicable 
