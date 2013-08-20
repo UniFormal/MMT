@@ -100,7 +100,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
       counter = 0
    }
    private def newArgument: OMV = {
-     val name = LocalName("") / "argument" / counter.toString
+     val name = LocalName("") / "I" / counter.toString
      //val tname = LocalName("") / "argumentType" / counter.toString
      vardecls = VarDecl(name,None,None) :: vardecls
      counter += 1

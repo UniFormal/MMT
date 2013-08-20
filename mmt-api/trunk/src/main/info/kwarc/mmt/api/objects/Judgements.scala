@@ -42,6 +42,21 @@ case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends J
       cont(t1) + " = " + cont(t2) + (if (t.isDefined) " : " + cont(t.get) else "")
 }
 
+/** represents an equality judgement between contexts
+ * context |- ctx = ctx
+ */
+case class EqualityContext(stack: Stack, context1: Context, context2: Context) extends Judgement {
+   lazy val freeVars = {
+     val ret = new HashSet[LocalName]
+     val fvs = stack.context.freeVars_ ::: context2.freeVars_ :::context1.freeVars_
+     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+     ret
+   }
+   override def presentSucceedent(implicit cont: Obj => String): String =
+      cont(context1) + " = " + cont(context2)
+}
+
+
 /** represents a typing judgement
  * context |- tm : tp
  * tpSymb - optionally specified typing symbol

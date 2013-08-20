@@ -250,6 +250,7 @@ case class OMV(name : LocalName) extends Term {
    def components = List(StringLiteral(name.toString)) 
    /** the substutition this/s */
    def /(s : Term) = Sub(name, s)
+   def ->(s: Term) = Sub(name, s)
    /** the declaration this:tp */
    def %(tp : Term) = VarDecl(name, Some(tp), None)
    def toNodeID(pos : Position) = <om:OMV name={name.toPath}/> % pos.toIDAttr
