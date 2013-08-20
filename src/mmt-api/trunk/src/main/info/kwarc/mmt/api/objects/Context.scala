@@ -97,6 +97,18 @@ case class Context(variables : VarDecl*) extends Obj {
       }
    }
    
+   /**
+    * if c1 and c2 have the same length, then (c1 alpha c2 : c1 -> c2) is the substitution mapping corresponding variables
+    * 
+    *  This substitution can be used to alpha-rename c1-objects to c2-objects. 
+    */
+   def alpha(that: Context): Option[Substitution] = 
+      if (this.length == that.length) {
+         val subs = (this zip that).map {case (vd1,vd2) => vd1.name / OMV(vd2.name)}
+         Some(Substitution(subs:_*))
+      } else
+         None
+   
    /** substitutes in all variable declarations except for the previously declared variables
     *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
     */
@@ -148,7 +160,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos / 1)}</om:OMV>
    def toCML : Node = <m:mi name={name.toPath}>{target.toCML}</m:mi>
    def components = List(StringLiteral(name.toString), target)
-   override def toString = name + "/" + target.toString
+   override def toString = name + ":=" + target.toString
    def head = None
 }
 
@@ -192,22 +204,28 @@ object Context {
 	  case <om:OMBVAR>{decls @ _*}</om:OMBVAR> =>  decls.toList.map(VarDecl.parse(_, base))
       case _ => throw ParseError("not a well-formed context: " + N.toString)
 	}
-	//crude renaming to kind of avoid variable capture
-	private def rename(s: LocalName) = s / "_"
+	/** generate new variable name similar to x */
+   private def rename(x: LocalName) = x / ""
+   /** picks a variable name that is fresh for context, preferably x */
+   def pickFresh(context: Context, x1: LocalName): (LocalName,Substitution) = {
+      var x = x1
+      while (context.isDeclared(x)) {
+         x = rename(x)
+      }
+      (x, x1 / OMV(x))
+   } 
 	/** returns an alpha-renamed version of con that contains no variable from forbidden, and a substitution that performs the alpha-renaming */
 	def makeFresh(con: Context, forbidden: List[LocalName]) : (Context,Substitution) = {
 	   var sub = Substitution()
 	   val conN = con map {case vd @ VarDecl(x,tp,df,ats @ _*) =>
-	      if (forbidden contains x) {
-   	      val xn = rename(x)
-            val vdn = VarDecl(xn, tp map {_ ^ sub}, df map {_ ^ sub}, ats : _*)
-            vdn.copyFrom(vd)
-   	      sub = sub ++ OMV(x) / OMV(xn)
-   	      vdn
-	      } else {
-	         sub = sub ++ OMV(x) / OMV(x)
+	      var xn = x
+	      while (forbidden contains xn) {xn = rename(xn)}
+	      val vdn = if (x == xn && sub.isIdentity)
 	         vd
-	      }
+	      else
+            vd.copy(name = xn, tp = tp map {_ ^ sub}, df = df map {_ ^ sub})
+	      sub = sub ++ OMV(x) / OMV(xn)
+	      vdn
 	   }
 	   (conN, sub)
 	}
