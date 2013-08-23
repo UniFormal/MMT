@@ -67,6 +67,7 @@ class MMTInterpolator(controller: frontend.Controller) {
 	           throw InvalidObject(t, "term was parsed but did not type-check")
 	        }
 	        tR
+//FIXME     OMA(tR, List(tpR))
         } else
           tI
    }
@@ -88,6 +89,10 @@ class MMTInterpolator(controller: frontend.Controller) {
             case OMBINDC(_,con, Nil) => con
             case _ => throw ParseError("not a context")
          }
+      }
+      def present(ts : Term*) : String = {
+        val t = parse(sc, ts.toList, None, false)
+        controller.presenter.asString(t)
       }
    }
 }
