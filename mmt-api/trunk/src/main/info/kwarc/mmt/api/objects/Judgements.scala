@@ -4,8 +4,7 @@ import objects.Conversions._
 import scala.collection.mutable.{HashSet}
 
 /** the type of object level judgments as used for typing and equality of terms */
-abstract class Judgement extends HistoryEntry {
-  lazy val hash = this.hashCode
+abstract class Judgement extends utils.HashEquality[Judgement] with HistoryEntry {
   /** @return the set of names of the meta-variables occurring in this judgment
    *    Constraints must come with a Context binding all object variables occurring freely in any expressions;
    *    therefore, the remaining free variables are meta-variables

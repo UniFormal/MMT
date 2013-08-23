@@ -89,6 +89,8 @@ class History(private var steps: List[HistoryEntry]) {
    }
 }
 
+object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
+
 /**
  * A Solver is used to solve a system of constraints about Term's given as judgments.
  * 
@@ -192,7 +194,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                }
             }
          }
-         if (errors.isEmpty && ! delayed.isEmpty) {
+         if (! delayed.isEmpty) {
             report(prefix, "constraints (current level is " + currentLevel + "):")
             logGroup {
                delayed.foreach {d =>
@@ -200,7 +202,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                   logGroup {
                      report(prefix, d.constraint.presentAntecedent(_.toString))
                      report(prefix, d.constraint.presentSucceedent(_.toString))
-                     logHistory(d.history)
+                     if (errors.isEmpty)
+                        // if there are no errors, see the history of the constraints
+                        logHistory(d.history)
                   }
                }
             }
@@ -233,8 +237,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @return true (i.e., delayed Judgment's always return success)
     */
    private def delay(j: Judgement, until: Int = currentLevel)(implicit history: History): Boolean = {
-      // testing if the same judgement has been delayed already, using hashCode to narrow down search
-      if (delayed.exists(d => d.constraint.hash == j.hash && d.constraint == j)) {
+      // testing if the same judgement has been delayed already
+      if (delayed.exists(d => d.constraint hasheq j)) {
          log("delaying (exists already): " + j.present)
       } else {
          log("delaying until level " + until + ": " + j.present)
@@ -324,7 +328,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
      val subs = solution.toPartialSubstitution
      def prepare(t: Term) = controller.uom.simplify(t ^? subs)
      def prepareS(s: Stack) =
-        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^ subs))))
+        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^? subs))))
      val mayhold = j match {
         case Typing(stack, tm, tp, typS) =>
            val tmS = tm ^? subs
@@ -332,9 +336,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
         case Equality(stack, tm1, tm2, tp) =>
            check(Equality(prepareS(stack), prepare(tm1), prepare(tm2), tp map prepare))
         case Universe(stack, tm, isIn) =>
-           check(Universe(prepareS(stack), tm ^ subs, isIn))
+           check(Universe(prepareS(stack), tm ^? subs, isIn))
         case IsMorphism(stack, mor, from) =>
-           checkMorphism(mor ^ subs, prepare(from))(prepareS(stack), history)
+           checkMorphism(mor ^? subs, prepare(from))(prepareS(stack), history)
      }
      if (mayhold) {
         //activate next constraint and recurse, if any left
@@ -344,7 +348,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
            case Some(dc) => 
               delayed = delayed filterNot (_ == dc)
               val j = dc.constraint
-              logState()
+              //logState() // noticably slows down type-checking, only use for debugging
               log("activating: " + j.present)
               apply(j, dc.history)
         }
@@ -436,6 +440,10 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    def inferType(tm: Term)(implicit stack: Stack, history: History): Option[Term] = {
      log("inference: " + presentObj(tm) + " : ?")
      history += "inferring type of " + presentObj(tm)
+     InferredType.get(tm) match {
+        case s @ Some(_) => return s
+        case _ =>
+     }
      val res = logGroup {
         log("in context: " + presentObj(stack.context))
         val resFoundInd = tm match {
@@ -461,6 +469,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
         }
      }
      log("inferred: " + res.getOrElse("failed"))
+     if (res.isDefined) InferredType.put(tm, res.get)
      res
    }
 
@@ -508,7 +517,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       val tm2S = controller.uom.simplify(tm2)
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
-      if (tm1S == tm2S) return true
+      if (tm1S hasheq tm2S) return true
       // solve an unknown
       val solved = solveEquality(tm1S, tm2S, tpOpt) || solveEquality(tm2S, tm1S, tpOpt)
       if (solved) return true
@@ -604,7 +613,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
        if (changed) {
           log("left term expanded and simplified to " + tE)
           // check if it is identical to one of the terms known to be equal to t2
-          if (torsos2.contains(tE)) {
+          if (torsos2.exists(_ hasheq tE)) {
              log("success by identity")
              return true
           }
