@@ -32,19 +32,15 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	              var aft : List[LocalName] = Nil
     	              var isBefore = true
     	              var implicitArgs : List[OMV] = Nil
-    	              val implArgsOut = controller.globalLookup.getConstant(outer).not match {
-    	                case Some(n) => n.flatten(args.length, 0, 0)._2
+    	              var implArgsOut = List.empty[ImplicitArg]
+    	              var implArgsIn = List.empty[ImplicitArg]
+    	              controller.globalLookup.getConstant(outer).not match {
+    	                case Some(n) => implArgsOut ++= n.flatten(args.length, 0, 0)._2
     	                case None => Nil
     	              }
-    	              if (!implArgsOut.isEmpty) {
-//    	                println("implicit arguments")
-    	                //TODO log implicit arguments
-    	              }
-//    	              implicitArgs ++= implArgsOut map { case ImplicitArg(n) =>
-//    	                args(n-1) match {
-//    	                  case v : OMV => v
-//    	                  case a => throw DoesNotMatch("argument " + a.toString + " not an OMV")
-//    	                }
+//    	              if (!implArgsOut.isEmpty) {
+////    	                println("implicit arguments")
+//    	                //TODO log implicit arguments
 //    	              }
     	              val omvs = args.zipWithIndex.map { case (arg, i) =>
     	                if (!implArgsOut.contains(ImplicitArg(i+1))) { 
@@ -55,24 +51,19 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	            	    else
     	            	       aft ::= x
     	            	  case ApplyGeneral(OMS(inner), args) =>
-    	            	    val implArgsIn = controller.globalLookup.getConstant(inner).not match {
-    	            	    	case Some(n) => n.flatten(args.length, 0, 0)._2
+    	            	    controller.globalLookup.getConstant(inner).not match {
+    	            	    	case Some(n) => implArgsIn ++= n.flatten(args.length, 0, 0)._2
     	            	    	case None => Nil
     	            	    }
-//    	            	    implicitArgs ++= implArgsIn map { case ImplicitArg(n) =>
-//    	            	    	args(n-1) match {
-//    	            	    		case v : OMV => v
-//    	            	    		case a => throw DoesNotMatch("argument " + a.toString + " not an OMV")
-//    	            	    	}
-//    	            	    }
-//    	            	    if (!implArgsIn.contains(ImplicitArg(i+1))) {
     	            	     if (isBefore) {
     	            	        inr = inner
-    	            	        args.zipWithIndex foreach {
-    	            	          case (OMV(x), vi) =>
-    	            	            if (!implArgsIn.contains(ImplicitArg(vi+1)))
-    	            	            	ins ::= x
-    	            	          case (e, _) => throw DoesNotMatch(controller.presenter.asString(e) + " not a variable for inner operation " + controller.presenter.asString(OMID(inner)))
+    	            	        args.zipWithIndex foreach { a =>
+    	            	            if (!implArgsIn.contains(ImplicitArg(a._2+1))) {
+    	            	              a match {
+    	            	                case (OMV(x),vi) => ins ::= x
+    	            	                case (e, _) => throw DoesNotMatch(controller.presenter.asString(e) + " not a variable for inner operation " + controller.presenter.asString(OMID(inner)))
+    	            	              }
+    	            	            }
     	            	        }
     	            	        isBefore = false
     	            	     } else
@@ -94,18 +85,25 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
  	            	   	private val bfrNames = bfr.reverse
  	            	   	private val aftNames = aft.reverse
  	            	   	private val insNames = ins.reverse
+ 	            	   	private val implOutInx = implArgsOut map { case ImplicitArg(i) => i-1 }
+    	                private val implInInx = implArgsIn map { case ImplicitArg(i) => i-1 }
  	            	   	def apply : Rewrite = { 
  	            	   	  (before : List[Term],inside : List[Term],after : List[Term]) => {
- 	            	   	    if (before.length != bfrNames.length || after.length != aftNames.length || inside != insNames) {
+ 	            	   	    val explBf = before.zipWithIndex.filterNot(p => implOutInx.contains(p._2)).map{_._1}
+ 	            	   	    val explIn = inside.zipWithIndex.filterNot(p => implInInx.contains(p._2)).map{_._1}
+ 	            	   	    val explAf = after.zipWithIndex.filterNot(p => implOutInx.contains(p._2 + before.length)).map{_._1}
+ 	            	   	    if (explBf.length != bfrNames.length || 
+ 	            	   	        explAf.length != aftNames.length || 
+ 	            	   	        explIn.length != insNames.length) {
  	            	   	      NoChange
  	            	   	    } else {
- 	            	   	    val bfrch = (bfrNames zip before).map {
+ 	            	   	    val bfrch = (bfrNames zip explBf).map {
  	            	   	      case (x,t) => OMV(x) / t
  	            	   	    }
- 	            	   	    val aftch = (aftNames zip after).map {
+ 	            	   	    val aftch = (aftNames zip explAf).map {
  	            	   	      case (x,t) => OMV(x) / t
  	            	   	    }
- 	            	   	    val insch = (insNames zip inside).map {
+ 	            	   	    val insch = (insNames zip explIn).map {
  	            	   	      case (x,t) => OMV(x) / t
  	            	   	    }
  	            	   	    val subs : Substitution = Substitution(bfrch ::: insch ::: aftch : _*)
