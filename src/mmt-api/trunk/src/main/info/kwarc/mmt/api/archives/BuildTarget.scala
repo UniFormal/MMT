@@ -80,6 +80,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
    val outDim: String
    /** the file extension used for generated files, defaults to outDim, override as needed */
    def outExt: String = outDim
+   
+   private def outPath(root: File, inPath: List[String]) = (root / outDim / inPath).setExtension(outExt)
+   
    /**
     * there is no inExt, instead we test to check which files should be used; 
     * this is often a test for the file extension
@@ -124,7 +127,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[Unit](inDim, in, includeFile) ({case Current(inFile,inPath) =>
-         val outFile = (a.root / outDim / inPath).setExtension(outExt)
+         val outFile = outPath(a.root, inPath)
          log(prefix + inFile + " -> " + outFile)
          val errors = buildOne(inFile, DPath(a.narrationBase / inPath), outFile)
            errorMap(inPath) = errors
@@ -154,11 +157,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse(inDim, in, _ => true) {case Current(inFile, inPath) =>
           a.timestamps(key).modified(inPath) match {
              case Deleted =>
-                delete(inFile)
+                val outFile = outPath(a.root, inPath)
+                delete(outFile)
              case Added =>
                 buildAux(inPath)
              case Modified =>
-                delete(inFile)
+                val outFile = outPath(a.root, inPath)
+                delete(outFile)
                 buildAux(inPath)
              case Unmodified => //nothing to do
           }
