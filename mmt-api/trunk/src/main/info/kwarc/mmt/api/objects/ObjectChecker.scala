@@ -192,7 +192,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                }
             }
          }
-         if (! delayed.isEmpty) {
+         if (errors.isEmpty && ! delayed.isEmpty) {
             report(prefix, "constraints (current level is " + currentLevel + "):")
             logGroup {
                delayed.foreach {d =>
