@@ -19,7 +19,9 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	  case FunType(ctx, scp) => 
     	    scp match {
     	      // match to OMA(OMID(=), (lhs, rhs))
-    	      case ApplySpine(OMID(eq), List(t1, t2)) =>
+    	      case ApplySpine(OMID(eq), argls) =>
+    	        val t1 = argls(argls.length - 2)
+    	        val t2 = argls(argls.length - 1)
     	        if (controller.localLookup.get(eq).role.toString == "Constant:Eq") {
                 // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
     	          t1 match {
@@ -35,7 +37,8 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	                case None => Nil
     	              }
     	              if (!implArgsOut.isEmpty) {
-    	                println("implicit arguments")
+//    	                println("implicit arguments")
+    	                //TODO log implicit arguments
     	              }
 //    	              implicitArgs ++= implArgsOut map { case ImplicitArg(n) =>
 //    	                args(n-1) match {
@@ -69,7 +72,7 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	            	          case (OMV(x), vi) =>
     	            	            if (!implArgsIn.contains(ImplicitArg(vi+1)))
     	            	            	ins ::= x
-    	            	          case _ => throw DoesNotMatch(ruleName + " not a variable for inner operation")
+    	            	          case (e, _) => throw DoesNotMatch(controller.presenter.asString(e) + " not a variable for inner operation " + controller.presenter.asString(OMID(inner)))
     	            	        }
     	            	        isBefore = false
     	            	     } else
@@ -90,9 +93,12 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	                  String.format("%-60s", head.toPath) + " : " + controller.presenter.asString(t1) + " ~~> " + controller.presenter.asString(t2)
  	            	   	private val bfrNames = bfr.reverse
  	            	   	private val aftNames = aft.reverse
- 	            	   	private val insNames = ins
+ 	            	   	private val insNames = ins.reverse
  	            	   	def apply : Rewrite = { 
- 	            	   	  (before : List[Term],inside : List[Term],after : List[Term]) => { 
+ 	            	   	  (before : List[Term],inside : List[Term],after : List[Term]) => {
+ 	            	   	    if (before.length != bfrNames.length || after.length != aftNames.length || inside != insNames) {
+ 	            	   	      NoChange
+ 	            	   	    } else {
  	            	   	    val bfrch = (bfrNames zip before).map {
  	            	   	      case (x,t) => OMV(x) / t
  	            	   	    }
@@ -103,17 +109,18 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
  	            	   	      case (x,t) => OMV(x) / t
  	            	   	    }
  	            	   	    val subs : Substitution = Substitution(bfrch ::: insch ::: aftch : _*)
- 	            	   	    val qq = t2^subs
- 	            	   	    GlobalChange(qq)
+ 	            	   	    val t2s = t2^subs
+ 	            	   	    GlobalChange(t2s)
+ 	            	   	    }
  	            	   	  }
  	            	   	} 	
  	            	  }
  	            	  controller.extman.ruleStore.add(simplify)
-    	              log("succesfully registered rule: " + String.format("%-60s", simplify.head.toPath))
+    	              log("succesfully registered rule: " + ruleName)
     	            case _ => throw DoesNotMatch(ruleName + " no outer op")
     	          }
     	        } else throw DoesNotMatch(OMID(eq).toString + " is not of role Eq in " + ruleName)
-    	      case _ => throw DoesNotMatch(ruleName + " : " + scp + " is not of the form a ~> b")
+    	      case _ => throw DoesNotMatch(ruleName + " is not well-formed OMA statement:\n\t" + controller.presenter.asString(scp))
     	    }
     	  case _ => throw DoesNotMatch(ruleName + " not a FunType")
     	}
