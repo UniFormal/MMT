@@ -18,7 +18,7 @@ case class Appendage(head: GlobalName, extremities: List[Term])
  *  
  *  For example, OMA(@,OMA(pi1,c),a) arises from the constant c (of product type) by first projection out a component (a function) and then applying it to a.
  */
-case class TorsoForm(torso: Term, apps: List[Appendage]) {
+case class TorsoForm(torso: Term, apps: List[Appendage]) extends utils.HashEquality[TorsoForm] {
    /** transforms a TorsoForm into the usual form */
    def toHeadForm : Term = apps.foldRight(torso) {case (Appendage(h,ext), t) => OMA(OMS(h), t::ext)}
    /** only the heads */

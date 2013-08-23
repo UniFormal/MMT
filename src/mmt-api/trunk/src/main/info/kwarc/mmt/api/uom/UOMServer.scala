@@ -61,15 +61,15 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
                case OMAorOMS(inner, inside, isOMS) =>
                   rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
                      val ch = rule.apply(before, inside, afterRest)
-                     log("rule " + rule + ": " + ch)
+                     //log("rule " + rule + ": " + ch)
                      ch match {
                         case NoChange =>
                         case LocalChange(args) =>
-                           saveSimplificationRule(rule)
+                           //saveSimplificationRule(rule)
                            return applyDepthRules(outer, before, args ::: afterRest)
                         //return immediately upon GlobalChange
                         case GlobalChange(tS) =>
-                           saveSimplificationRule(rule)
+                           //saveSimplificationRule(rule)
                            return GlobalChange(tS)
                      }
                   }
@@ -88,16 +88,16 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
       var changed = false
       rs.breadthRules.getOrElse(op,Nil) foreach {rule =>
          val ch = rule.apply(insideS)
-         log("rule " + rule + ": " + ch)
+         //log("rule " + rule + ": " + ch)
          ch match {
             case NoChange =>
             case LocalChange(args) =>
                insideS = args
                changed = true
-               saveSimplificationRule(rule)
+               //saveSimplificationRule(rule)
 
             case GlobalChange(t) => 
-              saveSimplificationRule(rule)
+              //saveSimplificationRule(rule)
               return GlobalChange(t)
          }
       }
@@ -134,17 +134,19 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
    // by marking with and testing for Simplified(_), we avoid traversing a term twice
    // Note that certain operations remove the simplified marker: changing the toplevel, substitution application 
    def traverse(t: Term)(implicit con : Context, init: UOMState) : Term =  t match {
-      case Simplified(t) => t
+      case Simplified(t) =>
+         log("not simplifying " + controller.presenter.asString(t))
+         t
       case OMA(OMS(_), _) =>
          log("simplifying " + controller.presenter.asString(t))
          logGroup {
-            log("state is" + init.t + "\n at " + init.path.toString)
+            //log("state is" + init.t + " at " + init.path.toString)
             val (tS, globalChange) = logGroup {
                applyAux(t)
             }
-            log("simplified to " + controller.presenter.asString(tS))
-            if (globalChange)
-              saveSimplificationResult(init, tS)
+            //log("simplified to " + controller.presenter.asString(tS))
+            //if (globalChange)
+              //saveSimplificationResult(init, tS)
             val tSM = Simplified(tS.from(t))
             if (globalChange)
                Changed(tSM)
@@ -170,7 +172,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
    private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
       case StrictOMA(strictApps, outer, args) =>
          // state (1)
-         log("applying depth rules to   " + t)
+         //log("applying depth rules to   " + t)
          applyDepthRules(outer, Nil, args) match {
             case GlobalChange(tS) =>
                // go back to state (1), remember that a global change was produced
@@ -192,7 +194,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
                    applyAux(tS, globalChange)
                else {
                   //state (3)
-                  log("applying breadth rules to " + outer(argsSS))
+                  //log("applying breadth rules to " + outer(argsSS))
                   applyBreadthRules(outer, argsSS) match {
                      case GlobalChange(tSS) =>
                         // go back to state (1), remember that a global change was produced

@@ -11,7 +11,7 @@ class Validator(controller: Controller) extends Logger {
       def apply(v: ValidationUnit)(errorCont: Invalid => Unit, depCont: CPath => Unit): (Boolean,Term) = {
          log("validation unit " + v.component + ": " + v.judgement.present(controller.presenter.asString))
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
-         val mayHold = logGroup{
+         val mayHold = logGroup {
             solver.apply(v.judgement)
          }
          // if solved, this substitutes all unknowns; if not, we still substitute partially
