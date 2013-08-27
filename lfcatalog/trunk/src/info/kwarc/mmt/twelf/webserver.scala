@@ -1,7 +1,7 @@
 package info.kwarc.mmt.twelf
 
-import zgs.httpd._
-import zgs.httpd.let._
+import tiscaf._
+import tiscaf.let._
 
 import java.io._
 import java.net._
@@ -60,14 +60,15 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   }
   
   override def name = "lfserver"
-  override def writeBufSize = 16*1024
+  //override def writeBufSize = 16*1024
   override def tcpNoDelay = true      // make this false if you have extremely frequent requests
   override def startStopListener = {}  // prevents tiscaf from creating a "stop" listener
+/*
   override def onMessage(s: String) {
      catalog.log(s)
   }
-
-  protected def ports = List(port)    // port to listen to
+*/
+  protected def ports = Set(port)    // port to listen to
   protected def apps  = List(new RequestHandler) // the request handler
   protected def talkPoolSize = 4
   protected def talkQueueSize = Int.MaxValue
@@ -97,7 +98,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   /** Request handler */
   protected class RequestHandler extends HApp {
     //override def buffered = true
-    def resolve(req : HReqHeaderData) : Option[HLet] = {
+    def resolve(req : HReqData) : Option[HLet] = {
       if (req.uriPath != "favicon.ico")
         catalog.log(Time + "Query: " + req.uriPath + "?" + req.query + " ")
         
@@ -311,7 +312,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     * @param text the message that is sent in the HTTP body
     * @param header optionally, a custom header tag, given as Pair(tag, content) that is added to the HTTP header
     */
-  private def TextResponse(text : String, header : Option[Pair[String, String]]) : HLet = new HLet {
+  private def TextResponse(text : String, header : Option[Pair[String, String]]) : HLet = new HSimpleLet {
     def act(tk : HTalk) {
       val out = text.getBytes("UTF-8")
       // !sending data in the header as well!
@@ -329,20 +330,18 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
       }
       //catalog.log(Time + text)
       tk.write(out)
-        .close
     }
   }
   
   /** An HTML response that the server sends back to the browser
     * @param text the HTML message that is sent in the HTTP body
     */
-  private def HTMLResponse(text : String) : HLet = new HLet {
+  private def HTMLResponse(text : String) : HLet = new HSimpleLet {
     def act(tk : HTalk) {
       val out = text.getBytes("UTF-8")
       tk.setContentLength(out.size) // if not buffered
             .setContentType("text/html; charset=utf8")
             .write(out)
-            .close
     }
   }
 }

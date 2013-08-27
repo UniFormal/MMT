@@ -1,20 +1,22 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
+
 import frontend._
 import backend._
 import ontology._
 import modules._
 import objects._
 import utils.URI
-import zgs.httpd._
-import zgs.httpd.let._
+import tiscaf._
+import tiscaf.let._
 import scala.util.parsing.json.{ JSONType, JSONArray, JSONObject }
 import scala.xml._
 import java.net.HttpURLConnection
 import java.net._
 import java.io._
 import scala.util.parsing.json.JSONObject
+import scala.concurrent._
 
 case class ServerError(msg: String) extends Error(msg)
 
@@ -36,13 +38,12 @@ object Server {
    * A text response that the server sends back to the browser
    * @param text the message that is sent in the HTTP body
    */
-  def TextResponse(text: String): HLet = new HLet {
+  def TextResponse(text: String): HLet = new HSimpleLet {
     def act(tk: HTalk) {
       val out = text.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("text/plain; charset=utf8")
         .write(out)
-        .close
     }
   }
 
@@ -50,13 +51,12 @@ object Server {
    * An XML response that the server sends back to the browser
    * @param node the XML message that is sent in the HTTP body
    */
-  def XmlResponse(node: scala.xml.Node): HLet = new HLet {
+  def XmlResponse(node: scala.xml.Node): HLet = new HSimpleLet {
     def act(tk: HTalk) {
       val out: Array[Byte] = node.toString.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("text/xml; charset=utf8")
         .write(out)
-        .close
     }
   }
 
@@ -64,13 +64,12 @@ object Server {
    * A Json response that the server sends back to the browser
    * @param json the Json message that is sent in the HTTP body
    */
-  def JsonResponse(json: JSONType): HLet = new HLet {
+  def JsonResponse(json: JSONType): HLet = new HSimpleLet {
     def act(tk: HTalk) {
       val out: Array[Byte] = json.toString.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("application/json; charset=utf8")
         .write(out)
-        .close
     }
   }
   /** a response that sends an HTML error message to the browser */
@@ -113,13 +112,13 @@ import Server._
 class Server(val port: Int, controller: Controller) extends HServer with Logger {
 
   override def name = "MMT rest server"
-  override def writeBufSize = 16 * 1024
+ // override def writeBufSize = 16 * 1024
   override def tcpNoDelay = true // make this false if you have extremely frequent requests
   override def startStopListener = {} // prevents tiscaf from creating a "stop" listener
-  override def onMessage(s: String) {
+ /* override def onMessage(s: String) {
      controller.report("tiscaf", s)
-  }
-  protected def ports = List(port) // port to listen to
+  } */
+  protected def ports = Set(port) // port to listen to
   protected def apps = List(new RequestHandler) // RequestHandler is defined below
   protected def talkPoolSize = 4
   protected def talkQueueSize = Int.MaxValue
@@ -131,7 +130,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
   protected class RequestHandler extends HApp {
     //override def buffered = true
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
-    def resolve(req: HReqHeaderData): Option[HLet] = {
+    def resolve(req: HReqData): Option[HLet] = {
       log("request: /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
       Util.getComponents(req.uriPath) match {
         case ":breadcrumbs" :: _ =>
@@ -164,14 +163,14 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
           controller.extman.getServerPlugin(hd.substring(1)) match {
             case Some(pl) =>
                val hlet = new HLet {
-                  def act(tk: HTalk) {
+                  def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
                      log("handling request via plugin " + pl.logPrefix)
                      val hl = try {
                         pl(tl, req.query, new Body(tk))
                      } catch {
                         case e: Error => errorResponse(e)
                      }
-                     hl.act(tk)
+                     hl.aact(tk)
                   }
                }
                Some(hlet)
@@ -189,7 +188,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
    * A resource response that the server sends back to the browser
    * @param path the path to the resource
    */
-  private def resourceResponse(path: String): HLet = new HLet {
+  private def resourceResponse(path: String): HLet = new HSimpleLet {
     def act(tk: HTalk) {
       val io = Util.loadResource(path.replace("//", "/"))
       if (io == null)
@@ -209,29 +208,28 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         }
         step(io.read(buffer))
         io.close
-        tk.close
       }
     }
   }
 
   /** Response when the first path component is :query */
   private def QueryResponse: HLet = new HLet {
-    def act(tk: HTalk) {
+    def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       try {
         val body = new Body(tk) 
         val q = ontology.Query.parse(body.asXML)
         val res = controller.evaluator.evaluate(q)
         val resp = res.toNode
-        XmlResponse(resp).act(tk)
+        XmlResponse(resp).aact(tk)
       } catch {
-        case e : Error => errorResponse(e).act(tk)
+        case e : Error => errorResponse(e).aact(tk)
       }
     }
   }
 
   /** Response when the first path component is :search */
   private def MwsResponse: HLet = new HLet {
-    def act(tk: HTalk) {
+    def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val body = new Body(tk)
       val resp = try {
         //
@@ -305,7 +303,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       } catch {
         case e : Error => errorResponse(e)
       }
-      resp.act(tk)
+      resp.aact(tk)
     }
   }
   
@@ -314,7 +312,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
    *  
    */
   private def PostResponse : HLet = new HLet {
-    def act(tk : HTalk) {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       try {
         val content = tk.req.param("body").getOrElse(throw ServerError("found no body in post req"))
         val format = tk.req.param("format").getOrElse("mmt")
@@ -322,16 +320,16 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         val dpath = DPath(URI(dpathS))
         log("Received content : " + content)
         controller.textParser.apply(parser.Reader(content), dpath)
-        TextResponse("Success").act(tk)
+        TextResponse("Success").aact(tk)
       } catch {
-        case e : Error => errorResponse(e).act(tk)
+        case e : Error => errorResponse(e).aact(tk)
       }
     }    
   }
   
   
   private def ChangeResponse : HLet = new HLet {
-    def act(tk : HTalk) {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       try {
         val body = new Body(tk)
         val bodyString = body.asString
@@ -339,16 +337,16 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         val reader = new moc.DiffReader(controller)
         val diff = reader(bodyXML)
         moc.Patcher.patch(diff, controller)
-        TextResponse("Success").act(tk)
+        TextResponse("Success").aact(tk)
       } catch {
-        case e : Error => errorResponse(e).act(tk) 
+        case e : Error => errorResponse(e).aact(tk) 
       }
     }
   }
 
 
   private def ParserResponse : HLet = new HLet {
-    def act(tk : HTalk) {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val text = tk.req.param("text").getOrElse(throw ServerError("found no text to parse"))
       val save = tk.req.param("save").map(_ == "true").getOrElse(false) //if save parameter is "true" then save otherwise don't
       tk.req.query.split("\\?").toList match {
@@ -403,20 +401,20 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                     }}
                     response("pres") = JSONArray(invPaths(controller.getBase).map(_.toString).toList)
                 }
-                JsonResponse(JSONObject(response.toMap)).act(tk)
+                JsonResponse(JSONObject(response.toMap)).aact(tk)
               }  catch {
                 case e : Throwable =>
                   e.printStackTrace()
-                  TextResponse(e.getMessage()).act(tk)
+                  TextResponse(e.getMessage()).aact(tk)
               }
             case l => //parsing failed -> returning errors 
               val response = new collection.mutable.HashMap[String,Any]()
               response("success") = "false"
               response("info") = JSONArray(Nil)
               response("pres") = l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString("")
-              JsonResponse(JSONObject(response.toMap)).act(tk)
+              JsonResponse(JSONObject(response.toMap)).aact(tk)
           }
-        case _ => errorResponse("invalid theory name in query : {tk.req.query}").act(tk)
+        case _ => errorResponse("invalid theory name in query : {tk.req.query}").aact(tk)
       }
     }
   }
@@ -424,7 +422,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
   
   /** Response when the first path component is :mmt */
   private def MmtResponse: HLet = new HLet {
-    def act(tk: HTalk) {
+    def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val comps = tk.req.query.split("\\?", -1)
       val (doc, mod, sym, act) = comps.length match {
         case 1 => (comps(0), "", "", "")
@@ -462,18 +460,18 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
           }
           log("done")
           if (textresponse)
-            TextResponse(node.toString).act(tk)
+            TextResponse(node.toString).aact(tk)
           else
-            XmlResponse(node).act(tk)
+            XmlResponse(node).aact(tk)
       } catch {
-        case e: Error => errorResponse(e).act(tk)
+        case e: Error => errorResponse(e).aact(tk)
       }
     }
   }
 
 
   private def TreeResponse = new HLet {
-     def act(tk: HTalk) {
+     def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
           val q = tk.req.query
           val node = if (q == ":root")
             <root>{
@@ -509,7 +507,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
               case _ => throw ImplementationError("only children of documents and modules can be taken")
             }
           }
-          XmlResponse(node).act(tk)
+          XmlResponse(node).aact(tk)
      }
   }
 }

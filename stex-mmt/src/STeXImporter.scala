@@ -98,6 +98,9 @@ class STeXImporter extends Compiler with Logger {
           controller.add(thy)
           errors ++= n.child.map(translateDeclaration).flatten
         case "metadata" => //ignore for now
+        case "omgroup" => 
+          val errs = n.child.map(translateTheory)
+          errors ++= errs.flatten
         case _ => //ignore for now (e.g. div)
       }
     } catch {
@@ -212,11 +215,13 @@ class STeXImporter extends Compiler with Logger {
   
   def parseRenderingMarkers(n : scala.xml.Node,argMap : Map[String, Int])(implicit dpath : DPath, mpath : MPath) : List[Marker] = n.label match {
     case "mrow" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
+    case "mmultiscripts" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated as mrow because not sure what it should do
     case "msub" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated mrow because there is no subscript support in MMT TextNotation
     case "msup" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated mrow because there is no superscript support in MMT TextNotation
     case "mpadded" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
     case "mo" => makeDelim(n.child.mkString) :: Nil
     case "mi" => makeDelim(n.child.mkString) :: Nil //for now treated exactly like mo        
+    case "mn" => makeDelim(n.child.mkString) :: Nil //for now treated exactly like mo
     case "mtext" => makeDelim(n.child.mkString) :: Nil
     case "render" => 
       val argName = (n \ "@name").text

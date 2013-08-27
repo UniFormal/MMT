@@ -11,7 +11,7 @@ import modules._
 
 import scala.collection._
 import scala.collection.immutable._
-import zgs.httpd._
+import tiscaf._
 
 case class FrameitError(val text : String) extends Error(text)
 
@@ -48,8 +48,10 @@ class FrameitPlugin extends ServerPlugin("frameit") with Logger {
      }
    }
    
-   private def GetResponse : HLet = new HLet {
+   private def GetResponse : HLet = new HSimpleLet {
+	 implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
      def act(tk : HTalk) = try {
+
        val cpathS = tk.req.param("solPath").getOrElse(throw FrameitError("no solPath found"))
        val vpathS = tk.req.param("viewPath").getOrElse(throw FrameitError("no viewPath found"))
        
@@ -66,10 +68,10 @@ class FrameitPlugin extends ServerPlugin("frameit") with Logger {
        
        val tm = simplify(pushout(cpath, vpath))
        var tmS = tm.toString
-       TextResponse(tmS).act(tk)
+       TextResponse(tmS).aact(tk)
      } catch {
-       case e : Error => log(e.longMsg);errorResponse(e.shortMsg).act(tk)
-       case e : Exception => errorResponse("Exception occured : " + e.getMessage()).act(tk)
+       case e : Error => log(e.longMsg);errorResponse(e.shortMsg).aact(tk)
+       case e : Exception => errorResponse("Exception occured : " + e.getMessage()).aact(tk)
      }
    }
    
@@ -144,13 +146,12 @@ class FrameitPlugin extends ServerPlugin("frameit") with Logger {
    * A text response that the server sends back to the browser
    * @param text the message that is sent in the HTTP body
    */
-  private def TextResponse(text: String): HLet = new HLet {    
+  private def TextResponse(text: String): HLet = new HSimpleLet {    
     def act(tk: HTalk) {
       val out = text.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("text/plain; charset=utf8")
         .write(out)
-        .close
     }
   }
   

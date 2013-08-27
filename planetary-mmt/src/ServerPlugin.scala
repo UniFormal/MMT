@@ -11,7 +11,9 @@ import info.kwarc.mmt.lf._
 
 
 import scala.util.parsing.json._
-import zgs.httpd._
+import tiscaf._
+import scala.concurrent._
+
 
 case class PlanetaryError(val text : String) extends Error(text)
 
@@ -19,12 +21,14 @@ case class PlanetaryError(val text : String) extends Error(text)
 class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
   
   override val logPrefix = "planetary"
+
     
      /** Server */   
 
    
    def apply(uriComps: List[String], query: String, body : Body): HLet = {
      try {
+       log("got here" + uriComps)
        uriComps match {
          case "getArchives" :: _ => getArchivesResponse
          case "getPaths" :: _ => getPathsResponse
@@ -53,23 +57,22 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
    }
    
    private def getArchivesResponse : HLet = new HLet {
-     def act(tk : HTalk) = try {
+     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
         val archives = controller.backend.getArchives map { a => (a.id, DPath(a.narrationBase))}
         val result = archives.map(p =>  p._1 + " " +  p._2).mkString("\n")
         log("getArchives returning: " + result)
-        TextResponse(result).act(tk)
+        TextResponse(result).aact(tk)
      } catch {
        case e : Error => 
          log(e.longMsg)
-         errorResponse(e.longMsg).act(tk)
+         errorResponse(e.longMsg).aact(tk)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage()).act(tk)
+         errorResponse("Exception occured : " + e.getMessage()).aact(tk)
      }
    }
    
-   
    private def getContentPres : HLet = new HLet {
-     def act(tk : HTalk) = try {
+     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
        val reqS = bodyAsString(tk)
        val params = JSON.parseRaw(reqS) match {
          case Some(j : JSONObject) => j.obj
@@ -91,14 +94,14 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
        
        
        log("Sending Response: " + response)
-       TextResponse(response.toString).act(tk)
+       TextResponse(response.toString).aact(tk)
 
      }
    }
    
    
    private def getCompiledResponse : HLet = new HLet {
-     def act(tk : HTalk) = try {
+     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
        val reqS = bodyAsString(tk)
        val params = JSON.parseRaw(reqS) match {
          case Some(j : JSONObject) => j.obj
@@ -114,32 +117,36 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
           val comp = new STeXImporter()
           comp.init(controller, Nil)
           val (response,errors) = comp.compileOne(bodyS, dpath)
-          JsonResponse(response, errors.mkString("\n")).act(tk)
+          JsonResponse(response, errors.mkString("\n")).aact(tk)
          case "mmt" => 
           val reader = parser.Reader(bodyS)
           val (doc,state) = controller.textParser(reader, dpath)
           
-          val response = doc.toNodeResolved(controller.memory.content).toString       
-          JsonResponse(response, "Success").act(tk)
+          val response = doc.toNodeResolved(controller.memory.content).toString    
+          println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+
+          JsonResponse(response, "Success").aact(tk)
          case "elf" => 
-           val comp = new Twelf()
-           comp.init(controller, List("/home/mihnea/kwarc/data/twelf-mod/bin/twelf-server")) //TODO take from extension list
-           val (response,errors) = comp.compileOne(bodyS, dpath)
+           //val comp = new Twelf()
+           //comp.init(controller, List("/home/mihnea/kwarc/data/twelf-mod/bin/twelf-server")) //TODO take from extension list
+           //val (response,errors) = comp.compileOne(bodyS, dpath)
            
-           JsonResponse(response, errors.mkString("\n")).act(tk)
+           val response = controller.get(dpath).toNode.toString
+           val errors = Nil
+           JsonResponse(response, errors.mkString("\n")).aact(tk)
        }
      } catch {
        case e : Error => 
          log(e.longMsg)
-         errorResponse(e.longMsg).act(tk)
+         errorResponse(e.longMsg).aact(tk)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).act(tk)
+         errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).aact(tk)
   
      }
    }
    
    private def getPresentationResponse : HLet = new HLet {
-     def act(tk : HTalk) = try {
+     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
        val reqS = bodyAsString(tk)
        val params = JSON.parseRaw(reqS) match {
          case Some(j : JSONObject) => j.obj
@@ -167,26 +174,26 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
        presenter.apply(doc, rb)
        val response = rb.get()
        log("Sending Response: " + response)
-       JsonResponse(response.toString, "Success").act(tk)
+       JsonResponse(response.toString, "Success").aact(tk)
      } catch {
         case e : Error => 
          log(e.longMsg)
-         errorResponse(e.longMsg).act(tk)
+         errorResponse(e.longMsg).aact(tk)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).act(tk)
+         errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).aact(tk)
      }
      
    }
    
    private def getPathsResponse : HLet = new HLet {
-     def act(tk : HTalk) = try {        
+     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {        
        val archives = controller.backend.getArchives map {a => DPath(a.narrationBase)}
        val pathList = archives.flatMap(getContentPaths)
        val lines = pathList map { p => 
          p.last + " " + p.toPath         
        }
        val response = lines.mkString("\n")
-       TextResponse(response).act(tk)
+       TextResponse(response).aact(tk)
         /* //old implementation, still around for documentation for now, to be removed soon
          
         val archives = controller.backend.getArchives map { a => (a.id, DPath(a.narrationBase))}
@@ -198,9 +205,9 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
      } catch {
        case e : Error => 
          log(e.longMsg)
-         errorResponse(e.shortMsg).act(tk)
+         errorResponse(e.shortMsg).aact(tk)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage()).act(tk)
+         errorResponse("Exception occured : " + e.getMessage()).aact(tk)
      }
    }
    
@@ -236,12 +243,8 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
           case ref : XRef => ref.target
          }
        case _ => Nil
-     }
-     
+     } 
    }
-   
-   
-   
    
   // Utils
   private def bodyAsString(tk: HTalk): String = {
@@ -249,11 +252,11 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
     new String(bodyArray, "UTF-8")
   }
   
-  private def errorResponse(text : String) : HLet = {
+  private def errorResponse(text : String) : HSimpleLet = {
     JsonResponse("", s"MMT Error in Planetary extension: $text ")
   }
   
-  private def JsonResponse(content : String, errors : String) : HLet = {
+  private def JsonResponse(content : String, errors : String) : HSimpleLet = {
       val response = new collection.mutable.HashMap[String, Any]()
       response("content") = content
       response("log") = errors
@@ -265,13 +268,12 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
    * A text response that the server sends back to the browser
    * @param text the message that is sent in the HTTP body
    */
-  private def TextResponse(text: String): HLet = new HLet {    
+  private def TextResponse(text: String): HSimpleLet = new HSimpleLet {    
     def act(tk: HTalk) {
       val out = text.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("text/plain; charset=utf8")
         .write(out)
-        .close
     }
   }
   
@@ -279,13 +281,12 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
    * A Json response that the server sends back to the browser
    * @param json the Json message that is sent in the HTTP body
    */
-  def JsonResponse(json: JSONType): HLet = new HLet {
+  def JsonResponse(json: JSONType): HSimpleLet = new HSimpleLet {
     def act(tk: HTalk) {
       val out: Array[Byte] = json.toString.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
         .setContentType("application/json; charset=utf8")
         .write(out)
-        .close
     }
   }
   
