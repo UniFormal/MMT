@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mmt-api" default="build" basedir=".">
+
+	 
+	 <property name="deploy" value="../../deploy"/>
+	
+    <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
+    <path id="scalac.classpath">
+        <pathelement location="${deploy}/lib/scala-library.jar"/>
+        <pathelement location="${deploy}/lib/scala-reflect.jar"/>
+        <pathelement location="${deploy}/lib/scala-compiler.jar"/>
+        <pathelement location="build"/>
+    </path>
+    <path id="scaladoc.classpath">
+        <path refid="scalac.classpath"/>
+    </path>
+
+    <!-- This defines the task scalac (which is similar to javac but for scala). -->
+
+    <taskdef resource="scala/tools/ant/antlib.xml"
+        classpathref="scalac.classpath"/>
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="compile" depends="init">
+        <mkdir dir="build"/>
+        <scalac destdir="build" srcdir="src" classpathref="scalac.classpath" deprecation="yes" unchecked="yes"/>
+    </target>
+
+    <target name="build" depends="compile">
+        <jar destfile="tiscaf.jar">
+            <fileset dir="build"/>
+        </jar>
+    </target>
+
+	<!--
+    <target name="scaladoc" depends="init">
+        <mkdir dir="${apidocs}"/>
+        <scaladoc
+            destdir="${apidocs}"
+            doctitle="${prj}"
+            docversion="${mmt.version}"
+            sourcepath="${src.main}"
+            classpathref="scaladoc.classpath"
+            srcdir="${src.main}">
+            <include name="**/*.scala"/>
+        </scaladoc>
+    </target>
+-->
+    <target name="deploy">
+        <copy todir="${deploy}/lib">
+            <fileset file="tiscaf.jar"/>
+        </copy>
+    </target>
+
+    <target name="clean">
+        <delete dir="build" />
+    </target>
+</project>
