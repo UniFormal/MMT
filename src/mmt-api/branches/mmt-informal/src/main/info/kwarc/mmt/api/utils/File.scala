@@ -57,7 +57,12 @@ object File {
    /** constructs a File from a string, using the java.io.File parser */  
    def apply(s: String) : File = File(new java.io.File(s))
    
-   def Writer(f: File) = new PrintWriter(new OutputStreamWriter(new FileOutputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+   def Writer(f: File) = new PrintWriter(
+      new OutputStreamWriter(
+         new BufferedOutputStream(new FileOutputStream(f.toJava)),
+         java.nio.charset.Charset.forName("UTF-8")
+       )
+   )
    /**
     * convenience method for writing a string into a file
     * 

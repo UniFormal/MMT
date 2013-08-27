@@ -43,7 +43,7 @@ abstract class Foundation extends Extension {
    def tracedTyping(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit lib : Lookup) : HashSet[CPath] = {
       val fl = new TracedLookup(lib)
       typing(tm, tp, G)(fl) match {
-        case false => throw InvalidObject(tp.getOrElse(OMHID), "type checking failed")
+        case false => throw InvalidObject(tp.getOrElse(null), "type checking failed")
         case true => fl.getTrace
       }
    }
@@ -70,5 +70,5 @@ class DefaultFoundation extends Foundation {
       //tm.isEmpty || tp.isEmpty || tp == Some(OMHID())
    def equality(tm1 : Term, tm2 : Term)(implicit fl : FoundationLookup) : Boolean = 
       tm1 == tm2
-   def inference(tm: Term, context: Context)(implicit lib: Lookup) : Term = OMHID //TODO: questionable choice here, better introduce a special untyped foundation
+   def inference(tm: Term, context: Context)(implicit lib: Lookup) : Term = tm //TODO: questionable choice here, better introduce a special untyped foundation
 }

@@ -61,7 +61,7 @@ case class ImplementationError(s : String) extends Error("implementation error: 
 /** errors that occur during substitution with name of the variable for which the substitution is defined */
 case class SubstitutionUndefined(name: LocalName, m: String) extends Error("Substitution undefined at " + name.toString + "; " + m)
 
-case class LookupError(name : LocalName) extends Error("variable " + name.toString + " not declared in context")
+case class LookupError(name : LocalName, context: objects.Context) extends Error("variable " + name.toString + " not declared in context " + context)
 
 /** base class for errors that are thrown by an extension */
 abstract class ExtensionError(prefix: String, s : String) extends Error(prefix + ": " + s)

@@ -17,6 +17,8 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
          intp.bind("controller", controller)
          val interpolator = new parser.MMTInterpolator(controller)
          intp.bind("interpolator", interpolator)
+         val isimp = new InteractiveSimplifier(controller, this)
+         intp.bind("isimp", isimp)
          intp.interpret("import interpolator._")
       }
       super.loop()
@@ -31,7 +33,7 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
    override def prompt = "scala-mmt> "
    def run {
       val settings = new Settings
-      settings.usejavacp.value = true
+      settings.usejavacp.value = true // make sure all classes of the Java classpath are available
       //settings.sourceReader.value = "SimpleReader"
       process(settings)
    }

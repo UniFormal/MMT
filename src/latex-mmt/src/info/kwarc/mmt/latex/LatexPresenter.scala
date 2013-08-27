@@ -224,7 +224,7 @@ class LatexPresenter extends ServerPlugin("latex") with Presenter with Logger {
    
    def apply(uriComps: List[String], query: String, body : Body): HLet = {
      try {
-       uriComps.tail match {
+       uriComps match {
          case "postdecl" :: _ => PostDeclResponse
          case "getobjpres" :: _ => GetObjPresResponse
          case "context" :: _ => ContextResponse
@@ -282,7 +282,7 @@ class LatexPresenter extends ServerPlugin("latex") with Presenter with Logger {
       
       
       val dpath = DPath(URI(dpathS)) 
-      log("received : " + jobname + " : " + text)
+      log("received : " + jobname + " and " +  dpathS + " : " + text)
       if (!states.isDefinedAt(jobname)) { 
         val state = new LatexState(dpath, controller)
         state.setParserState(text)

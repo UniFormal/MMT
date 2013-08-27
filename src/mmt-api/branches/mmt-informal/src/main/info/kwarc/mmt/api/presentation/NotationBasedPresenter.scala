@@ -149,9 +149,7 @@ trait NotationBasedPresenter extends Presenter {
          case Formal(t) => apply(t, rh)
          case objects.Text(format, t) => rh(t)
          case XMLNode(n) => rh(n.toString)
-      }
-      case OMHID => //nothing to do
-         
+      }         
       //TODO other cases
    }}
    /**

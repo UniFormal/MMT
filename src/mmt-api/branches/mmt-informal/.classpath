@@ -6,8 +6,8 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/svnkit.jar"/>
-	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/tntbase-plugin-api.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-compiler.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
 	<classpathentry kind="output" path="build/main"/>
 </classpath>

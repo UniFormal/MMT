@@ -181,7 +181,7 @@ class StructureChecker(controller: Controller) extends Logger {
                val (unknowns, dR, valid) = prepareTerm(d)
                if (valid) {
                   c.tp foreach {tp =>
-                      val j = Typing(Stack(scope, c.parameters), dR, tp)
+                      val j = Typing(Stack(scope, c.parameters), dR, tp, None)
                       unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
                   }
                }
@@ -289,9 +289,15 @@ class StructureChecker(controller: Controller) extends Logger {
    def checkTheory(t : Term)(implicit pCont: Path => Unit) : Term = {
      t match {
         case OMMOD(p) =>
-          val thy = controller.globalLookup.getTheory(p)
-          pCont(p)
-          t
+           controller.globalLookup.getO(p) match {
+              case Some(thy: Theory) =>
+                 pCont(p)
+              case Some(_) =>
+                 errorCont(InvalidObject(t, "not a valid theory"))
+              case None =>
+                 errorCont(InvalidObject(t, "not a valid identifier"))
+           }
+           t
         case OMS(mmt.tempty) => t
         case TheoryExp.Empty =>
            t
@@ -463,11 +469,6 @@ class StructureChecker(controller: Controller) extends Logger {
                val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
                OMM(argR, morph).from(s)
             } else s
-         case OMHID => s//TODO
-         case OME(err, args) =>
-            val errR  = checkTerm(home, context, err)
-            val argsR = args.map(checkTerm(home, context, _))
-            OME(errR, argsR).from(s)
          case OMFOREIGN(node) => s //TODO
          case OMI(i) => s //TODO check if integers are permitted
          case OMSTR(str) => s //TODO check if strings are permitted

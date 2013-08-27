@@ -29,19 +29,17 @@ trait Presenter extends frontend.Extension {
    protected def getNotation(t: Term) : (Term, List[Position], Option[TextNotation]) = {
       //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
       def tryTerm(t: Term): Option[TextNotation] = t match {
-         case ComplexTerm(p, args, vars, scs) =>
-           try {
-            controller.get(p) match {
+         case ComplexTerm(p, args, vars, scs) => try {
+            controller.globalLookup.getO(p) flatMap {
                case c: symbols.Constant => c.not
                case p: patterns.Pattern => p.not
-               case _ => None
             }
            } catch {
              case e : GetError => None //allow presentation of items with dangling references
            }
          case _ => None
       }
-      val (tP, posP) = controller.pragmatic.pragmaticHeadWithPositions(t)
+      val (tP, _, posP) = controller.pragmatic.pragmaticHeadWithInfo(t)
       tryTerm(tP) match {
          case Some(n) => (tP, posP, Some(n))
          case None    => tryTerm(t) match {

@@ -6,6 +6,12 @@ import scala.collection.mutable.{HashMap,HashSet}
 
 /** empty class as a type abbreviation */
 class RuleMap[R <: Rule] extends HashMap[ContentPath,R]
+/** empty class as a type abbreviation */
+class RuleMap2[R <: Rule] extends HashMap[(ContentPath,ContentPath),R]
+/** empty class as a type abbreviation */
+class RuleSetMap[R <: Rule] extends utils.HashMapToSet[ContentPath,R]
+/** empty class as a type abbreviation */
+class RuleSetMap2[R <: Rule] extends utils.HashMapToSet[(ContentPath,ContentPath), R]
 
 /** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
  * 
@@ -18,18 +24,20 @@ class RuleStore {
    val computationRules = new RuleMap[ComputationRule]
    val universeRules = new RuleMap[UniverseRule]
    val equalityRules = new RuleMap[EqualityRule]
+   val termBasedEqualityRules = new RuleSetMap2[TermBasedEqualityRule]
    val atomicEqualityRules = new RuleMap[AtomicEqualityRule]
    val solutionRules = new RuleMap[SolutionRule]
    val forwardSolutionRules = new RuleMap[ForwardSolutionRule]
-   val introProvingRules = new utils.HashMapToSet[ContentPath, IntroProvingRule]
-   val elimProvingRules = new utils.HashMapToSet[ContentPath, ElimProvingRule]
+   
+   val introProvingRules = new RuleSetMap[IntroProvingRule]
+   val elimProvingRules = new RuleSetMap[ElimProvingRule]
 
    /** the DepthRule's that this UOM will use, hashed by (outer,inner) pairs */
-   val depthRules = new utils.HashMapToSet[(GlobalName,GlobalName), uom.DepthRule]
+   val depthRules = new RuleSetMap2[uom.DepthRule]
    /** the BreadthRule's that this UOM will use, hashed by (outer,inner) pairs */
-   val breadthRules = new utils.HashMapToSet[GlobalName, uom.BreadthRule]
+   val breadthRules = new RuleSetMap[uom.BreadthRule]
    /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
-   val abbrevRules = new utils.HashMapToSet[GlobalName, uom.AbbrevRule]
+   val abbrevRules = new RuleSetMap[uom.AbbrevRule]
    
    /** add some Rule to this RuleStore */
    def add(rs: Rule*) {
@@ -39,6 +47,7 @@ class RuleStore {
          case r: ComputationRule => computationRules(r.head) = r
          case r: UniverseRule => universeRules(r.head) = r
          case r: EqualityRule => equalityRules(r.head) = r
+         case r: TermBasedEqualityRule => termBasedEqualityRules((r.left,r.right)) += r
          case r: AtomicEqualityRule => atomicEqualityRules(r.head) = r
          case r: SolutionRule => solutionRules(r.head) = r
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
@@ -95,6 +104,10 @@ trait Rule {
    override def toString = String.format("%-60s", head.toPath) + " of " + getClass.toString 
 }
 
+class Continue[A](a: => A) {
+   def apply() = a
+}
+
 /** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
 trait RuleSet {
    val rules = new HashSet[Rule]
@@ -128,7 +141,7 @@ abstract class TypingRule(val head: GlobalName) extends Rule {
  *  It may recursively infer the types of components.
  *  @param head the head of the term whose type this rule infers 
  */
-abstract class InferenceRule(val head: GlobalName) extends Rule {
+abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends Rule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
@@ -166,8 +179,8 @@ abstract class UniverseRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(univ: Term)(implicit stack: Stack): Boolean
 }
 
-/** A EqualityRule checks the equality of two expressions
- *  @param head the head of the type of the two expressions 
+/** A EqualityRule checks the equality of two terms based on the head of their type
+ *  @param head the head of the type of the two terms 
  */
 abstract class EqualityRule(val head: GlobalName) extends Rule {
    /** 
@@ -181,6 +194,21 @@ abstract class EqualityRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack): Boolean
 }
 
+/** A TermBasedEqualityRule checks the equality of two terms with certain heads
+ *  @param left the head of the first term
+ *  @param right the head of the second term 
+ */
+abstract class TermBasedEqualityRule(val left: GlobalName, val right: GlobalName) extends Rule {
+   /** 
+    *  @param solver provides callbacks to the currently solved system of judgments
+    *  @param tm1 the first term
+    *  @param tm2 the second term
+    *  @param tp their type
+    *  @param context their context
+    *  @return true iff the judgment holds
+    */
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack): Option[Continue[Boolean]]
+}
 
 /** An AtomicEqualityRule is called to handle equality of atomic terms with the same shape at a base type.
  * Same shape means that their TorsoNormalForm has identical torso and heads.

@@ -4,6 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deploy-wrapper"/>
-	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/tiscaf"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

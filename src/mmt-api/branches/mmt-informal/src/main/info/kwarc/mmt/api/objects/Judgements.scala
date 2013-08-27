@@ -42,8 +42,9 @@ case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends J
 
 /** represents a typing judgement
  * context |- tm : tp
+ * tpSymb - optionally specified typing symbol
  */
-case class Typing(stack: Stack, tm: Term, tp: Term) extends WFJudgement {
+case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[Term]) extends WFJudgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
