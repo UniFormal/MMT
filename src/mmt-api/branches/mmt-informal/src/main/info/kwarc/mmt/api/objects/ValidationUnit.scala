@@ -8,40 +8,42 @@ case class ValidationUnit(component: CPath, unknowns: Context, judgement: WFJudg
 class Validator(controller: Controller) extends Logger {
       val logPrefix = "validator"
       val report = controller.report
-      def apply(v: ValidationUnit)(errorCont: Invalid => Unit) {
-         log("validation unit " + v.component + ": " + v.judgement)
+      def apply(v: ValidationUnit)(errorCont: Invalid => Unit, depCont: CPath => Unit): (Boolean,Term) = {
+         log("validation unit " + v.component + ": " + v.judgement.present(controller.presenter.asString))
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
-         val result = logGroup{solver(v.judgement)}
-         val tc = controller.globalLookup.getComponent(v.component)
+         val mayHold = logGroup {
+            solver.apply(v.judgement)
+         }
          // if solved, this substitutes all unknowns; if not, we still substitute partially
          val psol = solver.getPartialSolution
          val remUnknowns = solver.getUnsolvedVariables 
          val subs = psol.toPartialSubstitution
          val tI = v.judgement.wfo ^ subs //fill in inferred values
          val tIS = SimplifyInferred(tI,remUnknowns) //substitution may have created redexes
-         tc.analyzed = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
-         //now report result/errors
+         val result = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
+         //now report results, dependencies, errors
          val solution = solver.getSolution
-         val success = result && solution.isDefined
-         if (success)
+         val success = mayHold && solution.isDefined
+         if (success) {
             log("success")
-         else
-            log("failure")
-         logGroup {
-            if (success) {
-               log("solution: " + solution.get.toString)
-            } else {
-               log("errors while validating " + v.component)
-               solver.logState
-               solver.getConstraints foreach {
-                  case j: WFJudgement =>
-                     errorCont(InvalidObject(j.wfo, j.present(controller.presenter.asString)))
-                  case j =>
-                     errorCont(InvalidObject(v.judgement.wfo, "unresolved constraint: " + j.present(controller.presenter.asString)))
+            solver.getDependencies foreach depCont
+         } else {
+            log("failure" + (if (mayHold) " (not proved)" else " (disproved)"))
+            logGroup {
+               solver.logState(logPrefix)
+               val errors = solver.getErrors
+               errors foreach {e =>
+                  errorCont(InvalidUnit(v, e.narrowDownError))
                }
-               //errorCont(InvalidObject(v.judgement.wfo, solver.toString))
+               if (errors.isEmpty) {
+                  solver.getConstraints foreach {dc =>
+                     val h = dc.history + "unresolved constraint"
+                     errorCont(InvalidUnit(v, h))
+                  }
+               }
             }
          }
+         (success,result)
       }
       
       /**

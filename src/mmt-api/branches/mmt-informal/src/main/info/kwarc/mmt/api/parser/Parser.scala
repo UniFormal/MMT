@@ -85,15 +85,22 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
       throw err
    }
    
-   /**
-    * declarations of the implicit variables
+   /*
+    * declarations of the unknown variables (implicit arguments, missing types, etc.
+    *
+    * the variable names are irrelevant as long as they are unique within each call to the parser
+    * Moreover, we make sure the names are chosen the same way every time to support change management. 
     */
    // due to the recursive processing, variables in children are always found first
    // so adding to the front yields the right order
    private var vardecls: List[VarDecl] = Nil
    private var counter = 0
+   private def resetVarGenerator {
+      vardecls = Nil
+      counter = 0
+   }
    private def newArgument: OMV = {
-     val name = LocalName("") / "argument" / counter.toString
+     val name = LocalName("") / "I" / counter.toString
      //val tname = LocalName("") / "argumentType" / counter.toString
      vardecls = VarDecl(name,None,None) :: vardecls
      counter += 1
@@ -104,7 +111,6 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
       vardecls ::= VarDecl(tname,None,None)
       OMV(tname)
    }
-   
    /**
     * recursively transforms a TokenListElem (usually obtained from a [[info.kwarc.mmt.api.parser.Scanner]]) to an MMT Term
     * @param te the element to transform
@@ -303,8 +309,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
   def apply(pu : ParsingUnit) : Term = {    
     //gathering notations in scope
     val qnotations = buildNotations(pu.scope)
-    // reset generated variables
-    vardecls = Nil
+    resetVarGenerator
     log("parsing: " + pu.term)
     log("notations:")
     logGroup {

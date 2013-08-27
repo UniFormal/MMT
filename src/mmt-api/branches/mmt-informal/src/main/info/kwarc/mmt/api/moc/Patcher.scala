@@ -62,7 +62,7 @@ object Patcher {
        copyDecls(t, tN)
        tN
     case (t : DefinedTheory,  DefComponent, Some(df : Term)) =>
-       new DefinedTheory(t.parent, t.name, df)
+       DefinedTheory(t.parent, t.name, df)
     /** Views */
     case (v : DeclaredView, CodComponent, Some(to : Term)) =>
        val vN = new DeclaredView(v.parent, v.name, v.from, to, v.isImplicit)
@@ -73,11 +73,11 @@ object Patcher {
        copyDecls(v, vN)
        vN
     case (v : DefinedView, CodComponent, Some(to : Term)) =>
-       new DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
+       DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
     case (v : DefinedView, DomComponent, Some(from : Term)) =>
-       new DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
+       DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
     case (v : DefinedView,  DefComponent, Some(df : Term)) =>
-       new DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
+       DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
 
     /** Constants */
     case (c : Constant, DefComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, c.tp, Some(s), c.rl, c.not)

@@ -83,8 +83,8 @@ class StructureChecker(controller: Controller) extends Logger {
             t.meta map {mt =>
               checkTheory(OMMOD(mt))
             }
-            t.getPrimitiveDeclarations foreach {
-               d => check(d)
+            logGroup {
+               t.getPrimitiveDeclarations foreach check
             }
          case t: DefinedTheory =>
             checkTheory(t.df)
@@ -92,7 +92,9 @@ class StructureChecker(controller: Controller) extends Logger {
             nrViews += 1
             checkTheory(v.from)
             checkTheory(v.to)
-            v.getPrimitiveDeclarations foreach check
+            logGroup {
+               v.getPrimitiveDeclarations foreach check
+            }
          case v: DefinedView =>
             checkTheory(v.from)
             checkTheory(v.to)
@@ -156,13 +158,21 @@ class StructureChecker(controller: Controller) extends Logger {
             }
             val parR = checkContext(c.home, Context(), c.parameters)
             //TODO reconstruction in parameters
-            // check that the type of c (if given) is a universe
-            c.tp foreach {t => 
-               val (unknowns, tR, valid) = prepareTerm(t)
-               if (valid) {
-                  val j = Universe(Stack(scope, c.parameters), tR)
-                  unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+            // check that the type of c (if given) is in a universe
+            if (c.tpC.isAnalyzedDirty) {
+               c.tpC.parsed foreach {t =>
+                  log("checking type")
+                  val (unknowns, tR, valid) = prepareTerm(t)
+                  if (valid) {
+                     val j = Universe(Stack(scope, parR), tR, true)
+                     unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
+                  }
                }
+            } else {
+               if (c.tpC.analyzed.isDefined)
+                  log("type skipped (not dirty)")
+               else
+                  log("type not given")
             }
             // if assignment: translate the type of cOrg
             linkInfo foreach {
@@ -177,14 +187,22 @@ class StructureChecker(controller: Controller) extends Logger {
                case _ => // cOrg has no type, nothing to do
             }
             // check that the definiens of c (if given) type-checks against the type of c (if given)
-            c.df foreach {d =>
-               val (unknowns, dR, valid) = prepareTerm(d)
-               if (valid) {
-                  c.tp foreach {tp =>
-                      val j = Typing(Stack(scope, c.parameters), dR, tp, None)
-                      unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+            if (c.dfC.isAnalyzedDirty) {
+               c.dfC.parsed foreach {d =>
+                  log("checking definiens")
+                  val (unknowns, dR, valid) = prepareTerm(d)
+                  if (valid) {
+                     c.tp foreach {tp =>
+                         val j = Typing(Stack(scope, parR), dR, tp, None)
+                         unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+                     }
                   }
                }
+            } else {
+               if (c.dfC.analyzed.isDefined)
+                  log("definiens skipped (not dirty)")
+               else
+                  log("definiens not given")
             }
             // if assignment: translate the definiens of cOrg
             linkInfo foreach {
@@ -522,6 +540,23 @@ class StructureChecker(controller: Controller) extends Logger {
 }
 
 class StructureAndObjectChecker(controller: Controller) extends StructureChecker(controller) {
-   val vdt = new Validator(controller)
-   override def unitCont(vu: ValidationUnit) {vdt.apply(vu)(errorCont)}
+   private val vdt = new Validator(controller)
+   /**
+    * calls the Validator on the ValidationUnit,
+    * registers the dependencies, and
+    * (if changed) marks depending components as dirty
+    */
+   override def unitCont(vu: ValidationUnit) {
+      val tc = controller.globalLookup.getComponent(vu.component)
+      tc.dependsOn.clear
+      val (success,analyzed) = vdt.apply(vu)(errorCont, tc.dependsOn += _)
+      val changed = Some(analyzed) != tc.analyzed
+      tc.analyzed = analyzed // set it even if unchanged so that dirty flag gets cleared
+      if (! success) tc.setAnalyzedDirty // revisit failed declarations
+      if (changed) {
+         log("changed")
+         controller.memory.content.notifyUpdated(vu.component)
+      } else
+         log("not changed")
+   }
 }

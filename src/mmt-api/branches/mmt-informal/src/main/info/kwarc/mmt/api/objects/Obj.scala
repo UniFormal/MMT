@@ -28,10 +28,20 @@ trait ClientProperties {
    lazy val clientProperty = new ListMap[URI, Any]
 }
 
+class TermProperty[A](val property: utils.URI) {
+   def put(t: Term, a:A) {
+      t.clientProperty(property) = a
+   }
+   def get(t: Term): Option[A] = t.clientProperty.get(property) match {
+      case Some(a: A) => Some(a)
+      case None => None
+   }
+}
+
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
-abstract class Obj extends Content with ontology.BaseType with HasMetaData with ClientProperties {
+abstract class Obj extends Content with ontology.BaseType with HasMetaData with ClientProperties with HashEquality[Obj] {
    /** prints to OpenMath */
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.Init)
@@ -45,9 +55,13 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
     *  capture is avoided by renaming bound variables that are free in sub */
    // TODO use an internal auxiliary method for subsitution that carries along a precomputed list of free variables in sub to avoid recomputing it at every binder
    // alternatively, make freeVars a lazy val in Substitution
-   def ^ (sub : Substitution) : Obj
+   def ^(sub : Substitution) : Obj
+   /** optimized version of ^ that does nothing if sub is the identity substitution
+    *  must be defined separately for every subclass just to get the return type right
+    */
+   def ^?(sub : Substitution) : Obj
    /** the free variables of this object in any order */ 
-   def freeVars : List[LocalName] = freeVars_.distinct
+   lazy val freeVars : List[LocalName] = freeVars_.distinct
    /** helper function for freeVars that computes the free variables without eliminating repetitions */ 
    private[objects] def freeVars_ : List[LocalName]
    /** returns the subobject at a given position and its context; first index of pos is always 0 and is ignored */
@@ -98,7 +112,10 @@ trait MMTObject {
 sealed abstract class Term extends Obj {
    def strip : Term = this
    def ^(sub : Substitution) : Term
-   def ^?(sub : Substitution) : Term = if (sub.isIdentity) this else this ^ sub
+   /** optimized to call substitution only if a free variable is substituted with a term other than itself */
+   def ^?(sub : Substitution) : Term =
+      if (freeVars.exists(f => sub.subs.exists(s => s.name == f && s.target != OMV(f)))) this ^ sub
+      else this
    /** morphism application (written postfix), maps OMHID to OMHID */
    def *(that : Term) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */
@@ -183,9 +200,9 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
    def ^(sub : Substitution) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
       val subN = sub ++ alpha
-      OMBINDC(binder ^ sub, newCon ^ sub, scopes.map(_ ^ subN)).from(this)
+      OMBINDC(binder ^? sub, newCon ^? sub, scopes.map(_ ^? subN)).from(this)
    }
-   private[objects] def freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
+   private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
    def toCML = <m:apply>{binder.toCML}{context.toCML}{scopes.map(_.toCML)}</m:apply>
 }
 
@@ -226,8 +243,8 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       <om:OMA>{fun.toNodeID(pos / 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMA(fun ^ sub, args.map(_ ^ sub)).from(this)
-   private[objects] def freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
+   def ^ (sub : Substitution) = OMA(fun ^? sub, args.map(_ ^? sub)).from(this)
+   private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
 }
 
@@ -250,6 +267,7 @@ case class OMV(name : LocalName) extends Term {
    def components = List(StringLiteral(name.toString)) 
    /** the substutition this/s */
    def /(s : Term) = Sub(name, s)
+   def ->(s: Term) = Sub(name, s)
    /** the declaration this:tp */
    def %(tp : Term) = VarDecl(name, Some(tp), None)
    def toNodeID(pos : Position) = <om:OMV name={name.toPath}/> % pos.toIDAttr

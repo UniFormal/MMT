@@ -51,7 +51,10 @@ case class InvalidElement(elem: StructuralElement, s : String, causedBy: Error =
     if (causedBy != null) setCausedBy(causedBy)
 }    
 /** errors that occur when objects are invalid */
-case class InvalidObject(obj: objects.Obj, s : String) extends Invalid("invalid object: " + s)
+case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object: " + s)
+/** errors that occur when judgement do not hold */
+case class InvalidUnit(unit: objects.ValidationUnit, history: objects.History) extends Invalid("invalid object: " + unit.component.toString)
+
 /** errors that occur when presenting a knowledge item */
 case class PresentationError(s : String) extends Error(s)
 /** errors that occur when registering extensions  */

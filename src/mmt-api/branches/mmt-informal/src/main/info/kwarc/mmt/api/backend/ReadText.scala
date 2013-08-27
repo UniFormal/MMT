@@ -843,9 +843,9 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
         val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, parent.toTerm)
         i = positionAfter
         domain match {
-          case Some(dom) => structure = new DefinedStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), morphism, isImplicit)
+          case Some(dom) => structure = DefinedStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), morphism, isImplicit)
           //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted 
-          case None => structure = new DefinedStructure(parent.toTerm, LocalName(name), null, morphism, isImplicit)
+          case None => structure = DefinedStructure(parent.toTerm, LocalName(name), null, morphism, isImplicit)
         }
 
         add(structure)
@@ -1267,7 +1267,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       // It's a DefinedTheory
       val (theoryExp, positionAfter) = crawlTerm(i, Nil, Nil, tpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
       i = positionAfter
-      theory = new DefinedTheory(tpath.parent, tpath.name, theoryExp)
+      theory = DefinedTheory(tpath.parent, tpath.name, theoryExp)
       add(theory)
       if (meta.isDefined) {
          errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(warning = true)
@@ -1372,7 +1372,7 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
       // It's a DefinedView
       val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, vpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
       i = positionAfter
-      view = new DefinedView(vpath.parent, vpath.name, domain, codomain, morphism, isImplicit)
+      view = DefinedView(vpath.parent, vpath.name, domain, codomain, morphism, isImplicit)
       add(view)
     }
 

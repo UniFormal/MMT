@@ -49,7 +49,7 @@ class DeclaredView(doc : DPath, name : LocalPath, val from : Term, val to : Term
    def getIncludes: List[MPath] = getDeclarations.flatMap {
       case PlainViewInclude(_,_,v) => List(v)
       case _ => Nil
-   } 
+   }
 }
 
   /**
@@ -62,7 +62,12 @@ class DeclaredView(doc : DPath, name : LocalPath, val from : Term, val to : Term
    * @param df the definiens
    * @param isImplicit true iff the link is implicit
    */
-class DefinedView(doc : DPath, name : LocalPath, val from : Term, val to : Term, val df : Term, val isImplicit : Boolean)
+class DefinedView(doc : DPath, name : LocalPath, val from : Term, val to : Term, val dfC : TermContainer, val isImplicit : Boolean)
       extends View(doc, name) with DefinedModule with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedView
+}
+
+object DefinedView {
+   def apply(doc : DPath, name : LocalPath, from : Term, to : Term, df : Term, isImplicit: Boolean) =
+      new DefinedView(doc, name, from, to, TermContainer(df), isImplicit)
 }

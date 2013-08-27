@@ -57,7 +57,7 @@ class Report {
    def record {rec = true}
    def recall = mem
    def clear {mem = Nil; rec = false}
-   def cleanup {
+   def flush {
       handlers foreach {_.flush}
    }
 }

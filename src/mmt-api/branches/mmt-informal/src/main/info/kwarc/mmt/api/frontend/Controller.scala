@@ -104,11 +104,9 @@ class Controller extends ROController with Logger {
    }
    init
    
-   
    //not sure if this really belong here, map from jobname to some state info
    val states = new collection.mutable.HashMap[String, ParserState]
          
-   
    def detectChanges(elems : List[ContentElement]) : StrictDiff = {
      val changes = elems flatMap {elem =>
        try {
@@ -164,12 +162,8 @@ class Controller extends ROController with Logger {
          // get, ...
          try {
            backend.get(path) {
-              // read, ...
-              case (u,n) =>
-                 xmlReader.readDocuments(DPath(u), n) {
-                 // and add the content with URI path
-                 e => add(e)
-              }
+              // read and add the content
+              case (u,n) => xmlReader.readDocuments(DPath(u), n) {e => add(e)}
            }
          } catch {
             case BackendError(p) =>
@@ -216,11 +210,43 @@ class Controller extends ROController with Logger {
    }
    /** adds a knowledge item */
    def add(e : StructuralElement) {
-      iterate (e match {
-         case c : ContentElement => memory.content.add(c)
+      iterate {e match {
+         case nw : ContentElement =>
+            localLookup.getO(e.path) match {
+               case Some(old) if old.inactive =>
+                  /* optimization for change management
+                   * if e.path is already loaded but inactive, and the new e is compatible with it,
+                   * we reactivate the existing declaration
+                   * otherwise, we remove the deactivated declaration and proceed normally
+                   */
+                  //TODO we currently reactivate declarations even if they occur in different orders
+                  //     if no reactivatable element exists, we append at the end
+                  if (old.compatible(nw)) {
+                     log("activating " + old.path)
+                     // deactivate all children and components
+                     old.getDeclarations.foreach {_.inactive = true}
+                     old.getComponents.foreach {case (_, cont) =>
+                        if (cont.isDefined) cont.inactive = true
+                     }
+                     // merge metadata and components of the new one into the old one
+                     old.metadata = nw.metadata
+                     nw.getComponents.foreach {case (comp, cont) =>
+                        old.getComponent(comp).foreach {_.update(cont)}
+                     }
+                     // activate the old one
+                     old.inactive = false
+                  } else {
+                     // delete the deactivated old one, and add the new one
+                     log("deleting deactivated " + old.path)
+                     memory.content.update(nw)
+                  }
+               case _ =>
+                  // the normal case
+                  memory.content.add(nw)
+            }
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
-      })
+      }}
    }
 
    /**
@@ -231,16 +257,18 @@ class Controller extends ROController with Logger {
    def delete(p: Path) {
       p match {
          case d: DPath =>
-            val orphaned = docstore.delete(d)
-            orphaned foreach delete
+            docstore.delete(d)
          case m: MPath =>
             library.delete(m)
             notstore.delete(m)
-         case s: GlobalName => library.delete(s)
-         case _ : CPath => throw ImplementationError("cannot delete component paths") //TODO delete component
+         case s: GlobalName =>
+            library.delete(s)
+         case cp : CPath =>
+            library.delete(cp)
       }
       //depstore.deleteSubject(p)
    }
+
    /** clears the state */
    def clear {
       memory.clear
@@ -252,9 +280,39 @@ class Controller extends ROController with Logger {
       //close all open svn sessions from storages in backend
       backend.cleanup
       // flush logging buffers
-      report.cleanup
+      report.flush
       // stop server
       server foreach {_.stop}
+   }
+
+   /** deletes a document, deactivates and returns its modules */
+   private def deactivateDocument(d: DPath): List[Module] = {
+      docstore.delete(d).toList.flatMap {doc =>
+         log("deactivating document " + d)
+         logGroup {
+            doc.getLocalItems flatMap {
+               case r: DRef => deactivateDocument(r.target)
+               case r: MRef => get(r.target) match {
+                  case m: Module =>
+                     log("deactivating " + m.path)
+                     m.inactive = true
+                     List(m)
+                  case _ => Nil // impossible
+               }
+            }
+         }
+      }
+   }
+   /** deletes everything in ce that is marked for deletion (i.e., inactive) */
+   private def deleteInactive(ce: ContentElement) {
+      ce.foreachDeclaration {d => if (d.inactive) {
+         log("deleting deactivated " + d.path)
+         delete(d.path)
+      }}
+      ce.foreachComponent {case (cp,cont) => if (cont.inactive) {
+         log("deleting deactivated " + cp)
+         delete(cp)
+      }}
    }
    /** reads a file containing a document and returns the Path of the document found in it
     * the reader is chosen according to the file ending: omdoc, elf, or mmt
@@ -269,8 +327,9 @@ class Controller extends ROController with Logger {
                      case (arch, p) => DPath(arch.narrationBase / p)
                   } getOrElse
                   DPath(utils.FileURI(f))
-      delete(dpath)
-      f.getExtension match {
+      val modules = deactivateDocument(dpath)
+      log("reading " + dpath)
+      val result = f.getExtension match {
          case Some("omdoc") =>
             val N = utils.xml.readFile(f)
             var doc: Document = null
@@ -299,6 +358,11 @@ class Controller extends ROController with Logger {
          case Some(e) => throw ParseError("unknown file extension: " + f)
          case None => throw ParseError("unknown document format: " + f)
       }
+      log("deleting the remaining deactivated elements")
+      logGroup {
+         modules foreach {m => deleteInactive(m)}
+      }
+      result
    }
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
@@ -325,6 +389,7 @@ class Controller extends ROController with Logger {
               return
         }
         handle(act)
+        report.flush
    }
    /** executes an Action */
    def handle(act : Action) : Unit = {
@@ -449,13 +514,11 @@ class Controller extends ROController with Logger {
 	         val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
             gv.exportDot(f)
 	      case Check(p) =>
-	         try {
-	            checker(p)
+	         val errors = checker(p)
+	         if (errors == Nil)
 	            log("check succeeded")
-	         } catch {
-	          case e: Invalid =>
-	            log("check failed\n" + e.getMessage)
-	         }
+	         else
+	            log("check failed (see log for error messages)")
 	      case DefaultGet(p) => handle(GetAction(Print(p)))
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
@@ -467,7 +530,6 @@ class Controller extends ROController with Logger {
             case "on" => winman.openBrowser
             case "off" => winman.closeBrowser
          }
-             
          case Exit =>
 	         cleanup 
 	         sys.exit

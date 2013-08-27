@@ -45,6 +45,8 @@ abstract class Structure extends Symbol with Link {
 class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MPath, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_Structure
+   /** the domain is not part of the term components because it is just a Path */ 
+   def getComponents = Nil
 }
 
  /**
@@ -56,9 +58,14 @@ class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MP
   * @param df the definiens (the target if we see this as an assignment to a structure)
   * @param isImplicit true iff the link is implicit
   */
-class DefinedStructure(val home : Term, val name : LocalName, val fromPath : MPath, val df : Term, val isImplicit : Boolean)
+class DefinedStructure(val home : Term, val name : LocalName, val fromPath : MPath, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedStructure
+}
+
+object DefinedStructure {
+   def apply(home : Term, name : LocalName, fromPath : MPath, df: Term, isImplicit : Boolean) =
+      new DefinedStructure(home, name, fromPath, TermContainer(df), isImplicit)
 }
 
 object Include {

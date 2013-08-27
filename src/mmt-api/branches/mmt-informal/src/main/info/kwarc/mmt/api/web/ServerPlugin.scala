@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import frontend._
-import zgs.httpd._
+import tiscaf._
 
 /**
  * An MMT extensions that handles certain requests in MMT's HTTP server.

@@ -30,7 +30,7 @@ case class Delete(path : Path) extends ContentMessage
  * Invariance: This class guarantees structural well-formedness in the sense that libraries conform to the MMT grammar and all declarations have canonical URIs
  * The well-formedness of the objects in the declarations is not guaranteed.
  */
-class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
+class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) with Logger {
    private val modules = new scala.collection.mutable.HashMap[MPath,Module]
    private val implicitGraph = new ThinGeneratedCategory
    
@@ -39,7 +39,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
       catch {case _ : Throwable => if (false) throw GetError("module does not exist: " + p)
                        else     throw new frontend.NotFound(p)
             }
-   def log(s : => String) = report("library", s)
+   val logPrefix = "library"
    
    /**
     * returns all module paths indexed by this library
@@ -230,9 +230,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
                  Constant(l.to, newName, newAlias, c.tp.map(_ * l.toTerm), newDef, c.rl, c.not)
               case r: Structure => assigOpt match {
                   case Some(a: DefinedStructure) =>
-                      new DefinedStructure(l.to, newName, r.fromPath, a.df, false)
+                      DefinedStructure(l.to, newName, r.fromPath, a.df, false)
                   case None =>
-                      new DefinedStructure(l.to, newName, r.fromPath, OMCOMP(r.toTerm, l.toTerm), false) //TODO should be a DeclaredStructure
+                      DefinedStructure(l.to, newName, r.fromPath, OMCOMP(r.toTerm, l.toTerm), false) //TODO should be a DeclaredStructure
                   case _ =>  throw GetError("link " + l.path + " provides non-StructureAssignment for structure " + r.path)
               }
           }
@@ -376,9 +376,19 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
          case doc : DPath => throw ImplementationError("deletion of documents from library impossible")
          case doc ? mod => modules -= doc ? mod
          case par % ln => getContainer(par, msg => throw DeleteError("illegal parent: " + msg)) match {
-            case t: DeclaredTheory => t.delete(ln)
-            case l: DeclaredLink => l.delete(ln)
+            case t: DeclaredTheory =>
+               t.delete(ln) foreach {s =>
+                  s.getComponents.foreach {case (comp,cont) =>
+                     if (cont.isDefined) notifyUpdated(s.path $ comp)
+                  }
+               }
+            case l: DeclaredLink =>
+               l.delete(ln)
             case _  => throw DeleteError("cannot delete from " + path)
+         }
+         case cp @ CPath(par, comp) => getO(par) foreach {ce =>
+            ce.getComponent(comp).foreach {_.delete}
+            notifyUpdated(cp)
          }
       }
    }
@@ -386,6 +396,29 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) {
    def update(e : ContentElement) {
 	   delete(e.path)
 	   add(e)
+   }
+   /**
+    * marks all known dependent components as dirty 
+    * @param p path to the component that was changed/deleted
+    * 
+    * This method is public because components may be changed from the outside.
+    * In that case, this method may be called additionally to maintain invariants.
+    * 
+    * When deleting a Symbol or Component, this is called automatically.
+    */ 
+   def notifyUpdated(p: CPath) {
+      log("updated: " + p)
+      logGroup {
+         modules.values.foreach {
+            case m: Module =>
+               m.foreachComponent {case (comp,termCont) =>
+                  if (termCont.dependsOn contains p) {
+                     log("setting dirty: " + comp)
+                     termCont.setAnalyzedDirty
+                  }
+               }
+         }
+      }
    }
    /** forgets everything */
    def clear {
