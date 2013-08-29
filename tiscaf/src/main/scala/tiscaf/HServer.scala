@@ -82,6 +82,8 @@ trait HServer {
 
   /** Called when an uncatched error is thrown. You may delegate to the log system of your choice. */
   protected def onError(e: Throwable): Unit = e.printStackTrace
+  /** Called when a method is printed. You may delegate to the log system of your choice. */
+  protected def onMessage(s: String): Unit = println(s)
 
   /** Returns the maximum upload size allowed. */
   protected def maxPostDataLength: Int = 65536 // for POST other than multipart/form-data
@@ -100,7 +102,7 @@ trait HServer {
     // only bind to localhost for stop message
     val serverSocket =
       new java.net.ServerSocket(stopPort, 0, java.net.InetAddress.getByName(stopHost))
-    println(name + " stop listener is listening to port " + stopPort)
+    onMessage(name + " stop listener is listening to port " + stopPort)
     val dataSocket = serverSocket.accept
     val ar = new Array[Byte](256)
     dataSocket.getInputStream.read(ar)
@@ -126,7 +128,7 @@ trait HServer {
       startStopListener
       onStart
       isStopped.set(false)
-      println(name + " server was started on port(s) " + (ports.toList ++ sslPorts).sortBy(x => x).mkString(", "))
+      onMessage(name + " server was started on port(s) " + (ports.toList ++ sslPorts).sortBy(x => x).mkString(", "))
     } else sys.error("the server is already started")
   }
 
@@ -139,7 +141,7 @@ trait HServer {
       Thread.sleep(interruptTimeoutMillis)
       talksExe.shutdown
       plexer.stop
-      println(name + " server stopped")
+      onMessage(name + " server stopped")
     } else sys.error("the server is already stopped")
   }
 
