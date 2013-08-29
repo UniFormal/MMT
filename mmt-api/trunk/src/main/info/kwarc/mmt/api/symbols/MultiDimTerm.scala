@@ -112,16 +112,20 @@ object TermContainer {
       tc.read = s
       tc
    }
-   /** factory for a parsed incarnation */
-   def apply(t: Term) = {
+   /** convenience factory */
+   def apply(t: Term): TermContainer = apply(Some(t))
+   /** factory for an optionally given Term
+    *  @param tOpt the term; treated as parsed or analyzed depending on AbstractObjectParser.isOnlyParsed
+    */
+   //TODO remove this - force users to decide whether a term is analyzed/parsed
+   //currently this is just a workaround
+   def apply(tOpt: Option[Term]): TermContainer = {
       val tc = new TermContainer
-      tc.parsed = t
-      tc
-   }
-   /** factory for an optional parsed incarnation */
-   def apply(tOpt: Option[Term]) = {
-      val tc = new TermContainer
-      tOpt foreach {t => tc.parsed = t}
+      tOpt foreach {t => if (parser.AbstractObjectParser.isOnlyParsed(t))
+         tc.parsed = t
+      else
+         tc.analyzed = t
+      }      
       tc
    }
 }
