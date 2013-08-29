@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="mmt-api" default="build" basedir=".">
+<project name="mmt-api" default="deploy" basedir=".">
 
 	 
 	 <property name="deploy" value="../../deploy"/>
@@ -49,7 +49,7 @@
         </scaladoc>
     </target>
 -->
-    <target name="deploy">
+    <target name="deploy" depends="build">
         <copy todir="${deploy}/lib">
             <fileset file="tiscaf.jar"/>
         </copy>
