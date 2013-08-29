@@ -24,7 +24,6 @@ class Index extends BuildTarget {
     private def writeToRel(se: StructuralElement, file: File) {
        val relFile = file.setExtension("rel")
        log("[  -> REL ]     " + relFile.getPath)
-       relFile.getParentFile.mkdirs
        val relFileHandle = File.Writer(relFile)
        ontology.Extractor(se) {
           r => relFileHandle.write(r.toPath + "\n")

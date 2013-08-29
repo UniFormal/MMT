@@ -41,7 +41,6 @@ trait ScalaArchive extends WritableArchive {
                  val mpath = Archive.ContentPathToMMTPath(inPath)
                  val mod = controller.globalLookup.getModule(mpath)
                  val outFile = (root / "scala" / inPath).setExtension("scala")
-                 outFile.getParentFile.mkdirs
                  uom.Extractor.doModule(controller, mod, outFile)
        }, {
            //directories

@@ -16,8 +16,7 @@ object xml {
     * overwrites existing files, creates directories if necessary
     */
    def writeFile(N : scala.xml.Node, file : File) {
-      file.toJava.getParentFile.mkdirs
-      val out = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file.toJava),"UTF-8"))
+      val out = File.Writer(file)
       out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + new PrettyPrinter(160,2).format(N))
       out.close
    }

@@ -93,8 +93,8 @@ object ConsoleWriter extends TextHandler {
 }
 
 /** writes text output to a file */
-class FileWriter(val filename : java.io.File) extends TextHandler {
-   private val file = utils.FileWriter(filename)
+class FileWriter(val filename : File) extends TextHandler {
+   private val file = utils.File.Writer(filename)
 	def write(s : String) {
 	  file.print(s)
 	}

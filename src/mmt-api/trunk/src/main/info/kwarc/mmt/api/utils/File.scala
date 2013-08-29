@@ -57,12 +57,13 @@ object File {
    /** constructs a File from a string, using the java.io.File parser */  
    def apply(s: String) : File = File(new java.io.File(s))
    
-   def Writer(f: File) = new PrintWriter(
-      new OutputStreamWriter(
+   def Writer(f: File) = {
+      f.toJava.getParentFile.mkdirs
+      new PrintWriter(new OutputStreamWriter(
          new BufferedOutputStream(new FileOutputStream(f.toJava)),
          java.nio.charset.Charset.forName("UTF-8")
-       )
-   )
+       ))
+   }
    /**
     * convenience method for writing a string into a file
     * 
@@ -71,7 +72,6 @@ object File {
     * @param s the content to write
     */
    def write(f: File, s: String) {
-      f.toJava.getParentFile.mkdirs
       val fw = Writer(f)
       fw.write(s)
       fw.close

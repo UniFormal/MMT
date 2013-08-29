@@ -18,8 +18,11 @@ case object Build  extends BuildTargetModifier {
    def toString(dim: String) = dim
 }
 
+/** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
+ *  from an input dimension.
+ */
 abstract class BuildTarget extends Extension {
-   /** the input archive folder */
+   /** the input dimension/archive folder */
    val inDim:  String
 
    /** a string identifying this build target, used for parsing commands, logging, error messages
@@ -75,11 +78,25 @@ abstract class BuildTarget extends Extension {
    }
 }
 
-abstract class TraversingBuildTarget extends BuildTarget {
+/** auxiliary type to represent the result of building a file/directory */
+sealed abstract class BuildResult
+case class BuiltFile(inPath: List[String], outFile: File) extends BuildResult
+case class BuiltDir(inPath: List[String], outFile: File) extends BuildResult {
+   def dirName = outFile.segments.init.last
+}
+
+/**
+ * This trait provides common functionality for BuildTargets that traverse all files in the input dimension.
+ * 
+ * It implements BuildTarget in terms of a single abstract method called to build a path in the archive.
+ */
+trait GenericTraversingBuildTarget extends BuildTarget {
    /** the output archive folder */
    val outDim: String
    /** the file extension used for generated files, defaults to outDim, override as needed */
    def outExt: String = outDim
+   /** the name that is used for the special file representing the containing folder, empty by default */
+   protected val folderName = ""
    
    private def outPath(root: File, inPath: List[String]) = (root / outDim / inPath).setExtension(outExt)
    
@@ -92,31 +109,52 @@ abstract class TraversingBuildTarget extends BuildTarget {
    def includeFile(name: String) : Boolean
 
    /** the main abstract method that implementations must provide: builds one file
+     * @param a the containing archive  
      * @param inFile the input file 
-     * @param dpath the base URI of the input file
+     * @param inPath the path in the archive to the input file
      * @param outFile the output file
      */ 
-   def buildOne(inFile: File, dpath: DPath, outFile: File): List[Error]
+   def buildFile(a: Archive, inFile: File, inPath: List[String], outFile: File): List[Error]
 
    /** similar to buildOne but called on every directory (after all its children have been processed)
+     * @param a the containing archive  
      * @param inDir the input directory 
-     * @param dpath the base URI of the directory
+     * @param inPath the path in the archive to the input file
+     * @param childPaths the paths of the children that were built
      * @param outFile the output file
      * This does nothing by default and can be overridden if needed.
      */ 
-   def buildDir(inDir: File, dpath: DPath, outFile: File): List[Error] = Nil
+   def buildDir(a: Archive, inDir: File, inPath: List[String], buildChildren: List[BuildResult], outFile: File): List[Error] = Nil
    
-   /** entry for recursive building */
+   /** entry point for recursive building */
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
       buildAux(in)(a)
    }
-   /** entry for recursive updating */
+   /** recursively reruns build if the input file has changed
+     *  
+     * the decision is made based on the time stamps and the system's last-modified date
+     */  
    def update(a: Archive, args: List[String], in: List[String] = Nil) {
-      updateAux(in)(a)
+       a.traverse(inDim, in, _ => true) {case Current(inFile, inPath) =>
+          a.timestamps(key).modified(inPath) match {
+             case Deleted =>
+                val outFile = outPath(a.root, inPath)
+                delete(outFile)
+             case Added =>
+                buildAux(inPath)(a)
+             case Modified =>
+                val outFile = outPath(a.root, inPath)
+                delete(outFile)
+                buildAux(inPath)(a)
+             case Unmodified => //nothing to do
+          }
+       }
    }
-   /** entry for recursive cleaning */
+   /** recursively delete output files */
    def clean (a: Archive, args: List[String], in: List[String] = Nil) {
-      cleanAux(in)(a)
+       a.traverse(outDim, in, _ => true) {case Current(inFile, _) =>
+          delete(inFile)
+       }
    }
    
    /** recursive building */
@@ -126,47 +164,28 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse(inDim, in, includeFile, false) {case Current(_,inPath) => errorMap(inPath) = Nil}
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
-       a.traverse[Unit](inDim, in, includeFile) ({case Current(inFile,inPath) =>
+       a.traverse[BuildResult](inDim, in, includeFile) ({case Current(inFile,inPath) =>
          val outFile = outPath(a.root, inPath)
          log(prefix + inFile + " -> " + outFile)
-         val errors = buildOne(inFile, DPath(a.narrationBase / inPath), outFile)
+         val errors = buildFile(a, inFile, inPath, outFile)
            errorMap(inPath) = errors
            if (! errors.isEmpty) {
              log("errors follow")
              errors foreach log
            }
            a.timestamps(key).set(inPath)
+           BuiltFile(inPath, outFile)
        }, {
-          case (Current(inDir, inPath), _) =>
-             val outFile = a.root / outDim / inPath / ("." + outExt)
-             buildDir(inDir, DPath(a.narrationBase / inPath), outFile)
+          case (Current(inDir, inPath), buildChildren) =>
+             val outFile = a.root / outDim / inPath / (folderName + "." + outExt)
+             buildDir(a, inDir, inPath, buildChildren, outFile)
+             BuiltDir(inPath, outFile)
        })
     }
-   
-    /** recursively deletes all files produced in the compilation chain */
-    private def cleanAux(in: List[String] = Nil)(implicit a: Archive) {
-       a.traverse(outDim, in, _ => true) {case Current(inFile, _) =>
-          delete(inFile)
-       }
-    }
-    /** recursively reruns build if the input file has changed
-     *  
-     * the decision is made based on the time stamps and the system's last-modified date
-     */  
-    private def updateAux(in: List[String] = Nil)(implicit a: Archive) {
-       a.traverse(inDim, in, _ => true) {case Current(inFile, inPath) =>
-          a.timestamps(key).modified(inPath) match {
-             case Deleted =>
-                val outFile = outPath(a.root, inPath)
-                delete(outFile)
-             case Added =>
-                buildAux(inPath)
-             case Modified =>
-                val outFile = outPath(a.root, inPath)
-                delete(outFile)
-                buildAux(inPath)
-             case Unmodified => //nothing to do
-          }
-       }
-    }
+}
+
+abstract class TraversingBuildTarget extends GenericTraversingBuildTarget {
+   def buildOne(inFile: File, dpath: DPath, outFile: File): List[Error]
+   def buildFile(a: Archive, inFile: File, in: List[String], outFile: File) =
+      buildOne(inFile, DPath(a.narrationBase / in), outFile)
 }

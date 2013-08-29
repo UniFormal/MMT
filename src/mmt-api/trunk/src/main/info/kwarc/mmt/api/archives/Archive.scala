@@ -213,7 +213,6 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
         controller.read(inFile,None)
         val mpath = Archive.ContentPathToMMTPath(inPath)
         val file = File(outFile)
-        file.getParentFile.mkdirs
         val fs = new presentation.FileWriter(file)
         frontend.Present(Get(mpath),param).make(controller, fs)
         fs.done
@@ -315,7 +314,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
 object Archive {
    /** a string containing all characters that are illegal in file names */ 
    val illegalChars = "'"
-   // TODO: (un)escape illegal characters
+   // TODO: (un)escape illegal characters, make case-insensitive distinct
    def escape(s: String) : String = s.replace("'","(apos)")
    def unescape(s: String) : String = s.replace("(apos)", "'")
     // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
@@ -334,7 +333,7 @@ object Archive {
    }
     // scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
    def ContentPathToDPath(segs: List[String]) : DPath = segs match {
-       case Nil => throw ImplementationError("")
+       case Nil => DPath(URI.empty)
        case hd :: tl =>
           val p = hd.indexOf("..")
           DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl)

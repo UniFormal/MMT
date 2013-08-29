@@ -32,7 +32,6 @@ trait ValidatedArchive extends WritableArchive {
             errors foreach {e => log(e.getMessage)}
          }
          val relFile = (relDir / inPath).setExtension("occ")
-         relFile.getParentFile.mkdirs
          val relFileHandle = File.Writer(relFile)
          rels foreach {r => relFileHandle.write(r.toPath + "\n")}
          relFileHandle.close
