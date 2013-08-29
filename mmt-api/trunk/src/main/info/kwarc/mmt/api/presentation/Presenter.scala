@@ -4,46 +4,30 @@ import objects._
 import objects.Conversions._
 import parser._
 
-/**
- * A Presenter transforms MMT content into presentation
- */
-trait Presenter extends frontend.Extension {
-   def isApplicable(format: String): Boolean
+trait StructurePresenter {
    def apply(e : StructuralElement, rh : RenderingHandler)
-   def apply(o: Obj, rh: RenderingHandler)
    def asString(e : StructuralElement): String = {
       val sb = new StringBuilder
       apply(e, sb)
       sb.get
    }
+}
+
+trait ObjectPresenter {
+   def apply(o: Obj, rh: RenderingHandler)
    def asString(o: Obj): String = {
       val sb = new StringBuilder
       apply(o, sb)
       sb.get
    }
-   /** transforms into pragmatic form and tries to retrieve a notation
-    *  
-    *  if the term but not the pragmatic form has a notation, the strict form is retained 
-    */
-   protected def getNotation(t: Term) : (Term, List[Position], Option[TextNotation]) = {
-      //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
-      def tryTerm(t: Term): Option[TextNotation] = t match {
-         case ComplexTerm(p, args, vars, scs) =>
-            controller.globalLookup.getO(p) flatMap {
-               case c: symbols.Constant => c.not
-               case p: patterns.Pattern => p.not
-            }
-         case _ => None
-      }
-      val (tP, _, posP) = controller.pragmatic.pragmaticHeadWithInfo(t)
-      tryTerm(tP) match {
-         case Some(n) => (tP, posP, Some(n))
-         case None    => tryTerm(t) match {
-            case Some(n) => (t, Position.positions(t), Some(n))
-            case None => (tP, posP, None)
-         }
-      }
-   }   
+}
+
+/**
+ * A Presenter transforms MMT content into presentation
+ */
+trait Presenter extends frontend.Extension with StructurePresenter with ObjectPresenter {
+   def isApplicable(format: String): Boolean
+   def getNotation(t: Term) = Presenter.getNotation(controller, t)
 }
 
 /** helper object */
@@ -84,6 +68,29 @@ object Presenter {
          if (yes) 1 else 0
       }
    }
+   /** transforms into pragmatic form and tries to retrieve a notation
+    *  
+    *  if the term but not the pragmatic form has a notation, the strict form is retained 
+    */
+   def getNotation(controller: frontend.Controller, t: Term) : (Term, List[Position], Option[TextNotation]) = {
+      //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
+      def tryTerm(t: Term): Option[TextNotation] = t match {
+         case ComplexTerm(p, args, vars, scs) =>
+            controller.globalLookup.getO(p) flatMap {
+               case c: symbols.Constant => c.not
+               case p: patterns.Pattern => p.not
+            }
+         case _ => None
+      }
+      val (tP, _, posP) = controller.pragmatic.pragmaticHeadWithInfo(t)
+      tryTerm(tP) match {
+         case Some(n) => (tP, posP, Some(n))
+         case None    => tryTerm(t) match {
+            case Some(n) => (t, Position.positions(t), Some(n))
+            case None => (tP, posP, None)
+         }
+      }
+   }   
 }
 
 /**

@@ -440,6 +440,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    def inferType(tm: Term)(implicit stack: Stack, history: History): Option[Term] = {
      log("inference: " + presentObj(tm) + " : ?")
      history += "inferring type of " + presentObj(tm)
+     // return previously inferred type, if any
      InferredType.get(tm) match {
         case s @ Some(_) => return s
         case _ =>
@@ -469,6 +470,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
         }
      }
      log("inferred: " + res.getOrElse("failed"))
+     // remember inferred type
      if (res.isDefined) InferredType.put(tm, res.get)
      res
    }
@@ -638,6 +640,10 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
              if (currentLevel < 1)
                 delay(j, 1)
              else
+                //TODO: if there is a simplification-rule for one of the heads, expand definition at the next lower level (and then iteratively)
+                //until a simplification-rule becomes applicable at toplevel
+                //That is necessary if a rule becomes applicable eventually.
+                //But it is a huge overhead if we don't actually want to simplify here. 
                 checkEqualityCongruence(s1, s2)
        }
    }

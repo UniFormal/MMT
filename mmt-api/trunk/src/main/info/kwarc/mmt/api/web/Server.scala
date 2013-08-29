@@ -8,15 +8,17 @@ import ontology._
 import modules._
 import objects._
 import utils.URI
+
 import tiscaf._
 import tiscaf.let._
+
 import scala.util.parsing.json.{ JSONType, JSONArray, JSONObject }
 import scala.xml._
+import scala.concurrent._
+
 import java.net.HttpURLConnection
 import java.net._
 import java.io._
-import scala.util.parsing.json.JSONObject
-import scala.concurrent._
 
 case class ServerError(msg: String) extends Error(msg)
 
@@ -87,7 +89,7 @@ object Server {
  *  This class abstracts from tiscaf's HTalk internal.
  */
 class Body(tk: HTalk) {
-     /** returns the body of a request as a string */
+  /** returns the body of a request as a string */
   def asString: String = {
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError("no body found"))
     new String(bodyArray, "UTF-8")
@@ -115,9 +117,9 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
  // override def writeBufSize = 16 * 1024
   override def tcpNoDelay = true // make this false if you have extremely frequent requests
   override def startStopListener = {} // prevents tiscaf from creating a "stop" listener
- /* override def onMessage(s: String) {
+  override def onMessage(s: String) {
      controller.report("tiscaf", s)
-  } */
+  }
   protected def ports = Set(port) // port to listen to
   protected def apps = List(new RequestHandler) // RequestHandler is defined below
   protected def talkPoolSize = 4

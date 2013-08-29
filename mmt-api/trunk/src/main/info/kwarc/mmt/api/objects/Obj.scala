@@ -28,10 +28,15 @@ trait ClientProperties {
    lazy val clientProperty = new ListMap[URI, Any]
 }
 
+/** convenience to create get and put methods for objects ClientProperties
+ *  @param property the client property for which to generate get and put methods
+ */
 class TermProperty[A](val property: utils.URI) {
+   /** put the client property */
    def put(t: Term, a:A) {
       t.clientProperty(property) = a
    }
+   /** get the client property if defined */
    def get(t: Term): Option[A] = t.clientProperty.get(property) match {
       case Some(a: A) => Some(a)
       case None => None
