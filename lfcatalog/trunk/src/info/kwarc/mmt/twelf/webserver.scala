@@ -14,17 +14,20 @@ import scala.xml._
   * @param port the port on which the server runs */
 class WebServer(catalog : Catalog, port : Int) extends HServer {
   
+  override def onMessage(s: String) {
+     catalog.log(s)
+  }
   /** Administration page, read from jar://resources/admin.html */
   var adminHtml : Option[scala.xml.Elem] = None
   
   /** Error page returned by the server */
-  val adminError = "<html><body>Bummer, can't find jar://server-resources/admin.html.</body></html>"
+  val adminError = "<html><body>cannot find jar://server-resources/admin.html.</body></html>"
   
   /** Readme page, read from jar://resources/readme.txt */
   var readmeText : Option[String] = None
   
   /** Error page returned by the server */
-  val readmeError = "Bummer, can't find jar://server-resources/readme.html."
+  val readmeError = "cannot find jar://server-resources/readme.html."
   
   // Read jar://resources/admin.html
   try {
