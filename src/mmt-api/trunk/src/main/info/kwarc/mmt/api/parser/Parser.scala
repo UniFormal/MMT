@@ -49,6 +49,8 @@ object AbstractObjectParser {
      case OMBIND(OMID(AbstractObjectParser.unknown), us, s) => (us, s)
      case _ => (Context(), t)
   }
+  /** @return true if t is a result of parsing that may need further analysis */
+  def isOnlyParsed(t: Term) = t.head == Some(unknown)
 }
 
 //TODO: notations should not be computed separately for each ParsingUnit; they must be cached theory-wise
