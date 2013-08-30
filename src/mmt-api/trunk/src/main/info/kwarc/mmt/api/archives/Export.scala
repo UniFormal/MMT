@@ -64,6 +64,7 @@ abstract class ContentExporter extends GenericTraversingBuildTarget {
 trait IndentedExporter extends ContentExporter {
    private var indentLevel = 0
    val indentString = "  "
+   protected var afterIndentationString = ""
    def indent(body: => Unit) {
       indentLevel += 1
       nl
