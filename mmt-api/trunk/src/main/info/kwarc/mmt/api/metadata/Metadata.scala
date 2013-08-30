@@ -34,8 +34,8 @@ class MetaData {
       add(Link(key, value))
    }
    def keys = data.map(_.key).distinct
-   /** get all metadata */
-   def getAll : List[MetaDatum] = data
+   /** get all metadata except tags */
+   def getAll : List[MetaDatum] = data.filter(_.value != null)
    /** get metadata for a certain key */
    def get(key: GlobalName) : List[MetaDatum] = data.filter(_.key == key)
    def getValues(key: GlobalName) : List[Obj] = get(key).map(_.value)

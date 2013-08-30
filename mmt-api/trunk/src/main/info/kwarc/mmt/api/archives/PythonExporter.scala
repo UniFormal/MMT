@@ -11,9 +11,10 @@ class PythonExporter extends ContentExporter with IndentedExporter {
    override val folderName = "__init__"
 
    private def comment(body: => Unit) {
-      rh("(: ")
+      rh("# ")
+      afterIndentationString += "# "
       body
-      rh(" :)")
+      afterIndentationString = afterIndentationString.substring(0, afterIndentationString.length-2)
       nl
    }
    private def cls(name: String)(body: => Unit) {
@@ -29,13 +30,21 @@ class PythonExporter extends ContentExporter with IndentedExporter {
    
    def doTheory(t: DeclaredTheory) {
       cls(t.name.toPath) {
+         var fields: List[String] = Nil
          t.getPrimitiveDeclarations.foreach {
             case c: Constant =>
+               c.not match {
+                  case Some(n) =>
+                     
+                  case None => 0
+               }
                df(c.name.toPath, Nil){
                   rh("pass")
+                  fields ::= c.name.toPath
                }
             case _ =>
          }
+         fields
       }
    }
    

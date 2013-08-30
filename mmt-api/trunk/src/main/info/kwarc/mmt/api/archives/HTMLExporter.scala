@@ -12,8 +12,16 @@ class HTMLExporter extends ContentExporter {
    val outDim = "html"
    val key = "html"
    private lazy val mmlPres = new MathMLPresenter(controller) // must be lazy because controller is provided in init only
+   private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="$value""""
    private def html(body: => Unit) {
-      rh("<html><body>")
+      rh("<html>")
+      rh("<head>")
+      rh("""<link rel="stylesheet" type="text/css" href="file:///c:/other/oaff/test/html.css"></link>""")
+      rh("""<script type="text/javascript" src="file:/c:/other/oaff/test/html.js"></script>""")
+      rh("""<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>""")
+      rh("</style>")
+      rh("</head>")
+      rh("<body>")
       body
       rh("</body></html>")
    }
@@ -22,8 +30,8 @@ class HTMLExporter extends ContentExporter {
       body
       rh("</div>")
    }
-   private def span(cls: String)(body: => Unit) {
-      rh(s"""<span class="$cls">""")
+   private def span(cls: String, onclick : String = "", title: String = "")(body: => Unit) {
+      rh(s"""<span${optAttr("class", cls)}${optAttr("onclick", onclick)}${optAttr("title", title)}>""")
       body
       rh("</span>")
    }
@@ -32,25 +40,78 @@ class HTMLExporter extends ContentExporter {
       body
       rh("</a>")
    }
-   
+   private def table(cls: String)(body: => Unit) {
+      rh(s"""<table${optAttr("class", cls)}>""")
+      body
+      rh("</table>")
+   }
+   private def tr(cls: String)(body: => Unit) {
+      rh(s"""<tr${optAttr("class", cls)}>""")
+      body
+      rh("</tr>")
+   }
+   private def td(body: => Unit) {
+      rh("<td>")
+      body
+      rh("</td>")
+   }
    private def doName(s: String) {
       rh(s"""<span class="name">$s</span>""")
    }
-   private def doComponent(comp: DeclarationComponent, t: Term) {
-      div(comp.toString) {
-         rh(s"<span>${comp.toString}</span><math>")
-         rh(mmlPres.asString(t))
-         rh("</math>")
-      }
+   private def doMath(t: Obj) {
+      rh("<math>")
+      rh(mmlPres.asString(t))
+      rh("</math>")
+   }
+   private def doComponent(comp: DeclarationComponent, t: Obj) {
+      td {rh(s"<span>${comp.toString}</span>")}
+      td {doMath(t)}
    }
    def doTheory(t: DeclaredTheory) {
       html {div("theory") {
-         doName(t.name.toPath)
-         t.getPrimitiveDeclarations.foreach {d =>
-            doName(d.name.toPath)
-            d.getComponents.foreach {case (comp, tc) =>
-               tc.get.foreach {t =>
-                   doComponent(comp, t)
+         div("theory-header") {doName(t.name.toPath)}
+         t.getPrimitiveDeclarations.foreach {
+            d => table("constant") {
+               tr("constant-header") {
+                    td {doName(d.name.toPath)}
+                    td {
+                       def toggle(label: String) {
+                          span("compToggle", s"toggle(this,'$label')") {rh(label)}
+                       }
+                       d.getComponents.foreach {case (comp, tc) => if (tc.get.isDefined) 
+                          toggle(comp.toString)
+                       }
+                       if (! d.metadata.getTags.isEmpty)
+                          toggle("tags")
+                       if (! d.metadata.getAll.isEmpty)
+                          toggle("metadata")
+                    }
+               }
+               d.getComponents.foreach {case (comp, tc) =>
+                  tr(comp.toString) {
+                        tc.get.foreach {t =>
+                            doComponent(comp, t)
+                        }
+                  }
+               }
+               if (! d.metadata.getTags.isEmpty) tr("tags") {
+                  td {rh("tags")}
+                  td {d.metadata.getTags.foreach {
+                     k => div("tag") {rh(k.toPath)}
+                  }}
+               }
+               def doKey(k: GlobalName) {
+                  td{span("key", title=k.toPath) {rh(k.toString)}}
+               }
+               d.metadata.getAll.foreach {
+                  case metadata.Link(k,u) => tr("link metadata") {
+                     doKey(k)
+                     td {a(u.toString) {rh(u.toString)}}
+                  }
+                  case md: metadata.MetaDatum => tr("metadatum metadata") {
+                     doKey(md.key)
+                     td {doMath(md.value)}
+                  }
                }
             }
          }
