@@ -33,13 +33,18 @@ trait ClientProperties {
  */
 class TermProperty[A](val property: utils.URI) {
    /** put the client property */
-   def put(t: Term, a:A) {
+   def put(t: Obj, a:A) {
       t.clientProperty(property) = a
    }
    /** get the client property if defined */
    def get(t: Term): Option[A] = t.clientProperty.get(property) match {
       case Some(a: A) => Some(a)
       case None => None
+      case Some(_) =>
+         throw ImplementationError("client property has bad type") // impossible if put was used to set the property
+   }
+   def erase(t: Term) {
+      t.clientProperty -= property
    }
 }
 
@@ -47,6 +52,12 @@ class TermProperty[A](val property: utils.URI) {
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
 abstract class Obj extends Content with ontology.BaseType with HasMetaData with ClientProperties with HashEquality[Obj] {
+   /** the type of this instance
+    *  
+    *  This is needed to provide sharper return types for inductive functions,
+    *  e.g., substitution returns Term if applied to Term, Context if applied to Context, etc. 
+    */
+   type ThisType >: this.type <: Obj
    /** prints to OpenMath */
    def toNodeID(pos : Position) : scala.xml.Node
    def toNode : scala.xml.Node = toNodeID(Position.Init)
@@ -56,15 +67,28 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
       <om:OMOBJ xmlns:om={om}>{toNode}</om:OMOBJ>
    }
    def toCML: Node
-   /** applies a substitution to an object (computed immediately)
-    *  capture is avoided by renaming bound variables that are free in sub */
-   // TODO use an internal auxiliary method for subsitution that carries along a precomputed list of free variables in sub to avoid recomputing it at every binder
-   // alternatively, make freeVars a lazy val in Substitution
-   def ^(sub : Substitution) : Obj
-   /** optimized version of ^ that does nothing if sub is the identity substitution
-    *  must be defined separately for every subclass just to get the return type right
+   /**
+    * generic version of substitution that does one step and recurses according to a SubstitutionApplier
+    *  
+    * capture is avoided by renaming bound variables that are free in sub
+    * 
+    * Individual SubstitutionAppliers can default to this method in order to recurse one level.
     */
-   def ^?(sub : Substitution) : Obj
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) : ThisType
+   /**
+    * convenience method that applies substitution by relegating to a SubstitutionApplier
+    * 
+    * This has the effect that o ^^ sub becomes an infix notation for substitution
+    * if an implicit SubstitutionApplier is available.
+    */
+   def ^^(sub : Substitution)(implicit sa: SubstitutionApplier) : ThisType = sa(this, sub)
+   /** applies a substitution to an object (computed immediately)
+    *  implemented in terms of ^^ and PlainSubstitutionApplier
+    */
+   def ^(sub : Substitution) : ThisType = ^^(sub)(PlainSubstitutionApplier)
+   /** optimized version of substitution defined in terms of SmartSubstitutionApplier */
+   def ^?(sub : Substitution) : ThisType = ^^(sub)(SmartSubstitutionApplier)
+
    /** the free variables of this object in any order */ 
    lazy val freeVars : List[LocalName] = freeVars_.distinct
    /** helper function for freeVars that computes the free variables without eliminating repetitions */ 
@@ -115,12 +139,9 @@ trait MMTObject {
  * A Term represents an MMT term.
  */
 sealed abstract class Term extends Obj {
+   final type ThisType = Term
    def strip : Term = this
-   def ^(sub : Substitution) : Term
    /** optimized to call substitution only if a free variable is substituted with a term other than itself */
-   def ^?(sub : Substitution) : Term =
-      if (freeVars.exists(f => sub.subs.exists(s => s.name == f && s.target != OMV(f)))) this ^ sub
-      else this
    /** morphism application (written postfix), maps OMHID to OMHID */
    def *(that : Term) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */
@@ -149,7 +170,7 @@ sealed abstract class Term extends Obj {
  */
 case class OMID(path: ContentPath) extends Term {
    def head = Some(path)
-   def ^(sub : Substitution) = this
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def role = path match {
       case m: MPath => Role_ModRef
@@ -202,10 +223,10 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
                  }}
       </om:OMBIND> % pos.toIDAttr
    override def toString = "(" + binder + " [" + context + "] " + scopes.map(_.toString).mkString(" ") + ")"  
-   def ^(sub : Substitution) = {
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
       val subN = sub ++ alpha
-      OMBINDC(binder ^? sub, newCon ^? sub, scopes.map(_ ^? subN)).from(this)
+      OMBINDC(binder ^^ sub, newCon ^^ sub, scopes.map(_ ^^ subN)).from(this)
    }
    private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
    def toCML = <m:apply>{binder.toCML}{context.toCML}{scopes.map(_.toCML)}</m:apply>
@@ -230,7 +251,7 @@ object OMBIND {
 case class OMM(arg : Term, via : Term) extends Term with MMTObject {
    val path = mmt.morphismapplication
    def args = List(arg,via)
-   def ^ (sub : Substitution) = OMM(arg ^ sub, via ^ sub).from(this)
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMM(arg ^^ sub, via ^^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: via.freeVars_
 }
 
@@ -248,7 +269,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       <om:OMA>{fun.toNodeID(pos / 0)}
               {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
       </om:OMA> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMA(fun ^? sub, args.map(_ ^? sub)).from(this)
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
 }
@@ -277,7 +298,7 @@ case class OMV(name : LocalName) extends Term {
    def %(tp : Term) = VarDecl(name, Some(tp), None)
    def toNodeID(pos : Position) = <om:OMV name={name.toPath}/> % pos.toIDAttr
    override def toString = name.toString
-   def ^(sub : Substitution) =
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = 
 	   sub(name) match {
 	  	   case Some(t) => t match {
 	  	      //substitution introduces structure-sharing if the same variable occurs more than once
@@ -317,7 +338,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
       <om:OMATTR><om:OMATP>{key.toNodeID(pos/0)}{value.toNodeID(pos/2)}</om:OMATP>
                  {arg.toNodeID(pos/1)}
       </om:OMATTR> % pos.toIDAttr
-   def ^ (sub : Substitution) = OMATTR(arg ^ sub, key, value ^ sub).from(this)
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
 
@@ -332,7 +353,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def role = Role_foreign
    def components = List(XMLLiteral(node))
    def toNodeID(pos : Position) = <om:OMFOREIGN>{node}</om:OMFOREIGN> % pos.toIDAttr
-   def ^(sub : Substitution) = this
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{Node}</m:apply>
 }
@@ -348,7 +369,7 @@ abstract class OMLiteral extends Term {
    def tag: String
    override def toString = value.toString
    def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, true, scala.xml.Text(value.toString)) 
-   def ^(sub : Substitution) = this
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
 }
 
@@ -384,9 +405,9 @@ case class OMURI(value: URI) extends OMLiteral {
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
    def role = Role_value
-   def ^(sub : Substitution) = {
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
       val newtokens = tokens map {
-         case Formal(t) => Formal(t ^ sub)
+         case Formal(t) => Formal(t ^^ sub)
          case i => i
       }
       OMSemiFormal(newtokens).from(this)

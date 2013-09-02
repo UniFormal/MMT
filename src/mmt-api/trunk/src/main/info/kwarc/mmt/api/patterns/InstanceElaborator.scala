@@ -23,7 +23,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator with Logger 
       case inst : Instance => 
         	val pt : Pattern = controller.globalLookup.getPattern(inst.pattern)
         	val subs = pt.body.map {d => d.name / OMID(inst.home % (inst.name / d.name))} //TODO Check c.c1
-         def auxSub(x : Term) = {
+         def auxSub(x : Term): Term = {
         		x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
         	}
         	pt.body.foreach {case VarDecl(n,tp,df,at @ _*) =>

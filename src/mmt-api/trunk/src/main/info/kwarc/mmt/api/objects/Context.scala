@@ -15,6 +15,7 @@ import scala.xml.Node
  * @param ats OpenMath-style attributions
  */
 case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: (GlobalName,Term)*) extends Obj {
+   type ThisType = VarDecl
    val attrs = ats.toList
    /** self-written copy method that does not allow changing attributions
     * (because sequence arguments and copy do not work together) */
@@ -24,12 +25,11 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
       vd
    }
    def toTerm = OMV(name)
-   def ^(sub : Substitution) = {
-      val vd = VarDecl(name, tp.map(_ ^? sub), df.map(_ ^? sub))
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
+      val vd = VarDecl(name, tp.map(_ ^^ sub), df.map(_ ^^ sub))
       vd.copyFrom(this)
       vd
    }
-   def ^?(sub : Substitution) : VarDecl = if (sub.isIdentity) this else this ^ sub
    private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil) 
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
@@ -59,6 +59,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
 
 /** represents an MMT context as a list of variable declarations */
 case class Context(variables : VarDecl*) extends Obj {
+   type ThisType = Context
    /** add variable at the end */
    def ++(v : VarDecl) : Context = this ++ Context(v)
    /** concatenate contexts */
@@ -113,13 +114,12 @@ case class Context(variables : VarDecl*) extends Obj {
    /** substitutes in all variable declarations except for the previously declared variables
     *  if |- G ++ H  and  |- sub : G -> G'  then  |- G' ++ (H ^ sub)
     */
-   def ^(sub : Substitution) : Context = {
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) : Context = {
       val id = this.id // precompute value
       // sub ++ id.take(i) represents sub, x_1/x_1, ..., x_{i-1}/x_{i-1} 
-      val newvars = variables.zipWithIndex map {case (vd, i) => vd ^ (sub ++ id.take(i))}
+      val newvars = variables.zipWithIndex map {case (vd, i) => vd ^^ (sub ++ id.take(i))}
       Context(newvars :_*)
    }
-   def ^?(sub : Substitution) : Context = if (sub.isIdentity) this else this ^ sub
    private[objects] def freeVars_ = {
       var except: List[LocalName] = Nil
       this flatMap {vd =>
@@ -152,12 +152,12 @@ case class Context(variables : VarDecl*) extends Obj {
 
 /** a case in a substitution */		
 case class Sub(name : LocalName, target : Term) extends Obj {
-   def ^(sub : Substitution) = {
-     val s = Sub(name, target ^? sub)
+   type ThisType = Sub
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
+     val s = Sub(name, target ^^ sub)
      s.copyFrom(this)
      s
    }
-   def ^?(sub : Substitution) : Sub = if (sub.isIdentity) this else this ^ sub
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
    def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos / 1)}</om:OMV>
@@ -170,11 +170,11 @@ case class Sub(name : LocalName, target : Term) extends Obj {
 
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) extends Obj {
+   type ThisType = Substitution
    def ++(n:String, t:Term) : Substitution = this ++ Sub(LocalName(n),t)
    def ++(s: Sub) : Substitution = this ++ Substitution(s)
    def ++(that: Substitution) : Substitution = this ::: that
-   def ^(sub : Substitution) = this map {s => s ^ sub}
-   def ^?(sub : Substitution) : Substitution = if (sub.isIdentity) this else this ^ sub
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this map {s => s ^^ sub}
    private[objects] def freeVars_ = (this flatMap {_.freeVars_})
    def maps(n: LocalName): Boolean = this exists {_.name == n}
    def apply(v : LocalName) : Option[Term] = subs.reverse.find(_.name == v).map(_.target)

@@ -165,6 +165,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    val logPrefix = "object-checker"
    /** shortcut for the RuleStore of the controller; used to retrieve Rule's */
    private val ruleStore = controller.extman.ruleStore
+   /** the SubstitutionApplier to be used throughout */
+   private implicit val sa = new MemoizedSubstitutionApplier
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = controller.presenter.asString
    
@@ -283,8 +285,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       if (solved.df.isDefined)
          check(Equality(stack, valueS, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
       else {
-         val valueSS = valueS ^? left.toPartialSubstitution // substitute solutions of earlier variables that have been found already
-         val rightS = right ^ (OMV(name) / valueSS) // substitute in solutions of later variables that have been found already
+         val valueSS = valueS ^^ left.toPartialSubstitution // substitute solutions of earlier variables that have been found already
+         val rightS = right ^^ (OMV(name) / valueSS) // substitute in solutions of later variables that have been found already
          solution = left ::: solved.copy(df = Some(valueSS)) :: rightS
          newsolutions = name :: newsolutions
          true
@@ -326,19 +328,19 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    final def apply(j: Judgement, history: History = new History(Nil)) : Boolean = {
      implicit val h = history
      val subs = solution.toPartialSubstitution
-     def prepare(t: Term) = controller.uom.simplify(t ^? subs)
+     def prepare(t: Term) = controller.uom.simplify(t ^^ subs)
      def prepareS(s: Stack) =
-        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^? subs))))
+        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs))))
      val mayhold = j match {
         case Typing(stack, tm, tp, typS) =>
-           val tmS = tm ^? subs
+           val tmS = tm ^^ subs
            check(Typing(prepareS(stack), tmS, prepare(tp), typS))
         case Equality(stack, tm1, tm2, tp) =>
            check(Equality(prepareS(stack), prepare(tm1), prepare(tm2), tp map prepare))
         case Universe(stack, tm, isIn) =>
-           check(Universe(prepareS(stack), tm ^? subs, isIn))
+           check(Universe(prepareS(stack), tm ^^ subs, isIn))
         case IsMorphism(stack, mor, from) =>
-           checkMorphism(mor ^? subs, prepare(from))(prepareS(stack), history)
+           checkMorphism(mor ^^ subs, prepare(from))(prepareS(stack), history)
      }
      if (mayhold) {
         //activate next constraint and recurse, if any left
