@@ -134,9 +134,12 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
    // by marking with and testing for Simplified(_), we avoid traversing a term twice
    // Note that certain operations remove the simplified marker: changing the toplevel, substitution application 
    def traverse(t: Term)(implicit con : Context, init: UOMState) : Term =  t match {
-      case Simplified(t) =>
+      // this term is the result of simplification
+      case Simple(t) =>
          log("not simplifying " + controller.presenter.asString(t))
          t
+      // this term was simplified before resulting in tS
+      case SimplificationResult(tS) => tS
       case OMA(OMS(_), _) =>
          log("simplifying " + controller.presenter.asString(t))
          logGroup {
@@ -147,7 +150,8 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
             //log("simplified to " + controller.presenter.asString(tS))
             //if (globalChange)
               //saveSimplificationResult(init, tS)
-            val tSM = Simplified(tS.from(t))
+            val tSM = Simple(tS.from(t))
+            SimplificationResult.put(t, tSM) // store result to recall later in case of structure sharing
             if (globalChange)
                Changed(tSM)
             else
@@ -158,7 +162,10 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
            case Some(ar) => ar.term.from(t)
            case None => t
          }
-      case _ => Simplified(Traverser(this, t))
+      case _ =>
+         val tS = Simple(Traverser(this, t))
+         SimplificationResult.put(t, tS)
+         tS
    }
    /** an auxiliary method of apply that applies simplification rules
     * This method exhaustively applies rules as follows:
@@ -188,7 +195,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
                val tS = StrictOMA(strictApps, outer, argsSS)
                // if any argument changed globally, go back to state (1)
                if (argsSS exists {
-                   case Changed(t) => Changed.eraseMarker(t); true
+                   case Changed(t) => Changed.erase(t); true
                    case _ => false
                 })
                    applyAux(tS, globalChange)
@@ -216,28 +223,32 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
 /**
  * apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
  */
-class BooleanTermProperty(val property: utils.URI) {
+class BooleanTermProperty(property: utils.URI) extends TermProperty[Boolean](property){
    def apply(t: Term) : Term = {
-     t.clientProperty(property) = true
+     put(t, true)
      t
    }
    def unapply(t: Term): Option[Term] =
-      t.clientProperty.get(this.property) match {
+      get(t) match {
           case Some(true) => Some(t)
           case _ => None
       }
-   def eraseMarker(t: Term) {
-      t.clientProperty -= property
-   }
 }
 
 /**
  * UOM uses this to remember that a Term has been simplified already to avoid recursing into it again 
  */
-object Simplified extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
+object Simple extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
 
 /**
  * UOM uses this to remember whether a Term underwent a GlobalChange during simplification
  * this information is passed upwards during recursive simplification
  */
 object Changed extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "changed")
+
+/**
+ * UOM uses this to store the result of simplifying a Term in the original term so that it can be reused 
+ */
+object SimplificationResult extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "uom" / "result") {
+   def unapply(t: Term) = get(t)
+}
