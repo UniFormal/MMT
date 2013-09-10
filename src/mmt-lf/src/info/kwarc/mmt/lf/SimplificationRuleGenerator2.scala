@@ -6,7 +6,7 @@ import uom._
 import utils._
 import parser.ImplicitArg
 
-class SimplificationRuleGenerator extends RoleHandler with Logger {
+class SimplificationRuleGenerator2 extends RoleHandler with Logger {
   override val logPrefix = "rule-gen"
   case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
   def isApplicable(role: String) : Boolean = role == "Simplify"
@@ -72,7 +72,12 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
     	              // check that all var names are different
     	              val varls = (bfr ++ ins ++ aft)
     	              val unique = varls.distinct
-    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
+    	              val uniqVarMap = unique.zipWithIndex.toMap
+    	              val bfrSig = bfr.map{uniqVarMap(_)}
+    	              val aftSig = aft.map{uniqVarMap(_)}
+    	              val insSig = ins.map{uniqVarMap(_)}
+    	              
+//    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
     	              
  	            	  val simplify = new DepthRule(outer, inr){
     	                
@@ -93,18 +98,24 @@ class SimplificationRuleGenerator extends RoleHandler with Logger {
  	            	   	        explIn.length != insNames.length) {
  	            	   	      NoChange
  	            	   	    } else {
- 	            	   	    val bfrch = (bfrNames zip explBf).map {
- 	            	   	      case (x,t) => OMV(x) / t
- 	            	   	    }
- 	            	   	    val aftch = (aftNames zip explAf).map {
- 	            	   	      case (x,t) => OMV(x) / t
- 	            	   	    }
- 	            	   	    val insch = (insNames zip explIn).map {
- 	            	   	      case (x,t) => OMV(x) / t
- 	            	   	    }
- 	            	   	    val subs : Substitution = Substitution(bfrch ::: insch ::: aftch : _*)
- 	            	   	    val t2s = t2^subs
- 	            	   	    GlobalChange(t2s)
+ 	            	   	    val varMap = (explBf ++ explIn ++ explAf).distinct.zipWithIndex.toMap
+ 	            	   	    // check if explicit variable signatures coincide with expected signatures
+ 	            	   	    if (explBf.map{varMap(_)} == bfrSig && 
+ 	            	   	        explIn.map{varMap(_)} == insSig &&
+ 	            	   	        explAf.map{varMap(_)} == aftSig) { 
+ 	            	   	      val bfrch = (bfrNames zip explBf).map {
+ 	            	   	        case (x,t) => OMV(x) / t
+ 	            	   	      }
+ 	            	   	      val aftch = (aftNames zip explAf).map {
+   	            	   	        case (x,t) => OMV(x) / t
+ 	            	   	      }
+ 	            	   	      val insch = (insNames zip explIn).map {
+ 	            	   	        case (x,t) => OMV(x) / t
+ 	            	   	      }
+ 	            	   	      val subs : Substitution = Substitution(bfrch ::: insch ::: aftch : _*)
+ 	            	   	      val t2s = t2^subs
+ 	            	   	      GlobalChange(t2s)
+ 	            	   	    } else NoChange
  	            	   	    }
  	            	   	  }
  	            	   	} 	
