@@ -69,15 +69,16 @@ class SimplificationRuleGenerator2 extends RoleHandler with Logger {
     	                }
     	              }
     	              if (isBefore) throw DoesNotMatch("no inner operator detected in " + ruleName) // check that inner OMA was detected
-    	              // check that all var names are different
     	              val varls = (bfr ++ ins ++ aft)
     	              val unique = varls.distinct
+    	         // map unique variable names to unique integers
     	              val uniqVarMap = unique.zipWithIndex.toMap
+    	         /** "signatures", for example:
+    	          *  x and (x or y) ~> bfr = (1) ins (1,2) aft = ()
+    	          */
     	              val bfrSig = bfr.map{uniqVarMap(_)}
     	              val aftSig = aft.map{uniqVarMap(_)}
     	              val insSig = ins.map{uniqVarMap(_)}
-    	              
-//    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
     	              
  	            	  val simplify = new DepthRule(outer, inr){
     	                
@@ -98,8 +99,9 @@ class SimplificationRuleGenerator2 extends RoleHandler with Logger {
  	            	   	        explIn.length != insNames.length) {
  	            	   	      NoChange
  	            	   	    } else {
+ 	            // make a map: unique term -> unique integer
  	            	   	    val varMap = (explBf ++ explIn ++ explAf).distinct.zipWithIndex.toMap
- 	            	   	    // check if explicit variable signatures coincide with expected signatures
+ 	          // check if explicit variable signatures coincide with expected signatures
  	            	   	    if (explBf.map{varMap(_)} == bfrSig && 
  	            	   	        explIn.map{varMap(_)} == insSig &&
  	            	   	        explAf.map{varMap(_)} == aftSig) { 
