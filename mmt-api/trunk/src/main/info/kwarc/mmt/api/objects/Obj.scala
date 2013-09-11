@@ -413,7 +413,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
       OMSemiFormal(newtokens).from(this)
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
-   def toCML = <m:apply><csymbol>OMSemiFormal</csymbol>tokens.map(_.toCML)</m:apply>
+   def toCML = <m:apply><csymbol>OMSemiFormal</csymbol>{tokens.map(_.toCML)}</m:apply>
 }
 
 object OMSemiFormal {
