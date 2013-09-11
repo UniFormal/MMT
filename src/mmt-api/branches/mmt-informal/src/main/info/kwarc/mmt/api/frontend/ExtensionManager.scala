@@ -64,6 +64,8 @@ class ExtensionManager(controller: Controller) extends Logger {
    def addDefaultExtensions {
       targets    ::= new MMTCompiler
       targets    ::= new archives.Index
+      targets    ::= new archives.HTMLExporter
+      targets    ::= new archives.PythonExporter
       presenters ::= TextPresenter
       presenters ::= OMDocPresenter
       presenters ::= controller.presenter

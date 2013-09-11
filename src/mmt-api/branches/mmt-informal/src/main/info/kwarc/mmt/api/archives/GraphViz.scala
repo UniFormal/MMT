@@ -48,7 +48,7 @@ class GraphViz extends TraversingBuildTarget {
    }
    
    /** same as buildOne but for the document given by the directory */
-   override def buildDir(inDir: File, dpath: DPath, outFile: File): List[Error] = {
-      buildOne(inDir, dpath, outFile)
+   override def buildDir(a: Archive, inDir: File, inPath: List[String], buildChildren: List[BuildResult], outFile: File): List[Error] = {
+      buildOne(inDir, DPath(a.narrationBase / inPath), outFile)
    }
 }

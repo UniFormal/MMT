@@ -20,6 +20,6 @@ class MMTCompiler extends Compiler {
     val invErrors = controller.checker(doc)
     val outFile = out.setExtension("omdoc")
     File.write(outFile, doc.toNodeResolved(controller.localLookup).toString)
-    errorList.toList
+    errorList
   }
 }

@@ -10,7 +10,8 @@ import Conversions._
  * The auxiliary methods in the companion object can be used to handle all cases that traverse the object without any change.
  * During the traversal, a value of type State may be used to carry along state.  
  */
-abstract class Traverser[State] {
+abstract class Traverser[A] {
+   protected type State = A
    /** the main method to call the traverser, context defaults to empty */
    def apply(t: Term, init : State, con : Context = Context()) : Term = traverse(t)(con, init)
    def traverse(t: Term)(implicit con : Context, init : State) : Term
@@ -70,17 +71,4 @@ object PushMorphs extends Traverser[Term] {
 		case t => Traverser(this,t)
 	}
 	def apply(t: Term, thy : info.kwarc.mmt.api.MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
-}
-
-/** A Traverser that applies a fixed substitution to a Term */
-object Substitute extends Traverser[Substitution] {
-	def traverse(t: Term)(implicit con : Context, subs: Substitution) : Term = t match {
-		// substitute the free but not the bound variables
-	   case OMV(n) => if (con.isDeclared(n)) t else subs(n) match {
-	  	   case Some(s) => s.from(t)
-	  	   case None => t
-	   }
-	   // in all other cases, traverse
-		case t => Traverser(this,t)
-	}
 }

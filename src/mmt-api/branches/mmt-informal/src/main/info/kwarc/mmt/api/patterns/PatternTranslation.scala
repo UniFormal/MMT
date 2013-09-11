@@ -47,7 +47,7 @@ object Functor {
                   val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
         	       val names = lpair.unzip._1
         	       val subs = lpair.unzip._2  
-                  def auxSub(x : Term) = {
+                  def auxSub(x : Term): Term = {
         		      x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
                   }
         	       pt.body.map {

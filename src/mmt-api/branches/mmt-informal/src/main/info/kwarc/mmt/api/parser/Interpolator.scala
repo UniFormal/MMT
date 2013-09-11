@@ -94,5 +94,9 @@ class MMTInterpolator(controller: frontend.Controller) {
         val t = parse(sc, ts.toList, None, false)
         controller.presenter.asString(t)
       }
+      def uomp(ts : Term*) : String = {
+        val t = uom(ts : _*)
+        controller.presenter.asString(t)
+      }
    }
 }
