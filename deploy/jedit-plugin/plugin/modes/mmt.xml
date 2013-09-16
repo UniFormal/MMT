@@ -45,8 +45,16 @@
 		</SPAN>
 
 		<SPAN TYPE="COMMENT1">
-			<BEGIN>%{</BEGIN>
-			<END>}%</END>
+			<BEGIN>//   </BEGIN>
+			<END>&#x1d;</END>
+		</SPAN>
+		<SPAN TYPE="COMMENT1">
+			<BEGIN>//  </BEGIN>
+			<END>&#x1f;</END>
+		</SPAN>
+		<SPAN TYPE="COMMENT1">
+			<BEGIN>// </BEGIN>
+			<END>&#x1e;</END>
 		</SPAN>
 
 		<!-- see comment on NESTED1 below -->
@@ -61,10 +69,10 @@
 		</SPAN>
 		
 		
-		<SEQ TYPE="KEYWORD1">&#x1c;</SEQ>
-		<SEQ TYPE="KEYWORD1">&#x1d;</SEQ>
-		<SEQ TYPE="KEYWORD1">&#x1e;</SEQ>
-		<SEQ TYPE="KEYWORD1">&#x1f;</SEQ>
+		<SEQ TYPE="KEYWORD2">&#x1c;</SEQ>
+		<SEQ TYPE="KEYWORD2">&#x1d;</SEQ>
+		<SEQ TYPE="KEYWORD2">&#x1e;</SEQ>
+		<SEQ TYPE="KEYWORD2">&#x1f;</SEQ>
 		
 		<SEQ TYPE="OPERATOR">.</SEQ>
 		<SEQ TYPE="OPERATOR">:</SEQ>
@@ -82,6 +90,7 @@
 			<KEYWORD2>namespace</KEYWORD2>
 			<KEYWORD2>import</KEYWORD2>
 			<KEYWORD2>theory</KEYWORD2>
+			<KEYWORD2>view</KEYWORD2>
 			<KEYWORD2>constant</KEYWORD2>
 			<KEYWORD2>include</KEYWORD2>
 			<KEYWORD2>pattern</KEYWORD2>
