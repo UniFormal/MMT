@@ -5,7 +5,7 @@ This file contains instructions how to setup the plugin.
 Installation
 
 1) Install jEdit from http://www.jedit.org/
-   Using the Plugin Manage, install the following plugins if you do not have them already
+   Using the Plugin Manager, install the following plugins if you do not have them already
    - ErrorList
    - Console
    - SideKick
@@ -15,11 +15,11 @@ Installation
    Extract the contents of plugin.zip into your jEdit settings folder.
    
    b) Otherwise, do the same but with the following caveats:
-   - plugin.zip contains a mode for mmt and a catalog file with an entry for that mode.
+   - plugin/ contains a mode for mmt and a catalog file with an entry for that mode.
      But if you have installed other modes already, you have a catalog file with other entries already.
      In that case, do not overwrite the existing file.
      Instead, open plugin.zip/modes/catalog and copy-paste the entry into your existing modes/catalog file.
-   - plugin.zip contains a file abbrevs defining useful abbreviations to input Unicode characters.
+   - plugin/ contains a file abbrevs defining useful abbreviations to input Unicode characters.
      But if you have defined your own abbreviations already, you have such a file already.
      In that case, do not overwrite the existing file.
      Instead open abbrevs and copy-paste the abbrevations into your existing abbrevs file.
