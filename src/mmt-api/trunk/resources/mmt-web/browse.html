@@ -35,7 +35,7 @@
   <script type="text/javascript">
 	var JOBAD1;
 	$(function(){	
-	JOBAD1 = new JOBAD($("#main"));
+	JOBAD1 = new JOBAD($("#main,#inputview"));
 	JOBAD1.modules.load("kwarc.mmt.navigation", []);
 	JOBAD1.modules.load("kwarc.mmt.hovering", []);
 	JOBAD1.modules.load("kwarc.mmt.intvw", []);
@@ -68,14 +68,31 @@
       graphWindow = window.open("/graph.html" + p);
    };
    
+   $(function(){
+      var inpbox = $('#inputbox');
+      var ana = $('#inputanalyze')[0];
+      var simp = $('#inputsimplify')[0];
+      $('#inpbox,#inputanalyze,#inputsimplify').change(function(){
+         var q = qmt.parse(qmt.literalString(inpbox.val()));
+         if (ana.checked) q = qmt.analyze(q);
+         if (simp.checked) q = qmt.simplify(q);
+         q = qmt.present(q);
+		   qmt.exec(q,
+		      function(result){
+		         var inpview = $('#inputview')[0];
+		         inpview.replaceChild(result.firstChild.firstChild.firstChild, inpview.firstChild);
+		      }
+		   );
+		})
+   });
+   
    $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
   </script>
 </head>
 
-<body>
-
-   <div style="width:100%">
+<body><table>
      
+  <tr><td colspan="2" class="layout">
     <div id="top">
       <div id="title">The MMT Web Server</div>
       <div id="menu_bar">
@@ -87,34 +104,44 @@
         <span class="pagelink"><a href="/help.html" target="_blank">Help</a></span>
       </div>
     </div>
+  </td></tr>
    
-    <div id="styleselector">
-      Style: <span id="currentstyle"/><br/>
-      <!--<input type="text" size="20" id="inputstyle"></input><button onclick="javascript:setStyle($('#inputstyle').val())">set</button> -->
-    </div>
+  <tr>
+      <td class="layout">
+         <div id="styleselector">
+            Style: <span id="currentstyle"/><br/>
+            <!--<input type="text" size="20" id="inputstyle"></input><button onclick="javascript:setStyle($('#inputstyle').val())">set</button> -->
+         </div>
     
-    <div id="breadcrumbs">
-      <div></div>
-    </div>
+   
+       <div id="sidebar">
+          <div id="pathtree"></div>
+       </div>
+     </td>
+    
+     <td class="layout">
+       <div id="breadcrumbs">
+         <div></div>
+       </div>
 
-    <div id="sidebar">
-       <div id="pathtree"></div>
-    </div>
-    
-    
-    <div id="main">
-      <div></div>
-    </div>
-    
-    <div id="input">
-      <div id="inputbox" contenteditable="true"><div></div></div>
+       <div id="main">
+         <div></div>
+       </div>
+    </td>
+  </tr>
+  
+  <tr><td colspan="2" class="layout">
+      <div><span>Enter an object over theory: </span><span id="inputtheory"></span></div>
+      <textarea id="inputbox"></textarea>
+      <div>
+        <span><input type="checkbox" id="inputanalyze"/>analyze</span>
+        <span><input type="checkbox" id="inputsimplify"/>simplify</span>
+      </div>
       <div id="inputview"><div></div></div>
-    </div>
-   
-   <div id="latin-dialog"><span/></div>
-    
-   </div>
+  </td></tr>
+</table>
 
+<div id="latin-dialog"><span/></div>
 </body>
 
 </html>

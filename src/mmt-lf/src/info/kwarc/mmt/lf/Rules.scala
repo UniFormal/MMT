@@ -190,23 +190,21 @@ object Beta extends ComputationRule(Apply.path) {
 
 object UnsafeBeta extends BreadthRule(Apply.path){
    val apply = (args: List[Term]) => {
-      var reduced = false // remembers if there was a reduction
-      // auxiliary recursive function to beta-reduce as often as possible
-      // returns Some(reducedTerm) or None if no reduction
+      // collects the substitution that will be applied (thus, we only substitute once even if there are multiple nested redexes) 
+      var sub = Substitution()
+      // repeatedly checks for a redex and returns the reduced terms
       def reduce(f: Term, args: List[Term]): Change = (f,args) match {
          case (Lambda(x,a,t), s :: rest) => 
-            reduced = true
-            reduce(t ^ (x / s), rest)
+            sub = sub ++ (x / s)
+            reduce(t, rest)
          case (f, Nil) =>
-            //all arguments were used
-            //only possible if there was a reduction, so no need for 'if (reduced)'
-            GlobalChange(f)
+            //all arguments were used (only possible if there was a reduction)
+            GlobalChange(f ^? sub)
          case _ => 
-            // simplify f recursively to see if it becomes a Lambda
-              if (reduced)
-                GlobalChange(ApplySpine(f,args : _*))
-              else
-                NoChange
+            if (sub.isEmpty)
+              NoChange
+            else
+              GlobalChange(ApplySpine(f ^? sub, args : _*))
       }
       reduce(args.head, args.tail)
    }

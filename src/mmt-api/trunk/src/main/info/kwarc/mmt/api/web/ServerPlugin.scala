@@ -58,9 +58,25 @@ class UOMServer extends ServerPlugin("uom") {
     *  @param body the expression as XML
     */
    def apply(path: List[String], query: String, body: Body) = {
-         val input = objects.Obj.parseTerm(body.asXML, controller.getBase)
-         val output = controller.uom.simplify(input)
-         Server.XmlResponse(output.toNode)
+      val input = objects.Obj.parseTerm(body.asXML, controller.getBase)
+      val output = controller.uom.simplify(input)
+      Server.XmlResponse(output.toNode)
+   }
+}
+
+/** Plugin for QMT query requests */
+class QueryServer extends ServerPlugin("query") {
+   /**
+    *  @param path ignored
+    *  @param query ignored
+    *  @param body the query as XML
+    */
+   def apply(path: List[String], query: String, body: Body) = {
+      val q = ontology.Query.parse(body.asXML)(controller.extman.queryExtensions)
+      ontology.Query.infer(q)(Nil) // type checking
+      val res = controller.evaluator.evaluate(q)
+      val resp = res.toNode
+      Server.XmlResponse(resp)
    }
 }
 
