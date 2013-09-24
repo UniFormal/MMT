@@ -110,7 +110,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    }
    private def newType(name: LocalName): OMV = {
       val tname = name / "type"
-      vardecls ::= VarDecl(tname,None,None)
+      // using a random attribution to signal that the type was inferred -- TODO: clean up together with Twelf output
+      vardecls ::= VarDecl(tname,None,None, (utils.mmt.mmttype,OMS(utils.mmt.mmttype)))
       OMV(tname)
    }
    /**

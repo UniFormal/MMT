@@ -36,7 +36,7 @@ object Test {
       //generic type of natural numbers in the theory Nat
       val nat = Constant(OMID(Nat.path),
         LocalName("nat"), None,
-          Some(LF.ktype), None, None, None)
+          Some(OMS(Typed.ktype)), None, None, None)
       controller.add(nat)
 
       //zero constructor in the theory Nat
@@ -54,7 +54,7 @@ object Test {
       //reflected type of natural numbers in the theory NatR
       val nat_refl = Constant(OMID(NatR.path),
         LocalName("N"), None,
-          Some(LF.ktype), Some(ReflType(OMMOD(NatR.path), OMID(nat.path))), None, None)
+          Some(OMS(Typed.ktype)), Some(ReflType(OMMOD(NatR.path), OMID(nat.path))), None, None)
       controller.add(nat_refl)
 
       //zero constructor reflected from the theory Nat down to the theory NatR

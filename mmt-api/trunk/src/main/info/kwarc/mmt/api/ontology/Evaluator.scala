@@ -8,8 +8,8 @@ import scala.collection.mutable.{HashSet}
 
 /** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
 trait BaseType
-case class XMLResult(node: scala.xml.Node) extends BaseType
-case class StringResult(string: String) extends BaseType
+case class XMLValue(node: scala.xml.Node) extends BaseType
+case class StringValue(string: String) extends BaseType
 
 /** wrapper type for the result of a query */
 sealed abstract class QueryResult {
@@ -20,7 +20,8 @@ case class ElemResult(l: List[BaseType]) extends QueryResult {
    def toNode : scala.xml.Node = <result>{l map {
       case p: Path => <uri path={p.toPath}/>
       case o: Obj => <object xmlns:om="http://www.openmath.org/OpenMath">{o.toNode}</object>
-      case x: XMLResult => <xml>{x.node}</xml>
+      case x: XMLValue => <xml>{x.node}</xml>
+      case s: StringValue => <string>{s.string}</string>
    }}</result>
 }
 /** result of a set query */
@@ -29,13 +30,21 @@ case class ESetResult(h : HashSet[List[BaseType]]) extends QueryResult {
       <results size={h.size.toString}>{h map {x => ElemResult(x).toNode}}</results>
 }
 
+object Evaluator {
+   val free = OMID(utils.mmt.mmtbase ? "mmt" ? "free")
+}
+
 /** evaluates a query expression to a query result */
 class Evaluator(controller: Controller) {
    private lazy val rs = controller.depstore
-   private lazy val extman = controller.extman
    private lazy val lup = controller.globalLookup
    private def log(msg: => String) {controller.report("query", msg)}
    
+   private class ResultSet extends HashSet[List[BaseType]] {
+      def +=(b: BaseType) {this += List(b)}
+   }
+   private def empty = new ResultSet 
+   private def singleton(b: BaseType) = {val res = empty; res += b; res}
    /** evaluation of a query
     *  the result is typed according to the type of the query
     *  if the query is ill-formed, this will throw an exception  
@@ -56,24 +65,20 @@ class Evaluator(controller: Controller) {
    /** pre: Query.infer(e) = Elem(ObjectType) */
    private def evaluateElemObj(e: Query)(implicit context: List[BaseType]) = evaluateElemBase(e).asInstanceOf[Obj]
 
-   private class RHashSet extends HashSet[List[BaseType]] {
-      def +=(b: BaseType) {this += List(b)}
-   }
-   private def empty = new RHashSet 
-   private def singleton(b: BaseType) = {val res = empty; res += b; res}
-
-   private val free = OMID(utils.mmt.mmtbase ? "mmt" ? "free")
    /** sets are evaluated to hash sets of the respective type
     *  pre: Query.infer(e) succeeds 
     */
    private def evaluateESet(q: Query)(implicit context: List[BaseType]) : HashSet[List[BaseType]] = q match {
       case Bound(i) => singleton(context(i-1))
-      case ThePath(p) => singleton(p)
-      case TheObject(o) => singleton(o)
+      case Literal(b) => singleton(b)
+      case Literals(bs@_*) =>
+         val res = empty
+         bs foreach {res += _}
+         res
       case SubObject(of, pos) =>
          val (con, obj) = evaluateElemObj(of).subobject(pos)
          val closure = obj match {
-            case t: Term => OMBIND(free, con, t)
+            case t: Term => OMBIND(Evaluator.free, con, t)
             case o => o //TODO assuming bound variables occur only in terms 
          }
          singleton(closure)
@@ -88,27 +93,6 @@ class Evaluator(controller: Controller) {
             case _ => throw ImplementationError("ill-typed query") 
          }
          res
-      case InferedType(of, mt) =>
-         val res = empty
-         val found = extman.getFoundation(mt).getOrElse(throw GetError("no applicable type inference engine defined"))
-         evaluateESet(of) foreach {
-            case List(o) => o match { 
-               case OMBIND(`free`, cont, obj) =>
-                 res += List(found.inference(obj, cont)(lup))
-               case t: Term => res += List(found.inference(t, Context())(lup))
-               case o => throw GetError("object exists but is not a term: " + o)
-            }
-            case _ => throw ImplementationError("ill-typed query")
-         }
-         res
-      case ThePaths(es @ _*) =>
-         val res = empty
-         es foreach {res += _}
-         res
-      case TheObjects(es @ _*) =>
-         val res = empty
-         es foreach {res += _}
-         res
       case Singleton(e) =>
          val res = empty
          res += evaluateElem(e)
@@ -120,7 +104,7 @@ class Evaluator(controller: Controller) {
       case Union(s,t) => evaluateESet(s) union evaluateESet(t)
       case BigUnion(dom,s) =>
          val res = empty
-            evaluateESet(dom) foreach {
+         evaluateESet(dom) foreach {
             e => evaluateESet(s)(e:::context) foreach {x => res += x}
          }
          res
@@ -149,25 +133,15 @@ class Evaluator(controller: Controller) {
         val res = empty
         res += t(i)
         res
-      case Present(cont,style) =>
-        val res = empty
-        val a = evaluateESet(cont)
-        a foreach {
-           case List(e) => e match {
-              case p: Path => 
-                 val rb = new presentation.XMLBuilder
-                 val e = controller.get(p)
-                 (new presentation.StyleBasedPresenter(controller,style)).apply(e, rb)
-                 res += XMLResult(rb.get)
-              case o : Obj =>
-                 val rb = new presentation.XMLBuilder
-                 (new presentation.StyleBasedPresenter(controller,style)).apply(o, rb)
-                 res += XMLResult(rb.get)
-              case _ => throw ImplementationError("evaluation of ill-typed query")
-           }
-           case _ => throw ImplementationError("evaluation of ill-typed query")
-        }
-        res
+      case QueryFunctionApply(fun, args, param) =>
+         val argsE = evaluateESet(args)
+         val res = empty
+         argsE foreach {
+            case List(b) =>
+               res += fun.evaluate(b, param)
+            case _ => throw ImplementationError("ill-typed query")
+         }
+         res
    }
    /** propositions are evaluated to booleans */
    def evaluate(p: Prop)(implicit context: List[BaseType]) : Boolean = p match {
