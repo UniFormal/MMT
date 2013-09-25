@@ -1,5 +1,4 @@
-package info.kwarc.mmt.api.objects
-import info.kwarc.mmt.api._
+package info.kwarc.mmt.api
 
 /** A DeclarationComponent identifies a component of a Declaration. It is used in CPath's */
 abstract class DeclarationComponent(s : String) {
@@ -27,6 +26,12 @@ case object DefComponent  extends DeclarationComponent("definition")
 case object DomComponent  extends DeclarationComponent("domain")
 /** codomain of a link */
 case object CodComponent  extends DeclarationComponent("codomain")
+
+abstract class NotationComponent(s: String) extends DeclarationComponent(s)
+/** one-dimensional notation of a symbol */
+case object OneDimNotationComponent extends NotationComponent("onedim-notation")
+/** two-dimensional notation of a symbol */
+case object TwoDimNotationComponent extends NotationComponent("twodim-notation")
 
 // the following components are used only by change management
 case object ParamsComponent extends DeclarationComponent("params")

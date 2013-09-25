@@ -645,13 +645,13 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
     }
 
     // read the optional notation
-    var constantNotation : Option[TextNotation] = None
+    var constantNotation = new presentation.NotationContainer
     if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '#'
       i = skipwscomments(i)
       val (not, posAfter) = crawlNotation(i, List("."), cpath)
       addSourceRef(not, i, posAfter - 1)
-      constantNotation = Some(not)
+      constantNotation.oneDim = not
 
       i = posAfter
       i = skipwscomments(i)
@@ -1036,13 +1036,13 @@ class TextReader(controller : frontend.Controller, cont : StructuralElement => U
      i = skipwscomments(i+1)
          // read the optional notation
 
-    var patternNotation : Option[TextNotation] = None
+    var patternNotation = new presentation.NotationContainer
     if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '#'
       i = skipwscomments(i)
       val (not, posAfter) = crawlNotation(i, List("."), parent.path ? name)
       addSourceRef(not, i, posAfter - 1)
-      patternNotation = Some(not)
+      patternNotation.oneDim = not
       i = posAfter
       i = skipwscomments(i)
     }

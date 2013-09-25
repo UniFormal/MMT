@@ -34,6 +34,10 @@ object xml {
       else
          l.map(_.text).mkString("","","")
    }
+   /** adds an attribute to a node */
+   def addAttr(N: scala.xml.Elem, key: String, value: String): scala.xml.Elem = {
+      N % (new scala.xml.UnprefixedAttribute(key, value, scala.xml.Null))
+   }
    
    // decode all occurrences of %HH
    def decodeURI(s: String) : String = {
@@ -93,21 +97,7 @@ object xml {
       src.asInstanceOf[scala.io.BufferedSource].close
       output(0)
    }
-   
-   /**
-    * Checks whether an XML element has illegal attribute keys.
-    * Prefixed attributes are ignored.
-    * @param md the attributes to be checked
-    * @param the allowed keys
-    * @return the illegal keys
-    */
-   def checkKeys(md : scala.xml.MetaData, keys : List[String]) : List[String] = md match {
-      case scala.xml.Null => Nil
-      case md : scala.xml.PrefixedAttribute => checkKeys(md.next, keys)
-      case md : scala.xml.UnprefixedAttribute =>
-         List(md.key).filterNot(keys.contains) ::: checkKeys(md.next, keys)
-   }
-   
+      
    /** common namespaces */
    def namespace (ns : String) : String = {
       ns match {

@@ -77,8 +77,8 @@ object Presenter {
       def tryTerm(t: Term): Option[TextNotation] = t match {
          case ComplexTerm(p, args, vars, scs) =>
             controller.globalLookup.getO(p) flatMap {
-               case c: symbols.Constant => c.not
-               case p: patterns.Pattern => p.not
+               case c: symbols.Constant => c.notC.getPresent
+               case p: patterns.Pattern => p.notC.getPresent
             }
          case _ => None
       }

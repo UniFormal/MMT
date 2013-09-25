@@ -111,7 +111,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
                 val ass = s.get(x)
                 ass match {
                   case conAss : Constant =>
-                    val genCons = Constant(conAss.home, conAss.name, conAss.alias, None, conAss.df, None, None)
+                    val genCons = Constant(conAss.home, conAss.name, conAss.alias, None, conAss.df, None)
                     newDecs += genCons
                   case _ => None
                 }
@@ -131,7 +131,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
           val ntp = c.tp.map(rewrite(_)(rewriteRules))
           val ndf = c.tp.map(rewrite(_)(rewriteRules))
 
-          val nc = Constant(nwHome, nwName, c.alias, ntp, ndf, c.rl, c.not)
+          val nc = Constant(nwHome, nwName, c.alias, ntp, ndf, c.rl, c.notC)
           nt.add(nc)
           decls += 1
         case _ => nt.add(_)
@@ -163,7 +163,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               if (p == t.path) {    // view from this theory
               val nwIndThy = new DeclaredTheory(v.to.toMPath.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
                 newDecs foreach { c =>
-                  val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
+                  val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.notC)
                   nwIndThy.add(nc)
                   decls += 1
                 }
@@ -176,7 +176,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
 
                       val nwIndThy = new DeclaredTheory(t.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
                         newDecs foreach { c =>
-                          val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.not)
+                          val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.notC)
 
                           nwIndThy.add(nc)
                           decls += 1

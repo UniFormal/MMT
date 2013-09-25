@@ -67,7 +67,7 @@ object Integrator {
 	  	 case (path,code) => 
 	  	   controller.globalLookup.get(path) match {
            case c : Constant =>
-              val cN = Constant(c.home, c.name, c.alias, c.tp, Some(mkLambda(code)), c.rl, c.not)
+              val cN = Constant(c.home, c.name, c.alias, c.tp, Some(mkLambda(code)), c.rl, c.notC)
               controller.library.update(cN)
            case _ =>
          }
