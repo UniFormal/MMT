@@ -137,14 +137,14 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
    }
    //TODO if a notation is used in a Structure, its path is computed wrong
    def readSymbols(home: Term, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
-      def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : Option[Node], md: Option[MetaData]) {
+      def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : NodeSeq, md: Option[MetaData]) {
     	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
     	 	  case Some(par) => Context.parse(par, base)
     	 	  case None      => Context()
     	  }
     	  val cn = Context.parse(con, base)
-        val notation = xmlNotation.map(TextNotation.parse(_, home.toMPath ? name))
+        val notation = NotationContainer.parse(xmlNotation, home.toMPath ? name)
     	  val p = new Pattern(home, name, pr, cn, notation)
     	  add(p, md)
       }
@@ -155,11 +155,11 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             case a => Some(LocalName.parse(a))
          }
          val (s2, md) = MetaData.parseMetaDataChild(s, base) 
-         def doCon(t : Option[Node], d : Option[Node], xmlNotation : Option[Node]) {
+         def doCon(t : Option[Node], d : Option[Node], xmlNotation : NodeSeq) {
             log("constant " + name.toString + " found")
             val tp = t.map(Obj.parseTerm(_, base))
             val df = d.map(Obj.parseTerm(_, base))
-            val notation = xmlNotation.map(TextNotation.parse(_, home.toMPath ? name))
+            val notation = NotationContainer.parse(xmlNotation, home.toMPath ? name)
             val rl = xml.attr(s,"role") match {
                case "" => None
                case r => Some(r)
@@ -168,24 +168,24 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             add(c,md)
          }
          s2 match {
-         case <constant><type>{t}</type><definition>{d}</definition><notation>{n}</notation></constant> =>
-            doCon(Some(t),Some(d), Some(n))
+         case <constant><type>{t}</type><definition>{d}</definition><notation>{ns @ _*}</notation></constant> =>
+            doCon(Some(t),Some(d), ns)
          case <constant><type>{t}</type><definition>{d}</definition></constant> =>
-            doCon(Some(t),Some(d), None)
+            doCon(Some(t),Some(d), Nil)
          case <constant><definition>{d}</definition><type>{t}</type></constant> =>
-            doCon(Some(t),Some(d), None)
+            doCon(Some(t),Some(d), Nil)
          case <constant><type>{t}</type></constant> =>
-            doCon(Some(t),None, None)
-         case <constant><type>{t}</type><notation>{n}</notation></constant> =>
-           doCon(Some(t),None, Some(n))
+            doCon(Some(t),None, Nil)
+         case <constant><type>{t}</type><notation>{ns @ _*}</notation></constant> =>
+           doCon(Some(t),None, ns)
          case <constant><definition>{d}</definition></constant> =>
-            doCon(None,Some(d), None)
-         case <constant><definition>{d}</definition><notation>{n}</notation></constant> =>
-            doCon(None,Some(d), Some(n))
-         case <constant><notation>{n}</notation></constant> =>
-            doCon(None, None, Some(n))
+            doCon(None,Some(d), Nil)
+         case <constant><definition>{d}</definition><notation>{ns @ _*}</notation></constant> =>
+            doCon(None,Some(d), ns)
+         case <constant><notation>{ns @ _*}</notation></constant> =>
+            doCon(None, None, ns)
          case <constant/> =>
-            doCon(None,None,None)
+            doCon(None,None,Nil)
          case <import>{seq @ _*}</import> =>
             log("import " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
@@ -210,16 +210,16 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             log("warning: ignoring deprecated alias declaration")
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, Some(params), decls, None, md)
-         case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{not}</notation></pattern> =>
+            doPat(name, Some(params), decls, Nil, md)
+         case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{ns @_*}</notation></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, Some(params), decls, Some(not), md)
+            doPat(name, Some(params), decls, ns, md)
          case <pattern><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, None, decls, None, md)         
-         case <pattern><declarations>{decls}</declarations><notation>{not}</notation></pattern> =>
+            doPat(name, None, decls, Nil, md)         
+         case <pattern><declarations>{decls}</declarations><notation>{ns @ _*}</notation></pattern> =>
             log("pattern with name " + name + " found")
-            doPat(name, None, decls, Some(not), md)         
+            doPat(name, None, decls, ns, md)         
          case <instance>{ns @ _*}</instance> =>
             val p = xml.attr(s2,"pattern")
          	log("instance " + name.toString + " of pattern " + p + " found")

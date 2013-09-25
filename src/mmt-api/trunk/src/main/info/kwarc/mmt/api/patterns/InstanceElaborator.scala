@@ -29,7 +29,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator with Logger 
         	pt.body.foreach {case VarDecl(n,tp,df,at @ _*) =>
         			val nname = inst.name / n
         			log("generating constant " + nname)
-        			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None,None)
+        			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None)
         			c.setOrigin(InstanceElaboration(inst.path))
         			cont(c)
         	}
