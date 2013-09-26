@@ -24,14 +24,17 @@ log+ planetary
 extension info.kwarc.mmt.lf.Plugin
 extension info.kwarc.mmt.lf.LFF
 extension info.kwarc.mmt.planetary.PlanetaryPlugin
+extension info.kwarc.mmt.stex.STeXImporter
 
 archive add /home/mihnea/kwarc/oaff/urtheories
 //build urtheories mmt-omdoc
 //build urtheories index
 archive add /home/mihnea/kwarc/oaff/latin
 archive add /home/mihnea/kwarc/oaff/openmath
-archive add /home/mihnea/kwarc/oaff/smglo
 
+archive add /home/mihnea/kwarc/oaff/smglo
+build smglo stex-omdoc
+build smglo index
 
 mathpath fs http://cds.omdoc.org/styles ../../../../styles
 base http://docs.omdoc.org/mmt
