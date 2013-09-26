@@ -51,21 +51,16 @@ sealed abstract class Query
  *  if a variable of tuple type is bound, each component is added separately, the first one has index 1
  */
 case class Bound(index: Int) extends Query
-/** constant path */
-case class ThePath(a: Path) extends Query
-/** constant object */
-case class TheObject(a: Obj) extends Query
-/** component of a declaration with a certain Path */
 case class Component(of: Query, component: String) extends Query
 /** subobject of an object at a certain position */
 case class SubObject(of: Query, position: Position) extends Query
 /** the set of all elements related to a certain path by a certain relation */
 case class Related(to: Query, by: RelationExp) extends Query
+/** iteral */
+case class Literal[T <: BaseType](literal: T) extends Query
 
-/** finite set of paths */
-case class ThePaths(as: Path*) extends Query
-/** finite set of objects */
-case class TheObjects(as: Obj*) extends Query
+/** set of literals */
+case class Literals[T <: BaseType](literals: T*) extends Query
 /** singleton sets */
 case class Singleton(e: Query) extends Query
 /** the set of all elements of a certain concept in the MMT ontology */ 
@@ -85,19 +80,8 @@ case class Tuple(components: List[Query]) extends Query
 /** projectiong */
 case class Projection(of: Query, index: Int) extends Query
 
-// main API functions exposed to the query language
-/** type of an object, infered by a foundation */
-case class InferedType(of: Query, found: MPath) extends Query
-
-/** parse an object, String -> Term */ //TODO
-case class Parse(content: Query, theory: MPath) extends Query
-/** analyze (validation, type inference) an object, String -> (Term,Term) */ //TODO
-case class Analyze(content: Query, theory: MPath) extends Query
-/** evaluate (via UOM) an object, Term -> Term */ //TODO
-case class Evaluate(content: Query, theory: MPath) extends Query
-/** render (presentation) an object, Term -> XML */
-case class Present(content: Query, style: MPath) extends Query
-
+/** query that applies an atomic function */
+case class QueryFunctionApply(function: QueryExtension, val argument: Query, val param: MPath) extends Query
 
 /** typing relation between a path and a concept of the MMT ontology */
 case class IsA(e: Query, t: Unary) extends Prop
@@ -188,6 +172,7 @@ object RelationExp {
 
 /** helper object for query expressions */
 object Query {
+   
    /** checks a query against a query type
     *  throws an exception if the query is ill-formed
     */
@@ -197,14 +182,27 @@ object Query {
          throw ParseError("illegal query: " + q + "\nexpected: " + tp + "\nfound: " + it)
       }
    }
+   
+   def infer(b : BaseType) = b match {
+      case p: Path => PathType
+      case s: StringValue => StringType
+      case x: XMLValue => XMLType
+      case o: Obj => ObjType
+   } 
+   
    /** infers the type of a query
     *  throws an exception if the query is ill-formed
     */
    def infer(q: Query)(implicit context: List[QueryBaseType]) : QueryType = q match {
       case Bound(i) => try {Elem(context(i-1))} catch {case _ : Throwable => 
         									throw ParseError("illegal variable index: " + i)}
-      case ThePath(_) => Elem(PathType)
-      case TheObject(_) => Elem(ObjType)
+      case Literal(b) =>
+         Elem(infer(b))
+      case Literals(bs@_*) =>
+         if (bs.isEmpty)
+            throw ParseError("empty set of literals")
+         else
+            ESet(infer(bs(0)))
       case Component(of, _) =>
          infer(of) match {
             case Elem1(PathType) => Elem(ObjType)
@@ -214,20 +212,20 @@ object Query {
       case SubObject(of,_) =>
          check(of, Elem(ObjType))
          Elem(ObjType)
-      case InferedType(of, p) =>
-         infer(of) match {
-            case Elem1(ObjType) => Elem(ObjType)
-            case ESet1(ObjType) => ESet(ObjType)
-            case _ => throw ParseError("illegal query: " + q)
-         }
+      case QueryFunctionApply(fun, arg, param) =>
+         val argType = infer(arg)
+         if (argType == Elem(fun.in))
+            Elem(fun.out)
+         else if (argType == ESet(fun.in))
+            ESet(fun.out)
+         else
+            throw ParseError("illegal query: " + q)
       case Related(to,_) =>
          infer(to) match {
             case Elem1(PathType) => ESet(PathType)
             case ESet1(PathType) => ESet(PathType)
             case t => throw ParseError("ill-typed query: " + to + " expected path or set of paths, found " + t)
          }
-      case ThePaths(_*) => ESet(PathType)
-      case TheObjects(_*) => ESet(ObjType)
       case Singleton(it) =>
          infer(it) match {
             case Elem(t) => ESet(t)
@@ -271,21 +269,19 @@ object Query {
          case Elem(s) if 0 <= i && i < s.length => Elem(s(i-1))
          case _ => throw ParseError("illegal query " + q)
       }
-      case Present(c,s) => infer(c) match {
-         case Elem1(PathType) => Elem(XMLType)
-         case Elem1(ObjType) => Elem(XMLType)
-         case ESet1(PathType) => ESet(XMLType)
-         case ESet1(ObjType) => ESet(XMLType)
-         case _ => throw ParseError("illegal query " + q)
-      }
    }
-   /** parses a query; infer must be called to sure well-formedness */
-   def parse(n: Node) : Query = n match {
-      case <individual/> => ThePath(Path.parse(xml.attr(n, "uri")))
+   /** parses a query; infer must be called to sure well-formedness
+    *  @param n the query to parse
+    *  @param queryFunctions the list of atomic functions to consider
+    */
+   def parse(n: Node)(implicit queryFunctions: List[QueryExtension]) : Query = n match {
+      case <literal/> =>
+         Literal(Path.parse(xml.attr(n, "uri")))
+      case <literal>{l}</literal> =>
+         Literal(StringValue(l.text))
       case <concept/> => AllThatAre(Unary.parse(xml.attr(n, "name")))
       case <component>{o}</component> => Component(parse(o), xml.attr(n, "index"))
       case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
-      case <type>{o}</type> => InferedType(parse(o), Path.parseM(xml.attr(n, "meta"), utils.mmt.mmtbase))
       case <var/> =>
          val s = xml.attr(n, "index")
          val i = try {s.toInt} catch {case _ : Throwable => throw ParseError("illegal variable index: " + s)}
@@ -302,7 +298,14 @@ object Query {
          BigUnion(dom, parse(s))
       case <comprehension>{d}{f}</comprehension> =>
          Comprehension(parse(d), Prop.parse(f))
-      case <present>{o}</present> => Present(parse(o), Path.parseM(xml.attr(n, "style"), utils.mmt.mmtbase))
+      case <function>{a}</function> =>
+         val name = xml.attr(n, "name")
+         val param = Path.parseM(xml.attr(n, "param"), utils.mmt.mmtbase)
+         val arg = parse(a)
+         val fun = queryFunctions.find(_.name == name).getOrElse {
+            throw ParseError("illegal function: " + name)
+         }
+         QueryFunctionApply(fun, arg, param)
       //TODO missing cases
       case n => throw ParseError("illegal query expression: " + n)
    }
@@ -343,7 +346,7 @@ object Prop {
    }}
    
    /** parses a propositions; check must be called to ensure well-formedness */
-   def parse(n: Node) : Prop = n match {
+   def parse(n: Node)(implicit queryFunctions: List[QueryExtension]) : Prop = n match {
       case <equal>{e}{f}</equal> => Equal(Query.parse(e), Query.parse(f))
       case <isin>{e}{f}</isin> => IsIn(Query.parse(e), Query.parse(f))
       case <isa>{e}</isa> => IsA(Query.parse(e), Unary.parse(xml.attr(n, "concept")))

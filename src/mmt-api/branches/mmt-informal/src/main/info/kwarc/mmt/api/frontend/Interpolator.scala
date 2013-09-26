@@ -1,7 +1,11 @@
-package info.kwarc.mmt.api.parser
+package info.kwarc.mmt.api.frontend
+
 import info.kwarc.mmt.api._
 import objects._
 import utils._
+import parser._
+
+import scala.math.BigInt.int2bigInt
 
 object MMT2ScalaConv {
   implicit def OM2int(tm : Term) : Int = tm match {
@@ -67,7 +71,6 @@ class MMTInterpolator(controller: frontend.Controller) {
 	           throw InvalidObject(t, "term was parsed but did not type-check")
 	        }
 	        tR
-//FIXME     OMA(tR, List(tpR))
         } else
           tI
    }

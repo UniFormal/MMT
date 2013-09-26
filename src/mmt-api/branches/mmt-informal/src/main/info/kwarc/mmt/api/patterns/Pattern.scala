@@ -18,18 +18,16 @@ import scala.io.Source
  * @param params the parameters of the declaration patterns
  * @param body   the body of the declaration pattern that consists of symbol declarations             
  */
-class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val not: Option[TextNotation]) extends Symbol {
+class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: presentation.NotationContainer) extends Symbol {
    override val parameters = params
+   def not = notC.oneDim
    def toNode =
      <pattern name={name.toPath}>
    		{if (! params.isEmpty)
    		   <parameters>{params.toNode}</parameters>
    		else Nil}
    	   <declarations>{body.toNode}</declarations>
-       {if (! not.isEmpty)
-          <notation>{not.get.toNode}</notation>
-       else Nil
-       }
+       {notC.toNode}
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
    override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("conBegin",params.length + 1)) 
@@ -37,7 +35,8 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
    def getComponents = Nil //TODO
    def getDeclarations = Nil
    override def toString = 
-     "Pattern for " + name.toString + {if (params.variables.toList.isEmpty) "" else  {" [ " + params.toString + " ]" }} + " { " + body.toString + " }"
+     "Pattern for " + name.toString + {if (params.variables.toList.isEmpty) "" else  {" [ " + params.toString + " ]" }} +
+     " { " + body.toString + " }" + notC.toString
 
    def getSubstitution(args: List[Term]): Substitution = params.zip(args).map {
       case (vd,t) => Sub(vd.name, t)

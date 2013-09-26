@@ -7,18 +7,17 @@ body {
  background: white;
 }
 
+td.layout {
+   vertical-align:top;
+}
+
 #top {
- margin-top:0px;
  min-width:640px;
  background: url("../images/bg.png");
- height : 66px;
 }
 
 #title {
-   position: absolute;
-   margin-top: 6px;
    height: 25px;
-   width :100%;
    min-width:640px;
    font-size:20px;
    font-weight:bold;
@@ -28,49 +27,28 @@ body {
 
 #menu_bar {
   text-align : center;
-  width :100%;
   min-width:640px;
   height:24px;
-  position: absolute;
-  margin-top: 44px;
-}
-
-span.pagelink {
- padding:0px; 
- height:24px;
 }
 
 span.pagelink a {
- height:24px;
- padding-top:2px;
- padding-bottom:2px;
  padding-left:5px;
  padding-right:5px;
- color: white;
- 
+ color: blue;
  font-weight:bold;
  text-decoration:none;
- background : none;
+ background : lightgray;
 }
 
 span.pagelink a:hover {
  background : url("../images/bg-hover-bak.png")
 }
 
-
 #styleselector {
-   position: absolute;
-   top: 75px;
-   left: 0%;
-   width: 100px;
    height: 20px;
 }
 
-
 #breadcrumbs {
-   position: absolute;
-   top: 80px;
-   left: 250px;
    height: 20px;
    font-size:12px;
 }
@@ -81,11 +59,7 @@ span.crumb {
 
 #sidebar {
    background: lightgray;
-   position: absolute;
    overflow: scroll;
-   top: 110px;
-   left: 0;
-   width: 250px;
    resize: both;
 }
 
@@ -103,12 +77,24 @@ a.treerelation {
 }
 
 #main {
-   position: absolute;
-   top: 110px;
    padding-left : 10px;
-   left: 250px;
    overflow: auto;
    min-width:380px;
+}
+
+#inputbox {
+   border: solid;
+   border-width: 1px;
+   min-height:10px;
+   min-width:640px;
+   overflow: scroll;
+}
+
+#inputview {
+   border: solid;
+   border-width: 1px;
+   min-height:10px;
+   min-width:640px;
 }
 
 table.decllist {

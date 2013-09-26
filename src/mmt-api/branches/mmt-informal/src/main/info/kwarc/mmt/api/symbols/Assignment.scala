@@ -14,7 +14,7 @@ import presentation._
   */
 object ConstantAssignment {
    def apply(home : Term, name : LocalName, alias: Option[LocalName], target : Option[Term]) =
-      Constant(home, name, alias, None, target, None, None)
+      Constant(home, name, alias, None, target, None, NotationContainer())
 }
 
   /**

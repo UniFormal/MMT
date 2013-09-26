@@ -153,7 +153,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
                   while (markersLeft != Nil) {
                      val current = markersLeft.head
                      markersLeft = markersLeft.tail
-                     val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.ArityComponent]
+                     val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.ArgumentMarker]
                      val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                      current match {
                         case Arg(n) if n > 0 =>

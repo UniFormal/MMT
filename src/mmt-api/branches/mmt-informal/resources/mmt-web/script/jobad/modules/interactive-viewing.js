@@ -18,11 +18,13 @@ var interactiveViewing = {
       if (mmt.focusIsMath) {
 			var me = this;
 			res["infer type"] = me.inferType;
+			res["simplify"] = me.simplify;
 			if (mmt.currentURI !== null) {
 				res["show type"] = this.showComp('type');
 				res["show definition"] = this.showComp('definition');
 				res["(un)mark occurrences"] = this.showOccurs;
 				res["show URI"] = function(){alert(mmt.currentURI)};
+			   res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
 				res["open in new window"] = function() {mmt.openCurrent();};
 				//res["get OMDoc"] = mmt.openCurrentOMDoc();
 			}
@@ -50,7 +52,7 @@ var interactiveViewing = {
 	
 	/* sends type inference query to server for the currentComponent and currentPosition */
 	inferType : function (){
-		var query = qmt.present(qmt.type(
+		var query = qmt.present(qmt.infer(
 		    qmt.subobject(qmt.component(qmt.individual(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
 		    uris.lf
 		));
@@ -66,10 +68,28 @@ var interactiveViewing = {
 				 );
 	},
 	
+	/* sends a simplification query to server for the currentComponent and currentPosition */
+	simplify : function (){
+		var query = qmt.present(qmt.simplify(
+		    qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
+		    uris.lf
+		));
+		qmt.exec(query,
+				  function(result) {
+					  try {
+						  var pres = result.firstChild.firstChild.firstChild;
+						  mmt.setLatinDialog(pres, 'simplified');
+					  } catch(err) { // probably result is an error report
+						  mmt.setLatinDialog(result.firstChild, 'simplified');
+					  }
+				  }
+				 );
+	},
+	
 	/* shows a component of the current MMT URI in a dialog */
 	showComp : function(comp) {
 	   return function(){
-		   var query = qmt.present(qmt.component(qmt.individual(mmt.currentURI), comp));
+		   var query = qmt.present(qmt.component(qmt.literalPath(mmt.currentURI), comp));
 		   qmt.exec(query,
 			   	     function(result){mmt.setLatinDialog(result.firstChild.firstChild.firstChild, mmt.currentURI);}
 				      );

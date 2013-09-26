@@ -4,7 +4,7 @@ import objects._
 import modules._
 import moc._
 import parser.TextNotation
-import presentation.{StringLiteral, Omitted}
+import presentation.{StringLiteral, Omitted,NotationContainer}
 
 /**
  * A Constant represents an MMT constant.<p>
@@ -16,7 +16,7 @@ import presentation.{StringLiteral, Omitted}
  * @param rl the role of the constant
  */
 class Constant(val home : Term, val name : LocalName, val alias: Option[LocalName],
-               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val not: Option[TextNotation]) extends Symbol {
+               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer) extends Symbol {
   override val alternativeName = alias
   def toTerm = OMID(path)
 
@@ -24,6 +24,7 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
   
   def tp = tpC.get
   def df = dfC.get
+  def not = notC.oneDim
   
   override def compNames = List(("name", 0), ("type",1), ("definition", 2))
   def components = List(StringLiteral(name.toPath), tp.getOrElse(Omitted), df.getOrElse(Omitted),
@@ -36,10 +37,10 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
        {getMetaDataNode}
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
-       {if (not.isDefined) <notation>{not.get.toNode}</notation> else Nil}
+       {notC.toNode}
      </constant>
   override def toString = name.toString + alias.map(" @ " + _).getOrElse("") +
-     tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + not.map(" # " + _).getOrElse("")
+     tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + notC.toString
 }
 
 /** helper object */
@@ -50,6 +51,6 @@ object Constant {
     * TermContainer factory
     */
    def apply(home : Term, name : LocalName, alias: Option[LocalName], tp: Option[Term], df: Option[Term],
-             rl : Option[String], not: Option[TextNotation]) =
+             rl : Option[String], not: NotationContainer = NotationContainer()) =
       new Constant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not)
 }

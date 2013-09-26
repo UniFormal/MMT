@@ -5,6 +5,7 @@ import backend._
 import presentation._
 import libraries._
 import archives.BuildTarget
+import ontology.QueryExtension
 import parser._
 import utils._
 import web._
@@ -43,14 +44,15 @@ trait Extension extends Logger {
  */
 class ExtensionManager(controller: Controller) extends Logger {
    
-   private[frontend] var foundations   : List[Foundation]   = Nil
-   private[frontend] var targets       : List[BuildTarget]  = Nil
-   private[frontend] var querytransformers : List[QueryTransformer] = Nil
-   private[frontend] var roleHandlers  : List[RoleHandler]  = Nil
-   private[frontend] var presenters    : List[Presenter]    = Nil
-   private[frontend] var serverPlugins : List[ServerPlugin] = Nil
-   private[frontend] var loadedPlugins : List[Plugin]       = Nil
-   private[frontend] var parserExtensions : List[ParserExtension] = Nil
+   private[api] var foundations   : List[Foundation]   = Nil
+   private[api] var targets       : List[BuildTarget]  = Nil
+   private[api] var querytransformers : List[QueryTransformer] = Nil
+   private[api] var roleHandlers  : List[RoleHandler]  = Nil
+   private[api] var presenters    : List[Presenter]    = Nil
+   private[api] var serverPlugins : List[ServerPlugin] = Nil
+   private[api] var loadedPlugins : List[Plugin]       = Nil
+   private[api] var parserExtensions : List[ParserExtension] = Nil
+   private[api] var queryExtensions : List[QueryExtension] = Nil
    var lexerExtensions : List[LexerExtension] = Nil
 
    private var mws : Option[URI] = None
@@ -77,6 +79,11 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= new PrefixEscapeHandler('\\')
       lexerExtensions ::= new NumberLiteralHandler(true)
       serverPlugins   ::= new web.SVGServer
+      serverPlugins   ::= new web.QueryServer
+      
+      queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
+                                new ontology.Present, new ontology.PresentDecl) 
+      
       // initialize all extensions
       getAll.foreach(_.init(controller, Nil))
    }
@@ -122,6 +129,10 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as parser extension")
           parserExtensions ::= ext.asInstanceOf[ParserExtension]
        }
+       if (ext.isInstanceOf[QueryExtension]) {
+          log("  ... as parser extension")
+          queryExtensions ::= ext.asInstanceOf[QueryExtension]
+       }
        if (ext.isInstanceOf[ServerPlugin]) {
           log("  ... as server plugin")
           serverPlugins ::= ext.asInstanceOf[ServerPlugin]
@@ -148,7 +159,8 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getMWS : Option[URI] = mws
    
    /** retrieves all registered extensions */
-   private def getAll = foundations:::targets:::querytransformers:::roleHandlers:::presenters:::serverPlugins:::parserExtensions:::loadedPlugins
+   private def getAll = foundations:::targets:::querytransformers:::roleHandlers:::presenters:::
+                        serverPlugins:::parserExtensions:::queryExtensions:::loadedPlugins
    
    def stringDescription = {
       def mkL(label: String, es: List[Extension]) =
@@ -160,6 +172,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       mkL("presenters", presenters) +
       mkL("serverPlugins", serverPlugins) +
       mkL("parserExtensions", parserExtensions)
+      mkL("queryExtensions", queryExtensions)
       mkL("plugins", loadedPlugins) +
       "rules\n" + ruleStore.stringDescription 
    }
@@ -174,5 +187,6 @@ class ExtensionManager(controller: Controller) extends Logger {
       serverPlugins = Nil
       loadedPlugins = Nil
       parserExtensions = Nil
+      queryExtensions = Nil
    }
 }

@@ -15,7 +15,7 @@ object Test {
       val log = List()
       log foreach {l => controller.handleLine("log+ " + l)}
       
-      val ip = new parser.MMTInterpolator(controller)
+      val ip = new info.kwarc.mmt.api.frontend.MMTInterpolator(controller)
       val mpath = Path.parseM("http://cds.omdoc.org/test-new?FOLExt", utils.mmt.mmtbase)
       controller.handle(SetBase(mpath))
       import ip._

@@ -102,39 +102,62 @@ var mmt = {
 		}
 	},
 	
+	/* the notation style is used for operations that must be executed relative to a sytle, e.g., presentation */
 	notstyle : uris.mathmlstyle,
 
+	/* the active theory is used for operations that must be executed relative to a theory, e.g., parsing */
+	activeTheory : '',
+	/* sets the active theory
+	  @param uri any MMT URI (symbol part is ignored if present; no action if document URI)
+	*/
+   setActiveTheory : function(uri) {
+      var arr = this.splitMMTURI(uri);
+      if (arr[1] != "") {
+         var thy = arr[0] + '?' + arr[1]
+         this.activeTheory = thy;
+         $('#inputtheory').text(thy);
+      }
+   },
+   
    /*
-	* Converts a relative to an absolute url if the base url is set.
+	 * Converts a relative to an absolute url if the base url is set.
     * Necessary when used within another application to connect with external mmt server (e.g. in planetary)
     */
-    makeURL : function(relUrl) {
+   makeURL : function(relUrl) {
 		if ((typeof mmtUrl) != 'undefined') {
 			return mmtUrl + relUrl; //compute absolute uri to external mmt server
 		} else { 
 			return relUrl;
 		}	
-	},
+   },
 
+   /*
+    * splits a URI into the (doc, mod, sym) triple; omitted parts are returned as ""
+    */
+   splitMMTURI : function(uri) {
+   	var arr = uri.split("?");
+		var doc = (arr.length >= 1) ? arr[0] : "";
+		var mod = (arr.length >= 2) ? arr[1] : "";
+		var sym = (arr.length >= 3) ? arr[2] : "";
+		return [doc, mod, sym];
+	},
+	
 	/*
 	 * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
 	 * act: String: action to call on MMTURI
 	 * present: Boolean: add presentation to action
 	 */
 	adaptMMTURI : function (uri, act, present) {
-		var arr = uri.split("?");
-		var doc = (arr.length >= 1) ? arr[0] : "";
-		var mod = (arr.length >= 2) ? arr[1] : "";
-		var sym = (arr.length >= 3) ? arr[2] : "";
+		var arr = this.splitMMTURI(uri);
 		if (present && this.notstyle !== null)
 			var pres = "_present_" + this.notstyle;
 		else
 			var pres = '';
-      var relativeURL = '/:mmt?' + doc + '?' + mod + '?' + sym + '?' + act + pres;
+		var relativeURL = '/:mmt?' + arr[0] + '?' + arr[1] + '?' + arr[2] + '?' + act + pres;
 		return this.makeURL(relativeURL);
 	},
 
-    ajaxReplaceIn : function (url, targetid, async) {
+   ajaxReplaceIn : function (url, targetid, async) {
 		function cont(data) {
 			var targetnode = $('#' + targetid).children();
 			targetnode.replaceWith(data.firstChild);
@@ -194,7 +217,6 @@ var mmt = {
 	  - title bar should only show the cd and name component, but not the cdbase of the symbol href (full href should be shown as @title)
 	*/
 	setLatinDialog : function (content, title){
-        console.log("got here");
 		var dia = $("#latin-dialog");
 		dia.dialog('option', 'title', title);
 		dia[0].replaceChild(content, dia[0].firstChild);
@@ -261,11 +283,13 @@ var mmt = {
 var XML = {
    // helper function to produce xml attributes: key="value"
 	attr : function (key, value) {return ' ' + key + '="' + value + '"';},
-	// helper function to produce xml elements: <tag>content</tag> or <tag/>
-	elem : function (tag, content) {return this.elem1(tag, null, null, content);},
-	// helper function to produce xml elements with 1 attribute: <tag key="value">content</tag> or <tag key="value"/>
-	elem1 : function (tag, key, value, content) {
-		var atts = (key == null) ? "" : this.attr(key,value);
+	// helper function to produce xml elements with 0-2 attributes:
+	// <tag key1="value1" key2="value">content</tag>
+	// all arguments except tag can be null
+	elem : function (tag, content, key1, value1, key2, value2) {
+		var att1 = (key1 == null) ? "" : this.attr(key1,value1);
+		var att2 = (key2 == null) ? "" : this.attr(key2,value2);
+		var atts = att1 + att2
 		var begin = '<' + tag + atts;
 		if (content == null) {
 			return begin + '/>';
@@ -275,14 +299,31 @@ var XML = {
 	},
 };
 
+var qmtAux = {
+	// returns a binary convenience function that returns a QMT query expression for a unary atomic function
+	// the second argument is an MMT URI that the unary function is parametrized by 
+	// defaultParam: a function returning the default value of the second argument of the returned function
+	extensionFunction : function(name, defaultParam) {
+	   return function(o, param) {
+	      var p = (param == null) ? ((defaultParam == null) ? mmt.activeTheory : defaultParam()) : param; 
+	      return XML.elem('function', o, 'name', name, 'param', p);
+	   };
+   },
+};
+
 // functions to build and run QMT queries
 var qmt = {
    // helper functions to build queries (as XML strings)
-	individual : function (p) {return XML.elem1('individual', 'uri', p);},
-	component : function (o, c) {return XML.elem1('component', 'index', c, o);},
-	subobject : function (o, p) {return XML.elem1('subobject', 'position', p, o);},
-	type : function (o,meta) {return XML.elem1('type', 'meta', meta, o);},
-	present : function (o) {return XML.elem1('present', 'style', mmt.notstyle, o);},
+	literalPath : function (p) {return XML.elem('literal', null, 'uri', p);},
+	literalString : function (p) {return XML.elem('literal', p);},
+	component  : function (o, c) {return XML.elem('component', o, 'index', c);},
+	subobject  : function (o, p) {return XML.elem('subobject', o, 'position', p);},
+	parse       : qmtAux.extensionFunction('parse'),
+	infer       : qmtAux.extensionFunction('infer'),
+	simplify    : qmtAux.extensionFunction('simplify'),
+	analyze     : qmtAux.extensionFunction('analyze'),
+	present     : qmtAux.extensionFunction('present', function(){return mmt.notstyle;}),
+	presentDecl : qmtAux.extensionFunction('presentDecl', function(){return mmt.notstyle;}),
 
 	/* executes a QMT query (as constructed by helper functions) via ajax and runs a continuation on the result */
     exec : function (q, cont) {

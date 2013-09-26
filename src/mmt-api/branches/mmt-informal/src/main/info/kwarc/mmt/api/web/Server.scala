@@ -156,7 +156,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
               Some(XmlResponse(Util.div("error: " + e.longMsg)))
           }
         case ":tree" :: _ => Some(TreeResponse)
-        case ":query" :: _ => Some(QueryResponse)
         case ":change" :: _ => Some(ChangeResponse)
         case ":search" :: _ => Some(MwsResponse)
         case ":parse" :: _ => Some(ParserResponse)
@@ -211,21 +210,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         }
         step(io.read(buffer))
         io.close
-      }
-    }
-  }
-
-  /** Response when the first path component is :query */
-  private def QueryResponse: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-      try {
-        val body = new Body(tk) 
-        val q = ontology.Query.parse(body.asXML)
-        val res = controller.evaluator.evaluate(q)
-        val resp = res.toNode
-        XmlResponse(resp).aact(tk)
-      } catch {
-        case e : Error => errorResponse(e).aact(tk)
       }
     }
   }

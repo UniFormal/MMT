@@ -44,9 +44,9 @@ trait ContentElement extends StructuralElement {
    /** returns all children of this elements */
    def getDeclarations: List[ContentElement]
    /** returns all term components of this elements */
-   def getComponents: List[(objects.DeclarationComponent,symbols.TermContainer)]
+   def getComponents: List[(DeclarationComponent,symbols.TermContainer)]
    /** returns a specific component if present */
-   def getComponent(c: objects.DeclarationComponent) = getComponents find (_._1 == c) map (_._2)
+   def getComponent(c: DeclarationComponent) = getComponents find (_._1 == c) map (_._2)
    /** recursively applies a function to all declarations in this element (in declaration order) */
    def foreachDeclaration(f: ContentElement => Unit) {
       f(this)

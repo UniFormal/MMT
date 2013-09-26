@@ -246,19 +246,26 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   // compute the variables
                   val finalVars = orderedVars.map {
                      case (vm, reg, vname, tp) =>
-                        val finalTp = if (! vm.typed) None else tp.orElse {
-                           //new meta-variable for unknown type
-                           val metaVar = newType(vname) 
-                           //under a binder, apply the meta-variable to all governing bound variables
-                           //these are the boundVars and all preceding vars of the current binder
-                           val governingBVars = boundVars ::: newBVarNamesBefore(vm, vname)
-                           val t = if (governingBVars == Nil)
-                              metaVar
-                           else
-                              prag.strictApplication(con.module.toMPath, metaVar, governingBVars.map(OMV(_)), true)
-                           Some(t)
+                        val (finalTp, unknown) = if (! vm.typed)
+                           (None, false)
+                        else tp match {
+                           case Some(tp) => (Some(tp), false)
+                           case None =>
+                              //new meta-variable for unknown type
+                              val metaVar = newType(vname) 
+                              //under a binder, apply the meta-variable to all governing bound variables
+                              //these are the boundVars and all preceding vars of the current binder
+                              val governingBVars = boundVars ::: newBVarNamesBefore(vm, vname)
+                              val t = if (governingBVars == Nil)
+                                 metaVar
+                              else
+                                 prag.strictApplication(con.module.toMPath, metaVar, governingBVars.map(OMV(_)), true)
+                              (Some(t), true)
                         }
-                        val vd = VarDecl(vname, finalTp, None)
+                        // using a random attribution to signal that the type was unknown
+                        // TODO: clean up together with Twelf output
+                        val atts = if (unknown) List((utils.mmt.mmttype,OMS(utils.mmt.mmttype))) else Nil
+                        val vd = VarDecl(vname, finalTp, None, atts:_*)
                         SourceRef.update(vd, pu.source.copy(region = reg))
                         vd
                   }

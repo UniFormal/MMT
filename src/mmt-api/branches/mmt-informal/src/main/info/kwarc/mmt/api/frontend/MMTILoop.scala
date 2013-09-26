@@ -15,7 +15,7 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
       intp beQuietDuring {
          intp.interpret("import info.kwarc.mmt.api._")
          intp.bind("controller", controller)
-         val interpolator = new parser.MMTInterpolator(controller)
+         val interpolator = new MMTInterpolator(controller)
          intp.bind("interpolator", interpolator)
          val isimp = new InteractiveSimplifier(controller, this)
          intp.bind("isimp", isimp)

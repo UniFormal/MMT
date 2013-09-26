@@ -451,6 +451,20 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       readInModule(mod, patterns) // compiled code is not actually tail-recursive
    }
    
+   private def doComponent(c: DeclarationComponent, tc: TermContainer, scope: Term, pr: Option[Context])(implicit state: ParserState) {
+         val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
+         tc.read = obj
+         tc.parsed = tm
+      }
+   private def doNotation(c: NotationComponent, nc: presentation.NotationContainer, treg: SourceRegion, cpath: GlobalName)(implicit state: ParserState) {
+         val (notString,reg) = state.reader.readObject
+         if (nc(c).isDefined)
+            errorCont(makeError(treg, "notation of this constant already given, ignored"))
+         else {
+            val notation = TextNotation.parse(notString, cpath)
+            nc(c) = notation
+         }
+      }
    /** reads the components of a [[info.kwarc.mmt.api.symbols.Constant]]
     * @param name the name of the constant
     * @param parent the containing [[info.kwarc.mmt.api.modules.DeclaredModule]]
@@ -462,21 +476,16 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val tpC = new TermContainer
       val dfC = new TermContainer
       var al : Option[LocalName] = None
-      var nt : Option[TextNotation] = None
+      var nt = new presentation.NotationContainer
       var rl : Option[String] = None
       var pr : Option[Context] = None
-      val cons = new Constant(OMMOD(parent), name, None, tpC, dfC, None, None)
+      val cons = new Constant(OMMOD(parent), name, None, tpC, dfC, None, nt)
       // every iteration reads one delimiter and one object
       // @ alias or : TYPE or = DEFINIENS or # NOTATION
       //TODO remove "##" here and in the case split below, only used temporarily for latex integration
       val keys = List(":","=","#", "##","@", "of", "role")
       val keyString = keys.map("'" + _ + "'").mkString(", ")
 
-      def doComponent(c: DeclarationComponent, tc: TermContainer) {
-         val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
-         tc.read = obj
-         tc.parsed = tm
-      }
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
             // branch based on the delimiter
@@ -501,21 +510,17 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      errorCont(makeError(treg, "type of this constant already given, ignored"))
                      state.reader.readObject
                   } else
-                     doComponent(TypeComponent, tpC)
+                     doComponent(TypeComponent, tpC, scope, pr)
                case "=" =>
                   if (dfC.read.isDefined) {
                      errorCont(makeError(treg, "definiens of this constant already given, ignored"))
                      state.reader.readObject
                   } else
-                     doComponent(DefComponent, dfC)
-               case "#" | "##" =>
-                  val (notString,reg) = state.reader.readObject
-                  if (nt.isDefined)
-                     errorCont(makeError(treg, "notation of this constant already given, ignored"))
-                  else {
-                     val notation = TextNotation.parse(notString, cpath)
-                     nt = Some(notation)
-                  }
+                     doComponent(DefComponent, dfC, scope, pr)
+               case "#" =>
+                  doNotation(OneDimNotationComponent, nt, treg, cpath)
+               case "##" =>
+                  doNotation(TwoDimNotationComponent, nt, treg, cpath)
                case "@" =>
                   val (str,_) = state.reader.readObject
                   if (al.isDefined)
@@ -581,17 +586,12 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       seCont(instance)
    }
    private def readPattern(name: LocalName, tpath: MPath)(implicit state: ParserState) {
-      val cpath = tpath ? name
+      val ppath = tpath ? name
       val tpC = new TermContainer
       val dfC = new TermContainer
-      var nt : Option[TextNotation] = None// notation
+      var nt = new presentation.NotationContainer
       var pr : Context = Context()// params
       var bd : Context = Context()// body
-      def doComponent(c: DeclarationComponent, tc: TermContainer) {
-         val (obj,_,tm) = readParsedObject(OMMOD(tpath), pr)
-         tc.read = obj
-         tc.parsed = tm
-      }
       while (! state.reader.endOfDeclaration) {
         val (delim, treg) = state.reader.readToken
         // branch based on the delimiter
@@ -617,14 +617,10 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
               case _ =>
                 errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
             }
-          case "#" | "##" =>
-            val (notString,reg) = state.reader.readObject
-            if (nt.isDefined)
-              errorCont(makeError(treg, "notation of this constant already given, ignored"))
-              else {
-              val notation = TextNotation.parse(notString, cpath)
-              nt = Some(notation)
-              }
+          case "#" =>
+             doNotation(OneDimNotationComponent, nt, treg, ppath)
+          case "##" =>
+             doNotation(TwoDimNotationComponent, nt, treg, ppath)
         }
       }
       val pattern = new Pattern(OMMOD(tpath),name, pr, bd, nt)
