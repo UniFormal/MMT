@@ -23,6 +23,7 @@ class STeXImporter extends Compiler with Logger {
   def includeFile(name : String) : Boolean = name.endsWith(".omdoc") //stex/latexml generated omdoc
   
   def buildOne(inFile : File, dpath : DPath, outFile : File) : List[Error] = {
+    println("TRANSLATING: " + inFile)
     val src = scala.io.Source.fromFile(inFile.toString)
 	val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
 	val node : Node = cp.document()(0)
@@ -131,9 +132,8 @@ class STeXImporter extends Compiler with Logger {
         case "symbol" => //omdoc symbol -> mmt constant
           val nameS = (n \ "@name").text
           val name = LocalName(nameS)
-          val const = new Constant(OMMOD(mpath), name, None, TermContainer(None), TermContainer(None), None, None)
+          val const = new Constant(OMMOD(mpath), name, None, TermContainer(None), TermContainer(None), None, presentation.NotationContainer())
           controller.add(const)
-          
         case "definition" => 
           val nameS =  (n \ s"@{$xmlNS}id").text
           val name = LocalName(nameS)
@@ -160,7 +160,7 @@ class STeXImporter extends Compiler with Logger {
           val refPath = Path.parseM("?" + cd, doc.path)
           val refName = refPath ? LocalName(name)
           val c = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
-          val const = new Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, Some(notation))
+          val const = new Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, presentation.NotationContainer(notation))
           controller.memory.content.update(const) 
           val res = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
           
@@ -170,6 +170,7 @@ class STeXImporter extends Compiler with Logger {
       }
     } catch {
       case e : Error => errors ::= e
+      case e : Throwable => log("WARNING: declaration ignored because of error " + e.getMessage() + "\n" + n.toString)
     }
     errors
   }
