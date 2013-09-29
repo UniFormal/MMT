@@ -10,7 +10,7 @@
         <pathelement location="${deploy}/lib/scala-reflect.jar"/>
         <pathelement location="${deploy}/lfcatalog/lfcatalog.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
-    	<pathelement location="${deploy}/mmt/immt-api.jar"/>
+    	<pathelement location="${deploy}/mmt/branches/informal/immt-api.jar"/>
         <pathelement location="bin"/>
     </path>
     <path id="scaladoc.classpath">
