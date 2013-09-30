@@ -70,11 +70,11 @@ class Simplify extends QueryExtension("simplify", ObjType, ObjType) {
    def evaluate(argument: BaseType, param: MPath) = {
       argument match { 
          case OMBIND(Evaluator.free, cont, body) =>
-           controller.uom.simplify(body, cont)
+            controller.uom.simplify(body, OMMOD(param), cont)
          case t: Term =>
-            controller.uom.simplify(t)
+            controller.uom.simplify(t, OMMOD(param))
          case c: Context =>
-            controller.uom.simplifyContext(c)
+            controller.uom.simplifyContext(c, OMMOD(param))
          case o: Obj =>
             o
          case _ => throw ImplementationError("evaluation of ill-typed query")

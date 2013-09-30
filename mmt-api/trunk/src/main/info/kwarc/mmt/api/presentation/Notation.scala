@@ -31,7 +31,7 @@ abstract class Notation extends PresentationElement {
 /** an interface for notations that can be used to present complex objects */ 
 trait ComplexNotation extends Notation {
    def precedence: Precedence
-   def presentation(args: Int, vars: Int, scopes: Int): Presentation
+   def presentation(args: Int, vars: Int, scopes: Int, attributten: Boolean): Presentation
 }
 
 /**

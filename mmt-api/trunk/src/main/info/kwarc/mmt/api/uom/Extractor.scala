@@ -120,7 +120,7 @@ object Extractor {
          val normalArgs = f match {
             case OMS(p) =>
                controller.globalLookup.getConstant(p).not.map {n =>
-                  val a = n.getArity
+                  val a = n.arity
                   a.arguments.length - (if (lastArgIsSeq(a)) 1 else 0)
                }.getOrElse(0)
             case _ => 0
@@ -201,7 +201,7 @@ object Extractor {
              val qnameString = "\"" + qname + "\""
              out.println(s"  val $qname = _assert($qnameString, _ => ${termToScala(c.df.get)(controller)}, _ == logic1_true())\n")
           } else {
-             val arity = c.not.map(_.getArity).getOrElse(Arity.constant)
+             val arity = c.not.map(_.arity).getOrElse(Arity.constant)
              val scalaArgs = arityToScala(arity)
              val argtpString = scalaArgs.map(p => p._1 + ": " + p._2).mkString(", ")
              var o = s"  def ${nameToScalaQ(c.path)}($argtpString): Term\n"
@@ -229,7 +229,7 @@ object Extractor {
 	         o +=  s"    val parent = _path\n"
 	         o +=   "    val name = \"" + c.name + "\"\n"
 	         c.not foreach {n =>
-	            val a = n.getArity
+	            val a = n.arity
 	            o += applyMethods(a)
 	         }
 	         o += "  }\n"
@@ -262,7 +262,7 @@ object Extractor {
              val implemented = nameToScala(from.path.name) + "." + nameToScala(c.name) + ".path"
              val apath = v.path ? c.name
              val aO = v.getO(c.name)
-             val arity = c.not.map(_.getArity).getOrElse(Arity.constant)
+             val arity = c.not.map(_.arity).getOrElse(Arity.constant)
              val scalaArgs = arityToScala(arity)
              val defaultNames = scalaArgs.map(_._1)
              val varTypes = scalaArgs.map(_._2)

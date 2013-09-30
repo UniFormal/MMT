@@ -114,22 +114,22 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
          case s:SemiFormalObject =>
             s.components.foreach(c => present(c, gpar, lpar)) //could be much better
          case o1: Obj =>
-            val (o, posP, notationOpt) = o1 match {
-               case t: Term => getNotation(t)
-               case _ => (o1, Position.positions(o1), None)
-            }
+            val (o, posP, notationOpt) = getNotation(o1)
             //default values
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar
             var comps = o.components
-            var namedInds : List[(String,Int)] = Nil
             //some adjustments for certain objects 
             o match {
                //for binders, change newlpar to remember VarData for rendering the bound variables later 
                case OMBINDC(binder,context,_) =>
-                  val pOpt = binder match {case OMS(b) => Some(b) case _ => None}
+                  val (pOpt,numBinderComps) = binder match {
+                     case OMS(b) => (Some(b),1)
+                     case OMA(OMS(b),args) => (Some(b),args.length+1)
+                     case _ => (None, 1)
+                  }
                   val vds = context.zipWithIndex.map {
-                      case (v, i) => VarData(v, pOpt, newlpar.pos / posP(i+1))
+                      case (v, i) => VarData(v, pOpt, newlpar.pos / posP(numBinderComps+i))
                   }
                   newlpar = newlpar.copy(context = newlpar.context ::: vds)
                //for bound variables, look up VarData   
@@ -143,6 +143,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                   }
                case _ =>
             }
+            implicit def convert(i:Int) = NumberedIndex(i)
             val presentation = o match {
                case ComplexTerm(p, args, vars, scs) =>
                   val numArgs = args.length
@@ -150,7 +151,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                   val numScs  = scs.length
                   notationOpt match {
                      case Some(notation) =>
-                        val pres = notation.presentation(numArgs, numVars, numScs)
+                        val pres = notation.presentation(numArgs, numVars, numScs, false)
                         lpar.bracketInfo match {
                            case None => NoBrackets(pres)
                            case Some(BracketInfo(precOpt, delOpt)) =>
@@ -163,7 +164,6 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                         }
                      case None =>
                         // default presentation
-                        implicit def convert(i:Int) = NumberedIndex(i)
                         val bi = BracketInfo(Some(Precedence.infinite)) // maximal bracketing since we don't know anything
                         var pres: Presentation = Component(0,bi)
                         if (numArgs > 0) pres += OpSep() + Iterate(1, numArgs, ArgSep(), bi)
@@ -171,6 +171,12 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                         if (numScs > 0)  pres += OpSep() + Iterate(numArgs+numVars+1, -1, ArgSep(), bi)
                         Brackets(pres)
                   }
+               case OMID(p) if notationOpt.isDefined =>
+                  val name = p match {
+                     case m: MPath => m.name.toString
+                     case g: GlobalName => g.name.toString
+                  }
+                  Fragment("constant", Text(p.toPathEscaped), notationOpt.get.presentation(0,0,0,false))
                case _ =>
                   val notation = controller.get(gpar.nset, key)
                   notation.presentation

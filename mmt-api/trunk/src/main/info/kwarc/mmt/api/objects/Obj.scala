@@ -58,9 +58,9 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
     *  e.g., substitution returns Term if applied to Term, Context if applied to Context, etc. 
     */
    type ThisType >: this.type <: Obj
+   protected def mdNode = metadata.toNode
    /** prints to OpenMath */
-   def toNodeID(pos : Position) : scala.xml.Node
-   def toNode : scala.xml.Node = toNodeID(Position.Init)
+   def toNode : scala.xml.Node
    /** prints to OpenMath (with OMOBJ wrapper) */
    def toOBJNode = {
       val om = xml.namespace("om") // inlining this into XML literal does not work
@@ -119,22 +119,6 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
    }
 }
 
-trait MMTObject {
-   def args : List[Obj]
-   def components = OMID(path) :: args
-   val path : GlobalName
-   def head = Some(path)
-   def role = if (args.isEmpty) Role_ConstantRef else Role_application(None)
-   def toNodeID(pos : Position) =
-      if (args.isEmpty) OMID(path).toNode
-      else
-      <om:OMA>{components.zipWithIndex.map({case (m,i) => m.toNodeID(pos/i)})}
-      </om:OMA> % pos.toIDAttr
-   def toCML = 
-     if (args.isEmpty) <m:csymbol>{path.toPath}</m:csymbol>
-     else <m:apply>{components.zipWithIndex.map({case (m,i) => m.toCML})}</m:apply> 
-}
-
 /**
  * A Term represents an MMT term.
  */
@@ -188,10 +172,10 @@ case class OMID(path: ContentPath) extends Term {
       case OMMOD(mod) % name => mod.name.flat + "?" + name.toString
       case thy % name => "[" + thy.toString + "]?" + name.toString
    }
-   def toNodeID(pos : Position) = path match {
-      case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}/> % pos.toIDAttr
-      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.toPath}/> % pos.toIDAttr
-      case thy % name => <om:OMS name={name.toPath}>{thy.toNodeID(pos / 0)}</om:OMS> % pos.toIDAttr
+   def toNode = path match {
+      case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
+      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.toPath}>{mdNode}</om:OMS>
+      case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
    }
    def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
 }
@@ -213,15 +197,23 @@ object OMS {
 case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends Term  {
    def head = binder.head
    val numVars = context.variables.length
-   def components = binder :: context.toList ::: scopes
+   def components = {
+      val binderComps = binder match {
+         case b:OMA => b.components
+         case b:OMID => List(b)
+         case _ => throw ImplementationError("binder must be OMA or OMID")
+      }
+      binderComps ::: context.toList ::: scopes
+   }
    def role = Role_binding
-   def toNodeID(pos : Position) = 
-      <om:OMBIND>{binder.toNodeID(pos / 0)}
-                 {context.toNodeID(pos)}
+   def toNode = 
+      <om:OMBIND>{mdNode}
+                 {binder.toNode}
+                 {context.toNode}
                  {scopes.zipWithIndex.map {
-                    case (s,i) => s.toNodeID(pos / (numVars + i + 1))
+                    case (s,i) => s.toNode
                  }}
-      </om:OMBIND> % pos.toIDAttr
+      </om:OMBIND>
    override def toString = "(" + binder + " [" + context + "] " + scopes.map(_.toString).mkString(" ") + ")"  
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
@@ -248,11 +240,22 @@ object OMBIND {
  * @param arg the argument term
  * @param via the applied morphism
  */
-case class OMM(arg : Term, via : Term) extends Term with MMTObject {
+case class OMM(arg : Term, via : Term) extends Term {
    val path = mmt.morphismapplication
    def args = List(arg,via)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMM(arg ^^ sub, via ^^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: via.freeVars_
+   def components = OMID(path) :: args
+   def head = Some(path)
+   def role = Role_application(None)
+   def toNode =
+      if (args.isEmpty) OMID(path).toNode
+      else
+      <om:OMA>{mdNode}{components.zipWithIndex.map({case (m,i) => m.toNode})}
+      </om:OMA>
+   def toCML = 
+     if (args.isEmpty) <m:csymbol>{path.toPath}</m:csymbol>
+     else <m:apply>{components.zipWithIndex.map({case (m,i) => m.toCML})}</m:apply> 
 }
 
 /**
@@ -265,10 +268,11 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def role = Role_application(None)
    def components = fun :: args
    override def toString = (fun :: args).map(_.toString).mkString("(", " ", ")")
-   def toNodeID(pos : Position) =
-      <om:OMA>{fun.toNodeID(pos / 0)}
-              {args.zipWithIndex.map({case (a,i) => a.toNodeID(pos/(i+1))})}
-      </om:OMA> % pos.toIDAttr
+   def toNode =
+      <om:OMA>{mdNode}
+              {fun.toNode}
+              {args.zipWithIndex.map({case (a,i) => a.toNode})}
+      </om:OMA>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCML = <m:apply>{fun.toCML}{args.map(_.toCML)}</m:apply>
@@ -296,7 +300,7 @@ case class OMV(name : LocalName) extends Term {
    def ->(s: Term) = Sub(name, s)
    /** the declaration this:tp */
    def %(tp : Term) = VarDecl(name, Some(tp), None)
-   def toNodeID(pos : Position) = <om:OMV name={name.toPath}/> % pos.toIDAttr
+   def toNode = <om:OMV name={name.toPath}>{mdNode}</om:OMV>
    override def toString = name.toString
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = 
 	   sub(name) match {
@@ -334,10 +338,10 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def components = List(key, arg, value)
    override def strip = arg.strip
    override def toString = "{" + arg + " : " + key + " -> " + value + "}"
-   def toNodeID(pos : Position) = 
-      <om:OMATTR><om:OMATP>{key.toNodeID(pos/0)}{value.toNodeID(pos/2)}</om:OMATP>
-                 {arg.toNodeID(pos/1)}
-      </om:OMATTR> % pos.toIDAttr
+   def toNode = 
+      <om:OMATTR>{mdNode}<om:OMATP>{key.toNode}{value.toNode}</om:OMATP>
+                 {arg.toNode}
+      </om:OMATTR>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
@@ -352,7 +356,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def head = None
    def role = Role_foreign
    def components = List(XMLLiteral(node))
-   def toNodeID(pos : Position) = <om:OMFOREIGN>{node}</om:OMFOREIGN> % pos.toIDAttr
+   def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{Node}</m:apply>
@@ -368,7 +372,8 @@ abstract class OMLiteral extends Term {
    val value : Any
    def tag: String
    override def toString = value.toString
-   def toNodeID(pos : Position) = scala.xml.Elem("om", tag, pos.toIDAttr, scala.xml.TopScope, true, scala.xml.Text(value.toString)) 
+   def toNode =
+      scala.xml.Elem("om", tag, scala.xml.Null, scala.xml.TopScope, true, mdNode ++ List(scala.xml.Text(value.toString)) :_*) 
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
 }
@@ -382,7 +387,7 @@ case class OMI(value : BigInt) extends OMLiteral {
 /** A float literal */
 case class OMF(value : Double) extends OMLiteral {
    def tag = "OMF"
-   override def toNodeID(pos : Position) = <om:OMF dec={value.toString}/> % pos.toIDAttr
+   override def toNode = <om:OMF dec={value.toString}/>
    def toCML = <m:cn>{value}</m:cn>
 
 }
@@ -454,9 +459,9 @@ object Obj {
    //base: base reference, may be set by any object
    //lib: optional library against which to validate and parse paths
    /** parses a term relative to a base address */
-   def parseTerm(N : Node, base : Path) : Term = {
+   def parseTerm(Nmd : Node, base : Path) : Term = {
       //N can set local cdbase attribute; if not, it is copied from the parent
-      val nbase = newBase(N, base)
+      val nbase = newBase(Nmd, base)
       //this function unifies the two cases for binders in the case distinction below
       def doBinder(binder : Node, context : Node, scopes : List[Node]) = {
          val bind = parseTerm(binder, nbase)
@@ -466,7 +471,9 @@ object Obj {
          val scopesP = scopes.map(parseTerm(_, nbase))
          OMBINDC(bind, cont, scopesP)
       }
-      N match {
+      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nbase)
+      val N = n
+      val o = N match {
          case <OMS/> =>
             parseOMS(N, base) match {
                case p : ContentPath => OMID(p)
@@ -516,9 +523,11 @@ object Obj {
          case <OMREL>{o}</OMREL> => parseTerm(o, nbase) //TODO this should be deprecated
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
+      mdOpt.foreach {md => o.metadata = md}
+      o
    }
   
-  def parseOMS(N : Node, base : Path) : Path = N match {
+  private def parseOMS(N : Node, base : Path) : Path = N match {
       case <OMS/> =>
         val doc = URI(xml.attr(N,"base"))
         val mod = xml.attr(N,"module")

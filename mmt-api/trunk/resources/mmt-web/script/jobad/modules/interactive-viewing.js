@@ -53,7 +53,7 @@ var interactiveViewing = {
 	/* sends type inference query to server for the currentComponent and currentPosition */
 	inferType : function (){
 		var query = qmt.present(qmt.infer(
-		    qmt.subobject(qmt.component(qmt.individual(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
+		    qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
 		    uris.lf
 		));
 		qmt.exec(query,

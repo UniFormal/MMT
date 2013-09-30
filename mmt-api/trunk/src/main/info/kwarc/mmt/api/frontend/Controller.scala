@@ -238,10 +238,17 @@ class Controller extends ROController with Logger {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
                      memory.content.update(nw)
+                     extman.changeListeners foreach {l =>
+                        l.onDelete(nw.path)
+                        l.onAdd(nw)
+                     }
                   }
                case _ =>
                   // the normal case
                   memory.content.add(nw)
+                  extman.changeListeners foreach {l =>
+                     l.onAdd(nw)
+                  }
             }
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
@@ -265,12 +272,16 @@ class Controller extends ROController with Logger {
          case cp : CPath =>
             library.delete(cp)
       }
+      extman.changeListeners foreach {l =>
+         l.onDelete(p)
+      }
       //depstore.deleteSubject(p)
    }
 
    /** clears the state */
    def clear {
       memory.clear
+      extman.changeListeners foreach {l => l.onClear}
    }
    /** releases all resources that are not handled by the garbage collection */
    def cleanup {
@@ -518,7 +529,7 @@ class Controller extends ROController with Logger {
 	            log("check succeeded")
 	         else
 	            log("check failed (see log for error messages)")
-	      case DefaultGet(p) => handle(GetAction(Print(p)))
+	      case DefaultGet(p) => GetAction(Print(p)).make(this)
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)

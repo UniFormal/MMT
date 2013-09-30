@@ -140,7 +140,7 @@ class HTMLExporter extends ContentExporter {
 }
 
 class MathMLPresenter(val controller: Controller) extends presentation.NotationBasedPresenter {
-   def getNotation(term: Term) = Presenter.getNotation(controller, term)
+   def getNotation(o: Obj) = Presenter.getNotation(controller, o)
    override def doIdentifier(p: ContentPath)(implicit rh : RenderingHandler) {
       val s = p match {
          case OMMOD(m) % name => name.toPath  //not parsable if there are name clashes 

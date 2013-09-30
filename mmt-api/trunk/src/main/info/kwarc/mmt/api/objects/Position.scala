@@ -7,8 +7,6 @@ case class Position(indices : List[Int]) {
    def /(i : Int): Position = this / Position(i)
    def current = indices.last
    override def toString = indices.mkString("","_","")
-   def toIDAttr = if (indices != Nil) new scala.xml.UnprefixedAttribute("position", toString, scala.xml.Null)
-      else scala.xml.Null
 }
 object Position {
    /** Parse a string representation of a list of integers

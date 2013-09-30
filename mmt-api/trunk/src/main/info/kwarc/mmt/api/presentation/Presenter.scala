@@ -27,7 +27,7 @@ trait ObjectPresenter {
  */
 trait Presenter extends frontend.Extension with StructurePresenter with ObjectPresenter {
    def isApplicable(format: String): Boolean
-   def getNotation(t: Term) = Presenter.getNotation(controller, t)
+   def getNotation(o: Obj) = Presenter.getNotation(controller, o)
 }
 
 /** helper object */
@@ -68,27 +68,37 @@ object Presenter {
          if (yes) 1 else 0
       }
    }
+   
+   private def  getNotation(controller: frontend.Controller, p: ContentPath) =
+      controller.globalLookup.getO(p) flatMap {
+         case c: symbols.Constant => c.notC.getPresent
+         case p: patterns.Pattern => p.notC.getPresent
+         case _ => None
+      }
+   
    /** transforms into pragmatic form and tries to retrieve a notation
     *  
     *  if the term but not the pragmatic form has a notation, the strict form is retained 
     */
-   def getNotation(controller: frontend.Controller, t: Term) : (Term, List[Position], Option[TextNotation]) = {
+   def getNotation(controller: frontend.Controller, o: Obj) : (Obj, List[Position], Option[TextNotation]) = {
       //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
-      def tryTerm(t: Term): Option[TextNotation] = t match {
-         case ComplexTerm(p, args, vars, scs) =>
-            controller.globalLookup.getO(p) flatMap {
-               case c: symbols.Constant => c.notC.getPresent
-               case p: patterns.Pattern => p.notC.getPresent
-            }
+      def tryTerm(t: Term) = t match {
+         case ComplexTerm(p, args, vars, scs) => getNotation(controller, p)
+         case OMID(p) => getNotation(controller, p)
          case _ => None
       }
-      val (tP, _, posP) = controller.pragmatic.pragmaticHeadWithInfo(t)
-      tryTerm(tP) match {
-         case Some(n) => (tP, posP, Some(n))
-         case None    => tryTerm(t) match {
-            case Some(n) => (t, Position.positions(t), Some(n))
-            case None => (tP, posP, None)
-         }
+      o match {
+         case t: Term =>
+            val (tP, _, posP) = controller.pragmatic.pragmaticHeadWithInfo(t)
+            tryTerm(tP) match {
+               case Some(n) => (tP, posP, Some(n))
+               case None    => tryTerm(t) match {
+                  case Some(n) => (t, Position.positions(t), Some(n))
+                  case None => (tP, posP, None)
+               }
+            }
+         case _ =>
+            (o, Position.positions(o), None)
       }
    }   
 }

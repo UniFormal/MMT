@@ -4,14 +4,36 @@ import libraries._
 import objects.Conversions._
 import scala.collection.mutable.{HashMap,HashSet}
 
-/** empty class as a type abbreviation */
-class RuleMap[R <: Rule] extends HashMap[ContentPath,R]
-/** empty class as a type abbreviation */
-class RuleMap2[R <: Rule] extends HashMap[(ContentPath,ContentPath),R]
-/** empty class as a type abbreviation */
-class RuleSetMap[R <: Rule] extends utils.HashMapToSet[ContentPath,R]
-/** empty class as a type abbreviation */
-class RuleSetMap2[R <: Rule] extends utils.HashMapToSet[(ContentPath,ContentPath), R]
+trait GenericRuleMap {
+   def delete(which: Rule => Boolean)
+}
+
+abstract class GenericRuleMapOne[I, R <: Rule] extends HashMap[I,R] with GenericRuleMap {
+   def delete(which: Rule => Boolean) {
+      iterator foreach {case (k,r) => if (which(r)) this -= k}
+   }
+}
+
+abstract class GenericRuleSetMap[I, R <: Rule] extends utils.HashMapToSet[I,R] with GenericRuleMap {
+   def delete(which: Rule => Boolean) {
+      values foreach {
+         s => s.iterator foreach {
+            r => if (which(r)) s -= r
+         }
+      }
+   }
+}
+
+/** rules indexed and uniquely determined by a single Path */
+class RuleMap[R <: Rule] extends GenericRuleMapOne[ContentPath,R] {
+}
+/** rules indexed and uniquely determined by a pair of Path's */
+class RuleMap2[R <: Rule] extends GenericRuleMapOne[(ContentPath,ContentPath),R]
+
+/** rules indexed by a single Path, which multiple rules may share */
+class RuleSetMap[R <: Rule] extends GenericRuleSetMap[ContentPath,R]
+/** rules indexed by a pair of Paths, which multiple rules may share */
+class RuleSetMap2[R <: Rule] extends GenericRuleSetMap[(ContentPath,ContentPath), R]
 
 /** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
  * 
@@ -38,6 +60,10 @@ class RuleStore {
    /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
    val abbrevRules = new RuleSetMap[uom.AbbrevRule]
    
+   private val all = List(typingRules, inferenceRules, computationRules, universeRules, 
+                     typeBasedEqualityRules , termBasedEqualityRules, solutionRules, forwardSolutionRules, 
+                     introProvingRules, elimProvingRules, depthRules, breadthRules, abbrevRules)
+   
    /** add some Rule to this RuleStore */
    def add(rs: Rule*) {
       rs foreach {
@@ -58,6 +84,9 @@ class RuleStore {
    }
    def add(rs: RuleSet) {
       rs.rules.foreach(add(_))
+   }
+   def delete(which: Rule => Boolean) {
+      all foreach {_.delete(which)}
    }
    
    def stringDescription = {
@@ -99,7 +128,18 @@ class RuleStore {
 trait Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    val head: GlobalName
-   override def toString = String.format("%-60s", head.toPath) + " of " + getClass.toString 
+   /** an MMT URI that identifies the rule, by default the head
+    */
+   def path: GlobalName = head
+   /**
+    * the home theory in which this rule lives
+    * 
+    * a rule is only applicable if the home theory is included
+    * 
+    * by default, the theory of the head operator 
+    */
+   def parent: Term = head.module
+   override def toString = "rule " + path.toString + " of class " + getClass.toString 
 }
 
 class Continue[A](a: => A) {

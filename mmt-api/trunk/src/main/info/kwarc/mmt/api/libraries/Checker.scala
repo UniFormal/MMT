@@ -216,19 +216,6 @@ class StructureChecker(controller: Controller) extends Logger {
                }
                case _ => // cOrg has no definiens, nothing to do
             }
-            // apply every applicable RoleHandler
-            c.rl foreach {r =>
-              controller.extman.getRoleHandler(r) foreach { h =>
-                 h.apply(c)
-              }
-            }
-            /*
-            val foundation = extman.getFoundation(c.parent).getOrElse(throw Invalid("no foundation found for " + c.parent))
-            c.tp map {t =>
-               val trace = foundation.tracedTyping(None, Some(t))
-               trace foreach {t => reCont(DependsOn(c.path $ "type", t))}
-            }
-            */
          case p : Pattern =>
             checkContext(p.home, Context(), p.params)
             checkContext(p.home, p.params, p.body)
@@ -243,6 +230,12 @@ class StructureChecker(controller: Controller) extends Logger {
             ptOpt foreach {pt => checkSubstitution(i.home, pt.getSubstitution(i), pt.params, Context())}
             //TODO mihnea's instances already refer to their elaboration in their matches
          case _ => //succeed for everything else
+      }
+      // call the registered change listeners
+      e match {
+         case ce: ContentElement =>
+            controller.extman.changeListeners foreach {l => l.onCheck(ce)}
+         case _ =>
       }
    }
    
@@ -505,11 +498,11 @@ class StructureChecker(controller: Controller) extends Logger {
     * if context is valid, then this succeeds iff context ++ con is valid
     */
    def checkContext(home: Term, context: Context, con: Context)(implicit pCont: Path => Unit) : Context = {
-      con.mapVarDecls {case (c, vd @ VarDecl(name, tp, df, attrs @_*)) =>
+      con.mapVarDecls {case (c, vd @ VarDecl(name, tp, df)) =>
              val currentContext = context ++ c 
     	     val tpR = tp.map(x => checkTerm(home, currentContext, x)) 
     	     val dfR = df.map(x => checkTerm(home, currentContext, x)) 
-    	     val vdR = VarDecl(name, tpR, dfR, attrs :_*) //TODO check attribution
+    	     val vdR = VarDecl(name, tpR, dfR)
     	     vdR.copyFrom(vd)
     	     vdR
       }
@@ -528,7 +521,7 @@ class StructureChecker(controller: Controller) extends Logger {
          subs
       } else {
          (from zip subs) map {       
-       	  case (VarDecl(n,tp,df,attrs @ _*), Sub(m,t)) if n == m =>
+       	  case (VarDecl(n,tp,df), Sub(m,t)) if n == m =>
        	     val tR = checkTerm(home,to,t)
        	     Sub(m,tR)
        	  case (v,s) =>

@@ -109,8 +109,9 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
      OMV(name)
    }
    private def newType(name: LocalName): OMV = {
-      val tname = name / "type"
+      val tname = LocalName("") / name / counter.toString
       vardecls ::= VarDecl(tname,None,None)
+      counter += 1
       OMV(tname)
    }
    /**
@@ -144,7 +145,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             e.parse(pu, boundVars, this)
          case ml : MatchedList =>
             val notation = ml.an.notation
-            val arity = notation.getArity
+            val arity = notation.arity
             //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
             // compute the names of all bound variables, in abstract syntax order
@@ -264,8 +265,9 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         }
                         // using a random attribution to signal that the type was unknown
                         // TODO: clean up together with Twelf output
-                        val atts = if (unknown) List((utils.mmt.mmttype,OMS(utils.mmt.mmttype))) else Nil
-                        val vd = VarDecl(vname, finalTp, None, atts:_*)
+                        val vd = VarDecl(vname, finalTp, None)
+                        if (unknown)
+                           vd.metadata.add(metadata.Tag(utils.mmt.inferedTypeTag))
                         SourceRef.update(vd, pu.source.copy(region = reg))
                         vd
                   }

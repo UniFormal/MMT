@@ -9,6 +9,5 @@ import objects._
 class Narration(val tokens: List[SemiFormalObject]) extends DocumentItem with SemiFormalObjectList {
    def governingPath = None
    def role = Role_Narration
-   def toNode = <omtext>{tokens map (_.toNode)}</omtext>
    override def toString = tokens.map(_.toString).mkString(""," ", "")
 }
