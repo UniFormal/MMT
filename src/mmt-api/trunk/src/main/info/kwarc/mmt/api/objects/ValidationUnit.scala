@@ -19,7 +19,7 @@ class Validator(controller: Controller) extends Logger {
          val remUnknowns = solver.getUnsolvedVariables 
          val subs = psol.toPartialSubstitution
          val tI = v.judgement.wfo ^ subs //fill in inferred values
-         val tIS = SimplifyInferred(tI,remUnknowns) //substitution may have created redexes
+         val tIS = SimplifyInferred(tI,v.judgement.stack.theory,remUnknowns) //substitution may have created redexes
          val result = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
          //now report results, dependencies, errors
          val solution = solver.getSolution
@@ -49,10 +49,10 @@ class Validator(controller: Controller) extends Logger {
       /**
        * A Traverser that simplifies all subterms that are the result of inference (recognized by the lack of a SourceRef)
        */
-      object SimplifyInferred extends StatelessTraverser {
-         def traverse(t: Term)(implicit con : Context, init : Unit) : Term = {
+      object SimplifyInferred extends Traverser[Term] {
+         def traverse(t: Term)(implicit con : Context, theory: Term) : Term = {
             if (parser.SourceRef.get(t).isEmpty)
-               controller.uom.simplify(t, con)
+               controller.uom.simplify(t, theory, con)
             else
                Traverser(this, t)
          }

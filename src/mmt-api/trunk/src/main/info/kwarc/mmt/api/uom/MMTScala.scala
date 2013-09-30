@@ -3,12 +3,9 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects.Term
 
-trait TheoryScalaAux {
+trait TheoryScala {
    val _base : DPath
    val _path : MPath
-}
-
-trait TheoryScala {
    var _axioms: List[(String, Unit => Term, Term => Boolean)] = Nil
    def _assert(name: String, term: Unit => Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
    def _test(controller: frontend.Controller, log: String => Unit) {
@@ -18,7 +15,7 @@ trait TheoryScala {
            try {
              val t = tL()
              //log("term: " + controller.presenter.asString(t))
-             val tS = controller.uom.simplify(t)
+             val tS = controller.uom.simplify(t, objects.OMMOD(_path))
              //log("simplified: " + controller.presenter.asString(tS))
              val result = a(tS)
              log((if (result) "PASSED" else "FAILED") + "\n")
@@ -45,10 +42,10 @@ object ConstantScala {
 }
 
 trait DocumentScala {
-   private var theories: List[TheoryScalaAux] = Nil
+   private var theories: List[TheoryScala] = Nil
    private var views: List[ViewScala] = Nil
    private var documents : List[DocumentScala] = Nil
-   def addTheory(t: TheoryScalaAux) {
+   def addTheory(t: TheoryScala) {
       theories = theories ::: List(t)
    }
    def addView(v: ViewScala) {

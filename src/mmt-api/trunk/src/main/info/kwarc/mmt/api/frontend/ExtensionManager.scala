@@ -47,7 +47,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    private[api] var foundations   : List[Foundation]   = Nil
    private[api] var targets       : List[BuildTarget]  = Nil
    private[api] var querytransformers : List[QueryTransformer] = Nil
-   private[api] var roleHandlers  : List[RoleHandler]  = Nil
+   private[api] var changeListeners   : List[ChangeListener]  = Nil
    private[api] var presenters    : List[Presenter]    = Nil
    private[api] var serverPlugins : List[ServerPlugin] = Nil
    private[api] var loadedPlugins : List[Plugin]       = Nil
@@ -109,9 +109,9 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as foundation")
           foundations ::= ext.asInstanceOf[Foundation]
        }
-       if (ext.isInstanceOf[RoleHandler]) {
-          log("  ... as role handler")
-          roleHandlers ::= ext.asInstanceOf[RoleHandler]
+       if (ext.isInstanceOf[ChangeListener]) {
+          log("  ... as change listener")
+          changeListeners ::= ext.asInstanceOf[ChangeListener]
        }
        if (ext.isInstanceOf[BuildTarget]) {
           log("  ... as compiler")
@@ -143,8 +143,6 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getTarget(src: String) : Option[BuildTarget] = targets.find(_.isApplicable(src))
    /** retrieves an applicable query transformer */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
-   /** retrieves an applicable role handler */
-   def getRoleHandler(role: String) : List[RoleHandler] = roleHandlers.filter(_.isApplicable(role))
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
    /** retrieves an applicable server plugin */
@@ -159,7 +157,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getMWS : Option[URI] = mws
    
    /** retrieves all registered extensions */
-   private def getAll = foundations:::targets:::querytransformers:::roleHandlers:::presenters:::
+   private def getAll = foundations:::targets:::querytransformers:::changeListeners:::presenters:::
                         serverPlugins:::parserExtensions:::queryExtensions:::loadedPlugins
    
    def stringDescription = {
@@ -168,7 +166,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       mkL("foundations", foundations) +
       mkL("build targets", targets) +
       mkL("querytransformers", querytransformers) +
-      mkL("roleHandlers", roleHandlers) +
+      mkL("change listeners", changeListeners) +
       mkL("presenters", presenters) +
       mkL("serverPlugins", serverPlugins) +
       mkL("parserExtensions", parserExtensions)
@@ -182,7 +180,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       foundations = Nil
       targets = Nil
       querytransformers = Nil
-      roleHandlers = Nil
+      changeListeners = Nil
       presenters = Nil
       serverPlugins = Nil
       loadedPlugins = Nil

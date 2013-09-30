@@ -14,6 +14,12 @@ import scala.collection.mutable.{HashSet,HashMap}
  *   but what if there are unknowns whose type cannot be inferred? Is that even possible?
  * limitedSimplify must include computation, definition expansion, but can stop on GlobalChange; but safety is usually needed
  * constants have equality rule: injectivity and implicit arguments used to obtain necessary/sufficient condition (not preserved by morphism); congruence if no rule applicable
+ * 
+ * if an unknown type is a Pi but the variable only occurs applied, the unknown cannot be solved
+ *   we get stuck on a constraint like x: A, f: ? x |- f x : B
+ *   and cannot progress into |- f: Pi x:A. B
+ *   and neither from there into ? x = Pi x:A .B and solve for ?
+ *   solution: perform variable transformation in ApplyTerm rule
  */
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
@@ -167,6 +173,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    private val ruleStore = controller.extman.ruleStore
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
+   /** shortcut for UOM simplification */
+   private def simplify(t : Term) = controller.uom.simplify(t, theory, unknowns)
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = controller.presenter.asString
    
@@ -279,7 +287,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     */
    def solve(name: LocalName, value: Term)(implicit stack: Stack, history: History) : Boolean = {
       log("solving " + name + " as " + value)
-      val valueS = controller.uom.simplify(value)
+      val valueS = simplify(value)
       parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined)
@@ -301,7 +309,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * precondition: value is well-typed if the the overall check succeeds
     */
    private def solveType(name: LocalName, value: Term)(implicit stack: Stack, history: History) : Boolean = {
-      val valueS = controller.uom.simplify(value)
+      val valueS = simplify(value)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined)
          check(Equality(stack, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution") //TODO
@@ -328,9 +336,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    final def apply(j: Judgement, history: History = new History(Nil)) : Boolean = {
      implicit val h = history
      val subs = solution.toPartialSubstitution
-     def prepare(t: Term) = controller.uom.simplify(t ^^ subs)
+     def prepare(t: Term) = simplify(t ^^ subs)
      def prepareS(s: Stack) =
-        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs))))
+        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs, theory, unknowns))))
      val mayhold = j match {
         case Typing(stack, tm, tp, typS) =>
            val tmS = tm ^^ subs
@@ -517,8 +525,8 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       val tm2 = j.t2
       val tpOpt = j.t
       implicit val stack = j.stack
-      val tm1S = controller.uom.simplify(tm1)
-      val tm2S = controller.uom.simplify(tm2)
+      val tm1S = simplify(tm1)
+      val tm2S = simplify(tm2)
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
@@ -572,7 +580,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          getDef(c) match {
             case Some(df) =>
                val tE = TorsoForm(df, t.apps).toHeadForm
-               val tES = controller.uom.simplify(tE)
+               val tES = simplify(tE)
                (TorsoForm.fromHeadForm(tES), true)
             case None => (t, false)
          }
@@ -773,7 +781,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    //TODO call this method at appropriate times
    private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
       val results = unknowns.zipWithIndex map {
-         case (vd @ VarDecl(x, Some(tp), None, _*), i) =>
+         case (vd @ VarDecl(x, Some(tp), None), i) =>
             implicit val con : Context = unknowns.take(i)
             limitedSimplify(tp, ruleStore.forwardSolutionRules) match {
                case (tpS, Some(rule)) if rule.priority == priority => rule(this)(vd)

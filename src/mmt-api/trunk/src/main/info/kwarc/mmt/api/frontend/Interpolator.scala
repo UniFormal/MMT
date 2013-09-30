@@ -38,6 +38,15 @@ class MMTInterpolator(controller: frontend.Controller) {
      controller.handleLine(command)
    }
    
+   private def theory = controller.getBase match {
+        case d: DPath => OMMOD(utils.mmt.mmtcd) 
+        case p: MPath => OMMOD(p)
+        case GlobalName(t,_) => t
+        case CPath(par,_) => par match {
+           case p: MPath => OMMOD(p)
+           case GlobalName(t,_) => t
+        }
+     }
    private def parse(sc: StringContext, ts: List[Term], top: Option[TextNotation], check: Boolean) = {
          val strings = sc.parts.iterator
          val args = ts.iterator
@@ -53,15 +62,6 @@ class MMTInterpolator(controller: frontend.Controller) {
             i += 1
         }
         val str = buf.toString
-        val theory = controller.getBase match {
-           case d: DPath => OMMOD(utils.mmt.mmtcd) 
-           case p: MPath => OMMOD(p)
-           case GlobalName(t,_) => t
-           case CPath(par,_) => par match {
-              case p: MPath => OMMOD(p)
-              case GlobalName(t,_) => t
-           }
-        }
         val pu = ParsingUnit(SourceRef.anonymous(str), theory, cont, str, top) 
         val t = controller.termParser(pu)
         val tI = t ^ cont.toPartialSubstitution
@@ -79,12 +79,12 @@ class MMTInterpolator(controller: frontend.Controller) {
       def mmt(ts: Term*): Term = parse(sc, ts.toList, None, false)
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
-	     controller.uom.simplify(t)
+	     controller.uom.simplify(t, theory)
       }
       def r(ts: Term*): Term = parse(sc, ts.toList, None, true)
       def rs(ts: Term*): Term = {
          val t = r(ts : _*)
-	     controller.uom.simplify(t)
+	     controller.uom.simplify(t, theory)
       }
       def cont(ts: Term*) : Context = {
          val t = parse(sc, ts.toList, Some(TextNotation.contextNotation), false)

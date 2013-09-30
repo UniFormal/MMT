@@ -35,5 +35,5 @@ trait SemiFormalObjectList {
    val tokens: List[SemiFormalObject]
    def components = tokens
    override def toString = tokens.map(_.toString).mkString("", " ", "")
-   def toNodeID(pos : Position) = <om:OMSF>{tokens.map(_.toNode)}</om:OMSF>
+   def toNode = <om:OMSF>{tokens.map(_.toNode)}</om:OMSF>
 }

@@ -57,6 +57,12 @@ mi {
    display: none;
 }
 
+msubsup > .reconstructed-hidden, msubsup > .implicit-arg-hidden, msubsup > .brackets-hidden,
+munderover > .reconstructed-hidden, munderover > .implicit-arg-hidden, munderover > .brackets-hidden
+{
+   display: inline;
+}
+
 div.omdoc-view
 {
    border-style: none

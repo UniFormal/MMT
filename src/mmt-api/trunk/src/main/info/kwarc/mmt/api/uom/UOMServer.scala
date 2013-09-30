@@ -3,9 +3,9 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
 
-class UOMState(val t : Term, val path : List[Int]) {
-  def enter(i : Int) : UOMState = new UOMState(t, i :: path)
-  def exit(i : Int) : UOMState = new UOMState(t, path.tail)
+class UOMState(val t : Term, val scope: Term, val path : List[Int]) {
+  def enter(i : Int) : UOMState = new UOMState(t, scope, i :: path)
+  def exit(i : Int) : UOMState = new UOMState(t, scope, path.tail)
   override def toString = t.toString + "@" + path.mkString("_")  
 }
 
@@ -35,6 +35,10 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
   private val rs = controller.extman.ruleStore
   private val StrictOMA = controller.pragmatic.StrictOMA
 
+  private def inScope(currentTheory: Term, ruleTheory: Term): Boolean = {
+     controller.memory.content.hasImplicit(ruleTheory, currentTheory)
+  }
+  
    /** applies all DepthRule's that are applicable at toplevel of an OMA
     * for each arguments, all rules are tried
     * if a rule leads to a GlobalChange, we stop; otherwise, we go to the next argument
@@ -43,7 +47,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * @param after the arguments that still need to be checked
     * @return GlobalChange if a rule led to it; LocalChange otherwise (even if no rule was applicable)
     */
-   private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term]): Change = {
+   private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term])(implicit state: UOMState): Change = {
       after match {
          case Nil => LocalChange(before) //we don't know if 'before' has a change; but if not, returning NoChange would not actually help in applyAux anyway
          case arg::afterRest =>
@@ -60,17 +64,19 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
             arg match {
                case OMAorOMS(inner, inside, isOMS) =>
                   rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
-                     val ch = rule.apply(before, inside, afterRest)
-                     //log("rule " + rule + ": " + ch)
-                     ch match {
-                        case NoChange =>
-                        case LocalChange(args) =>
-                           //saveSimplificationRule(rule)
-                           return applyDepthRules(outer, before, args ::: afterRest)
-                        //return immediately upon GlobalChange
-                        case GlobalChange(tS) =>
-                           //saveSimplificationRule(rule)
-                           return GlobalChange(tS)
+                     if (inScope(state.scope, rule.parent)) {
+                        val ch = rule.apply(before, inside, afterRest)
+                        //log("rule " + rule + ": " + ch)
+                        ch match {
+                           case NoChange =>
+                           case LocalChange(args) =>
+                              //saveSimplificationRule(rule)
+                              return applyDepthRules(outer, before, args ::: afterRest)
+                           //return immediately upon GlobalChange
+                           case GlobalChange(tS) =>
+                              //saveSimplificationRule(rule)
+                              return GlobalChange(tS)
+                        }
                      }
                   }
                   applyDepthRules(outer, before ::: List(arg), afterRest)
@@ -83,22 +89,24 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * @param outer the toplevel symbol
     * @param args the arguments
     * */
-   private def applyBreadthRules(op: GlobalName, inside: List[Term]): Change = {
+   private def applyBreadthRules(op: GlobalName, inside: List[Term])(implicit state: UOMState): Change = {
       var insideS = inside
       var changed = false
       rs.breadthRules.getOrElse(op,Nil) foreach {rule =>
-         val ch = rule.apply(insideS)
-         //log("rule " + rule + ": " + ch)
-         ch match {
-            case NoChange =>
-            case LocalChange(args) =>
-               insideS = args
-               changed = true
-               //saveSimplificationRule(rule)
-
-            case GlobalChange(t) => 
-              //saveSimplificationRule(rule)
-              return GlobalChange(t)
+         if (inScope(state.scope, rule.parent)) {
+            val ch = rule.apply(insideS)
+            //log("rule " + rule + ": " + ch)
+            ch match {
+               case NoChange =>
+               case LocalChange(args) =>
+                  insideS = args
+                  changed = true
+                  //saveSimplificationRule(rule)
+   
+               case GlobalChange(t) => 
+                 //saveSimplificationRule(rule)
+                 return GlobalChange(t)
+            }
          }
       }
       //we have to check for insideS == inside here in case a BreadthRule falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
@@ -117,16 +125,16 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * The code use [[Simplified]] to remember whether a term has been simplified.
     * So multiple calls to this method do not cause multiple traversals. 
     */
-   def simplify(t: Term, context: Context = Context()) = {
+   def simplify(t: Term, scope: Term, context: Context = Context()) = {
      simplificationLog = Nil
-     val initState = new UOMState(t, Nil)
+     val initState = new UOMState(t, scope, Nil)
      val tS = apply(t,initState, context)
      tS
    }
    
    /** applies simplify to all terms in a context */ 
-   def simplifyContext(c: Context, outer: Context = Context()) : Context = {
-      c.mapTerms {case (inner, t) => simplify(t, outer ++ inner)}
+   def simplifyContext(c: Context, scope: Term, outer: Context = Context()) : Context = {
+      c.mapTerms {case (inner, t) => simplify(t, scope, outer ++ inner)}
    }
    
    /** the simplification method that is called internally during the traversal of a term

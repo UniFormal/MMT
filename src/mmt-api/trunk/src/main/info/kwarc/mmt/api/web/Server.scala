@@ -120,6 +120,9 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
   override def onMessage(s: String) {
      controller.report("tiscaf", s)
   }
+  override def onError(e: Throwable) {
+     throw ServerError("unknown error in underlying server").setCausedBy(e)
+  }
   protected def ports = Set(port) // port to listen to
   protected def apps = List(new RequestHandler) // RequestHandler is defined below
   protected def talkPoolSize = 4
