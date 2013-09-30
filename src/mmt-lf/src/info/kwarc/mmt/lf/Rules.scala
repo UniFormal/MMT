@@ -58,7 +58,8 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
                solver.check(Typing(stack, t, a))(history + "argument must have domain type")
                Some(b ^ (x / t))
            case _ =>
-              // TODO simplify type to make it a Pi
+              // TODO: definition expansion, simplification, to turn into Pi
+              // definition expansion must also consider unknown variables whose definitions are not known yet
               None
         }
      case _ => None // should be impossible
@@ -276,7 +277,7 @@ object Solve extends SolutionRule(Apply.path) {
                 return false
              // get the type of x and abstract over it
              stack.context.variables(i) match {
-                case VarDecl(_, Some(a), _, _*) => 
+                case VarDecl(_, Some(a), _) => 
                    val newStack = Stack(stack.frames.head.copy(context = newCon) :: stack.frames.tail)
                    solver.solveEquality(t, Lambda(x, a, tm2), None)(newStack, history + ("solving by binding " + x)) // tpOpt map {tp => Pi(x,a,tp)}
                 case _ => false
