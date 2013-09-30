@@ -12,13 +12,12 @@ import utils._
  * @author aivaras
  *
  */
-class TypingRuleGen extends RoleHandler with Logger {
+/*
+class TypingRuleGen extends ChangeListener {
   override val logPrefix = "rule-gen"
-  def isApplicable(role: String) : Boolean = role == "Typing"
-  
   case class TypingRuleGenErr(msg : String = "") extends java.lang.Throwable(msg)
     
-  def apply(c : symbols.Constant) : Unit = c.tp match {
+  def onCheck(ce : ContentElement) {c.tp match {
     case Some(tm) => {
       val ruleName : String = c.name.toString
       tm match {
@@ -30,3 +29,5 @@ class TypingRuleGen extends RoleHandler with Logger {
     case _ => throw TypingRuleGenErr("no term in " ++ c.name.toString)
   }
 }
+
+*/

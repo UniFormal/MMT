@@ -6,15 +6,25 @@ import uom._
 import utils._
 import parser.ImplicitArg
 
-class SimplificationRuleGenerator2 extends RoleHandler with Logger {
+class SimplificationRuleGenerator2 extends ChangeListener {
   override val logPrefix = "rule-gen"
   case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
-  def isApplicable(role: String) : Boolean = role == "Simplify"
-  def apply(c: symbols.Constant) = {
-    if (! c.tp.isEmpty) {
-      val tm = c.tp.get
-      try {
-        val ruleName : String = c.name.toString
+  def onAdd(e: ContentElement) {onCheck(e)}
+  def onClear {}
+  def onDelete(p: Path) {
+     controller.extman.ruleStore.delete {r => r.path == p}
+  }
+  def onCheck(e: ContentElement) {
+    val c = e match {
+       case c: symbols.Constant =>
+          if (c.rl == "Simplify" && c.tpC.analyzed.isDefined)
+             c
+          else return
+       case _ => return
+    }
+    val tm = c.tpC.analyzed.get
+    try {
+      val ruleName : String = c.name.toString
     	tm match {
     	  case FunType(ctx, scp) => 
     	    scp match {
@@ -36,7 +46,7 @@ class SimplificationRuleGenerator2 extends RoleHandler with Logger {
     	              var implArgsOut = List.empty[ImplicitArg]
     	              var implArgsIn = List.empty[ImplicitArg]
     	              controller.globalLookup.getConstant(outer).not match {
-    	                case Some(n) => implArgsOut ++= n.flatten(args.length, 0, 0)._2
+    	                case Some(n) => implArgsOut ++= n.arity.flatImplicitArguments(args.length)
     	                case None => Nil
     	              }
     	              val omvs = args.zipWithIndex.map { case (arg, i) =>
@@ -49,7 +59,7 @@ class SimplificationRuleGenerator2 extends RoleHandler with Logger {
     	            	       aft ::= x
     	            	  case ApplyGeneral(OMS(inner), args) =>
     	            	    controller.globalLookup.getConstant(inner).not match {
-    	            	    	case Some(n) => implArgsIn ++= n.flatten(args.length, 0, 0)._2
+    	            	    	case Some(n) => implArgsIn ++= n.arity.flatImplicitArguments(args.length)
     	            	    	case None => Nil
     	            	    }
     	            	     if (isBefore) {
@@ -130,11 +140,10 @@ class SimplificationRuleGenerator2 extends RoleHandler with Logger {
     	      case _ => throw DoesNotMatch(ruleName + " is not well-formed OMA statement:\n\t" + controller.presenter.asString(scp))
     	    }
     	  case _ => throw DoesNotMatch(ruleName + " not a FunType")
-    	}
-      } catch {
-        case e : DoesNotMatch => log(e.msg)
-        case e : Throwable => log("unknown error occured in " + c.name + "\nreading tm = " + tm.toString + "\n" + e.toString())
       }
-    }
-  }
+   } catch {
+     case e : DoesNotMatch => log(e.msg)
+     case e : Throwable => log("unknown error occured in " + c.name + "\nreading tm = " + tm.toString + "\n" + e.toString())
+   }
+ }
 }
