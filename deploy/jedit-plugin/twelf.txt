@@ -1,3 +1,5 @@
+Working with Twelf
+
 This provides instructions for installing Twelf.
 
  1) Install SMLNJ http://www.smlnj.org/
@@ -13,3 +15,7 @@ This provides instructions for installing Twelf.
    a) Check out https://svn.kwarc.info/repos/MMT/deploy/lfcatalog
    b) Run it in the background while working with Twelf.
    c) In Twelf, set the URL of the catalog server by something like "set catalog http://localhost/getText".
+   
+ 6) To register Twelf as an external compiler in the MMT jEdit plugin add
+    extension info.kwarc.mmt.lf.Twelf /PATH/TO/twelf-server
+    to the MMT startup file.

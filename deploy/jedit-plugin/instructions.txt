@@ -4,38 +4,60 @@ This file contains instructions how to setup the plugin.
 -----------------------------------------
 Installation
 
-1) Install jEdit from http://www.jedit.org/
+1) Check out MMT
+   svn co https://svn.kwarc.info/repos/MMT/deploy
+
+2) Install jEdit
+
+   For example, get it from http://www.jedit.org/
+
    Using the Plugin Manager, install the following plugins if you do not have them already
    - ErrorList
    - Console
    - SideKick
    - Hyperlinks
-
-2) a) If you have just installed jEdit:
-   Extract the contents of plugin.zip into your jEdit settings folder.
    
-   b) Otherwise, do the same but with the following caveats:
-   - plugin/ contains a mode for mmt and a catalog file with an entry for that mode.
-     But if you have installed other modes already, you have a catalog file with other entries already.
-     In that case, do not overwrite the existing file.
-     Instead, open plugin.zip/modes/catalog and copy-paste the entry into your existing modes/catalog file.
-   - plugin/ contains a file abbrevs defining useful abbreviations to input Unicode characters.
-     But if you have defined your own abbreviations already, you have such a file already.
-     In that case, do not overwrite the existing file.
-     Instead open abbrevs and copy-paste the abbrevations into your existing abbrevs file.
+3) Add the MMT plugin to jEdit
 
-3) Go to the jEdit plugin manager dialog and select the check box of the MMT plugin to load the plugin.
+   Locate your jedit settings folder -- call it JEDIT -- and run
+   cd deploy/jedit-plugin
+   install.sh JEDIT
+  
+   This script does the following, and you may instead carry out these steps manually:
+  
+   a) jars
+      copy all jars from plugin/jars into JEDIT/jars
+   b) modes
+      - copy all modes from plugin/modes into JEDIT/modes
+      - add the mode catalog entries in the file
+        plugin/modes/catalog
+        to the file
+        JEDIT/modes/catalog
+   c) abbreviations
+      append the content of plugin/abbrevs to JEDIT/abbrevs
+
+4) Load the plugin 
+
+   Run jEdit and in the plugin manager dialog select the MMT plugin.
    After doing that once, the plugin will be loaded automatically when jEdit is started.
-
    
------------------------------------------
-Configuration
+5) Unicode font
 
-To configure the MMT plugin, you use the MMT pane of the jEdit plugin options dialog.
+   If necessary, install a font on your system that includes
+   - a good amount of unicode characters
+   - readable glyphs for the characters ASCII 27-31, which MMT uses as delimiters.
+   
+   An example of such a font is GNU unifont.
+   
+   Set this font as the font for jEdit text areas. 
 
-- startup file: This is the path to a MMT script, a text file with MMT shell commands.
-  This commands are executed when the MMT plugin is loaded (usually when jEdit is started).
-  A commented example is provided by the file startup.mmt in this directory.
+6) Configure MMT
+
+To configure the MMT plugin, go to the MMT pane of the jEdit plugin options dialog.
+
+The startup file gives a path to an MMT script that is run when the MMT plugin is loaded (usually when jEdit is started).
+
+A commented example is provided by the file startup.mmt in this directory.
 
 ----------------------------------------
 Updating
@@ -50,8 +72,6 @@ It is advisable to make the following general jEdit configurations
 
 Plugins: Browse the plugin manager and install all additional plugins you fancy, e.g., BufferTabs, CandyFolds, DirtyGutter, SuperAbbrevs, WhiteSpace, and XML.
 
-Unicode: Install a Unicode font on your system (e.g., GNU unifont http://unifoundry.com/unifont.html) and switch to that font in Options/Textarea. (Otherwise, unicode identifiers will not display correctly.)
-
 Encoding: Set UTF-8 as your default encoding in the Options/Encodings.
 
 -----------------------------------------
@@ -64,8 +84,7 @@ The token types LITERAL1 to LITERAL4 are assigned to brackets at different level
 The token type COMMENT4 is reseved by MMT. It is assigned to all hidden, i.e., invisible, parts. Changes to its text style are ignored and overwritten.
 
 The files abbrevs contains a number of useful abbreviations to produce Unicode characters using Latex-like commands.
-For example, "öPi" expands like "\Pi". The details can be configured in jEdit's Options/Abbreviations dialog.
-If you do not use a German keyboard, you want to do a global replace of ö with some other letter in the abbrevs file before running jEdit.
+For example, "jPi" expands like "\Pi". The details can be configured in jEdit's Options/Abbreviations dialog or by editing the JEDIT/abbrevs file.
 
 The MMT plugin integrates with jEdit core components and a number of other plugins.
 Many of these provided "dockable windows". These are subwindows of the jEdit window, which you open separately via the respective plugin.
@@ -99,14 +118,3 @@ Many of these provided "dockable windows". These are subwindows of the jEdit win
 The plugin provides a number of jEdit actions.
 These can be bound to any key, menu item, or toolbar button via the generic jEdit options dialog.
 By default, they are available in the MMT plugin menu.
-
-- Compile current buffer: compiles the current buffer
-- Various actions for hiding permit hiding/showing hidable parts in the current selection.
-
------------------------------------------
-Working with Twelf
-
-1) Follow the instructions for Twelf to download and compile Twelf:
-   https://svn.kwarc.info/repos/MMT/deploy/jedit-plugin/twelf.txt
-
-2) Register Twelf as an external compiler in your startup file (or interactively via the MMT Console).
