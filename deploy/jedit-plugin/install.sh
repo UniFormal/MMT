@@ -5,7 +5,7 @@ jedit=$1
 cp $dir/plugin/jars/*.jar $jedit/jars
 
 # copy the modes
-cp $dir/modes/*.xml $jedit/modes
+cp $dir/plugin/modes/*.xml $jedit/modes
 
 # remove the final </MODES> tag in the mode catalog, append the entries for the modes, and then append the final </MODES> tag again
 sed -i 's/<\/MODES>//' $jedit/modes/catalog
