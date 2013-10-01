@@ -1,3 +1,3 @@
 <!--MMT:--><MODE NAME="mmt" FILE="mmt.xml" FILE_NAME_GLOB="*.mmt" />
-<!--MMT--><MODE NAME="msl" FILE="msl.xml" FILE_NAME_GLOB="*.msl" />
-<!--MMT--><MODE NAME="mmtlog" FILE="mmtlog.xml" FILE_NAME_GLOB="*.log" />
+<!--MMT:--><MODE NAME="msl" FILE="msl.xml" FILE_NAME_GLOB="*.msl" />
+<!--MMT:--><MODE NAME="mmtlog" FILE="mmtlog.xml" FILE_NAME_GLOB="*.log" />
