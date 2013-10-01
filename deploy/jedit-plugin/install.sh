@@ -17,6 +17,6 @@ cat $dir/plugin/modes/catalog >> $jedit/modes/catalog
 echo \</MODES\> >> $jedit/modes/catalog
 
 # remove old abbreviation for the mmt mode (if any)
-sed -i 's/\[mmt]([^[])*//' $jedit/abbrevs
+sed -i 's/\[mmt][^[]*//' $jedit/abbrevs
 # append abbreviations for the mmt mode
 cat $dir/plugin/abbrevs >> $jedit/abbrevs
