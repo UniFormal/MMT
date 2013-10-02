@@ -31,14 +31,16 @@ class MMTPlugin extends EBPlugin {
       val home = getPluginHome()
       home.mkdirs()
       controller.setHome(home)
-      val startup = jEdit.getProperty(MMTProperty("startup"))
-      if (startup != null) {
-         val file = new java.io.File(home, startup)
-         if (file.isFile)
-            controller.reportException(controller.handle(ExecFile(file)))
+      var startup = jEdit.getProperty(MMTProperty("startup"))
+      if (startup == null) startup = "startup.msl"
+      val file = new java.io.File(home, startup)
+      if (file.isFile) {
+         try {
+            controller.handle(ExecFile(file))
+         } catch {
+            case e: Error => controller.report(e)
+         }
       }
-      //else
-      //   controller.report("error", "could not find startup.mmt file")
       errorlist.ErrorSource.registerErrorSource(errorSource)
       // add this only after executing the startup file because the status bar is not available yet
       // this command itself may also not be logged

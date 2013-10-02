@@ -672,7 +672,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 /** A thread that checks for updated files and crawls them every crawlingInterval seconds */
 class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends Thread {
   override def run {
-    while(true) {
+    while(true && !isInterrupted()) {
         try {
             Thread.sleep(crawlingInterval * 1000)
         } catch {
@@ -686,7 +686,7 @@ class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends
 /** A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes */
 class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) extends Thread {
   override def run {
-    while(true) {
+    while(true && !isInterrupted()) {
       try {
           Thread.sleep(deletingInterval * 1000)
       } catch {
