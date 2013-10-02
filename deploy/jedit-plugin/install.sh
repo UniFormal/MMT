@@ -1,8 +1,12 @@
-dir=`dirname $0`
+dir=`dirname $0`/plugin
 jedit=$1
 
 # copy the jars
-cp $dir/plugin/jars/*.jar $jedit/jars
+cp $dir/jars/*.jar $jedit/jars
+
+# copy mars and startup file to MMT plugin directory
+mkdir $jedit/plugins/info.kwarc.mmt.jedit.MMTPlugin
+cp $dir/plugins/info.kwarc.mmt.jedit.MMTPlugin/* $jedit/plugins/info.kwarc.mmt.jedit.MMTPlugin/ 
 
 # copy the modes
 cp $dir/plugin/modes/*.xml $jedit/modes

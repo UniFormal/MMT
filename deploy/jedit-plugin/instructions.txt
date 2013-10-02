@@ -27,13 +27,18 @@ Installation
   
    a) jars
       copy all jars from plugin/jars into JEDIT/jars
-   b) modes
+
+   b) plugin-specific data
+      copy the content of plugin/plugins/info.kwarc.mmt.jedit.MMTPlugin to JEDIT/plugins/info.kwarc.mmt.jedit.MMTPlugin
+      
+   c) modes
       - copy all modes from plugin/modes into JEDIT/modes
       - add the mode catalog entries in the file
         plugin/modes/catalog
         to the file
         JEDIT/modes/catalog
-   c) abbreviations
+
+   d) abbreviations
       append the content of plugin/abbrevs to JEDIT/abbrevs
 
 4) Load the plugin 

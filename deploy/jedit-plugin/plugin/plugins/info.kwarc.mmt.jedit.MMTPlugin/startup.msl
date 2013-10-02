@@ -1,4 +1,6 @@
-log file jedit.log
+log file mmtplugin.log
+log+ archive
+log+ backend
 
 archive add mars
 
