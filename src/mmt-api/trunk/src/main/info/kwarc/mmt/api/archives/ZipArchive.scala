@@ -48,7 +48,7 @@ trait ZipArchive extends WritableArchive {
         val out = new ZipOutputStream(new FileOutputStream(target))
         val buffer = new Array[Byte](100000)   // 100KB buffer size
         try {
-            List("META-INF", "source", "narration", "content", "presentation", "relational") foreach {dim =>
+            List("META-INF", "source", "narration", "content", "relational") foreach {dim =>
                 if ((root/dim).canRead)
                     addFolderToMar(root/dim, root, out, buffer)
             }

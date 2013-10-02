@@ -16,11 +16,8 @@ class MMTConsole extends console.Shell("mmt") {
    override def printInfoMessage (output: Output) {
       output.print(null, "This is the MMT Shell")
    }
-
    //If your shell executes commands in a separate thread, this method should stop the currently running thread, if any. 
    override def stop (console: Console) {}
-
-   
    private var success : Option[Boolean] = Some(true) 
    
    //This method should block until the currently running command has completed, and return true if the command executed successfully, false otherwise. If no command is currently running, it should return the status of the most recently run command. 
@@ -30,7 +27,11 @@ class MMTConsole extends console.Shell("mmt") {
       val han = new OutputAsReport(output)
       controller.report.addHandler(han)
       success = None
-      controller.reportException(controller.handleLine(command))
+      try {
+         controller.handleLine(command)
+      } catch {
+         case e: info.kwarc.mmt.api.Error => controller.report(e)
+      }
       controller.report.removeHandler(han.id)
       success = Some(true)
       output.commandDone()

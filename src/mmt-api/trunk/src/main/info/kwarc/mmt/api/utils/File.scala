@@ -41,6 +41,15 @@ case class File(toJava: java.io.File) {
        case None => this
        case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
    }
+   /** delete this, recursively if directory */
+   def deleteDir {
+      toJava.list foreach {n =>
+         val f = this / n
+         if (f.toJava.isDirectory) f.deleteDir
+         else f.toJava.delete
+      }
+      toJava.delete
+   }
 }
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */

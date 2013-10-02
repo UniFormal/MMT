@@ -379,16 +379,14 @@ class Controller extends ROController with Logger {
    def getBase = base
    /** base URL In the local system */
    protected var home = File(System.getProperty("user.dir"))
+   /** @return the current home directory */
    def getHome = home
+   /** @param h sets the current home directory relative to which path names in commands are executed
+    *  
+    *  initially the current directory
+    */
    def setHome(h: File) {home = h}
 
-   def reportException[A](a: => A) {
-       try {a}
-       catch {
-    	   case e : info.kwarc.mmt.api.Error => report(e)
-         case e : java.lang.Exception => report("error", e.getMessage)
-       }
-   }
    /** executes a string command */
    def handleLine(l : String) {
         val act = try {
@@ -424,11 +422,11 @@ class Controller extends ROController with Logger {
 	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
-	         val arch = backend.openArchive(f)
-	         extman.targets.foreach {t => t.register(arch)}
+	         val archs = backend.openArchive(f)
+	         archs foreach {a => extman.targets.foreach {t => t.register(a)}}
          case AddSVNArchive(url, rev) =>
            backend.openArchive(url, rev)
-          case ArchiveBuild(id, key, mod, in, args) =>
+         case ArchiveBuild(id, key, mod, in, args) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             key match {
                case "check" => arch.check(in, this)
