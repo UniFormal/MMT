@@ -1,4 +1,4 @@
-Directories:
+1) Directories:
   - mmt: all jar files of MMT projects
   - lib: all jar files that MMT depends on, including the Scala library
     The only extenal dependency is the JVM itself. For most parts, Java 6 is fine; occassionally Java 7 is needed.
@@ -8,6 +8,57 @@ Directories:
   - jedit-plugin: the jar files for the plugin for jEdit, to obtain MMT editing support
   - informal-mmt: jar files for the mmt-informal branch of mmt-api
 
-Run scripts (with .bat/.sh file endings to be used on Windows/Unix):
-  - run-plain: opens an empty MMT shell
-  - run-file:  runs an MMT script (an msl file)
+2) Run scripts (with .bat/.sh file endings to be used on Windows/Unix):
+  - run-plain.sh: opens an empty MMT shell
+  - run-file.sh:  runs an MMT script (an msl file)
+
+For graphical interfaces, it makes to assciates msl files with the run-file scripts.
+
+For text interfaces, it makes sense to add the deploy folder to the PATH variable or to define 'mmt' as an alias for run-file.sh. 
+
+3) MMT Archives
+
+   MMT archives correspond to software projects and are the primary means to maintain and distribute MMT content.
+   
+   A number of MMT archives is available at https://tntbase.mathweb.org/repos/oaff/
+   
+   In particular, beginners should do
+     mkdir archives
+     cd archives
+     svn co https://tntbase.mathweb.org/repos/oaff/urtheories
+
+   The urtheories archive defines among other languages the logical framework LF. And empty-archive provides an example of some MMT theories using LF.  
+   
+4) Building archives
+
+   MMT can be used as a build tool.
+   Atomic operations include compiling (parsing, type checking, and export as OMDoc), indexing, and various exports (HTML, SVG, ...).
+   
+   After checking the archives from above, users should do
+     run-file.sh urtheories/build.msl
+   to make the urtheories archive available to other archives.
+
+5) Writing MMT Archives
+
+   Use
+     svn co https://tntbase.mathweb.org/repos/oaff/empty-archive
+   to obtain an empty example archive to play with and adapt.
+   
+   Use 
+     run-file.sh empty-archive/build.msl
+   when you are done with your changes.
+
+6) An IDE for Writing MMT Archives
+
+   See jedit-plugin/ for information on how to set up the MMT plugin for jEdit.
+
+   While using jEdit, it will constantly build the written files in memory. To create hard drive images of the build results, use the build command from above.
+
+7) Serving archives
+
+   After or while creating archives, you can run the MMT webserver to serve the contents.
+   This is achieved by using the command 'server on PORT' in an msl file.
+   
+   An example msl files with that effect is provided in the example archive:
+     run-file.sh empty-archive/serve.msl
+
