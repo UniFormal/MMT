@@ -20,24 +20,25 @@ Installation
 3) Add the MMT plugin to jEdit
 
    Locate your jedit settings folder -- call it JEDIT -- and run
-   cd deploy/jedit-plugin
-   install.sh JEDIT
+   
+     cd deploy/jedit-plugin
+     setup.sh install JEDIT
+   
+   to integrate the MMT files with jEdit.
+   setup.bat words accordingly on Windows.
+   Both can also be used with 'uninstall JEDIT' instead of 'install JEDIT' to remove the files.
   
-   This script does the following, and you may instead carry out these steps manually:
-  
+   Alternatively, if you want or have to install manually, do the following:
    a) jars
       copy all jars from plugin/jars into JEDIT/jars
-
    b) plugin-specific data
       copy the content of plugin/plugins/info.kwarc.mmt.jedit.MMTPlugin to JEDIT/plugins/info.kwarc.mmt.jedit.MMTPlugin
-      
    c) modes
       - copy all modes from plugin/modes into JEDIT/modes
       - add the mode catalog entries in the file
         plugin/modes/catalog
         to the file
         JEDIT/modes/catalog
-
    d) abbreviations
       append the content of plugin/abbrevs to JEDIT/abbrevs
 
