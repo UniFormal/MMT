@@ -345,7 +345,7 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
           openArchive(newRoot)
       }
       else {
-         logError(root + " is not an archive or a folder containing archives")
+         log(root + " is not an archive or a folder containing archives")
          Nil
       }
    }
