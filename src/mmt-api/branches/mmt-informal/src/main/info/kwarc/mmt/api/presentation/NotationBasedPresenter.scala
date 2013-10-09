@@ -41,6 +41,12 @@ trait NotationBasedPresenter extends ObjectPresenter {
       rh(n.toPath)
    }
    /**
+    * called by doDefaultTerm to render literals
+    */
+   def doLiteral(l: OMLiteral)(implicit rh : RenderingHandler) {
+      rh(l.toString)
+   }
+   /**
     * called by various methods to render MMT-level operators, such as ,:=()
     */
    def doOperator(s: String)(implicit rh : RenderingHandler) {
@@ -62,157 +68,242 @@ trait NotationBasedPresenter extends ObjectPresenter {
       Range(0,level).foreach {_ => rh(" ")}
    }
    
-   def getNotation(term: Term): (Term, List[Position], Option[TextNotation])
-   /**
-    * called on terms for which no notation is available
-    * @return true if the term was bracketed
+   def doBracketedGroup(body: => Unit)(implicit rh : RenderingHandler) {
+      doOperator("(")
+      body
+      doOperator(")")
+   }
+   def doUnbracketedGroup(body: => Unit)(implicit rh : RenderingHandler) {
+      body
+   }
+   def doOptionallyBracketedGroup(body: => Unit)(implicit rh : RenderingHandler) {
+      doUnbracketedGroup(body)
+   }
+   def doImplicit(body: => Unit)(implicit rh : RenderingHandler) {}
+   
+   /** auxiliary type for a continuation function */
+   type Cont = Unit => Unit
+   /** called to render a scripted object - an optional decorated by several optional scripts
+    *  
+    *  each script is passed as a continuation that must be called at the appropriate place
+    *  @param main the object
+    *  
+    * See [[parser.ScriptMarker]] for the meaning of the scripts
     */
-   def doDefaultTerm(t: Term)(implicit rh : RenderingHandler): Boolean = {t match {
+   def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit rh : RenderingHandler) {
+      def aux(sOpt: Option[Cont], oper: String) {sOpt match {
+            case Some(script) => doOperator(oper); script()
+            case None =>
+      }}
+      main
+      aux(under, "__")
+      aux(over, "^^")
+      aux(sub, "_")
+      aux(sup, "^")
+      doSpace(1)
+    }
+   
+   def doTableRow(row: List[Cont])(implicit rh : RenderingHandler) {
+      row.head()
+      row.tail map {e =>
+         doOperator("&")
+         e()
+      }
+   }
+   def doTable(rows: List[List[Cont]], lines: Boolean)(implicit rh : RenderingHandler) {
+      doTableRow(rows.head)
+      rows.tail map {row =>
+         doOperator("\\\\")
+         doTableRow(row)
+      }
+   }
+   
+   /**
+    * @param o the object to be presented
+    * @return an object o' that is presented instead (e.g., o itself)
+    *         one position p for each component c of o' such that the c is the p-subobject of o
+    *         a notation to use for presenting o'
+    */ 
+   def getNotation(o: Obj): (Obj, List[Position], Option[TextNotation])
+   /**
+    * called on objects for which no notation is available
+    * @return 1/0/-1 depending on the type of bracketing applied (yes/optional/no)
+    */
+   def doDefault(o: Obj)(implicit rh : RenderingHandler): Int = o match {
       case OMID(p) =>
          doIdentifier(p)
-         false
+         -1
       case OMV(n) =>
          doVariable(n)
-         false
+         -1
       case OMA(f,args) =>
-         doOperator("(")
-         val comps = f::args
-         comps.init.foreach {t =>
-            apply(t, rh)
-            doSpace(1)
+         doBracketedGroup {
+            val comps = f::args
+            comps.init.foreach {t =>
+               apply(t, rh)
+               doSpace(1)
+            }
+            apply(comps.last, rh)
          }
-         apply(comps.last, rh)
-         doOperator(")")
-         true
+         1
       case OMBINDC(b,c,s) =>
-         doOperator("(")
-         apply(b,rh)
-         doSpace(1)
-         doOperator("[")
-         c.foreach {v =>
-            apply(v, rh)
-         }
-         doOperator("]")
-         s.foreach {t =>
+         doBracketedGroup {
+            apply(b,rh)
             doSpace(1)
-            apply(t, rh)
+            doOperator("[")
+            c.foreach {v =>
+               apply(v, rh)
+            }
+            doOperator("]")
+            s.foreach {t =>
+               doSpace(1)
+               apply(t, rh)
+            }
          }
-         doOperator(")")
-         true
+         1
       case l: OMLiteral =>
-         rh(l.toString)
-         false
+         doLiteral(l)
+         -1
       case OMSemiFormal(parts) => parts.foreach {
          case Formal(t) => apply(t, rh)
          case objects.Text(format, t) => rh(t)
          case XMLNode(n) => rh(n.toString)
       }         
-      true
+      1
       //TODO other cases
-   }}
+      case VarDecl(n,tp,df) =>
+         doVariable(n)
+         tp foreach {t =>
+            doOperator(":")
+            recurse(t, noBrackets)
+         }
+         df foreach {d =>
+            doOperator("=")
+            recurse(d, noBrackets)
+         }
+         -1
+      case Sub(n,t) =>
+         doVariable(n)
+         doOperator("=")
+         recurse(t, noBrackets)
+         -1
+      case c: Context =>
+         if (! c.isEmpty) {
+            c.init.foreach {v =>
+               recurse(v, noBrackets)
+               doOperator(", ")
+            }
+            recurse(c.last, noBrackets)
+         }
+         -1
+      case s: Substitution =>
+         if (! s.isEmpty) {
+            s.init.foreach {c =>
+               recurse(c, noBrackets)
+               doOperator(", ")
+            }
+            recurse(s.last, noBrackets)
+         }
+         -1
+   }
 
    /** abbreviation for not bracketing */
-   private val noBrackets = (_: TextNotation) => false
+   private val noBrackets = (_: TextNotation) => -1
    
    def apply(o: Obj, rh : RenderingHandler) {recurse(o, noBrackets)(rh)}
    /** 
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return true if the term was bracketed
     */
-   private def recurse(o: Obj, bracket: TextNotation => Boolean)(implicit rh : RenderingHandler): Boolean = {
-       o match {
-         case term: Term =>
-            val (termP, _, notOpt) = getNotation(term)
+   private def recurse(obj: Obj, bracket: TextNotation => Int)(implicit rh : RenderingHandler): Int = {
+            val (objP, _, notOpt) = getNotation(obj)
             notOpt match {
                case None =>
-                  doDefaultTerm(termP)
+                  doDefault(objP)
                case Some(not) =>
-                  // try to render using notation, defaults to doDefaultTerm for some errors
-                  val ComplexTerm(p, args, context, scopes) = termP
-                  if (! not.canHandle(args.length, context.length, scopes.length))
-                     return doDefaultTerm(termP)
-                  val br = bracket(not)
+                  val (args, context, scopes, attributee) = objP match { 
+                     // try to render using notation, defaults to doDefault for some errors
+                     case ComplexTerm(_, args, context, scopes) => (args, context, scopes, None)
+                     case OMID(p) => (Nil,Context(),Nil,None)
+                     case _ => return doDefault(objP)
+                  }
+                  if (! not.arity.canHandle(args.length, context.length, scopes.length, attributee.isDefined))
+                     return doDefault(objP)
    
                   /*
-                   * @param position the position into which we recurse
-                   * @return a function that determines whether the child has to be bracketed
+                   * @param child the child into which we recurse 
+                   * @param currentPosition the position from where we recurse
+                   *         -1: left-open argument; 0: middle argument; 1: right-open
+                   * @return the result of recursing into the child
                    */
-                  def childrenMustBracket(position: Int) =
-                     (childNot: TextNotation) => Presenter.bracket(not.precedence, position, childNot) > 0
-                  val (markers,_) = not.flatten(args.length, context.length, scopes.length)
-                  // currentPostion: -1: left-open argument; 0: middle argument; 1: right-open
-                  val numDelims = markers.count(_.isInstanceOf[parser.Delimiter])
-                  var numDelimsSeen = 0
-                  def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
-                  def doChild(child: Obj) = recurse(child, childrenMustBracket(currentPosition))
-                  // the while loop removes elements from markersLeft until it is empty
-                  var markersLeft = markers
-                  // the most recently removed marker
-                  var previous : Option[parser.Marker] = None
-                  if (br) doOperator("(")
-                  while (markersLeft != Nil) {
-                     val current = markersLeft.head
-                     markersLeft = markersLeft.tail
-                     val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.ArgumentMarker]
-                     val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
-                     current match {
-                        case Arg(n) if n > 0 =>
-                           doChild(args(n-1))
-                           if (compFollows) doSpace(1)
-                        case Arg(n) if n < 0 =>
-                           doChild(scopes(-n-args.length-context.length-1))
-                           if (compFollows) doSpace(1)
-                        case Var(n, typed, _) => //sequence variables impossible due to flattening
-                           doChild(context(n-args.length-1))
-                           if (compFollows) doSpace(1)
-                        case d: parser.Delimiter =>
-                           val letters = d.text.exists(_.isLetter)
-                           if (letters && previous.isDefined) doSpace(1)
-                           doDelimiter(p, d)
-                           numDelimsSeen += 1
-                           if (letters && !markersLeft.isEmpty) doSpace(1)
-                        case s: SeqArg => //impossible due to flattening
+                  def doChild(child: Obj, currentPosition: Int) =
+                     recurse(child, (childNot: TextNotation) => Presenter.bracket(not.precedence, currentPosition, childNot))
+                  /* processes a list of markers left-to-right
+                   *   for ArgumentMarkers, renders argument via doChild
+                   *   for DelimiterMarkers, renders delimiter via doDelimiter
+                   *   for presentation markers, recurses into groups and arranges them according to doXXX methods
+                   */
+                  def doMarkers(markers: List[Marker]) {
+                     val numDelims = markers.count(_.isInstanceOf[parser.Delimiter])
+                     var numDelimsSeen = 0
+                     def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
+                     // the while loop removes elements from markersLeft until it is empty
+                     var markersLeft = markers
+                     // the most recently removed marker
+                     var previous : Option[parser.Marker] = None
+                     while (markersLeft != Nil) {
+                        val current = markersLeft.head
+                        markersLeft = markersLeft.tail
+                        val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.ArgumentMarker]
+                        //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
+                        current match {
+                           case Arg(n) if n > 0 =>
+                              doChild(args(n-1), currentPosition)
+                              if (compFollows) doSpace(1)
+                           case ImplicitArg(n) =>
+                              doImplicit {
+                                 doChild(args(n-1), currentPosition)
+                                 if (compFollows) doSpace(1)
+                              }
+                           case Arg(n) if n < 0 =>
+                              doChild(scopes(-n-args.length-context.length-1), currentPosition)
+                              if (compFollows) doSpace(1)
+                           case Var(n, typed, _) => //sequence variables impossible due to flattening
+                              doChild(context(n-args.length-1), currentPosition)
+                              if (compFollows) doSpace(1)
+                           case AttributedObject =>
+                              // we know attributee.isDefined due to flattening
+                              attributee.foreach {a =>
+                                 doChild(a, currentPosition)
+                              }
+                              if (compFollows) doSpace(1)
+                           case d: parser.Delimiter =>
+                              val letters = d.text.exists(_.isLetter)
+                              if (letters && previous.isDefined) doSpace(1)
+                              doDelimiter(not.name, d)
+                              numDelimsSeen += 1
+                              if (letters && !markersLeft.isEmpty) doSpace(1)
+                           case s: SeqArg => //impossible due to flattening
+                           case GroupMarker(ms) =>
+                              doMarkers(ms)
+                           case s: ScriptMarker =>
+                              def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
+                              doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
+                           case TableMarker(rows, lines) =>
+                              doTable(rows map {r => r map {e => (_:Unit) => doMarkers(List(e))}}, lines)
+                        }
+                        previous = Some(current)
                      }
-                     previous = Some(current)
                   }
-                  if (br) doOperator(")")
+                  val br = bracket(not)
+                  val markers = not.arity.flatten(not.presentationMarkers,args.length, context.length, scopes.length, attributee.isDefined)
+                  br match {
+                     case n if n > 0 => doBracketedGroup { doMarkers(markers) }
+                     case 0 =>          doOptionallyBracketedGroup { doMarkers(markers) }
+                     case n if n < 0 => doUnbracketedGroup { doMarkers(markers) }
+                  }
                   br
             }
-         case VarDecl(n,tp,df, _*) =>
-            doVariable(n)
-            tp foreach {t =>
-               doOperator(":")
-               recurse(t, noBrackets)
-            }
-            df foreach {d =>
-               doOperator("=")
-               recurse(d, noBrackets)
-            }
-            false
-         case Sub(n,t) =>
-            doVariable(n)
-            doOperator("=")
-            recurse(t, noBrackets)
-            false
-         case c: Context =>
-            if (! c.isEmpty) {
-               c.init.foreach {v =>
-                  recurse(v, noBrackets)
-                  doOperator(", ")
-               }
-               recurse(c.last, noBrackets)
-            }
-            false
-         case s: Substitution =>
-            if (! s.isEmpty) {
-               s.init.foreach {c =>
-                  recurse(c, noBrackets)
-                  doOperator(", ")
-               }
-               recurse(s.last, noBrackets)
-            }
-            false
-       }
    }
 }
 
@@ -256,10 +347,16 @@ class StructureAndObjectPresenter(controller: frontend.Controller) extends Prese
                rh("  = ")
                apply(t, rh)
             }
-            c.not foreach {n =>
+            c.notC.oneDim foreach {n =>
                rh("\n")
                doIndent
                rh("  # ")
+               rh(n.toText)
+            }
+            c.notC.twoDim foreach {n =>
+               rh("\n")
+               doIndent
+               rh("  ## ")
                rh(n.toText)
             }
          case t: DeclaredTheory =>

@@ -13,15 +13,19 @@ import objects._
  *  some arguments, some variables: application+binder as in OMBINDC(OMA(s, args), vars, scopes), as suggested by Kohlhase, Rabe, MiCS 2012
  *  as above but exactly 1 scope: usual binders, generalized binders as suggested by Davenport, Kohlhase, MKM 2010
  */
-case class Arity(arguments: List[ArgumentComponent], variables: List[VariableComponent], scopes: List[ScopeComponent]) {
+case class Arity(arguments: List[ArgumentComponent],
+                 variables: List[VariableComponent],
+                    scopes: List[ScopeComponent], attribution: Boolean) {
    def components = arguments ::: variables ::: scopes
    def length = components.length
-   def isConstant    =    arguments.isEmpty  &&    variables.isEmpty  && scopes.isEmpty
-   def isApplication = (! arguments.isEmpty) &&    variables.isEmpty  && scopes.isEmpty
-   def isBinder      =    arguments.isEmpty  && (! variables.isEmpty)
-   def isPlainBinder =    arguments.isEmpty  && (! variables.isEmpty) && scopes.length == 1
-   def isApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty)
-   def isPlainApplBinder  = (! arguments.isEmpty) && (! variables.isEmpty) && scopes.length == 1
+   def isConstant    = (! attribution) &&    arguments.isEmpty  &&    variables.isEmpty  && scopes.isEmpty
+   def isApplication = (! attribution) && (! arguments.isEmpty) &&    variables.isEmpty  && scopes.isEmpty
+   def isBinder      = (! attribution) &&    arguments.isEmpty  && (! variables.isEmpty)
+   def isAttribution = attribution && variables.isEmpty && scopes.isEmpty
+   def isPlainAttribution = isAttribution && arguments.length == 1
+   def isPlainBinder = isBinder && scopes.length == 1
+   def isApplBinder  = (! attribution) && (! arguments.isEmpty) && (! variables.isEmpty)
+   def isPlainApplBinder  = isApplBinder && scopes.length == 1
    def numSeqArgs = arguments.count(_.isInstanceOf[SeqArg])
    def numSeqVars = variables.count {
       case Var(_,_, Some(_)) => true
@@ -61,7 +65,7 @@ case class Arity(arguments: List[ArgumentComponent], variables: List[VariableCom
     * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
     * remaining arguments are distributed in order of content position
     */
-   def distributeArgs(numArgs: Int) : (Int, Int) = {
+   private def distributeArgs(numArgs: Int) : (Int, Int) = {
       val seqArgPositions = arguments.flatMap {
          case SeqArg(n,_) if n > 0 => List(n)
          case _ => Nil
@@ -71,13 +75,28 @@ case class Arity(arguments: List[ArgumentComponent], variables: List[VariableCom
    /** 
     * like distributeArgs but for the variables
     */
-   def distributeVars(numVars: Int): (Int, Int) = {
+   private def distributeVars(numVars: Int): (Int, Int) = {
       val seqVarPositions = variables.flatMap {
          case Var(n,_,Some(_)) => List(n)
          case _ => Nil
       }
       distribute(numVars, variables.length, seqVarPositions)
    }
+   /** maps component positions to position in flattened notation, by including the arguments of the preceding sequences */
+   private def remapFun(perSeqArg: Int, seqArgCutOff: Int, perSeqVar: Int, seqVarCutOff: Int)(p: Int): Int = {
+         var i = p.abs
+         components foreach {
+            case SeqArg(n,_) if n < p || p < 0 =>
+               i += perSeqArg - 1
+               if (n < seqArgCutOff) i += 1
+            case Var(n,_,Some(_)) if n < p || p < 0 => 
+               i += perSeqVar - 1
+               if (n < seqVarCutOff) i += 1
+            case _ =>
+         }
+         if (p > 0) i else -i
+      }
+
    /**
     * groups a list of arguments into sequences according to distributeArgs
     */
@@ -114,11 +133,75 @@ case class Arity(arguments: List[ArgumentComponent], variables: List[VariableCom
       }
       result.reverse
    }
+   /** @return true if ComplexTerm(name, args, vars, scs) has enough components for this arity and provides for an attribution if necessary */
+   def canHandle(args: Int, vars: Int, scs: Int, att: Boolean) = {
+      numNormalArgs <= args &&
+      numNormalVars <= vars &&
+      numNormalScopes <= scs &&
+      (! att || attribution)
+   }
+  /**
+    * flattens all sequence arguments/variables of a notation according to a complex term
+    * 
+    * @param markers the list of markers to flatten
+    * @param args number of arguments
+    * @param vars number of variables
+    * @param scs number of scopes
+    * 
+    * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
+    * remaining arguments are distributed in order of content position
+    * 
+    * multiple sequence variables are treated accordingly
+    * it is assumed there are no sequences in the scopes
+    * 
+    * pre: canHandle(args, vars, scs) == true
+    */
+   def flatten(markers: List[Marker], args: Int, vars: Int, scs: Int, attrib: Boolean) : List[Marker] = {
+      val (perSeqArg, seqArgCutOff) = distributeArgs(args)
+      val (perSeqVar, seqVarCutOff) = distributeVars(vars)
+      val remap = remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff) _
+      def flattenOne(m: Marker): List[Marker] = m match {
+         case Arg(n) =>
+            List(Arg(remap(n)))
+         case SeqArg(n, sep) if n > 0 =>
+            val length = if (n < seqArgCutOff) perSeqArg+1 else perSeqArg
+            val first = remap(n)
+            if (length == 0) Nil
+            else Range(1,length).toList.flatMap(i => List(Arg(first+i-1), sep)) ::: List(Arg(first+length-1))
+         case ImplicitArg(n) =>
+            List(ImplicitArg(remap(n)))
+         case Var(n, tpd, None) =>
+            List(Var(remap(n), tpd, None))
+         case v @ Var(n, tpd, Some(sep)) =>
+            val length = if (n < seqVarCutOff) perSeqVar+1 else perSeqVar
+            val first = remap(n)
+            if (length == 0) Nil
+            else Range(1,length).toList.flatMap(i => List(Var(first+i-1, tpd, None), sep)) ::: List(Var(first+length-1, tpd, None))
+         case AttributedObject => if (attrib) List(AttributedObject) else Nil
+         case d: Delimiter =>
+            List(d)
+         case p: PresentationMarker => List(p flatMap flattenOne)
+      }
+      markers flatMap flattenOne
+   }
+   /** 
+    *  @param args the number of total arguments
+    *  @return the list of remapped implicit arguments
+    */
+   def flatImplicitArguments(args: Int) : List[ImplicitArg] = {
+      val (perSeqArg, seqArgCutOff) = distributeArgs(args)
+      val (perSeqVar, seqVarCutOff) = distributeVars(0)
+      arguments flatMap {
+         case ImplicitArg(n) => List(ImplicitArg(remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff)(n)))
+         case _ => Nil
+      }
+   }
 }
 
 object Arity {
-   def constant = Arity(Nil,Nil,Nil)
-   def plainApplication = Arity(List(SeqArg(1,Delim(""))), Nil, Nil)
-   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")))), List(Arg(-2)))
+   def constant = Arity(Nil,Nil,Nil,false)
+   def plainApplication = Arity(List(SeqArg(1,Delim(""))), Nil, Nil, false)
+   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")))), List(Arg(-2)), false)
+   def attribution = Arity(List(Arg(1)),Nil,Nil,true)
 }
 

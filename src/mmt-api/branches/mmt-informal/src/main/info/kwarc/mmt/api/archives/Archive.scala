@@ -23,7 +23,7 @@ abstract class ROArchive extends Storage with Logger {
   //def traverse(dim: String, in: List[String], filter: String => Boolean)(f: List[String] => Unit)
 
   val rootString: String
-  override def toString = "archive rootString"
+  override def toString = "archive " + rootString
   val properties: Map[String, String]
   val report : Report
   val logPrefix = "archive"

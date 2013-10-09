@@ -12,6 +12,7 @@ object mmt {
    val context = mmtsymbol("context")
    val identity = mmtsymbol("identity")
    val composition = mmtsymbol("composition")
+   val inferedTypeTag = mmtsymbol("infered")
    val morphismapplication = mmtsymbol("morphismapplication")
    val substitutionapplication = mmtsymbol("substitutionapplication")
    val tempty = mmtsymbol("theory-empty")

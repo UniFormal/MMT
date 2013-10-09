@@ -14,13 +14,12 @@ import scala.xml.Node
  * @param df optional definiens
  * @param ats OpenMath-style attributions
  */
-case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: (GlobalName,Term)*) extends Obj {
+case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term]) extends Obj {
    type ThisType = VarDecl
-   val attrs = ats.toList
    /** self-written copy method that does not allow changing attributions
     * (because sequence arguments and copy do not work together) */
    def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) = {
-      val vd = VarDecl(name, tp, df, ats:_*)
+      val vd = VarDecl(name, tp, df)
       vd.copyFrom(this)
       vd
    }
@@ -33,7 +32,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
    private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil) 
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
-	   val varToOMATTR = attrs.foldLeft[Term](OMV(name)) {(v,a) => OMATTR(v, OMID(a._1), a._2)}
+	   val varToOMATTR = OMV(name)
       (tp, df) match {
          case (None, None) => varToOMATTR
          case (Some(t), None) => 
@@ -42,19 +41,18 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], ats: 
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
-   def toNodeID(pos : Position) = <om:OMV name={name.toPath}>{tpN(pos)}{dfN(pos)}{attrsN(pos)}</om:OMV> % pos.toIDAttr 
+   def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
    def toCML = toOpenMath.toCML
    def role = Role_Variable
-   def head = None
+   def head = tp.flatMap(_.head)
    def components =
       List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted)) :::
       //temporary hack: if any other attribution is present, the type is assumed to be reconstructed
       //and returning a 4th components indicates that 
-      (if (ats.isEmpty) Nil else List(StringLiteral("")))
+      (if (metadata.getTags contains utils.mmt.inferedTypeTag) List(StringLiteral("")) else Nil)
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
-   private def tpN(pos : Position) = tp.map(t => <type>{t.toNodeID(pos / 1)}</type>).getOrElse(Nil)
-   private def dfN(pos : Position) = df.map(t => <definition>{t.toNodeID(pos / 2)}</definition>).getOrElse(Nil)
-   private def attrsN(pos : Position) = attrs map {case (path,tm) => <attribution key={path.toPath}>{tm.toNode}</attribution>}
+   private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
+   private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
 }
 
 /** represents an MMT context as a list of variable declarations */
@@ -76,16 +74,16 @@ case class Context(variables : VarDecl*) extends Obj {
    }
    /** the identity substitution of this context */
    def id : Substitution = this map {
-	   case VarDecl(n, _, _, _*) => Sub(n,OMV(n))
+	   case VarDecl(n, _, _) => Sub(n,OMV(n))
    }
  
    /** applies a function to the type/definiens of all variables (in the respective context)
     * @return the resulting context
     */
    def mapTerms(f: (Context,Term) => Term): Context = {
-      val newvars = variables.zipWithIndex map {case (VarDecl(n,tp,df,attrs @ _*), i) =>
+      val newvars = variables.zipWithIndex map {case (VarDecl(n,tp,df), i) =>
          val con = Context(variables.take(i) : _*)
-         VarDecl(n, tp map {f(con,_)}, df map {f(con,_)}, attrs : _*) 
+         VarDecl(n, tp map {f(con,_)}, df map {f(con,_)}) 
       }
       Context(newvars : _*)
    }
@@ -131,7 +129,7 @@ case class Context(variables : VarDecl*) extends Obj {
    /** returns this as a substitutions using those variables that have a definiens */
    def toPartialSubstitution : Substitution = {
      variables.toList mapPartial {
-        case VarDecl(n,_,Some(df), _*) => Some(Sub(n,df))
+        case VarDecl(n,_,Some(df)) => Some(Sub(n,df))
         case _ => None
      }
    }
@@ -141,8 +139,8 @@ case class Context(variables : VarDecl*) extends Obj {
      if (subs.length == this.length) Some(subs) else None
    }
    override def toString = this.map(_.toString).mkString("",", ","")
-   def toNodeID(pos : Position) =
-     <om:OMBVAR>{this.zipWithIndex.map({case (v,i) => v.toNodeID(pos / i)})}</om:OMBVAR>
+   def toNode =
+     <om:OMBVAR>{mdNode}{this.zipWithIndex.map({case (v,i) => v.toNode})}</om:OMBVAR>
    def toCML = 
      <m:bvar>{this.map(v => v.toCML)}</m:bvar>
    def head = None
@@ -160,7 +158,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    }
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
-   def toNodeID(pos: Position): Node = <om:OMV name={name.toString}>{target.toNodeID(pos / 1)}</om:OMV>
+   def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
    def toCML : Node = <m:mi name={name.toPath}>{target.toCML}</m:mi>
    def components = List(StringLiteral(name.toString), target)
    override def toString = name + ":=" + target.toString
@@ -192,8 +190,8 @@ case class Substitution(subs : Sub*) extends Obj {
       Context(decls : _*)
    }
    override def toString = this.map(_.toString).mkString("",", ","")
-   def toNodeID(pos : Position) =
-      <om:OMBVAR>{subs.zipWithIndex.map(x => x._1.toNodeID(pos / x._2))}</om:OMBVAR>
+   def toNode =
+      <om:OMBVAR>{mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}</om:OMBVAR>
    def toCML = asContext.toCML
    def head = None
    def role : Role = Role_substitution
@@ -204,9 +202,14 @@ case class Substitution(subs : Sub*) extends Obj {
 /** helper object */
 object Context {
 	/** parses an OMBVAR into a context */
-	def parse(N : scala.xml.Node, base : Path) : Context = N match {
-	  case <om:OMBVAR>{decls @ _*}</om:OMBVAR> =>  decls.toList.map(VarDecl.parse(_, base))
-      case _ => throw ParseError("not a well-formed context: " + N.toString)
+	def parse(Nmd : scala.xml.Node, base : Path) : Context = {
+	   val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)
+	   val c = n match {
+	      case <om:OMBVAR>{decls @ _*}</om:OMBVAR> =>  decls.toList.map(VarDecl.parse(_, base))
+         case _ => throw ParseError("not a well-formed context: " + n.toString)
+	   }
+      mdOpt.foreach {md => c.metadata = md}
+      c
 	}
 	/** generate new variable name similar to x */
    private def rename(x: LocalName) = x / ""
@@ -221,7 +224,7 @@ object Context {
 	/** returns an alpha-renamed version of con that contains no variable from forbidden, and a substitution that performs the alpha-renaming */
 	def makeFresh(con: Context, forbidden: List[LocalName]) : (Context,Substitution) = {
 	   var sub = Substitution()
-	   val conN = con map {case vd @ VarDecl(x,tp,df,ats @ _*) =>
+	   val conN = con map {case vd @ VarDecl(x,tp,df) =>
 	      var xn = x
 	      while (forbidden contains xn) {xn = rename(xn)}
 	      val vdn = if (x == xn && sub.isIdentity)
@@ -237,70 +240,54 @@ object Context {
 
 /** helper object */
 object VarDecl {
-   def parseAttrs(N: Seq[Node], base: Path) : (Option[Term], Option[Term], List[(GlobalName,Term)]) = {
+   private def parseAttrs(N: Seq[Node], base: Path) : (Option[Term], Option[Term], Boolean) = {
       var tp : Option[Term] = None
       var df : Option[Term] = None
-      var attrs : List[(GlobalName, Term)] = Nil
-      var left = N.toList
-      while (left != Nil) {
-         left.head match {
+      var attrs = false
+      N.toList.foreach {
             case <type>{t}</type> => tp = Some(Obj.parseTerm(t, base))
             case <definition>{t}</definition> => df = Some(Obj.parseTerm(t, base))
-            case a @ <attribution>{t}</attribution> =>
-               val key = Path.parseS(xml.attr(a, "key"), base)
-               val value = Obj.parseTerm(t, base)
-               attrs = (key, value) :: attrs
-            //TODO remove support for OpenMath style OMATTR
-            case k @ <OMS/> =>
-               val key = Obj.parseOMS(k, base) match {
-                  case g: GlobalName => g
-                  case _ => throw ParseError("key must be symbol in " + N.toString)
-               }
-               left = left.tail
-               if (left == Nil) throw ParseError("missing attribution value: " + N)
-               val vl = left.head
-               key match {
-                  case mmt.mmttype => tp = Some(Obj.parseTerm(vl, base))
-                  case mmt.mmtdef => df = Some(Obj.parseTerm(vl, base))
-                  case _ =>
-                     val value = Obj.parseTerm(vl, base)
-                     attrs = (key, value) :: attrs
-               }
-         }
-         left = left.tail
+            case _ => attrs = true // for Twelf: all other children mark inferred types
       }
-      (tp, df, attrs.reverse)
+      (tp, df, attrs)
    }
-   def parse(N: Node, base: Path) : VarDecl = {
-      N match {      
-         // no support for OpenMath style attributed variables
-         /*
-         case <OMATTR><OMATP>{ats @ _*}</OMATP>{v}</OMATTR> =>
-            val name = LocalName.parse(xml.attr(v, "name"))
-            val (tp, df, attrs) = parseAttrs(ats, base, pTerm, pTerm, pTerm)
-            VarDecl(name, tp, df, attrs : _*)
-         */
-         case <OMV>{ats @ _*}</OMV> =>
-            val name = LocalName.parse(xml.attr(N, "name"))
-            val (tp, df, attrs) = parseAttrs(ats, base)
-            VarDecl(name, tp, df, attrs : _*)
-         case _ => throw ParseError("not a well-formed variable declaration: " + N.toString)
+   def parse(Nmd: Node, base: Path) : VarDecl = {
+      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)
+      n match {      
+         case <OMV>{body @ _*}</OMV> =>
+            val name = LocalName.parse(xml.attr(n, "name"))
+            val (tp, df, attrs) = parseAttrs(body, base)
+            val vd = VarDecl(name, tp, df)
+            mdOpt.foreach {md => vd.metadata = md}
+            if (attrs) vd.metadata.add(metadata.Tag(utils.mmt.inferedTypeTag)) // for Twelf export compatibility, TODO remove
+            vd
+         case _ => throw ParseError("not a well-formed variable declaration: " + n.toString)
       }
    }
 }
 /** helper object */
 object Substitution {
 	/** parsers an OMBVAR into a substitution */
-	def parse(N : scala.xml.Node, base : Path) : Substitution = N match {
-		case <om:OMBVAR>{sbs @ _*}</om:OMBVAR> => sbs.toList.map(Sub.parse(_, base))
-      case _ => throw ParseError("not a well-formed substitution: " + N.toString)
-	}
+	def parse(Nmd : scala.xml.Node, base : Path) : Substitution = {
+      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)
+	   val s = n match {
+   		case <om:OMBVAR>{sbs @ _*}</om:OMBVAR> => sbs.toList.map(Sub.parse(_, base))
+         case _ => throw ParseError("not a well-formed substitution: " + n.toString)
+      }
+      mdOpt.foreach {md => s.metadata = md}
+      s
+   }
 }
 /** helper object */
 object Sub {
-   def parse(N: Node, base: Path) = N match {
-      case <OMV>{e}</OMV> => Sub(LocalName.parse(xml.attr(N, "name")), Obj.parseTerm(e, base))
-      case _ => throw ParseError("not a well-formed case in a substitution: " + N.toString)
+   def parse(Nmd: Node, base: Path) = {
+      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)      
+      val s = n match {
+         case <OMV>{e}</OMV> => Sub(LocalName.parse(xml.attr(n, "name")), Obj.parseTerm(e, base))
+         case _ => throw ParseError("not a well-formed case in a substitution: " + n.toString)
+      }
+      mdOpt.foreach {md => s.metadata = md}
+      s
    }
 }
 

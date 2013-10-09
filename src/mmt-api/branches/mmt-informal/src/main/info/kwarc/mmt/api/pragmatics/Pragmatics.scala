@@ -76,7 +76,7 @@ class Pragmatics(controller: Controller) {
     * @param t the strict term
     * @return (tP,apps,ps) where tP is the pragmatic version of t;
     *   apps gives the Application's undone (innermost first);
-    *   ps gives the positions of the components of tP in t i.e., (tP.components zip ps) forall {(c,p) => t.subobject(p) = c}
+    *   ps gives the positions of the components of tP in t, i.e., (tP.components zip ps) forall {(c,p) => t.subobject(p) = c}
     */
    def pragmaticHeadWithInfo(t: Term) : (Term, List[Application], List[Position]) = {
       pragmaticHeadAux(t, Nil, Position.positions(t))
@@ -87,13 +87,17 @@ class Pragmatics(controller: Controller) {
             case Some(a) =>
                if (a.apply == apply) {
                   val (tP, posP) = args match {
-                     case List(OMBIND(OMS(lambda @ OMMOD(meta2) % _), context, scope)) =>
+                     case List(OMBINDC(OMS(lambda @ OMMOD(meta2) % _), context, scopes)) =>
                         ps.getHOAS(meta2) match {
                            case Some(h) =>
                               if (h.apply == apply && h.lambda == lambda) {
-                                 // OMA(apply, fun, OMBIND(lambda, context, scope)) ---> OMBIND(fun, context, scope)
-                                 val tP = OMBIND(fun, context, scope)
-                                 val posP = pos(1) :: Position.positions(tP).tail.map(p => pos(2)/p)
+                                 // OMA(apply, OMA(apply, s, args), OMBIND(lambda, context, scopes))
+                                 //  --->
+                                 // OMBIND(OMA(s, args), context, scopes)
+                                 val (funP, funApps, funPos) = pragmaticHeadWithInfo(fun) // OMA(s, args)
+                                 val restRange = Range(0,context.variables.length + scopes.length).toList 
+                                 val posP = funPos.map(pos(1)/_) ::: restRange.map(i => Position(2)/(1+i))
+                                 val tP = OMBINDC(funP, context, scopes)
                                  (tP, posP)
                               } else
                                  (OMA(fun, args), pos.tail)

@@ -338,6 +338,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
     * @param e the added declaration
     */
   def add(e : ContentElement) {
+    log("adding " + e.path)
     (e.path, e) match {
       case (_, doc : DPath) => throw ImplementationError("addtion of document to library impossible")
       case (doc ? mod, m : Module) =>
@@ -372,6 +373,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
     * @param path the path to the element to be deleted
     */
    def delete(path : Path) {
+      log("deleting " + path)
       path match {
          case doc : DPath => throw ImplementationError("deletion of documents from library impossible")
          case doc ? mod => modules -= doc ? mod

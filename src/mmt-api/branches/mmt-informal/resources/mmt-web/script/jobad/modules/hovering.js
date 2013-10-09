@@ -26,7 +26,7 @@ var hovering = {
 		}
 		// hover on variable: select declaration
 		if (target.hasAttribute('jobad:varref')) {
-			var v = $(target).parents('mrow').children().filter(function() {
+			var v = $(target).parents('mrow').find('mrow').filter(function() {
                 return $(this).attr('jobad:mmtref') == target.attr('jobad:varref');
 			})
 			mmt.setSelected(v[0]);

@@ -239,10 +239,17 @@ class Controller extends ROController with Logger {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
                      memory.content.update(nw)
+                     extman.changeListeners foreach {l =>
+                        l.onDelete(nw.path)
+                        l.onAdd(nw)
+                     }
                   }
                case _ =>
                   // the normal case
                   memory.content.add(nw)
+                  extman.changeListeners foreach {l =>
+                     l.onAdd(nw)
+                  }
             }
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
@@ -266,12 +273,16 @@ class Controller extends ROController with Logger {
          case cp : CPath =>
             library.delete(cp)
       }
+      extman.changeListeners foreach {l =>
+         l.onDelete(p)
+      }
       //depstore.deleteSubject(p)
    }
 
    /** clears the state */
    def clear {
       memory.clear
+      extman.changeListeners foreach {l => l.onClear}
    }
    /** releases all resources that are not handled by the garbage collection */
    def cleanup {
@@ -369,16 +380,14 @@ class Controller extends ROController with Logger {
    def getBase = base
    /** base URL In the local system */
    protected var home = File(System.getProperty("user.dir"))
+   /** @return the current home directory */
    def getHome = home
+   /** @param h sets the current home directory relative to which path names in commands are executed
+    *  
+    *  initially the current directory
+    */
    def setHome(h: File) {home = h}
 
-   def reportException[A](a: => A) {
-       try {a}
-       catch {
-    	   case e : info.kwarc.mmt.api.Error => report(e)
-         case e : java.lang.Exception => report("error", e.getMessage)
-       }
-   }
    /** executes a string command */
    def handleLine(l : String) {
         val act = try {
@@ -414,11 +423,11 @@ class Controller extends ROController with Logger {
 	          val b = URI.fromJava(currentDir.toURI)
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
-	         val arch = backend.openArchive(f)
-	         extman.targets.foreach {t => t.register(arch)}
+	         val archs = backend.openArchive(f)
+	         archs foreach {a => extman.targets.foreach {t => t.register(a)}}
          case AddSVNArchive(url, rev) =>
            backend.openArchive(url, rev)
-          case ArchiveBuild(id, key, mod, in, args) =>
+         case ArchiveBuild(id, key, mod, in, args) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             key match {
                case "check" => arch.check(in, this)
@@ -519,7 +528,7 @@ class Controller extends ROController with Logger {
 	            log("check succeeded")
 	         else
 	            log("check failed (see log for error messages)")
-	      case DefaultGet(p) => handle(GetAction(Print(p)))
+	      case DefaultGet(p) => GetAction(Print(p)).make(this)
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)

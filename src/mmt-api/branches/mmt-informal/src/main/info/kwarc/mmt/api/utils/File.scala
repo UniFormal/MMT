@@ -41,6 +41,15 @@ case class File(toJava: java.io.File) {
        case None => this
        case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
    }
+   /** delete this, recursively if directory */
+   def deleteDir {
+      toJava.list foreach {n =>
+         val f = this / n
+         if (f.toJava.isDirectory) f.deleteDir
+         else f.toJava.delete
+      }
+      toJava.delete
+   }
 }
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
@@ -76,7 +85,37 @@ object File {
       fw.write(s)
       fw.close
    }
+   /**
+    * convenience method for writing a list of lines into a file
+    * 
+    * overwrites existing files, creates directories if necessary
+    * @param f the target file
+    * @param lines the lines (without line terminator - will be chosen by Java and appended)
+    */
+   def WriteLineWise(f: File, lines: List[String]) {
+      val fw = Writer(f)
+      lines.foreach {l =>
+         fw.println(l)
+      }
+      fw.close
+   }
+   /**
+    * convenience method for reading a file into a string
+    * 
+    * @param f the source file
+    * @return s the file content
+    */
+   def read(f: File): String = {
+      var s : String = ""
+      ReadLineWise(f) {l => s += l}
+      s
+   }
+   /** convenience method to obtain a typical (buffered, UTF-8) reader for a file */
    def Reader(f: File) = new BufferedReader(new InputStreamReader(new FileInputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+   /** convenience method to read a file line by line
+    *  @param f the file
+    *  @param proc a function applied to every line (without line terminator)
+    */
    def ReadLineWise(f: File)(proc: String => Unit) {
       val r = Reader(f)
       var line : String = null

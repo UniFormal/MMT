@@ -41,12 +41,56 @@ abstract class Fixity(val fixityString: String) {
    def argumentStrings: List[String]
    def argumentString: String = argumentStrings.mkString(" ")
    override def toString = "%%" + fixityString + " " + argumentString
-   /** @return a complete list of Marker's */
-   def allMarkers : List[Marker]
-   /** @return the list of only those markers that are relevant for parsing */
-   def markers = allMarkers.filter {
-      case _:ImplicitArg => false // remove the implicit markers
-      case _ => true
+   /** @return the list of markers defining this fixity */
+   def markers: List[Marker]
+   /** @return the arity of this fixity */
+   def getArity = {
+      var args: List[ArgumentComponent] = Nil
+      var vars : List[VariableComponent] = Nil
+      var scopes : List[ScopeComponent] = Nil
+      var attrib : Int = 0
+      //collect components from markers
+      markers foreach {
+         case a : ArgumentMarker =>
+            if (a.number > 0)
+               args ::= a
+            else if (a.number < 0)
+               scopes ::= a
+            else {
+               throw InvalidNotation("illegal marker: " + a)
+            }
+         case v: VariableComponent =>
+            vars ::= v
+         case AttributedObject =>
+            attrib += 1
+         case _ =>
+      }
+      // sort by component number
+      args = args.sortBy(_.number)
+      vars = vars.sortBy(_.number)
+      scopes = scopes.sortBy(_.number)
+      // args with all implicit argument components added
+      var argsWithImpl: List[ArgumentComponent] = Nil
+      var i = 1
+      args foreach {a =>
+         while (i < a.number) {
+            //add implicit argument in front of the current one
+            argsWithImpl ::= ImplicitArg(i)
+            i += 1
+         }
+         argsWithImpl ::= a
+         i += 1
+      }
+      //TODO: check all args.number < vars.number < scopes.numbers; no gaps in variables or scopes
+      //add implicit arguments after the last one (the first variable tells us if there are implicit arguments after the last one)
+      val totalArgs = vars.headOption.map(_.number).getOrElse(i) - 1
+      while (i <= totalArgs) {
+         argsWithImpl ::= ImplicitArg(i)
+         i += 1
+      }
+      args = argsWithImpl.reverse
+      val attribution = attrib > 0
+      Arity(args, vars, scopes, attribution)
    }
 }
 
@@ -61,8 +105,8 @@ object MixfixParser extends FixityParser {
 }
 
 /** the simplest Fixity consisting of a list of Marker's */
-case class Mixfix(val allMarkers: List[Marker]) extends Fixity("mixfix") {
-   def argumentStrings = allMarkers.map(_.toString)
+case class Mixfix(val markers: List[Marker]) extends Fixity("mixfix") {
+   def argumentStrings = markers.map(_.toString)
 }
 
 /**
@@ -100,7 +144,7 @@ case class BasicFixity(name: GlobalName, fixity: String, impl: Int) extends Fixi
     *  infix-left and infix-right are currently the same as infix, will be used for left/right-associative operators later
     *  but generally its better to avoid them in favor of sequence arguments
     */
-   def allMarkers = fixity match {
+   def markers = fixity match {
       case "infix"       => List(Arg(impl+1),SymbolName(name),Arg(impl+2))
       case "infix-left"  => List(Arg(impl+1),SymbolName(name),Arg(impl+2))
       case "infix-right" => List(Arg(impl+1),SymbolName(name),Arg(impl+2))
@@ -129,7 +173,7 @@ object RuleFixityParser extends FixityParser {
 /** A Fixity for inference rules: it takes some implicit and explicit parameters, then some hypotheses */
 case class RuleFixity(name: GlobalName, implParams: Int, explParams: Int, hypos: Int) extends Fixity("rule") {
    def argumentStrings = List(implParams.toString, explParams.toString, hypos.toString)
-   def allMarkers =
+   def markers =
       SymbolName(name) ::
       Range(0,implParams).map {i => ImplicitArg(i+1)}.toList :::
       Range(0,explParams).map {i => Arg(implParams + i +1 )}.toList :::

@@ -2,9 +2,15 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 
 /**
- * A RoleHandler is an Extension that is called on every Constant with a certain role
+ * A ChangeListener is an Extension that is called on every Constant
  */
-abstract class RoleHandler extends Extension {
-   def isApplicable(role: String): Boolean
-   def apply(c: symbols.Constant)
+abstract class ChangeListener extends Extension {
+   /** called after adding the element */
+   def onAdd(c: ContentElement)
+   /** called after deleting the element */
+   def onDelete(path: Path)
+   /** called after clearing the Constant */
+   def onClear
+   /** called after checking the element */
+   def onCheck(c: ContentElement)
 }

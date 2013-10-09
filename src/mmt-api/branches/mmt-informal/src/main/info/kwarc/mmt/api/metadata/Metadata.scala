@@ -47,8 +47,8 @@ class MetaData {
       case Tag(key) => List(key)
       case _ => Nil
    }
-   def toNode = <metadata>{data.map(_.toNode)}</metadata>
-   // def toString
+   def toNode = if (data.isEmpty) Nil else <metadata>{data.map(_.toNode)}</metadata>
+   override def toString = data.map(_.toString).mkString(", ")
 }
 
 /** helper object */

@@ -238,9 +238,9 @@ case class TNTBase(scheme : String, authority : String, prefix : String, ombase 
 
 
 /** a Backend holds a list of Storages and uses them to dereference Paths */
-class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Report) {
+class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend.Report) extends Logger {
    private var stores : List[Storage] = Nil
-   private def log(msg : => String) = report("backend", msg)
+   val logPrefix = "backend"
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
       s.foreach {d =>
@@ -293,37 +293,61 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
      }
    }
   
-   /** @throws BackendError if the root file cannot be read
-     * @throws NotApplicable if the root is neither a folder nor a MAR archive file */
-   def openArchive(root: java.io.File) : Archive = {
-      //TODO: check if "root" is meta-inf file, branch accordingly
+   /** 
+    * opens archives: an archive folder, or a mar file, or any other folder recursively
+    * @param root the file/folder containing the archive(s)
+    * @return the opened archives   
+    * @throws NotApplicable if the root is neither a folder nor a mar file
+    */
+   def openArchive(root: java.io.File) : List[Archive] = {
       if (root.isDirectory) {
-          val properties = new scala.collection.mutable.ListMap[String,String]
           val manifest = root / "META-INF" / "MANIFEST.MF"
-          var compsteps : Option[List[CompilationStep]] = Some(Nil) 
-          if (manifest.isFile) {
-             File.ReadLineWise(manifest) {case line =>
-                val tline = line.trim
-                if (! tline.startsWith("//") && tline != "") {
-                   val p = tline.indexOf(":")
-                   val key = tline.substring(0,p).trim
-                   val value = tline.substring(p+1).trim
-                   properties(key) = value
+          if (manifest.exists) {
+             log("opening archive defined by " + manifest)
+             val properties = new scala.collection.mutable.ListMap[String,String]
+             var compsteps : Option[List[CompilationStep]] = Some(Nil) 
+             if (manifest.isFile) {
+                File.ReadLineWise(manifest) {case line =>
+                   val tline = line.trim
+                   if (! tline.startsWith("//") && tline != "") {
+                      val p = tline.indexOf(":")
+                      val key = tline.substring(0,p).trim
+                      val value = tline.substring(p+1).trim
+                      properties(key) = value
+                   }
                 }
              }
+             val arch = new Archive(root, properties, report)
+             addStore(arch)
+             List(arch)
+          } else {
+             log(root + " is not an archive - recursing")
+             root.list.toList flatMap (n => openArchive(root / n))
           }
-          val arch = new Archive(root, properties, report)
-          addStore(arch)
-          arch
-      }
-      else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
-          // unpack it
-          val newRoot = root.getParentFile / (root.getName + "-unpacked")
-          extractMar(root, newRoot)
+      } else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
+          val folder = root.getParentFile
+          val name = root.getName
+          val newRoot = folder / (name + "-unpacked")
+          // timestamp to remember last unpacking
+          val ts = new Timestamps(folder, newRoot / "META-INF" / "timestamps")
+          val mod = ts.modified(List(name)) 
+          if (mod == Modified) {
+             newRoot.deleteDir
+          }
+          if (List(Added, Modified) contains mod) {
+             // unpack it
+             extractMar(root, newRoot)
+             ts.set(List(name))
+          }
+          if (mod == Unmodified)
+             log("skipping unpacked, unmodified archive " + newRoot)
           // open the archive in newRoot
           openArchive(newRoot)
       }
-      else throw NotApplicable
+      else {
+         log(root + " is not an archive or a folder containing archives")
+         Nil
+      }
    }
    def closeArchive(id: String) {
       getArchive(id) foreach {arch =>
@@ -332,19 +356,20 @@ class Backend(extman: ExtensionManager, report : info.kwarc.mmt.api.frontend.Rep
       }
    }
    
-   private def extractMar(file: java.io.File, newRoot: java.io.File) {
+   private def extractMar(file: File, newRoot: File) {
+       log("unpacking archive " + file + " to " + newRoot)
        val mar = new ZipFile(file)
-       var bytes =  new Array[Byte](100000)
+       var bytes = new Array[Byte](100000)
        var len = -1
        val enum = mar.entries
        while (enum.hasMoreElements) {
            val entry = enum.nextElement
-           if (entry.isDirectory)
-                new java.io.File(newRoot, entry.getName).mkdirs
-           else {
+           val outFile = newRoot / entry.getName
+           outFile.getParentFile.mkdirs
+           if (! entry.isDirectory) {
                val istream = mar.getInputStream(entry)
-               val ostream = new java.io.FileOutputStream(new java.io.File(newRoot, entry.getName))
-               while({ len = istream.read(bytes, 0, bytes.size); len != -1 })
+               val ostream = new java.io.FileOutputStream(outFile)
+               while({len = istream.read(bytes, 0, bytes.size); len != -1 })
                ostream.write(bytes, 0, len)
                ostream.close
                istream.close
