@@ -72,7 +72,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       presenters ::= OMDocPresenter
       presenters ::= controller.presenter
       parserExtensions ::= parser.MetadataParser
-      parserExtensions ::= parser.CommentIgnorer
+      parserExtensions ::= parser.CommentHandler
       //parserExtensions ::= new ControlParser
       lexerExtensions ::= GenericEscapeHandler
       lexerExtensions ::= QuoteHandler
