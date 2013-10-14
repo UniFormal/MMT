@@ -37,5 +37,5 @@ class GUIPanel(controller: Controller) extends JPanel {
    private val empane = new ExtManPane(controller.extman)
    tabbed.addTab("Extensions", null, empane, "registered extensions")
    
-   add(tabbed, BorderLayout.CENTER)
+   add(new JScrollPane(tabbed), BorderLayout.CENTER)
 }

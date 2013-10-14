@@ -14,6 +14,7 @@ trait Logger {
       try {a}
       finally {report.unindent}
    }
+   protected def logTime {log(Report.time)}
    protected def logError(s : => String) = report("error", "(" + logPrefix + ") " + s)
 }
 
@@ -64,6 +65,8 @@ class Report {
 
 object Report {
    val groups = List("user", "error", "controller", "extman", "library", "archive", "backend")
+   private val df = new java.text.SimpleDateFormat("HH:mm:ss.S")
+   def time = df.format(new java.util.Date())
 }
 
 abstract class ReportHandler(val id: String) {
@@ -83,10 +86,8 @@ object ConsoleHandler extends ReportHandler("console") {
 /** outputs to a file */
 class FileHandler(val filename : File, timestamps: Boolean) extends ReportHandler(filename.toString) {
    private val file = utils.File.Writer(filename)
-   private val df = new java.text.SimpleDateFormat("HH:mm:ss.S")
-   def time = df.format(new java.util.Date())
    def apply(ind: String, group : String, msg : String) = {
-         val t = if (timestamps) time + "\t" else ""
+         val t = if (timestamps) Report.time + "\t" else ""
          val m = t + ind + group + ": " + msg
          file.println(m)
    }

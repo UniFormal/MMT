@@ -66,3 +66,15 @@ class QueryServer extends ServerPlugin("query") {
    }
 }
 
+/** Plugin for MMT actions */
+class AdminServer extends ServerPlugin("admin") {
+   def apply(path: List[String], query: String, body: Body) = {
+      controller.report.record
+      val c = query.replace("%20", " ")
+      val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
+      controller.handle(act)
+      val r = controller.report.recall
+      controller.report.clear
+      Server.XmlResponse(Util.div(r reverseMap Util.div))
+   }
+}

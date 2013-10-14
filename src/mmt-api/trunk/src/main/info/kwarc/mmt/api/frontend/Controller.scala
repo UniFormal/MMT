@@ -374,6 +374,24 @@ class Controller extends ROController with Logger {
       }
       result
    }
+   
+   /** like read(f: File) but taking a string in mmt format  */
+   def read(s: String, dpath: DPath) : (Document,List[SourceError]) = {
+      val modules = deactivateDocument(dpath)
+      log("reading " + dpath)
+      val r = Reader(s)
+      val result = try {
+         val (doc, state) = textParser(r, dpath)
+         (doc, state.getErrors)
+      } finally {
+         r.close
+      }
+      log("deleting the remaining deactivated elements")
+      logGroup {
+         modules foreach {m => deleteInactive(m)}
+      }
+      result
+   }
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
    def getBase = base
@@ -527,6 +545,10 @@ class Controller extends ROController with Logger {
 	            log("check succeeded")
 	         else
 	            log("check failed (see log for error messages)")
+	      case Navigate(p) =>
+	         extman.changeListeners foreach {l =>
+	            l.onNavigate(p)
+	         }
 	      case DefaultGet(p) => GetAction(Print(p)).make(this)
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)

@@ -78,9 +78,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= QuoteHandler
       lexerExtensions ::= new PrefixEscapeHandler('\\')
       lexerExtensions ::= new NumberLiteralHandler(true)
-      serverPlugins   ::= new web.SVGServer
-      serverPlugins   ::= new web.QueryServer
-      
+      serverPlugins   :::= List(new web.SVGServer, new web.QueryServer, new web.AdminServer)
       queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
                                 new ontology.Present, new ontology.PresentDecl) 
       
@@ -88,9 +86,12 @@ class ExtensionManager(controller: Controller) extends Logger {
       getAll.foreach(_.init(controller, Nil))
    }
 
-   /** adds an Importer and initializes it */
+   /** instantiates an extension, initializes it, and adds it
+    *  @param cls qualified class name (e.g., org.my.Extension), must be on the class path at run time
+    *  @parag args arguments that will be passed when initializing the extension
+    */
    def addExtension(cls: String, args: List[String]) {
-       log("adding extension " + cls)
+       log("trying to create extension " + cls)
        val clsJ = java.lang.Class.forName(cls)
        val ext = try {
           val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
@@ -98,13 +99,18 @@ class ExtensionManager(controller: Controller) extends Logger {
        } catch {
           case e : java.lang.Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
+       addExtension(ext, args)
+   }
+   /** initializes and adds an extension */
+   def addExtension(ext: Extension, args: List[String] = Nil) {
+       log("adding extension " + ext.getClass.toString)
+       ext.init(controller, args)
        if (ext.isInstanceOf[Plugin]) {
           log("  ... as plugin")
           val pl = ext.asInstanceOf[Plugin]
           loadedPlugins ::= pl
           pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == java.lang.Class.forName(d))) addExtension(d, Nil)}
        }
-       ext.init(controller, args)
        if (ext.isInstanceOf[Foundation]) {
           log("  ... as foundation")
           foundations ::= ext.asInstanceOf[Foundation]
@@ -165,12 +171,12 @@ class ExtensionManager(controller: Controller) extends Logger {
          if (es.isEmpty) "" else label + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
       mkL("foundations", foundations) +
       mkL("build targets", targets) +
-      mkL("querytransformers", querytransformers) +
+      mkL("query transformers", querytransformers) +
       mkL("change listeners", changeListeners) +
       mkL("presenters", presenters) +
-      mkL("serverPlugins", serverPlugins) +
-      mkL("parserExtensions", parserExtensions)
-      mkL("queryExtensions", queryExtensions)
+      mkL("server plugins", serverPlugins) +
+      mkL("parser extensions", parserExtensions)
+      mkL("query extensions", queryExtensions)
       mkL("plugins", loadedPlugins) +
       "rules\n" + ruleStore.stringDescription 
    }

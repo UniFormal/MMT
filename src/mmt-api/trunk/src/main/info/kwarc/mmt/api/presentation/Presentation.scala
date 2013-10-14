@@ -96,8 +96,11 @@ case class Nest(begin : CIndex, end : CIndex, step : Presentation, base : Presen
    override def fill(plug : Presentation*) = Nest(begin, end, step.fill(plug : _*), base.fill(plug : _*))
 }
 
-/** produces the position of the current expression as a string, can be used for unique ids */
+/** produces the position of the current expression in the content dimension as a string, can be used for unique ids */
 case object Id extends Presentation
+
+/** produces the position of the current expression in the source */
+case object Source extends Presentation
 
 /** produces the name of the used style */
 case object TheNotationSet extends Presentation
@@ -202,7 +205,8 @@ object Presentation {
             val bi = BracketInfo(precOpt(xml.attr(n, "precedence")))
             Neighbor(int(xml.attr(n, "offset", "0")), bi)
          case <hole>{child @ _*}</hole> => Hole(int(xml.attr(n, "index", "0")), parse(child))
-         case <id/> => Id 
+         case <id/> => Id
+         case <source/> => Source
          case <index/> => Index
          case <nset/> => TheNotationSet 
          case <component/> =>

@@ -18,12 +18,12 @@ case class GlobalParams(rh : RenderingHandler, nset : MPath)
  * @param context some information about how to present the free variables that were bound on higher levels
  * @param inObject a flag to indicate whether the presented expression is a declaration or an object
  */
-case class LocalParams(ids : List[(String,String)], pos : Position,
+case class LocalParams(ids : List[(String,String)], pos : Position, source: Option[SourceRef],
                        inObject : Boolean, bracketInfo : Option[BracketInfo], context : List[VarData]) {
    def asContext = Context(context map (_.decl) : _*)
 }
 object LocalParams {
-   val objectTop = LocalParams(Nil, Position.Init, true, None, Nil)
+   val objectTop = LocalParams(Nil, Position.Init, None, true, None, Nil)
 }
 /** This class stores information about a bound variable.
  * @param decl the variable declaration
@@ -71,6 +71,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
    def apply(s : StructuralElement, rh: RenderingHandler) {
       val gpar = GlobalParams(rh, style)
       val lpar = LocalParams.objectTop.copy(inObject = false)
+      val lparS = lpar.copy(source = SourceRef.get(s))
       present(StrToplevel(s), gpar, lpar)
    }
    def apply(o: Obj, rh: RenderingHandler) {
@@ -84,7 +85,11 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
     * @param gpar the parameters that do not change during rendering
     * @param lpar the parameters that change during rendering
     */
-   protected def present(c : Content, gpar : GlobalParams, lpar : LocalParams) {
+   protected def present(c : Content, gpar : GlobalParams, lp : LocalParams) {
+      val lpar = c match {
+         case c: metadata.HasMetaData => lp.copy(source = SourceRef.get(c))
+         case _ => lp
+      }
       log("presenting: " + c)
       c match {
         case m : documents.XRef if expandXRefs => 
@@ -269,6 +274,10 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                recurse(post)
             recurse(Components(NumberedIndex(current), Presentation.Empty, last, post, step, sep, body))
         case Id => gpar.rh(lpar.pos.toString)
+        case Source => lpar.source match {
+           case Some(r) => gpar.rh(r.toString)
+           case None => 
+        }
         case Index => gpar.rh(lpar.pos.current.toString)
         case Neighbor(offset, bi) =>
             val i = ind.head + offset

@@ -12,7 +12,7 @@ var interactiveViewing = {
 	
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
-	   target = targetArray[0]  //for some reason jobad passes [target] instead of target
+	   target = targetArray[0];  //for some reason jobad passes [target] instead of target
 		mmt.setCurrentPosition(target);
 		var res = this.visibMenu();
       if (mmt.focusIsMath) {
