@@ -242,7 +242,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val tree = new SideKickParsedData(path.toJava.getName)
       val root = tree.root
       try {
-         val (doc,errors) = controller.read(path, None)
+         val (doc,errors) = controller.read(buffer.getText, DPath(utils.FileURI(path)))
          val checker = controller.checker //new StructureChecker(controller) 
          val errors2 = checker(doc)
          // add narrative structure of doc to outline tree

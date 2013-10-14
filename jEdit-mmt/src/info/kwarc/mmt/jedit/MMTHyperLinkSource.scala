@@ -8,10 +8,30 @@ import org.gjt.sp.jedit._
 import sidekick._
 import gatchan.jedit.hyperlinks._
 
-class MyHyperlink(start: Int, end: Int, startLine: Int, path: Path, ref: Option[SourceRef])
+class MMTHyperlink(start: Int, end: Int, startLine: Int, path: Path, ref: Option[SourceRef])
    extends AbstractHyperlink(start, end, startLine, path.toPath) {
    def click(view: View) {
-      ref map {
+      ref foreach {r => MMTHyperlink.navigateTo(view, r)}
+   }
+}
+
+object MMTHyperlink {
+   def elemToSourceRef(controller: frontend.Controller, elem: StructuralElement) : Option[SourceRef] = {
+       val ref = SourceRef.get(elem)
+       // we may have a ref now, but it's only useful if it's a file:URI
+       ref flatMap {r =>
+          val c = r.container
+          if (c.scheme == Some("file")) Some(r)
+          else {
+             //resolve logical document id in an archive
+             controller.backend.resolveLogical(c) map {
+               case (archive, path) => r.copy(container = FileURI(archive.sourceDir / path)) 
+             }
+          }
+       }
+   }
+   def navigateTo(view: View, ref: SourceRef) {
+      ref match {
         case SourceRef(FileURI(file), region) =>
            var buffer = jEdit.getBuffer(file.toString)
            if (buffer == null) {
@@ -52,24 +72,12 @@ class MMTHyperlinkSource extends HyperlinkSource {
                case _ => None
                   //asset.getScope flatMap {home => libraries.Names.resolve(home, id)(controller.localLookup)}
             }
-            elemOpt match {
-              case None => null
-              case Some(elem) =>
-                val ref = SourceRef.get(elem)
-                // we may have a ref now, but it's only useful if it's a file:URI
-                val fileRef = ref flatMap {r =>
-                   val c = r.container
-                   if (c.scheme == Some("file")) Some(r)
-                   else {
-                      //resolve logical document id in an archive
-                      controller.backend.resolveLogical(c) map {
-                        case (archive, path) => r.copy(container = FileURI(archive.sourceDir / path)) 
-                      }
-                   }
-                }
-                log(fileRef.map(_.toString).getOrElse("no file reference"))
-                new MyHyperlink(begin, end, line, elem.path, fileRef)
+            val linkOpt = elemOpt map {elem => 
+               val ref = MMTHyperlink.elemToSourceRef(controller,elem)
+               log(ref.map(_.toString).getOrElse("no file reference"))
+               new MMTHyperlink(begin, end, line, elem.path, ref)
             }
+            linkOpt.getOrElse(null)
       }
       currentLink
    } catch {

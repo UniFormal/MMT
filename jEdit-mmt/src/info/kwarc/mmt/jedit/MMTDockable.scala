@@ -11,4 +11,5 @@ class MMTDockable(view: View, position: String) extends JPanel {
       val gui = new GUIPanel(controller)
       add(gui)
    }
+   init
 }
