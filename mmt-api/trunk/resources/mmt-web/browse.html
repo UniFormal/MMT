@@ -72,7 +72,7 @@
       var inpbox = $('#inputbox');
       var ana = $('#inputanalyze')[0];
       var simp = $('#inputsimplify')[0];
-      $('#inputbox,#inputanalyze,#inputsimplify').change(function(){
+      $('#inputbox,#inputanalyze,#inputsimplify').on('change keyup paste', function(){
          var q = qmt.parse(qmt.literalString(inpbox.val()));
          if (ana.checked) q = qmt.analyze(q);
          if (simp.checked) q = qmt.simplify(q);

@@ -85,7 +85,7 @@ class MMTTreeModel(controller: Controller) extends TreeModel {
 class TreePane(controller: Controller) extends JPanel {
    /** true: text; false: XML; pres: presentation according to style */
    private var mode: String = "text"
-   private var style = DPath(utils.mmt.baseURI / "styles" / "lf" / "mathml.omdoc") ? "twelf"
+   private var style = DPath(utils.mmt.baseURI / "styles" / "omdoc" / "mathml.omdoc") ? "html5"
 
    setLayout(new BorderLayout())
 
@@ -101,34 +101,37 @@ class TreePane(controller: Controller) extends JPanel {
    buttons.add(styleTextArea)
    add(buttons, BorderLayout.NORTH)
 
-   private val content = new JTextArea //new FXPanel
+   private val content = new JTextArea // FXPanel 
    private val scrollContent = new JScrollPane(content)
    scrollContent.setPreferredSize(new java.awt.Dimension(700,700))
-   /** a RenderingHandler that writes directly into the JTextArea */
-   private val rb = new presentation.TextHandler {
-       def write(s: String) {content.append(s)}
-   }
 
    private val tree = new JTree(new MMTTreeModel(controller))
    tree.setRootVisible(false)
    val ml = new MouseAdapter() {
       override def mousePressed(e: MouseEvent) {
-         val path = tree.getPathForLocation(e.getX, e.getY)
-         if (path == null) return
-         val node = path.getLastPathComponent.asInstanceOf[MMTNode]
-         if (e.getClickCount == 1) {
-            val se = node match {
-               case seNode: StructuralElementNode => seNode.se
-               case pn: PathNode => pn.seNode.se
-               case _ => null
-            }
-            if (se != null) {
-               content.setText("")
-               val presenter = controller.extman.getPresenter(mode) getOrElse {
-                  new presentation.StyleBasedPresenter(controller,style)
+         val jpath = tree.getPathForLocation(e.getX, e.getY)
+         if (jpath == null) return
+         val node = jpath.getLastPathComponent.asInstanceOf[MMTNode]
+         val se = node match {
+            case seNode: StructuralElementNode => seNode.se
+            case pn: PathNode => pn.seNode.se
+            case _ => null
+         }
+         (e.getButton, e.getClickCount) match {
+            case (MouseEvent.BUTTON1, 1) =>
+               if (se != null) {
+                  val presenter = controller.extman.getPresenter(mode) getOrElse {
+                     new presentation.StyleBasedPresenter(controller,style)
+                  }
+                  val rb = new presentation.XMLBuilder
+                  presenter(se, rb)
+                  content.setText(rb.get.toString) // content.load(rb.get) 
                }
-               presenter(se, rb)
-            }
+            case (MouseEvent.BUTTON1, 2) =>
+               if (se != null) {
+                  val act = Navigate(se.path)
+                  controller.handle(act)
+               }
          }
       }
    }

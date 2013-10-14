@@ -23,9 +23,9 @@ object Action extends RegexParsers {
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
    private def comment = "//.*"r
-   private def action = controller | shell | getaction
+   private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | scala |
+      setbase | read | graph | check | navigate | printall | printallxml | clear | exit | getaction // getaction must be at end for default get
 
-   private def controller = log | mathpath | archive | extension | mws | server | windowaction | execfile | scala
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f, false))}
      private def logfilets = "log filets" ~> file ^^ {f => AddReportHandler(new FileHandler(f, true))}
@@ -71,38 +71,37 @@ object Action extends RegexParsers {
      private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def scala = "scala" ^^ {_ => Scala}
-
-   private def shell = setbase | read | graph | check | printall | printallxml | clear | exit
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
    private def graph = "graph" ~> file ^^ {f => Graph(f)}
    private def check = "check" ~> path ^^ {p => Check(p)}
+   private def navigate = "navigate" ~> path ^^ {p => Navigate(p)}
    private def printall = "printAll" ^^ {case _ => PrintAll}
    private def printallxml = "printXML" ^^ {case _ => PrintAllXML}
    private def clear = "clear" ^^ {case _ => Clear}
    private def exit = "exit" ^^ {case _ => Exit}
 
    private def getaction = diff | tofile | towindow | respond | print | defaultget 
-   private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
-   private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
-   private def towindow = presentation ~ ("window" ~> str) ^^ {case p ~ w => GetAction(ToWindow(p,w))}
-   private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
-   private def defaultget = presentation ^^ {p => DefaultGet(p)}
-   private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
-   private def presentation = present | deps | defaultPresent
-   private def present = content ~ ("present" ~> str) ^^ {case c ~ p => Present(c,p)}
-   private def deps = path <~ "deps" ^^ {case p => Deps(p)}
-   private def defaultPresent = content ^^ {c => Present(c, "text")}
-   private def content = closure | elaboration | component | get
-   private def closure = path <~ "closure" ^^ {p => Closure(p)}
-   private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
-   private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, s)}
-   private def get = path ^^ {p => Get(p)}
+      private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
+      private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
+      private def towindow = presentation ~ ("window" ~> str) ^^ {case p ~ w => GetAction(ToWindow(p,w))}
+      private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
+      private def defaultget = presentation ^^ {p => DefaultGet(p)}
+      private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
+      private def presentation = present | deps | defaultPresent
+      private def present = content ~ ("present" ~> str) ^^ {case c ~ p => Present(c,p)}
+      private def deps = path <~ "deps" ^^ {case p => Deps(p)}
+      private def defaultPresent = content ^^ {c => Present(c, "text")}
+      private def content = closure | elaboration | component | get
+      private def closure = path <~ "closure" ^^ {p => Closure(p)}
+      private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
+      private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, s)}
+      private def get = path ^^ {p => Get(p)}
    
    private def windowaction = windowclose | windowpos | browser
-   private def windowclose = "window" ~> str <~ "close" ^^ {s => WindowClose(s)}
-   private def windowpos   = ("window" ~> str <~ "position") ~ int ~ int ^^ {case s ~ x ~ y => WindowPosition(s, x, y)}
-   private def browser = "browser" ~> ("on" | "off") ^^ {s => BrowserAction(s)}
+      private def windowclose = "window" ~> str <~ "close" ^^ {s => WindowClose(s)}
+      private def windowpos   = ("window" ~> str <~ "position") ~ int ~ int ^^ {case s ~ x ~ y => WindowPosition(s, x, y)}
+      private def browser = "browser" ~> ("on" | "off") ^^ {s => BrowserAction(s)}
    
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
@@ -184,6 +183,9 @@ case class Read(file : File) extends Action {override def toString = "read " + f
 
 /** check a knowledge item */
 case class Check(p : Path) extends Action {override def toString = "check " + p}
+
+/** navigate to knowledge item */
+case class Navigate(p : Path) extends Action {override def toString = "navigate " + p}
 
 /** add a catalog entry for the local file system
  * All URIs of the form file:///SUFFIX are mapped to SUFFIX
