@@ -19,13 +19,28 @@ import utils.FileConversion._
  * logging information is sent to home/mmtplugin.log
  * the home directory is obtained from jEdit, e.g., settings/plugins/info.kwarc.mmt.jedit.MMTPlugin
  */
-class MMTPlugin extends EBPlugin {
+class MMTPlugin extends EBPlugin with Logger {
    val controller : Controller = new Controller
+   val report = controller.report
+   val logPrefix = "jedit"
    val errorSource = new DefaultErrorSource("MMT")
    
    val compileActions = new CompileActions(this)
    
-   private def log(msg: String) {controller.report("jedit", msg)}
+   /** implements onNavigate hook in terms of the methods of MMTHyperlink */
+   val mmtListener = new ChangeListener {
+      override def onNavigate(p: Path) {
+         log("navigating to " + p)
+         val ref = controller.globalLookup.getO(p) flatMap {
+            e => MMTHyperlink.elemToSourceRef(controller, e)
+         }
+         ref foreach {r =>
+            val view = jEdit.getActiveView
+            MMTHyperlink.navigateTo(view, r)
+         }
+      }
+   }
+   
    /** called by jEdit when plugin is loaded */
    override def start() {
       val home = getPluginHome()
@@ -45,6 +60,7 @@ class MMTPlugin extends EBPlugin {
       // add this only after executing the startup file because the status bar is not available yet
       // this command itself may also not be logged
       controller.report.addHandler(StatusBarLogger)
+      controller.extman.addExtension(mmtListener)
    }
    /** called by jEdit when plugin is unloaded */
    override def stop() {
@@ -52,18 +68,17 @@ class MMTPlugin extends EBPlugin {
       errorlist.ErrorSource.unregisterErrorSource(errorSource)
    }
    
-   //private val taKey = "info.kwarc.mmt.jedit.MMTTextAreaExtension"
    private def customizeEditPane(editPane: EditPane) {
        val ta = editPane.getTextArea
        val painter = ta.getPainter
        val sc = new StyleChanger(editPane, "mmt")
        val taExt = new MMTTextAreaExtension(controller, editPane)
        painter.addExtension(TextAreaPainter.DEFAULT_LAYER, taExt)
-       painter.addExtension(TextAreaPainter.DEFAULT_LAYER, sc)
+       //painter.addExtension(TextAreaPainter.DEFAULT_LAYER, sc)
        val ma = new MMTMouseAdapter(editPane)
        painter.addMouseListener(ma)
 
-       /* old code used for cleaning up? seems unnecessary
+       /* old code used for cleaning up - seems unnecessary
          painter.putClientProperty(taKey, taExt)
           case EditPaneUpdate.DESTROYED =>
               log("handling " + epu.paramString)
@@ -89,18 +104,11 @@ class MMTPlugin extends EBPlugin {
            vup.getWhat match {
               case ViewUpdate.CREATED =>
                  log("handling " + vup.paramString)
-                 //view.getEditPanes foreach customizeEditPane
+                 view.getEditPanes foreach customizeEditPane
               case _ =>
            }
         case _ =>
       }
-   }
-   
-   def showinfo(view : View) {
-      val wm = view.getDockableWindowManager
-      wm.addDockableWindow("mmt-dockable")
-      val d = wm.getDockableWindow("mmt-dockable").asInstanceOf[MMTDockable]
-      d.init
    }
 }
 
