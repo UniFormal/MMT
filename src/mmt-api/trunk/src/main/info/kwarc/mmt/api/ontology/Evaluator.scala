@@ -75,6 +75,9 @@ class Evaluator(controller: Controller) {
          val res = empty
          bs foreach {res += _}
          res
+      case Let(v, in) =>
+         val vE = evaluateElem(v)
+         evaluateESet(in)(vE ::: context)
       case SubObject(of, pos) =>
          val (con, obj) = evaluateElemObj(of).subobject(pos)
          val closure = obj match {

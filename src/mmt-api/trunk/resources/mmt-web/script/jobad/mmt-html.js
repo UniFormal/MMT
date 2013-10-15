@@ -106,7 +106,9 @@ var mmt = {
 	notstyle : uris.mathmlstyle,
 
 	/* the active theory is used for operations that must be executed relative to a theory, e.g., parsing */
-	activeTheory : '',
+	getActiveTheory : function() {
+	   return $('#inputtheory').val();
+	},
 	/* sets the active theory
 	  @param uri any MMT URI (symbol part is ignored if present; no action if document URI)
 	*/
@@ -115,7 +117,7 @@ var mmt = {
       if (arr[1] != "") {
          var thy = arr[0] + '?' + arr[1]
          this.activeTheory = thy;
-         $('#inputtheory').text(thy);
+         $('#inputtheory').val(thy);
       }
    },
    
@@ -305,7 +307,7 @@ var qmtAux = {
 	// defaultParam: a function returning the default value of the second argument of the returned function
 	extensionFunction : function(name, defaultParam) {
 	   return function(o, param) {
-	      var p = (param == null) ? ((defaultParam == null) ? mmt.activeTheory : defaultParam()) : param; 
+	      var p = (param == null) ? ((defaultParam == null) ? mmt.getActiveTheory() : defaultParam()) : param; 
 	      return XML.elem('function', o, 'name', name, 'param', p);
 	   };
    },
@@ -316,8 +318,12 @@ var qmt = {
    // helper functions to build queries (as XML strings)
 	literalPath : function (p) {return XML.elem('literal', null, 'uri', p);},
 	literalString : function (p) {return XML.elem('literal', p);},
+	bound      : function(i) {return XML.elem('bound', null, 'index', i);},
 	component  : function (o, c) {return XML.elem('component', o, 'index', c);},
 	subobject  : function (o, p) {return XML.elem('subobject', o, 'position', p);},
+	tuple       : function(os) {return XML.elem('tuple', os);},
+	projection  : function(o, i) {return XML.elem('projection', o, 'index', i);},
+	let         : function(v, i) {return XML.elem('let', v + i);},
 	parse       : qmtAux.extensionFunction('parse'),
 	infer       : qmtAux.extensionFunction('infer'),
 	simplify    : qmtAux.extensionFunction('simplify'),

@@ -90,7 +90,7 @@ a.treerelation {
    overflow: scroll;
 }
 
-#inputview {
+#inputviewterm, #inputviewtype {
    border: solid;
    border-width: 1px;
    min-height:30px;
