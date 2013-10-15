@@ -34,6 +34,13 @@ object xml {
       else
          l.map(_.text).mkString("","","")
    }
+   /** like attr but forces integer value
+    */
+   def attrInt(N: Node, att: String, exc: String => Throwable) : Int = {
+      val s = attr(N, att)
+      try {s.toInt}
+      catch {case _ : Throwable => throw exc("illegal attribute, expected integer, found: " + s)}
+   }
    /** adds an attribute to a node */
    def addAttr(N: scala.xml.Elem, key: String, value: String): scala.xml.Elem = {
       N % (new scala.xml.UnprefixedAttribute(key, value, scala.xml.Null))

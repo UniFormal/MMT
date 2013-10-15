@@ -26,14 +26,15 @@ var hovering = {
 	   }
 	},
 
-	hoverText: function(target, JOBADInstance) {
+	hoverText: function(targetObj, JOBADInstance) {
 		//hover on OMS: show jobad:href and select the smallest proper superexpression
+		var target = targetObj[0];
 		if (target.hasAttribute('jobad:href')) {			
 			var mr = $(target).closest('mrow');
 			var select = (mr.length == 0) ? target : mr[0];
 			mmt.setSelected(select);
 			this.selectSource(select);
-			return target.attr('jobad:href');
+			return target.getAttribute('jobad:href');
 		}
 		// hover on bracketed expression: select expression
 		if (mmt.getTagName(target) == 'mfenced') {

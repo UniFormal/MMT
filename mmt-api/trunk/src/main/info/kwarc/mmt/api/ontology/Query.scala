@@ -22,6 +22,12 @@ case class Elem(tp: List[QueryBaseType]) extends QueryType
 /** type oa a query that returns a set of values of a base type */
 case class ESet(tp: List[QueryBaseType]) extends QueryType
 
+object QueryTypeConversion {
+   implicit def qtFromList(bs: List[QueryBaseType]) = Elem(bs)
+   implicit def qtFromBase(b: QueryBaseType) = qtFromList(List(b))
+   implicit def tFromBase(b: BaseType): List[BaseType] = List(b)
+}
+
 object Elem {
    def apply(b: QueryBaseType) : QueryType = Elem(List(b))
 }
@@ -61,6 +67,8 @@ case class Literal[T <: BaseType](literal: T) extends Query
 
 /** set of literals */
 case class Literals[T <: BaseType](literals: T*) extends Query
+/** let binder */
+case class Let(value: Query, in: Query) extends Query
 /** singleton sets */
 case class Singleton(e: Query) extends Query
 /** the set of all elements of a certain concept in the MMT ontology */ 
@@ -77,7 +85,7 @@ case class BigUnion(domain: Query, of: Query) extends Query
 case class Comprehension(domain: Query, pred : Prop) extends Query
 /** tupling */
 case class Tuple(components: List[Query]) extends Query
-/** projectiong */
+/** projection */
 case class Projection(of: Query, index: Int) extends Query
 
 /** query that applies an atomic function */
@@ -203,6 +211,12 @@ object Query {
             throw ParseError("empty set of literals")
          else
             ESet(infer(bs(0)))
+      case Let(v,in) =>
+         val vI = infer(v) match {
+            case Elem(s) => s
+            case _ => throw ParseError("illegal query " + q)
+         }
+         infer(in)(vI ::: context)
       case Component(of, _) =>
          infer(of) match {
             case Elem1(PathType) => Elem(ObjType)
@@ -214,12 +228,14 @@ object Query {
          Elem(ObjType)
       case QueryFunctionApply(fun, arg, param) =>
          val argType = infer(arg)
-         if (argType == Elem(fun.in))
-            Elem(fun.out)
-         else if (argType == ESet(fun.in))
-            ESet(fun.out)
-         else
-            throw ParseError("illegal query: " + q)
+         if (argType == fun.in)
+            fun.out
+         else (fun.in,fun.out) match {
+            // lifting simple functions to set-arguments
+            case (Elem(in), Elem(out)) if argType == ESet(in) =>
+                  ESet(out)
+            case _ => throw ParseError("illegal query: " + q)
+         }
       case Related(to,_) =>
          infer(to) match {
             case Elem1(PathType) => ESet(PathType)
@@ -279,13 +295,11 @@ object Query {
          Literal(Path.parse(xml.attr(n, "uri")))
       case <literal>{l}</literal> =>
          Literal(StringValue(l.text))
+      case <bound/> => Bound(xml.attrInt(n, "index", ParseError(_)))
+      case <let>{v}{in}</let> => Let(parse(v), parse(in))
       case <concept/> => AllThatAre(Unary.parse(xml.attr(n, "name")))
       case <component>{o}</component> => Component(parse(o), xml.attr(n, "index"))
       case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
-      case <var/> =>
-         val s = xml.attr(n, "index")
-         val i = try {s.toInt} catch {case _ : Throwable => throw ParseError("illegal variable index: " + s)}
-         Bound(i)
       case <related>{to}{by}</related> => Related(parse(to), RelationExp.parse(by))
       case <closure>{of}</closure> => Closure(parse(of))
       case <singleton>{e}</singleton> => Singleton(parse(e))
@@ -298,6 +312,11 @@ object Query {
          BigUnion(dom, parse(s))
       case <comprehension>{d}{f}</comprehension> =>
          Comprehension(parse(d), Prop.parse(f))
+      case <tuple>{t @ _*}</tuple> =>
+         Tuple(t.toList.map(parse))
+      case <projection>{t}</projection> =>
+         val i = xml.attrInt(n, "index", ParseError(_))
+         Projection(parse(t), i)
       case <function>{a}</function> =>
          val name = xml.attr(n, "name")
          val param = Path.parseM(xml.attr(n, "param"), utils.mmt.mmtbase)
@@ -345,7 +364,7 @@ object Prop {
      }
    }}
    
-   /** parses a propositions; check must be called to ensure well-formedness */
+   /** parses a proposition; check must be called to ensure well-formedness */
    def parse(n: Node)(implicit queryFunctions: List[QueryExtension]) : Prop = n match {
       case <equal>{e}{f}</equal> => Equal(Query.parse(e), Query.parse(f))
       case <isin>{e}{f}</isin> => IsIn(Query.parse(e), Query.parse(f))
