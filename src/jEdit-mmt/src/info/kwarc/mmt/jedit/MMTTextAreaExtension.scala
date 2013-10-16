@@ -26,30 +26,53 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
      //gfx.fillRect(0, y, 500, height)
    //}
    private def asString(o: Obj) = controller.presenter.asString(o)
+   private def onSelection(ta: TextArea, offset: Int): Option[(Int,Int)] = {
+      if (textArea.getSelectionCount != 1) return None
+      val sel = textArea.getSelection(0)
+      sel.getStart <= offset && offset <= sel.getEnd
+      Some((sel.getStart, sel.getEnd))
+   }
    override def getToolTipText(xCoord: Int, yCoord: Int): String = {
       val offset = textArea.xyToOffset(xCoord, yCoord, false)
       if (offset == -1) return null
-      val as = MMTSideKick.getAssetAtOffset(view,offset)
-      as match {
-         case ta: MMTObjAsset =>
-            ta.obj match {
-              case OMV(n) =>
-                asString(ta.context(n))
-              case VarDecl(n, Some(tp), _) =>
-                if (parser.SourceRef.get(tp).isEmpty)
-                  //assuming lack of source reference identifies inferred type
-                  asString(tp)
-                else 
-                  null
-              case OMA(OMID(p), args) =>
-                  val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
-                  if (implicits.isEmpty) null
-                  else implicits.map(asString).mkString("   ")
-              case _ => null
+      onSelection(textArea,offset) match {
+         case Some((b,e)) =>
+            val as = MMTSideKick.getAssetAtRange(view, b, e)
+            as match {
+               case ta: MMTObjAsset =>
+                  ta.obj match {
+                     case t: Term =>
+                        Solver.check(controller, Stack(ta.getTheory, ta.context), t) match {
+                           case Some((_,tp)) => asString(tp)
+                           case _ => null
+                        }
+                     case _ => null
+                  }
+               case _ => null
             }
-         case _ => null
+         case None => 
+            val as = MMTSideKick.getAssetAtOffset(view,offset)
+            as match {
+               case ta: MMTObjAsset =>
+                  ta.obj match {
+                    case OMV(n) =>
+                      asString(ta.context(n))
+                    case VarDecl(n, Some(tp), _) =>
+                      if (parser.SourceRef.get(tp).isEmpty)
+                        //assuming lack of source reference identifies inferred type
+                        asString(tp)
+                      else 
+                        null
+                    case OMA(OMID(p), args) =>
+                        val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
+                        if (implicits.isEmpty) null
+                        else implicits.map(asString).mkString("   ")
+                    case _ => null
+                  }
+               case _ => null
+            }
       }
-   } 
+   }
 }
 
 //to highlight the current expression implement this

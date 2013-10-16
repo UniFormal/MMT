@@ -64,10 +64,7 @@ class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: S
   obj.head map {case p =>
     setLongDescription(p.toPath)
   }
-  def getTheory = parent.parent match {
-     case p: MPath => OMMOD(p)
-     case GlobalName(t, _) => t
-  }
+  def getTheory = parent.parent.module
   def getScope = Some(getTheory)
 }
 
@@ -352,8 +349,22 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
 }
 
 object MMTSideKick {
+   /** @return the asset at the specified position */
    def getAssetAtOffset(view: org.gjt.sp.jedit.View, caret: Int) = {
       val pd = SideKickParsedData.getParsedData(view)
       pd.getAssetAtOffset(caret).asInstanceOf[MMTAsset]
+   }
+   /** @return the smallest asset covering the specified range */
+   def getAssetAtRange(view: org.gjt.sp.jedit.View, begin: Int, end: Int) = {
+      val pd = SideKickParsedData.getParsedData(view)
+      var path = pd.getTreePathForPosition(begin)
+      var asset: MMTAsset = null
+      while ({
+         asset = path.getLastPathComponent.asInstanceOf[MMTAsset]
+         asset.getEnd.getOffset < end
+      }) {
+         path = path.getParentPath
+      }
+      asset
    }
 }
