@@ -9,100 +9,133 @@ import parser.ImplicitArg
 class SimplificationRuleGenerator extends ChangeListener {
   override val logPrefix = "rule-gen"
   case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
-  def onAdd(e: ContentElement) {onCheck(e)}
-  def onDelete(p: Path) {
+  override def onAdd(e: ContentElement) {onCheck(e)}
+  override def onDelete(p: Path) {
      controller.extman.ruleStore.delete {r => r.path == p}
   }
-  def onClear {
+  override def onClear {
      controller.extman.ruleStore.delete {r => r.isInstanceOf[GeneratedDepthRule]}
   }
-  def onCheck(e: ContentElement) {
-    val c = e match {
-       case c: symbols.Constant =>
-          if (c.rl == Some("Simplify") && c.tpC.analyzed.isDefined &&
-                ! controller.extman.ruleStore.depthRules.pairs.exists({case (k,r) => r.path == c.path})) // check if rule exists already
-             c
-          else {log("not1"); return}
-       case _ => log("not"); return
-    }
-    val tm = c.tpC.analyzed.get
-    try {
-      val ruleName : String = c.name.toString
-    	tm match {
-    	  case FunType(ctx, scp) => 
-    	    scp match {
-    	      case OMSemiFormal(s) => throw DoesNotMatch("failed to parse rule " + ruleName)
-    	      // match to OMA(OMID(=), (lhs, rhs))    	      
-    	      case ApplySpine(OMS(eq), argls) =>
-    	        val t1 = argls(argls.length - 2)
-    	        val t2 = argls(argls.length - 1)
-    	        if (controller.globalLookup.getConstant(eq).rl == Some("Eq")) {
-                // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
-    	          t1 match {
-    	            case ApplySpine(OMS(outer), args) =>
-    	              var bfr : List[LocalName] = Nil
-    	              var inr : GlobalName = null
-    	              var ins : List[LocalName] = Nil
-    	              var aft : List[LocalName] = Nil
-    	              var isBefore = true
-    	              var implicitArgs : List[OMV] = Nil
-    	              var implArgsOut = List.empty[ImplicitArg]
-    	              var implArgsIn = List.empty[ImplicitArg]
-    	              controller.globalLookup.getConstant(outer).not match {
-    	                case Some(n) => implArgsOut ++= n.arity.flatImplicitArguments(args.length)
-    	                case None => Nil
-    	              }
-    	              val omvs = args.zipWithIndex.map { case (arg, i) =>
-    	                if (!implArgsOut.contains(ImplicitArg(i+1))) { 
-    	                arg match {    	                  
-    	            	  case OMV(x) =>
-    	            	    if (isBefore)
-    	            	       bfr ::= x
-    	            	    else
-    	            	       aft ::= x
-    	            	  case ApplyGeneral(OMS(inner), args) =>
-    	            	    controller.globalLookup.getConstant(inner).not match {
-    	            	    	case Some(n) => implArgsIn ++= n.arity.flatImplicitArguments(args.length)
-    	            	    	case None => Nil
-    	            	    }
-    	            	     if (isBefore) {
-    	            	        inr = inner
-    	            	        args.zipWithIndex foreach { a =>
-    	            	            if (!implArgsIn.contains(ImplicitArg(a._2+1))) {
-    	            	              a match {
-    	            	                case (OMV(x),vi) => ins ::= x
-    	            	                case (e, _) => throw DoesNotMatch(controller.presenter.asString(e) + " not a variable for inner operation " + controller.presenter.asString(OMID(inner)))
-    	            	              }
-    	            	            }
-    	            	        }
-    	            	        isBefore = false
-    	            	     } else
-    	            	        throw DoesNotMatch(ruleName + " more than 1 inner operation detected " + args)    	  
-    	                }
-    	                }
-    	              }
-    	              if (isBefore) throw DoesNotMatch("no inner operator detected in " + ruleName) // check that inner OMA was detected
-    	              // check that all var names are different
-    	              val varls = (bfr ++ ins ++ aft)
-    	              val unique = varls.distinct
-    	              if (varls.length != unique.length) throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
-    	              val desc = ruleName + " simplify " +   
-                         controller.presenter.asString(t1) + "  ~~>  " + controller.presenter.asString(t2)
-    	              val simplify = new GeneratedDepthRule(outer, inr, c, desc,
-    	                     bfr.reverse, ins.reverse, aft.reverse, implArgsOut, implArgsIn, t2)
- 	            	  controller.extman.ruleStore.add(simplify)
-    	              log("succesfully registered rule: " + ruleName)
-    	            case _ => throw DoesNotMatch(ruleName + " no outer op")
-    	          }
-    	        } else throw DoesNotMatch(OMID(eq).toString + " is not of role Eq in " + ruleName)
-    	      case _ => throw DoesNotMatch(ruleName + " is not well-formed OMA statement:\n\t" + controller.presenter.asString(scp))
-    	    }
-    	  case _ => throw DoesNotMatch(ruleName + " not a FunType")
-    	}
-   } catch {
-     case e : DoesNotMatch => logError(e.msg)
-     case e : Error => logError(e.shortMsg)
-   }
+  override def onCheck(e: ContentElement) {
+       val c = e match {
+          case c: symbols.Constant if c.rl == Some("Simplify") =>
+             if (c.tpC.analyzed.isDefined) {
+                val rules = controller.extman.ruleStore.depthRules.pairs
+                // check if an up-to-date rule for this constant exists already: if so break, otherwise delete it
+                rules foreach {
+                   case (_, r: GeneratedDepthRule) if r.path == c.path => 
+                      if (r.validSince >= c.tpC.lastChangeAnalyzed) {
+                         log("rule is up-to-date")
+                         return
+                      } else
+                         controller.extman.ruleStore.delete(_ == r)
+                   case _ =>
+                }
+                c
+             } else {
+                log("not valid, skipped")
+                return
+             }
+          case _ => return
+       }
+       val tm = c.tpC.analyzed.get
+       if (parser.AbstractObjectParser.isOnlyParsed(tm)) {
+          log("type only partially validated, skipped")
+          return
+       }
+       tm match {
+       	 case FunType(ctx, scp) => 
+       	    scp match {
+       	      case ApplySpine(OMS(eq), argls) if argls.length >= 2 =>
+       	          if (controller.globalLookup.getConstant(eq).rl == Some("Eq"))
+       	             generateRule(c, argls)
+                   else
+                      error("not of eq-args shape")
+               case ApplySpine(OMS(ded), List(ApplySpine(OMS(eq), argls))) if argls.length >= 2 =>
+                   if (controller.globalLookup.getConstant(ded).rl == Some("Truth") &&
+                       controller.globalLookup.getConstant(eq).rl == Some("Eq"))
+                      generateRule(c, argls)
+                   else
+                      error("not of ded-eq-args shape")
+               case _ =>
+                  error("not a depth rule")
+       	    }
+           case _ =>
+              error("not a depth rule")
+       }
+  }
+  private def error(msg: String) {
+     logError(msg)
+  }
+  /** @param args implicit ::: List(t1, t2) for a rule t1 ~> t2 */
+  private def generateRule(c: symbols.Constant, args: List[Term]) {
+     val t1 = args.init.last
+     val t2 = args.last
+     val ruleName = c.name.toString
+     log("generating rule for " + ruleName)
+     try {
+       // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
+       t1 match {
+         case ApplySpine(OMS(outer), args) =>
+           var bfr : List[LocalName] = Nil
+           var inr : GlobalName = null
+           var ins : List[LocalName] = Nil
+           var aft : List[LocalName] = Nil
+           var isBefore = true
+           var implicitArgs : List[OMV] = Nil
+           var implArgsOut = List.empty[ImplicitArg]
+           var implArgsIn = List.empty[ImplicitArg]
+           controller.globalLookup.getConstant(outer).not match {
+             case Some(n) => implArgsOut ++= n.arity.flatImplicitArguments(args.length)
+             case None => Nil
+           }
+           val omvs = args.zipWithIndex.map { case (arg, i) =>
+              if (!implArgsOut.contains(ImplicitArg(i+1))) { 
+                 arg match {    	                  
+               	  case OMV(x) =>
+               	    if (isBefore)
+               	       bfr ::= x
+               	    else
+               	       aft ::= x
+               	  case ApplyGeneral(OMS(inner), args) =>
+               	    controller.globalLookup.getConstant(inner).not match {
+               	    	case Some(n) => implArgsIn ++= n.arity.flatImplicitArguments(args.length)
+               	    	case None => Nil
+               	    }
+               	    if (isBefore) {
+                  	    inr = inner
+                  	    args.zipWithIndex foreach { a =>
+                     	    if (!implArgsIn.contains(ImplicitArg(a._2+1))) {
+               	              a match {
+               	                case (OMV(x),vi) => ins ::= x
+               	                case (e, _) => throw DoesNotMatch(controller.presenter.asString(e) + " not a variable for inner operation " + controller.presenter.asString(OMID(inner)))
+               	              }
+               	          }
+                  	    }
+                  	    isBefore = false
+                  	 } else
+                  	    throw DoesNotMatch(ruleName + " more than 1 inner operation detected " + args)    	  
+                  }
+              }
+           }
+           if (isBefore) throw DoesNotMatch("no inner operator detected in " + ruleName) // check that inner OMA was detected
+           // check that all var names are different
+           val varls = (bfr ++ ins ++ aft)
+           val unique = varls.distinct
+           if (varls.length != unique.length)
+              throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
+           val desc = ruleName + " simplify " +   
+              controller.presenter.asString(t1) + "  ~~>  " + controller.presenter.asString(t2)
+           val simplify = new GeneratedDepthRule(outer, inr, c, desc,
+              bfr.reverse, ins.reverse, aft.reverse, implArgsOut, implArgsIn, t2)
+      	  controller.extman.ruleStore.add(simplify)
+           log("succesfully registered rule: " + ruleName)
+         case _ => error("no outer op")
+       }
+     } catch {
+        case e : DoesNotMatch => logError(e.msg)
+        case e : Error => logError(e.shortMsg)
+     }
   }
 }
 
@@ -113,6 +146,7 @@ class GeneratedDepthRule(outer: GlobalName, inner: GlobalName, from: symbols.Con
     override def path = from.path
     override def parent = from.home
     override def toString = desc
+    val validSince = from.tpC.lastChangeAnalyzed
     private val implOutInx = implArgsOut map { case ImplicitArg(i) => i-1 }
     private val implInInx = implArgsIn map { case ImplicitArg(i) => i-1 }
     def apply : Rewrite = { 
