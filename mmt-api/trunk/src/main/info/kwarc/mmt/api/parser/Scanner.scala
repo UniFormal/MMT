@@ -194,8 +194,11 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
    /** tail-recursively going through the Token's */
    @tailrec
    private def next {
-      var goToNextToken = true
-      tl(currentIndex) match {
+      val currentElem = try {tl(currentIndex)}
+         catch {case e: java.lang.IndexOutOfBoundsException =>
+            throw ImplementationError("illegal index in token list\n" + toString)
+         }
+      currentElem match {
          case ml: MatchedList =>
             scanRecursively(ml)
             advance
@@ -214,11 +217,12 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
             anyActiveApplicable match {
                case Abort =>
                   log("aborting")
-                  //drop innermost notations up to and including the one to be aborted (= active(closable+1))
-                  currentIndex = active(closable).firstToken + 1
+                  // go back to the beginning of the aborted notation 
+                  currentIndex = active(closable).firstToken
+                  // drop innermost notations up to and including the one to be aborted, i.e., closable+1 notations
                   active = active.drop(closable+1)
-                  goToNextToken = false
-                  //numCurrentTokens must be reset as well
+                  // shift the token that opened the aborted notation
+                  advance
                case Applicable => 
                   //close the first active notations that are closable, then apply the next one 
                   Range(0,closable) foreach {_ => closeFirst(true)}
@@ -272,25 +276,26 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   }
             }
       }
-      if (goToNextToken) {
-         currentIndex += 1
-         //check if there is next token left
-         if (currentIndex < numTokens) {
-            next
-         } else {
-            //close remaining notations
-            val allClosed = closeAllPossible
-            if (! allClosed) {
-               log("backtracking")
-               //active notations left, but no further tokens left -> backtracking
-               currentIndex = active.head.firstToken + 1
-               active = active.tail
-               //TODO numCurrentTokens must be reset as well
+      // go to the next token if possible
+      currentIndex += 1
+      if (currentIndex < numTokens) {
+         next
+      } else {
+         //close remaining right-open notations
+         val allClosed = closeAllPossible
+         if (! allClosed) {
+            log("backtracking")
+            //active notations left, but no further tokens left -> backtracking
+            //drop innermost active notation and shift the token that triggered it
+            currentIndex = active.head.firstToken
+            active = active.tail
+            advance
+            // got to next token 
+            currentIndex += 1
+            if (currentIndex < numTokens) {
                next
             }
          }
-      } else {
-         next
       }
    }
    /** scans for some notations and applies matches to tl

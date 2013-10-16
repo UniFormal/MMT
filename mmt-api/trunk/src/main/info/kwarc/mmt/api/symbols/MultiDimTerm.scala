@@ -8,6 +8,8 @@ class TermDimension {
    var term: Option[Term] = None
    /** true if the Term is dirty, i.e., has to be recomputed */
    var dirty: Boolean = false
+   /** the time of the last change */
+   var time : Long = System.currentTimeMillis
    /** delete all data */
    def delete {
       term = None
@@ -58,21 +60,30 @@ class TermContainer {
       val changed = Some(t) != _parsed.term
       if (changed) {
          _parsed.term    = Some(t)
-         _parsed.dirty   = false
+         _parsed.time    = System.currentTimeMillis
          _analyzed.dirty = true
       }
+      _parsed.dirty = false
    }
    /** setter for the analyzed representation */
    def analyzed_=(t: Term) {
-      _analyzed.term  = Some(t)
+      val changed = Some(t) != _analyzed.term
+      if (changed) {
+         _analyzed.term = Some(t)
+         _analyzed.time = System.currentTimeMillis
+      }
       _analyzed.dirty = false
    }
    /** true if the term must still be (re)parsed */
    def isParsedDirty = ! _parsed.dirty
+   /** time of the last change */
+   def lastChangeParsed = _parsed.time
    /** true if the term must be (re)analyzed */
    def isAnalyzedDirty =  _analyzed.dirty
    /** marks this term for reanalyzation */
    def setAnalyzedDirty {_analyzed.dirty = true}
+   /** time of the last change */
+   def lastChangeAnalyzed = _analyzed.time
    /** getter for the best available representation: analyzed or parsed */
    def get: Option[Term] = _analyzed.term orElse _parsed.term
    /** true if any dimension is present, i.e., if the component is present */

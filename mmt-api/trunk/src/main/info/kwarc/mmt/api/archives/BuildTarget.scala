@@ -186,7 +186,7 @@ trait GenericTraversingBuildTarget extends BuildTarget {
            BuiltFile(inPath, outFile)
        }, {
           case (Current(inDir, inPath), buildChildren) =>
-             val currentFolder = inPath.last
+             val currentFolder = inPath.lastOption.getOrElse("")
              val outFile = a.root / outDim / inPath / (currentFolder + "." + outExt)
              buildDir(a, inDir, inPath, buildChildren, outFile)
              BuiltDir(inPath, outFile)

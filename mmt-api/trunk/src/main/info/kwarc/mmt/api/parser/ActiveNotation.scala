@@ -29,7 +29,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
    private var left : List[Marker] = markers
    /** the number of tokens that are part of the current argument(s),
     * i.e., the tokens scanned since the previously found delimiter */
-   var numCurrentTokens : Int = 0
+   private[parser] var numCurrentTokens : Int = 0
 
    /** remove n Markers from left */
    private def delete(n: Int) {
