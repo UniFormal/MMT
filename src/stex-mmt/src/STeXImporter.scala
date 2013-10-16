@@ -177,7 +177,6 @@ class STeXImporter extends Compiler with Logger {
   
   def makeNotation(proto : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, mpath : MPath) : parser.TextNotation = {
 	val argMap : collection.mutable.Map[String, Int] = new collection.mutable.HashMap() 
-
     val symName = proto.label match {
       case "OMA" => 
         val n = proto.child.head
@@ -201,7 +200,6 @@ class STeXImporter extends Compiler with Logger {
         refPath ? LocalName(name)
       case _ => throw ParseError("invalid prototype" + proto + rendering)
     }
-
    
    val markers =  parseRenderingMarkers(rendering, argMap.toMap)
    val precS = try {
@@ -212,7 +210,6 @@ class STeXImporter extends Compiler with Logger {
    
    new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS))
   }
-  
   
   def parseRenderingMarkers(n : scala.xml.Node,argMap : Map[String, Int])(implicit dpath : DPath, mpath : MPath) : List[Marker] = n.label match {
     case "mrow" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
@@ -234,9 +231,9 @@ class STeXImporter extends Compiler with Logger {
       n.child.find(_.label == "separator") match {
         case None => SeqArg(argNr, makeDelim(",")) :: Nil
         case Some(sep) => 
-          val delim = sep.child.head.child.mkString
+          val delim = parseRenderingMarkers(sep, argMap).mkString(" ")
           SeqArg(argNr, makeDelim(delim)) :: Nil
-      }
+        }
     case "none" => Nil
   }
   
