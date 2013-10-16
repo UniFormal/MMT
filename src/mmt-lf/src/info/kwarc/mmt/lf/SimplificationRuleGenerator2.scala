@@ -9,12 +9,11 @@ import parser.ImplicitArg
 class SimplificationRuleGenerator2 extends ChangeListener {
   override val logPrefix = "rule-gen"
   case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
-  def onAdd(e: ContentElement) {onCheck(e)}
-  def onClear {}
-  def onDelete(p: Path) {
+  override def onAdd(e: ContentElement) {onCheck(e)}
+  override def onDelete(p: Path) {
      controller.extman.ruleStore.delete {r => r.path == p}
   }
-  def onCheck(e: ContentElement) {
+  override def onCheck(e: ContentElement) {
     val c = e match {
        case c: symbols.Constant =>
           if (c.rl == "Simplify" && c.tpC.analyzed.isDefined)
