@@ -24,15 +24,14 @@ import scala.sys.process._ // need this to execute shell commands
  * TPTP twelf Compiler, translates TPTP sources to twelf using tptp2x
  */
 class TptpTwelfCompiler extends Compiler {
+  val key = "tptp-twelf"
   private var tptppath : String = null
-  private def log(msg: => String) {report("tptptwelf", msg)}
-  def isApplicable(src : String) : Boolean = src == "tptp"
-  override def init(con: Controller, args: List[String]) {
+  override def start(args: List[String]) {
      tptppath = args(0)     
-     super.init(con, Nil)
   }
-
-  override def compile(in : File, dpath: Option[DPath], out : File) : List[SourceError] = {
+  
+  def includeFile(n: String) : Boolean = n.endsWith(".tptp")
+  def buildOne(in: File, dpath: DPath, out: File) : List[SourceError] = {
     var errors: List[SourceError] = Nil    
    
    // should be  .../TPTP/TPTP2X  

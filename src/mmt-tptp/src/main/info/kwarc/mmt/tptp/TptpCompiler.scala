@@ -17,10 +17,10 @@ import presentation._
  * TPTP Compiler, translates TPTP sources to OMDoc
  */
 class TptpCompiler extends Compiler with QueryTransformer {
-  
-  def isApplicable(src : String) : Boolean = src == "tptp"
+  val key = "tptp-omdoc"  
 
-  override def compile(in : File, dpath: Option[DPath], out : File) : List[SourceError] = {
+  def includeFile(n: String) : Boolean = n.endsWith(".tptp")
+  def buildOne(in: File, dpath: DPath, out: File) : List[SourceError] = {
     var errors: List[SourceError] = Nil
     val fileName = in.toJava.getName
     if (!fileName.contains(TptpUtils.FORM))
