@@ -29,26 +29,29 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    private def onSelection(ta: TextArea, offset: Int): Option[(Int,Int)] = {
       if (textArea.getSelectionCount != 1) return None
       val sel = textArea.getSelection(0)
-      sel.getStart <= offset && offset <= sel.getEnd
-      Some((sel.getStart, sel.getEnd))
+      if (sel.getStart <= offset && offset <= sel.getEnd)
+         Some((sel.getStart, sel.getEnd))
+      else
+         None
    }
    override def getToolTipText(xCoord: Int, yCoord: Int): String = {
       val offset = textArea.xyToOffset(xCoord, yCoord, false)
       if (offset == -1) return null
       onSelection(textArea,offset) match {
          case Some((b,e)) =>
-            val as = MMTSideKick.getAssetAtRange(view, b, e)
+            val as = try {MMTSideKick.getAssetAtRange(view, b, e)} catch {case ex => return ex.getClass.toString+ex.getMessage+" " + b + " " + e}
             as match {
                case ta: MMTObjAsset =>
                   ta.obj match {
                      case t: Term =>
-                        Solver.check(controller, Stack(ta.getTheory, ta.context), t) match {
-                           case Some((_,tp)) => asString(tp)
-                           case _ => null
-                        }
-                     case _ => null
+                        log(asString(t))
+                        val found = controller.extman.getFoundation(ta.getTheory).getOrElse(return "no foundation")
+                        val tp = try {found.inference(t, ta.context)(controller.globalLookup)}
+                        catch {case e : Throwable => return e.getMessage}
+                        asString(tp)
+                     case _ => return b.toString + ":" + e.toString
                   }
-               case _ => null
+               case _ => return "mm" + b.toString + ":" + e.toString
             }
          case None => 
             val as = MMTSideKick.getAssetAtOffset(view,offset)

@@ -360,7 +360,7 @@ object MMTSideKick {
       var path = pd.getTreePathForPosition(begin)
       var asset: MMTAsset = null
       while ({
-         asset = path.getLastPathComponent.asInstanceOf[MMTAsset]
+         asset = path.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[MMTAsset]
          asset.getEnd.getOffset < end
       }) {
          path = path.getParentPath
